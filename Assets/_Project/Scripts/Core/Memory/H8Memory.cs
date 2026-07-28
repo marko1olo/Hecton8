@@ -3591,8 +3591,29 @@ namespace Hecton8.Core.Memory
         private static bool _initialized;
 
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
+        // One AtomicSafetyHandle per DISTINCT alias region, never one handle for the whole process.
+        // A shared handle cannot detect a real race between two views of the SAME region any better than a
+        // per-region handle, and it makes Unity report two unrelated regions as "the same
+        // UNKNOWN_OBJECT_TYPE", which refuses job SCHEDULING and cannot be cleared by any JobHandle chaining
+        // in the calling system. Two views of one region still share a handle - they genuinely alias.
+        // Capacity mirrors DefaultCapacity, the initial _records tracking capacity declared above, because an
+        // alias region is always either a tracked H8Memory allocation or a sub-offset inside one.
+        private const int AliasRegionCapacity = DefaultCapacity;
+        private const int AliasRegionCapacityMask = AliasRegionCapacity - 1;
+        private const int AliasRegionProbeLimit = 8;
+
         private static AtomicSafetyHandle _aliasSafetyHandle;
         private static bool _aliasSafetyHandleCreated;
+        // COLD ALLOC: long[4096] - alias region pointer keys, 0 marks a free slot - owner: H8Memory
+        private static long[] _aliasRegionKeys;
+        // COLD ALLOC: AtomicSafetyHandle[4096] - one safety handle per distinct alias region - owner: H8Memory
+        private static AtomicSafetyHandle[] _aliasRegionHandles;
+        // COLD ALLOC: bool[4096] - per-region safety handle lifetime flags - owner: H8Memory
+        private static bool[] _aliasRegionHandleCreated;
+        private static int _aliasRegionMutationGate;
+        private static int _aliasRegionOwnerThreadId;
+        private static int _aliasRegionLiveCount;
+        private static bool _aliasRegionExhaustionReported;
 #endif
 
         /// <summary>Tracked allocation count.</summary>
@@ -3771,8 +3792,23 @@ namespace Hecton8.Core.Memory
                 RegisterSceneHooks();
                 RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.Initialized);
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
+                // Idempotent: releases anything a previous partially-initialized pass left live before this
+                // pass creates new handles, so no handle can be orphaned by a re-entered Initialize.
+                ReleaseAliasSafetyHandleIfCreated();
                 _aliasSafetyHandle = AtomicSafetyHandle.Create();
                 _aliasSafetyHandleCreated = true;
+                if ((AliasRegionCapacity & AliasRegionCapacityMask) == 0)
+                {
+                    _aliasRegionKeys = new long[AliasRegionCapacity];
+                    _aliasRegionHandles = new AtomicSafetyHandle[AliasRegionCapacity];
+                    _aliasRegionHandleCreated = new bool[AliasRegionCapacity];
+                    _aliasRegionLiveCount = 0;
+                    _aliasRegionExhaustionReported = false;
+                    _aliasRegionMutationGate = 0;
+                    // Captured last: the per-region lane stays closed until the table is fully built, and every
+                    // AtomicSafetyHandle.Create/Release for that lane is pinned to this thread.
+                    _aliasRegionOwnerThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
+                }
 #endif
             }
             catch
@@ -4468,11 +4504,170 @@ namespace Hecton8.Core.Memory
 
             NativeArray<T> array = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>(pointer, length, Allocator.None);
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
-            if (_aliasSafetyHandleCreated)
+            if (TryResolveAliasRegionHandle(pointer, out AtomicSafetyHandle regionHandle))
+                NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref array, regionHandle);
+            else if (_aliasSafetyHandleCreated)
                 NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref array, _aliasSafetyHandle);
 #endif
             return array;
         }
+
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+        /// <summary>
+        /// Maps a region pointer onto its table slot. Region pointers are at least
+        /// <see cref="MinimumRawAlignment"/> aligned and vault sub-offsets are block aligned, so the low bits
+        /// are always zero and have to be mixed before masking or every region collides.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int AliasRegionSlot(long pointerKey)
+        {
+            ulong mixed = MixAddressFingerprint(AddressFingerprintSeed, unchecked((ulong)pointerKey));
+            // The FNV prime is odd, so the low bits of the product carry almost no entropy. Fold the high bits
+            // down before masking or every aligned region lands in the same slot.
+            mixed ^= mixed >> 29;
+            return (int)(mixed & (ulong)AliasRegionCapacityMask);
+        }
+
+        /// <summary>
+        /// Resolves the safety handle that belongs to one distinct alias region, creating it on first sight of
+        /// that region pointer and never again. Returns false - caller falls back to the shared handle, which
+        /// is the pre-existing behaviour - when the table is absent, exhausted, contended, or the caller is not
+        /// the thread that built the table.
+        /// </summary>
+        private static bool TryResolveAliasRegionHandle(void* pointer, out AtomicSafetyHandle handle)
+        {
+            handle = default;
+            if (_aliasRegionKeys == null ||
+                _aliasRegionHandles == null ||
+                _aliasRegionHandleCreated == null ||
+                _aliasRegionOwnerThreadId == 0 ||
+                System.Threading.Thread.CurrentThread.ManagedThreadId != _aliasRegionOwnerThreadId)
+            {
+                return false;
+            }
+
+            long pointerKey = ((IntPtr)pointer).ToInt64();
+            if (pointerKey == 0L)
+                return false;
+
+            if (System.Threading.Interlocked.CompareExchange(ref _aliasRegionMutationGate, 1, 0) != 0)
+                return false;
+
+            try
+            {
+                int slot = AliasRegionSlot(pointerKey);
+                for (int probe = 0; probe < AliasRegionProbeLimit; probe++)
+                {
+                    int index = (slot + probe) & AliasRegionCapacityMask;
+                    long existingKey = _aliasRegionKeys[index];
+                    if (existingKey == pointerKey)
+                    {
+                        // Same region seen before: hand back the same handle, never create a second one. This
+                        // is the per-frame path, so creation here would leak one handle per frame.
+                        if (!_aliasRegionHandleCreated[index])
+                            return false;
+
+                        handle = _aliasRegionHandles[index];
+                        return true;
+                    }
+
+                    if (existingKey != 0L)
+                        continue;
+
+                    // A key-free slot must not hold a live handle. Enforced rather than assumed so the
+                    // exactly-once invariant does not depend on unreachability of a partial write.
+                    ReleaseAliasRegionSlot(index);
+                    _aliasRegionHandles[index] = AtomicSafetyHandle.Create();
+                    _aliasRegionHandleCreated[index] = true;
+                    _aliasRegionKeys[index] = pointerKey;
+                    _aliasRegionLiveCount++;
+                    handle = _aliasRegionHandles[index];
+                    return true;
+                }
+
+                // Table pressure degrades to the shared handle, which re-admits the old false-positive for the
+                // overflowing views only. Reported once so it cannot rot silently.
+                if (!_aliasRegionExhaustionReported)
+                {
+                    _aliasRegionExhaustionReported = true;
+                    RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.Fault);
+                }
+
+                return false;
+            }
+            finally
+            {
+                System.Threading.Thread.MemoryBarrier();
+                System.Threading.Volatile.Write(ref _aliasRegionMutationGate, 0);
+            }
+        }
+
+        /// <summary>
+        /// Releases the single handle a slot may hold and clears the slot. Caller must be the table owner
+        /// thread. The created flag is the exactly-once gate: released handles are unflagged before any other
+        /// statement can observe them, so no handle can be released twice.
+        /// </summary>
+        private static void ReleaseAliasRegionSlot(int index)
+        {
+            if (_aliasRegionHandleCreated[index])
+            {
+                AtomicSafetyHandle.Release(_aliasRegionHandles[index]);
+                _aliasRegionHandleCreated[index] = false;
+            }
+
+            _aliasRegionHandles[index] = default;
+            if (_aliasRegionKeys[index] == 0L)
+                return;
+
+            _aliasRegionKeys[index] = 0L;
+            if (_aliasRegionLiveCount > 0)
+                _aliasRegionLiveCount--;
+        }
+
+        /// <summary>
+        /// Releases every per-region handle whose region lies inside a tracked allocation that is being
+        /// retired. This is the region-death path: vault buffers are sub-offsets of the vault arena, so freeing
+        /// the arena kills every alias region inside it, and an exact-address region is covered by the same
+        /// containment test. Cold path only - it runs on free/ReleaseAll/scene-transition purges, never per
+        /// frame - so the full-table scan is affordable and is skipped outright while the table is empty.
+        /// </summary>
+        private static void ReleaseAliasRegionHandlesInRange(IntPtr basePointer, long bytes)
+        {
+            if (_aliasRegionKeys == null ||
+                _aliasRegionHandles == null ||
+                _aliasRegionHandleCreated == null ||
+                _aliasRegionLiveCount <= 0 ||
+                basePointer == IntPtr.Zero)
+            {
+                return;
+            }
+
+            long rangeStart = basePointer.ToInt64();
+            long rangeEnd = bytes > 0L ? rangeStart + bytes : rangeStart + 1L;
+            if (rangeEnd <= rangeStart)
+                return;
+
+            if (System.Threading.Interlocked.CompareExchange(ref _aliasRegionMutationGate, 1, 0) != 0)
+                return;
+
+            try
+            {
+                for (int i = 0; i < _aliasRegionKeys.Length; i++)
+                {
+                    long key = _aliasRegionKeys[i];
+                    if (key == 0L || key < rangeStart || key >= rangeEnd)
+                        continue;
+
+                    ReleaseAliasRegionSlot(i);
+                }
+            }
+            finally
+            {
+                System.Threading.Thread.MemoryBarrier();
+                System.Threading.Volatile.Write(ref _aliasRegionMutationGate, 0);
+            }
+        }
+#endif
 
         /// <summary>
         /// Force-frees all tracked memory for an unregistered owner.
@@ -4825,12 +5020,34 @@ namespace Hecton8.Core.Memory
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             _aliasSafetyHandle = default;
             _aliasSafetyHandleCreated = false;
+            // Every caller of ResetStaticValueState runs ReleaseAliasSafetyHandleIfCreated first, so dropping
+            // the table references here can never orphan a live handle.
+            _aliasRegionKeys = null;
+            _aliasRegionHandles = null;
+            _aliasRegionHandleCreated = null;
+            _aliasRegionMutationGate = 0;
+            _aliasRegionOwnerThreadId = 0;
+            _aliasRegionLiveCount = 0;
+            _aliasRegionExhaustionReported = false;
 #endif
         }
 
         private static void ReleaseAliasSafetyHandleIfCreated()
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
+            // Close the per-region lane first: no other thread can enter TryResolveAliasRegionHandle once the
+            // owner-thread id is cleared, so the sweep below cannot race a create.
+            _aliasRegionOwnerThreadId = 0;
+            if (_aliasRegionKeys != null && _aliasRegionHandles != null && _aliasRegionHandleCreated != null)
+            {
+                for (int i = 0; i < _aliasRegionHandleCreated.Length; i++)
+                    ReleaseAliasRegionSlot(i);
+            }
+
+            _aliasRegionLiveCount = 0;
+            _aliasRegionExhaustionReported = false;
+            _aliasRegionMutationGate = 0;
+
             if (_aliasSafetyHandleCreated)
             {
                 AtomicSafetyHandle.Release(_aliasSafetyHandle);
@@ -6169,6 +6386,12 @@ namespace Hecton8.Core.Memory
         private static void RemoveRecordAt(int index, bool removeOwnerPointer, H8MemoryTelemetryFlags telemetryFlags)
         {
             H8AllocationRecord record = _records[index];
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+            // Single funnel for retiring a tracked pointer - UnregisterPointer, ForceFreeRecordAt (ReleaseAll,
+            // scene-transition purge, sentinel reap) and the RegisterPointer rollbacks all land here - so the
+            // region's alias handles are released exactly once, here, before the record is dropped.
+            ReleaseAliasRegionHandlesInRange(record.Pointer, record.Bytes);
+#endif
             long pointerKey = record.Pointer.ToInt64();
             _allocationOwners.Remove(pointerKey);
             if (_allocationRecordIndices.IsCreated)
