@@ -1122,20 +1122,60 @@ namespace Hecton8.Gameplay
             if (preset == null || toolPrefabs == null || toolPrefabs.Length == 0)
                 return false;
 
+            GameObject[] presetSlots = preset.slotPrefabs;
+            int count = presetSlots != null ? Mathf.Min(toolPrefabs.Length, presetSlots.Length) : 0;
+
+            // A ToolLoadoutPreset is read-only DATA, not the owner of quick-slot truth - this manager
+            // is. A slot the preset leaves empty says nothing about that slot, so it must not be able
+            // to strip an assigned tool, and a preset that names no tool at all is an authoring gap
+            // rather than an instruction to empty the bar. Both callers that can reach this from a
+            // shipped build already render the refusal: PDALoadoutTab.cs:1180 ("FAILED TO APPLY") and
+            // PlayerExpressionManager.cs:997.
+            int namedSlots = 0;
+            for (int i = 0; i < count; i++)
+            {
+                if (presetSlots[i] != null)
+                    namedSlots++;
+            }
+
+            if (namedSlots == 0)
+                return false;
+
             if (holsterFirst)
                 Holster();
 
-            int count = Mathf.Min(toolPrefabs.Length, preset.slotPrefabs != null ? preset.slotPrefabs.Length : 0);
+            GameObject previousCurrentSlotPrefab = GetAssignedToolPrefab(_currentSlotIndex);
             bool previousSignalSuppression = _suppressToolLoadoutSignal;
             _suppressToolLoadoutSignal = true;
             try
             {
                 for (int i = 0; i < count; i++)
-                    SetAssignedToolPrefab(i, preset.slotPrefabs[i], holsterIfCurrentInvalid: false);
+                {
+                    GameObject slotPrefab = presetSlots[i];
+                    if (slotPrefab == null)
+                        continue;
+
+                    SetAssignedToolPrefab(i, slotPrefab, holsterIfCurrentInvalid: false);
+                }
             }
             finally
             {
                 _suppressToolLoadoutSignal = previousSignalSuppression;
+            }
+
+            // The instance in hand must never disagree with the prefab its own slot now names.
+            // holsterIfCurrentInvalid stays false in the loop so a reassignment cannot fight the swap
+            // state machine mid-write, so the invariant is closed once, here. A caller passing
+            // holsterFirst: false may skip the courtesy holster but cannot waive this: tools.md
+            // section 7 puts tool truth on this owner, and SwitchToSlot would read the stale
+            // _currentSlotIndex as "already equipped" (see RequestSwap early-out at :1729) and only
+            // holster instead of raising the tool the bar is showing.
+            if (!holsterFirst &&
+                _currentTool != null &&
+                _currentSlotIndex >= 0 &&
+                !ReferenceEquals(GetAssignedToolPrefab(_currentSlotIndex), previousCurrentSlotPrefab))
+            {
+                Holster();
             }
 
             PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
