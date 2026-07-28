@@ -26,7 +26,7 @@ namespace Hecton8.Editor.SaveSystem
             if (result.IssueCount == 0)
                 Debug.Log("[WorldPickupStateAuthoringValidator] PASS open-scene persistent pickups have non-empty unique stable IDs.");
             else
-                Debug.LogError($"[WorldPickupStateAuthoringValidator] FAIL issues={result.IssueCount}. Run Hecton/Authoring/Seed World Pickup Stable IDs In Open Scenes to repair open-scene IDs.");
+                Debug.LogError($"[WorldPickupStateAuthoringValidator] FAIL issues={result.IssueCount}. Run Hecton8/Authoring/Seed World Pickup Stable IDs In Open Scenes to repair open-scene IDs.");
         }
 
         [MenuItem("Hecton8/Authoring/Seed World Pickup Stable IDs In Open Scenes")]
@@ -220,7 +220,7 @@ namespace Hecton8.Editor.SaveSystem
                 return;
 
             Debug.LogWarning($"[WorldPickupStableIdBuildGate] Scene {scene.path} has {result.IssueCount} persistent pickup stable ID issue(s), unresolved={result.UnresolvedCount}. " +
-                "Run Hecton/Authoring/Seed World Pickup Stable IDs In Open Scenes, then fix unresolved item identity errors before building.");
+                "Run Hecton8/Authoring/Seed World Pickup Stable IDs In Open Scenes, then fix unresolved item identity errors before building.");
         }
     }
 

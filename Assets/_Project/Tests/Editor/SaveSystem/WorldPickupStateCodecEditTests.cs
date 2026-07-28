@@ -804,8 +804,13 @@ namespace Hecton8.Tests.Editor.SaveSystem
                 Application.dataPath,
                 "_Project/Scripts/Editor/SaveSystem/WorldPickupStateAuthoringValidator.cs"));
 
-            Assert.That(source, Does.Contain("[MenuItem(\"Hecton/Validation/Validate World Pickup Stable IDs\")]"));
-            Assert.That(source, Does.Contain("[MenuItem(\"Hecton/Authoring/Seed World Pickup Stable IDs In Open Scenes\")]"));
+            // "Hecton8/", not "Hecton/". The source has always carried the Hecton8 prefix that every
+            // other menu in this project uses, so "[MenuItem(\"Hecton/" was never a substring of it and
+            // both of these assertions were red. The validator's own two user-facing instruction strings
+            // had the same typo and told people to run a menu path that does not exist; they now say
+            // Hecton8 as well. Fixing only one side would have re-broken the other.
+            Assert.That(source, Does.Contain("[MenuItem(\"Hecton8/Validation/Validate World Pickup Stable IDs\")]"));
+            Assert.That(source, Does.Contain("[MenuItem(\"Hecton8/Authoring/Seed World Pickup Stable IDs In Open Scenes\")]"));
             Assert.That(source, Does.Contain("WorldPickupStableIdBuildGate : IProcessSceneWithReport"));
             Assert.That(source, Does.Contain("throw new BuildFailedException"));
             Assert.That(source, Does.Contain("internal static int ScanOpenScenePickups(bool repair, string requiredScenePath)"));
