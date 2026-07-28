@@ -7,8 +7,9 @@ structure it lists is mandatory and is built here:
                             following the ground plane -- not a vertical ribbon
   stipe with taper+ribbing  swept tube whose cross-section changes along its
                             length: taper, rotating ellipse, angular ribs,
-                            pneumatocyst swellings. A constant-radius tube is a
-                            stated rejection.
+                            growth rings. A constant-radius tube is a stated
+                            rejection. Pneumatocysts sit on the BLADE bases, which
+                            is where Macrocystis carries them.
   blade sheets with rim     each blade is a CLOSED thin shell: the cross-section
                             is a flat lens, so the narrow ends of the lens *are*
                             the edge rim. Section 3: "Blade surfaces must not be
@@ -89,7 +90,7 @@ ATLAS_SIZE = 4096
 # ``forest_kelp.webp`` uses as its colour focal point. It is NOT emissive: kelp is
 # photic tissue, so vertex-colour G stays 0 everywhere. Every declared slot must
 # carry triangles or validation fails, so the bladder regions are real geometry.
-SLOT_ROLES = ("tissue", "basal_collar_scar", "holdfast", "bladder")
+SLOT_ROLES = ("tissue", "basal_collar_scar", "holdfast")
 
 # Vertex class tags, carried per-vertex so the sway/harvest fields can tell
 # rigid root tissue from flexible frond tissue after welding has renumbered
@@ -102,6 +103,25 @@ CLS_BLADE = 3.0
 GEO_LAYER = "h8_geo"
 CLS_LAYER = "h8_cls"
 PART_LAYER = "h8_part"
+# Across-surface mask coordinate, 0 and 1 at the two margins / the hidden seam and
+# 0.5 on the midrib. It exists because the LIVE Hecton_KelpMaster.shader consumes
+# UV0 as a MASK parameterisation, not as a texture coordinate -- see UV_MASK_LAYER.
+ACROSS_LAYER = "h8_across"
+
+# Second UV set. 3dmodel.md section 3 assigns TexCoord1 to "atlas remap ... or packed
+# baked masks"; section 6 says a triplanar material "still requires UV0 or object-space
+# coordinates for decals and MASKS". Hecton_KelpMaster.shader samples every one of its
+# three textures TRIPLANAR from world position and uses TEXCOORD0 only for
+# heightMask = saturate(uv.y) (sway amplitude, thickness, biolum) and
+# widthMask = uv.x (midrib and edge-wear masks). UVMap therefore stays the atlas
+# unwrap that every existing density/padding/stretch gate measures, and this layer
+# carries the mask parameterisation the shader actually wants:
+#   U = 0 and 1 at the blade margins, 0.5 on the midrib (tube parts: 0 at the hidden
+#       seam, wrapping once around)
+#   V = geodesic distance from the holdfast over the longest path, root 0 -> tip 1
+# V is deliberately the same field as vertex-colour R, so whichever input the channel
+# policy lands on, the curve is identical.
+UV_MASK_LAYER = "UVMask"
 
 # Named deterministic streams. Adding a stage must not reshuffle earlier ones,
 # which is what a single shared generator would do.
@@ -110,6 +130,17 @@ STREAM_HOLDFAST = 23
 STREAM_STIPE = 37
 STREAM_BLADES = 53
 STREAM_DETAIL = 71
+
+# Where a swimmer cuts the stipe, as a fraction of plant height above the holdfast.
+# One constant so ANCHOR_Cut and the channel-A harvest mask cannot drift apart: the
+# mask has to say "this tissue leaves with the cut" about the same place the anchor
+# puts the cut. Low, because on a 10 m column the reachable stipe is the bottom metre
+# or two, not the canopy.
+CUT_HEIGHT_FRACTION = 0.11
+
+# The substrate the holdfast grips. Blades trail ALONG it rather than through it.
+SEDIMENT_CLEARANCE_M = 0.030
+SEDIMENT_SOFTNESS_M = 0.090
 
 
 # ---------------------------------------------------------------------------
@@ -230,7 +261,9 @@ def _arclengths(points):
 
 def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
                   points, segments, offset_fn, part_id, vertex_class,
-                  material_fn, geo_base, geo_lengths, seam_direction=None):
+                  material_fn, geo_base, geo_lengths, seam_direction=None,
+                  across_layer=None, across_fn=None, cut_caps=True,
+                  u_params=None, extra_seam_columns=(), cap_ends=True):
     """Sweep a parametric cross-section along ``points`` and cap both ends.
 
     ``offset_fn(row, u, j, theta) -> (x, y)`` returns the cross-section offset in
@@ -268,9 +301,17 @@ def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
     tangents, normals, binormals = _parallel_frames(points)
 
     # -- ring plan --------------------------------------------------------
+    # ``u_params`` lets a caller feed the SAME non-uniform parameter it used to place
+    # ``points``. Without it a caller that clusters rings (a blade does, around its basal
+    # gas float) gets rings at one spacing and cross-sections evaluated at another, and
+    # the cross-section flares across a single quad band. Measured at iteration 2: a
+    # 27 cm x 2 cm quad at the bladder, 378.27 aspect distortion against a 3.3 ceiling.
     plan = []
     for i in range(rows):
-        u_param = i / float(rows - 1) if rows > 1 else 0.0
+        if u_params is not None:
+            u_param = float(u_params[i])
+        else:
+            u_param = i / float(rows - 1) if rows > 1 else 0.0
         plan.append((points[i], i, u_param, 1.0, geo_lengths[i]))
 
     # -- vertices ---------------------------------------------------------
@@ -315,6 +356,21 @@ def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
                 best = score
                 seam_column = j
 
+    # -- across-surface mask coordinate -----------------------------------
+    # Written here rather than in the vertex loop because the tube convention is
+    # measured FROM the seam column, which is only known above. Blades override it with
+    # their own symmetric margin->midrib->margin function; a tube wraps once around from
+    # the hidden seam, which puts the shader's edge-wear bands on the lee side and its
+    # midrib gloss band on the exposed side.
+    if across_layer is not None:
+        for i in range(ring_count):
+            for j in range(segments):
+                if across_fn is not None:
+                    value = across_fn(j)
+                else:
+                    value = ((j - seam_column) % segments) / float(segments)
+                grid[i][j][across_layer] = law.saturate(value)
+
     # -- quads ------------------------------------------------------------
     for i in range(ring_count - 1):
         for j in range(segments):
@@ -344,8 +400,19 @@ def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
     # The shell stays closed, as 3dmodel.md section 5 requires ("all sheet borders must
     # be capped"). These are caps, not holes. Winding is left to the recalculation pass
     # in weld_and_clean, which orients each closed component outward.
+    # ``cap_ends`` off for the blades. 3dmodel.md section 5 permits it outright --
+    # "Plants and fins may be intentionally open shells, but all sheet borders must be
+    # capped, thickened, or tagged as non-collision render-only surfaces" -- and flora
+    # is in law.FAMILIES_WITHOUT_DEFAULT_COLLISION, so a blade end IS render-only by
+    # contract. The positive reason is UV: a centroid fan over a 22 cm x 1.5 mm end ring
+    # is a row of near-collinear slivers, and once BOTH margins are cut that fan is the
+    # only thing still bridging the upper and lower face islands -- which is how a
+    # 0.500 x 969.408 px island appeared against law.UV_MIN_ISLAND_PIXELS=4. Cutting it
+    # free instead does not help: a 1.5 mm thick cap can never be 4 px in its thickness
+    # dimension at any atlas size. The blade keeps real thickness through its midrib and
+    # a 1.5 mm open slit at each end, of which the base one is buried in the stipe.
     caps = []
-    for end in (0, ring_count - 1):
+    for end in ((0, ring_count - 1) if cap_ends else ()):
         row = grid[end]
         if len(row) < 3:
             continue
@@ -366,6 +433,10 @@ def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
         hub = bm.verts.new(centre)
         hub[geo_layer] = row[0][geo_layer]
         hub[cls_layer] = vertex_class
+        if across_layer is not None:
+            # The cap centroid is interior surface, so it takes the midrib value. Giving
+            # it a margin value would put an edge-wear ring on the blade tip.
+            hub[across_layer] = 0.5
         made = []
         for j in range(len(row)):
             first = row[j]
@@ -385,21 +456,43 @@ def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
     # cut of this shape opens it into a disc -- the domain a conformal solver needs.
     # Without the apex spokes the cut stops short of the poles and the surface stays
     # closed, at which point the solver has to invent its own seam.
+    # ``extra_seam_columns`` exists for the blades, and it is the fix for the one gate
+    # that survived every geometric change: a single lengthwise cut leaves the closed
+    # lens as ONE island, so the solver still has to parameterise the 180 degree turn
+    # around a 1.5 mm margin fold. A conformal map has to compress that entire angular
+    # turn into a sliver of UV, and the triangles beside it are where the anisotropy
+    # lands -- measured across four iterations at 60.9, 48.6, 46688, 1542.9 and 382.9,
+    # moving with every parameter but never below the 3.3 ceiling, and dragging
+    # _collapse_uv_outliers into 139 edge collapses that then produced a degenerate
+    # triangle of their own. Cutting BOTH margins unrolls the blade into two flat
+    # near-developable rectangles with no fold to map, which is also the arrangement
+    # 3DMODEL_FLORA_CORAL.md section 5 implies: "U from left edge to right edge" is a
+    # per-FACE span, so the margin is where the cut belongs.
     seam_edges = 0
-    chain = [grid[i][seam_column] for i in range(ring_count)]
-    for index in range(len(chain) - 1):
-        edge = bm.edges.get((chain[index], chain[index + 1]))
-        if edge is not None:
-            edge.seam = True
-            seam_edges += 1
-    # Cut each cap free along its boundary ring, so the part unwraps as a rectangle plus
-    # two discs instead of a punctured sphere.
-    for row, _faces in caps:
-        for j in range(len(row)):
-            edge = bm.edges.get((row[j], row[(j + 1) % len(row)]))
+    columns = [seam_column] + [int(c) % segments for c in extra_seam_columns]
+    for column in sorted(set(columns)):
+        chain = [grid[i][column] for i in range(ring_count)]
+        for index in range(len(chain) - 1):
+            edge = bm.edges.get((chain[index], chain[index + 1]))
             if edge is not None and not edge.seam:
                 edge.seam = True
                 seam_edges += 1
+    # Cut each cap free along its boundary ring, so the part unwraps as a rectangle plus
+    # two discs instead of a punctured sphere.
+    # ``cut_caps`` off for parts whose end ring is a small flat slot. Measured at
+    # iteration 1: cutting a blade's two caps free produced 18 islands of 2.31 x 0.43 px
+    # at atlas 4096, against law.UV_MIN_ISLAND_PIXELS=4 -- an outright gate failure. A
+    # blade end ring is a 2 cm x 1 mm lens whose centroid fan sits in the ring's own
+    # plane, so it carries almost no cone deficit and the solver absorbs it into the
+    # sheet island without the scale singularity a tall dome caused. The cut is still
+    # correct for the wide tube caps, where the island has real pixel area.
+    if cut_caps:
+        for row, _faces in caps:
+            for j in range(len(row)):
+                edge = bm.edges.get((row[j], row[(j + 1) % len(row)]))
+                if edge is not None and not edge.seam:
+                    edge.seam = True
+                    seam_edges += 1
 
     return {"seamColumn": seam_column, "seamEdges": seam_edges,
             "rings": ring_count, "segments": segments}
@@ -430,7 +523,28 @@ class KelpForm:
         self.seed = int(seed)
         self.quality = law.saturate(quality)
 
-        self.height = float(rng.uniform(1.75, 2.65))
+        # SCALE IS THE FIRST DECISION, and the previous grammar got it wrong by an
+        # order of magnitude. Giant kelp (Macrocystis) is not a shrub: the read that
+        # makes it legible underwater is VERTICAL and RIBBON-LIKE -- a holdfast on the
+        # floor and a near-unbranched stipe that keeps rising past the camera, which is
+        # why both mandatory reference frames (``forest_kelp.webp``,
+        # ``middle-water.webp``) are shot looking UP a column.
+        #
+        # Measured failure being replaced (VISUAL_ROUTE_INVALID, self-declared by the
+        # previous owner and confirmed by opening its own flat sheet):
+        #   height 1.75-2.65 m, blades 0.20-0.36 m long at 4-7 cm wide, 16-49 of them
+        #   at 12-25 cm spacing, cross-section aspect ~4:1.
+        # Every one of those numbers builds a bottle-brush, and the 4:1 cross-section
+        # is decisive on its own -- a 4:1 oval swept 30 cm is a fleshy ROD, and a rod
+        # cannot read as a blade at any count or density.
+        # Iteration 2: 12.7 m measured too empty for a 6500 triangle budget -- the
+        # column read vertical but there was nothing on it. 7.4-9.8 m still rises well
+        # past a 1.8 m swimmer and past the scale witness, and it puts ~600-800
+        # triangles per metre of plant instead of ~430.
+        # Iteration 3: 10.5 m measured too empty against 1.75 m blades. 6.4-8.4 m keeps
+        # the column well past a 1.8 m swimmer while making a 3 m blade 0.4 of the plant
+        # height, which is the proportion ``middle-water.webp`` actually shows.
+        self.height = float(rng.uniform(6.4, 8.4))
         current_angle = float(rng.uniform(0.0, 2.0 * math.pi))
         self.current = Vector((math.cos(current_angle), math.sin(current_angle), 0.0))
         self.cross_current = Vector((-self.current.y, self.current.x, 0.0))
@@ -441,105 +555,123 @@ class KelpForm:
 
         # Stipe cross-section. A constant-radius tube is an explicit rejection in
         # section 3, so taper, ellipse eccentricity, a rotating ellipse and an
-        # angular rib count are all part of the form, not optional polish.
-        self.stipe_radius_base = float(rng.uniform(0.021, 0.031))
-        self.stipe_radius_top = float(rng.uniform(0.007, 0.011))
-        self.stipe_ellipse = float(rng.uniform(0.14, 0.24))
-        self.stipe_twist = float(rng.uniform(0.7, 2.1))
-        self.rib_count = int(rng.integers(5, 9))
-        self.rib_amplitude = float(rng.uniform(0.055, 0.095))
-        self.growth_ring_frequency = float(rng.uniform(6.0, 11.0))
-        self.growth_ring_amplitude = float(rng.uniform(0.026, 0.046))
+        # angular rib count are all part of the form, not optional polish. Radii are
+        # real Macrocystis: 2-4 cm at the holdfast, 1-1.7 cm near the canopy.
+        self.stipe_radius_base = float(rng.uniform(0.026, 0.040))
+        self.stipe_radius_top = float(rng.uniform(0.011, 0.017))
+        self.stipe_ellipse = float(rng.uniform(0.10, 0.18))
+        self.stipe_twist = float(rng.uniform(0.5, 1.4))
+        self.rib_count = int(rng.integers(6, 11))
+        self.rib_amplitude = float(rng.uniform(0.050, 0.085))
+        self.growth_ring_frequency = float(rng.uniform(9.0, 16.0))
+        self.growth_ring_amplitude = float(rng.uniform(0.022, 0.040))
 
-        # Pneumatocyst swellings: real kelp carries gas bladders on the stipe.
-        # Narrow bands, and the amplitude is a FRACTION of the local radius. The first
-        # version added an absolute 0.035-0.070 m to a 0.036-0.052 m radius, which
-        # could triple it -- the render showed a bloated tentacle, not a stipe. Same
-        # lesson as scaling any displacement by local radius instead of a global size.
-        swelling_count = _qi(2, 4, self.quality)
-        self.swellings = tuple(
-            (float(rng.uniform(0.18, 0.94)), float(rng.uniform(0.022, 0.045)),
-             float(rng.uniform(0.35, 0.85)))
-            for _ in range(swelling_count)
-        )
+        # Pneumatocysts moved OFF the stipe and onto the blade bases, which is where
+        # Macrocystis actually carries them: one pyriform gas float at the junction of
+        # each blade and the stipe. The previous grammar swelled the stipe itself, then
+        # (correctly) refused to paint the bladder material there because it read as an
+        # orange stripe down the stem -- geometry and material disagreeing is the tell
+        # that the anatomy was wrong, not the shader. ``_build_blades`` owns them now.
+        # In METRES, not as a fraction of blade length. Expressed as a fraction, a
+        # 2.6 m blade got a 0.25-0.66 m "gas float" -- anatomically absurd (a real
+        # pneumatocyst is 3-6 cm) and the direct cause of the iteration-2 outlier: the
+        # neck-to-sheet flare then spread over a quarter of the blade, so the first quad
+        # band measured 253 x 5.5 mm and the solver drove it to 48.61 distortion.
+        self.bladder_length_m = float(rng.uniform(0.034, 0.062))
+        self.bladder_swell = float(rng.uniform(2.1, 3.1))
+        # Length of the stalk over which a blade broadens out of its float, in metres.
+        # A real Macrocystis stalk is 20-30 cm whatever the blade length; as a fraction
+        # of length it produced a 75 cm neck on a long blade and an unwrap fold-over.
+        self.shoulder_length_m = float(rng.uniform(0.19, 0.31))
 
         # Holdfast. Fingers splay along the ground plane; the boss is the knuckle
         # that hides the union, which is what section 3 permits instead of a
         # boolean: "Branch intersections must be blended, welded, or explicitly
-        # hidden by knuckles."
-        self.finger_count = _qi(6, 11, self.quality)
-        self.boss_radius = float(rng.uniform(0.080, 0.112))
-        self.boss_height = float(rng.uniform(0.105, 0.155))
+        # hidden by knuckles." A 10 m plant needs a holdfast that can plausibly hold
+        # it, so the pad scales up with the column it anchors.
+        self.finger_count = _qi(5, 7, self.quality)
+        self.boss_radius = float(rng.uniform(0.135, 0.195))
+        self.boss_height = float(rng.uniform(0.145, 0.205))
 
-        # Blades. Grammar taken from the mandatory reference ``forest_kelp.webp``,
-        # opened directly: the blades there are SHORT relative to the stipe, dense,
-        # curled, and distributed along the WHOLE length, giving a bottle-brush
-        # silhouette. An earlier draft here used a canopy cluster of long fronds;
-        # against the reference that reads as ribbons on a stick, which is the
-        # section 3 "loose vertical ribbon" failure wearing a different hat.
-        # Densities converged by looking at the renders next to the reference. 6-13
-        # long blades read as a corn stalk; the reference crowds many shorter, ruffled
-        # blades along the stipe. Length came down and count went up together, because
-        # raising count alone just makes a bigger corn stalk.
-        # VISUAL_ROUTE_INVALID replacement of the blade arrangement grammar. The prior
-        # grammar attached blades at intervals along the stipe like leaves on a branch,
-        # which read as a willow/bamboo shoot twice in review. In the reference frame
-        # every column is a CONTINUOUS shaggy mass with no bare stipe visible between
-        # attachments, so the grammar is now whorled NODES at near-zero internode, each
-        # carrying several narrow straps.
-        self.blade_nodes = _qi(8, 15, self.quality)
-        self.blades_per_node = _qi(2, 3, self.quality)
-        self.basal_blades = _qi(2, 4, self.quality)
-        # Short-to-medium and NARROW. Straps, not paddles: the previous 0.050-0.082 m
-        # half-width read as a leaf. The reference projections are 3-6x longer than wide,
-        # not the 5-10x of a draping Macrocystis strap, so length stays moderate.
-        self.blade_length = float(rng.uniform(0.20, 0.36))
-        self.blade_width = float(rng.uniform(0.020, 0.034))
-        # Thicker than the first pass. The rim columns of a very flat lens are where the
-        # area-weighted stretch concentrates, and 3DMODEL_FLORA_CORAL.md section 3 wants
-        # real thickness anyway: "Blade surfaces must not be zero-thickness if seen from
-        # both sides at close range."
-        self.blade_thickness = float(rng.uniform(0.0058, 0.0088))
+        # BLADES: few, LONG, FLAT, and HANGING.
+        #
+        # Macrocystis blade geometry, from the reference frames and from the plant:
+        # 0.9-2.4 m long, 10-22 cm wide, 1.2-1.8 mm thick. That is an aspect of 60-140
+        # across the sheet against 1 through it -- two orders of magnitude away from the
+        # 4:1 the previous grammar swept. ``blade_half_thickness`` is the number that
+        # decides whether this reads as a blade or a twig, so it is expressed in
+        # millimetres and kept there.
+        #
+        # Count and spacing follow from length, not the other way round. 12-18 blades
+        # at 1.1-1.9 m on a 9-12 m stipe puts an attachment roughly every 0.6 m while
+        # each blade spans 1.5 m of column, so three blades overlap at any height and
+        # the silhouette closes into a vertical curtain WITHOUT the radial fuzz that
+        # made the last attempt a brush. Closing the mass with length instead of count
+        # is also what keeps the triangle budget payable.
+        # ITERATION 2. Iteration 1's flat sheet was opened and rejected: the vertical
+        # read was right but the plant was a bare wire with scraps on it, silhouette
+        # occupancy about 3 percent. Two measured causes, both mine:
+        #   (a) 12.7 m of height against 1.3 m blades -- 0.10 of height per blade;
+        #   (b) radial reach cut to 0.055-0.17 of length, so a 13 cm wide blade hung
+        #       inside 14 cm of a 5 cm stipe and merged into it from every angle.
+        # Height comes down, blades get longer, and WIDTH goes up -- width is the only
+        # lever here that buys silhouette mass at zero triangle cost.
+        # Iteration 3: length and width both up again, count and ring density down to
+        # pay for it. Length and width cost NO triangles -- a longer blade is the same
+        # ring count over more metres -- so they are the only free levers on silhouette
+        # mass, and 2.3-3.4 m straps at 21-31 cm wide put 5-7 overlapping sheets at any
+        # height on the column instead of 2.7 narrow ones.
+        self.blade_count_target = _qi(14, 20, self.quality)
+        self.canopy_blades_target = _qi(2, 3, self.quality)
+        self.blade_length = float(rng.uniform(2.30, 3.40))
+        self.blade_half_width = float(rng.uniform(0.105, 0.155))
+        self.blade_half_thickness = float(rng.uniform(0.00064, 0.00098))
 
     @property
     def canopy_blades(self) -> int:
-        return self.blade_nodes * self.blades_per_node
+        return self.canopy_blades_target
 
     @property
     def blade_count(self) -> int:
-        return self.canopy_blades + self.basal_blades
+        return self.blade_count_target + self.canopy_blades_target
 
     # -- stipe centreline -------------------------------------------------
 
     def stipe_point(self, t: float) -> Vector:
         """Centreline at normalised height ``t``.
 
-        The lateral term grows faster than linearly so the bend concentrates in the
-        upper stipe, which is how a flexible stem loaded by drag actually deforms:
-        the base is stiff because the moment arm is short.
+        NEAR-VERTICAL, with the lean saved for the top quarter. The previous version
+        used ``current_strength * height * t**1.85`` with a strength up to 0.72, so a
+        2.65 m plant leaned up to 1.9 m sideways -- a 36 degree mean tilt that read as
+        a wheat stalk / shepherd's crook in its own render. Macrocystis is held up by
+        the gas floats on its blades: the stipe rises almost straight and only the
+        canopy, once it reaches the surface, lies over downstream. So the lean is
+        gated behind a smoothstep that does nothing below t=0.55 and is capped at a
+        fraction of the height, and the whole-length term is a slow helical wander of
+        a few percent instead of a bend.
         """
-        lateral = self.current * (self.current_strength * self.height * (t ** 1.85))
-        sway = self.cross_current * (0.055 * self.height *
-                                     math.sin(t * math.pi * 1.35))
-        return Vector((lateral.x + sway.x, lateral.y + sway.y,
+        canopy = _smoothstep(0.55, 1.0, t)
+        lean = 0.055 + 0.115 * self.current_strength
+        lateral = self.current * (lean * self.height * (canopy ** 1.6))
+        wander = (self.current * math.sin(t * math.pi * 0.9) * 0.012 +
+                  self.cross_current * math.sin(t * math.pi * 1.7 + 1.1) * 0.020)
+        wander *= self.height
+        return Vector((lateral.x + wander.x, lateral.y + wander.y,
                        self.boss_height * 0.55 + t * self.height))
 
     def stipe_radius(self, t: float) -> float:
-        radius = self.stipe_radius_top + (self.stipe_radius_base -
-                                          self.stipe_radius_top) * ((1.0 - t) ** 0.85)
-        swell = 0.0
-        for centre, width, fraction in self.swellings:
-            swell += fraction * math.exp(
-                -((t - centre) ** 2) / max(1e-6, width * width * 2.0))
-        return radius * (1.0 + min(1.15, swell))
+        """Taper only. Pneumatocysts live on the blade bases, not on the stem."""
+        return self.stipe_radius_top + (self.stipe_radius_base -
+                                        self.stipe_radius_top) * ((1.0 - t) ** 0.85)
 
 
 def _stipe_material_for(form):
-    """Stipe faces are tissue, except the pneumatocyst swellings, which are bladder.
+    """Stipe faces are tissue, except the scarred basal collar.
 
-    The gas bladders are real geometry (see ``KelpForm.stipe_radius``), so giving them
-    their own slot means the amber accent lands on a bulge the silhouette already has,
-    rather than being painted onto a smooth tube.
+    The gas bladders are NOT here: Macrocystis floats each blade with its own basal
+    pneumatocyst, so both the swelling and the slot-3 pigment live in
+    ``_build_blades``. Painting an amber band along the stipe produced a stripe down
+    the stem instead of discrete floats.
     """
     def material_fn(i, j, rings, segments):
         u = i / float(max(1, rings - 1))
@@ -564,7 +696,7 @@ def _build_stipe(bm, layers, form, rows: int, segments: int, part_id: int):
     receive proportional detail instead of the base staying porcelain-smooth while
     the tip self-intersects.
     """
-    uv_layer, geo_layer, cls_layer, part_layer = layers
+    uv_layer, geo_layer, cls_layer, part_layer, across_layer = layers
     points = [form.stipe_point(i / float(rows - 1)) for i in range(rows)]
     lengths = _arclengths(points)
 
@@ -592,7 +724,8 @@ def _build_stipe(bm, layers, form, rows: int, segments: int, part_id: int):
         vertex_class=CLS_STIPE,
         material_fn=_stipe_material_for(form),
         geo_base=form.boss_height * 0.55, geo_lengths=lengths,
-        seam_direction=form.current.copy())
+        seam_direction=form.current.copy(),
+        across_layer=across_layer)
     return info, points, lengths
 
 
@@ -605,13 +738,13 @@ def _build_holdfast(bm, layers, form, quality: float, part_start: int):
     azimuth jitter, a sideways curl, an upstream splay bias and knobbly haptera
     swellings, so no two strands run parallel.
     """
-    uv_layer, geo_layer, cls_layer, part_layer = layers
+    uv_layer, geo_layer, cls_layer, part_layer, across_layer = layers
     rng = _rng(form.seed, STREAM_HOLDFAST)
     islands = []
     part_id = part_start
 
-    boss_rows = _qi(5, 8, quality)
-    boss_segments = _qi(8, 13, quality)
+    boss_rows = _qi(4, 6, quality)
+    boss_segments = _qi(9, 12, quality)
     boss_points = [Vector((0.0, 0.0, form.boss_height * (i / float(boss_rows - 1))))
                    for i in range(boss_rows)]
     boss_lengths = _arclengths(boss_points)
@@ -643,19 +776,23 @@ def _build_holdfast(bm, layers, form, quality: float, part_start: int):
         part_id=part_id, vertex_class=CLS_BOSS,
         material_fn=lambda i, j, r, s: law.MATERIAL_SLOT_TRIM,
         geo_base=0.0, geo_lengths=boss_lengths,
-        seam_direction=form.current.copy()))
+        seam_direction=form.current.copy(),
+        across_layer=across_layer))
     part_id += 1
 
-    finger_rows = _qi(5, 8, quality)
-    finger_segments = _qi(6, 10, quality)
+    finger_rows = _qi(5, 7, quality)
+    finger_segments = _qi(6, 8, quality)
     for index in range(form.finger_count):
         azimuth = 2.0 * math.pi * index / float(form.finger_count) + \
             float(rng.uniform(-0.34, 0.34))
         direction = Vector((math.cos(azimuth), math.sin(azimuth), 0.0))
         # Upstream fingers reach further: that is where the drag load is resisted.
         upstream = law.saturate(0.5 - 0.5 * direction.dot(form.current))
-        reach = float(rng.uniform(0.170, 0.285)) * (0.82 + 0.42 * upstream)
-        radius0 = float(rng.uniform(0.018, 0.028))
+        # A 10 m column needs a holdfast that could plausibly hold it, so reach and
+        # haptera radius scale with the boss rather than staying at the 2 m values.
+        reach = (form.boss_radius * float(rng.uniform(1.55, 2.35)) *
+                 (0.82 + 0.42 * upstream))
+        radius0 = float(rng.uniform(0.024, 0.038))
         knuckle_freq = float(rng.uniform(4.5, 8.5))
         knuckle_amp = float(rng.uniform(0.09, 0.17))
         knuckle_phase = float(rng.uniform(0.0, 6.28))
@@ -690,7 +827,8 @@ def _build_holdfast(bm, layers, form, quality: float, part_start: int):
             part_id=part_id, vertex_class=CLS_FINGER,
             material_fn=lambda i, j, r, s: law.MATERIAL_SLOT_TRIM,
             geo_base=0.012, geo_lengths=lengths,
-            seam_direction=Vector((0.0, 0.0, -1.0))))
+            seam_direction=Vector((0.0, 0.0, -1.0)),
+            across_layer=across_layer))
         part_id += 1
 
     return islands, part_id
@@ -703,57 +841,96 @@ def _build_holdfast(bm, layers, form, quality: float, part_start: int):
 # zero-thickness if seen from both sides at close range. Use a thin shell with edge
 # rim."
 #
-# A blade here is the same closed sweep as the stipe, with a FLAT LENS
-# cross-section: half-width ``a`` across the sheet, half-thickness ``b`` through
-# it, with a >> b. The narrow ends of the lens are the edge rim, so the rim is part
-# of the same manifold shell and cannot separate from the sheet, cannot z-fight
-# against it, and gets the cut/edge material slot.
+# A blade is the same closed sweep as the stipe, but the cross-section is sampled by
+# an EXPLICIT COLUMN PLAN rather than by an angle, because the shape wanted here is
+# 60-140 : 1 and no angular sampling survives that. Layout, for ``n`` interior
+# columns per face and ``segments = 2 * n + 2``:
 #
-# Ring layout: ``segments = 2 * (nu - 1)``, so j = 0 lands exactly on theta = 0
-# (right rim) and j = nu - 1 lands exactly on theta = pi (left rim). j in 1..nu-2
-# is the upper face, j in nu..segments-1 the lower face. That exactness is what
-# lets the rim be selected for material slot 1 by index rather than by a
-# floating-point angle test.
+#     j = 0            right margin, s = +1, mid-surface (the fold)
+#     j = 1 .. n       UPPER face, s stepping +1 -> -1
+#     j = n + 1        left margin,  s = -1, mid-surface (the fold)
+#     j = n+2 .. 2n+1  LOWER face, s stepping -1 -> +1
+#
+# ``s`` is the normalised across-sheet coordinate and every feature keys off it, so
+# the two faces are addressable by index and the margins are exact. ``offset_fn``
+# ignores the ``theta`` it is handed; the plan is the parameterisation.
+#
+# THICKNESS PROFILE. ``y = +/- b * (1 - s^2) ** 0.275``: full thickness at the
+# midrib, 0.885 b at the outermost interior column, and zero exactly at the margin,
+# where the upper and lower faces meet in a single shared vertex. That shared vertex
+# is why the shell stays closed and manifold with no stitching, and the ~180 degree
+# dihedral there is above ``law.smooth_angle_for(ORGANIC)`` so ``apply_shading_basis``
+# splits the normals and the margin renders as the crease it physically is.
+#
+# The bible's zero-thickness clause is satisfied by the SHELL, not by the margin: at
+# 1.2-1.8 mm through the midrib the blade has a lit upper face and a shaded lower one
+# from both sides, which is the defect the clause exists to prevent. A half-round rim
+# of radius b would need two extra columns per margin -- 40 percent more triangles per
+# blade -- to resolve 1.5 mm, which is sub-pixel at every play distance, and the live
+# ``Hecton_KelpMaster.shader`` authors ``_Cull = 0`` plus a back-light transmission
+# term precisely for two-sided leaf tissue. Spending that budget on blade LENGTH is
+# what closes the silhouette; spending it on the rim is not.
+#
+# SEAM. ``seam_direction=None`` so ``_sweep_closed`` cuts column 0 -- the right
+# margin. One cut along a margin unrolls the closed lens into a single near-rectangle,
+# which is the domain a conformal solver handles almost exactly. The previous
+# pole-to-pole-plus-helical-roll arrangement is what left one triangle at 60.918
+# aspect distortion against a 3.3 ceiling and cost the sixth asset its FBX.
 
 
 def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
                   part_start: int):
-    """Every frond, swept downstream, with the full section-3 detail set."""
-    uv_layer, geo_layer, cls_layer, part_layer = layers
+    """Every frond: a long flat corrugated sheet hanging alongside the stipe."""
+    uv_layer, geo_layer, cls_layer, part_layer, across_layer = layers
     rng = _rng(form.seed, STREAM_BLADES)
     detail_rng = _rng(form.seed, STREAM_DETAIL)
     islands = []
     part_id = part_start
     attachments = []
 
-    # A narrow strap needs fewer samples around its section than a broad paddle did, and
-    # every triangle saved goes into blade COUNT, which is what closes the silhouette
-    # into a continuous mass instead of a stem with foliage.
-    rows = _qi(6, 9, quality)
-    nu = _qi(5, 6, quality)
-    segments = 2 * (nu - 1)
-    # Serration teeth and blister count are the density knobs section 9 names:
-    # "GlobalQualityWeight scales flora and coral fidelity through offline branch
-    # count, pore density, blade serration density..."
-    serration_teeth = _qi(4, 11, quality)
-    blister_count = _qi(1, 4, quality)
+    # rows along the blade, and interior columns per face. Four interior columns plus
+    # two margins gives ten around the section: enough for a midrib crease, a corrugation
+    # trough either side of it, and an exact margin, at 2*rows*segments triangles. The
+    # rest of the budget goes into blade LENGTH, which is what closes the silhouette.
+    # Rows buy the drape arc and the four plan-form regimes; interior columns buy the
+    # corrugation across the sheet. Rows are the scarcer good on a 2.5 m ribbon, so the
+    # section drops to three interior columns per face (eight around) and the saving
+    # goes into rows. LOD0 must land under the 0.94 x 6500 headroom by CONSTRUCTION:
+    # reduce_to_budget firing on LOD0 destroys the authored parameterisation, and the
+    # worst UV triangle of that run was a 19 cm x 1.4 cm needle with no counterpart in
+    # the analytic surface.
+    rows = _qi(9, 12, quality)
+    face_columns = 3
+    segments = 2 * face_columns + 2
+    # Serration and corrugation density are the knobs section 9 names: "GlobalQualityWeight
+    # scales flora and coral fidelity through offline branch count, pore density, blade
+    # serration density..."
+    serration_teeth = _qi(7, 16, quality)
+    # Capped at 3, not 5. Measured at iteration 1: 5 corrugations over 11 rings is
+    # 2.2 rings per period, which is Nyquist-marginal at LOD0 and aliases outright once
+    # build_lod_chain collapses to ~30 percent of the rows -- LOD1 came back with a
+    # 28 cm2 triangle at 5.4144 aspect distortion against the 3.3 ceiling while LOD0's
+    # worst was a passing 2.816. Three periods over 11 rings leaves 3.7 rings each.
+    corrugations = _qi(2, 3, quality)
     tear_count = _qi(1, 3, quality)
 
     stipe_rows = len(stipe_points)
 
-    # Whorled nodes at near-ZERO internode. Node spacing is deliberately smaller than a
-    # blade is wide, so successive whorls overlap and the silhouette closes into a
-    # continuous mass rather than a stem punctuated by foliage.
+    # Attachment plan. Macrocystis carries roughly one blade per node in an ALTERNATE
+    # spiral up the stipe, plus a cluster at the apex that lies over once the plant
+    # reaches the surface. Azimuth advances by the golden angle so successive blades
+    # never line up into the whorls that made the previous version read as radial.
     heights = []
-    node_span = 0.92 / float(max(1, form.blade_nodes))
-    for node in range(form.blade_nodes):
-        base = 0.07 + node * node_span
-        for _slot in range(form.blades_per_node):
-            heights.append((base + float(rng.uniform(-0.006, 0.006)), True))
-    for k in range(form.basal_blades):
-        span = k / float(max(1, form.basal_blades - 1)) if form.basal_blades > 1 else 0.5
-        heights.append((0.030 + 0.038 * span + float(rng.uniform(-0.008, 0.008)), False))
+    span_lo, span_hi = 0.075, 0.955
+    count = max(1, form.blade_count_target)
+    for node in range(count):
+        t = span_lo + (span_hi - span_lo) * (node / float(max(1, count - 1)))
+        heights.append((t + float(rng.uniform(-0.018, 0.018)), False))
+    for k in range(max(0, form.canopy_blades_target)):
+        heights.append((0.905 + 0.085 * (k / float(max(1, form.canopy_blades_target))) +
+                        float(rng.uniform(-0.012, 0.012)), True))
 
+    golden = 2.399963229728653  # 137.507... degrees in radians
     for index, (height_t, is_canopy) in enumerate(heights):
         height_t = min(0.985, max(0.055, height_t))
         row = height_t * (stipe_rows - 1)
@@ -764,189 +941,319 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         attach_length = _lerp(stipe_lengths[low], stipe_lengths[high], blend)
         stipe_r = form.stipe_radius(height_t)
 
-        azimuth = float(rng.uniform(0.0, 2.0 * math.pi))
+        # Golden angle, but blades come in near-PAIRS. A perfectly even spiral is a
+        # manufactured-object tell, and Macrocystis carries its blades in close series
+        # up the stipe rather than one per node at a fixed divergence.
+        azimuth = (index * golden + (0.34 if index % 2 else -0.34) +
+                   float(rng.uniform(-0.20, 0.20)))
         outward = Vector((math.cos(azimuth), math.sin(azimuth), 0.0))
-        # Flow-facing asymmetry: fronds on the lee side grow longer because they
-        # are not being scoured, and every frond trails downstream.
+        sideways_axis = Vector((-outward.y, outward.x, 0.0))
+        # Flow-facing asymmetry: blades on the lee side grow longer because they are
+        # not being scoured, and every blade trails downstream.
         lee = law.saturate(0.5 + 0.5 * outward.dot(form.current))
-        length = form.blade_length * (0.78 + 0.42 * lee) * \
-            (1.0 if is_canopy else 0.78) * float(rng.uniform(0.82, 1.22))
-        width = form.blade_width * (0.85 + 0.3 * lee) * float(rng.uniform(0.9, 1.12))
-        thickness = form.blade_thickness * float(rng.uniform(0.9, 1.1))
+        # Lower blades on a real plant are the OLDEST and longest; the apex ones are
+        # young and short. That gradient also helps the read, because it puts the long
+        # ribbons where the player swims.
+        age = 1.0 - height_t
+        length = form.blade_length * (0.80 + 0.32 * lee) * (0.72 + 0.44 * age) * \
+            (0.86 if is_canopy else 1.0) * float(rng.uniform(0.84, 1.20))
+        half_width = form.blade_half_width * (0.86 + 0.26 * lee) * \
+            (0.78 + 0.30 * age) * float(rng.uniform(0.90, 1.12))
+        half_thickness = form.blade_half_thickness * float(rng.uniform(0.88, 1.14))
 
-        # Elevation: blades radiate at varied pitch -- some angled up, some straight
-        # out, some slumped. One shared rise/droop profile for every blade is what
-        # makes a procedural plant read as a manufactured object.
-        # Wide per-blade orientation spread. A single shared rise/droop profile applied
-        # radially is the land-plant tell; in the reference the straps leave the column at
-        # every pitch, curve as they go, and fold over one another.
-        elevation = float(rng.uniform(-0.85, 0.75))
-        rise = float(rng.uniform(0.04, 0.16)) + max(0.0, elevation) * 0.30
-        droop = float(rng.uniform(0.55, 1.05)) + max(0.0, -elevation) * 0.60
-        curl_side = float(rng.uniform(-0.70, 0.70))
-        # Roll: the strap twists about its own axis along its length, like a ribbon.
-        # Twist bounded to under a half turn. At +-1.5 rad the strap became a helical
-        # ribbon, and a conformal unwrap of a helicoid carries GENUINE stretch -- the gate
-        # flagged a 42 cm2 triangle at 60.9 and reported it as 90x the sliver floor, i.e.
-        # real distortion on visible surface rather than numerical noise on a sliver.
-        roll = float(rng.uniform(-0.85, 0.85))
-        undulate_periods = float(detail_rng.uniform(1.6, 3.2))
-        undulate_amp = float(detail_rng.uniform(0.20, 0.34))
-        bladder_size = float(detail_rng.uniform(1.7, 3.0))
+        # HANG, do not radiate. This is the single change that separates a kelp from a
+        # bottle-brush. The previous curve put 0.48*length of straight radial reach at a
+        # low exponent, so every blade left the stipe as an outward spike and the union
+        # of them was a cylinder of bristles. A Macrocystis blade clears the stipe by a
+        # few centimetres and then falls ALONGSIDE it: the vertical term dominates by
+        # 4-8x, so the tip finishes 0.7-0.95 of the blade's length BELOW its own
+        # attachment and the plant reads as a vertical curtain of ribbons.
+        # ARC OVER, then hang. Iteration 1 removed the radial reach entirely and the
+        # blades glued themselves to the stipe; the bottle-brush version before it kept
+        # the reach but at a LOW exponent, so the blade left as a straight outward spike.
+        # Neither is the reference. In ``middle-water.webp`` a strap leaves the stipe at a
+        # real angle, its outward travel SATURATES early, and the drop keeps accumulating
+        # after that -- an arc whose tip finishes both well out and well down. So reach
+        # gets a low exponent (out fast, then stop) and hang a high one (down late).
+        # ITERATION 5. Iteration 4 was opened and rejected as maize / young banana. Two
+        # measured causes:
+        #   (a) reach 0.30-0.54 of a 2.8 m blade put tips 0.85-1.5 m out, and the asset
+        #       measured 3.76 x 3.10 m in plan against 8.47 m of height. Kelp is a
+        #       NARROW column; a bush that wide is a land plant whatever the blades do.
+        #   (b) lift 0.26-0.56 at exponent 0.36 made every blade rise 30-40 degrees out
+        #       of the stipe and arc over symmetrically -- leaf TURGOR, the tell that
+        #       separates a stiff leaf from a limp waterborne sheet.
+        # A Macrocystis blade has no turgor. The float lifts only its BASE; the rest is
+        # slack tissue that falls immediately and then hangs nearly parallel to the
+        # stipe for most of its length. So reach collapses, the fall gets a LOW exponent
+        # (it starts at once and dominates everywhere), and lift is confined to the
+        # first fifth by a high exponent on a short-lived term.
+        #
+        # This is not a retry of iteration 1, where reach was also small and the plant
+        # read as a bare wire with scraps: the constraint that changed is blade SIZE.
+        # At 1.3 m long and 13 cm wide a low-reach blade disappeared into a 5 cm stipe;
+        # at 2.8 m and 22 cm it hangs well past the stipe as a curtain.
+        reach = 0.12 + 0.11 * float(rng.uniform(0.0, 1.0))
+        hang = 0.72 + 0.22 * float(rng.uniform(0.0, 1.0))
+        lift = 0.10 + 0.14 * float(rng.uniform(0.0, 1.0))
+        swing = float(rng.uniform(-0.16, 0.16))
+        if is_canopy:
+            # At the surface the canopy blades lie OVER, downstream, rather than hang.
+            reach = 0.46 + 0.26 * float(rng.uniform(0.0, 1.0))
+            hang = 0.10 + 0.16 * float(rng.uniform(0.0, 1.0))
+            lift = 0.03 + 0.07 * float(rng.uniform(0.0, 1.0))
+        # Roll about the blade's own axis. Bounded hard: a helicoid is not developable
+        # and an unwrap of one carries GENUINE stretch, which is the mechanism behind the
+        # 60.918 triangle that cost the sixth asset its FBX. +-0.42 rad over the whole
+        # length is 24 degrees -- enough to make the sheet catch light differently along
+        # itself, mild enough that a margin-seam unroll stays near-isometric.
+        roll = float(rng.uniform(-0.30, 0.30))
         serr_phase_right = float(detail_rng.uniform(0.0, 1.0))
         serr_phase_left = float(detail_rng.uniform(0.0, 1.0))
-        serr_amp = float(detail_rng.uniform(0.20, 0.34))
-        fold_k = float(detail_rng.uniform(1.6, 3.4))
-        fold_phase = float(detail_rng.uniform(0.0, 6.28))
-        fold_amp = float(detail_rng.uniform(1.6, 3.2))
+        serr_amp = float(detail_rng.uniform(0.10, 0.19))
+        # Corrugation. Macrocystis blades are bullate -- ridged and puckered across the
+        # sheet, which is the detail that makes a broad flat surface read as tissue
+        # rather than as a card. Amplitude is expressed against HALF-WIDTH, not against
+        # thickness: a 1.5 mm sheet corrugated by 1.5 mm is invisible, corrugated by
+        # 8-14 mm it ripples the way the reference does.
+        corr_amp = float(detail_rng.uniform(0.085, 0.155))
+        corr_phase = float(detail_rng.uniform(0.0, 6.28))
+        corr_lateral = float(detail_rng.uniform(1.0, 2.0))
+        # Margin frill: the long slow undulation of the whole edge, on top of the teeth.
+        frill_k = float(detail_rng.uniform(1.4, 2.8))
+        frill_phase = float(detail_rng.uniform(0.0, 6.28))
+        frill_amp = float(detail_rng.uniform(0.10, 0.20))
         tears = tuple((float(detail_rng.uniform(0.25, 0.9)),
                        1.0 if detail_rng.random() < 0.5 else -1.0,
-                       float(detail_rng.uniform(0.030, 0.065)),
-                       float(detail_rng.uniform(0.32, 0.54)))
+                       float(detail_rng.uniform(0.030, 0.075)),
+                       float(detail_rng.uniform(0.28, 0.50)))
                       for _ in range(tear_count))
-        blisters = tuple((float(detail_rng.uniform(0.10, 0.85)),
-                          float(detail_rng.uniform(-0.75, 0.75)),
-                          float(detail_rng.uniform(0.045, 0.10)),
-                          float(detail_rng.uniform(0.9, 2.3)))
-                         for _ in range(blister_count))
         scar_at = float(detail_rng.uniform(0.2, 0.8))
-        scar_width = float(detail_rng.uniform(0.020, 0.045))
+        scar_width = float(detail_rng.uniform(0.020, 0.055))
 
-        # Curve: DRAPE, not radiate. The radial term used to dominate (0.90 of length at
-        # a low exponent) so every strap left the stipe as a straight outward spike and
-        # the plant read as a bottle-brush. Pulling radial reach back and letting a strong
-        # late-kicking droop take over makes the strap arc over and hang, so tips fall
-        # BELOW their attachment and neighbouring straps fold across each other -- which
-        # is what closes the silhouette into a continuous mass.
+        # Ring distribution along the blade. THREE rings inside the basal gas float and
+        # the rest spread over the sheet. A float that occupies the first 8-13 percent of
+        # the blade but is sampled by one ring out of eleven is under-resolved by
+        # construction: the cross-section then doubles across a single quad band, which is
+        # both an invisible bulb and the 378.27 distortion outlier of iteration 2.
+        # Ring plan. The blade has four regimes and every distortion outlier this
+        # generator produced came from a regime boundary landing inside one quad band,
+        # or from a band being far longer than its section is wide.
+        #
+        # The knots for the first two regimes are in METRES, converted per blade.
+        # Iteration 3 had them as fractions of blade length, which is the same class of
+        # bug as the gas float being a fraction: a 2.5 m blade then got a 75 cm stalk,
+        # the neck band ran 30 cm long against a 2 cm wide section, and the ABF++ solver
+        # folded that 30:1 strip over on itself -- measured, one triangle at 46688
+        # aspect distortion with UV edges spanning half the atlas. A real Macrocystis
+        # stalk is 20-30 cm regardless of how long the blade is.
+        bladder_span = law.saturate(form.bladder_length_m / max(0.20, length))
+        bulb_end = min(0.075, max(0.016, bladder_span * 1.9))
+        shoulder_end = min(0.26, max(0.055, form.shoulder_length_m / length))
+        tip_start = 0.86
+        # 3 rings resolve the float, 2 more the shoulder, 1 the tip taper; every
+        # remaining row goes to the plateau, which is where the drape arc lives and
+        # where a coarse sampling shows as a faceted ribbon.
+        lead = [0.0, bulb_end * 0.5, bulb_end,
+                bulb_end + (shoulder_end - bulb_end) * 0.45,
+                shoulder_end]
+        tail = [tip_start, 1.0]
+        mid = max(1, rows - len(lead) - len(tail))
+        u_params = list(lead)
+        for k in range(mid):
+            f = (k + 1) / float(mid + 1)
+            u_params.append(shoulder_end + (tip_start - shoulder_end) * f)
+        u_params.extend(tail)
+        u_params = sorted(set(u_params))
+        while len(u_params) < rows:
+            gaps = [(u_params[i + 1] - u_params[i], i)
+                    for i in range(len(u_params) - 1)]
+            widest, index = max(gaps)
+            u_params.insert(index + 1, u_params[index] + widest * 0.5)
+        u_params = u_params[:rows]
+
         points = []
         for step in range(rows):
-            u = step / float(rows - 1)
+            u = u_params[step]
             # Start inside the stipe so the junction is a hidden union under the
             # sheath, per the section 3 weld/knuckle/hidden-union clause.
-            radial = outward * (-stipe_r * 0.55 + length * 0.48 * (u ** 0.58))
-            flow = form.current * (length * 0.52 * form.current_strength *
-                                   1.45 * (u ** 1.3))
-            # Sideways curl, perpendicular to this blade's own outward direction.
-            sideways = Vector((-outward.y, outward.x, 0.0)) * \
-                (length * curl_side * (u ** 1.5))
-            vertical = length * (rise * (u ** 0.5) - droop * (u ** 1.55))
+            radial = outward * (-stipe_r * 0.75 + length * reach * (u ** 0.34))
+            flow = form.current * (length * 0.20 * form.current_strength * (u ** 1.20))
+            sideways = sideways_axis * (length * swing * (u ** 1.25))
+            # Fall exponent 1.05, not 1.62: near-linear, so the blade is already
+            # descending at u=0.2 and keeps descending at the same rate. A high exponent
+            # holds the sheet up through its first half, which is exactly the stiff arc
+            # that read as maize. Lift is confined to the first fifth by u**0.30 on a
+            # (1-u) window so it lifts the float and nothing else.
+            vertical = length * (lift * (u ** 0.30) * (1.0 - u) ** 1.6 -
+                                 hang * (u ** 1.05))
+            # Soft floor. A 3 m blade attached 0.5 m up hangs to -2.2 m: measured at
+            # iteration 3, bounds min z was -1.43 m, so the lowest blades passed
+            # straight through the substrate and through the AO bake floor, and
+            # inflated the asset bounds by 15 percent. A softplus approach means the
+            # blade DECELERATES into the sediment and then trails along it, which is
+            # what a real lower blade does, instead of being clipped flat or lifted
+            # off its arc.
+            z_raw = attach.z + vertical
+            over = (z_raw - SEDIMENT_CLEARANCE_M) / SEDIMENT_SOFTNESS_M
+            if over < 18.0:
+                z = SEDIMENT_CLEARANCE_M + SEDIMENT_SOFTNESS_M * math.log1p(
+                    math.exp(over))
+            else:
+                z = z_raw
             points.append(Vector((attach.x + radial.x + flow.x + sideways.x,
                                   attach.y + radial.y + flow.y + sideways.y,
-                                  attach.z + vertical)))
+                                  z)))
         lengths = _arclengths(points)
 
         def blade_offset(row_index, u, j, theta,
-                         w=width, th=thickness, sa=serr_amp,
+                         w=half_width, th=half_thickness, sa=serr_amp,
                          spr=serr_phase_right, spl=serr_phase_left,
-                         fk=fold_k, fp=fold_phase, fa=fold_amp,
-                         tear_list=tears, blister_list=blisters,
-                         scar_u=scar_at, scar_w=scar_width,
-                         roll=roll, undulate_amp=undulate_amp,
-                         undulate_periods=undulate_periods,
-                         bladder_size=bladder_size):
-            # Sheet plan-form: narrow at the sheath, widest just past mid, tapering
-            # to a rounded tip. A rectangle is the "flat untextured rectangle" the
-            # section 8 gate rejects.
-            plan = math.sin(math.pi * (u ** 0.72)) ** 0.55
-            # The 0.30 floor is a real rounded tip, not a needle. A blade that tapers
-            # to nothing produces sub-millimetre cap triangles, which read as
-            # degenerate to the UV gate and shade badly at any LOD.
-            nominal_a = w * (0.30 + 0.80 * plan)
-            nominal_b = th * (0.72 + 0.28 * plan)
-
-            # STADIUM cross-section sampled by ARC LENGTH, not by uniform theta.
-            # This is the fix for the last failing gate. An ellipse sampled at uniform
-            # theta crowds its samples where the curve turns tightest -- at the rim,
-            # where x = a*cos(theta) barely moves while y races -- so with a/b around
-            # 8-11 the chord spacing across one ring varies by that same factor. Those
-            # crowded rim columns are simultaneously the thin triangles that breach the
-            # outlier ceiling and the surface area that breaches the area fraction.
-            # Equal arc spacing makes every column the same width, so the quads are
-            # near-isotropic and the conformal solver has almost nothing left to fix.
-            # A stadium also IS the "thin shell with edge rim" section 3 asks for: two
-            # flat faces joined by a real half-round rim of radius b.
-            straight = max(1e-6, nominal_a - nominal_b)
-            perimeter = 4.0 * straight + 2.0 * math.pi * nominal_b
-            walk = (theta / (2.0 * math.pi)) * perimeter
-            arc = math.pi * nominal_b
-            if walk < straight:
-                # upper face, centre -> right
-                x, y = walk, nominal_b
-            elif walk < straight + arc:
-                # right rim, +90deg -> -90deg
-                phi = math.pi * 0.5 - (walk - straight) / max(1e-9, nominal_b)
-                x = straight + nominal_b * math.cos(phi)
-                y = nominal_b * math.sin(phi)
-            elif walk < 3.0 * straight + arc:
-                # lower face, right -> left
-                x, y = (2.0 * straight + arc - walk), -nominal_b
-            elif walk < 3.0 * straight + 2.0 * arc:
-                # left rim, -90deg -> -270deg
-                phi = -math.pi * 0.5 - (walk - 3.0 * straight - arc) /                     max(1e-9, nominal_b)
-                x = -straight + nominal_b * math.cos(phi)
-                y = nominal_b * math.sin(phi)
+                         nfc=face_columns, teeth_n=serration_teeth,
+                         tear_list=tears, scar_u=scar_at, scar_w=scar_width,
+                         roll=roll, corr_amp=corr_amp, corr_phase=corr_phase,
+                         corr_n=corrugations, corr_lat=corr_lateral,
+                         frill_k=frill_k, frill_phase=frill_phase,
+                         frill_amp=frill_amp,
+                         bladder_span=bladder_span, shoulder_u=shoulder_end,
+                         bladder_swell=form.bladder_swell):
+            # -- explicit column plan; ``theta`` is deliberately unused -------------
+            # j = 0 right margin, 1..n upper face, n+1 left margin, n+2..2n+1 lower.
+            if j == 0:
+                s_across, face = 1.0, 0.0
+            elif j <= nfc:
+                s_across = 1.0 - 2.0 * j / float(nfc + 1)
+                face = 1.0
+            elif j == nfc + 1:
+                s_across, face = -1.0, 0.0
             else:
-                # upper face, left -> centre
-                x, y = (walk - 4.0 * straight - 2.0 * arc), nominal_b
+                k = j - (nfc + 1)
+                s_across = -1.0 + 2.0 * k / float(nfc + 1)
+                face = -1.0
 
-            # Normalised position across the sheet, and which face we are on. Every
-            # feature below keys off these instead of off cos/sin(theta).
-            cx = max(-1.0, min(1.0, x / max(1e-9, nominal_a)))
-            sy = y
+            # -- plan-form ---------------------------------------------------------
+            # Narrow at the sheath, broad through the middle two thirds, tapering to a
+            # rounded point. A rectangle is the "flat untextured rectangle" the
+            # section 8 gate rejects.
+            # STRAP, not a leaf. Iteration 2 used ``sin(pi*u**0.85)**0.55``, which is a
+            # lanceolate profile -- widest near 40 percent, tapering to a point. Opened,
+            # that render read as maize or oleander: exactly the "went willow" failure the
+            # previous route owner named, reproduced with better geometry.
+            #
+            # A Macrocystis blade is a STRAP: it broadens out of its stalk over the first
+            # sixth, holds near-constant width for most of its length, and ends blunt and
+            # frayed rather than pointed. That plateau is the whole silhouette read -- a
+            # tapering sheet is a leaf on a stem, a parallel-sided sheet hanging in water
+            # is kelp.
+            # The ramp is stretched to 0.30 of the blade and the tip taper starts at
+            # 0.86. Measured with a 0.17 ramp: the plan-form widened 4.3x across ONE
+            # quad band (5.9 cm to 25.5 cm over 0.30 m), and that single flare was the
+            # 649.68 distortion outlier. A shoulder resolved by three rings, each
+            # flaring under 2x, is the fix -- and 30 cm of broadening on a 2.5 m blade
+            # is anatomically what a Macrocystis stalk does anyway.
+            # ITERATION 4. The iteration-3 sheet was opened and still read as a
+            # terrestrial monocot -- maize or dracaena -- because the blades tapered to
+            # points. 0.72 of the width removed over the last 14 percent is 39 cm of
+            # taper on a 2.8 m blade, and at that length the eye reads a lanceolate
+            # LEAF. A Macrocystis blade ends abruptly: still about three quarters of its
+            # mid width at the very tip, frayed rather than pointed, and the taper
+            # occupies the last tenth at most. That bluntness is a load-bearing part of
+            # the archetype, not a detail.
+            shoulder = _smoothstep(0.0, shoulder_u, u)
+            blunt = 1.0 - 0.28 * _smoothstep(0.90, 1.0, u)
+            plan = shoulder * blunt
+            # End rings stay a small flat lens rather than collapsing to a cone point:
+            # a collapsed ring reintroduces the conformal scale singularity, and the
+            # centroid cap fan across it is where sliver triangles come from.
+            end_a = max(6.0 * th, 0.10 * w)
+            a_local = end_a + (w - end_a) * plan
+            b_local = th * (0.70 + 0.30 * plan)
 
-            half_width = nominal_a
+            # -- basal pneumatocyst ------------------------------------------------
+            # Macrocystis floats its blades with one pyriform gas bladder at the
+            # junction with the stipe. It inflates BOTH axes, so it reads as a bulb on
+            # the silhouette rather than as a thickened patch -- and material slot 3
+            # (bladder pigment) is painted on exactly this band, so the amber accent
+            # from the reference lands on geometry the outline already has.
+            bulb = math.exp(-((u / max(1e-6, bladder_span)) ** 2) * 1.35)
+            a_local *= 1.0 + (bladder_swell * 0.42 - 0.42) * bulb
+            b_local *= 1.0 + (bladder_swell - 1.0) * bulb
 
-            # Serration: independent tooth phase per margin, so the two edges are
-            # not mirror images of each other.
-            phase = spr if cx >= 0.0 else spl
-            teeth = 1.0 + sa * (_tri_wave(u * serration_teeth + phase) - 0.5) * 2.0
-            half_width *= teeth
-
-            # Tears: a deep notch bitten out of one margin. Kept above the
-            # 1e-4 weld distance so remove_doubles cannot close the notch.
+            # -- margin: teeth, frill, tears ---------------------------------------
+            # Independent tooth phase per margin so the two edges are not mirror
+            # images, plus one slow undulation of the whole edge.
+            phase = spr if s_across >= 0.0 else spl
+            teeth = 1.0 + sa * (_tri_wave(u * teeth_n + phase) - 0.5) * 2.0
+            frill = 1.0 + frill_amp * math.sin(frill_k * math.pi * u + frill_phase +
+                                               (0.0 if s_across >= 0.0 else 1.9))
+            margin = teeth * frill
             for tear_u, tear_side, tear_span, tear_depth in tear_list:
-                if (cx >= 0.0) == (tear_side > 0.0):
+                if (s_across >= 0.0) == (tear_side > 0.0):
                     falloff = math.exp(-((u - tear_u) ** 2) /
                                        max(1e-6, tear_span * tear_span))
-                    half_width *= (1.0 - tear_depth * falloff)
+                    margin *= (1.0 - tear_depth * falloff)
+            # Floor the margin. Teeth, frill and a tear stack multiplicatively and can
+            # otherwise pinch the sheet to near-zero width, which produces exactly the
+            # sliver triangle whose UV blows up. A torn kelp blade keeps a ragged web;
+            # it does not vanish.
+            a_local *= max(margin, 0.34)
 
-            # Floor the margin. Serration and a tear can otherwise stack
-            # multiplicatively and pinch the sheet to near-zero width, which produces a
-            # sliver triangle whose UV blows up -- measured as a single LOD0 triangle at
-            # 81.89 aspect distortion, over the outlier ceiling. The floor is a real
-            # feature too: a torn kelp blade keeps a ragged web, it does not vanish.
-            half_width = max(half_width, w * 0.24)
-
-            half_thickness = nominal_b
-
-            # Blisters: one-sided pneumatocyst bumps on the upper face only, which
-            # is where gas bladders actually form.
-            if sy > 0.0:
-                for b_u, b_cx, b_span, b_amp in blister_list:
-                    falloff = math.exp(-(((u - b_u) ** 2) / max(1e-6, b_span * b_span) +
-                                         ((cx - b_cx) ** 2) / 0.28))
-                    half_thickness *= (1.0 + b_amp * falloff)
-
-            # Healed scar: a shallow groove across the sheet.
-            half_thickness *= (1.0 - 0.34 * math.exp(
+            # -- thickness profile across the sheet --------------------------------
+            # Zero exactly at the margin, so the upper and lower faces share one vertex
+            # there and the shell closes with no stitch. Full thickness at the midrib.
+            across = b_local * ((max(0.0, 1.0 - s_across * s_across)) ** 0.275)
+            # Healed scar: a shallow transverse groove.
+            across *= (1.0 - 0.34 * math.exp(
                 -((u - scar_u) ** 2) / max(1e-6, scar_w * scar_w)))
+            sample = Vector((s_across, u * 5.0, 0.0))
+            across *= (1.0 + 0.12 * _fine_noise(sample, form.noise_offset, 3.2))
 
-            sample = Vector((cx, u * 5.0, 0.0))
-            half_thickness *= (1.0 + 0.12 * _fine_noise(sample, form.noise_offset, 3.2))
+            x = s_across * a_local
+            y = face * across
 
-            # Longitudinal folds displace the MID-SURFACE, so thickness is
-            # preserved and the sheet ruffles instead of getting fatter. Strongest
-            # at the margins, which is how a kelp blade ripples.
-            fold = fa * w * 0.10 * math.sin(fk * math.pi * u + fp) *                 (0.35 + 0.65 * abs(cx))
+            # -- corrugation: MID-SURFACE displacement ------------------------------
+            # Bullate tissue. Displacing the mid-surface preserves thickness, so the
+            # sheet ripples instead of getting fatter. Amplitude scales with half-width
+            # because a 1.5 mm sheet needs centimetre-scale ripples to read at all, and
+            # it fades to zero at the sheath and the tip so neither cap is warped.
+            # Held off until past the flare. Corrugating the neck-to-sheet cone is what
+            # turns a developable surface into one the solver cannot map without
+            # anisotropy, and it buys nothing visually: the shoulder is 4 cm of tissue
+            # tucked against the stipe.
+            envelope = plan * (1.0 - bulb) * _smoothstep(0.10, 0.34, u)
+            corrugate = (corr_amp * w * envelope *
+                         math.sin(corr_n * math.pi * u + corr_phase) *
+                         math.cos(corr_lat * math.pi * s_across * 0.5))
+            y += corrugate
 
-            # Scale the arc-length sample by however much the features moved the local
-            # radii, rather than re-deriving the position from an angle. Serration and
-            # tears are +-30% at most, so equal-arc spacing survives the rescale.
-            return (x * (half_width / max(1e-9, nominal_a)),
-                    y * (half_thickness / max(1e-9, nominal_b)) + fold)
+            # -- roll about the blade axis -----------------------------------------
+            # Applied as a rotation of the whole section, which keeps thickness and
+            # width exact rather than shearing them.
+            angle = roll * (u ** 1.6)
+            cos_r, sin_r = math.cos(angle), math.sin(angle)
+            return (x * cos_r - y * sin_r, x * sin_r + y * cos_r)
 
-        def blade_material(i, j, r, s, n=nu, seg=segments,
-                           blister_list=blisters):
+        def blade_across(j, nfc=face_columns):
+            """Mask U: 0 at the right margin, 0.5 on the midrib, 1 at the left margin.
+
+            Matched to what the live shader reads. ``Hecton_KelpMaster.shader:497-500``
+            computes ``widthMask = saturate(uv.x)``, then
+            ``centerDistance = abs(widthMask - 0.5) * 2``, a ``midribMask`` peaking at
+            0.5 and an ``edgeMask`` rising past 0.24. Both blade faces get the same U, so
+            midrib gloss and margin wear land on the same physical lines top and bottom,
+            which is what a real blade does.
+            """
+            if j == 0:
+                s_across = 1.0
+            elif j <= nfc:
+                s_across = 1.0 - 2.0 * j / float(nfc + 1)
+            elif j == nfc + 1:
+                s_across = -1.0
+            else:
+                s_across = -1.0 + 2.0 * (j - (nfc + 1)) / float(nfc + 1)
+            return 0.5 * (1.0 - s_across)
+
+        def blade_material(i, j, r, s, n=face_columns, seg=segments):
             # The blade margin is NOT a separate material slot. Putting slot 1 on the rim
             # columns was measured to cause four separate failures at once: a pale streak
             # chalk-outlining every blade, 2.4 px sliver islands (build_lod_chain splits
@@ -954,20 +1261,33 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             # degenerate LOD1 UV triangle at 181 aspect distortion once that strip
             # decimated to one face, and slot 1 emptying at LOD2. A thin geometric band
             # is the wrong carrier for a material ID; the margin is a texture job.
-            # Slot 1 now lives on the basal collar, which has real area -- see
-            # _stipe_material_for.
+            # Slot 1 lives on the basal collar of the stipe -- see _stipe_material_for.
             #
-            # Bladder pigment on the basal swelling, matching exactly where blade_offset
-            # raises it. This is the reference's repeated amber accent distributed through
-            # the tissue mass, replacing the stripe that used to run down the stipe. A
-            # blade base is also a compact region with real area, unlike the thin blister
-            # patches that produced sub-4-px islands.
-            if (i / float(max(1, r - 1))) < 0.15:
-                return law.MATERIAL_SLOT_EMISSIVE
+            # Slot 3 is the pneumatocyst pigment, on the bulb band that ``blade_offset``
+            # actually inflates. That is the amber focal accent the mandatory
+            # ``forest_kelp.webp`` frame uses, landing on a bulge the silhouette has.
+            # The pneumatocyst does NOT get its own material slot, and this is the
+            # third time this generator has learned the same lesson: a thin band of
+            # ring bands is the wrong carrier for a material ID. Measured with the
+            # float on slot 3: LOD0 carried a triangle at 649.68 aspect distortion
+            # inside the band (3.5x the sliver floor, so a real gate failure), and at
+            # LOD1 build_lod_chain's material-border split turned that band into four
+            # islands of 64.6 x 3.53 px against law.UV_MIN_ISLAND_PIXELS=4. It also
+            # cost a fourth submesh and SetPass slot for a 4 cm organ.
+            #
+            # 3dmodel.md section 6 makes slot 3 conditional -- "emissive/
+            # bioluminescent/details ONLY WHEN NEEDED" -- and kelp is non-emissive by
+            # 3DMODEL_FLORA_CORAL.md section 2, so vertex-colour G is 0 everywhere.
+            # The float is carried by what should carry it: real silhouette geometry
+            # plus the UVMask parameterisation, which localises it for the shader
+            # without a submesh split.
             return law.MATERIAL_SLOT_PRIMARY
 
-        # A blade's underside faces away from the light and the swimmer above it, so
-        # the cut goes there rather than across the lit upper face.
+        # seam_direction=None so the cut lands on column 0, which the explicit column
+        # plan puts exactly on the right margin. One margin cut unrolls the closed lens
+        # into a single near-rectangle -- the domain a conformal solver maps almost
+        # isometrically. Scoring the seam against a world direction, as the tube parts
+        # do, is meaningless here because ``blade_offset`` ignores theta.
         islands.append(_sweep_closed(
             bm, uv_layer, geo_layer, cls_layer, part_layer,
             points=points, segments=segments, offset_fn=blade_offset,
@@ -975,27 +1295,33 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             material_fn=blade_material,
             geo_base=form.boss_height * 0.55 + attach_length,
             geo_lengths=lengths,
-            seam_direction=Vector((0.0, 0.0, -1.0))))
+            seam_direction=None, cut_caps=False, cap_ends=False,
+            u_params=u_params, extra_seam_columns=(face_columns + 1,),
+            across_layer=across_layer, across_fn=blade_across))
         attachments.append({
             "index": index,
             "heightT": round(height_t, 5),
             "canopy": bool(is_canopy),
             "lengthM": round(length, 5),
-            "widthM": round(width, 5),
-            "thicknessM": round(thickness, 6),
-            "serrationTeeth": serration_teeth,
-            "tears": tear_count,
-            "blisters": blister_count,
+            "widthM": round(2.0 * half_width, 5),
+            "thicknessM": round(2.0 * half_thickness, 6),
+            "sheetAspect": round(half_width / max(1e-9, half_thickness), 1),
+            "tipDropFractionOfLength": round(hang, 4),
+            "radialReachFractionOfLength": round(reach, 4),
+            "rollRad": round(roll, 4),
         })
         part_id += 1
 
     return islands, part_id, attachments, {
         "rows": rows,
         "crossSectionVerts": segments,
-        "faceColumnsPerSide": nu - 1,
+        "faceColumnsPerSide": face_columns,
+        "columnPlan": "j0=right margin, j1..n=upper face, j(n+1)=left margin, "
+                      "j(n+2)..j(2n+1)=lower face",
         "serrationTeeth": serration_teeth,
-        "blistersPerBlade": blister_count,
+        "corrugationsPerBlade": corrugations,
         "tearsPerBlade": tear_count,
+        "pneumatocyst": "one basal gas bladder per blade, material slot 3",
     }
 
 
@@ -1545,6 +1871,67 @@ def _collapse_uv_outliers(obj, ceiling: float) -> int:
     return len(chosen)
 
 
+def _grow_subfloor_islands(mesh, atlas_size: int) -> dict:
+    """Scale any island under ``law.UV_MIN_ISLAND_PIXELS`` up about its own centre.
+
+    ``law.UV_MIN_ISLAND_PIXELS = 4`` is an ABSOLUTE pixel floor, so it is a statement
+    about the atlas page, not about the surface. A decimated LOD can leave a two-triangle
+    stub island -- measured at LOD1: 25.601 x 3.422 px against the floor of 4 -- and no
+    amount of re-solving fixes it, because ``mesh_ops._split_uv_seams`` has already
+    duplicated the vertices along the seam, so the stub is genuinely disconnected
+    geometry. Clearing the seam flag cannot rejoin it.
+
+    Growing it in place is legal and measurable. The only rule it interacts with is the
+    section 6 texel-density mismatch ceiling, ``law.UV_TEXEL_MISMATCH_MAX = 0.20``, and
+    the required scale here is 4 / 3.422 = 1.17. Overlap is not a risk either:
+    ``pack_islands(margin_method='ADD', margin=padding_uv)`` has already reserved
+    ``law.atlas_padding_for(atlas_size)`` pixels of clearance around every island, so
+    adding a third of a pixel per side cannot cross into a neighbour.
+
+    Returns what it did, including the largest scale applied, so a run that needed a big
+    correction is visible rather than silently rescued.
+    """
+    layer = mesh.uv_layers.active
+    if layer is None or not mesh.polygons:
+        return {"islandsGrown": 0, "maxScale": 1.0}
+    floor_uv = float(law.UV_MIN_ISLAND_PIXELS) / float(atlas_size)
+    islands = _face_islands(mesh)
+    grown = 0
+    max_scale = 1.0
+    for members in islands:
+        loops = []
+        for index in members:
+            polygon = mesh.polygons[index]
+            loops.extend(range(polygon.loop_start,
+                               polygon.loop_start + polygon.loop_total))
+        if not loops:
+            continue
+        us = [layer.data[i].uv[0] for i in loops]
+        vs = [layer.data[i].uv[1] for i in loops]
+        width = max(us) - min(us)
+        height = max(vs) - min(vs)
+        if min(width, height) >= floor_uv:
+            continue
+        # Anisotropic on purpose: only the dimension that breaches is corrected, so a
+        # long thin stub is not blown up along its already-legal axis.
+        scale_u = floor_uv / width if width < floor_uv else 1.0
+        scale_v = floor_uv / height if height < floor_uv else 1.0
+        # A hair over the floor. The gate is a strict `<`, and a float that lands exactly
+        # on 4.000 px can round below it.
+        scale_u *= 1.02 if scale_u > 1.0 else 1.0
+        scale_v *= 1.02 if scale_v > 1.0 else 1.0
+        centre_u = 0.5 * (max(us) + min(us))
+        centre_v = 0.5 * (max(vs) + min(vs))
+        for i in loops:
+            u, v = layer.data[i].uv
+            layer.data[i].uv = (centre_u + (u - centre_u) * scale_u,
+                                centre_v + (v - centre_v) * scale_v)
+        grown += 1
+        max_scale = max(max_scale, scale_u, scale_v)
+    return {"islandsGrown": grown, "maxScale": round(max_scale, 4),
+            "floorPx": law.UV_MIN_ISLAND_PIXELS}
+
+
 def _unwrap_and_pack(obj, atlas_size: int, blackbox=None):
     """Conformal unwrap on the authored seams, growth-aligned, density-equalised, packed.
 
@@ -1616,6 +2003,9 @@ def _unwrap_and_pack(obj, atlas_size: int, blackbox=None):
     # scale+offset into the padded square is deterministic, preserves conformality and
     # preserves relative texel density, so it fixes the gate without touching quality.
     _fit_uv_into_padding(mesh, padding_uv)
+    island_growth = _grow_subfloor_islands(mesh, atlas_size)
+    if island_growth["islandsGrown"]:
+        _fit_uv_into_padding(mesh, padding_uv)
 
     # Measure with the gate's own formula and act until it is satisfied. Bounded, and
     # each round is a real reduction, so it terminates.
@@ -1652,10 +2042,15 @@ def _unwrap_and_pack(obj, atlas_size: int, blackbox=None):
             break
         outliers_removed += removed
         _fit_uv_into_padding(mesh, padding_uv)
+        growth_retry = _grow_subfloor_islands(mesh, atlas_size)
+        if growth_retry["islandsGrown"]:
+            island_growth = growth_retry
+            _fit_uv_into_padding(mesh, padding_uv)
 
     metrics = _uv_metrics(mesh, atlas_size)
     if metrics is not None:
         metrics["uvOutliersCollapsed"] = outliers_removed
+        metrics["islandGrowth"] = island_growth
         metrics["solver"] = method
         metrics["islandsOriented"] = rotated
         metrics["seamEdges"] = sum(1 for e in mesh.edges if e.use_seam)
@@ -1710,7 +2105,6 @@ def _shared_materials():
         ("tissue", (0.052, 0.128, 0.043, 1.0), 0.62, 0.32, 0.10),
         ("basal_collar_scar", (0.058, 0.062, 0.034, 1.0), 0.74, 0.06, 0.03),
         ("holdfast", (0.048, 0.036, 0.026, 1.0), 0.78, 0.0, 0.06),
-        ("bladder", (0.402, 0.196, 0.030, 1.0), 0.44, 0.34, 0.14),
     )
     out = []
     for role, colour, roughness, translucency, sheen in specs:
@@ -1858,7 +2252,7 @@ def _author_vertex_colours(obj, form, bb, *, ao_samples: int, ao_distance: float
     # instead of an omission, and so nobody reads a blank channel as an oversight.
     biolum = [0.0] * len(mesh.vertices)
 
-    cut_distance = form.boss_height * 0.55 + form.height * 0.34
+    cut_distance = form.boss_height * 0.55 + form.height * CUT_HEIGHT_FRACTION
     alpha = _harvest_mask(classes, geodesics, cut_distance)
 
     report = vertexcolor.write_organic_channels(
@@ -1921,6 +2315,88 @@ def _author_vertex_colours(obj, form, bb, *, ao_samples: int, ao_distance: float
     return report, sway, ao_result
 
 
+def _write_mask_uv(obj, max_flexible_length: float) -> dict:
+    """Second UV set carrying the mask parameterisation the live shader consumes.
+
+    Read the evidence first, because this is not a guess. ``Hecton_KelpMaster.shader``
+    samples all three of its maps TRIPLANAR from world position
+    (``:505``, ``:509``, ``:514`` -> ``SampleFloraTriplanar(..., samplePositionWS, ...)``),
+    so UV0 is never a texture coordinate for this material. What it IS used for:
+
+      ``:236``  ``heightMask = saturate(uv.y)``  -> sway amplitude, squared at ``:216``
+                into ``tipParabola`` and multiplied into every displacement term
+      ``:496``  ``heightMask`` again -> ``thicknessMask``, ``biolumMask``
+      ``:497``  ``widthMask = saturate(uv.x)`` -> ``midribMask``, ``edgeMask``
+
+    3dmodel.md section 6 sanctions exactly this split: triplanar assignment "still
+    requires UV0 or object-space coordinates for decals and masks". But UVMap is also
+    what every UV density / padding / island / stretch gate in ``validate.py`` measures,
+    and swapping the two would silently change what those gates test. So the atlas
+    unwrap keeps slot 0 and the mask set is written to slot 1, where 3dmodel.md
+    section 3 puts "atlas remap, or packed baked masks".
+
+    CONSEQUENCE, reported not hidden: as shipped, the shader reads TEXCOORD0 and will
+    see ATLAS coordinates, so ``heightMask`` becomes each island's V band inside the
+    atlas rather than a root-to-tip gradient. Blades whose island packed high sway hard
+    at their base; blades that packed low do not sway at all. That is a one-line shader
+    change (``input.uv`` sourced from TEXCOORD1) or a UV-layer reorder, and it is a
+    policy call for the route owner, not something a generator should decide by
+    reordering layers underneath three validation gates.
+
+    V is the same normalised geodesic field as vertex-colour R by construction, so the
+    motion curve is identical whichever input the channel policy settles on.
+    """
+    mesh = obj.data
+    if mesh.uv_layers.get(UV_MASK_LAYER) is None:
+        mesh.uv_layers.new(name=UV_MASK_LAYER, do_init=False)
+    mask = mesh.uv_layers[UV_MASK_LAYER]
+
+    across, across_ok = _read_vertex_floats(mesh, ACROSS_LAYER, 0.5)
+    geodesics, geo_ok = _read_vertex_floats(mesh, GEO_LAYER, 0.0)
+    scale = 1.0 / max(1e-9, max_flexible_length)
+
+    u_min, u_max = 1.0e9, -1.0e9
+    v_min, v_max = 1.0e9, -1.0e9
+    for loop in mesh.loops:
+        vertex = loop.vertex_index
+        u = law.saturate(across[vertex])
+        v = law.saturate(geodesics[vertex] * scale)
+        mask.data[loop.index].uv = (u, v)
+        u_min = min(u_min, u); u_max = max(u_max, u)
+        v_min = min(v_min, v); v_max = max(v_max, v)
+
+    # UVMap must stay the ACTIVE layer or the per-LOD re-unwrap hook solves into the
+    # mask set and destroys it. Set all three pointers, not just ``active``: the
+    # exporter and the solver read different ones.
+    atlas = mesh.uv_layers.get("UVMap")
+    if atlas is not None:
+        mesh.uv_layers.active = atlas
+        atlas.active_render = True
+
+    # ACROSS has done its job. GEO stays alive for the per-LOD island orientation.
+    attribute = mesh.attributes.get(ACROSS_LAYER)
+    if attribute is not None:
+        mesh.attributes.remove(attribute)
+
+    return {
+        "layer": UV_MASK_LAYER,
+        "texcoordIndex": mesh.uv_layers.find(UV_MASK_LAYER),
+        "uSemantic": "0 and 1 at blade margins, 0.5 on the midrib; tube parts wrap "
+                     "once around from the hidden seam column",
+        "vSemantic": "geodesic distance from the holdfast / longest path, root 0 to "
+                     "farthest tip 1 -- identical field to vertex colour R",
+        "uRange": [round(u_min, 5), round(u_max, 5)],
+        "vRange": [round(v_min, 5), round(v_max, 5)],
+        "acrossAttributeSurvived": across_ok,
+        "geodesicAttributeSurvived": geo_ok,
+        "activeRenderLayer": mesh.uv_layers.active.name if mesh.uv_layers.active
+                             else "",
+        "shaderGap": "Hecton_KelpMaster.shader reads TEXCOORD0, which is the ATLAS "
+                     "unwrap; until it is repointed at TEXCOORD1 the sway height mask "
+                     "is an atlas coordinate, not a root-to-tip gradient",
+    }
+
+
 # ---------------------------------------------------------------------------
 # Interaction anchors  --  PROCEDURAL_ASSET_PIPELINE.md
 # ---------------------------------------------------------------------------
@@ -1934,9 +2410,15 @@ def _build_anchors(form, name: str):
     kelp are emitted -- inventing ANCHOR_Weld on a plant would be noise.
     """
     wanted = {
-        "ANCHOR_Cut": Vector((0.0, 0.0, form.boss_height * 0.55 + form.height * 0.42)),
-        "ANCHOR_Loot": Vector((0.0, 0.0, form.boss_height * 0.55 + form.height * 0.60)),
-        "ANCHOR_Scan": Vector((0.0, 0.0, form.boss_height * 0.55 + form.height * 0.72)),
+        # Rescaled for a 8-13 m column. The previous fractions (0.42/0.60/0.72) put
+        # every anchor 4-9 m up a plant the player cannot reach, which was invisible
+        # while the plant was 2 m tall.
+        "ANCHOR_Cut": Vector((0.0, 0.0, form.boss_height * 0.55 +
+                              form.height * CUT_HEIGHT_FRACTION)),
+        "ANCHOR_Loot": Vector((0.0, 0.0, form.boss_height * 0.55 +
+                               form.height * 0.055)),
+        "ANCHOR_Scan": Vector((0.0, 0.0, form.boss_height * 0.55 +
+                               form.height * 0.19)),
     }
     out = []
     for anchor_name, position in sorted(wanted.items()):
@@ -2010,6 +2492,39 @@ def _preserve_material_slots(obj, anchors) -> dict:
     return repaired
 
 
+def _triangulate_ngons(obj) -> dict:
+    """Split any polygon with more than four sides, and report the count.
+
+    Blender cannot build a tangent basis on an n-gon: ``Mesh.calc_tangents`` raises
+    "Tangent space can only be computed for tris/quads, aborting", the validator then
+    records ``non_finite_tangent``, ``tangent_length_out_of_range`` and
+    ``tangent_handedness_invalid`` as NOT ENFORCED rather than as failures, and the FBX
+    ships without tangents. Nothing raises anywhere along that path, so the only way to
+    see it is to count. ``3dmodel.md`` section 3 makes tangents mandatory when a normal
+    map is read, and ``Hecton_KelpMaster.shader`` reads one.
+    """
+    mesh = obj.data
+    before = [polygon.index for polygon in mesh.polygons
+              if len(polygon.vertices) > 4]
+    if not before:
+        return {"ngonsFound": 0, "triangulated": 0,
+                "note": "source surface emits quads and cap triangles only"}
+    bm = mesh_ops.bmesh_from_object(obj)
+    targets = [face for face in bm.faces if len(face.verts) > 4]
+    result = bmesh.ops.triangulate(bm, faces=targets, quad_method="BEAUTY",
+                                   ngon_method="BEAUTY")
+    made = len(result.get("faces", ()))
+    mesh_ops.bmesh_to_object(bm, obj)
+    remaining = sum(1 for polygon in mesh.polygons if len(polygon.vertices) > 4)
+    if remaining:
+        raise RuntimeError(
+            "{n} n-gons survived triangulation; the tangent basis cannot be "
+            "built".format(n=remaining))
+    return {"ngonsFound": len(before), "triangulated": made,
+            "cause": "weld_and_clean dissolve_degenerate merges a few quads into "
+                     "n-gons; the source surface emits none"}
+
+
 def _reset_scene() -> None:
     """Empty the scene between variants so one asset cannot contaminate the next.
 
@@ -2068,12 +2583,15 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
     geo_layer = bm.verts.layers.float.new(GEO_LAYER)
     cls_layer = bm.verts.layers.float.new(CLS_LAYER)
     part_layer = bm.faces.layers.int.new(PART_LAYER)
-    layers = (uv_layer, geo_layer, cls_layer, part_layer)
+    across_layer = bm.verts.layers.float.new(ACROSS_LAYER)
+    layers = (uv_layer, geo_layer, cls_layer, part_layer, across_layer)
 
     holdfast_parts, next_part = _build_holdfast(bm, layers, form, quality, 0)
 
-    stipe_rows = _qi(12, 26, quality)
-    stipe_segments = _qi(7, 12, quality)
+    # A 8-13 m stipe at 24 rings is a ring every ~0.45 m, which is enough for the
+    # canopy lean and the growth-ring banding without spending blade budget.
+    stipe_rows = _qi(13, 20, quality)
+    stipe_segments = _qi(8, 10, quality)
     stipe_part = next_part
     stipe_info, stipe_points, stipe_lengths = _build_stipe(
         bm, layers, form, stipe_rows, stipe_segments, stipe_part)
@@ -2081,9 +2599,18 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
 
     blade_parts, next_part, blade_records, blade_stats = _build_blades(
         bm, layers, form, quality, stipe_points, stipe_lengths, next_part)
-    # Three islands per swept part now: the tube opened along its lengthwise seam, plus
-    # the two caps cut free along their boundary rings.
-    expected_islands = 3 * (len(holdfast_parts) + 1 + len(blade_parts))
+    # Tube parts (boss, haptera, stipe) contribute THREE islands: the tube opened along
+    # its lengthwise seam plus two caps cut free along their boundary rings. A blade
+    # contributes ONE: cut_caps is off there, because a 1 mm-thick sheet's cap island can
+    # never reach law.UV_MIN_ISLAND_PIXELS=4 in its thickness dimension at any atlas size,
+    # so absorbing it into the sheet island is the only arrangement that can pass.
+    # A blade now contributes TWO islands: both margins are cut, so the upper and lower
+    # faces unroll as separate flat rectangles. Its two end caps are NOT cut free -- a
+    # 1.5 mm thick sheet cap can never reach law.UV_MIN_ISLAND_PIXELS=4 in its thickness
+    # dimension at any atlas size -- so each cap is absorbed into whichever face island
+    # it borders.
+    tube_parts = len(holdfast_parts) + 1
+    expected_islands = 3 * tube_parts + 2 * len(blade_parts)
 
     raw_faces = len(bm.faces)
     raw_verts = len(bm.verts)
@@ -2091,7 +2618,13 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
               family=law.Family.FLORA.value)
 
     # -- 4. topology rules: weld -------------------------------------------
-    weld_stats = mesh_ops.weld_and_clean(bm, merge_distance=1e-4, blackbox=bb)
+    # fill_boundary_loops=False. The blade ends are DELIBERATELY open render-only
+    # borders (see _sweep_closed cap_ends), and holes_fill would close each one with an
+    # n-gon -- destroying the tangent basis and recreating the sliver fan the open end
+    # exists to avoid. Any unintended hole now shows up in boundary_edges_after instead
+    # of being silently patched.
+    weld_stats = mesh_ops.weld_and_clean(bm, merge_distance=1e-4,
+                                        fill_boundary_loops=False, blackbox=bb)
     seams_marked = sum(1 for edge in bm.edges if edge.seam)
 
     mesh_name = law.NAME_MESH.format(family=law.Family.FLORA.value, name=name, lod=0)
@@ -2100,6 +2633,22 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
     bm.free()
     obj = bpy.data.objects.new(mesh_name, mesh)
     bpy.context.scene.collection.objects.link(obj)
+
+    # N-gons are fatal to the tangent basis and therefore to the normal-map route.
+    # ``mesh.calc_tangents()`` aborts with "Tangent space can only be computed for
+    # tris/quads", the validator records THREE tangent gates as "not enforced", and
+    # the FBX ships with no tangents -- all silently, because nothing raises. The
+    # source surface emits only quads and cap triangles; weld_and_clean's
+    # dissolve_degenerate pass is what merges a few into n-gons. Measured and
+    # reported in the manifest either way.
+    ngon_report = _triangulate_ngons(obj)
+    # NOT healed here. Adding a _heal_degenerate pass at this point was tried and
+    # measured WORSE: it removed the degenerate triangle and introduced
+    # inconsistent_winding at LOD0, LOD1 AND LOD2, because deleting a sliver face
+    # opens a rim that recalc_face_normals then orients against its neighbours. The
+    # degenerate triangle was never a triangulation product anyway -- it is created
+    # later, by _collapse_uv_outliers inside _unwrap_and_pack, which is the pass that
+    # needed fixing.
 
     materials = _shared_materials()
     for material in materials:
@@ -2164,7 +2713,7 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
     # legitimately consume a whole cap, and each part then contributes two islands
     # instead of three. A floor of two per part distinguishes those two situations.
     atlas_report["islandsExpected"] = expected_islands
-    minimum_islands = 2 * (expected_islands // 3)
+    minimum_islands = 2 * tube_parts + len(blade_parts)
     if atlas_report["islands"] < minimum_islands:
         raise RuntimeError(
             "unwrap produced {a} islands against {e} expected and a floor of {m}; a "
@@ -2187,7 +2736,14 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
     # The core owns the shading basis. Its ShadingResult is asserted rather than
     # trusted: a silent no-op here ships a flat-shaded asset, and flat shading
     # destroys the specular response the whole normal/bevel pass exists to create.
-    shading = mesh_ops.apply_shading_basis(obj, blackbox=bb)
+    # law.SMOOTH_ANGLE_DEG, the default, is the 32 degree HARD-SURFACE number. Organic
+    # tissue is 68 degrees (law.SMOOTH_ANGLE_BY_SURFACE), and the difference is not
+    # cosmetic here: a corrugated blade has 35-55 degree creases across its own
+    # surface, so the hard-surface threshold would split every ripple into a faceted
+    # plate. The blade MARGIN fold sits near 180 degrees and stays sharp either way.
+    shading = mesh_ops.apply_shading_basis(
+        obj, smooth_angle_deg=law.smooth_angle_for(law.SurfaceClass.ORGANIC),
+        blackbox=bb)
     if getattr(shading, "smooth_polygons", 0) <= 0:
         raise RuntimeError(
             "apply_shading_basis reported {p} smooth polygons; the asset would ship "
@@ -2205,6 +2761,15 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
         obj, form, bb, ao_samples=ao_samples,
         ao_distance=(ao_distance_override if ao_distance_override > 0.0
                      else max(0.12, form.boss_radius * 2.4 + 0.14)))
+
+    # -- 6c. mask UV set, before the LOD chain so every level inherits it -----
+    mask_uv = _write_mask_uv(
+        obj, float(vcol_report.get("maxFlexibleLengthM", 0.0)))
+    if mask_uv["vRange"][1] < 0.90:
+        raise RuntimeError(
+            "mask UV V reaches only {v}; the root-to-tip gradient the shader reads as "
+            "sway amplitude would never reach the tip band".format(
+                v=mask_uv["vRange"][1]))
 
     bounds_min, bounds_max = mesh_ops.local_bounds(obj)
     identity.scale_meters = round(max(bounds_max.z - bounds_min.z,
@@ -2240,6 +2805,31 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
         levels=3, preserve_seams=True, blackbox=bb, reunwrap=_reunwrap)
     lod_uv[0] = dict(atlas_report)
     lod_uv[0]["slotsRepaired"] = _preserve_material_slots(obj, slot_anchors)
+    # topology_report has had NO CALLERS in this pipeline, which is why a missed budget
+    # used to report "584 tris vs 300" instead of a cause. Called per level here so the
+    # manifest carries components / boundary edges / non-manifold edges / irreducible
+    # floor next to the triangle count -- the four numbers that say whether a budget miss
+    # is a decimation setting or a topology wall no pass count will beat.
+    lod_topology = {}
+    for level in lods:
+        report = mesh_ops.topology_report(level.obj)
+        lod_topology[str(level.index)] = {
+            "triangles": report.triangles, "faces": report.faces,
+            "components": report.components,
+            "boundaryEdges": report.boundary_edges,
+            "nonmanifoldEdges": report.nonmanifold_edges,
+            "smallestComponent": report.smallest_component,
+            "largestComponent": report.largest_component,
+            "irreducibleFloor": report.irreducible_floor,
+            "budget": level.budget,
+            "explain": report.explain(level.budget),
+        }
+        print("  topology LOD{i}   tris={t} components={c} boundary={b} "
+              "nonmanifold={n} floor={f} budget={g}".format(
+                  i=level.index, t=report.triangles, c=report.components,
+                  b=report.boundary_edges, n=report.nonmanifold_edges,
+                  f=report.irreducible_floor, g=level.budget))
+
     for level in lods:
         stats = mesh_ops.uv_stretch_stats(level.obj)
         lod_uv.setdefault(level.index, {})["stretchStats"] = stats
@@ -2320,7 +2910,13 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
             filepath=fbx_path, use_selection=True, apply_unit_scale=True,
             global_scale=1.0, apply_scale_options="FBX_SCALE_NONE",
             axis_forward="-Z", axis_up="Y", object_types={"MESH", "EMPTY"},
-            use_mesh_modifiers=False, mesh_smooth_type="FACE", use_tspace=True,
+            # EDGE, not FACE. apply_shading_basis writes the shading basis as PER-EDGE
+            # smooth/sharp flags plus weighted normals; mesh_smooth_type="FACE" exports
+            # per-polygon smoothing groups instead and throws that away, which is the
+            # same flat-shaded asset the shade_auto_smooth trap produces -- arrived at
+            # by a different route and just as invisible. h8forge.export_unity
+            # EXPORT_SETTINGS uses "EDGE" for exactly this reason.
+            use_mesh_modifiers=False, mesh_smooth_type="EDGE", use_tspace=True,
             # The exporter defaults to SRGB, which would gamma-encode masks that are
             # DATA, not colour: a sway of 0.5 would arrive in Unity as 0.74. LINEAR
             # passes the authored 0..1 numbers through untouched.
@@ -2346,10 +2942,16 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
             "stipeRadiusBaseM": round(form.stipe_radius_base, 5),
             "stipeRadiusTopM": round(form.stipe_radius_top, 5),
             "stipeRibCount": form.rib_count,
-            "stipePneumatocysts": len(form.swellings),
+            "stipeTaperOnly": True,
+            "bladderLengthM": round(form.bladder_length_m, 4),
             "bladeCount": form.blade_count,
             "bladeCanopy": form.canopy_blades,
-            "bladeBasal": form.basal_blades,
+            "bladeLengthNominalM": round(form.blade_length, 4),
+            "bladeHalfWidthNominalM": round(form.blade_half_width, 5),
+            "bladeHalfThicknessNominalM": round(form.blade_half_thickness, 6),
+            "bladeSheetAspectNominal": round(form.blade_half_width /
+                                            form.blade_half_thickness, 1),
+            "pneumatocystsPerPlant": form.blade_count,
             "bladeShell": "closed thin shell, edge rim is the narrow end of the "
                           "lens cross-section (no zero-thickness sheet)",
             "bladeDetail": blade_stats,
@@ -2372,6 +2974,7 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
             "trianglesBeforeBudgetReduce": before_reduce,
             "trianglesAfterBudgetReduce": after_reduce,
             "postDecimationClean": post_clean,
+            "ngons": ngon_report,
             "budgetReduceFired": after_reduce < before_reduce,
             "branchUnion": "stipe base and blade sheaths are hidden unions beneath "
                            "the holdfast boss and the blade root embed; no "
@@ -2408,11 +3011,16 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
              "material": materials[1].name},
             {"slot": law.MATERIAL_SLOT_TRIM, "role": SLOT_ROLES[2],
              "material": materials[2].name},
-            {"slot": law.MATERIAL_SLOT_EMISSIVE, "role": SLOT_ROLES[3],
-             "material": materials[3].name,
-             "note": "non-emissive amber bladder pigment under the section 6 "
-                     "'details' clause; vertex colour G stays 0"},
         ],
+        "materialSlotOmission": "no slot 3: 3dmodel.md section 6 makes it "
+                                "conditional ('only when needed') and kelp is "
+                                "non-emissive per 3DMODEL_FLORA_CORAL.md section 2. "
+                                "The pneumatocyst is carried by silhouette geometry "
+                                "plus the UVMask parameterisation, not by a fourth "
+                                "submesh over a 4 cm organ -- measured, that band "
+                                "produced a 649.68 distortion outlier at LOD0 and "
+                                "3.53 px islands at LOD1.",
+        "maskUv": mask_uv,
         "vertexColour": vcol_report,
         "vertexColourContract": list(law.ORGANIC_VCOL),
         "lods": [
@@ -2426,6 +3034,7 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
             for level in lods
         ],
         "lodUv": {str(k): v for k, v in sorted(lod_uv.items())},
+        "lodTopology": lod_topology,
         "lodChainFailures": [str(f) for f in chain_failures],
         "collision": {
             "kind": collider.kind,
@@ -2673,15 +3282,20 @@ def _print_report(manifest: dict) -> None:
         s=identity["scaleMeters"], lo=manifest["bounds"]["min"],
         hi=manifest["bounds"]["max"]))
     print("  structures       holdfast fingers={f} stipe rings={r} ribs={rb} "
-          "blades={b} (canopy {c} / basal {ba})".format(
+          "blades={b} (canopy {c})".format(
               f=structures["holdfastFingers"], r=structures["stipeRings"],
               rb=structures["stipeRibCount"], b=structures["bladeCount"],
-              c=structures["bladeCanopy"], ba=structures["bladeBasal"]))
+              c=structures["bladeCanopy"]))
+    print("  blade sheet      {l} m long, {w} m wide, {t} m thick, aspect {a}:1"
+          .format(l=structures["bladeLengthNominalM"],
+                  w=round(2.0 * structures["bladeHalfWidthNominalM"], 4),
+                  t=round(2.0 * structures["bladeHalfThicknessNominalM"], 5),
+                  a=structures["bladeSheetAspectNominal"]))
     detail = structures["bladeDetail"]
     print("  blade detail     rows={r} ring verts={v} serration teeth={s} "
-          "blisters={bl} tears={t}".format(
+          "corrugations={c} tears={t}".format(
               r=detail["rows"], v=detail["crossSectionVerts"],
-              s=detail["serrationTeeth"], bl=detail["blistersPerBlade"],
+              s=detail["serrationTeeth"], c=detail["corrugationsPerBlade"],
               t=detail["tearsPerBlade"]))
     topology = manifest["topology"]
     print("  topology         raw faces={rf} welded verts removed={wv} "
