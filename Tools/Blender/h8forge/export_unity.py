@@ -210,6 +210,17 @@ MIN_LANDMARK_MARGIN = 1.0e-3
 
 _SAFE_NODE_NAME = re.compile(r"^[A-Za-z0-9_.\-]+$")
 _LOD_SUFFIX = re.compile(r"_LOD(\d+)$")
+#: Blender's uniquifying suffix. Re-importing an FBX into the session that produced
+#: it lands every node next to its source, so the copies come back as ``NAME.001``.
+#: Matching on the raw name would report "objects absent from the fbx" for a file
+#: that is perfectly correct, so the comparison keys on the stripped base name --
+#: and a source object already carrying such a suffix is rejected outright, because
+#: it would make that stripping ambiguous and Unity mangles the dot anyway.
+_DUPLICATE_SUFFIX = re.compile(r"\.\d{3}$")
+
+
+def _base_name(name: str) -> str:
+    return _DUPLICATE_SUFFIX.sub("", name)
 
 
 # ---------------------------------------------------------------------------
@@ -529,10 +540,11 @@ class _ImportSandbox:
         self._previous_active_object = None
 
     def __enter__(self):
+        bpy.context.view_layer.update()
         view_layer = bpy.context.view_layer
         self._previous_active = view_layer.active_layer_collection
         self._previous_selection = tuple(
-            o for o in view_layer.objects if o.select_get())
+            o for o in view_layer.objects if o is not None and o.select_get())
         self._previous_active_object = view_layer.objects.active
         for library in _TRACKED_LIBRARIES:
             collection = getattr(bpy.data, library, None)
@@ -585,6 +597,8 @@ class _ImportSandbox:
                 except (RuntimeError, ReferenceError):
                     pass
             for obj in view_layer.objects:
+                if obj is None:
+                    continue
                 try:
                     obj.select_set(obj in self._previous_selection)
                 except RuntimeError:
@@ -667,7 +681,12 @@ def verify_fbx_roundtrip(
         imported = sandbox.imported_meshes()
         after = {}
         for obj in imported:
-            after[obj.name] = _snapshot(obj, apply_modifiers=False)
+            key = _base_name(obj.name)
+            if key in after:
+                report.failures.append(
+                    "two imported nodes collapse onto the base name " + key)
+                continue
+            after[key] = _snapshot(obj, apply_modifiers=False)
         _compare_a(before, after, report)
 
     # -- import B ----------------------------------------------------------
@@ -684,7 +703,7 @@ def verify_fbx_roundtrip(
                 return report
             raw = {}
             for obj in sandbox.imported_meshes():
-                raw[obj.name] = _snapshot(obj, apply_modifiers=False)
+                raw[_base_name(obj.name)] = _snapshot(obj, apply_modifiers=False)
             _compare_axes(before, raw, report)
     else:
         report.notes.append(
@@ -897,3 +916,1147 @@ def _compare_axes(before: dict, raw: dict, report: RoundtripReport) -> None:
         report.notes.append(
             "axis map not asserted: every object was near-symmetric at its "
             "extreme vertex")
+
+
+# ---------------------------------------------------------------------------
+# Pre-export guards
+# ---------------------------------------------------------------------------
+
+def _as_object(candidate):
+    """Accept a bpy object, a mesh_ops.LodLevel, or a mesh_ops.ColliderResult.
+
+    Duck-typed on purpose: importing mesh_ops here would couple the exporter to a
+    module another agent owns, for nothing but a type name.
+    """
+    if candidate is None:
+        return None
+    if isinstance(candidate, bpy.types.Object):
+        return candidate
+    inner = getattr(candidate, "obj", None)
+    if isinstance(inner, bpy.types.Object):
+        return inner
+    raise TypeError(
+        "expected a bpy Object or an object with an .obj attribute, got "
+        + type(candidate).__name__)
+
+
+def _guard_objects(objects: Sequence[bpy.types.Object],
+                   notes: list) -> None:
+    """Refuse the export states that produce silently broken Unity assets."""
+    failures = []
+    for obj in objects:
+        if obj.type != "MESH":
+            failures.append("{0} is a {1}, not a MESH".format(obj.name, obj.type))
+            continue
+        if obj.name not in bpy.context.view_layer.objects:
+            failures.append(
+                "{0} is not in the active view layer, so use_selection cannot "
+                "reach it".format(obj.name))
+        determinant = obj.matrix_world.to_3x3().determinant()
+        if determinant <= 0.0:
+            failures.append(
+                "{0} has a mirrored or degenerate transform (matrix_world "
+                "determinant {1:+.6f}). Unity inherits the flipped winding and the "
+                "tangent w sign inverts with it, which breaks every normal map on "
+                "the asset. 3dmodel.md section 3 forbids inverted unintentional "
+                "winding: bake the mirror into the geometry and recompute normals "
+                "instead of shipping a negative scale.".format(obj.name,
+                                                               determinant))
+        if not _SAFE_NODE_NAME.match(obj.name):
+            failures.append(
+                "{0!r} contains characters Unity's importer rewrites; the FBX node "
+                "name would not match the mesh asset name and the _LOD suffix "
+                "convention would break".format(obj.name))
+        if _DUPLICATE_SUFFIX.search(obj.name):
+            failures.append(
+                "{0!r} ends in Blender's duplicate suffix. That name is an "
+                "authoring accident, it breaks the _LOD suffix convention, Unity "
+                "rewrites the dot, and it makes the round-trip node matching "
+                "ambiguous. Rename through law.NAME_MESH / law.NAME_COLLIDER."
+                .format(obj.name))
+        mesh = obj.data
+        if not mesh.vertices:
+            failures.append("{0} has no vertices".format(obj.name))
+        if not mesh.uv_layers:
+            failures.append(
+                "{0} has no UV layer. 3dmodel.md section 3 makes TexCoord0 a "
+                "required stream and tangent space cannot be computed without "
+                "it, so the Tangent stream would be dropped too.".format(obj.name))
+        elif len(mesh.uv_layers) < 2:
+            notes.append(
+                "{0}: only UV0 present. 3dmodel.md section 3 requires TexCoord1 "
+                "when a lightmap, detail, atlas remap or packed mask is used; "
+                "confirm this asset genuinely needs none.".format(obj.name))
+        if not mesh.color_attributes:
+            failures.append(
+                "{0} has no colour attribute. law.VCOL_CONTRACT is mandatory for "
+                "every family (3dmodel.md sections 4 and 5), and a missing "
+                "stream a material reads is a validation failure per section "
+                "8.".format(obj.name))
+        elif len(mesh.color_attributes) > 1:
+            extra = [a.name for a in mesh.color_attributes
+                     if a.name != getattr(mesh.attributes, "active_color_name", "")]
+            notes.append(
+                "{0}: {1} colour attributes present ({2}). Unity consumes one; "
+                "prioritize_active_color writes {3!r} first, but leftover layers "
+                "still bloat the file. vertexcolor.remove_scratch_attributes "
+                "clears the AO bake scratch layer.".format(
+                    obj.name, len(mesh.color_attributes),
+                    [a.name for a in mesh.color_attributes], extra,
+                ) if extra else
+                "{0}: {1} colour attributes present.".format(
+                    obj.name, len(mesh.color_attributes)))
+        if not mesh.materials:
+            notes.append(
+                "{0}: no material slot. 3dmodel.md section 6 declares slot 0 as "
+                "the primary structural/tissue material; Unity will assign its "
+                "default material to submesh 0.".format(obj.name))
+        sides = max((len(p.vertices) for p in mesh.polygons), default=0)
+        if sides > 4:
+            notes.append(
+                "{0}: contains a {1}-sided polygon. use_triangles=True is "
+                "mandatory for this mesh -- without it Blender skips tangent "
+                "export with only a console warning and the FBX ships with no "
+                "Tangent stream.".format(obj.name, sides))
+    if failures:
+        raise GenerationAborted(
+            "fbx export refused: " + "; ".join(failures), failures=failures)
+
+
+def _view_layer_objects() -> list:
+    """Live view-layer objects, None entries filtered out.
+
+    ``view_layer.objects`` can hand back ``None`` slots while the depsgraph is stale
+    -- for example straight after a script removed datablocks. Iterating it blind
+    raises ``AttributeError`` on the first hole, which is a crash in the middle of a
+    selection restore rather than an honest error.
+    """
+    return [o for o in bpy.context.view_layer.objects if o is not None]
+
+
+def _refresh_view_layer() -> None:
+    """Flush pending depsgraph work before anything reads the scene.
+
+    Two things break without this. ``view_layer.objects`` does not yet list an
+    object a script has just linked, so the reachability guard rejects perfectly
+    valid geometry. And ``matrix_world`` is stale after a script assigns
+    ``obj.scale``, so the mirrored-transform guard reads the previous determinant
+    and waves a negative scale through.
+    """
+    bpy.context.view_layer.update()
+
+
+def _select_only(objects: Sequence[bpy.types.Object]) -> None:
+    view_layer = bpy.context.view_layer
+    for other in _view_layer_objects():
+        if other.select_get():
+            other.select_set(False)
+    for obj in objects:
+        obj.select_set(True)
+    view_layer.objects.active = objects[0]
+
+
+# ---------------------------------------------------------------------------
+# Export
+# ---------------------------------------------------------------------------
+
+def export_fbx(
+    objects,
+    out_path: str,
+    *,
+    apply_modifiers: bool = True,
+    verify_roundtrip: bool = True,
+    blackbox: Optional[BlackBox] = None,
+) -> ExportResult:
+    """Write one FBX containing ``objects``, then prove it round-trips.
+
+    ``objects`` may be bpy objects, ``mesh_ops.LodLevel`` values or
+    ``mesh_ops.ColliderResult`` values -- anything exposing ``.obj``.
+
+    ``out_path`` is required and is never defaulted. law.py holds no sanctioned FBX
+    staging directory, and inventing one would breach ``AGENTS.md`` ``Project
+    Shape``: "Do not invent new prefixes, folders ... without local source proof and
+    justification." Writing under ``Assets/`` would also trigger an import in
+    whichever Unity instance is running.
+
+    Raises :class:`~h8forge.blackbox.GenerationAborted` when a guard trips or the
+    round trip finds data loss, an axis error or a chirality flip.
+    ``PROCEDURAL_ASSET_PIPELINE.md`` "Validation Before Save": "On validation
+    failure the save is aborted."
+    """
+    resolved = []
+    for candidate in (objects if isinstance(objects, (list, tuple))
+                      else list(objects)):
+        obj = _as_object(candidate)
+        if obj is not None:
+            resolved.append(obj)
+    if not resolved:
+        raise GenerationAborted("fbx export refused: no objects to export")
+
+    notes = []
+    _refresh_view_layer()
+    _guard_objects(resolved, notes)
+
+    out_path = os.path.abspath(out_path)
+    directory = os.path.dirname(out_path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    if os.path.exists(out_path):
+        # AGENTS.md "Atomic File Delete Rule": a stale artefact left in place is
+        # how a run reports success against the previous run's output.
+        os.remove(out_path)
+
+    triangle_counts = {}
+    uv_names = ()
+    has_colors = False
+    has_custom_normals = False
+    max_sides = 0
+    for obj in resolved:
+        shape = _snapshot(obj, apply_modifiers=apply_modifiers)
+        triangle_counts[obj.name] = shape.triangle_count
+        uv_names = uv_names or shape.uv_names
+        has_colors = has_colors or bool(shape.color_layers)
+        has_custom_normals = has_custom_normals or shape.has_custom_normals
+        max_sides = max(max_sides, shape.max_polygon_sides)
+
+    previous_selection = tuple(
+        o for o in _view_layer_objects() if o.select_get())
+    previous_active = bpy.context.view_layer.objects.active
+    settings = dict(EXPORT_SETTINGS)
+    settings["use_mesh_modifiers"] = bool(apply_modifiers)
+    try:
+        _select_only(resolved)
+        result = bpy.ops.export_scene.fbx(filepath=out_path, **settings)
+    finally:
+        for obj in _view_layer_objects():
+            try:
+                obj.select_set(obj in previous_selection)
+            except RuntimeError:
+                pass
+        if previous_active is not None:
+            try:
+                bpy.context.view_layer.objects.active = previous_active
+            except (RuntimeError, ReferenceError):
+                pass
+
+    # An operator that returns CANCELLED writes nothing and raises nothing.
+    # mesh_ops documents the same trap for modifier_apply; the cost of not
+    # checking is a manifest that describes a file which does not exist.
+    if "FINISHED" not in result:
+        raise GenerationAborted(
+            "bpy.ops.export_scene.fbx returned {0} for {1}".format(
+                sorted(result), os.path.basename(out_path)))
+    if not os.path.isfile(out_path) or os.path.getsize(out_path) <= 0:
+        raise GenerationAborted(
+            "fbx export reported FINISHED but produced no usable file: "
+            + os.path.basename(out_path))
+
+    notes.insert(0, "wrote {0} ({1} bytes) with axis_forward={2} axis_up={3} "
+                    "bake_space_transform={4} colors_type={5} use_triangles={6} "
+                    "use_tspace={7}".format(
+                        os.path.basename(out_path), os.path.getsize(out_path),
+                        settings["axis_forward"], settings["axis_up"],
+                        settings["bake_space_transform"], settings["colors_type"],
+                        settings["use_triangles"], settings["use_tspace"]))
+
+    unit_scale = FBX_UNITS_PER_METRE
+    verified = False
+    # use_tspace only succeeds once the mesh is triangles/quads, and
+    # use_triangles guarantees that; a tangent claim without it would be false
+    # for any n-gon mesh.
+    has_tangents = bool(settings["use_tspace"]) and bool(uv_names)
+    if verify_roundtrip:
+        report = verify_fbx_roundtrip(
+            resolved, out_path, colors_type=settings["colors_type"],
+            apply_modifiers=apply_modifiers)
+        notes.extend(report.lines())
+        unit_scale = report.measured_unit_scale
+        has_colors = has_colors or report.has_vertex_colors
+        if report.uv_layer_names:
+            uv_names = report.uv_layer_names
+        if not report.passed:
+            dump = blackbox.dump("fbx_roundtrip_failed") if blackbox else None
+            if blackbox is not None:
+                blackbox.note_invalid("export_fbx", "FBX_ROUNDTRIP_FAILED",
+                                      "; ".join(report.failures)[:400])
+            raise GenerationAborted(
+                "fbx round trip failed for {0}: {1}".format(
+                    os.path.basename(out_path), "; ".join(report.failures)),
+                dump_path=dump, failures=list(report.failures))
+        verified = True
+        notes.append(
+            "roundtrip VERIFIED: axis map confirmed={0}, chirality "
+            "preserved={1}".format(report.axis_map_confirmed,
+                                   report.chirality_preserved))
+    else:
+        notes.append(
+            "roundtrip verification disabled by caller; stream survival is "
+            "UNPROVEN for this file")
+
+    if blackbox is not None:
+        blackbox.record(
+            "export_fbx",
+            triangle_count=sum(triangle_counts.values()),
+            vertex_count=-1,
+            warning="" if verified else "roundtrip not verified",
+        )
+
+    return ExportResult(
+        fbx_path=out_path,
+        object_names=tuple(o.name for o in resolved),
+        triangle_counts=triangle_counts,
+        has_vertex_colors=has_colors,
+        has_custom_normals=has_custom_normals,
+        has_tangents=has_tangents,
+        uv_layer_names=tuple(uv_names),
+        unit_scale=unit_scale,
+        roundtrip_verified=verified,
+        roundtrip_notes=tuple(notes),
+    )
+
+
+def export_lod_group(
+    lod_objects,
+    collider,
+    out_path: str,
+    *,
+    identity=None,
+    apply_modifiers: bool = True,
+    verify_roundtrip: bool = True,
+    blackbox: Optional[BlackBox] = None,
+) -> ExportResult:
+    """Export a whole LOD chain plus its collision proxy as one FBX.
+
+    One file, several nodes. Unity's automatic LODGroup route keys off child
+    GameObjects whose names end in ``_LOD0``, ``_LOD1``, ``_LOD2`` sharing a common
+    prefix, and ``law.NAME_MESH`` ("MESH_{family}_{name}_LOD{lod}") already produces
+    exactly that, so the two conventions reconcile without renaming anything. The
+    reconciliation is checked here rather than assumed: a chain whose names do not
+    end in the suffix is rejected, because Unity would then import three sibling
+    renderers with no LODGroup and ``HectonFBXPostprocessor.OnPostprocessModel``
+    would decimate LOD0 into its own ``__AUTO_LOD1``/``__AUTO_LOD2`` above 2000
+    triangles -- shipping five LODs where three were authored.
+
+    The collider rides in the same file as a ``COL_``-prefixed node
+    (``law.COLLIDER_PREFIX``). ``3dmodel.md`` section 9 requires the proxy to be a
+    separate object from the visual mesh, and the Unity authoring script must bind
+    it to a ``MeshCollider`` with ``convex = true`` and never to an LOD mesh.
+    """
+    levels = []
+    for candidate in (lod_objects if isinstance(lod_objects, (list, tuple))
+                      else list(lod_objects)):
+        obj = _as_object(candidate)
+        if obj is not None:
+            levels.append(obj)
+    if not levels:
+        raise GenerationAborted("lod group export refused: no LOD objects")
+
+    notes = []
+    seen = {}
+    for position, obj in enumerate(levels):
+        match = _LOD_SUFFIX.search(obj.name)
+        if match is None:
+            raise GenerationAborted(
+                "lod group export refused: {0!r} does not end in _LOD<n>, so "
+                "Unity cannot build an LODGroup from it. Use "
+                "law.NAME_MESH.format(family=..., name=..., lod=...).".format(
+                    obj.name))
+        index = int(match.group(1))
+        if index in seen:
+            raise GenerationAborted(
+                "lod group export refused: LOD{0} claimed by both {1!r} and "
+                "{2!r}".format(index, seen[index], obj.name))
+        seen[index] = obj.name
+        if index != position:
+            notes.append(
+                "LOD ordering: argument position {0} carries _LOD{1}; the manifest "
+                "records the suffix, not the argument order".format(position,
+                                                                   index))
+    prefixes = set(_LOD_SUFFIX.sub("", obj.name) for obj in levels)
+    if len(prefixes) > 1:
+        raise GenerationAborted(
+            "lod group export refused: LOD names share no common prefix "
+            "({0}); Unity groups by the text before _LOD".format(
+                sorted(prefixes)))
+
+    missing = [i for i in (0, 1, 2) if i not in seen]
+    if missing:
+        notes.append(
+            "LOD chain is incomplete: missing {0}. 3dmodel.md section 7 requires "
+            "LOD0/LOD1/LOD2 unless the asset is an approved impostor/card or an "
+            "editor-only debug mesh; record that exemption in the "
+            "manifest.".format(["LOD" + str(i) for i in missing]))
+
+    exported = list(levels)
+    collider_obj = _as_object(collider)
+    if collider_obj is not None:
+        if not collider_obj.name.startswith(law.COLLIDER_PREFIX):
+            raise GenerationAborted(
+                "lod group export refused: collider {0!r} must start with "
+                "{1!r} (3dmodel.md section 9, law.COLLIDER_PREFIX)".format(
+                    collider_obj.name, law.COLLIDER_PREFIX))
+        exported.append(collider_obj)
+    else:
+        reason = getattr(collider, "reason", "") if collider is not None else ""
+        notes.append(
+            "no collision proxy in this package"
+            + (": " + reason if reason else
+               ". 3DMODEL_FLORA_CORAL.md section 7 allows this for flora/coral "
+               "only; every other family needs a COL_ proxy."))
+
+    result = export_fbx(exported, out_path, apply_modifiers=apply_modifiers,
+                        verify_roundtrip=verify_roundtrip, blackbox=blackbox)
+
+    family = getattr(identity, "family", None)
+    if family is not None:
+        budgets = law.LOD_BUDGETS.get(
+            family if isinstance(family, law.Family) else law.Family(family))
+        if budgets is not None:
+            previous = None
+            for index in sorted(seen):
+                name = seen[index]
+                tris = result.triangle_counts.get(name, -1)
+                budget = budgets.limit(index)
+                verdict = "within" if tris <= budget else "OVER"
+                notes.append(
+                    "LOD{0} {1}: {2} tris vs law budget {3} -> {4}".format(
+                        index, name, tris, budget, verdict))
+                if previous is not None and tris >= previous:
+                    notes.append(
+                        "LOD chain is not monotonic at LOD{0} ({1} >= previous "
+                        "{2}); 3dmodel.md section 7 requires each level to be a "
+                        "reduction of the one before".format(index, tris,
+                                                             previous))
+                previous = tris
+    if collider_obj is not None:
+        tris = result.triangle_counts.get(collider_obj.name, -1)
+        notes.append(
+            "collider {0}: {1} tris vs law.COLLIDER_CONVEX_TRI_MAX {2} -> {3}"
+            .format(collider_obj.name, tris, law.COLLIDER_CONVEX_TRI_MAX,
+                    "within" if tris <= law.COLLIDER_CONVEX_TRI_MAX else "OVER"))
+        notes.append(
+            "Unity side must bind {0} to a MeshCollider with convex=true on a "
+            "collider child, never to an LOD mesh (3dmodel.md section 9)".format(
+                collider_obj.name))
+    notes.append(
+        "Unity LODGroup: create it explicitly from the _LOD suffixed children "
+        "rather than relying on importer auto-detection, then set "
+        "screenRelativeTransitionHeight per level with a hysteresis band and "
+        "fadeMode=CrossFade with animateCrossFading=false (dithered). "
+        "3dmodel.md section 7 bans alpha-blended cross-fade for dense "
+        "flora/coral on the compact lane; dither is not alpha blend.")
+
+    return ExportResult(
+        fbx_path=result.fbx_path,
+        object_names=result.object_names,
+        triangle_counts=result.triangle_counts,
+        has_vertex_colors=result.has_vertex_colors,
+        has_custom_normals=result.has_custom_normals,
+        has_tangents=result.has_tangents,
+        uv_layer_names=result.uv_layer_names,
+        unit_scale=result.unit_scale,
+        roundtrip_verified=result.roundtrip_verified,
+        roundtrip_notes=tuple(list(result.roundtrip_notes) + notes),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Unity import contract
+# ---------------------------------------------------------------------------
+# Families whose runtime animation comes from an offline-baked Vertex Animation
+# Texture. AGENTS.md "Zero-GC Scatter & Animation Protocol": "Kelps, corals, and
+# fish must use offline baked Vertex Animation Textures (VAT) and
+# BatchRendererGroup (BRG) indirect rendering." A VAT indexes per-vertex data by
+# vertex id, so any importer step that reorders or welds vertices desynchronises
+# the texture from the mesh.
+_VAT_FAMILIES = (law.Family.FLORA, law.Family.FLORA_CLUSTER, law.Family.FAUNA)
+
+#: Real project layers, read from ProjectSettings/TagManager.asset. Not invented:
+#: AGENTS.md forbids changing Tags/Layers, so the importer script must select from
+#: what exists.
+_FAMILY_LAYER = {
+    law.Family.SMALL_PROP: "World_Static",
+    law.Family.BASE_MODULE: "BaseModule",
+    law.Family.WRECKAGE: "World_Static",
+    law.Family.GEOLOGY: "World_Static",
+    law.Family.FLORA: "Flora_NonColliding",
+    law.Family.FLORA_CLUSTER: "Flora_NonColliding",
+    law.Family.FAUNA: "Fauna_Hitbox",
+}
+
+
+def unity_import_notes(family) -> dict:
+    """The exact `ModelImporter` state the Unity-side authoring script must set.
+
+    Values are flat so a C# reader can consume them directly; ``why`` carries the
+    bible line behind each one so the pair cannot drift.
+    """
+    resolved = family if isinstance(family, law.Family) else law.Family(family)
+    surface = law.FAMILY_SURFACE_CLASS[resolved]
+    vat = resolved in _VAT_FAMILIES
+
+    importer = {
+        "globalScale": 1.0,
+        "useFileScale": True,
+        "bakeAxisConversion": False,
+        "importNormals": "Import",
+        "normalSmoothingAngle": law.SMOOTH_ANGLE_DEG,
+        "importBlendShapeNormals": "None",
+        "importTangents": "CalculateMikk",
+        "importColors": True,
+        "meshCompression": "Off",
+        "isReadable": False,
+        "optimizeMeshVertices": not vat,
+        "optimizeMeshPolygons": True,
+        "meshOptimizationFlags": "PolygonOrder" if vat else "Everything",
+        "weldVertices": not vat,
+        "indexFormat": "Auto",
+        "keepQuads": False,
+        "generateSecondaryUV": False,
+        "materialImportMode": "None",
+        "addCollider": False,
+        "importAnimation": False,
+        "animationType": "None",
+        "importBlendShapes": False,
+        "importVisibility": False,
+        "importCameras": False,
+        "importLights": False,
+        "importConstraints": False,
+        "preserveHierarchy": True,
+        "sortHierarchyByName": False,
+    }
+
+    why = {
+        "globalScale":
+            "The FBX already carries real-world size. law.py expresses every "
+            "dimension in metres (BEVEL_RANGES, MIN_BOUNDS_EXTENT_M); any scale "
+            "factor other than 1.0 would silently rescale those budgets.",
+        "useFileScale":
+            "Measured: the exporter writes geometry in centimetres and leaves the "
+            "header UnitScaleFactor at {0:g}, so Convert Units is what turns 175.0 "
+            "back into 1.75 m. Off by mistake and the asset arrives {1:g}x too "
+            "large.".format(FBX_HEADER_UNIT_SCALE_FACTOR, FBX_UNITS_PER_METRE),
+        "bakeAxisConversion":
+            "bake_space_transform=True already baked the axis conversion into the "
+            "vertex data on the Blender side, so the FBX node transform is "
+            "identity and Unity has nothing left to bake. Enabling it too would "
+            "apply a second conversion.",
+        "importNormals":
+            "3dmodel.md section 3: 'RecalculateNormals, RecalculateTangents, and "
+            "RecalculateBounds are allowed only as editor fallback after a "
+            "documented failure, never as the default strategy. A generator owns "
+            "normals, tangents, UVs, and bounds because it owns the geometry.' "
+            "mesh_ops.apply_shading_basis bakes the section 4 weighted-normal "
+            "formula into custom split normals; Calculate throws that away and "
+            "re-derives from an angle, which is the bevel shading work lost.",
+        "normalSmoothingAngle":
+            "law.SMOOTH_ANGLE_DEG, the same value mesh_ops used for "
+            "shade_auto_smooth. Inert while importNormals=Import, but it means a "
+            "forced fallback to Calculate reproduces the authored split instead "
+            "of a different one.",
+        "importBlendShapeNormals":
+            "There are no blend shapes: the exporter runs with bake_anim=False "
+            "and object_types={'MESH'}.",
+        "importTangents":
+            "3dmodel.md section 3 requires 'Tangent | Float32 x4 ... "
+            "MikkTSpace-compatible. w is handedness.' Under MikkTSpace the tangent "
+            "is fully determined by position, normal and UV0, and all three are "
+            "measured to survive this export exactly, so CalculateMikk reproduces "
+            "the same basis expressed in Unity's own left-handed frame. The FBX "
+            "does carry tangent and binormal layers (use_tspace=True, verified "
+            "present in the file), so 'Import' is available -- but Blender's "
+            "importer discards tangents, so no round trip inside Blender can prove "
+            "the w sign survives Unity's handedness flip. Switching to 'Import' "
+            "needs a Unity-side normal-map A/B capture first. Matches the existing "
+            "project policy in HectonFBXPostprocessor.ApplyImporterPolicy.",
+        "importColors":
+            "The colour stream is data, not decoration: law.VCOL_CONTRACT for "
+            "{0} is {1} (3dmodel.md sections 4 and 5). Section 8: 'Missing "
+            "tangents, colors, UVs, or masks are validation failures when the "
+            "material reads them.' Exported with colors_type='LINEAR' so the "
+            "numbers arrive unwarped by an sRGB transfer "
+            "curve.".format(surface.value, list(law.VCOL_CONTRACT[surface])),
+        "meshCompression":
+            "Compression quantises positions, normals, tangents and UVs. "
+            "3dmodel.md section 10 gates 'Normals normalized within 0.995 to 1.005 "
+            "length' and section 3 fixes a stable Float32 layout; quantised "
+            "normals fail the first and quantised vertex colours corrupt the AO "
+            "and sway masks. Note the existing project policy sets Medium for "
+            "Assets/ScifiFacility third-party models only.",
+        "isReadable":
+            "AGENTS.md Runtime Hot-Path Law forbids mesh.vertices, mesh.normals "
+            "and mesh.triangles in hot paths, and 3dmodel.md section 0A forbids "
+            "runtime mutation of vertex buffers, so nothing needs the CPU copy. "
+            "Read/Write on doubles mesh memory against the compact-lane 1800 MB "
+            "VRAM ceiling. Colliders do not need it: PhysX cooks at import, and "
+            "runtime collider cooking is rejected anyway.",
+        "optimizeMeshVertices":
+            ("Off for {0}: this family renders through a baked VAT, which indexes "
+             "per-vertex animation by vertex id. Reordering vertices desynchronises "
+             "the texture from the mesh and the asset animates as noise."
+             if vat else
+             "On: reordering for GPU cache locality is free performance and "
+             "nothing in this family indexes the mesh by vertex id.").format(
+                resolved.value),
+        "optimizeMeshPolygons":
+            "Triangle-order optimisation touches no per-vertex identity, so it is "
+            "safe even on VAT families.",
+        "meshOptimizationFlags":
+            ("PolygonOrder only, for the VAT vertex-id reason above."
+             if vat else
+             "Everything: both vertex and polygon order may be optimised."),
+        "weldVertices":
+            ("Off for {0}: welding changes the vertex count and therefore the VAT "
+             "row mapping.".format(resolved.value) if vat else
+             "On: welding only merges vertices whose position, normal and UV all "
+             "match, so the deliberate splits from the section 4 smoothing groups "
+             "survive it."),
+        "indexFormat":
+            "Auto picks 16-bit under 65k vertices. law.LOD_BUDGETS tops out at a "
+            "35 000 triangle fauna body, so most assets stay 16-bit.",
+        "keepQuads":
+            "The FBX is already triangulated (use_triangles=True), so this is "
+            "moot; leaving it off keeps the imported topology identical to the "
+            "measured one.",
+        "generateSecondaryUV":
+            "MUST stay off. Unity's secondary-UV generator OVERWRITES UV1, and "
+            "3dmodel.md section 3 makes TexCoord1 an authored stream: 'Lightmap, "
+            "detail, atlas remap, or packed baked masks when required.' Note "
+            "HectonBakeryUvAudit.RunAudit() sets generateSecondaryUV=true and "
+            "reimports for models under its managed roots -- a generated package "
+            "placed there loses its authored UV1.",
+        "materialImportMode":
+            "3dmodel.md section 0 requires 'Static material references named "
+            "MAT_*, never runtime material clones', and "
+            "PROCEDURAL_ASSET_PIPELINE.md requires shared "
+            "MAT_<Family>_<SurfaceRole> assets. Letting Unity build materials from "
+            "the FBX creates per-model materials and breaks the SRP Batcher and "
+            "atlas policy. The exporter ships nothing to import: path_mode='STRIP' "
+            "and embed_textures=False. Note the existing project policy forces "
+            "materialLocation=InPrefab for its managed roots.",
+        "addCollider":
+            "3dmodel.md section 9: 'LOD0 visual meshes must never be assigned "
+            "directly to production MeshCollider components.' Generate Colliders "
+            "does exactly that. Collision comes from the COL_ proxy in the same "
+            "FBX.",
+        "importAnimation":
+            "Exported with bake_anim=False; there is no animation data.",
+        "animationType":
+            "Static geometry. An Animator on a generated prop would also breach "
+            "the Zero-GC Scatter protocol.",
+        "importBlendShapes":
+            "None present; matches the existing project importer policy.",
+        "importVisibility":
+            "Blender visibility flags are authoring state, not runtime truth; "
+            "matches the existing project importer policy.",
+        "importCameras":
+            "preview.py builds a camera into the same scene. object_types={'MESH'} "
+            "already excludes it, and this is the second gate.",
+        "importLights":
+            "Same reason as cameras: preview.py builds lights.",
+        "importConstraints":
+            "No rigging in a generated static package.",
+        "preserveHierarchy":
+            "The _LOD0/_LOD1/_LOD2 and COL_ nodes must stay separate children for "
+            "the LODGroup and the collider binding to work.",
+        "sortHierarchyByName":
+            "Off: the authored node order already reflects LOD order, and "
+            "resorting would make the imported hierarchy depend on naming rather "
+            "than on the manifest.",
+    }
+
+    collider_expectation = {
+        "proxyNamePrefix": law.COLLIDER_PREFIX,
+        "visualNamePrefixes": [law.VISUAL_PREFIX, law.LOD_PREFIX],
+        "convexTriangleMax": law.COLLIDER_CONVEX_TRI_MAX,
+        "meshColliderConvex": True,
+        "meshColliderOnLod0": False,
+        "defaultCollision": (
+            "none" if resolved in law.FAMILIES_WITHOUT_DEFAULT_COLLISION
+            else "convex proxy or primitive compound"),
+        "physicsLayer": _FAMILY_LAYER[resolved],
+        "physicsLayerNote":
+            "Layer name read from ProjectSettings/TagManager.asset. AGENTS.md "
+            "forbids changing Tags/Layers without explicit instruction, so the "
+            "authoring script must resolve it by name and fail loudly if absent -- "
+            "it must not create one. COMMON_SENSE.md rule 2 additionally requires "
+            "every raycast against these colliders to pass an explicit "
+            "LayerMask.GetMask(...) plus QueryTriggerInteraction.Ignore.",
+        "interactionAnchors": list(law.INTERACTION_ANCHORS),
+        "interactionAnchorNote":
+            "PROCEDURAL_ASSET_PIPELINE.md 'Collision And Interaction Package': "
+            "anchors must be serialised, never discovered by runtime scene search.",
+    }
+
+    lod_expectation = {
+        "createLodGroupExplicitly": True,
+        "childSuffixPattern": "_LOD<n>",
+        "nameTemplate": law.NAME_MESH,
+        "requiredLevels": [0, 1, 2],
+        "budgets": {
+            "lod0": law.LOD_BUDGETS[resolved].lod0,
+            "lod1": law.LOD_BUDGETS[resolved].lod1,
+            "lod2": law.LOD_BUDGETS[resolved].lod2,
+            "impostorMin": law.LOD_BUDGETS[resolved].impostor_min,
+            "impostorMax": law.LOD_BUDGETS[resolved].impostor_max,
+        },
+        "fadeMode": "CrossFade",
+        "animateCrossFading": False,
+        "why":
+            "3dmodel.md section 7 requires a complete LOD0/LOD1/LOD2 chain and "
+            "'LOD switching must use hysteresis and dithered cross-fade where the "
+            "renderer supports it. Alpha-blended cross-fade is forbidden for dense "
+            "flora/coral on MX350 because it creates overdraw.' CrossFade with "
+            "animateCrossFading=false is the dithered path, not alpha blend. "
+            "AGENTS.md requires a 3-5 m or 2-3 s hysteresis band on any LOD "
+            "switch. Build the LODGroup explicitly: relying on importer "
+            "auto-detection risks HectonFBXPostprocessor generating its own "
+            "__AUTO_LOD1/__AUTO_LOD2 above 2000 triangles.",
+    }
+
+    texture_expectation = {
+        "albedo": {"compression": "BC7", "sRGB": True, "mips": True},
+        "normal": {"compression": "BC5", "sRGB": False, "mips": True,
+                   "textureType": "NormalMap"},
+        "mrao": {"compression": "BC7", "sRGB": False, "mips": True,
+                 "channels": "R=Metallic G=Roughness-or-Smoothness B=AO A=Emission"},
+        "namePrefix": law.NAME_TEXTURE,
+        "why":
+            "AGENTS.md Visual And Asset Discipline: 'Textures default to BC7 for "
+            "albedo/roughness/AO and BC5 for normals where applicable.' "
+            "3DMODEL_TEXTURES_MATERIALS.md section 3 and section 8: albedo sRGB "
+            "true, normal NormalMap type with sRGB false, masks sRGB false, mips "
+            "enabled for world textures, and the manifest must state whether G is "
+            "roughness or smoothness rather than guessing.",
+    }
+
+    return {
+        "family": resolved.value,
+        "surfaceClass": surface.value,
+        "modelImporter": importer,
+        "why": why,
+        "collider": collider_expectation,
+        "lodGroup": lod_expectation,
+        "textureImport": texture_expectation,
+        "vertexColorContract": list(law.VCOL_CONTRACT[surface]),
+        "exportSettingsUsed": _serialisable_settings(),
+        "knownProjectConflicts": [
+            "HectonFBXPostprocessor.OnPreprocessModel forces "
+            "importNormals=ModelImporterNormals.Calculate for every FBX under "
+            "Assets/_Project/Art, Assets/_Project/_PROLOGUE_CONTENT/Models and "
+            "Assets/ScifiFacility. A generated package placed under those roots "
+            "loses its authored weighted split normals silently.",
+            "The same postprocessor forces "
+            "materialLocation=ModelImporterMaterialLocation.InPrefab, which "
+            "conflicts with materialImportMode=None and the shared MAT_* policy.",
+            "HectonBakeryUvAudit.RunAudit() enables generateSecondaryUV and "
+            "reimports, which overwrites authored UV1.",
+            "HectonFBXPostprocessor.OnPostprocessModel builds a fallback LODGroup "
+            "with its own decimation above 2000 triangles when no LODGroup is "
+            "present.",
+        ],
+        "proofStatus": PENDING_MARKER,
+        "proofStatusNote":
+            "Every value above is derived from the bibles and from measured FBX "
+            "content. None of it has been applied in Unity by this module: no "
+            "Unity import log, no Console output and no visual capture exists for "
+            "it.",
+    }
+
+
+def _serialisable_settings() -> dict:
+    """EXPORT_SETTINGS with the set() value turned into a sorted list for JSON."""
+    out = {}
+    for key, value in EXPORT_SETTINGS.items():
+        out[key] = sorted(value) if isinstance(value, set) else value
+    out["fbxUnitsPerMetre"] = FBX_UNITS_PER_METRE
+    out["fbxHeaderUnitScaleFactor"] = FBX_HEADER_UNIT_SCALE_FACTOR
+    out["blenderToFbxAxes"] = "(x, y, z) -> (x, z, -y)"
+    out["blenderToUnityAxes"] = "(x, y, z) -> (x, z, y)"
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Manifest
+# ---------------------------------------------------------------------------
+
+def manifest_filename(family, name: str) -> str:
+    """``law.NAME_MANIFEST`` plus ``.json``, so no caller hardcodes the template."""
+    resolved = family if isinstance(family, law.Family) else law.Family(family)
+    return law.NAME_MANIFEST.format(family=resolved.value, name=name) + ".json"
+
+
+def _project_relative(path: str, outside: list) -> str:
+    """Project-relative, forward-slashed path.
+
+    ``AGENTS.md`` ``[RULE] Relative Path Requirement``: "Hardcoding absolute
+    developer paths ... is strictly banned. All screenshot, log, config, and data
+    directories must be resolved relatively from the project root." A manifest is a
+    durable artefact, so an absolute ``C:\\Users\\...`` inside it is the same
+    violation as one in source. Anything genuinely outside the repo is reduced to
+    its basename and reported, never emitted whole.
+    """
+    if not path:
+        return ""
+    try:
+        root = law.project_root()
+    except RuntimeError:
+        outside.append(os.path.basename(path))
+        return os.path.basename(path)
+    absolute = os.path.abspath(path)
+    relative = os.path.relpath(absolute, root)
+    if relative.startswith(".."):
+        outside.append(os.path.basename(absolute))
+        return os.path.basename(absolute)
+    return relative.replace("\\", "/")
+
+
+def _mesh_entry(item, outside: list) -> dict:
+    """Normalise one mesh record.
+
+    Accepts a ``validate.MeshReport`` (duck-typed, so validate.py stays
+    uncoupled), a ``mesh_ops.LodLevel``, or a plain dict. MeshReport is the
+    interesting case: it already carries every field 3dmodel.md section 10 wants in
+    the proof artefact.
+    """
+    if isinstance(item, dict):
+        entry = dict(item)
+        if "path" in entry:
+            entry["path"] = _project_relative(entry["path"], outside)
+        return entry
+
+    name = getattr(item, "name", None)
+    if name is None:
+        obj = getattr(item, "obj", None)
+        name = getattr(obj, "name", "") if obj is not None else ""
+    lod = getattr(item, "lod_index", None)
+    if lod is None:
+        lod = getattr(item, "index", -1)
+    match = _LOD_SUFFIX.search(str(name))
+    if (lod is None or lod < 0) and match is not None:
+        lod = int(match.group(1))
+
+    entry = {
+        "name": str(name),
+        "lod": int(lod) if lod is not None else -1,
+        "triangles": int(getattr(item, "triangle_count",
+                                 getattr(item, "triangles", -1))),
+        "vertices": int(getattr(item, "vertex_count", -1)),
+        "submeshes": int(getattr(item, "submesh_count", -1)),
+        "uvLayers": list(getattr(item, "uv_layers", ()) or ()),
+        "colorLayers": list(getattr(item, "color_layers", ()) or ()),
+        "hasTangentBasis": bool(getattr(item, "has_tangent_basis", False)),
+        "boundsMin": list(getattr(item, "bounds_min", ()) or ()),
+        "boundsMax": list(getattr(item, "bounds_max", ()) or ()),
+        "digest": str(getattr(item, "digest", "") or ""),
+        "validatorVersion": str(getattr(item, "validator_version", "") or ""),
+    }
+    budget = getattr(item, "budget", None)
+    if budget is not None:
+        entry["lodBudget"] = int(budget)
+        entry["withinBudget"] = bool(getattr(item, "within_budget",
+                                             entry["triangles"] <= int(budget)))
+    failures = getattr(item, "failures", None)
+    if failures is not None:
+        entry["validation"] = {
+            "passed": bool(getattr(item, "passed", not failures)),
+            "failures": [str(f) for f in failures],
+            "warnings": [str(w) for w in (getattr(item, "warnings", ()) or ())],
+        }
+    return entry
+
+
+def _collider_entry(item, outside: list) -> dict:
+    if isinstance(item, dict):
+        entry = dict(item)
+        if "path" in entry:
+            entry["path"] = _project_relative(entry["path"], outside)
+        return entry
+    obj = getattr(item, "obj", None)
+    triangles = int(getattr(item, "triangles", -1))
+    return {
+        "name": getattr(obj, "name", "") if obj is not None else "",
+        "kind": str(getattr(item, "kind", "unknown")),
+        "triangles": triangles,
+        "triangleBudget": law.COLLIDER_CONVEX_TRI_MAX,
+        "withinBudget": bool(getattr(item, "within_budget",
+                                     triangles <= law.COLLIDER_CONVEX_TRI_MAX)),
+        "reason": str(getattr(item, "reason", "") or ""),
+    }
+
+
+def _named_entry(item, outside: list, kind: str) -> dict:
+    if isinstance(item, dict):
+        entry = dict(item)
+        if "path" in entry:
+            entry["path"] = _project_relative(entry["path"], outside)
+        return entry
+    if isinstance(item, str):
+        return {"name": os.path.basename(item),
+                "path": _project_relative(item, outside)} \
+            if (os.sep in item or "/" in item) else {"name": item}
+    material = getattr(item, "name", None)
+    if material is not None:
+        return {"name": str(material)}
+    raise TypeError("cannot record {0} entry of type {1}".format(
+        kind, type(item).__name__))
+
+
+def write_manifest(
+    path: str,
+    identity,
+    meshes,
+    materials,
+    textures,
+    colliders,
+    proof_paths,
+    *,
+    export_result: Optional[ExportResult] = None,
+    uv_summary: Optional[dict] = None,
+    alpha_meaning: str = "",
+    lod_exempt: bool = False,
+    extra: Optional[dict] = None,
+) -> str:
+    """Write the package manifest as JSON and return the path.
+
+    ``PROCEDURAL_ASSET_PIPELINE.md`` "Proof Artifacts" opens with "A generator
+    report that only says 'created assets' is invalid", so this function does not
+    accept a thin payload: a manifest missing a bible-required field is written with
+    that field named in ``manifestGaps`` and ``productionReady`` forced to false --
+    "If proof is missing, the asset is not production-ready, even if the prefab
+    exists."
+
+    The manifest carries no wall-clock timestamp. "Every procedural asset must be
+    reproducible" and "No generated mesh may depend on ... wall-clock time"
+    (Deterministic Source Contract); a time field would make two byte-identical
+    packages produce different manifests and a different validation hash. Run
+    timing belongs in the black-box dump and the task log.
+    """
+    if identity is None:
+        raise ValueError(
+            "manifest refused: PROCEDURAL_ASSET_PIPELINE.md 'Deterministic Source "
+            "Contract' requires a GeneratorIdentity (seed, generator name and "
+            "semantic version, GlobalQualityWeight, family, scale in metres, "
+            "camera distance class, platform lane)")
+    meshes = list(meshes or ())
+    if not meshes:
+        raise ValueError(
+            "manifest refused: no mesh records. 'Required Output Package' lists "
+            "MESH_<Family>_<Name>_LOD0/1/2 as mandatory content")
+
+    outside = []
+    gaps = []
+
+    identity_block = identity.as_dict() if hasattr(identity, "as_dict") \
+        else dict(identity)
+    for required in ("seed", "generator", "generatorVersion", "qualityWeight",
+                     "family", "scaleMeters", "cameraDistanceClass",
+                     "platformLane"):
+        value = identity_block.get(required)
+        if value is None or (isinstance(value, str) and not value.strip()):
+            gaps.append("identity." + required)
+    if not identity_block.get("sourceReferences"):
+        gaps.append("identity.sourceReferences (source texture/reference IDs)")
+
+    family = identity_block.get("family", law.Family.SMALL_PROP.value)
+    try:
+        resolved_family = law.Family(family)
+    except ValueError:
+        raise ValueError("manifest refused: unknown family " + repr(family))
+    surface = law.FAMILY_SURFACE_CLASS[resolved_family]
+
+    mesh_entries = [_mesh_entry(m, outside) for m in meshes]
+    collider_entries = [_collider_entry(c, outside) for c in (colliders or ())]
+    material_entries = [_named_entry(m, outside, "material")
+                        for m in (materials or ())]
+    texture_entries = [_named_entry(t, outside, "texture")
+                       for t in (textures or ())]
+    proofs = [_project_relative(p, outside) for p in (proof_paths or ())]
+
+    if not material_entries:
+        gaps.append("materials (MAT_<Family>_<SurfaceRole>, 3dmodel.md section 6 "
+                    "slot 0 is mandatory)")
+    if not texture_entries:
+        gaps.append("textures (TX_<Family>_<Set>_<Role>; "
+                    "3DMODEL_TEXTURES_MATERIALS.md section 2: 'Missing texture is "
+                    "fatal unless the generator is explicitly producing a "
+                    "placeholder diagnostic asset')")
+    if not proofs:
+        gaps.append("proofPaths (screenshot or render capture; "
+                    "PROCEDURAL_ASSET_PIPELINE.md 'Proof Artifacts')")
+    if uv_summary is None:
+        gaps.append("uvSummary (UV density and atlas utilisation summary; "
+                    "3DMODEL_TEXTURES_MATERIALS.md section 4 texelDensity and "
+                    "stretchRatio)")
+    if not collider_entries:
+        if resolved_family in law.FAMILIES_WITHOUT_DEFAULT_COLLISION:
+            pass  # 3DMODEL_FLORA_CORAL.md section 7: default flora collision is none.
+        else:
+            gaps.append("colliders (3dmodel.md section 9 requires a COL_ proxy for "
+                        "this family)")
+    if surface is law.SurfaceClass.ORGANIC and not alpha_meaning.strip():
+        gaps.append("alphaMeaning (3dmodel.md section 5: the alpha channel meaning "
+                    "'must be documented in the asset manifest')")
+
+    lod_indices = sorted(set(e["lod"] for e in mesh_entries if e["lod"] >= 0))
+    budgets = law.LOD_BUDGETS[resolved_family]
+    missing_lods = [i for i in (0, 1, 2) if i not in lod_indices]
+    if missing_lods and not lod_exempt:
+        gaps.append("lodChain (missing LOD{0}; 3dmodel.md section 7)".format(
+            ", LOD".join(str(i) for i in missing_lods)))
+
+    monotonic = True
+    previous = None
+    for index in lod_indices:
+        current = min(e["triangles"] for e in mesh_entries if e["lod"] == index)
+        if previous is not None and current >= previous:
+            monotonic = False
+        previous = current
+
+    mesh_failures = 0
+    for entry in mesh_entries:
+        validation = entry.get("validation")
+        if validation is not None and not validation.get("passed", True):
+            mesh_failures += len(validation.get("failures", ()))
+
+    payload = {
+        "schema": MANIFEST_SCHEMA,
+        "exporterVersion": EXPORTER_VERSION,
+        "forgeVersion": law.FORGE_VERSION,
+        "identity": identity_block,
+        "surfaceClass": surface.value,
+        "naming": {
+            "mesh": law.NAME_MESH,
+            "material": law.NAME_MATERIAL,
+            "texture": law.NAME_TEXTURE,
+            "collider": law.NAME_COLLIDER,
+            "prefab": law.NAME_PREFAB_GENERATED,
+            "manifest": law.NAME_MANIFEST,
+            "namingNote":
+                "Templates come from law.py, which follows AGENTS.md 'Project "
+                "Shape' (generated prefabs GEN_*, textures TX_*). "
+                "PROCEDURAL_ASSET_PIPELINE.md 'Required Output Package' spells the "
+                "same two artefacts PF_<Family>_<Name>.prefab and "
+                "TEX_<Family>_<AtlasOrUnique>_<Role>.png; root AGENTS.md outranks "
+                "it per the authority spine, so GEN_ and TX_ are used. Flagged for "
+                "the lead rather than resolved here.",
+        },
+        "vertexColorContract": {
+            "channels": list(law.VCOL_CONTRACT[surface]),
+            "alphaMeaning": alpha_meaning,
+            "exportedColorSpace": EXPORT_SETTINGS["colors_type"],
+            "note":
+                "Exported with colors_type='LINEAR'. Measured in the written file: "
+                "an authored linear 0.25 is stored as 0.25016 with LINEAR and as "
+                "0.53725 with SRGB. Unity copies the raw FBX float into "
+                "Mesh.colors32 without a colour conversion, so SRGB would gamma "
+                "warp every mask channel.",
+        },
+        "meshes": mesh_entries,
+        "lod": {
+            "levels": lod_indices,
+            "exempt": bool(lod_exempt),
+            "monotonic": monotonic,
+            "budgets": {
+                "lod0": budgets.lod0, "lod1": budgets.lod1, "lod2": budgets.lod2,
+                "impostorMin": budgets.impostor_min,
+                "impostorMax": budgets.impostor_max,
+            },
+            "triangleCountsPerLod": {
+                "LOD{0}".format(index): min(
+                    e["triangles"] for e in mesh_entries if e["lod"] == index)
+                for index in lod_indices
+            },
+        },
+        "materials": material_entries,
+        "materialSlotContract": {
+            "slot0": "primary structural/tissue",
+            "slot1": "exposed cut, bevel, edge, scar, fracture",
+            "slot2": "secondary trim, gasket, barnacle, mineral vein, growth plate",
+            "slot3": "emissive/bioluminescent/details",
+            "maxSlots": law.MATERIAL_SLOT_MAX,
+        },
+        "textures": texture_entries,
+        "colliders": collider_entries,
+        "colliderSummary": {
+            "count": len(collider_entries),
+            "types": sorted(set(c.get("kind", "unknown")
+                                for c in collider_entries)),
+            "triangleBudget": law.COLLIDER_CONVEX_TRI_MAX,
+            "allWithinBudget": all(c.get("withinBudget", False)
+                                   for c in collider_entries)
+            if collider_entries else None,
+        },
+        "uvSummary": uv_summary if uv_summary is not None else {
+            "status": "NOT_MEASURED",
+            "required":
+                "texelDensity, stretchRatio, island count, atlas rect utilisation, "
+                "padding and edge bleed (3DMODEL_TEXTURES_MATERIALS.md sections 4 "
+                "and 5; law.UV_STRETCH_MAX_HERO / UV_TEXEL_MISMATCH_MAX / "
+                "UV_MIN_ISLAND_PIXELS / ATLAS_PADDING_PX hold the thresholds)",
+        },
+        "export": {
+            "fbx": _project_relative(
+                export_result.fbx_path if export_result else "", outside),
+            "objectNames": list(export_result.object_names) if export_result else [],
+            "unitScaleFbxUnitsPerMetre":
+                export_result.unit_scale if export_result else FBX_UNITS_PER_METRE,
+            "hasVertexColors":
+                bool(export_result.has_vertex_colors) if export_result else None,
+            "hasCustomNormals":
+                bool(export_result.has_custom_normals) if export_result else None,
+            "hasTangents":
+                bool(export_result.has_tangents) if export_result else None,
+            "uvLayerNames":
+                list(export_result.uv_layer_names) if export_result else [],
+            "roundtripVerified":
+                bool(export_result.roundtrip_verified) if export_result else False,
+            "settings": _serialisable_settings(),
+        },
+        "unityImport": unity_import_notes(resolved_family),
+        "validation": {
+            "meshGateFailures": mesh_failures,
+            "passed": mesh_failures == 0 and monotonic and not missing_lods,
+            "validatorVersion": next(
+                (e.get("validatorVersion") for e in mesh_entries
+                 if e.get("validatorVersion")), ""),
+            "note":
+                "Mesh, LOD-chain and collider gates are owned by validate.py and "
+                "must have run before this manifest was written "
+                "(PROCEDURAL_ASSET_PIPELINE.md 'Validation Before Save'). This "
+                "block reports their result; it does not re-run them.",
+        },
+        "proof": {
+            "paths": proofs,
+            "roundtripNotes":
+                list(export_result.roundtrip_notes) if export_result else [],
+            "status": PENDING_MARKER,
+            "statusNote":
+                "Static and Blender-side evidence only. No Unity import log, "
+                "Console output, Frame Debugger capture, profiler capture or "
+                "in-engine screenshot exists for this package.",
+        },
+        "manifestGaps": gaps,
+        "productionReady": not gaps and mesh_failures == 0,
+    }
+    if outside:
+        payload["pathsOutsideProjectRoot"] = sorted(set(outside))
+    if extra:
+        payload["extra"] = extra
+
+    # Deterministic hash over the whole payload minus the hash fields themselves.
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"),
+                           ensure_ascii=True)
+    digest = hashlib.blake2b(canonical.encode("utf-8"), digest_size=16).hexdigest()
+    payload["validationHashAlgorithm"] = "blake2b-128 over the canonical JSON of " \
+                                         "every other field, sorted keys"
+    payload["validationHash"] = digest
+
+    path = os.path.abspath(path)
+    directory = os.path.dirname(path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=1, sort_keys=True)
+        handle.write("\n")
+    return path

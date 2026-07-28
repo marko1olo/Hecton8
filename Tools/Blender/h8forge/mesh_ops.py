@@ -259,6 +259,13 @@ def bevel_hard_edges(
 # Shading basis  --  3dmodel.md section 4, smoothing groups + weighted normals
 # ---------------------------------------------------------------------------
 
+@dataclass
+class ShadingResult:
+    smooth_polygons: int
+    sharp_edges: int
+    weighted_applied: bool
+
+
 def apply_shading_basis(
     obj: bpy.types.Object,
     *,
@@ -266,40 +273,82 @@ def apply_shading_basis(
     weighted: bool = True,
     keep_sharp: bool = True,
     blackbox: Optional[BlackBox] = None,
-) -> None:
-    """Angle-based smoothing plus area/angle weighted normals.
+) -> ShadingResult:
+    """Angle-based smoothing plus area/angle weighted normals, applied at DATA level.
 
-    The bible's formula:
-        ``weightedNormal(v, group) = normalize(sum(faceNormal[i] * faceArea[i] * cornerAngleWeight[i]))``
-    is exactly Blender's ``WEIGHTED_NORMAL`` modifier with ``mode='FACE_AREA_WITH_ANGLE'``,
-    so we use it instead of hand-rolling a fold that would need its own proof.
+    ``bpy.ops.object.shade_auto_smooth`` -- the documented Blender 4.1+ replacement for
+    the removed ``Mesh.use_auto_smooth`` -- returns ``{'CANCELLED'}`` under
+    ``-b --factory-startup`` and adds NO modifier. Measured on 4.5.9: the operator
+    reports CANCELLED, ``obj.modifiers`` stays empty, and every ``polygon.use_smooth``
+    remains False. So the previous implementation was a complete no-op in exactly the
+    headless mode this whole pipeline runs in, and every asset it produced was
+    flat-shaded. That is not a cosmetic loss: flat shading destroys the specular
+    response the bevel pass in ``3dmodel.md`` section 4 exists to create, so a correctly
+    beveled mesh still read as faceted programmer output.
 
-    Blender 4.1 removed ``Mesh.use_auto_smooth``. ``shade_auto_smooth`` adds the
-    "Smooth by Angle" modifier, which is the supported route in 4.5. Setting the old
-    attribute here would raise, and guarding it with ``hasattr`` would silently skip
-    shading -- both worse than using the current API directly.
+    The fix does the same job without an operator:
+      1. mark every polygon smooth;
+      2. mark edges whose dihedral angle exceeds the threshold as SHARP -- this IS what
+         "Smooth by Angle" does, expressed as mesh data instead of a modifier;
+      3. apply WEIGHTED_NORMAL, which is precisely the bible's formula
+         ``normalize(sum(faceNormal * faceArea * cornerAngleWeight))`` in
+         ``mode='FACE_AREA_WITH_ANGLE'``, with ``keep_sharp`` honouring step 2.
+
+    Data-level is also strictly better here: it is deterministic, it does not depend on
+    operator context, and the sharp-edge set is inspectable afterwards.
     """
-    view_layer = bpy.context.view_layer
-    previous_active = view_layer.objects.active
-    _make_sole_active(obj)
+    mesh = obj.data
+    for polygon in mesh.polygons:
+        polygon.use_smooth = True
 
-    bpy.ops.object.shade_auto_smooth(angle=math.radians(smooth_angle_deg))
+    threshold = math.radians(smooth_angle_deg)
+    sharp_count = 0
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    try:
+        for edge in bm.edges:
+            if len(edge.link_faces) != 2:
+                # A boundary edge has no dihedral angle. Leaving it smooth avoids a
+                # shading seam along an intentionally open shell rim.
+                continue
+            angle = edge.calc_face_angle()
+            is_smooth = angle <= threshold
+            edge.smooth = is_smooth
+            if not is_smooth:
+                sharp_count += 1
+        bm.to_mesh(mesh)
+    finally:
+        bm.free()
+    mesh.update()
 
+    weighted_applied = False
     if weighted:
+        view_layer = bpy.context.view_layer
+        previous_active = view_layer.objects.active
         modifier = obj.modifiers.new(name="H8_WeightedNormal", type="WEIGHTED_NORMAL")
         modifier.mode = "FACE_AREA_WITH_ANGLE"
         modifier.weight = 50
         modifier.keep_sharp = keep_sharp
-        bpy.ops.object.modifier_apply(modifier=modifier.name)
+        _make_sole_active(obj)
+        result = bpy.ops.object.modifier_apply(modifier=modifier.name)
+        weighted_applied = "FINISHED" in result
+        if not weighted_applied and modifier.name in [m.name for m in obj.modifiers]:
+            obj.modifiers.remove(modifier)
+        if previous_active is not None:
+            view_layer.objects.active = previous_active
 
-    if previous_active is not None:
-        view_layer.objects.active = previous_active
+    smooth_polygons = sum(1 for p in obj.data.polygons if p.use_smooth)
     if blackbox is not None:
         blackbox.record(
             "apply_shading_basis",
             vertex_count=len(obj.data.vertices),
             triangle_count=triangle_count(obj.data),
+            warning=("" if smooth_polygons and weighted_applied else
+                     "smooth_polygons={s} weighted_applied={w}".format(
+                         s=smooth_polygons, w=weighted_applied)),
+            failure_code="" if smooth_polygons else "SHADING_NOT_APPLIED",
         )
+    return ShadingResult(smooth_polygons, sharp_count, weighted_applied)
 
 
 # ---------------------------------------------------------------------------
@@ -317,6 +366,88 @@ class LodLevel:
     @property
     def within_budget(self) -> bool:
         return self.triangles <= self.budget
+
+
+@dataclass
+class TopologyReport:
+    """Why a mesh is the size it is. Explains an unreachable decimation target."""
+
+    triangles: int
+    faces: int
+    components: int
+    boundary_edges: int
+    nonmanifold_edges: int
+    smallest_component: int
+    largest_component: int
+
+    @property
+    def irreducible_floor(self) -> int:
+        """Rough lower bound on triangles that Quadric Edge Collapse cannot remove.
+
+        Decimate collapses edges; it does not delete whole shells. Every disconnected
+        component therefore keeps at least a tetrahedron-ish remnant, and every boundary
+        loop resists collapse. A colony made of many small separate nubs has a floor far
+        above its budget no matter how many passes run -- which is the difference between
+        "decimation is broken" and "this target is unreachable for this topology".
+        """
+        return self.components * 4 + self.boundary_edges // 2
+
+    def explain(self, budget: int) -> str:
+        if self.triangles <= budget:
+            return ""
+        return ("{t} tris vs {b} budget; {c} disconnected components, {be} boundary "
+                "edges, {nm} non-manifold edges -> estimated irreducible floor ~{f} tris"
+                .format(t=self.triangles, b=budget, c=self.components,
+                        be=self.boundary_edges, nm=self.nonmanifold_edges,
+                        f=self.irreducible_floor))
+
+
+def topology_report(obj: bpy.types.Object) -> TopologyReport:
+    """Connected-component and manifold census.
+
+    Called when a budget is missed so the black box records a CAUSE rather than just a
+    number. A generator author reading "584 tris vs 300 budget" learns nothing; reading
+    "76 disconnected components" tells them the tip clusters must be welded into the
+    parent branch or replaced with an impostor at that LOD.
+    """
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    try:
+        bm.faces.ensure_lookup_table()
+        bm.edges.ensure_lookup_table()
+
+        seen = set()
+        sizes = []
+        for face in bm.faces:
+            if face.index in seen:
+                continue
+            stack = [face]
+            size = 0
+            while stack:
+                current = stack.pop()
+                if current.index in seen:
+                    continue
+                seen.add(current.index)
+                size += 1
+                for edge in current.edges:
+                    for neighbour in edge.link_faces:
+                        if neighbour.index not in seen:
+                            stack.append(neighbour)
+            sizes.append(size)
+
+        boundary = sum(1 for e in bm.edges if len(e.link_faces) == 1)
+        nonmanifold = sum(1 for e in bm.edges if len(e.link_faces) > 2)
+        return TopologyReport(
+            triangles=triangle_count(obj.data),
+            faces=len(bm.faces),
+            components=len(sizes),
+            boundary_edges=boundary,
+            nonmanifold_edges=nonmanifold,
+            smallest_component=min(sizes) if sizes else 0,
+            largest_component=max(sizes) if sizes else 0,
+        )
+    finally:
+        bm.free()
 
 
 def reduce_to_budget(
@@ -451,8 +582,21 @@ def build_lod_chain(
         clone.data.name = clone.name
         source.users_collection[0].objects.link(clone)
 
+        # Seam splitting is what makes 3dmodel.md section 7's preservation requirement
+        # hold, but it costs a TRIANGLE FLOOR: split seams become mesh boundaries, and
+        # Decimate/COLLAPSE will not collapse a boundary edge. On a many-island unwrap
+        # that floor can sit above the budget -- observed on coral LOD2, which stuck at
+        # 584 against a 300 ceiling no matter how many passes ran.
+        #
+        # Resolution follows the bible rather than picking a favourite: section 6 of
+        # 3DMODEL_FLORA_CORAL.md describes LOD2 as "preserve mass and root/anchor shape"
+        # and permits "simplified shells or cards", so UV precision is explicitly
+        # secondary at the coarsest level. Seams are preserved where they matter and
+        # dropped only when keeping them would breach a hard budget -- and the drop is
+        # recorded, never silent.
+        seams_split = 0
         if preserve_seams:
-            _split_uv_seams(clone)
+            seams_split = _split_uv_seams(clone)
 
         # Retention per step, scaled by GlobalQualityWeight. LOD1 keeps silhouette
         # plus most material zones; LOD2 keeps mass and anchor shape only. Quality
@@ -481,9 +625,39 @@ def build_lod_chain(
             ratio_used *= ratio
 
         final_tris = triangle_count(clone.data)
+
+        # If the seam floor blocked the budget, rebuild this level from LOD0 WITHOUT
+        # splitting seams and decimate again. Retrying with the same constraints would be
+        # the "same-failure escalation" AGENTS.md forbids; changing the constraint is the
+        # strategy change it demands.
+        seams_dropped = False
+        if final_tris > budget and seams_split > 0:
+            bpy.data.objects.remove(clone, do_unlink=True)
+            clone = lod0.copy()
+            clone.data = lod0.data.copy()
+            clone.name = law.NAME_MESH.format(family=family.value, name=name, lod=index)
+            clone.data.name = clone.name
+            source.users_collection[0].objects.link(clone)
+            seams_dropped = True
+            for _attempt in range(8):
+                current = triangle_count(clone.data)
+                if current <= target:
+                    break
+                modifier = clone.modifiers.new(name="H8_Decimate", type="DECIMATE")
+                modifier.decimate_type = "COLLAPSE"
+                modifier.ratio = max(0.01, min(0.99, (target / float(current)) * 0.96))
+                modifier.use_collapse_triangulate = True
+                _make_sole_active(clone)
+                bpy.ops.object.modifier_apply(modifier=modifier.name)
+            final_tris = triangle_count(clone.data)
+
         out.append(LodLevel(index, clone, final_tris, budget, ratio_used))
 
         problems = []
+        if seams_dropped:
+            problems.append(
+                "UV seams NOT preserved at this level: the {n} split seams imposed a "
+                "triangle floor above the {b} budget".format(n=seams_split, b=budget))
         if final_tris > budget:
             problems.append("over budget {t}>{b}".format(t=final_tris, b=budget))
         if final_tris > previous_tris:
@@ -496,7 +670,8 @@ def build_lod_chain(
                 triangle_count=final_tris,
                 vertex_count=len(clone.data.vertices),
                 warning="; ".join(problems),
-                failure_code="LOD_CHAIN_INVALID" if problems else "",
+                failure_code="LOD_CHAIN_INVALID" if (final_tris > budget or
+                                                 final_tris > previous_tris) else "",
             )
         previous_tris = final_tris
 

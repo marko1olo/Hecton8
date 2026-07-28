@@ -193,10 +193,23 @@ def bake_ambient_occlusion(
     view_layer.objects.active = obj
 
     scene.render.bake.use_selected_to_active = False
-    try:
-        scene.render.bake.distance = distance
-    except AttributeError:
-        pass
+    # `render.bake.distance` DOES NOT EXIST on Blender 4.5 -- measured: the attribute set
+    # is cage_extrusion / max_ray_distance / margin / margin_type / normal_space / ...
+    # The previous try/except AttributeError silently swallowed the assignment, so the AO
+    # bake ran with UNBOUNDED rays. That is not a missing nicety: unbounded rays let every
+    # branch occlude every other branch across the whole colony, which crushed a coral's
+    # AO mean to 0.078 and buried the local cavity detail the bible actually asks for
+    # ("low values in crevices, under plates, root clusters, and branch intersections").
+    #
+    # Failing loudly rather than swallowing: if the attribute is ever renamed again, the
+    # black box records it instead of the pipeline quietly regressing.
+    if hasattr(scene.render.bake, "max_ray_distance"):
+        scene.render.bake.max_ray_distance = distance
+    elif blackbox is not None:
+        blackbox.note_invalid(
+            "bake_ao", "AO_DISTANCE_UNSUPPORTED",
+            "scene.render.bake has no max_ray_distance; AO rays are unbounded and local "
+            "cavity contrast will be lost")
 
     baked = True
     reason = ""
