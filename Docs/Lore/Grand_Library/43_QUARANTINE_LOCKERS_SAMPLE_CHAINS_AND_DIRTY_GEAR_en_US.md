@@ -84,7 +84,7 @@ TRANSFER 2......: intake to locker D-14, 09:58, two signatures
 HOLD CLASS......: pending assay
 ```
 
-Every field on that card is a place to lose a case. Buyers attack `WATER ADMITTED` first, because 1.5 mL taken at 12.4 MPa and 1.5 mL taken on the deck look identical in the tube and different in the pressure trace. `GLOVE LOT` is there because a glove from the wrong pair moves a sample into another crew's route. `SEAL TEMP` at 4 C is what lets an assay argue a film was dormant when it went in and active when it came out.
+Every field on that card is a place to lose a case. Buyers attack `WATER ADMITTED` first, because 1.5 mL taken at 19.4 MPa and 1.5 mL taken on the deck look identical in the tube and different in the pressure trace. `GLOVE LOT` is there because a glove from the wrong pair moves a sample into another crew's route. `SEAL TEMP` at 4 C is what lets an assay argue a film was dormant when it went in and active when it came out.
 
 Weak chains are short. `Found in Sector 44` is a complete entry under the old Deep Reach schema and answers nothing: which ledge, above or below the 1,880 m crown datum, inboard or outboard of the Support 3 collar, clean tool or borrowed glove.
 

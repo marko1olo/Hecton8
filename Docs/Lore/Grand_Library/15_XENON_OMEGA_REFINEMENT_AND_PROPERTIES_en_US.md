@@ -25,7 +25,7 @@ NOTE................: state, not mass, carried this class
 
 Not one of those fields describes a composition. Every one of them describes a history. Xenon-Omega is a pressure-kept process family -- xenon-rich clathrates, defect lattices, brine inclusions, mineral stress scars, biological catalyst residue and industrial containment history -- locked into a material that keeps how it was made. The short field names are easier to say. XO. Blue debt. Pressure glass feed. Continuity substrate. None of them are complete.
 
-A trench-wall sample and a flooded process-rack sample come apart on every line of that card. So do a core grown at a live vent tap and a core that has sat in a sealed receiver room since 2147. Bad salvage crews lose money because they collect colour. Good crews collect state, and state is six fields long.
+A trench-wall sample and a flooded process-rack sample come apart on every line of that card. So do a core grown at a live vent tap and a core that has sat in a sealed receiver room since 2147. Bad salvage crews lose money because they collect colour. Good crews collect state, and on that card state is five fields long.
 
 ## 2. What HECTON-8 Actually Made
 
@@ -115,9 +115,7 @@ sensor fouling inside an XO process field          5
 Atlas handshake accepted, then refused             4
 ```
 
-A hull can be hardened against the first row, lose money to the second and come back as salvage on the third. A human in a Class-IV suit is not better because flesh is noble. A human is useful because liability moves onto the contract, judgement goes into the water inside the body that carries it, and a worker in debt improvises around failures no procurement office wanted to model. The suit keeps the carrier from having to call that murder. The debt makes the descent repeatable.
-
-That is the real material property Deep Reach bought on HECTON-8: a system where people could be made to carry unstable blue substrate through a place machines could not cheaply understand.
+A hull can be hardened against the first row, lose money to the second and come back as salvage on the third. A human in a Class-IV suit is not better because flesh is noble. A human is useful because liability moves onto the contract, judgement goes into the water inside the body that carries it, and a worker in debt improvises around failures no procurement office wanted to model. The suit keeps the carrier from having to call that murder. The debt makes the descent repeatable, and no row on `BK-DR-12` has a column for either.
 
 ## 8. Field Grades
 
@@ -143,4 +141,4 @@ The slang is cruel and it is also correct, because the debt runs in both directi
 
 Selling the mass alone keeps the ocean a mine. Preserving the state can turn one canister into testimony, paid for in air and lift capacity on the same descent, which is a trade made in the water and settled at a desk.
 
-Hard limits worth carrying down. The unbroken brine inclusion is the one field that four of the five `DR-PR-77` rows depend on, and it survives nothing above 12 C. A sample renamed after it leaves your sight has no chain, whatever the tag says. Nothing in a 4.8 tonne lien window is reserved: every kilogram of blue mass is a kilogram not spent on scrubber media, a cutter head, a body, or the lift back to the crown.
+Hard limits worth carrying down. An unbroken brine inclusion is the single field the highest-yield row on `DR-PR-77` depends on, 0.44 of mass, and it survives nothing above 12 C. A sample renamed after it leaves your sight has no chain, whatever the tag says. Nothing in a 4.8 tonne lien window is reserved: every kilogram of blue mass is a kilogram not spent on scrubber media, a cutter head, a body, or the lift back to the crown.

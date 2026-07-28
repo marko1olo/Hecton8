@@ -57,7 +57,7 @@ NOTE.......: SUBSURFACE RESCUE IS NOT A PLATFORM FUNCTION AND IS NOT
 
 A skeleton crew and a great deal of automation insure cheaper than a staffed rescue tender, and the note in that third field is the sentence that keeps it that way.
 
-The four returns are recorded on the same form. A descending contractor gets a debt chain, suit identity, cargo permission, route witness and recovery terms. A returned body gets the legal category it came back under. A returned beacon gets a ruling on whether it can stand in for a body. When nothing comes back, form `BK-CAP-7/B` opens a silence interval of 240 days before a claim can move, and that is the only one of the four returns with a number printed on it.
+The four returns are recorded on the same form. A descending contractor is logged against a debt chain, suit identity, cargo permission, route witness and recovery terms. A body that comes back is assigned the legal category it came back under, and a beacon that comes back without one draws a ruling on whether it can stand in for the body. When nothing comes back, form `BK-CAP-7/B` opens a silence interval of 240 days before a claim can move, and that is the only one of the four returns with a number printed on it.
 
 ## 4. Orbital Isolation
 

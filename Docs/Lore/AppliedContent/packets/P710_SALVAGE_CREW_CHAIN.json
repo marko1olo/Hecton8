@@ -1,0 +1,810 @@
+{
+ "schema": "H8.APPLIED_CONTENT_PACKET.V0",
+ "release_set_id": "RS710_SALVAGE_CREW_CHAIN",
+ "canon_owner": [
+  "Docs/Lore/Lore_Bible.md",
+  "Docs/Lore/Canon_Locks.md"
+ ],
+ "runtime_contract": {
+  "authoring_only": true,
+  "runtime_reads_markdown": false,
+  "runtime_generates_translation": false,
+  "runtime_expected_shape": "packet_id_hash, loc_id_hashes, surface_enum, unlock_id, seed_tags, localized_string_pool"
+ },
+ "packets": [
+  {
+   "packet_id": "P710_SHELF_TOOL_BOARD",
+   "article_id": "hecton8.salvage.shelf_tool_board",
+   "title_key": "LORE_P710_SHELF_TOOL_BOARD_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.salvage.shelf_tool_board",
+    "secondary": [
+     "unlock.first_shelf_camp"
+    ],
+    "poi_tags": [
+     "poi.shelf_camp",
+     "poi.tool_board"
+    ],
+    "biome_tags": [
+     "biome.industrial_shelf",
+     "biome.drowned_factories"
+    ]
+   },
+   "image_targets": {
+    "codex": "shelf-camp tool board under a work lamp, printed label strip along the top, every hook loaded except one, descent card pinned at the left edge",
+    "scanner_thumbnail": "close view of one empty hook beside a punch-dot label and a blank return column"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Tool Board, Shelf Camp 186",
+     "scanner": "Printed tool board, shelf camp, 1.86 MPa ambient. Confidence 92 percent. Hazard: none. Limit: one hook logged out, no return entry on the strip.",
+     "in_game_wiki": "Every hook on this board carries a printed label, and every tool sits on the hook its label names. The strip was dusted before the crew left.\n\nThe four-dot hook is empty. Punch dots instead of names is one rigger's habit, one dot to five, and the out-log reads CUTTER HEAD 4 DOT, SHIFT S-14, with the return column blank.\n\nA descent card pinned at the left edge is in another hand: bearings as three digits and a depth, 214/1,190. Below it, printed, HOISTS STOP AT CROWN 1,880.\n\nThe shelf reads 1.86 MPa and a Class-IV works it all shift. Following the card gets you to the factory face in one descent, which is where the card stops being correct. Assessment: strip the rated cutting gear, and copy the out-log before you copy the card.",
+     "terminal": "AEGIR RECLAMATION POOL / TENDER ISSUE 44-T-0912. HOLDER: JOINT WINDOW 6.2 T. CLASS: BILLABLE SYSTEMS, ISSUED AGAINST WINDOW. RETURN CONDITION: RACKED OR DEBITED. STATUS: ONE UNIT OUTSTANDING.",
+     "field_note": "Cutting gear goes out against the window, so an unreturned head is money, not carelessness. Whoever kept this board did it properly right up to the hook that stayed empty.",
+     "external_site_article": "Salvage crews working under joint tonne-window liens are issued cutting and rigging gear as billable systems, debited against the window if not racked at shift end. Boards recovered from shelf camps on HECTON-8 are commonly complete, with printed labels and an out-log maintained per shift.\n\nA board recovered from a 186 metre shelf camp registered to tender issue 44-T-0912 holds a full complement except one cutter head, logged out under shift code S-14 with no return entry. The same crew's descent card, pinned to the board, records a bearing and depth pair and a printed limit noting that hoist coverage in Sector 44 ends at the 1,880 metre crown.",
+     "localization_status": "source_authority",
+     "external_site": "Salvage crews working under joint tonne-window liens are issued cutting and rigging gear as billable systems, debited against the window if not racked at shift end. Boards recovered from shelf camps on HECTON-8 are commonly complete, with printed labels and an out-log maintained per shift."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P710_SHELF_CREW_PLATE",
+   "article_id": "hecton8.salvage.shelf_crew_plate",
+   "title_key": "LORE_P710_SHELF_CREW_PLATE_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.salvage.shelf_crew_plate",
+    "secondary": [
+     "unlock.first_shelf_camp"
+    ],
+    "poi_tags": [
+     "poi.shelf_camp",
+     "poi.crew_plate"
+    ],
+    "biome_tags": [
+     "biome.industrial_shelf"
+    ]
+   },
+   "image_targets": {
+    "codex": "laminated crew plate bolted beside a camp hatch, four printed entries, two lower slots taped over, a sealed recorder clipped under the frame",
+    "scanner_thumbnail": "close view of a printed lien line reading JOINT WINDOW 6.2 T under four names"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Crew Plate, Shelf Camp 186",
+     "scanner": "Laminated crew plate, four entries, two slots taped over. Confidence 90 percent. Hazard: none. Limit: lien figure printed, not stamped, cannot be matched to a tender record here.",
+     "in_game_wiki": "Four names, four jobs, one window. T. ANSARI route and lead, N. ORLU air and scrubbers, B. SEFF cutting and rigging, K. LOWRY claims and tender traffic. The lien is printed under the last line: JOINT WINDOW 6.2 T, JOINT AND SEVERAL.\n\nJoint and several means any one of them clears all of it. The rotation printed beside the names is correct work. Nobody dives alone, the air tech signs the beds, the claims clerk does not cut.\n\nThe plate has six slots. Two are blanked with tape.\n\nA recorder is still clipped under the frame, sealed and dry at 1.86 MPa. Assessment: this is the only surface where all four names appear together, and the recorder plays without drawing from the camp bus.",
+     "terminal": "RECOVERY COMPLIANCE OFFICE / LIEN 6.2-0912. HOLDERS: FOUR, JOINT AND SEVERAL. TENDER: BLACK KEEL, AUTOMATED. CLASS: WINDOW ACTIVE. NOTE: SURVIVORSHIP DOES NOT DIVIDE THE WINDOW. OFFICE: V. SATO-REN.",
+     "field_note": "Survivorship does not divide the window. Read that line twice, because it means the last one breathing owed all six point two, and the six-two are why Barnard crews sign their own windows now.",
+     "audio": "Camp is up, board is labelled, beds are signed. Descent card reads two one four, eleven ninety, and everybody copies it onto their own slate before they get wet. Kemp wanted the paperwork filed at the top and I told him no. We file when we lift. Nika is asking about the floor figure. Twenty-three point four. Twenty-three point four megapascals at the foundry floor.",
+     "external_site_article": "Marauder crews operating under Aegir Reclamation Pool tenders are commonly bound by a single joint tonne-window rather than individual liens. Recovered crew plates print the window figure alongside the roster, and the standard clause records the obligation as joint and several.\n\nA plate recovered from a 186 metre shelf camp lists four holders against a 6.2 tonne window under lien 6.2-0912. The associated Recovery Compliance Office record notes that survivorship does not divide the window, which leaves the full obligation with any surviving holder. The plate carries six slots; the remaining two were taped over rather than filled.",
+     "localization_status": "source_authority",
+     "external_site": "Marauder crews operating under Aegir Reclamation Pool tenders are commonly bound by a single joint tonne-window rather than individual liens. Recovered crew plates print the window figure alongside the roster, and the standard clause records the obligation as joint and several."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P710_ROUTE_MARK_SEVEN",
+   "article_id": "hecton8.salvage.route_mark_seven",
+   "title_key": "LORE_P710_ROUTE_MARK_SEVEN_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.salvage.route_mark_seven",
+    "secondary": [
+     "unlock.factory_face_camp"
+    ],
+    "poi_tags": [
+     "poi.factory_face",
+     "poi.route_mark"
+    ],
+    "biome_tags": [
+     "biome.drowned_factories"
+    ]
+   },
+   "image_targets": {
+    "codex": "steel beam face at depth carrying three grease-pencil bearings, two struck through and initialled, work lamp raking across old paint",
+    "scanner_thumbnail": "close view of two struck bearings above a standing one written in harder pencil"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Route Mark 7, Corrected Twice",
+     "scanner": "Painted route mark, grease pencil over paint, two strike-throughs. Confidence 61 percent. Hazard: beam edge cut and unrailed. Limit: instrument returns the last figure only.",
+     "in_game_wiki": "Route Mark 7 is a beam face with three bearings on it and two of them struck out. 214/1,190 struck, initialled TA. 196/1,240 struck, initialled TA. 188/1,255 standing, in a harder pencil.\n\nThe hand that wrote all three never erases. A strike-through keeps the wrong number readable, which is how a route gets audited later, and it is also how you watch a route walk downhill: sixty-five metres of correction in two passes.\n\n188 is followable. From this beam it runs to the Sector 44 crown, where hoist coverage stops at 1,880 metres.\n\nAssessment: copy 188 and both struck figures together. The struck ones were correct when they were written, and the beam edge past the mark is cut without a rail.",
+     "terminal": "RETURN ACTION QUEUE / ROUTE ADVISORY 44-R-118. MARK 7, SECTOR 44 APPROACH, REVISED TWICE IN ONE SHIFT SERIES. CLASS: ELECTIVE ROUTE, CREW SELECTED. INSPECTION: NOT SCHEDULED. LIABILITY: RESTS WITH HOLDER.",
+     "field_note": "Two corrections in one shift series is procedure working, not procedure failing. What it costs you is that the third figure is the only one anybody carried down.",
+     "external_site_article": "Route marks in the HECTON-8 drowned factories are maintained in grease pencil over painted stock so a bearing can be corrected under pressure without removing the original figure. Standard practice strikes the superseded bearing and initials the strike.\n\nMark 7, recovered at 1,240 metres, carries three bearing and depth pairs. Two are struck and initialled by the same hand, and the standing figure, 188 at 1,255 metres, is written in a harder pencil. The bearing tracks toward the Sector 44 crown, where hoist coverage terminates at the 1,880 metre datum. Return Action Queue advisory 44-R-118 classifies the route as elective and crew selected.",
+     "localization_status": "source_authority",
+     "external_site": "Route marks in the HECTON-8 drowned factories are maintained in grease pencil over painted stock so a bearing can be corrected under pressure without removing the original figure. Standard practice strikes the superseded bearing and initials the strike."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P710_CROWN_PIN_ACCOUNTS",
+   "article_id": "hecton8.salvage.crown_pin_accounts",
+   "title_key": "LORE_P710_CROWN_PIN_ACCOUNTS_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.salvage.crown_pin_accounts",
+    "secondary": [
+     "unlock.factory_face_camp"
+    ],
+    "poi_tags": [
+     "poi.factory_face",
+     "poi.rigging_station"
+    ],
+    "biome_tags": [
+     "biome.drowned_factories"
+    ]
+   },
+   "image_targets": {
+    "codex": "two field notes on one bulkhead clip, one printed in capitals, one in grease pencil ending in four punch dots, a pin gauge hanging beside them",
+    "scanner_thumbnail": "close view of two notes on one clip giving different load figures for the same pin"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Two Accounts of the Crown Pin",
+     "scanner": "Two field notes, one clip, same shift code. Confidence 74 percent. Hazard: none at this station. Limit: cannot establish which note was written first.",
+     "in_game_wiki": "Two notes on one clip describe the same pin test on the same shift, and they do not agree.\n\nThe printed one: CROWN HOIST PIN 3, TEST TO 1.4 T, HELD, SERVICEABLE, D-31, initialled TA. The grease-pencil one: pin 3, aborted at 0.6, shoulder already flat on one side, four punch dots where a signature goes.\n\nBoth are dated 160190. Both name the same pin. Neither is a lie that helps anybody. The printed note gets the crew a hoist that will take their cases off the crown, and the pencil note leaves those cases at 1,880 metres with nothing above them but water.\n\nPin 3 is still in the crown frame. Assessment: the pin is inspectable, and whichever note you believe, gauge the shoulder cold before you hang mass on it.",
+     "terminal": "ASSET SILENCE BOARD / ITEM 44-S-118. SUBJECT: NON-RECONCILED FIELD ACCOUNTS, CROWN HOIST PIN 3. DETERMINATION: BOTH ACCOUNTS HELD. NO INSPECTION SCHEDULED. LIABILITY: RIGGING JUDGEMENT RESTS WITH CREW.",
+     "field_note": "Held is doing a lot of work in that first note. The Board filed both accounts and inspected nothing, which is cheaper than deciding which one was right.",
+     "audio": "Pin three came off the frame at six hundred kilos and the shoulder was already flat on one side. Tev has it at fourteen hundred and held. I am not calling him a liar. I am saying he read it off the bay gauge, and the bay gauge has been over by a fifth since we dropped it on the ledge. Put it back on the frame cold. Gauge the shoulder cold.",
+     "external_site_article": "Recovered HECTON-8 rigging paperwork occasionally preserves two field accounts of a single load test under one shift code. Where the accounts conflict, Deep Reach shell practice has been to hold both entries rather than schedule an inspection.\n\nItem 44-S-118 concerns crown hoist pin 3 in Sector 44. One account records a test to 1.4 tonnes, held and serviceable; the second records an abort at 0.6 tonnes with shoulder deformation already present. Both carry shift code D-31 and the same date. The pin remains in the crown frame at the 1,880 metre datum, where hoist coverage for the sector terminates.",
+     "localization_status": "source_authority",
+     "external_site": "Recovered HECTON-8 rigging paperwork occasionally preserves two field accounts of a single load test under one shift code. Where the accounts conflict, Deep Reach shell practice has been to hold both entries rather than schedule an inspection."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P710_WINDOW_SETTLEMENT_WS11",
+   "article_id": "hecton8.salvage.window_settlement_ws11",
+   "title_key": "LORE_P710_WINDOW_SETTLEMENT_WS11_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.salvage.window_settlement_ws11",
+    "secondary": [
+     "unlock.factory_face_camp"
+    ],
+    "poi_tags": [
+     "poi.factory_face",
+     "poi.settlement_clip"
+    ],
+    "biome_tags": [
+     "biome.drowned_factories"
+    ]
+   },
+   "image_targets": {
+    "codex": "printed settlement worksheet clipped to a bulkhead, pencil column of figures running down the margin, grease-pencil ring around one multiplier",
+    "scanner_thumbnail": "close view of a pencil margin column ending in a ruled balance figure"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Window Settlement Worksheet WS-11",
+     "scanner": "Printed worksheet, pencil working in the margin, thermal edge scorched. Confidence 87 percent. Hazard: none. Limit: multiplier table continues on a sheet not present.",
+     "in_game_wiki": "WS-11 settles a tonne-window against what a crew actually lifts, and its arithmetic is why this camp is empty.\n\nPrinted: consumables spent on an aborted lift book as a debit at full issue, no credit. Recovered mass credits at the depth class it came from. Custody-grade off the foundry floor carries 2.8.\n\nThe margin does the rest in pencil. Window left to clear, 2.1. Abort and ascend, 0.9 debit, no credit, balance 3.0. Two cases at 0.55 from the floor, 1.10 lifted, credited 3.08, balance clear with 0.98 spare.\n\nGoing home cost them three tonnes of window. Going to 2,340 metres cost them nothing on paper.\n\nThe consumables line is filled for three: three transfer lines, three beds, 620 minutes each. Assessment: the multiplier still stands, and it still prices the floor below the surface.",
+     "terminal": "RECOVERY COMPLIANCE OFFICE / RETURN ACTION QUEUE / SCHEDULE WS-11 REV 2. ABORTED LIFT: CONSUMABLES DEBIT AT FULL ISSUE, NO CREDIT. DEPTH CLASS CREDIT: SEE TABLE. APPEAL: PACKET NOTARY INTERFACE. OFFICE: V. SATO-REN.",
+     "field_note": "Nobody ordered them down. The schedule only made the cheap direction the one that went down, and every figure in that margin is correct.",
+     "external_site_article": "Return Action Queue schedule WS-11 governs how a tonne-window lien is settled against recovered mass. An aborted lift books expended consumables as a debit at full issue value with no offsetting credit, while recovered mass is credited at a multiplier set by the depth class it was taken from.\n\nA worksheet recovered from a 1,240 metre camp carries the crew's own pencil working. Ascending without a lift would have left 3.0 tonnes outstanding against a remaining 2.1, while two custody-grade cases lifted from the 2,340 metre foundry floor at a 2.8 multiplier would have cleared the window with 0.98 tonnes spare. The consumables line on the sheet is completed for three sets.",
+     "localization_status": "source_authority",
+     "external_site": "Return Action Queue schedule WS-11 governs how a tonne-window lien is settled against recovered mass. An aborted lift books expended consumables as a debit at full issue value with no offsetting credit, while recovered mass is credited at a multiplier set by the depth class it was taken from."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P710_FOUNDRY_RETURN_LINE",
+   "article_id": "hecton8.salvage.foundry_return_line",
+   "title_key": "LORE_P710_FOUNDRY_RETURN_LINE_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.salvage.foundry_return_line",
+    "secondary": [
+     "unlock.foundry_floor_entry"
+    ],
+    "poi_tags": [
+     "poi.foundry_floor",
+     "poi.ascent_line"
+    ],
+    "biome_tags": [
+     "biome.drop_wall",
+     "biome.factory_temple"
+    ]
+   },
+   "image_targets": {
+    "codex": "staged ascent line rising out of frame from a foundry floor, two harnesses clipped and spaced, a third lying coiled on the deck plate",
+    "scanner_thumbnail": "close view of an anchor bite jammed with a punch-dotted cutter head"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Return Line, Two Stages",
+     "scanner": "Rigged ascent line, two stage harnesses clipped, third loose on deck. Confidence 69 percent. Hazard: line under residual tension. Limit: cannot read the anchor bite without cutting.",
+     "in_game_wiki": "The line runs from the foundry floor at 2,340 metres to the crown at 1,880, which is the 460 metres no hoist covers.\n\nIt is rigged correctly for two. Two stage harnesses clipped and spaced for a paired ascent, bottles bracketed at the halfway wrap, tag ends whipped rather than taped. A third harness lies on the deck plate below, tied in a bight, never clipped in.\n\nThe anchor bite is jammed with a cutter head. Four punch dots on the collar.\n\nThe floor reads 23.4 MPa. The line is still under residual tension and it will move when you cut it. Assessment: the harnesses and the head are rated and recoverable, and the halfway wrap is the only part of this rig that will take your weight.",
+     "terminal": "KEELMARK LOSS DESK / RIG RECOVERY 44-G-0771. ITEM: ASCENT LINE, TWO STAGE, FOUNDRY FLOOR TO CROWN. HOLDERS ON WINDOW: FOUR. CLASS: RECOVERABLE HARDWARE. CAUSE OF LOSS: ELECTIVE DEPTH. RECOVERY: DEFERRED.",
+     "field_note": "Rigged for two with four on the window. The rig is good work, spaced right and bracketed right, and there is a third harness on the deck tied and ready to clip.",
+     "external_site_article": "Hoist coverage in Sector 44 terminates at the 1,880 metre crown datum, leaving the 460 metres down to the 2,340 metre foundry floor to be worked on staged ascent lines. Recovered rigs are commonly found intact, since the hardware is rated and the remaining tension is residual rather than loaded.\n\nRig recovery 44-G-0771 records a two-stage ascent line rigged from the foundry floor, bottles bracketed at the halfway wrap, and a third harness recovered loose on the deck, tied but unclipped. The anchor bite is jammed with a cutter head carrying four punch dots. The associated window lists four holders. Cause of loss is recorded as elective depth.",
+     "localization_status": "source_authority",
+     "external_site": "Hoist coverage in Sector 44 terminates at the 1,880 metre crown datum, leaving the 460 metres down to the 2,340 metre foundry floor to be worked on staged ascent lines. Recovered rigs are commonly found intact, since the hardware is rated and the remaining tension is residual rather than loaded."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P710_FOUNDRY_BOTTLE_RACK",
+   "article_id": "hecton8.salvage.foundry_bottle_rack",
+   "title_key": "LORE_P710_FOUNDRY_BOTTLE_RACK_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "audio_subtitle",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.salvage.foundry_bottle_rack",
+    "secondary": [
+     "unlock.foundry_floor_entry"
+    ],
+    "poi_tags": [
+     "poi.foundry_floor",
+     "poi.bottle_rack"
+    ],
+    "biome_tags": [
+     "biome.drop_wall",
+     "biome.factory_temple"
+    ]
+   },
+   "image_targets": {
+    "codex": "four-socket bottle rack bolted to a foundry floor plate, two bottles vented and two charged, sealed media case beside it, wired tag with a pencil column",
+    "scanner_thumbnail": "close view of a wired rack tag showing a minutes column and a ruled total"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Bottle Rack, Foundry Floor",
+     "scanner": "Four-socket rack, two bottles charged, two vented. Confidence 81 percent. Hazard: charged bottles at 23.4 MPa ambient. Limit: media case seal unbroken, contents counted by tag only.",
+     "in_game_wiki": "Four sockets, four certified bottles, and the pencil column on the rack tag still closes.\n\nTwo bottles are vented. Two hold 480 minutes each, 960 on the tag total. The media case beside them is tagged for two scrubber beds and the seal is unbroken. A bed strips CO2 and makes no oxygen, so a bed short is a diver short, whatever the bottles read.\n\nThe last three lines of the column are in the air tech's hand. Minutes only, no litres. The subtraction is correct.\n\nThe tag header is dated 190190. Three suits came down this shaft.\n\nAssessment: crack the case for the beds before you touch the rack, and check each gauge against the tag rather than the tag against the gauges.",
+     "terminal": "KEELMARK LOSS DESK / CONSUMABLES RECONCILIATION 44-C-0770. MEDIA ISSUED TO RACK: 2 BEDS. NOTE: BEDS ARE ISSUED TO THE RACK, NOT TO THE PERSON. CLASS: CONSUMABLE. REVIEW: NOT REQUIRED.",
+     "field_note": "Issued to the rack, not to the person. That is how a rack leaves the yard two beds short of the crew standing next to it and nobody signs anything wrong. Count beds, not bottles.",
+     "audio": "Rack tag, recount, second pass. Socket one vented, socket two vented, socket three four eighty, socket four four eighty. Beds, two. Case seal intact, so two is what we have and two is what we started with. Nine hundred and sixty on the rack. That is four hundred and eighty each.",
+     "external_site_article": "Closed-loop diving on HECTON-8 pairs a certified bottle or a receiver-fed transfer line with a CO2 scrubber bed. The bed removes carbon dioxide and does not generate oxygen, so bed count sets how many divers a rack can support regardless of stored volume.\n\nConsumables reconciliation 44-C-0770 records media issued to the rack rather than to individual holders. The rack recovered from the 2,340 metre foundry floor holds four certified bottles, two vented and two charged at 480 minutes each, with a sealed media case tagged for two beds. The air technician's final pencil column on the tag is kept in minutes and reconciles against the tag total.",
+     "localization_status": "source_authority",
+     "external_site": "Closed-loop diving on HECTON-8 pairs a certified bottle or a receiver-fed transfer line with a CO2 scrubber bed. The bed removes carbon dioxide and does not generate oxygen, so bed count sets how many divers a rack can support regardless of stored volume."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  },
+  {
+   "packet_id": "P710_FOUNDRY_CLAIM_TAG",
+   "article_id": "hecton8.salvage.foundry_claim_tag",
+   "title_key": "LORE_P710_FOUNDRY_CLAIM_TAG_TITLE",
+   "content_class": "in_world_artifact",
+   "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
+   "unlock": {
+    "primary": "unlock.salvage.foundry_claim_tag",
+    "secondary": [
+     "unlock.foundry_floor_entry"
+    ],
+    "poi_tags": [
+     "poi.foundry_floor",
+     "poi.case_bracket"
+    ],
+    "biome_tags": [
+     "biome.drop_wall",
+     "biome.factory_temple"
+    ]
+   },
+   "image_targets": {
+    "codex": "polymer claim tag wired to a bracketed pair of sealed cases, every field completed in block capitals, ruled underline beneath the total, notary strip clipped to one corner",
+    "scanner_thumbnail": "close view of a completed claim tag with the LIFT COMPLETED box marked"
+   },
+   "localized": {
+    "en_US": {
+     "title": "Claim Tag 44-C-0771, Filled Ahead",
+     "scanner": "Claim tag, polymer, all fields completed. Confidence 95 percent. Hazard: none. Limit: tag date is later than every other entry recovered on this floor.",
+     "in_game_wiki": "Every field on this tag is filled, in block capitals, with the total ruled underneath. Nothing on it is crossed out.\n\nTONNAGE PRESENTED 1.10. CLASS CUSTODY-GRADE. ORIGIN 2,340 M FOUNDRY FLOOR. LIFT COMPLETED, box marked. DATE 220190.\n\nThe latest date written anywhere else on this floor is 190190. The two cases the tonnage refers to are still bracketed behind the tag, sealed, containment stage 0.\n\nThe tender took it. The notary strip clipped to the corner reads TAG ACCEPTED, LIFT NOT PRESENTED, WINDOW ADJUSTED.\n\nAssessment: the cases are stage 0 and liftable at 0.55 each, and the strip beside them is a settled window for a lift that never left the floor.",
+     "terminal": "PACKET NOTARY INTERFACE / TAG 44-C-0771. PRESENTED: TONNAGE 1.10, CUSTODY-GRADE, ORIGIN 2,340 M. DETERMINATION: TAG ACCEPTED. LIFT NOT PRESENTED. WINDOW ADJUSTED. OFFICE: V. SATO-REN.",
+     "field_note": "Tag says lift completed, cases say otherwise, and the tender stamped it anyway. Somebody filled that form out three days early and the machine did not care which order the two things happened in.",
+     "external_site_article": "Claim tags on Aegir Reclamation Pool tenders are presented at lift and stamped by the Packet Notary Interface, an automated stamping surface that validates the form rather than the cargo. A tag completed before a lift is not rejected on that basis.\n\nTag 44-C-0771, recovered from the 2,340 metre foundry floor, is completed in full for 1.10 tonnes of custody-grade material and dated three days after the latest entry in any other document recovered on the same floor. The notary strip records the tag as accepted with no lift presented and the window adjusted. The two cases named by the tonnage remain bracketed and sealed at containment stage 0.",
+     "localization_status": "source_authority",
+     "external_site": "Claim tags on Aegir Reclamation Pool tenders are presented at lift and stamped by the Packet Notary Interface, an automated stamping surface that validates the form rather than the cargo. A tag completed before a lift is not rejected on that basis."
+    },
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
+   }
+  }
+ ]
+}
