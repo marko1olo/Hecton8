@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import re
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -51,6 +52,16 @@ PATH_REFERENCE_SKIP_TERMS = (
     "such as",
     "<",
     "*",
+    # Added 2026-07-28 when path-existence checking was extended to route bibles and
+    # mandates. Each term marks an idiom where a NON-existent path is the correct
+    # documentation, verified case by case against the citing line:
+    "dump target",   # black-box ring declares where it WOULD dump; `data.md` says
+    "dumps",         # outright "no dump file was generated in this documentation pass"
+    "on fault",      # `water.md` dump target "on fault"
+    "migrated-away", # `water.md` records the path a file moved AWAY from
+    "not the current",
+    "artifact missing",   # `BUILD_PLAYTEST_ISSUES.md` cites a log to say it is GONE
+    "does not exist",
 )
 AMBIGUOUS_AUTHORITY_TERMS = re.compile(
     r"\b(best effort|best-effort|when possible|if possible|nice to have|probably|hope|assume|stub|placeholder)\b",
@@ -667,8 +678,26 @@ def main() -> int:
             if not re.search(pattern, route_text, re.IGNORECASE | re.MULTILINE):
                 fail(errors, f"{route_path}: missing route completeness marker for {label}")
         assert_no_unguarded_route_bible_language(errors, route_path)
+        # Extended 2026-07-28. Until then assert_referenced_paths_exist ran on only
+        # nine routing files, so a route bible could name an owner `.cs` that had
+        # moved and nothing failed. Measured at the time: three bibles cited moved
+        # owner files (terrain.md twice, world.md once). Route bibles are owner-file
+        # contracts, so a wrong path there sends the next agent to a file that is
+        # not the owner.
+        assert_referenced_paths_exist(errors, route_path)
         if f'"{route_file}"' not in combined_builder_text:
             fail(errors, f"{combined_bibles_builder}: SOURCE_FILES missing route bible {route_file}")
+
+    # Mandates are owner-contract documents too, and they were the other half of the
+    # uncovered surface. Same rationale as the route-bible line above: a mandate that
+    # cites a moved `Assets/`, `Docs/`, `Tools/` or `.agents-skills/` path sends the
+    # next agent to the wrong owner, and nothing failed before 2026-07-28.
+    # Note the deliberate limit: ACTIVE_PATH_PREFIXES does not include bare basenames
+    # or `Runtime/` / `Tests/`-style fragments, so mandate prose that cites a symbol
+    # or a partial path is still unchecked. Widening the prefix list is a separate
+    # decision — do not assume this closes every citation class.
+    for mandate_path in sorted((ROOT / ".agents-skills").glob("*.txt")):
+        assert_referenced_paths_exist(errors, mandate_path)
 
     for path, forbidden in (
         (ROOT / ".agents-skills" / "AUDIO_Hrtf_Binaural_Spatialization.txt", "Good enough"),
@@ -763,5 +792,55 @@ def main() -> int:
     return 0
 
 
+def self_test() -> int:
+    """Reject-case proof for assert_referenced_paths_exist.
+
+    Root law forbids adding a check without a reproducible reject case
+    (`AGENTS.md` `[FORBID] Self-check cascade`). Path-existence coverage was
+    extended to route bibles and mandates on 2026-07-28, so this proves both
+    directions: a moved citation fails, and each legitimate not-on-disk idiom in
+    PATH_REFERENCE_SKIP_TERMS stays silent. Runs on temp files, never the repo.
+    """
+    cases = (
+        ("moved owner file",
+         "| `Assets/_Project/Scripts/World/GoneAway_Owner.cs` | owner contract |", True),
+        ("missing Docs artifact",
+         "See `Docs/Reports/NO_SUCH_BUILD_LOG_20260101.log` for the pass.", True),
+        ("missing tool",
+         "Run `Tools/Docs/NoSuchTool.py` after edits.", True),
+        ("real existing file",
+         "Canonical law is `Docs/AGENT_AUTHORITY_ROUTING.md`.", False),
+        ("dump-target idiom",
+         "300-entry ring with dump target `Docs/AgentLogs/Dump_FAKE_ID.bin`.", False),
+        ("migrated-away idiom",
+         "migrated-away path: `Assets/_Project/Scripts/World/Old.cs` is not the current location.", False),
+        ("artifact-missing idiom",
+         "Cited artifact `Docs/Reports/GONE.log` — artifact missing, so this is not proof.", False),
+    )
+
+    wrong = 0
+    with tempfile.TemporaryDirectory() as tmp:
+        probe = Path(tmp) / "probe.md"
+        for name, line, should_fail in cases:
+            probe.write_text(line + "\n", encoding="utf-8")
+            errors: list[str] = []
+            assert_referenced_paths_exist(errors, probe)
+            fired = bool(errors)
+            if fired != should_fail:
+                wrong += 1
+                print(f"- SELFTEST WRONG: {name}: expected "
+                      f"{'FAIL' if should_fail else 'PASS'}, got "
+                      f"{'FAIL' if fired else 'PASS'}")
+
+    if wrong:
+        print("AGENT_RULE_ROUTING_SELFTEST=FAIL")
+        return 1
+    print("AGENT_RULE_ROUTING_SELFTEST=PASS")
+    print(f"cases={len(cases)}")
+    return 0
+
+
 if __name__ == "__main__":
+    if "--self-test" in sys.argv[1:]:
+        sys.exit(self_test())
     sys.exit(main())

@@ -48,7 +48,7 @@ Work outside that route must name the blocker it removes.
 | Signal registry | `SignalBusRegistry.LaneCapacity = 512` |
 | Data Monolith | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists; `1,064,384` bytes; H8DM header `64` |
 | Runtime proof | Unity import, Console, Play Mode, profiler, GCMonitor, player build, save/load, scene wiring, and visual proof remain pending unless a current artifact is cited |
-| Current CLI build | `Docs/Reports/BUILD_UNKNOWN_RUNTIME_API_TRAP_CLEANUP_20260526.log`; full `Hecton8.slnx`; exit `0`; `0 Warning(s)`; `0 Error(s)`. CLI_COMPILE only; new build/import/profiler/player proof still requires the current `AGENTS.md` / `performance.md` CPU and Unity-process gate. |
+| Current CLI build | `PENDING VERIFICATION` — artifact missing. The recorded pass cited `Docs/Reports/BUILD_UNKNOWN_RUNTIME_API_TRAP_CLEANUP_20260526.log` for full `Hecton8.slnx`, exit `0`, `0 Warning(s)`, `0 Error(s)`, but that log does not exist anywhere in the repository as of 2026-07-28, so it is a record and not evidence. `Docs/Reports/Compile_20260726.log` is Unity batchmode, a different proof class, and does not substitute. Detail and re-run instruction: `BUILD_PLAYTEST_ISSUES.md` `Current Build Evidence`. Any new build/import/profiler/player proof still requires the current `AGENTS.md` / `performance.md` CPU and Unity-process gate. |
 
 ## Active Work Buckets
 

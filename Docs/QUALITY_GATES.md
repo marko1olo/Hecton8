@@ -227,6 +227,9 @@ Run after root authority, route bible index, routing docs, doc governance, quali
 | Gate | Command / proof | Blocks reporting |
 |---|---|---|
 | agent rule routing lint | `python -B Tools/Docs/TestAgentRuleRouting.py`; checks root mirror byte sync, authority read-order hooks, current live-path references, unguarded upper-authority/route-bible ambiguity/readiness/runtime tokens, subagent/orchestrator boundaries, lane contracts, mandate gate surfacing, and content-production gates | Yes |
+| agent rule routing lint self-test | `python -B Tools/Docs/TestAgentRuleRouting.py --self-test`; reject-case proof for the path-existence check — a moved citation must fail and each legitimate not-on-disk idiom (dump target, migrated-away path, artifact-missing note) must stay silent | Yes after changing the agent rule routing lint tool |
+
+Live-path coverage was extended on 2026-07-28 from nine routing files to every route bible in `PROJECT_BIBLES.md` and every mandate in `.agents-skills`. Three route bibles were citing owner `.cs` files that had moved, and one root doc was citing a build log that no longer exists; both classes had been rotting unchecked. A citation whose target is deliberately absent needs wording the skip list recognises, not a weakened check.
 
 ## Mandate Registry Gate
 
