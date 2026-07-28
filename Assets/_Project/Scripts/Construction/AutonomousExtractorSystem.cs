@@ -958,6 +958,14 @@ namespace Hecton8.Construction
         private const string DefaultPlacementBlockedReason = "INFINITE VEIN REQUIRED";
         private const string DefaultClaimBlockedReason = "VEIN ALREADY CLAIMED";
         private const string DefaultNodeScaleBlockedReason = "VEIN TOO SMALL";
+        /// <summary>
+        /// Shown when the extractor SOA owner is absent, which is a system fault and not a world condition.
+        /// The other three reasons all name something the player can act on - find a bigger vein, find an
+        /// unclaimed one. Reusing <see cref="DefaultPlacementBlockedReason"/> here told a player standing on
+        /// a perfectly valid infinite vein to go find an infinite vein, with no action that could ever clear
+        /// it. Same defect shape as commit 77bb63582: a lifetime bug reported as missing content.
+        /// </summary>
+        private const string OwnerMissingBlockedReason = "EXTRACTOR CONTROL OFFLINE";
         private const int PlacementOverlapCapacity = 24;
         private const uint ExtractorOverflowDropWarningHash = 0x6DAE28B7u;
         private const uint ExtractorOverflowDropContextHash = 0xD9113EF2u;
@@ -985,6 +993,39 @@ namespace Hecton8.Construction
 
             for (int i = 0; i < PlacementSpatialBuffer.Length; i++)
                 PlacementSpatialBuffer[i] = default;
+        }
+
+        /// <summary>
+        /// Publishes the release-audible evidence that <see cref="AutonomousExtractorSystem"/> has no live
+        /// instance, at most once per call site per session.
+        /// <para>
+        /// The latches, the warning hash and both context hashes were authored for this report and the
+        /// session reset above was written to keep it firing, but the publish itself was never wired: the
+        /// three hashes had zero references and neither latch was ever set, so both missing-owner paths
+        /// returned silently and the only evidence that this type has no construction route did not exist.
+        /// </para>
+        /// <para>
+        /// The latch is load-bearing, not merely tidy. The placement site is reached from
+        /// PlayerBuilder.cs:2136 on every ghost-preview evaluation while an extractor blueprint is held, so
+        /// an unlatched publish would push a telemetry entry per frame. Latched, the steady-state cost is one
+        /// static bool read and no allocation.
+        /// <see cref="GlobalTelemetryBus.PublishPerformanceWarning"/> (Core/GlobalTelemetryBus.cs:365) is
+        /// used because it carries no <c>[Conditional]</c> attribute and is therefore audible in a shipped
+        /// build, unlike the H8Debug helpers.
+        /// </para>
+        /// </summary>
+        /// <param name="contextHash">Call-site context hash distinguishing registration from placement.</param>
+        /// <param name="reportedLatch">Per-call-site once-per-session latch, cleared by <see cref="ResetStaticState"/>.</param>
+        private static void ReportOwnerMissing(uint contextHash, ref bool reportedLatch)
+        {
+            if (reportedLatch)
+                return;
+
+            reportedLatch = true;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ExtractorOwnerMissingWarningHash,
+                contextHash,
+                1f);
         }
 
         [Header("Placement")]
@@ -1108,7 +1149,8 @@ namespace Hecton8.Construction
         {
             if (runtime == null)
             {
-                blockReason = DefaultPlacementBlockedReason;
+                ReportOwnerMissing(ExtractorOwnerMissingPlacementContextHash, ref s_ownerMissingPlacementReported);
+                blockReason = OwnerMissingBlockedReason;
                 return false;
             }
 
@@ -1244,7 +1286,10 @@ namespace Hecton8.Construction
                 return;
 
             if (!AutonomousExtractorSystem.TryGetActiveRuntime(out AutonomousExtractorSystem runtime))
+            {
+                ReportOwnerMissing(ExtractorOwnerMissingRegisterContextHash, ref s_ownerMissingRegisterReported);
                 return;
+            }
 
             _registered = runtime.RegisterModule(this) >= 0;
         }
