@@ -418,3 +418,33 @@ A doc that records what is still broken is worth more than one that implies comp
 | `PIL` / Pillow | **absent** — `ModuleNotFoundError`. Composite and measure with numpy. |
 | `gpu` module | unavailable in background mode (`GPU functions for drawing are not available`), which does NOT prevent EEVEE Next or Cycles offline rendering |
 | essentials assets | `<blender>/4.5/datafiles/assets/geometry_nodes/smooth_by_angle.blend` — not loaded under `-b`, which is the root of trap 1 |
+
+## A collider crashes with `ValueError: found the same ... used multiple times`
+
+**Symptom.** `bmesh.ops.delete` raises on a concave mesh while an identical call on a convex
+one is fine. Hit by every concave geology LOD0.
+
+**Cause.** `bmesh.ops.convex_hull` reports leftovers in `geom_interior` AND `geom_unused`, and
+on concave input **those two lists overlap**. Concatenating them hands `delete` a duplicated
+element, which it refuses.
+
+**Fix.** `mesh_ops._convex_hull_in_place` de-duplicates with
+`list(dict.fromkeys(interior + unused))` — order-preserving, collapses by object identity.
+
+**Why it survived testing, which is the transferable lesson.** The smoke test hulls a beveled
+CUBE. A cube is convex, so both leftover lists come back EMPTY and can never overlap: the
+convex test case cannot reach the concave code path at all. Note this is the same operator
+whose *other* trap — source faces surviving under the hull — is ALSO invisible on convex
+input for the mirror-image reason. One operator, two traps, both hidden by the same test
+choice. When a helper branches on a geometric property, the test set has to span that
+property.
+
+## Rationale can be lost to the cement job even when the code is committed
+
+An automated job snapshots the working tree every few minutes and claims new or modified
+files into a generic commit. Twice in one session a `[FORGE]` commit lost its ref race
+(`fatal: cannot lock ref 'HEAD': is at X but expected Y`) and the changes landed inside
+another agent's commit instead — code preserved, reasoning gone. Two habits: commit a
+finished change immediately rather than batching, and put any explanation the next agent will
+actually need into a durable doc like this one, not only into a commit message that a race can
+detach from its diff.
