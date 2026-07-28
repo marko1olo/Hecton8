@@ -575,7 +575,9 @@ public class HectonPlayerSpawner : MonoBehaviour
         // ══════════════════════════════════════════════════════════
 
         bool terrainReady = false;
-        float waitTimer = 0f;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        bool terrainBlockerReported = false;
+#endif
 
         _groundProbeOrigin.Set(searchOrigin.x, groundProbeOriginHeight, searchOrigin.y);
 
@@ -606,7 +608,18 @@ public class HectonPlayerSpawner : MonoBehaviour
             }
             else
             {
-                waitTimer += retryDelay;
+                // REAL elapsed seconds. This was `waitTimer += retryDelay`, which advances by 0.5 per pass
+                // no matter how long the pass actually took - an iteration counter wearing a seconds label.
+                // Measured in Logs/omega_route20.log: 37 passes printed "18,5s" while roughly 30 seconds of
+                // wall clock went by, because each pass costs retryDelay PLUS a headless frame. So
+                // maxWaitTime was silently a ~1.6x longer budget than its own log claimed, and a 60s value
+                // needed ~97 real seconds to trigger - long after the caller's 30s per-step no-progress
+                // deadline (GameBootstrapper.cs:614 bootstrapTimeout = 30f, armed at :7266/:8243, and
+                // GameBootstrapper is in no scene so that serialized default is the live value) had already
+                // cancelled this method. That is why ForceFallbackSpawn below never ran even once: the
+                // degradation path this class was built around is unreachable whenever the caller's budget
+                // is smaller than ours, and the run failed hard instead of spawning at water level.
+                float waitTimer = Time.realtimeSinceStartup - _operationStartTime;
 
                 if (waitTimer >= maxWaitTime)
                 {
@@ -619,6 +632,17 @@ public class HectonPlayerSpawner : MonoBehaviour
                 }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Name the blocking condition ONCE. "Terrain not ready" on its own cost this project a
+                // whole route verdict: 37 identical lines that never said which of the three conditions was
+                // false, so the failure looked like slow terrain when it was an unsatisfiable predicate.
+                if (!terrainBlockerReported)
+                {
+                    terrainBlockerReported = true;
+                    LogSpawnerWarning(
+                        "[HectonPlayerSpawner] Phase 1 blocked: " +
+                        DescribeTerrainReadinessBlocker(searchOrigin.x, searchOrigin.y));
+                }
+
                 LogSpawner(
                     $"[HectonPlayerSpawner] Terrain not ready; waiting ({waitTimer:F1}s).");
 #endif
@@ -950,13 +974,68 @@ public class HectonPlayerSpawner : MonoBehaviour
         return true;
     }
 
+        /// <summary>
+        /// Resolves terrain height for the spawn search.
+        ///
+        /// THIS IS THE PREDICATE THAT MADE THE GAME UNENTERABLE. It used to ask exactly one object for a
+        /// height - <see cref="HectonMapMagicVegetationBridge"/> - and that object does not exist. Not
+        /// "is disabled", not "is slow": a format-agnostic GUID census over the serialized project
+        /// (31 scenes including the ForceBinary 02_HECTON_WORLD, 968 prefabs, all .asset) finds its script
+        /// GUID a18538e60f784a9fad1a614cc77829f5 in ZERO of them, and no code path creates one - there is
+        /// no AddComponent&lt;HectonMapMagicVegetationBridge&gt; anywhere under Assets/. The instrument
+        /// self-tests: the same scan finds this spawner's own GUID (560e83b763132d2418e071332d17b172) in
+        /// 02_HECTON_WORLD plus three _Recovery scenes, so a null result is absence and not a broken search.
+        ///
+        /// The bridge publishes itself only from its own OnEnable (HectonMapMagicVegetationBridge.cs:2816
+        /// -> :2826 PublishActiveRuntimeInstance -> :2571 s_activeRuntimeInstance = this). A component in no
+        /// scene gets no OnEnable, so s_activeRuntimeInstance is permanently null,
+        /// WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge
+        /// (WorldRuntimeReferenceUtility.cs:435) is permanently false, and phase 1's `terrainReady` was
+        /// STRUCTURALLY UNSATISFIABLE - it could never become true in any run, on any hardware, at any
+        /// timeout. Measured end state in Logs/omega_route20.log: 37 "Terrain not ready" lines, then the
+        /// caller's no-progress deadline cancels scene activation before ActivatePlayer ever runs, so the
+        /// player stays held by the Kinematic Arrest Gate and cannot move.
+        ///
+        /// The fix is to ask the registered terrain authority instead. GlobalRegistry.Terrain
+        /// (GlobalRegistry.cs:1774) is live in that same run - Logs/omega_route20.log records
+        /// "REGISTRY Terrain=MapMagicRuntimeBridge" - and MapMagicRuntimeBridge.TryGetHeight
+        /// (MapMagicRuntimeBridge.cs:851) is a SUPERSET of what this method used to do: its first tier is
+        /// the very same vegetation-bridge cache (:855-857), and when that is unavailable it falls through
+        /// to the real Unity heightmap via FindTerrainAt + TerrainData.GetInterpolatedHeight (:859-879),
+        /// which needs no vegetation bridge at all. So this can only succeed in strictly more cases than
+        /// before, never fewer, and it is the same provider GameBootstrapper's own ground-ready check uses
+        /// (GameBootstrapper.cs:7729).
+        ///
+        /// The vegetation-bridge call is KEPT as a second tier rather than deleted: it is the authored
+        /// route this spawner was written against, and if that component is ever placed in a scene it must
+        /// keep working. It is simply no longer the only route, and no longer load-bearing.
+        ///
+        /// Height alone is deliberately NOT treated as permission to spawn - an unapplied MapMagic tile can
+        /// report a flat heightmap. Release stays gated by <see cref="IsSpawnPointPhysicsReady"/>, which is
+        /// the signal `AGENTS.md` actually names for the Kinematic Arrest Gate.
+        /// </summary>
         private static bool TryResolveCachedTerrainHeight(float x, float z, out float groundY)
         {
-            groundY = 0f;
+            ITerrainProvider terrainProvider = GlobalRegistry.Terrain;
+            if (terrainProvider != null &&
+                terrainProvider.IsAvailable &&
+                terrainProvider.TryGetHeight(x, z, out groundY) &&
+                float.IsFinite(groundY))
+            {
+                return true;
+            }
+
             HectonMapMagicVegetationBridge vegetationBridge = null;
-            return WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge) &&
-                   vegetationBridge.TryGetCachedTerrainHeight(x, z, out groundY) &&
-                   float.IsFinite(groundY);
+            if (WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge) &&
+                vegetationBridge.TryGetCachedTerrainHeight(x, z, out groundY) &&
+                float.IsFinite(groundY))
+            {
+                return true;
+            }
+
+            // Both tiers may have written a non-finite or stale value through their out parameter.
+            groundY = 0f;
+            return false;
         }
 
     private void RefreshWaterSurfaceFromRuntimeWaterline()
@@ -1316,6 +1395,53 @@ public class HectonPlayerSpawner : MonoBehaviour
 
         return WorldChunkPhysicsBakedEvents.IsWorldPointPhysicsBaked(worldX, worldZ);
     }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    /// <summary>
+    /// Says WHICH phase-1 condition is false. Every return is a compile-time literal, so this allocates
+    /// nothing; it runs at most once per spawn on the 0.5s retry cadence, never in a tick or physics path.
+    ///
+    /// Written because the failure it describes was invisible. A headless route run produced 37 consecutive
+    /// "Terrain not ready; waiting (Ns)" lines and then died by cancellation, and nothing in the log
+    /// distinguished "no terrain provider is registered at all" - the actual cause, a predicate bound to a
+    /// component that exists in zero scenes - from "the world is still streaming". Both look like patience.
+    /// </summary>
+    private static string DescribeTerrainReadinessBlocker(float worldX, float worldZ)
+    {
+        ITerrainProvider terrainProvider = GlobalRegistry.Terrain;
+        if (terrainProvider == null)
+        {
+            return "GlobalRegistry.Terrain is NOT REGISTERED - no ITerrainProvider exists this session, so " +
+                   "no height can ever resolve and this wait cannot succeed. Check that the terrain bridge " +
+                   "is present and enabled in the active scene.";
+        }
+
+        if (!terrainProvider.IsAvailable)
+        {
+            return "ITerrainProvider is registered but reports IsAvailable=false - the terrain backend has " +
+                   "no MapMagicObject to sample.";
+        }
+
+        if (!terrainProvider.TryGetHeight(worldX, worldZ, out float providerHeight) ||
+            !float.IsFinite(providerHeight))
+        {
+            return "ITerrainProvider is available but has no finite height at the search origin - no " +
+                   "generated tile covers that XZ yet. If the terrain was moved away from the search " +
+                   "origin, this never resolves.";
+        }
+
+        HectonMapMagicVegetationBridge vegetationBridge = null;
+        if (!WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge))
+        {
+            return "height RESOLVED through ITerrainProvider (the vegetation-bridge tier is unavailable, " +
+                   "which is expected - that component is authored in no scene). Remaining gate is the " +
+                   "Kinematic Arrest Gate: no WorldChunkPhysicsBakedSignal has covered this chunk yet.";
+        }
+
+        return "height resolved and a vegetation bridge is live, so the remaining gate is the Kinematic " +
+               "Arrest Gate: no WorldChunkPhysicsBakedSignal has covered this chunk yet.";
+    }
+#endif
 
     private void TeleportPlayer(Vector3 position)
     {
