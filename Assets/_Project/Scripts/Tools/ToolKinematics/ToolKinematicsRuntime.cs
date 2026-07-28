@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -18,6 +19,38 @@ namespace Hecton8.Tools.ToolKinematics
     public sealed class ToolKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, IColdTickable, IGlobalRegistryHotSwapListener
     {
         private static int _signalPushDropCount;
+
+        // Release-audible diagnostics. GlobalTelemetryBus.PublishPerformanceWarning
+        // (Core/GlobalTelemetryBus.cs:365) carries no [Conditional] attribute, unlike every
+        // H8Debug entry point (Core/H8Debug.cs:63-77), so these reach a shipped player. Every
+        // fault this runtime already measured was previously written to a field that nothing read.
+        private static readonly uint AbiLayoutFaultWarningHash =
+            unchecked((uint)LocHash.Compute("ToolKinematicsRuntime.AbiLayoutFault"));
+        private static readonly uint TickRegistrationMissWarningHash =
+            unchecked((uint)LocHash.Compute("ToolKinematicsRuntime.TickRegistrationMiss"));
+        private static readonly uint ConsumerlessLaneWarningHash =
+            unchecked((uint)LocHash.Compute("ToolKinematicsRuntime.SignalLaneHasNoConsumer"));
+        private static readonly uint SignalPushDropWarningHash =
+            unchecked((uint)LocHash.Compute("ToolKinematicsRuntime.SignalPushDrop"));
+        private static readonly uint BlackBoxDumpFaultWarningHash =
+            unchecked((uint)LocHash.Compute("ToolKinematicsRuntime.BlackBoxDumpWriteFault"));
+        private static readonly uint ToolKinematicsContextHash =
+            unchecked((uint)LocHash.Compute("ToolKinematicsRuntime"));
+
+        // ToolCarveRequestSignal, ToolHeatSignal, VfxSparkRequestSignal and ToolPowerDepletedSignal
+        // are configured and pushed here and read by no consumer anywhere under Assets/ - verified by
+        // rg over every SignalBus<T> read entry point (GetFrameSnapshot / GetFrameSnapshotArray /
+        // GetSignals / TryConsumeFrame / TryGetLatest / FilterSnapshot / TransformSnapshot).
+        private const uint ConsumerlessLaneContextHash =
+            ToolCarveRequestSignal.LaneHash ^
+            ToolHeatSignal.LaneHash ^
+            VfxSparkRequestSignal.LaneHash ^
+            ToolPowerDepletedSignal.LaneHash;
+
+        private static int _consumerlessLanePublishTotal;
+        private static int _consumerlessLaneReported;
+        private static int _abiLayoutFaultReported;
+
         public const int MaxToolCapacity = 8;
         public const int BeamVerticesPerTool = 64;
 #if UNITY_EDITOR
@@ -112,6 +145,9 @@ namespace Hecton8.Tools.ToolKinematics
         private bool _pendingDataVaultRebind;
         private bool _abiValid;
         private IDataVault _pendingDataVault;
+        private int _reportedSignalPushDropCount;
+        private int _reportedBlackBoxDumpFailureCode;
+        private int _tickRegistrationMissReported;
 
 #if UNITY_EDITOR
         private enum EquipmentCsvKey : uint
@@ -129,6 +165,18 @@ namespace Hecton8.Tools.ToolKinematics
             SystemHealth = 0x9EE949DAu
         }
 #endif
+
+        // Domain reload is disabled (ProjectSettings/EditorSettings.asset:29-30
+        // m_EnterPlayModeOptionsEnabled: 1, m_EnterPlayModeOptions: 1), so every static counter below
+        // survives from one Play session into the next and would report a stale total on the next run.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticDiagnosticsState()
+        {
+            Volatile.Write(ref _signalPushDropCount, 0);
+            Volatile.Write(ref _consumerlessLanePublishTotal, 0);
+            Volatile.Write(ref _consumerlessLaneReported, 0);
+            Volatile.Write(ref _abiLayoutFaultReported, 0);
+        }
 
         private void Awake()
         {
@@ -148,12 +196,16 @@ namespace Hecton8.Tools.ToolKinematics
         private void OnEnable()
         {
             if (!_abiValid)
+            {
+                ReportAbiLayoutFaultOnce();
                 return;
+            }
 
             _activeToolCapacity = math.clamp(toolCapacity, 1, MaxToolCapacity);
             CacheRegistryDependenciesCold();
             TryRegisterHotSwap();
             TryBootstrapRuntime();
+            ReportTickRegistrationMissOnce();
         }
 
         private void OnDisable()
@@ -166,6 +218,7 @@ namespace Hecton8.Tools.ToolKinematics
             TryUnregisterHotSwap();
             ReleaseVaultHandles();
             ClearHandles();
+            ClearLifecycleDiagnostics();
         }
 
         private void OnDestroy()
@@ -178,6 +231,7 @@ namespace Hecton8.Tools.ToolKinematics
             TryUnregisterHotSwap();
             ReleaseVaultHandles();
             ClearHandles();
+            ClearLifecycleDiagnostics();
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -263,6 +317,7 @@ namespace Hecton8.Tools.ToolKinematics
         public void ColdTick()
         {
             ApplyPendingDataVaultRebindIfIdle();
+            ReportPendingDiagnostics();
         }
 
         public bool TryReadState(int index, out ToolStateDTO state)
@@ -292,6 +347,97 @@ namespace Hecton8.Tools.ToolKinematics
         }
 
         internal int LastBlackBoxDumpFailureCode => Volatile.Read(ref _blackBoxDumpFailureCode);
+
+        /// <summary>
+        /// Cold-cadence flush of every fault this runtime measures. Reports a delta only, so a healthy
+        /// runtime publishes nothing, and reaches a shipped player because the telemetry route is not
+        /// compiled out.
+        /// </summary>
+        private void ReportPendingDiagnostics()
+        {
+            int drops = Volatile.Read(ref _signalPushDropCount);
+            if (drops > _reportedSignalPushDropCount)
+            {
+                _reportedSignalPushDropCount = drops;
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    SignalPushDropWarningHash,
+                    ToolKinematicsContextHash,
+                    math.max(1, drops));
+            }
+
+            int dumpFailureCode = Volatile.Read(ref _blackBoxDumpFailureCode);
+            if (dumpFailureCode == 0)
+            {
+                _reportedBlackBoxDumpFailureCode = 0;
+            }
+            else if (dumpFailureCode != _reportedBlackBoxDumpFailureCode)
+            {
+                _reportedBlackBoxDumpFailureCode = dumpFailureCode;
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    BlackBoxDumpFaultWarningHash,
+                    ToolKinematicsContextHash ^ unchecked((uint)dumpFailureCode),
+                    math.max(1, dumpFailureCode));
+            }
+
+            int consumerlessPublishTotal = Volatile.Read(ref _consumerlessLanePublishTotal);
+            if (consumerlessPublishTotal > 0 &&
+                Interlocked.Exchange(ref _consumerlessLaneReported, 1) == 0)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    ConsumerlessLaneWarningHash,
+                    ConsumerlessLaneContextHash,
+                    math.max(1, consumerlessPublishTotal));
+            }
+        }
+
+        /// <summary>
+        /// An ARM64 DTO layout mismatch disables this runtime completely. It was announced only through
+        /// H8Debug.LogError, which is compiled out of a shipped build, so the tool silently stopped
+        /// existing. Reported once per process.
+        /// </summary>
+        private static void ReportAbiLayoutFaultOnce()
+        {
+            if (Interlocked.Exchange(ref _abiLayoutFaultReported, 1) != 0)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                AbiLayoutFaultWarningHash,
+                ToolKinematicsContextHash,
+                1f);
+        }
+
+        /// <summary>
+        /// The dispatcher exists, this component is enabled in a playing session, and at least one of
+        /// its three tick lanes still did not arm - so the runtime is authored and inert. A null
+        /// dispatcher is normal boot ordering and is covered by the hot-swap listener instead, so it is
+        /// deliberately not reported here.
+        /// </summary>
+        private void ReportTickRegistrationMissOnce()
+        {
+            if (_tickRegistrationMissReported != 0 ||
+                !Application.isPlaying ||
+                GlobalRegistry.Dispatcher == null ||
+                (_fixedRegistered && _postFixedRegistered && _coldRegistered))
+            {
+                return;
+            }
+
+            _tickRegistrationMissReported = 1;
+            uint missingLaneMask =
+                (_fixedRegistered ? 0u : 1u) |
+                (_postFixedRegistered ? 0u : 2u) |
+                (_coldRegistered ? 0u : 4u);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                TickRegistrationMissWarningHash,
+                ToolKinematicsContextHash ^ missingLaneMask,
+                missingLaneMask);
+        }
+
+        private void ClearLifecycleDiagnostics()
+        {
+            _tickRegistrationMissReported = 0;
+            _reportedBlackBoxDumpFailureCode = 0;
+        }
 
         private void TryFinalizePendingFrameNoWait()
         {
@@ -431,6 +577,7 @@ namespace Hecton8.Tools.ToolKinematics
                 if (heat.Frame != 0u)
                 {
                     SignalBus<ToolHeatSignal>.TryPushTracked(in heat, ref _signalPushDropCount);
+                    CountConsumerlessLanePublish();
                     PublishToolPowerAndHaptics(in heat);
                     ToolScreenExportDTO screen = (uint)i < (uint)buffers.ScreenExports.Length ? buffers.ScreenExports[i] : default;
                     PublishGlobalToolStateBridge(in heat, in screen);
@@ -439,12 +586,29 @@ namespace Hecton8.Tools.ToolKinematics
 
                 VfxSparkRequestSignal spark = buffers.SparkRequests[i];
                 if (spark.Frame != 0u && spark.Intensity01 > 0f)
+                {
                     SignalBus<VfxSparkRequestSignal>.TryPushTracked(in spark, ref _signalPushDropCount);
+                    CountConsumerlessLanePublish();
+                }
 
                 ToolCarveRequestSignal carve = buffers.CarveRequests[i];
                 if (carve.Frame != 0u && carve.MaterialHash != 0u)
+                {
                     SignalBus<ToolCarveRequestSignal>.TryPushTracked(in carve, ref _signalPushDropCount);
+                    CountConsumerlessLanePublish();
+                }
             }
+        }
+
+        /// <summary>
+        /// Counts one publication into a lane that has no consumer anywhere under Assets/. Main-thread
+        /// post-fixed phase only, saturating, no allocation and no branch on managed state.
+        /// </summary>
+        private static void CountConsumerlessLanePublish()
+        {
+            int current = _consumerlessLanePublishTotal;
+            if (current != int.MaxValue)
+                _consumerlessLanePublishTotal = current + 1;
         }
 
         private static void EnsureSignalLanesReady()
@@ -501,6 +665,7 @@ namespace Hecton8.Tools.ToolKinematics
                     _pad1 = 0u
                 };
                 SignalBus<ToolPowerDepletedSignal>.TryPushTracked(in depleted, ref _signalPushDropCount);
+                CountConsumerlessLanePublish();
             }
 
             if ((heat.Flags & (uint)ToolKinematicsFlags.Active) == 0u)
