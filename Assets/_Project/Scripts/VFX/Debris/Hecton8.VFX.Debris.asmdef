@@ -6,6 +6,7 @@
         "Hecton8.Core",
         "Hecton8.Core.Memory",
         "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Tools.ToolKinematics.Contracts",
         "Unity.Burst",
         "Unity.Collections",
         "Unity.Jobs",

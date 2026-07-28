@@ -13,6 +13,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using VfxSparkRequestSignal = Hecton8.Tools.ToolKinematics.Contracts.VfxSparkRequestSignal;
 
 namespace Hecton8.VFX.Debris
 {
@@ -44,6 +45,20 @@ namespace Hecton8.VFX.Debris
         private const int MaxCarveSignalsPerFrame = 32;
         private const int MaxCarveSignalScanPerFrame = 64;
         private const int MaxDebrisSpawnSignalScanPerFrame = 64;
+        private const int MaxVfxSparkSignalScanPerFrame = VfxSparkRequestSignal.MaxFrameSignals;
+        private const int SparkToolGateSlotCount = 4;
+        private const int MinimumSparkParticles = 3;
+        // A cutter biting continuously publishes a spark every simulation frame. Emitting one burst per
+        // signal would be ~60 bursts/second per tool, which reads as noise and starves carve debris out of
+        // the shared particle pool. ~11.8 Hz per tool is a readable spark stream with a bounded pool cost.
+        private const float SparkEmitIntervalSeconds = 0.085f;
+        private const float SparkMinimumIntensity01 = 0.08f;
+        private const float SparkParticleShare = 0.22f;
+        private const float MinimumSparkSpawnRadiusMeters = 0.03f;
+        private const float MaximumSparkSpawnRadiusMeters = 0.075f;
+        private const float SparkSpeedScaleMin = 1.1f;
+        private const float SparkSpeedScaleMax = 2.1f;
+        private const float SparkLife01 = 0.42f;
         private const int TelemetryPublishStride = 30;
         private const int GlobalSdfRefreshStrideFrames = 4;
         private const int MissingRegistryRefreshStrideFrames = 30;
@@ -64,6 +79,7 @@ namespace Hecton8.VFX.Debris
         private const uint FlowActiveFlag = 1u << 3;
         private const uint StressRecycleFlag = 1u << 4;
         private const uint WakeActiveFlag = 1u << 5;
+        private const uint SparkActiveFlag = 1u << 6;
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_05_DEBRIS_PHYSICS_FAKE.h8dump";
         private const SystemID VaultOwnerSystem = SystemID.Vfx;
 
@@ -212,6 +228,10 @@ namespace Hecton8.VFX.Debris
         private int _pendingDebrisUploadEnd;
         private Vector4 _cachedAbyssalFlowTextureParams;
         private Vector4 _cachedAbyssalFlowCenter;
+        // COLD ALLOC: uint[4] - spark rate-gate key per concurrent tool, allocated once at construction - owner: CarveDebrisComputeRenderer
+        private readonly uint[] _sparkGateToolHash = new uint[SparkToolGateSlotCount];
+        // COLD ALLOC: float[4] - spark rate-gate cooldown seconds per concurrent tool - owner: CarveDebrisComputeRenderer
+        private readonly float[] _sparkGateCooldownSeconds = new float[SparkToolGateSlotCount];
 
         private void Awake()
         {
@@ -308,6 +328,7 @@ namespace Hecton8.VFX.Debris
             _lastFlowActive = false;
             _lastSdfActive = false;
             _lastWakeActive = false;
+            ResetSparkGates();
             if (IsGpuStateValid() &&
                 TryResolveVaultBuffers(
                     out var debrisPositions,
@@ -1144,6 +1165,10 @@ namespace Hecton8.VFX.Debris
                 requestCount++;
                 queuedCarves++;
             }
+
+            int sparkRequestCount = AppendSparkRequests(particlesPerCarve, requestCount, carveRequests, jobState);
+            requestCount += sparkRequestCount;
+            queuedCarves += sparkRequestCount;
 
             if (requestCount <= 0)
                 return 0;
@@ -2049,6 +2074,159 @@ namespace Hecton8.VFX.Debris
                 Seed = seed
             };
             return true;
+        }
+
+        /// <summary>
+        /// Drains the <see cref="VfxSparkRequestSignal"/> lane published by the tool kinematics runtime while
+        /// a cutter is biting and turns each accepted request into a GPU debris injection. Rate limited per
+        /// tool so a continuously firing tool produces a readable spark stream instead of a per-frame burst
+        /// that would evict carve debris from the shared particle pool.
+        /// </summary>
+        /// <returns>Number of requests appended at <paramref name="existingRequestCount"/>.</returns>
+        private int AppendSparkRequests(
+            int particlesPerCarve,
+            int existingRequestCount,
+            NativeArray<CarveDebrisRequest> carveRequests,
+            NativeArray<int> jobState)
+        {
+            AdvanceSparkGates(_lastDeltaTime);
+            ReadOnlySpan<VfxSparkRequestSignal> sparkSignals = SignalBus<VfxSparkRequestSignal>.GetFrameSnapshot();
+            if (sparkSignals.Length == 0)
+                return 0;
+
+            // Spark hit points arrive camera-relative (ToolKinematicsMath.ToLocalFloat3 subtracts the camera
+            // anchor position), so the render camera position is the only legal way back to runtime space.
+            Camera camera = renderCamera;
+            if (camera == null)
+                return 0;
+
+            Vector3 cameraRuntimePosition = camera.transform.position;
+            float3 cameraOrigin = new float3(cameraRuntimePosition.x, cameraRuntimePosition.y, cameraRuntimePosition.z);
+            if (!math.all(math.isfinite(cameraOrigin)))
+                return 0;
+
+            int requestLimit = math.min(MaxCarveSignalsPerFrame, carveRequests.IsCreated ? carveRequests.Length : 0);
+            int scanCount = math.min(sparkSignals.Length, MaxVfxSparkSignalScanPerFrame);
+            int appended = 0;
+            for (int i = 0; i < scanCount && existingRequestCount + appended < requestLimit; i++)
+            {
+                VfxSparkRequestSignal spark = sparkSignals[i];
+                if (!math.isfinite(spark.Intensity01) ||
+                    !math.all(math.isfinite(spark.HitPoint)) ||
+                    !math.all(math.isfinite(spark.Normal)))
+                {
+                    jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
+                    continue;
+                }
+
+                float intensity01 = math.saturate(spark.Intensity01);
+                if (intensity01 < SparkMinimumIntensity01)
+                    continue;
+
+                if (!TryOpenSparkGate(spark.ToolHash))
+                    continue;
+
+                float3 center = cameraOrigin + spark.HitPoint;
+                if (!math.all(math.isfinite(center)))
+                {
+                    jobState[JobStateFlagsIndex] |= (int)InvalidStateFlag;
+                    continue;
+                }
+
+                uint seed = BuildSparkSeed(_frameSequence, in spark, i);
+                int sparkParticles = math.clamp(
+                    (int)math.round(particlesPerCarve * SparkParticleShare * math.lerp(0.45f, 1f, intensity01)),
+                    MinimumSparkParticles,
+                    math.max(MinimumSparkParticles, particlesPerCarve));
+                carveRequests[existingRequestCount + appended] = new CarveDebrisRequest
+                {
+                    Center = center,
+                    EjectionAxis = ResolveSparkEjectionAxis(in spark, seed),
+                    Radius = math.lerp(MinimumSparkSpawnRadiusMeters, MaximumSparkSpawnRadiusMeters, intensity01),
+                    ParticlesToInject = sparkParticles,
+                    InitialSpeed = initialVelocityMetersPerSecond * math.lerp(SparkSpeedScaleMin, SparkSpeedScaleMax, intensity01),
+                    Life = SparkLife01,
+                    Seed = seed
+                };
+                appended++;
+                jobState[JobStateFlagsIndex] |= (int)SparkActiveFlag;
+            }
+
+            return appended;
+        }
+
+        private void AdvanceSparkGates(float deltaTimeSeconds)
+        {
+            float dt = math.isfinite(deltaTimeSeconds) ? math.max(0f, deltaTimeSeconds) : 0f;
+            for (int i = 0; i < SparkToolGateSlotCount; i++)
+            {
+                float remaining = _sparkGateCooldownSeconds[i] - dt;
+                _sparkGateCooldownSeconds[i] = remaining > 0f ? remaining : 0f;
+            }
+        }
+
+        private void ResetSparkGates()
+        {
+            for (int i = 0; i < SparkToolGateSlotCount; i++)
+            {
+                _sparkGateToolHash[i] = 0u;
+                _sparkGateCooldownSeconds[i] = 0f;
+            }
+        }
+
+        /// <summary>
+        /// Fixed-slot per-tool rate gate. Hash 0 is the free-slot sentinel, so a zero tool hash is folded to 1.
+        /// </summary>
+        private bool TryOpenSparkGate(uint toolHash)
+        {
+            uint key = toolHash == 0u ? 1u : toolHash;
+            int reusableSlot = -1;
+            for (int i = 0; i < SparkToolGateSlotCount; i++)
+            {
+                if (_sparkGateToolHash[i] == key)
+                {
+                    if (_sparkGateCooldownSeconds[i] > 0f)
+                        return false;
+
+                    _sparkGateCooldownSeconds[i] = SparkEmitIntervalSeconds;
+                    return true;
+                }
+
+                if (reusableSlot < 0 && (_sparkGateToolHash[i] == 0u || _sparkGateCooldownSeconds[i] <= 0f))
+                    reusableSlot = i;
+            }
+
+            if (reusableSlot < 0)
+                return false;
+
+            _sparkGateToolHash[reusableSlot] = key;
+            _sparkGateCooldownSeconds[reusableSlot] = SparkEmitIntervalSeconds;
+            return true;
+        }
+
+        private static float3 ResolveSparkEjectionAxis(in VfxSparkRequestSignal spark, uint seed)
+        {
+            float3 normal = spark.Normal;
+            float lengthSq = math.lengthsq(normal);
+            if (lengthSq > 0.0001f && math.all(math.isfinite(normal)))
+                return normal * math.rsqrt(lengthSq);
+
+            return BuildSignalEjectionAxis(seed);
+        }
+
+        private static uint BuildSparkSeed(uint frame, in VfxSparkRequestSignal spark, int signalIndex)
+        {
+            uint hash = 2166136261u;
+            hash = (hash ^ frame) * 16777619u;
+            hash = (hash ^ (uint)signalIndex) * 16777619u;
+            hash = (hash ^ spark.ToolHash) * 16777619u;
+            hash = (hash ^ spark.MaterialHash) * 16777619u;
+            hash = (hash ^ spark.Frame) * 16777619u;
+            hash = (hash ^ math.asuint(spark.HitPoint.x)) * 16777619u;
+            hash = (hash ^ math.asuint(spark.HitPoint.y)) * 16777619u;
+            hash = (hash ^ math.asuint(spark.HitPoint.z)) * 16777619u;
+            hash = (hash ^ math.asuint(spark.Intensity01)) * 16777619u;
+            return hash == 0u ? 1u : hash;
         }
 
         private static float3 BuildSignalEjectionAxis(uint seed)
