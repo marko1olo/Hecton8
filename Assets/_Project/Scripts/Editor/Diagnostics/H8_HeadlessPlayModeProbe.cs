@@ -222,6 +222,17 @@ namespace Hecton8.EditorTools.Diagnostics
         private const string MomentResource = "Resource";
         private const string MomentTool = "Tool";
         private const string MomentCraft = "CraftRepairBuild";
+
+        /// <summary>
+        /// The mission spine had no route row at all, while being the best-instrumented axis in the
+        /// project: QuestManager is registered both cold (QuestManager.cs:258) and on a real tick lane
+        /// (:486), 12 quest assets are authored, and it already publishes a purpose-built public telemetry
+        /// surface - QuestSpineAuthoredQuestCount, QuestSpineActivationCount, QuestSpineCompletionCount,
+        /// QuestSpineStateGraphReady, CopyQuestSpineTransitions - that nothing consumed. Someone built the
+        /// instrument panel and no instrument was ever plugged into it.
+        /// </summary>
+        private const string MomentMission = "Mission";
+
         private const string MomentHazard = "Hazard";
         private const string MomentSaveLoad = "SaveLoad";
         private const string MomentProof = "Proof";
@@ -1428,6 +1439,7 @@ namespace Hecton8.EditorTools.Diagnostics
 
             RecordProofMoment();
             RecordWorldDriverMoments();
+            RecordMissionMoment();
             RecordContentBlockedMoments();
             ReportRouteMoments();
 
@@ -1563,6 +1575,107 @@ namespace Hecton8.EditorTools.Diagnostics
         /// Verdict stays NOT_EXERCISED on purpose. Calling it Blocked would imply the route was attempted
         /// and obstructed at runtime; it was never attempted, because there is nothing to attempt.
         /// </summary>
+        /// <summary>
+        /// Hash of <c>quest_biome_spine</c>, the one quest that completes without the player doing anything.
+        ///
+        /// <c>Quest_BiomeSpine.asset</c> authors its trigger and its completion as the byte-identical
+        /// condition (<c>triggerType:2/triggerValue:1</c> and <c>completionType:2/completionValue:1</c>), so
+        /// a single BiomeEntered signal satisfies both nodes inside one EvaluateSignal call. It completed in
+        /// Logs/omega_route20.log - "H8QUESTSPINE COMPLETE quest=0x244B9A5E" - on a run where the player was
+        /// never activated and never moved a millimetre. It would complete in an empty world with no player
+        /// at all.
+        ///
+        /// That green line is the most dangerous output in the log, because it reads as proof the mission
+        /// axis works while the five quests that form the real first-hour chain sit behind an unproduced
+        /// discovery hash. A Mission row that counted it would be a self-certifying instrument.
+        /// </summary>
+        private const uint SelfCompletingBiomeSpineQuestHash = 0x244B9A5Eu;
+
+        /// <summary>
+        /// Records the Mission row from QuestManager's own telemetry, and refuses to accept the
+        /// self-completing quest as evidence.
+        /// </summary>
+        private static void RecordMissionMoment()
+        {
+            if (!Hecton8.Quest.QuestManager.QuestSpineBootObserved)
+            {
+                RecordMoment(
+                    MomentMission,
+                    MomentVerdict.NotExercised,
+                    "QuestManager never reached its BOOT log, so no quest telemetry exists for this run. " +
+                    "Either the quest owner is absent from the scene or the boot stopped before it awoke.");
+                return;
+            }
+
+            int authored = Hecton8.Quest.QuestManager.QuestSpineAuthoredQuestCount;
+            int autoActivated = Hecton8.Quest.QuestManager.QuestSpineAutoActivationCount;
+            int activations = Hecton8.Quest.QuestManager.QuestSpineActivationCount;
+            int completions = Hecton8.Quest.QuestManager.QuestSpineCompletionCount;
+            int reverts = Hecton8.Quest.QuestManager.QuestSpineRevertCount;
+            bool graphReady = Hecton8.Quest.QuestManager.QuestSpineStateGraphReady;
+
+            // COLD ALLOC: QuestSpineTransitionRecord[16] - one-shot verdict read in an editor probe, sized
+            // to QuestSpineTransitionRingCapacity at QuestManager.cs:62 - owner: H8_HeadlessPlayModeProbe
+            //
+            // 16, not 32. QuestSpineTransitionLogCap on the next line is 32, but that bounds how many
+            // H8QUESTSPINE LINES get printed, not how many records the ring holds, and
+            // CopyQuestSpineTransitions clamps its return to the ring capacity. Sizing this to the log cap
+            // would have looked correct and silently over-allocated while implying the ring is deeper than
+            // it is.
+            var transitions = new Hecton8.Quest.QuestSpineTransitionRecord[16];
+            int transitionCount = Hecton8.Quest.QuestManager.CopyQuestSpineTransitions(transitions);
+
+            int genuineCompletions = 0;
+            int selfCompletions = 0;
+            for (int i = 0; i < transitionCount && i < transitions.Length; i++)
+            {
+                if (transitions[i].Completed == 0)
+                    continue;
+
+                if (transitions[i].QuestHash == SelfCompletingBiomeSpineQuestHash)
+                    selfCompletions++;
+                else
+                    genuineCompletions++;
+            }
+
+            string detail =
+                $"authored={authored} graphReady={graphReady} autoActivated={autoActivated} " +
+                $"activations={activations} completions={completions} reverts={reverts} " +
+                $"transitionsLogged={transitionCount} genuineCompletions={genuineCompletions} " +
+                $"selfCompletions={selfCompletions}";
+
+            if (genuineCompletions > 0)
+            {
+                RecordMoment(MomentMission, MomentVerdict.Pass, detail);
+                return;
+            }
+
+            if (selfCompletions > 0)
+            {
+                RecordMoment(
+                    MomentMission,
+                    MomentVerdict.Fail,
+                    "the only completed quest was quest_biome_spine, whose authored trigger and completion " +
+                    "are the same condition, so it closes itself on one signal with no player operation - " +
+                    $"it would complete in an empty world. No mission completed because of the player. {detail}");
+                return;
+            }
+
+            if (authored <= 0)
+            {
+                RecordMoment(
+                    MomentMission,
+                    MomentVerdict.NotExercised,
+                    $"no quest assets are assigned to QuestManager.allQuests. {detail}");
+                return;
+            }
+
+            RecordMoment(
+                MomentMission,
+                MomentVerdict.Blocked,
+                $"{authored} quests are authored and the graph is ready, but nothing completed. {detail}");
+        }
+
         private static void RecordContentBlockedMoments()
         {
             RecordMoment(
@@ -1656,6 +1769,7 @@ namespace Hecton8.EditorTools.Diagnostics
             AddRouteMoment(MomentResource, "world object reaches inventory");
             AddRouteMoment(MomentTool, "one tool interaction is useful on the route");
             AddRouteMoment(MomentCraft, "one recipe/repair consumes the resource");
+            AddRouteMoment(MomentMission, "one mission completes BECAUSE the player did something");
             AddRouteMoment(MomentHazard, "one fair hazard creates a decision");
             AddRouteMoment(MomentSaveLoad, "save, quit/reload, return to the same state");
             AddRouteMoment(MomentProof, "console, run, profiler, GC, memory, capture, save directory diff");
