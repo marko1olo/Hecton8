@@ -3,46 +3,44 @@
 
 > **Source:** Aegir Reclamation Pool field-habitat primer, Black Keel approved excerpt.  
 > **Speaker:** Contractor shelter systems instructor, calm-channel recording.  
-> **Reviewer Note:** On HECTON-8, a room is safe only while every system inside it continues winning small arguments.
+> **Primer note:** Body text follows the Pool's habitability sheet `HB-4`. Margin lines are contractor additions, kept because the sheet is wrong without them.
 
 ---
 
-## 1. A Room Is Not A Home
+## 1. Habitability Sheet HB-4
 
-The first mistake is calling a habitat home.
+The primer opens with a definition and a form. `FIELD HABITAT: ANY ENCLOSED VOLUME CERTIFIED FOR OCCUPANCY UNDER SHEET HB-4.` Nothing on the sheet concerns comfort.
 
-A home forgives. A habitat counts. It counts heat, seals, dry volume, battery reserve, filter life, microbial load, stress cracks, emergency mass and the number of people pretending they are not listening to each other's breathing. It gives privacy only as a side effect of bulkheads. It gives comfort only when comfort costs less than panic.
+HB-4 grades nine rows: dry volume, seal state, heat balance, battery reserve at rest, filter hours remaining, microbial load, crack survey, emergency mass on hand, occupancy count. Eight passes and a note is a pass. A room that fails battery reserve at rest is written up `CONDITIONALLY OCCUPIABLE`, and the condition is never printed on the copy that goes into the room.
 
-Most field habitats on HECTON-8 began as work volumes: maintenance pockets, sample huts, pressure annexes, relay closets, survey shelters and half-certified contractor rooms bolted to older colony frames. Some were built by Deep Reach crews. Some were improvised after the evacuation. Some are only habitable because three later workers hated dying enough to fix what the original plan ignored.
+Most field habitats on HECTON-8 began as work volumes: maintenance pockets, sample huts, pressure annexes, relay closets, survey shelters and half-certified contractor rooms bolted onto older colony frames. Deep Reach crews built some. Others were improvised after the evacuation. Several are habitable only because later workers hated dying enough to fix what the original plan left out, and none of those fixes appear on a sheet.
 
-Marauders still decorate them. A strip of tape around a valve. A tool hung in the same place every time. A scratched depth number over a bunk. A cup that nobody admits is sentimental. These gestures do not make the room a home. They make the room legible enough for a tired person to use it before fear starts inventing new shapes.
+Contractors still decorate. A strip of tape wound round a valve so a glove finds it in the dark. A tool hung in the same place every rotation. A depth number scratched over a bunk. A cup nobody admits to keeping. That changes no row on HB-4. It makes the room usable by a tired person before fear starts inventing shapes in it.
 
 ## 2. Quiet Power
 
-The most important sound in a habitat is the one that does not change.
+The instructor's rule is that the useful sound in a habitat is whichever one has not changed since the last check.
 
-A steady pump means circulation has not lost its rhythm. A dull fan means the scrubber is still moving air through media. A soft click in the heater bank means frost has not reached the control bus. A silent wall is not always good. It may mean insulation. It may mean a dead sensor. People who live long enough in pressure rooms learn to hear absence as information.
+A steady pump note means circulation is holding its rhythm. A fan gone dull is still pushing air through media, which is a different fact from a fan gone quiet. Frost reaching the heater control bus takes the soft click out of the bank before it takes the heat out of the room. Silence in a wall proves nothing on its own - it can be insulation, and it can be a sensor that stopped reporting three rotations ago.
 
-Power on HECTON-8 is rarely dramatic. It arrives in rationed cells, salvaged bus bars, thermal stores, tether-fed trickle lines, flywheel packs and ugly emergency chem stacks that smell like old coins when they warm. A bright panel is useful. A stable panel is beloved. The difference is learned at three in the morning equivalent, when the room goes half-dark and everyone waits to see which system blinks first.
+Power arrives here in poor forms and gets logged anyway: rationed cells, salvaged bus bars, thermal stores, tether-fed trickle lines, flywheel packs, and emergency chem stacks that smell like old coins as they warm. The primer prints one worked example. `BUS 3 IDLE 26 V. UNDER PUMP START 19 V. RECOVERY 4 S. ACCEPT.` Beside it, in contractor hand: `19 V trips the inner hatch solenoid. Start the pump last, or open the hatch first.`
 
-That is why field workers call reliable power quiet. Not because it makes no noise, but because it does not ask for attention while a person is deciding whether to live.
+## 3. The Airlock Card
 
-## 3. Airlock Etiquette
+The lock rules are printed as a posted card, short enough to read while equalising.
 
-Every habitat has rules nobody writes down because writing them down would make the room feel less human.
+`DO NOT CROWD THE INNER HATCH. DO NOT SPEAK WHILE ANOTHER OCCUPANT IS EQUALISING. CALL OUT FLUID BEFORE STEPPING THROUGH. REPORT A CRACKED GLOVE AS CRACKED GLOVE.` The last line is underscored on every card in Pool stock, because `small issue` is the wording that appears on the report that cost a seal rigger a hand.
 
-Do not crowd the inner hatch. Do not joke while someone is still equalizing. Do not open a private locker during a pressure alarm unless the owner is dead or the seal kit is inside. Call out fluid before stepping through. Announce a cracked glove as cracked glove, not "small issue." If a diver comes in shaking, give them a task before giving them pity. Pity leaves too much room for memory.
+The card leaves out rules that carry the same weight. Do not open another occupant's locker during a pressure alarm unless the owner is dead or the seal kit is inside it. Give a shaking diver a task before offering sympathy. Those live in the margin, in whatever hand was last in the room.
 
-These habits sound small. They are not. A safe room fails first as a room and then as a society. One person hoards heat. One person lies about contamination. One person leaves grit in the lock track. One person vents panic into the only channel everybody needs. The systems can survive stress. People often cannot survive the way stress teaches them to treat each other.
+Habitat incidents are filed by system - heat, seal, filter, power - so the file never records how a room lost its order. An occupant who hoards heat shows up as a battery row. An occupant who lies about contamination shows up as a filter row six days later. Grit left in a lock track becomes a seal row. Somebody venting panic into the only channel everybody needs does not appear anywhere. HB-4 has no row for the people in the room.
 
-Black Keel records habitat incidents as maintenance events. Marauders remember them as names.
+## 4. What The Rooms Still Hold
 
-## 4. The Things People Leave Behind
+Abandoned habitats keep records their paperwork does not.
 
-Abandoned habitats are the most honest archives on HECTON-8.
+Official files close cleanly: pressure loss timestamp, crew transfer, claim suspension, last reported door status. One suspended-claim notice recovered from a shelf reads `OCCUPANCY: 0. STATUS: SECURED PENDING REVIEW.` The room it was pinned in has six bunks, five sets of boots and a meal tray still strapped to the deck.
 
-Official logs say when a room lost pressure, when a crew transferred out, when a claim was suspended or when a door stopped answering. The room itself says more. It shows which tools were taken and which were not. Whether the last meal was finished. Whether the emergency blanket was folded by someone calm or kicked aside by someone running. Whether the wall marks count days, dives, bodies or debts.
+The room supplies the rest of the record. Which tools were taken and which were left in the clamp. Whether the emergency blanket was folded or kicked into a corner. Whether the wall marks count days, dives, bodies or debts. A habitat with every cup washed and no spare cell in the rack describes a different last hour than one with a cutter still clamped and still warm.
 
-Marauders enter these rooms with practical hunger. They need filters, fuses, dry bags, charge, medicine, sealant, firmware keys and anything that can be traded to a receiver queue. But the rooms also teach. A habitat with all cups washed and no spare cells left says a different final hour than a habitat with a cutter still warm in its clamp. A room can accuse without a voice.
-
-Good scavengers learn to take what keeps them alive and still notice what the room was trying to say.
+Contractors enter these rooms hungry for filters, fuses, dry bags, charge, medicine, sealant, firmware keys and anything a receiver queue will price. They are also the only place where the occupancy count can be checked against the notice on the wall.

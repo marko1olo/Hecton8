@@ -3,56 +3,54 @@
 
 > **Source:** Black Keel suit-cage registry, contractor equipment layer.  
 > **Speaker:** Quartermaster service voice, public-safe maintenance digest.  
-> **Reviewer Note:** A Class-IV suit is not a power fantasy. It is a rented room that moves, argues with the ocean and records what you did inside it.
+> **Registry note:** Rows are copied from cage sign-out ledger `CL4-SO/2190` and the matching Return Action Queue deduction sheet. Contractor margin corrections were left in place where they contradict the ledger.
 
 ---
 
-## 1. Not Armor First
+## 1. Cage Stock And Class Designation
 
-New Marauders call the Class-IV a suit because the word is short and because panic needs short words. The quartermaster calls it a pressure-rated mobile work envelope. Old divers call it whatever lets them sleep.
+The ledger lists the item as `PRESSURE-RATED MOBILE WORK ENVELOPE, CLASS IV, SERVICE GRADE 3`. Nobody says that twice. Contractors say suit, because short words survive a helmet.
 
-It is not armor first. Armor is what people imagine when they are still thinking about predators, wreck edges and sharp tools. The suit's first job is more ordinary and less forgiving: keep one human-shaped volume from becoming part of the ocean. Everything else is secondary. The plating, joint guards, ballast boots, viewport shutters, tether clamps, scrubber spine, heater mesh and tool hardpoints all serve that single insult to the water.
+Line 1 of the issue sheet is the only line a quartermaster reads aloud: `PRIMARY FUNCTION: HOLD ONE OCCUPIED VOLUME AGAINST DIFFERENTIAL. ALL OTHER FUNCTIONS SUBORDINATE.` Plating, joint guards, ballast boots, viewport shutters, tether clamps, scrubber spine, heater mesh and the eight tool hardpoints are billed beneath that line, each under its own deduction code.
 
-From the outside a Class-IV looks heavy, slow and almost stupid. That is because it has no reason to look graceful. Grace wastes motion. Motion wastes heat. Heat wastes battery. Battery becomes breath. In deep work, ugliness is not a flaw if it keeps its promise.
+A Class-IV moves badly by design, and the ledger shows the arithmetic. Cage 6 released suit `CL4-217` onto a 640 m service route; the return row logs 41 percent of pack charge spent on heater draw and 6 percent on movement. The clerk underlined those two figures and left the rest of the row clean.
 
-The promise is limited. No suit makes a Marauder safe. A good suit only makes danger slow enough to read.
+One sentence sits where a contractor has to read it while signing: `RECOVERY IS NOT GUARANTEED BY THIS RATING.` The Return Action Queue quotes it back whenever a lien is disputed.
 
-## 2. The Shape Of A Working Body
+## 2. Fit, Assist Limits And Old Incidents
 
-The Class-IV does not let a person swim through HECTON-8. It lets a person negotiate where they stand.
+A Class-IV does not let a person swim through HECTON-8. It lets a person choose where to stand and then bills for the standing.
 
-The boots carry ballast and release mass in stages, not because falling is rare, but because sudden buoyancy is its own kind of death. The joints are servo-assisted, but every assist is conservative. A suit that overhelps can tear a worker's shoulder against a stuck hatch. A hand actuator is strong enough to hold a cutter steady and weak enough that a frightened contractor cannot easily crush their own glove against a bulkhead. Every design choice contains an old accident.
+Ballast boots release mass in staged increments because the older cage ledger carries four rows marked `UNCONTROLLED ASCENT - OCCUPANT UNRECOVERED`. Shoulder assist is capped low: incident record `IR-1132` describes a servo that held against a jammed hatch while the arm inside the sleeve did not. Hand actuator force is set to hold a cutter steady and to give out before a frightened glove can close on a bulkhead. That limit carries revision mark `R4` and has never been raised.
 
-The viewport is small by habit and by law. More glass means more light, more vision and more ways to lose both. Most Marauders learn to turn their bodies like machinery rather than their heads like tourists. A good worker sees with sonar, suit pressure maps, tool feedback, tether tension and the behavior of suspended silt. The glass is for confirmation. The ocean punishes people who use it as the whole truth.
+The viewport is small because glass is the component that fails with an audience. Working crews steer by sonar, suit pressure map, tool feedback, tether tension and the drift of suspended silt, then use the glass to confirm what they already decided. Cage inspection closes with one of three words in the viewport condition field: `CLEAR`, `HAZED`, `EDGE`.
 
-Inside, the body becomes part of a schedule. Drink too much before descent and the suit becomes a prison. Drink too little and cold makes the hands clumsy. Breathe badly and the scrubber pays for it. Panic has a maintenance cost.
+Before descent the contractor initials four boxes on the same sheet - fluid load, glove ring grit, scrubber wafer date, heater mesh continuity. Each box exists because somebody died with a full bottle and one of those four things wrong.
 
-## 3. Life Support Is A Stack Of Small Arguments
+## 3. Life Support As Line Items
 
-Black Keel never issues "air." It issues a stack of systems that agree to pretend air exists.
+Black Keel does not issue air. It issues six billable systems that between them behave like air.
 
-The breathing mix comes from certified bottles or receiver-fed transfer lines. The scrubber pulls carbon dioxide before the helmet turns sour. Condensate traps keep water out of sensors and out of places where salt becomes a patient knife. Thermal mesh keeps the ribs warm enough for decision-making. Suit firmware watches pressure deltas, seal creep, heater draw, voice stress, glove humidity and the ugly pauses between breaths.
+Certified bottle or receiver-fed transfer line. Scrubber bed with a dated wafer. Condensate trap, because salt turns patient and sharp wherever water sits against a sensor. Thermal mesh, rated for decision-making rather than comfort. Firmware watch on pressure delta, seal creep, heater draw, glove humidity and the length of the pauses between breaths. Every item carries a deduction code, and the sheet totals them under `SUPPORT CONSUMABLES - NON-REFUNDABLE`.
 
-None of those systems are dramatic when they work. That is why Marauders distrust drama. A bright warning is already late. A changed fan pitch, a sweet-metal smell in the helmet, a hand that feels slow for half a second, a pressure trace that refuses to settle after a kneel: those are the warnings that keep people alive.
+None of it is loud while it works, which is the whole reason a loud warning is already late. Cage handlers are trained on the quiet set instead: a changed fan pitch, sweet metal in the helmet, a hand that answers half a second slow, a pressure trace that will not settle after the occupant kneels.
 
-The contract sees life support differently. Every bottle, mesh patch, scrubber wafer, seal ring and diagnostic cycle has a line item. The suit keeps a person alive; the ledger turns that life into billable evidence. By the third descent most contractors understand the shape of the trap. They are not buying safety. They are renting the chance to be careful.
+The deduction sheet against suit `CL4-217` runs eleven lines for one descent and closes `BALANCE APPLIED TO LIEN`. Most contractors have the arithmetic memorised by the third descent. The sheet has no line for a descent that was refused.
 
-## 4. Tools, Weapons And Honest Work
+## 4. Tool Mounts And The Intended-Use Field
 
-A Class-IV tool mount does not care whether the object attached to it is a cutter, a harpoon driver, a sample drill or a rescue hook. The distinction lives in the job order.
+A hardpoint cannot tell a cutter from a harpoon driver, a sample drill or a rescue hook. The job order does that, in a field labelled `INTENDED USE`.
 
-Marauders learn that tools become weapons only when the work has already gone wrong. A cutter is for pressure doors, pipe cages, colony lockers and alloy ribs. If it is pointed at something alive, somebody has lost control of distance. A harpoon driver buys space; it rarely wins a fight. A tether hook saves more lives than any blade, because the hardest thing to fight on HECTON-8 is not always a mouth or a claw. Sometimes it is a current, a bad step, or the quiet decision of the floor to stop being floor.
+Cutters are written against pressure doors, pipe cages, colony lockers and alloy ribs. If a cutter has been pointed at something alive, somebody already lost control of distance, and the damage field says so in three words. A harpoon driver buys space and settles nothing. A tether hook has recovered more people than every blade in cage stock, because what usually kills a contractor is a current, a bad step, or a floor deciding to stop being floor.
 
-The best tools are boring until the exact second they are not. Clamp lights. Seal picks. Sample sleeves. Bolt splitters. Sludge brushes. Cable splints. A roll of marked repair tape with somebody's handwriting on the inside. These are not cinematic objects, but they are the things a worker curses for, prays for and steals first from a dead suit if they can bear to open it.
+The standard route manifest is unglamorous and complete: two clamp lights, three seal picks, six sample sleeves, one bolt splitter, one sludge brush, two cable splints, one roll of marked repair tape. Cage 6 stock still holds a tape roll with a pump chief's handwriting legible inside the core, re-issued nine times, never replaced by any clerk who read it.
 
-Black Keel prices the tools as equipment. Marauders price them as verbs.
+## 5. What The Suit Files On Its Occupant
 
-## 5. Suit Memory
+Every Class-IV writes a return record whether its occupant writes one or not.
 
-Every Class-IV remembers.
+The fields are fixed: `SIGNED OUT BY`, `CAGE`, `SEALS REPLACED`, `JOINT OVERTEMP EVENTS`, `MOUNT SHOCK`, `MAX PRESSURE BAND`, `ALARMS MUTED BY HAND`. The Asset Silence Board reads the last field first. Suit `CL4-217` came back with `ALARMS MUTED BY HAND: 3` beside a condition note of `EXTERIOR CLEAN`. Both entries are accurate. Only one of them is worth anything.
 
-It remembers who signed it out, which cage released it, which seals were changed, which joints overheated, which tool mount took shock, which pressure band it crossed and which alarms were muted by a human hand. The suit does not remember like a person. It remembers like a witness that can be asked the wrong question by the right office.
+That is why experienced contractors distrust a washed suit. Salt collects under latch lips and stress stays in the glass edge where a wipe cloth cannot reach, but neat notes hide bad work best of all. A suit back from a route nobody logged can be worth more as testimony than as hardware, and dangerous for exactly that reason.
 
-This is why experienced Marauders treat a returned suit with suspicion. A cleaned exterior means almost nothing. Salt hides under latch lips. Stress hides in glass edges. Bad work hides in neat notes. A suit that came back from a silent route may be worth more as testimony than as equipment, and more dangerous for the same reason.
-
-Some contractors carve private marks where the cage camera cannot easily see them: one dot for a descent survived, two for a body recovered, a short line for a seal they do not trust. Officially this is vandalism. Unofficially, handlers read those marks before signing out a suit to anyone they do not hate.
+Some contractors cut private marks where the cage camera has a poor angle: one dot for a descent survived, two for a body recovered, a short line beside a seal they do not trust. Ledger policy files this as `WILFUL DEFACEMENT OF LEASED PROPERTY, CODE 14-C`. Handlers read the marks anyway before signing a suit out to anyone they do not hate.

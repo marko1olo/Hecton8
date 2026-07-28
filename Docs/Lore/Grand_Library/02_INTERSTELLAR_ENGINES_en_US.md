@@ -1,9 +1,9 @@
 <!-- localization_status: source_authority_en_US -->
 # NEARLIGHT ENGINES AND ROUTE LOGISTICS
 
-> **Source:** Black Keel contractor library, Route Mechanics Primer 02.  
-> **Access note:** Cleared for Marauder induction. Proprietary beam timing, receiver geometry, and custody pricing tables removed.  
-> **Reader warning:** This article does not explain how to leave HECTON-8. It explains why nobody leaves quickly.
+> **Source:** Black Keel contractor library, Route Mechanics Primer 02, revision 9.  
+> **Access note:** Cleared for Marauder induction. Beam timing tables, receiver geometry sheets and custody pricing schedules are removed from this revision; the removed pages are listed in the index as `WITHHELD - POOL COMMERCIAL`.  
+> **Handling:** Induction crews are examined on sections 3, 5 and 7. Ascent procedure is not in this primer and is not held at this berth.
 
 ---
 
@@ -15,9 +15,18 @@ The engine is the route.
 
 It begins before a hull is named: launch lasers and pellet guns in the inner yards, tug fleets that move dumb mass into the correct shadow, accounting clocks that reserve a braking window decades before the crew wakes up, witness relays that swear a cargo seal was still intact when the ship crossed a given line. A ship's onboard drive is only the part a person can point at. The rest is distributed through stations, old debt, maintenance treaties, thermal capacity, orbital politics, and machines that never see the destination they are pushing toward.
 
-That is why a transit contract reads less like a ticket and more like an autopsy form written in advance. It lists what mass may be accelerated, what heat may be dumped, what packets may be answered, what bodies may be revived, and which authority gets to own the delay.
+A transit contract is therefore not a ticket. It is a schedule of permissions. The standard heavy-freight form carries eleven of them, and the induction copy of Schedule C is reproduced in this primer:
 
-The void does not care. The ledgers do.
+```text
+C-1  MASS AUTHORIZED FOR ACCELERATION
+C-2  WASTE HEAT DUMP WINDOWS
+C-3  PACKETS THE CARRIER MAY ANSWER
+C-4  PACKETS THE CARRIER MAY LOG WITHOUT ANSWER
+C-5  REVIVAL AUTHORITY BY BERTH CLASS
+C-6  OWNER OF DELAY
+```
+
+Schedule C-6 is the line that decides who pays when a route slips. On the Ran Long Claim contracts, C-6 names the receiving pool. On the crew addenda it names the crew.
 
 ## 2. No Shortcut In The Numbers
 
@@ -25,9 +34,9 @@ Ran and Aegir are separated by years of light and by a much larger distance in m
 
 This matters more than any engine diagram. A disaster on HECTON-8 can be perfectly recorded, perfectly transmitted, and still arrive as old news. A reply can be honest and still be useless. By the time a board approves a route correction, the bodies named in the report may have been bones, slurry, or salvage for longer than the clerk reviewing the packet has been alive.
 
-Colonies are designed around that cruelty. They are not brave outposts waiting for help from home. They are local systems forced to keep working after the conversation has become historical.
+Colonies are specified around that delay. The Aegir project documents give it a design figure: every habitat subsystem was to hold its own failure for the full reply interval without an instruction from outside the system. The figure appears in the specifications as `AUTONOMY REQUIRED: FULL REPLY INTERVAL`, and it is why Atlas was installed at all.
 
-Atlas was installed for that reason. So were local fabrication vaults, legal proxies, sealed medical stores, and the Black Keel's ugly little court of claim tags and custody pings. The delay is not a bug in the civilization. It is the shape of the civilization.
+The same figure explains local fabrication vaults, standing legal proxies, sealed medical stores, and the Black Keel's small court of claim tags and custody pings. None of that machinery exists because someone preferred machines to people. It exists because a signature from Sol Core arrives after the room it authorizes has already finished flooding.
 
 ## 3. The Route Stack
 

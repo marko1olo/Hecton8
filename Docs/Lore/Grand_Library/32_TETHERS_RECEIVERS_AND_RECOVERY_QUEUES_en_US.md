@@ -3,46 +3,42 @@
 
 > **Source:** Black Keel recovery operations cache, contractor public layer.  
 > **Speaker:** Receiver control service, simplified training voice.  
-> **Reviewer Note:** A tether is a line. A receiver is a mouth. A queue is the place where physics, contract and fear decide who gets heard first.
+> **Cache note:** Extracts from queue log `RQ-2190-0417`, tether strain records for the same shift, and the standing acceptance card posted at both receiver throats.
 
 ---
 
-## 1. The Line Up
+## 1. What A Tether Files
 
-A descent begins when a person goes down. A recovery begins when somebody above agrees that the line still matters.
+A descent starts when a contractor leaves the cage. A recovery starts when the queue accepts a slot request. Those are two events with two timestamps, and the gap between them is where most of this cache lives.
 
-Marauders talk about tethers as if they are simple cables, because calling them simple makes the work easier to start. In practice a tether is power reserve, signal path, legal witness, emergency pull, navigation hint and future argument. It carries strain, timestamps, suit telemetry, route pings, ownership tags and the small lies a frightened worker tells their own oxygen clock.
+Crews talk about tethers as cable. The record is a table: strain in newtons at one-second cadence, suit telemetry, route pings, ownership tag, custody transitions, and the operator voice channel with its mute flags. Log `RQ-2190-0417` holds nine minutes where strain climbed steadily while the voice channel stayed muted from the diver's side. No office has found a way to bill that gap.
 
-The line is not always physical for its full length. Some routes use hard tether, some use acoustic handoff, some use dead-reckoned recovery pings and some use staged anchor nodes that can be collected later if the contract still likes the numbers. The safest line is the one nobody had to think about. The most common line is the one somebody repaired twice and pretended not to remember.
+Not every line is physical for its whole length. Hard tether runs to a stage anchor and acoustic handoff carries the rest; dead-reckoned pings cover the routes where geometry is trusted more than it should be; staged anchor nodes get planted for later collection while the contract still likes the numbers. The line most crews actually work has two splices in it and a `FIELD REPAIR - UNCERTIFIED` flag that nobody has cleared.
 
-To Black Keel, a good tether is proof that a descent is still recoverable. To a Marauder, it is the voice that says the world above has not entirely closed.
+## 2. Jurisdiction, Not Rescue
 
-## 2. Tether Is Not Rescue
+New contractors read a tether as rescue. Clause 6 of the recovery annex is plainer: `TETHER CONTINUITY ESTABLISHES CARRIER JURISDICTION OVER THE ATTACHED ASSET. IT DOES NOT ESTABLISH A RECOVERY OBLIGATION.`
 
-New contractors believe a tether means rescue. Old contractors know it means jurisdiction.
+A tether can pull a tool, a sample, a suit or a body, and it can prove when pressure failed, when a latch cycled, when an alarm was muted and when a package crossed into custody. It proves other things without being asked. Row 41 of the same log reads `DEPTH EXCEEDED RATED BAND 00:04:11`. Row 47 reads `OCCUPANT ACKNOWLEDGED RETURN ORDER, DID NOT COMPLY`. The occupant came back up. So did the rows, and the rows are what the desk reads.
 
-A tether can pull a tool, a sample, a suit or a body. It can prove when pressure failed, when a latch opened, when a worker muted an alarm and when a package crossed into custody. It can also prove that a living contractor ignored return instructions, exceeded rated depth, damaged leased equipment or brought an object into quarantine without the right flag.
+That is why the fear runs both ways. A snapped line leaves questions. An intact line can leave answers a contractor cannot afford in writing.
 
-That is why people fear a clean tether log almost as much as a broken one. A broken line leaves questions. A clean line may leave answers nobody can afford.
+The worst case is a line that holds. A stuck suit, still transmitting, still breathing badly, close enough for the receiver desk to price the reach, becomes a figure every office can see and none will initial. The Return Action Queue keeps a code for that condition: `RECOVERY DEFERRED, CONTINUITY MAINTAINED`. It has been applied to people who were still talking.
 
-The worst moment is not always when the tether snaps. Sometimes it is when it keeps holding. A stuck suit, still transmitting, still breathing badly, still close enough for Black Keel to calculate cost, becomes a problem every office can see and no office wants to name. The line does not save the worker by itself. It only prevents the worker from becoming easy to ignore.
+## 3. Receiver Gates And Acceptance Order
 
-## 3. Receivers Are Mouths With Schedules
+A receiver does not open because somebody is frightened. It opens when a return passes the gates, in order.
 
-Black Keel's receivers do not open because someone is afraid. They open because a return can be accepted.
+The card posted at both throats lists them: `MASS BRACKET`, `SURFACE TEMPERATURE`, `PRESSURE LOCK CYCLE`, `CONTAMINATION CLASS`, `CUSTODY SLOT`, `SCHEDULE WINDOW`. Anything already inside the lock outranks anything still outside it. Queued alongside a contractor, on any given window, there may be sealed cores, witness pods, a damaged drone, debt cargo, body bags, or an evidence packet carrying a priority code from the Packet Notary Interface.
 
-A receiver has heat limits, pressure locks, contamination gates, mass brackets, route timing, custody slots and a queue of other things also asking to enter the vessel. Some of those things are people. Some are samples. Some are sealed cores, witness pods, damaged drones, debt cargo, body bags or evidence packets with priority codes attached.
+A living contractor arriving early with `CONTAMINATION CLASS: UNDETERMINED` can be harder to accept than a sample crate arriving exactly on its assigned ping. The machine is not cruel about it. A crate is finished when the lock closes; a person keeps producing records after coming aboard - medical, quarantine, welfare addendum, statement - and every record has an office attached to it.
 
-The receiver is a mouth, but not a kind one. It will take what fits the schedule, what fits the lock and what fits the liability envelope. A living Marauder who arrives early with bad seals can be harder to accept than a dead sample crate that arrives exactly on its assigned ping. This is not because the machine hates the living. It is because the living create more records after they come aboard.
+Everyone aboard knows this and works around saying it, because saying it means admitting the carrier can be near enough to hear a person breathe and still be busy with a box.
 
-Everyone on Black Keel understands this and pretends not to, because the alternative is admitting that the ship can be near enough to hear a person breathe and still be busy with another object.
+## 4. Queue Discipline
 
-## 4. Queue Culture
+The request form is five fields long, and those five fields are the whole of queue discipline: `MASS`, `CONDITION`, `CONTAMINATION`, `PROOF ATTACHED`, `REQUESTED WINDOW`. Filled badly, it goes to the bottom without a reply.
 
-The recovery queue is where manners become survival equipment.
+Crews keep panic off the public channel, because a handler who hears panic starts doubting the mass figure too. Condition gets stated before need, and a route witness gets attached wherever one exists, since a witness hash moves a slot faster than asking does. The `BODY` field is marked only after the suit stops arguing - it cannot be reversed and it changes the fee. Every handler has a habit worth learning: one refuses untagged fluid on sight, one will re-sort a window for an attached witness, one files silence as `REQUEST WITHDRAWN`.
 
-Marauders learn not to waste a clear channel. They keep panic off public audio if they can, because panic makes handlers doubt the rest of the report. They announce mass, condition, contamination and proof before begging. They attach evidence to requests. They mark a body as body only when the suit has stopped arguing. They know which receiver tech hates untagged fluid, which handler will move a queue if a route witness is attached and which clerk files silence as refusal.
-
-There are ugly customs. A contractor may send a sample up first because the sample can buy the receiver time needed for the person. A pair may cut a tool loose to keep the tether from overstraining. Someone may lie about contamination to avoid losing a window and then live long enough to pay for that lie. None of this is heroic. It is queue behavior under pressure.
-
-Black Keel records queue discipline as efficiency. Marauders remember it as character.
+The ugly customs are procedure too. A contractor sends the sample up first because the sample buys the receiver the cycle time the person needs. A pair cuts a tool loose to hold strain under the splice limit. Someone enters `CONTAMINATION: NONE` to keep a window and lives long enough to pay that fee twice. Log `RQ-2190-0417` closes with `SLOT RELEASED - SEE WELFARE ADDENDUM 3`. Addendum 3 is not in the cache.
