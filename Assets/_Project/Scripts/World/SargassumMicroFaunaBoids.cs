@@ -1079,6 +1079,16 @@ namespace Hecton8.World
         [Tooltip("Authored zero-flow Texture3D bound when no abyssal flow field is published. Runtime Texture3D fallback generation is forbidden.")]
         private Texture3D neutralAbyssalFlowTexture;
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// Byte-identical to HectonMarineSnowRenderer.cs:49. That renderer needs the same authored
+        /// zero-flow volume and resolves it through this exact literal, so both consumers answer to one
+        /// asset instead of two divergent copies.
+        /// </summary>
+        private const string DefaultNeutralAbyssalFlowTexturePath1728 =
+            "Assets/_Project/Art/Textures/VFX/ParticulateFlipbooks1728/TX_MarineSnow_EmptyAbyssalFlow_1x1x1.asset";
+#endif
+
         [Header("â”€â”€ Population â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField, Range(128, 2048)]
         [Tooltip("Total boid count rendered and simulated on the GPU.")]
@@ -2829,9 +2839,48 @@ namespace Hecton8.World
             _activeBoidCount = math.clamp(_activeBoidCount <= 0 ? boidCount : _activeBoidCount, 128, boidCount);
         }
 
+        /// <summary>
+        /// Editor-only cold self-heal for the authored zero-flow volume, copied from
+        /// HectonMarineSnowRenderer.RefreshAuthoredNeutralVolumeFallbacksColdEditor
+        /// (HectonMarineSnowRenderer.cs:5058-5068) - same guard shape, same AssetDatabase lookup, same
+        /// null-only assignment.
+        /// </summary>
+        /// <remarks>
+        /// Why this component needed it: Ocean_Crest.prefab:634 DOES serialize this field, but at
+        /// guid 5b18df2e53d2a3f4bbd9eba32746810b -
+        /// Assets/_Project/Art/TEXTURES/RuntimeFallbacks/TX_H8NeutralAbyssalFlow_1x1x1_1428.asset - which
+        /// commit 621403ad5 ("1428 file cleanup", 2026-06-15) deleted along with its .meta. A dangling
+        /// GUID deserializes to null, so the guard below fires and DisableComputeDispatch runs the whole
+        /// swarm inert.
+        ///
+        /// This is deliberately NOT a runtime fallback: it never constructs a texture, it only resolves an
+        /// authored asset, and it is compiled out of player builds exactly like the renderer's version.
+        /// It therefore silences the editor/batchmode error but does NOT fix a build - the durable fix is
+        /// re-pointing the serialized prefab reference (SargassumNeutralAbyssalFlowPrefabRepair).
+        ///
+        /// UnityEditor is fully qualified rather than imported: this file compiles into the runtime
+        /// assembly and a file-scope `using UnityEditor;` would put names like Editor, Selection and
+        /// Progress into scope across 10 000+ lines.
+        /// </remarks>
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void RefreshAuthoredNeutralAbyssalFlowFallbackColdEditor()
+        {
+#if UNITY_EDITOR
+            if (neutralAbyssalFlowTexture == null)
+            {
+                neutralAbyssalFlowTexture =
+                    UnityEditor.AssetDatabase.LoadAssetAtPath<Texture3D>(DefaultNeutralAbyssalFlowTexturePath1728);
+            }
+#endif
+        }
+
         private void EnsureBuffers()
         {
             _boidMeshVertexCount = boidMesh != null ? boidMesh.vertexCount : 0;
+
+            // Runs before the guard, mirroring HectonMarineSnowRenderer.cs:3356 -> :3359. One call site
+            // here covers all three EnsureBuffers callers (Awake:1962, OnEnable:1988, vault rebind:2669).
+            RefreshAuthoredNeutralAbyssalFlowFallbackColdEditor();
 
             if (neutralAbyssalFlowTexture == null)
             {

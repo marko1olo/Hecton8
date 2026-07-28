@@ -576,7 +576,12 @@ public class HectonPlayerSpawner : MonoBehaviour
 
         bool terrainReady = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        bool terrainBlockerReported = false;
+        // Which condition was false on the previous pass, tracked as a CODE rather than a one-shot bool so
+        // that a blocker which CHANGES mid-wait gets named again. The one-shot bool it replaces always fired
+        // on the FIRST failing pass - the pass where nothing has finished initialising - so the single most
+        // useful line this method emits was guaranteed to report the least useful state and to stay silent
+        // about the state the run actually died in.
+        TerrainReadinessBlocker lastReportedBlocker = TerrainReadinessBlocker.None;
 #endif
 
         _groundProbeOrigin.Set(searchOrigin.x, groundProbeOriginHeight, searchOrigin.y);
@@ -606,6 +611,33 @@ public class HectonPlayerSpawner : MonoBehaviour
                     $"[HectonPlayerSpawner] Terrain found at map center. Height: {_hitInfo.point.y:F1}");
 #endif
             }
+            else if (WorldChunkPhysicsBakedEvents.IsWorldPointBakeFailed(searchOrigin.x, searchOrigin.y))
+            {
+                // TERMINAL-FAILURE RELEASE. This is the lane's own contract, not a new policy:
+                // WorldChunkPhysicsBakedSignal.cs:35 - "Terminal failure for this chunk. The gate must
+                // resolve (degraded), never wait forever" - and WorldChunkPhysicsBakedEvents.cs:120 exists
+                // for exactly this question. That method had ZERO callers project-wide, so a chunk that
+                // published FlagBakeFailed over the search origin parked this loop on a point that can never
+                // become ready: IsSpawnPointPhysicsReady refuses a failed chunk by design
+                // (WorldChunkPhysicsBakedEvents.cs:113) and phase 1 only ever re-asks the SAME point.
+                //
+                // Leaving the loop does NOT release the player. Phase 2 re-gates every candidate through
+                // IsSpawnPointPhysicsReady, so the failed chunk stays refused and the search simply moves
+                // outward - which is what the R99 note on IsSpawnPointPhysicsReady already claimed happened.
+                // Signal-driven, so it does not reach for the loading timeout `AGENTS.md`:197 bans.
+                //
+                // This is NOT a fix for the measured 2026-07-28 route failure. In Logs/omega_route20.log the
+                // lane never published anything at all, so this branch could not have fired. It closes a
+                // latent hang, and it is the only condition under which this wait was previously infinite by
+                // construction rather than merely slow.
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                LogSpawnerWarning(
+                    "[HectonPlayerSpawner] Phase 1: the chunk covering the search origin reported a TERMINAL " +
+                    "bake failure, so centre readiness is unreachable. Searching outward instead; the " +
+                    "physics gate still refuses every failed chunk.");
+#endif
+                break;
+            }
             else
             {
                 // REAL elapsed seconds. This was `waitTimer += retryDelay`, which advances by 0.5 per pass
@@ -632,21 +664,39 @@ public class HectonPlayerSpawner : MonoBehaviour
                 }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                // Name the blocking condition ONCE. "Terrain not ready" on its own cost this project a
-                // whole route verdict: 37 identical lines that never said which of the three conditions was
-                // false, so the failure looked like slow terrain when it was an unsatisfiable predicate.
-                if (!terrainBlockerReported)
+                // Name the blocking condition, and name it AGAIN whenever it changes. "Terrain not ready" on
+                // its own cost this project a whole route verdict: 37 identical lines that never said which
+                // of the conditions was false, so the failure looked like slow terrain when it was an
+                // unsatisfiable predicate.
+                TerrainReadinessBlocker blocker =
+                    ResolveTerrainReadinessBlocker(searchOrigin.x, searchOrigin.y);
+                if (blocker != lastReportedBlocker)
                 {
-                    terrainBlockerReported = true;
+                    lastReportedBlocker = blocker;
                     LogSpawnerWarning(
-                        "[HectonPlayerSpawner] Phase 1 blocked: " +
-                        DescribeTerrainReadinessBlocker(searchOrigin.x, searchOrigin.y));
+                        "[HectonPlayerSpawner] Phase 1 blocked: " + DescribeTerrainReadinessBlocker(blocker));
                 }
 
                 LogSpawner(
                     $"[HectonPlayerSpawner] Terrain not ready; waiting ({waitTimer:F1}s).");
 #endif
-                await Awaitable.WaitForSecondsAsync(retryDelay, cancellationToken: ct);
+                try
+                {
+                    await Awaitable.WaitForSecondsAsync(retryDelay, cancellationToken: ct);
+                }
+                catch (OperationCanceledException)
+                {
+                    // THE RUN DIES HERE, and until now it died mutely. The caller's per-step no-progress
+                    // budget - GameBootstrapper.cs:614 `bootstrapTimeout = 30f`, re-armed by every
+                    // SetSceneActivationStep through GameBootstrapper.cs:7266 - is SMALLER than both budgets
+                    // this class owns (maxWaitTime 60s, globalTimeoutSec 120s), so on the production route
+                    // the outer token always wins and neither ForceFallbackSpawn above can ever run. The
+                    // cancellation surfaces from inside THIS await rather than from the loop-top
+                    // ThrowIfCancellationRequested, so nothing in this method observed it and the log's last
+                    // word on the subject was one more "Terrain not ready" line.
+                    ReportPhase1Cancelled(searchOrigin.x, searchOrigin.y);
+                    throw;
+                }
             }
         }
 

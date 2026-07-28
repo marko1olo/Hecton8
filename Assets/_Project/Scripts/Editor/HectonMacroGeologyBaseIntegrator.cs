@@ -128,6 +128,19 @@ namespace Hecton8.Editor
         //  does not resize TerrainData assets already baked at 250 m. If the tiles in the scene are
         //  pinned/saved rather than generated on load, the terrain stays 250 m until a regenerate, and
         //  a run of this tool alone is not proof that the world got taller.
+        //
+        //  WRONG-SCENE TRAP - read before concluding this defect is fixed. A sibling tool,
+        //  Hecton8/Diagnostics/Fix MapMagic Height (FixMapMagicHeightTask.cs:12), already writes the
+        //  correct pair - globals.height = 12000 at :29 and base Y = -10000 at :33 - but it opens
+        //  Assets/_Project/Scenes/020_RENDER_SANDBOX_V2.unity at :20, NOT the shipping world scene.
+        //  It then logs "Successfully updated MapMagicObject" (:39). So that tool can be run to
+        //  completion, print success, and leave 02_HECTON_WORLD untouched at 250 m - which is the most
+        //  likely reason this mismatch survived while looking repeatedly "fixed". Its hardcoded
+        //  12000/-10000 is independent corroboration of the authored span, not a second authority.
+        //
+        //  Because that trap is live, every write below NAMES THE SCENE IT TOUCHED. A sync log that
+        //  does not name the scene cannot distinguish "fixed the shipping world" from "fixed a sandbox",
+        //  and that ambiguity is exactly what cost this project the repeat.
         // ══════════════════════════════════════════════════════════════════════════════════════════
 
         /// <summary>
@@ -332,7 +345,16 @@ namespace Hecton8.Editor
                 }
 
                 if (!alreadySaved)
+                {
                     EditorSceneManager.SaveScene(owningScene);
+
+                    // Name the scene PATH that was actually written. "Saved the owning scene(s)" is the
+                    // exact wording that let the sibling tool's sandbox write pass for a world fix.
+                    Debug.Log(
+                        "[HectonMacroGeologyBaseIntegrator] SAVED scene " +
+                        $"'{owningScene.path}'. Confirm this is the scene you intended - a sync of any " +
+                        $"scene other than {WorldScenePath} does NOT fix the shipping world.");
+                }
             }
 
             Debug.Log(
@@ -588,14 +610,20 @@ namespace Hecton8.Editor
             float span = highWorldY - lowWorldY;
             bool changed = false;
 
+            // The scene name is part of every write line below, not a nicety: FixMapMagicHeightTask
+            // (see the WRONG-SCENE TRAP note above) wrote the right numbers to the wrong scene and
+            // reported success. A log that names only the object cannot catch that.
+            Scene owningScene = mapMagicObject.gameObject.scene;
+            string sceneLabel = owningScene.IsValid() ? owningScene.name : "<no scene>";
+
             float previousHeight = mapMagicObject.globals.height;
             if (Mathf.Abs(previousHeight - span) > HeightMatchToleranceMeters)
             {
                 mapMagicObject.globals.height = span;
                 changed = true;
                 Debug.Log(
-                    $"[HectonMacroGeologyBaseIntegrator] {mapMagicObject.name}: globals.height " +
-                    $"{previousHeight:F1}m -> {span:F1}m (authored geology span).",
+                    $"[HectonMacroGeologyBaseIntegrator] scene '{sceneLabel}' / {mapMagicObject.name}: " +
+                    $"globals.height {previousHeight:F1}m -> {span:F1}m (authored geology span).",
                     mapMagicObject);
             }
 
@@ -612,10 +640,10 @@ namespace Hecton8.Editor
                 transform.position = position;
                 changed = true;
                 Debug.Log(
-                    $"[HectonMacroGeologyBaseIntegrator] {mapMagicObject.name}: terrain base Y " +
-                    $"{previousBase:F1}m -> {lowWorldY:F1}m (authored LowWorldY). This MOVES the terrain in " +
-                    "world space; water level, spawn height and any authored world-space props must be " +
-                    "re-checked against the new base.",
+                    $"[HectonMacroGeologyBaseIntegrator] scene '{sceneLabel}' / {mapMagicObject.name}: " +
+                    $"terrain base Y {previousBase:F1}m -> {lowWorldY:F1}m (authored LowWorldY). This MOVES " +
+                    "the terrain in world space; water level, spawn height and any authored world-space " +
+                    "props must be re-checked against the new base.",
                     mapMagicObject);
             }
 

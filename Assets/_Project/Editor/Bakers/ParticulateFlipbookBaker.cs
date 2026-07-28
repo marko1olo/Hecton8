@@ -12,6 +12,55 @@ namespace Hecton8.Editor.Bakers
         private const string NeutralCaveSdfAssetName1728 = "TX_MarineSnow_EmptyCaveSdf_1x1x1.asset";
         private const string NeutralAbyssalFlowAssetName1728 = "TX_MarineSnow_EmptyAbyssalFlow_1x1x1.asset";
 
+        // ------------------------------------------------------------------
+        // NEUTRAL VOLUME PAYLOADS - DO NOT "SIMPLIFY" BACK TO A Color LITERAL
+        //
+        // These two 1x1x1 volumes are pure lookup data, not art. The previous
+        // code baked them as RGBA32 from new Color(0.5f, 0f, 0f, 0f) and
+        // new Color(0.5f, 0.5f, 0.5f, 0f), and both values were wrong in the
+        // decode direction, not merely unusual:
+        //
+        //   Cave SDF - Hecton_MarineSnow.compute:918 reads .r and :919 decodes
+        //   it as lerp(-_HectonCaveVoxelHalfExtents.w, +w, r), i.e. r is a
+        //   [0,1]-packed SIGNED distance: 0 = deepest solid rock, 0.5 = EXACTLY
+        //   zero distance, 1 = maximum free water. ResolveSdfParticleCollision
+        //   (compute:922-946) freezes the particle and drains its life on any
+        //   negative result, and CS_EvaluateWakeProximity (compute:1443-1449)
+        //   takes abs() of the same value as "how close is rock". 0.5 therefore
+        //   means "every texel is a cave surface". The project's own definition
+        //   of an empty SDF volume is HectonCaveVoxelLightingVolume.cs:899-901:
+        //       byte fill = foundOccupied ? byte.MinValue : byte.MaxValue;
+        //   i.e. "no occupied voxel anywhere" == 255 == 1.0. Hence 0xFF.
+        //
+        //   Abyssal flow - Hecton_MarineSnow.compute:394 and
+        //   SargassumMicroFaunaBoids.compute:440 read .xyz straight into a
+        //   world-space velocity with NO *2-1 unbias step anywhere in either
+        //   file. (0.5, 0.5, 0.5) is not "no current"; it is a constant ~0.5 m/s
+        //   drift along +X+Y+Z. Zero current is literally zero.
+        //
+        // FORMATS ARE COPIED FROM THE PRODUCERS, NOT CHOSEN:
+        //   R8 matches the live cave volume (HectonCaveVoxelLightingVolume.cs)
+        //   and the single-channel Texture3D<float> at Hecton_MarineSnow
+        //   .compute:81. RGBAHalf is the TextureFormat twin of the live
+        //   R16G16B16A16_SFloat flow volume published by HectonFluidEngine and
+        //   satisfies Texture3D<float4> at compute:73. The old RGBA32 was worse
+        //   than the wrong values: UNORM cannot encode a negative velocity at
+        //   all, so an RGBA32 flow volume can never be anything but a
+        //   one-directional current.
+        //
+        // These payloads are byte-identical to the ones
+        // Assets/_Project/Scripts/Editor/Authoring/MarineSnowNeutralVolumeAuthoring.cs
+        // wrote to disk, which is the point: this baker's CopySerialized step
+        // below overwrites those exact assets, so it must produce the same bytes
+        // instead of reverting them.
+        // ------------------------------------------------------------------
+
+        /// <summary>R8, one texel, 0xFF == 1.0 unorm == maximum free water.</summary>
+        private static readonly byte[] NeutralCaveSdfTexel1728 = { 0xFF };
+
+        /// <summary>RGBAHalf, one texel, four 0x0000 halves == exactly zero current.</summary>
+        private static readonly byte[] NeutralAbyssalFlowTexel1728 = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
         [MenuItem("Hecton8/Bakers/1728/Bake Required Silt Snow Cavitation Flipbooks", false, 1728)]
         public static void BakeRequiredParticulateFlipbooks1728()
         {
@@ -124,14 +173,14 @@ namespace Hecton8.Editor.Bakers
                 return false;
             }
 
-            if (!TryBakeNeutralVolumeTexture1728(neutralCaveSdfPath, new Color(0.5f, 0f, 0f, 0f), out string neutralCaveFailure))
+            if (!TryBakeNeutralVolumeTexture1728(neutralCaveSdfPath, TextureFormat.R8, NeutralCaveSdfTexel1728, out string neutralCaveFailure))
             {
                 TryRestoreAssetFileRollbackSnapshots(rollback);
                 failure = neutralCaveFailure;
                 return false;
             }
 
-            if (!TryBakeNeutralVolumeTexture1728(neutralAbyssalFlowPath, new Color(0.5f, 0.5f, 0.5f, 0f), out string neutralFlowFailure))
+            if (!TryBakeNeutralVolumeTexture1728(neutralAbyssalFlowPath, TextureFormat.RGBAHalf, NeutralAbyssalFlowTexel1728, out string neutralFlowFailure))
             {
                 TryRestoreAssetFileRollbackSnapshots(rollback);
                 failure = neutralFlowFailure;
@@ -163,21 +212,33 @@ namespace Hecton8.Editor.Bakers
             return true;
         }
 
-        private static bool TryBakeNeutralVolumeTexture1728(string assetPath, Color voxel, out string failure)
+        /// <summary>
+        /// Writes one 1x1x1 neutral lookup volume. Raw texel bytes plus an explicit
+        /// <see cref="TextureFormat"/> rather than a <see cref="Color"/>, because both consumers decode
+        /// these channels as signed data and a UNORM colour cannot express what they need - see the
+        /// payload block at the top of this file.
+        /// </summary>
+        private static bool TryBakeNeutralVolumeTexture1728(string assetPath, TextureFormat format, byte[] texelBytes, out string failure)
         {
             failure = string.Empty;
             Texture3D texture = null;
             try
             {
-                texture = new Texture3D(1, 1, 1, TextureFormat.RGBA32, false)
+                texture = new Texture3D(1, 1, 1, format, false)
                 {
                     name = Path.GetFileNameWithoutExtension(assetPath),
                     wrapMode = TextureWrapMode.Clamp,
                     filterMode = FilterMode.Point,
                     anisoLevel = 0
                 };
-                texture.SetPixel(0, 0, 0, voxel);
-                texture.Apply(updateMipmaps: false, makeNoLongerReadable: true);
+                texture.SetPixelData(texelBytes, 0);
+
+                // makeNoLongerReadable stays FALSE. Both branches below serialize this object - one
+                // through CreateAsset, one through CopySerialized onto an existing asset - and both need
+                // the CPU-side image data still present. Discarding it costs 1 byte and 8 bytes here and
+                // risks writing an asset with `image data: 0`. The two assets already on disk carry
+                // m_IsReadable: 1, so keeping it also keeps the overwrite byte-identical to them.
+                texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
 
                 Texture3D existing = AssetDatabase.LoadAssetAtPath<Texture3D>(assetPath);
                 if (existing == null)
