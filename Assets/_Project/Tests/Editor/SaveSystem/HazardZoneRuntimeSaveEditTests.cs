@@ -13259,11 +13259,23 @@ namespace Hecton8.Tests.Editor
                 155);
             int floodCountOffset = FindLittleEndianByteSequenceOffset(payload, bytesWritten, marker);
             Assert.GreaterOrEqual(floodCountOffset, 0);
-            PatchLittleEndianIntAtOffset(payload, floodCountOffset, 0);
-            int shortenedBytesWritten = bytesWritten - 32;
+            // Declaring the mirror absent means cutting its bytes out, not shortening the payload.
+            // The flood state array is followed by the voxel delta block, the celestial light phase and
+            // the procedural terrain identity (SaveBinaryPayloadCodec.cs:650-659), so trimming the end
+            // left every one of those sections reading 32 bytes behind the writer.
+            int floodStateEntryBytes = UnsafeUtility.SizeOf<HabitatFloodStateDTO>();
+            Assert.AreEqual(marker.Length - sizeof(int), floodStateEntryBytes);
+            byte[] shortenedPayload = new byte[bytesWritten - floodStateEntryBytes];
+            int shortenedBytesWritten = RemovePayloadRange(
+                payload,
+                floodCountOffset + sizeof(int),
+                floodStateEntryBytes,
+                bytesWritten,
+                shortenedPayload);
             Assert.Greater(shortenedBytesWritten, 0);
+            PatchLittleEndianIntAtOffset(shortenedPayload, floodCountOffset, 0);
 
-            fixed (byte* payloadPtr = payload)
+            fixed (byte* payloadPtr = shortenedPayload)
             {
                 bool read = SaveBinaryPayloadCodec.TryRead(
                     payloadPtr,
