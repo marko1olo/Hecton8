@@ -27,6 +27,7 @@ namespace Hecton8.Dev
         private const uint StartupLoadoutEmptyWarningHash = 0x544C4530u;        // TLE0
         private const uint StartupLoadoutSourceInertWarningHash = 0x544C5349u;  // TLSI
         private const uint DevelopmentGrantRefusedWarningHash = 0x544C4447u;    // TLDG
+        private const uint QuickSlotMirrorDivergedWarningHash = 0x544C4D44u;    // TLMD
         private const uint ToolLoadoutProvisionerContextHash = 0x544C5650u;     // TLVP
 
         internal static ToolLoadoutProvisioner ActiveRuntimeInstance { get; private set; }
@@ -110,6 +111,7 @@ namespace Hecton8.Dev
             }
 
             ReportStartupLoadoutOutcome();
+            ReportQuickSlotMirrorDivergence();
         }
 
         /// <summary>
@@ -142,6 +144,51 @@ namespace Hecton8.Dev
                 StartupLoadoutEmptyWarningHash,
                 ToolLoadoutProvisionerContextHash,
                 slotCount);
+        }
+
+        /// <summary>
+        /// coreQuickSlotPrefabs is a duplicate of the tool owner's own assignments - on the canonical
+        /// player it repeats PlayerToolManager.toolPrefabs GUID for GUID and in the same order - and the
+        /// editor auto-resolver that keeps it populated only ever fills a NULL entry
+        /// (TryAssignToolPrefab, :426), so it cannot correct an entry that already points somewhere
+        /// else. The moment a designer re-authors the owner's list the mirror rots, and nothing
+        /// anywhere noticed. Divergence is never intent: the sanctioned way to state a DIFFERENT
+        /// loadout is a ToolLoadoutPreset asset, which startupPreset already takes ahead of this array
+        /// (:100-102) and which the owner applies as authored data. The four shipped presets prove the
+        /// distinction - Preset_Loadout_Construction holds the same four tools in a deliberately
+        /// different slot order, which is an override; this array holding a different tool is rot.
+        /// Published through GlobalTelemetryBus because it carries no [Conditional]
+        /// (Core/GlobalTelemetryBus.cs:365) and therefore survives into a shipped build, which is the
+        /// entire point - silence was the defect.
+        /// </summary>
+        private void ReportQuickSlotMirrorDivergence()
+        {
+            AutoResolveSceneReferences();
+            if (toolManager == null || coreQuickSlotPrefabs == null)
+                return;
+
+            int comparedSlots = Mathf.Min(coreQuickSlotPrefabs.Length, toolManager.SlotCount);
+            int divergedSlots = 0;
+            for (int i = 0; i < comparedSlots; i++)
+            {
+                GameObject mirrored = coreQuickSlotPrefabs[i];
+                GameObject assigned = toolManager.GetAssignedToolPrefab(i);
+
+                // Only a slot where BOTH sides name a tool and the two disagree is drift. A mirror
+                // entry left empty is an unauthored gap, and an owner slot left empty is a gap the
+                // mirror is allowed to seed - neither is a contradiction. ReferenceEquals is the same
+                // identity test the owner uses to decide a slot write is redundant (:873).
+                if (mirrored != null && assigned != null && !ReferenceEquals(mirrored, assigned))
+                    divergedSlots++;
+            }
+
+            if (divergedSlots <= 0)
+                return;
+
+            Hecton8.Core.GlobalTelemetryBus.PublishPerformanceWarning(
+                QuickSlotMirrorDivergedWarningHash,
+                ToolLoadoutProvisionerContextHash,
+                divergedSlots);
         }
 
         [ContextMenu("Provision Full Tool Kit")]
@@ -195,7 +242,9 @@ namespace Hecton8.Dev
         [ContextMenu("Assign Core Loadout")]
         public void AssignCoreLoadout()
         {
-            // Explicit designer action: overwrite is what was asked for, empty entries included.
+            // Explicit designer action, so replacing an assigned slot is what was asked for - but an
+            // empty mirror entry is NOT a request to empty a slot (see ApplyStartupLoadout), and this
+            // component cannot delete a tool the player prefab shipped with.
             ApplyStartupLoadout(coreQuickSlotPrefabs, overwriteAssignedSlots: true);
         }
 
@@ -225,7 +274,17 @@ namespace Hecton8.Dev
                 GameObject candidate = slotSource[i];
                 GameObject assigned = toolManager.GetAssignedToolPrefab(i);
 
-                if (!overwriteAssignedSlots && (assigned != null || candidate == null))
+                // An EMPTY source entry says nothing about that slot, in either mode. The only
+                // authoring path into coreQuickSlotPrefabs is TryAssignToolPrefab (:426), which fills a
+                // null and can never clear one, so an empty entry is an unauthored gap and not an
+                // instruction to strip the bar. The authored override channel already obeys exactly
+                // this rule - PlayerToolManager.ApplyLoadoutPreset:1128-1133 skips null preset slots
+                // for the same reason - and until now this DEV mirror held MORE authority over the
+                // validated starter loadout than a designer's preset asset did: one right-click on
+                // "Assign Core Loadout" with a null mirror entry deleted a tool the prefab shipped
+                // with. That is the same "fewer tools than the prefab shipped with" loss the
+                // non-overwrite mode was already hardened against.
+                if (candidate == null || (!overwriteAssignedSlots && assigned != null))
                 {
                     if (assigned != null)
                         filledSlots++;
@@ -233,7 +292,10 @@ namespace Hecton8.Dev
                     continue;
                 }
 
-                if (toolManager.SetAssignedToolPrefab(i, candidate, holsterIfCurrentInvalid: false) && candidate != null)
+                // Returns true both when it wrote the slot and when the slot already held this exact
+                // prefab (PlayerToolManager.cs:873) - both mean the slot holds a tool, which is what
+                // filledSlots counts.
+                if (toolManager.SetAssignedToolPrefab(i, candidate, holsterIfCurrentInvalid: false))
                     filledSlots++;
             }
 
