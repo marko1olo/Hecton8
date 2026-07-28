@@ -17284,6 +17284,12 @@ namespace Hecton8.Tests.Editor
             WritePayloadInt(bytes, ref offset, 1);
             WritePayloadInt(bytes, ref offset, 1);
             WritePayloadInt(bytes, ref offset, 1);
+            // WriteWorldState (SaveBinaryPayloadCodec.cs:3355-3362) ends with
+            // WriteStructArraySlice(value.depletedPickupWords, pickupWordCount), and that helper
+            // (SaveBinaryPayloadCodec.cs:6979) emits its own element count int before the elements.
+            // The marker skipped that count, so it described 88 bytes of a 92-byte section and the
+            // size self-check below failed before either caller could search for it.
+            WritePayloadInt(bytes, ref offset, 1);
             WritePayloadLong(bytes, ref offset, pickupWord);
             Assert.AreEqual(bytes.Length, offset);
             return bytes;
