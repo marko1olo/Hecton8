@@ -111,7 +111,10 @@ namespace Hecton8.Editor
         public static void ValidateStarterResourceSources()
         {
             int errors = 0;
-            GameObject root = GameObject.Find(RootPath);
+            // Inactive-inclusive, because this is a VALIDATOR: with GameObject.Find it reported the
+            // resource field sources as missing whenever the authored world root was disabled, which is
+            // a false absence rather than a finding.
+            GameObject root = FindByPathIncludingInactive(RootPath);
             if (root == null)
             {
                 Debug.LogError("[ResourceWorldBootstrap] Missing world root '--- WORLD ---/Resource_FieldSources'.");
@@ -198,6 +201,55 @@ namespace Hecton8.Editor
             return material;
         }
 
+        /// <summary>
+        /// Finds a scene root by name across every loaded scene, INCLUDING inactive ones. Faithful
+        /// replacement for <see cref="GameObject.Find"/>, which also searched all loaded scenes but
+        /// skipped inactive objects.
+        /// </summary>
+        private static GameObject FindSceneRootIncludingInactive(string rootName)
+        {
+            if (string.IsNullOrEmpty(rootName))
+                return null;
+
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+
+                GameObject[] roots = scene.GetRootGameObjects();
+                for (int i = 0; i < roots.Length; i++)
+                {
+                    if (string.Equals(roots[i].name, rootName, System.StringComparison.Ordinal))
+                        return roots[i];
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Resolves a "/"-separated hierarchy path, INCLUDING inactive objects. Only the first segment
+        /// needs the scan - <see cref="Transform.Find"/> already accepts a path and already sees
+        /// inactive children.
+        /// </summary>
+        private static GameObject FindByPathIncludingInactive(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return null;
+
+            int firstSeparator = path.IndexOf('/');
+            if (firstSeparator < 0)
+                return FindSceneRootIncludingInactive(path);
+
+            GameObject root = FindSceneRootIncludingInactive(path.Substring(0, firstSeparator));
+            if (root == null)
+                return null;
+
+            Transform child = root.transform.Find(path.Substring(firstSeparator + 1));
+            return child != null ? child.gameObject : null;
+        }
+
         private static GameObject EnsureWorldRoot(string path)
         {
             if (string.IsNullOrEmpty(path)) return null;
@@ -205,7 +257,13 @@ namespace Hecton8.Editor
             string[] parts = path.Split('/');
             if (parts.Length == 0) return null;
 
-            GameObject current = GameObject.Find(parts[0]);
+            // Inactive-inclusive, and note the asymmetry it repairs: the child lookup below already uses
+            // Transform.Find, which DOES see inactive children, while GameObject.Find here saw only
+            // ACTIVE objects. So once Assets/_Project/Editor/H8_SceneCleaner.cs reparented
+            // '--- WORLD ---' under DEPRECATED_STUFF and disabled it (:41-42, then SaveScene at :47),
+            // this reuse check went blind and every run created a SECOND, active world root beside the
+            // buried one - in a binary scene with no diff to reveal it.
+            GameObject current = FindSceneRootIncludingInactive(parts[0]);
             if (current == null)
             {
                 current = new GameObject(parts[0]);

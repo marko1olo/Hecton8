@@ -314,6 +314,51 @@ namespace Hecton8.Editor
             return recipe;
         }
 
+        /// <summary>
+        /// Resolves a "/"-separated hierarchy path inside one scene, INCLUDING inactive objects.
+        ///
+        /// <see cref="GameObject.Find"/> returns only active objects. This tool used it three times to
+        /// decide whether the outpost root, its parent and the fabricator already existed. Once
+        /// <c>Assets/_Project/Editor/H8_SceneCleaner.cs</c> reparented <c>--- WORLD ---</c> under
+        /// <c>DEPRECATED_STUFF</c> and disabled it (:41-42, then <c>SaveScene</c> at :47), all three
+        /// lookups went blind at the same time, and the consequences compounded: the root check missed
+        /// the buried <c>Fabrication_Outpost</c> and made a new one, then the parent lookup for
+        /// <c>--- WORLD ---</c> ALSO returned null, and because the reparent below is guarded by
+        /// <c>if (parent != null)</c> the freshly created outpost was left as an ORPHAN SCENE ROOT.
+        /// In a binary scene there is no diff to notice that.
+        ///
+        /// <see cref="Transform.Find"/> already accepts a slash-separated path and already sees inactive
+        /// children, so only the first segment needed a scene-root scan.
+        /// </summary>
+        private static GameObject FindByPathIncludingInactive(Scene scene, string path)
+        {
+            if (!scene.IsValid() || !scene.isLoaded || string.IsNullOrEmpty(path))
+                return null;
+
+            int firstSeparator = path.IndexOf('/');
+            string rootName = firstSeparator < 0 ? path : path.Substring(0, firstSeparator);
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            GameObject matchedRoot = null;
+            for (int i = 0; i < roots.Length; i++)
+            {
+                if (!string.Equals(roots[i].name, rootName, StringComparison.Ordinal))
+                    continue;
+
+                matchedRoot = roots[i];
+                break;
+            }
+
+            if (matchedRoot == null)
+                return null;
+
+            if (firstSeparator < 0)
+                return matchedRoot;
+
+            Transform child = matchedRoot.transform.Find(path.Substring(firstSeparator + 1));
+            return child != null ? child.gameObject : null;
+        }
+
         private static void CreateOrUpdateSceneFabricator(
             string rootName,
             string parentName,
@@ -328,20 +373,20 @@ namespace Hecton8.Editor
                 return;
 
             string rootPath = string.IsNullOrEmpty(parentName) ? rootName : $"{parentName}/{rootName}";
-            GameObject root = GameObject.Find(rootPath);
+            GameObject root = FindByPathIncludingInactive(activeScene, rootPath);
             if (root == null)
             {
                 root = new GameObject(rootName);
 
                 if (!string.IsNullOrEmpty(parentName))
                 {
-                    GameObject parent = GameObject.Find(parentName);
+                    GameObject parent = FindByPathIncludingInactive(activeScene, parentName);
                     if (parent != null)
                         root.transform.SetParent(parent.transform, false);
                 }
             }
 
-            GameObject station = GameObject.Find($"{rootPath}/{fabricatorName}");
+            GameObject station = FindByPathIncludingInactive(activeScene, $"{rootPath}/{fabricatorName}");
             bool createdStation = station == null;
             if (createdStation)
             {
@@ -388,7 +433,10 @@ namespace Hecton8.Editor
 
         private static void ValidateSceneFabricator(string rootPath, string fabricatorName, ref int errors)
         {
-            GameObject root = GameObject.Find(rootPath);
+            // Inactive-inclusive, because this is a VALIDATOR: with GameObject.Find it reported
+            // "Missing root" for content that is present and merely disabled, which is a false absence
+            // and the single most misleading thing a validator can say in this project.
+            GameObject root = FindByPathIncludingInactive(SceneManager.GetActiveScene(), rootPath);
             if (root == null)
             {
                 Debug.LogError($"[FabricationBootstrap] Missing root '{rootPath}'.");

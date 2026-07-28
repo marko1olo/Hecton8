@@ -84,13 +84,13 @@ namespace Hecton8.Editor
                 return;
             }
 
-            GameObject managersRoot = GameObject.Find(ManagersRootName);
+            GameObject managersRoot = FindByPathIncludingInactive(ManagersRootName);
             if (managersRoot == null)
                 managersRoot = new GameObject(ManagersRootName);
 
             GameObject player = GameObject.FindWithTag("Player");
             if (player == null)
-                player = GameObject.Find("Player");
+                player = FindByPathIncludingInactive("Player");
 
             Transform playerTransform = player != null ? player.transform : null;
             Rigidbody playerBody = null;
@@ -508,7 +508,7 @@ namespace Hecton8.Editor
             SerializedObject so = new SerializedObject(director);
             so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
             so.FindProperty("scatterBudgetController").objectReferenceValue = scatterBudgetController;
-            so.FindProperty("worldSliceDirector").objectReferenceValue = GetOrAddComponent<WorldSliceDirector>(GameObject.Find(ManagersRootName));
+            so.FindProperty("worldSliceDirector").objectReferenceValue = GetOrAddComponent<WorldSliceDirector>(FindByPathIncludingInactive(ManagersRootName));
             so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(director);
         }
@@ -734,7 +734,7 @@ namespace Hecton8.Editor
                 return boundManager;
 
             const string RockRuntimeRootName = "Rock_Runtime";
-            GameObject runtimeRoot = GameObject.Find($"{ManagersRootName}/{RockRuntimeRootName}");
+            GameObject runtimeRoot = FindByPathIncludingInactive($"{ManagersRootName}/{RockRuntimeRootName}");
             if (runtimeRoot != null && runtimeRoot.TryGetComponent(out GPUInstancer.GPUInstancerPrefabManager runtimeManager))
                 return runtimeManager;
 
@@ -1023,7 +1023,10 @@ namespace Hecton8.Editor
 
         private static void ConfigureSceneBiolumZones(Transform playerTransform)
         {
-            GameObject worldRoot = GameObject.Find(WorldRootName);
+            // Inactive-inclusive on purpose: GameObject.Find sees only active objects, so with the
+            // authored world root disabled under DEPRECATED_STUFF this lane silently did nothing at all
+            // rather than reporting a problem. See FindSceneRootIncludingInactive for the full history.
+            GameObject worldRoot = FindSceneRootIncludingInactive(WorldRootName);
             if (worldRoot == null)
                 return;
 
@@ -1101,7 +1104,10 @@ namespace Hecton8.Editor
 
         private static void EnsureStarterReefFieldRoot(Transform playerTransform)
         {
-            GameObject worldRoot = GameObject.Find(WorldRootName);
+            // Inactive-inclusive on purpose: GameObject.Find sees only active objects, so with the
+            // authored world root disabled under DEPRECATED_STUFF this lane silently did nothing at all
+            // rather than reporting a problem. See FindSceneRootIncludingInactive for the full history.
+            GameObject worldRoot = FindSceneRootIncludingInactive(WorldRootName);
             if (worldRoot == null)
                 return;
 
@@ -1114,9 +1120,74 @@ namespace Hecton8.Editor
             reefField.transform.localScale = Vector3.one;
         }
 
+        /// <summary>
+        /// Finds a scene root by name, INCLUDING inactive ones.
+        ///
+        /// <see cref="GameObject.Find"/> returns only active objects. This tool used it to decide
+        /// whether the world root already existed, so once
+        /// <c>Assets/_Project/Editor/H8_SceneCleaner.cs</c> reparented <c>--- WORLD ---</c> under
+        /// <c>DEPRECATED_STUFF</c> and called <c>SetActive(false)</c> (:41-42, followed by
+        /// <c>SaveScene</c> at :47), the reuse check could no longer see it - and every run of this tool
+        /// silently created a SECOND, active <c>--- WORLD ---</c> beside the buried one, in a binary
+        /// scene with no diff to reveal it. The duplicate carries only the bare Transforms
+        /// <c>EnsureRoutePath</c> creates, so it also looks plausible while holding no components.
+        ///
+        /// Note the asymmetry this fixes: <see cref="Transform.Find"/> DOES see inactive children, which
+        /// is why <c>EnsureChild</c> in this same file reuses children correctly. Only the root-level
+        /// lookups were blind.
+        /// </summary>
+        private static GameObject FindSceneRootIncludingInactive(string rootName)
+        {
+            if (string.IsNullOrEmpty(rootName))
+                return null;
+
+            for (int sceneIndex = 0; sceneIndex < EditorSceneManager.sceneCount; sceneIndex++)
+            {
+                UnityEngine.SceneManagement.Scene scene = EditorSceneManager.GetSceneAt(sceneIndex);
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+
+                GameObject[] roots = scene.GetRootGameObjects();
+                for (int i = 0; i < roots.Length; i++)
+                {
+                    if (string.Equals(roots[i].name, rootName, System.StringComparison.Ordinal))
+                        return roots[i];
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Resolves a "/"-separated hierarchy path, INCLUDING inactive objects. Drop-in replacement for
+        /// <see cref="GameObject.Find"/> in this tool.
+        ///
+        /// Every path lookup in this file that starts at <c>--- WORLD ---</c> was blind for the same
+        /// reason described on <see cref="FindSceneRootIncludingInactive"/>: the authored world root is
+        /// disabled, and <see cref="GameObject.Find"/> skips inactive objects. Only the FIRST segment
+        /// needed fixing - <see cref="Transform.Find"/> already accepts a slash-separated path and
+        /// already sees inactive children.
+        /// </summary>
+        private static GameObject FindByPathIncludingInactive(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return null;
+
+            int firstSeparator = path.IndexOf('/');
+            if (firstSeparator < 0)
+                return FindSceneRootIncludingInactive(path);
+
+            GameObject root = FindSceneRootIncludingInactive(path.Substring(0, firstSeparator));
+            if (root == null)
+                return null;
+
+            Transform child = root.transform.Find(path.Substring(firstSeparator + 1));
+            return child != null ? child.gameObject : null;
+        }
+
         private static void EnsureWorldRouteSkeleton(Transform playerTransform)
         {
-            GameObject worldRoot = GameObject.Find(WorldRootName);
+            GameObject worldRoot = FindSceneRootIncludingInactive(WorldRootName);
             if (worldRoot == null)
                 worldRoot = new GameObject(WorldRootName);
 
@@ -1276,7 +1347,7 @@ namespace Hecton8.Editor
 
         private static void ConfigureResourceFieldSlice()
         {
-            GameObject root = GameObject.Find("--- WORLD ---/Resource_FieldSources");
+            GameObject root = FindByPathIncludingInactive("--- WORLD ---/Resource_FieldSources");
             if (root == null)
                 return;
 
@@ -1301,7 +1372,7 @@ namespace Hecton8.Editor
 
         private static void ConfigureStarterReefFieldSlice()
         {
-            GameObject root = GameObject.Find(StarterReefFieldPath);
+            GameObject root = FindByPathIncludingInactive(StarterReefFieldPath);
             if (root == null)
                 return;
 
@@ -1326,7 +1397,7 @@ namespace Hecton8.Editor
 
         private static void ConfigureFabricationOutpostSlice()
         {
-            GameObject root = GameObject.Find("--- WORLD ---/Fabrication_Outpost");
+            GameObject root = FindByPathIncludingInactive("--- WORLD ---/Fabrication_Outpost");
             if (root == null)
                 return;
 
@@ -1351,7 +1422,7 @@ namespace Hecton8.Editor
 
         private static void ConfigureFabricationTrialSlice()
         {
-            GameObject root = GameObject.Find("Fabrication_Trial");
+            GameObject root = FindByPathIncludingInactive("Fabrication_Trial");
             if (root == null)
                 return;
 
@@ -1376,7 +1447,7 @@ namespace Hecton8.Editor
 
         private static void ConfigureToolStagingSlice()
         {
-            GameObject root = GameObject.Find("Tool_Staging");
+            GameObject root = FindByPathIncludingInactive("Tool_Staging");
             if (root == null)
                 return;
 
@@ -1407,7 +1478,7 @@ namespace Hecton8.Editor
             float midDistance,
             float hysteresisPadding)
         {
-            GameObject root = GameObject.Find(lanePath);
+            GameObject root = FindByPathIncludingInactive(lanePath);
             if (root == null)
                 return;
 
@@ -1442,7 +1513,7 @@ namespace Hecton8.Editor
             float sliceNearScale = 1.04f,
             float sliceMidScale = 1.08f)
         {
-            GameObject root = GameObject.Find(objectPath);
+            GameObject root = FindByPathIncludingInactive(objectPath);
             if (root == null)
                 return;
 
@@ -1475,7 +1546,7 @@ namespace Hecton8.Editor
             WorldZoneProfile zoneProfile,
             int dominantMatrixIndex)
         {
-            GameObject root = GameObject.Find(objectPath);
+            GameObject root = FindByPathIncludingInactive(objectPath);
             if (root == null)
                 return;
 
@@ -1566,7 +1637,7 @@ namespace Hecton8.Editor
             string contentIntent,
             WorldContentProfile contentProfile)
         {
-            GameObject target = GameObject.Find(objectPath);
+            GameObject target = FindByPathIncludingInactive(objectPath);
             if (target == null)
                 return;
 
