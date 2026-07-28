@@ -94,8 +94,8 @@ namespace Hecton8.AI.Ambient
 
         [Header("Biota Presentation")]
         [SerializeField, Tooltip("Enables the Graphics.RenderMeshIndirect presentation path for active biota slots.")] private bool enableIndirectDraw = true;
-        [SerializeField, Tooltip("Optional assigned quad mesh. If empty, a cold fallback quad is created on enable.")] private Mesh biotaQuadMesh;
-        [SerializeField, Tooltip("Material using the Hecton ambient biota indirect shader and GPU instance buffer.")] private Material biotaMaterial;
+        [SerializeField, Tooltip("REQUIRED for the indirect draw. There is no runtime fallback quad: TryResolveDrawMesh returns this field verbatim and UploadIndirectArgs needs submesh 0 index data, so an empty field means zero pixels.")] private Mesh biotaQuadMesh;
+        [SerializeField, Tooltip("REQUIRED for the indirect draw. Material whose shader is Hecton8/Ambient/BiotaIndirect (Hecton_AmbientBiotaIndirect.shader). No runtime fallback exists and none is possible in a player build - see EnsureIndirectPresentationAssetsOrReport.")] private Material biotaMaterial;
         [SerializeField, Tooltip("Unity render layer used by the indirect biota draw.")] private int renderLayer;
         [SerializeField, Tooltip("Shadow mode for indirect ambient biota. Defaults off because sub-meter translucent biota should not cast dynamic shadows.")] private ShadowCastingMode shadowCastingMode = ShadowCastingMode.Off;
 
@@ -172,6 +172,7 @@ namespace Hecton8.AI.Ambient
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _hotSwapListenerRegistered;
+        private bool _presentationAssetGapReported;
 
         public bool IsInitialized => _capacity > 0 &&
                                      IsOwnedVaultHandle(in _biotaAupHandle, BufferID.BiotaAUPs) &&
@@ -1089,9 +1090,78 @@ namespace Hecton8.AI.Ambient
             }
 
             _capacity = desiredCapacity;
-            if (enableIndirectDraw)
+            if (enableIndirectDraw && EnsureIndirectPresentationAssetsOrReport())
                 TryEnsureGraphicsResourcesCold(_capacity);
             return true;
+        }
+
+        /// <summary>
+        /// Cold gate in front of the indirect-draw GPU allocation. Returns true only when the draw could
+        /// actually reach the rasteriser, and reports the exact authoring gap once per component otherwise.
+        /// <para>
+        /// Without this gate <c>enableIndirectDraw</c> alone allocated the render payload:
+        /// <see cref="EnsureGraphicsResources"/> creates two structured buffers of
+        /// <c>capacity * sizeof(AmbientBiotaGpuInstance)</c> (64 B per instance - three float4 plus four
+        /// uint) plus two indirect-args buffers. At <c>precisionCapacity = 8192</c> that is 1 MB of VRAM
+        /// held for the whole session. <see cref="RenderIndirectBiota"/> then returns at its
+        /// <c>material == null</c> / <c>!TryResolveDrawMesh</c> guard on every single
+        /// <see cref="LateFrameTick"/>, so not one byte of it is ever sampled.
+        /// </para>
+        /// <para>
+        /// Both fields are <c>[SerializeField]</c> and neither has a runtime fallback, so this is decided
+        /// at enable time and cannot be repaired by a runtime-created host: a code-only owner has no
+        /// inspector to receive them, <c>Resources.Load</c> is forbidden by project law, and
+        /// <c>Shader.Find</c> cannot recover the shader in a player build because
+        /// Hecton_AmbientBiotaIndirect.shader (guid 6f2d4d4b1f134e5cb3e9a7d01a5219c8) is referenced by no
+        /// material anywhere in Assets/ and is absent from m_AlwaysIncludedShaders in
+        /// ProjectSettings/GraphicsSettings.asset, which means it is stripped from the build. The owner
+        /// therefore has to be authored - into 02_HECTON_WORLD or onto a prefab - with both fields wired.
+        /// </para>
+        /// <para>
+        /// The report is what makes the failure loud instead of silent. The draw guard is a bare
+        /// <c>return</c> on a hot tick, so an owner authored with an unassigned material renders nothing
+        /// and says nothing while <see cref="IsInitialized"/> and <see cref="ActiveBiotaCount"/> both
+        /// report a healthy system. <c>H8Debug.LogError</c> carries
+        /// <c>[Conditional("UNITY_EDITOR")]</c> + <c>[Conditional("DEVELOPMENT_BUILD")]</c> on the
+        /// message+context overload (H8Debug.cs:74-80), so the call and its literal argument are stripped
+        /// from release IL - no release-build cost and no string allocation on any path.
+        /// </para>
+        /// </summary>
+        /// <returns>True when both indirect presentation assets are assigned.</returns>
+        private bool EnsureIndirectPresentationAssetsOrReport()
+        {
+            bool hasMaterial = biotaMaterial != null;
+            bool hasMesh = TryResolveDrawMesh(out _);
+            if (hasMaterial && hasMesh)
+            {
+                _presentationAssetGapReported = false;
+                return true;
+            }
+
+            if (_presentationAssetGapReported)
+                return false;
+
+            _presentationAssetGapReported = true;
+            if (!hasMaterial && !hasMesh)
+            {
+                Hecton8.Core.H8Debug.LogError(
+                    "[AmbientBiotaDirector] Indirect draw enabled with no biotaMaterial and no biotaQuadMesh. Ambient biota will simulate and stay invisible. Author a Material on shader 'Hecton8/Ambient/BiotaIndirect' and a quad Mesh, assign both on this component, and keep the shader reachable from the build.",
+                    this);
+            }
+            else if (!hasMaterial)
+            {
+                Hecton8.Core.H8Debug.LogError(
+                    "[AmbientBiotaDirector] Indirect draw enabled with no biotaMaterial. Ambient biota will simulate and stay invisible. Author a Material on shader 'Hecton8/Ambient/BiotaIndirect' and assign it to biotaMaterial.",
+                    this);
+            }
+            else
+            {
+                Hecton8.Core.H8Debug.LogError(
+                    "[AmbientBiotaDirector] Indirect draw enabled with no biotaQuadMesh. Ambient biota will simulate and stay invisible. Assign a quad Mesh with submesh 0 index data to biotaQuadMesh.",
+                    this);
+            }
+
+            return false;
         }
 
         private void RebindDataVaultForLifecycle(IDataVault currentVault)

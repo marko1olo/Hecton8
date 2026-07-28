@@ -179,6 +179,38 @@ namespace Hecton8.Gameplay
                 s_activeRuntime = this;
         }
 
+        /// <summary>
+        /// Yields to an already-usable runtime by destroying THIS COMPONENT, never its host GameObject.
+        /// </summary>
+        /// <remarks>
+        /// This method used to call Destroy(gameObject), and that single line made the game unenterable.
+        ///
+        /// BeaconNetworkSystem is authored on the ROOT of Player.prefab - the same GameObject that carries
+        /// HectonPlayerMovement, the Rigidbody and the CapsuleCollider. Meanwhile the bootstrap creates a
+        /// SECOND one: GameBootstrapper.EnsureBeaconNetworkServiceRegistered does new GameObject
+        /// ("[BeaconNetworkSystem]") + AddComponent, persists it under the bootstrapper and registers it,
+        /// driven from the BeaconNetworkSystem dependency node during the player layer - thousands of log
+        /// lines before the player is spawned.
+        ///
+        /// So when HectonPlayerSpawner instantiates Player.prefab, the player's own copy woke up, saw the
+        /// bootstrap twin, decided it was the duplicate - correctly - and then destroyed THE WHOLE PLAYER
+        /// ROOT. Silently: this abort logs nothing. Downstream, MarkPlayerInstantiated received null, the
+        /// SceneInstantiationGate reported PLAYER_NULL, scene activation timed out, ActivatePlayer never
+        /// ran, and the player root was never re-activated after DisablePlayer deactivated it. Every
+        /// route-moment row that needs a player was unreachable, and on the bootstrap-handoff route the
+        /// whole phase failed so the main menu could not even load.
+        ///
+        /// Destroy is deferred, so OnDestroy fired on the end-of-frame pump with no managed caller in the
+        /// stack - which is why three separate headless runs recorded
+        /// "[HectonPlayerMovement-DEBUG] OnDestroy called on player!" with a native-origin trace and nobody
+        /// could name the destroyer from it.
+        ///
+        /// Destroy(this) is the correct semantic and it is the project's own precedent: PlayerActionController
+        /// already yields this way, and Audio/Editor/AdvancedAcousticsSmokeTester.cs:672 asserts exactly this
+        /// invariant for it - "Player action duplicate-owner abort cannot destroy an authored player root".
+        /// That assertion covers one component; the invariant belongs to every component authored on the
+        /// player root. The duplicate is the COMPONENT, not the object hosting it.
+        /// </remarks>
         private bool TryAbortForUsableExistingRuntime()
         {
             BeaconNetworkSystem active = s_activeRuntime;
@@ -186,7 +218,7 @@ namespace Hecton8.Gameplay
             {
                 if (IsBeaconNetworkActiveRuntimeUsable(active))
                 {
-                    Destroy(gameObject);
+                    Destroy(this);
                     return true;
                 }
 
@@ -203,7 +235,10 @@ namespace Hecton8.Gameplay
             if (IsBeaconNetworkRegisteredRuntimeUsable(registered))
             {
                 s_activeRuntime = registered;
-                Destroy(gameObject);
+
+                // Same reasoning as the branch above: the duplicate is this component, not the player root
+                // that happens to host it. See the remarks on this method.
+                Destroy(this);
                 return true;
             }
 

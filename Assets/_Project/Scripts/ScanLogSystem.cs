@@ -175,6 +175,24 @@ namespace Hecton8.Gameplay
 
 
 
+        /// <summary>
+        /// Yields to an already-usable runtime by destroying THIS COMPONENT, never its host GameObject.
+        /// </summary>
+        /// <remarks>
+        /// ScanLogSystem is authored on the ROOT of Player.prefab, so Destroy(gameObject) here destroys the
+        /// entire player - the Rigidbody, the collider, HectonPlayerMovement, every service handle the
+        /// bootstrap resolves off it. That is not a hypothetical: the identical line in
+        /// BeaconNetworkSystem.TryAbortForUsableExistingRuntime did exactly that, silently, and made the
+        /// world unenterable across three consecutive headless runs.
+        ///
+        /// This type has no bootstrap-created twin today - nothing AddComponents it and its GUID appears in
+        /// no asset other than Player.prefab - so it only fires against a genuine second player. That makes
+        /// it a landmine rather than a live defect, and the difference is one double-spawn.
+        ///
+        /// Destroy(this) is the project's own precedent (PlayerActionController) and the invariant is asserted
+        /// for that one component at Audio/Editor/AdvancedAcousticsSmokeTester.cs:672. It belongs to every
+        /// component authored on the player root. The duplicate is the COMPONENT.
+        /// </remarks>
         private bool TryAbortForUsableExistingRuntime()
         {
             ScanLogSystem active = s_activeRuntimeInstance;
@@ -182,7 +200,7 @@ namespace Hecton8.Gameplay
             {
                 if (IsScanLogRuntimeUsable(active))
                 {
-                    Destroy(gameObject);
+                    Destroy(this);
                     return true;
                 }
 
@@ -199,7 +217,9 @@ namespace Hecton8.Gameplay
             if (IsScanLogRuntimeUsable(registered))
             {
                 s_activeRuntimeInstance = registered;
-                Destroy(gameObject);
+
+                // Same reasoning as the branch above. See the remarks on this method.
+                Destroy(this);
                 return true;
             }
 

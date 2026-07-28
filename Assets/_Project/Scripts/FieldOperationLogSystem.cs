@@ -197,6 +197,23 @@ namespace Hecton8.Gameplay
             return _runtimeRegistered;
         }
 
+        /// <summary>
+        /// Yields to an already-usable runtime by destroying THIS COMPONENT, never its host GameObject.
+        /// </summary>
+        /// <remarks>
+        /// FieldOperationLogSystem is authored on the ROOT of Player.prefab, so Destroy(gameObject) here
+        /// destroys the entire player. The identical line in
+        /// BeaconNetworkSystem.TryAbortForUsableExistingRuntime did exactly that, silently, and made the
+        /// world unenterable across three consecutive headless runs - the gate reported PLAYER_NULL, scene
+        /// activation timed out, and ActivatePlayer never ran.
+        ///
+        /// This type has no bootstrap-created twin today, so it only fires against a genuine second player -
+        /// a landmine rather than a live defect, and the difference is one double-spawn. Note this one is
+        /// reachable from both Awake and TryRegisterRuntime, so it has two arming paths.
+        ///
+        /// Destroy(this) is the project's own precedent (PlayerActionController), asserted for that component
+        /// at Audio/Editor/AdvancedAcousticsSmokeTester.cs:672. The duplicate is the COMPONENT, not its host.
+        /// </remarks>
         private bool TryAbortForUsableExistingRuntime()
         {
             FieldOperationLogSystem active = s_activeRuntime;
@@ -204,7 +221,7 @@ namespace Hecton8.Gameplay
             {
                 if (IsFieldOperationRuntimeUsable(active))
                 {
-                    Destroy(gameObject);
+                    Destroy(this);
                     return true;
                 }
 
@@ -221,7 +238,9 @@ namespace Hecton8.Gameplay
             if (IsFieldOperationRuntimeUsable(registered))
             {
                 s_activeRuntime = registered;
-                Destroy(gameObject);
+
+                // Same reasoning as the branch above. See the remarks on this method.
+                Destroy(this);
                 return true;
             }
 
