@@ -7128,8 +7128,7 @@ namespace Hecton8.Tests.Editor
             SaveData data = SaveData.CreateNew(0.0);
             const int discoveredBiomeId = 7;
             const int staleLastBiomeId = 99;
-            data.discoveredBiomeIds.Clear();
-            data.discoveredBiomeIds.Add(discoveredBiomeId);
+            SeedLegacyDiscoveredBiomeIds(data, discoveredBiomeId);
             BiomeDiscoveryBitMask.Pack(data.discoveredBiomeIds, data.discoveredBiomeBitWords);
             data.lastDiscoveredBiomeId = staleLastBiomeId;
 
@@ -7174,10 +7173,11 @@ namespace Hecton8.Tests.Editor
         {
             SaveData data = SaveData.CreateNew(0.0);
             const int discoveredBiomeId = 10;
-            data.discoveredBiomeIds.Clear();
-            data.discoveredBiomeIds.Add(-1);
-            data.discoveredBiomeIds.Add(discoveredBiomeId);
-            data.discoveredBiomeIds.Add(BiomeDiscoveryBitMask.MaxBiomeId + 1);
+            SeedLegacyDiscoveredBiomeIds(
+                data,
+                -1,
+                discoveredBiomeId,
+                BiomeDiscoveryBitMask.MaxBiomeId + 1);
             BiomeDiscoveryBitMask.Pack(data.discoveredBiomeIds, data.discoveredBiomeBitWords);
             data.lastDiscoveredBiomeId = discoveredBiomeId;
 
@@ -7215,8 +7215,7 @@ namespace Hecton8.Tests.Editor
             SaveData data = SaveData.CreateNew(0.0);
             const int discoveredBiomeId = 8;
             const int staleLastBiomeId = 100;
-            data.discoveredBiomeIds.Clear();
-            data.discoveredBiomeIds.Add(discoveredBiomeId);
+            SeedLegacyDiscoveredBiomeIds(data, discoveredBiomeId);
             BiomeDiscoveryBitMask.Pack(data.discoveredBiomeIds, data.discoveredBiomeBitWords);
             data.lastDiscoveredBiomeId = discoveredBiomeId;
 
@@ -7259,9 +7258,7 @@ namespace Hecton8.Tests.Editor
             SaveData data = SaveData.CreateNew(0.0);
             const int discoveredBiomeId = 10;
             const int malformedBiomeId = BiomeDiscoveryBitMask.MaxBiomeId + 1;
-            data.discoveredBiomeIds.Clear();
-            data.discoveredBiomeIds.Add(malformedBiomeId);
-            data.discoveredBiomeIds.Add(discoveredBiomeId);
+            SeedLegacyDiscoveredBiomeIds(data, malformedBiomeId, discoveredBiomeId);
             BiomeDiscoveryBitMask.Pack(data.discoveredBiomeIds, data.discoveredBiomeBitWords);
             data.lastDiscoveredBiomeId = discoveredBiomeId;
 
@@ -7305,8 +7302,7 @@ namespace Hecton8.Tests.Editor
             SaveData data = SaveData.CreateNew(0.0);
             const int discoveredBiomeId = 11;
             const int malformedBiomeId = BiomeDiscoveryBitMask.MinBiomeId - 1;
-            data.discoveredBiomeIds.Clear();
-            data.discoveredBiomeIds.Add(discoveredBiomeId);
+            SeedLegacyDiscoveredBiomeIds(data, discoveredBiomeId);
             BiomeDiscoveryBitMask.Pack(data.discoveredBiomeIds, data.discoveredBiomeBitWords);
             data.lastDiscoveredBiomeId = discoveredBiomeId;
 
@@ -7360,8 +7356,7 @@ namespace Hecton8.Tests.Editor
             SaveData data = SaveData.CreateNew(0.0);
             const int discoveredBiomeId = 65;
             const long malformedHighBit = 1L << 50;
-            data.discoveredBiomeIds.Clear();
-            data.discoveredBiomeIds.Add(discoveredBiomeId);
+            SeedLegacyDiscoveredBiomeIds(data, discoveredBiomeId);
             BiomeDiscoveryBitMask.Pack(data.discoveredBiomeIds, data.discoveredBiomeBitWords);
             data.discoveredBiomeBitWords[1] |= malformedHighBit;
             data.lastDiscoveredBiomeId = discoveredBiomeId;
@@ -7407,8 +7402,7 @@ namespace Hecton8.Tests.Editor
             SaveData data = SaveData.CreateNew(0.0);
             const int discoveredBiomeId = 66;
             const long malformedHighBit = 1L << 50;
-            data.discoveredBiomeIds.Clear();
-            data.discoveredBiomeIds.Add(discoveredBiomeId);
+            SeedLegacyDiscoveredBiomeIds(data, discoveredBiomeId);
             BiomeDiscoveryBitMask.Pack(data.discoveredBiomeIds, data.discoveredBiomeBitWords);
             data.lastDiscoveredBiomeId = discoveredBiomeId;
             long[] malformedWords = (long[])data.discoveredBiomeBitWords.Clone();
@@ -8050,8 +8044,7 @@ namespace Hecton8.Tests.Editor
 
             SaveData data = SaveData.CreateNew(42.0);
             data.timestamp = "   ";
-            data.discoveredBiomeIds.Clear();
-            data.discoveredBiomeIds.Add(discoveredBiomeId);
+            SeedLegacyDiscoveredBiomeIds(data, discoveredBiomeId);
             Array.Clear(
                 data.discoveredBiomeBitWords,
                 0,
@@ -8959,8 +8952,7 @@ namespace Hecton8.Tests.Editor
             SaveData data = SaveData.CreateNew(0.0);
             const int discoveredBiomeId = 9;
             data.version = SaveData.CurrentVersion;
-            data.discoveredBiomeIds.Clear();
-            data.discoveredBiomeIds.Add(discoveredBiomeId);
+            SeedLegacyDiscoveredBiomeIds(data, discoveredBiomeId);
             BiomeDiscoveryBitMask.Pack(data.discoveredBiomeIds, data.discoveredBiomeBitWords);
             data.lastDiscoveredBiomeId = 101;
 
@@ -8979,9 +8971,7 @@ namespace Hecton8.Tests.Editor
             const int discoveredBiomeId = 12;
             const int malformedBiomeId = BiomeDiscoveryBitMask.MaxBiomeId + 1;
             data.version = SaveData.CurrentVersion;
-            data.discoveredBiomeIds.Clear();
-            data.discoveredBiomeIds.Add(malformedBiomeId);
-            data.discoveredBiomeIds.Add(discoveredBiomeId);
+            SeedLegacyDiscoveredBiomeIds(data, malformedBiomeId, discoveredBiomeId);
             Array.Clear(data.discoveredBiomeBitWords, 0, data.discoveredBiomeBitWords.Length);
             data.lastDiscoveredBiomeId = discoveredBiomeId;
 
@@ -9004,8 +8994,7 @@ namespace Hecton8.Tests.Editor
             const int discoveredBiomeId = 67;
             const long malformedHighBit = 1L << 50;
             data.version = SaveData.CurrentVersion;
-            data.discoveredBiomeIds.Clear();
-            data.discoveredBiomeIds.Add(discoveredBiomeId);
+            SeedLegacyDiscoveredBiomeIds(data, discoveredBiomeId);
             BiomeDiscoveryBitMask.Pack(data.discoveredBiomeIds, data.discoveredBiomeBitWords);
             long expectedWord = data.discoveredBiomeBitWords[1];
             data.discoveredBiomeBitWords[1] = malformedHighBit;
@@ -9049,8 +9038,7 @@ namespace Hecton8.Tests.Editor
             SaveData data = SaveData.CreateNew(0.0);
             data.version = legacyVersion;
             data.timestamp = "   ";
-            data.discoveredBiomeIds.Clear();
-            data.discoveredBiomeIds.Add(discoveredBiomeId);
+            SeedLegacyDiscoveredBiomeIds(data, discoveredBiomeId);
             Array.Clear(
                 data.discoveredBiomeBitWords,
                 0,
@@ -17178,6 +17166,41 @@ namespace Hecton8.Tests.Editor
             WritePayloadFloat(bytes, ref offset, firstHourSessionTime);
             Assert.AreEqual(bytes.Length, offset);
             return bytes;
+        }
+
+        /// <summary>
+        /// Supplies the legacy <see cref="SaveData.discoveredBiomeIds"/> payload a codec or migration test
+        /// needs, and pins the contract that made the old arrange block wrong.
+        /// <para>
+        /// Until 11757f10b (2026-04-20) <c>SaveData.CreateNew</c> handed back an allocated
+        /// <c>HashSet&lt;int&gt;</c> and the set was the primary discovery state, so tests arranged it with
+        /// <c>data.discoveredBiomeIds.Clear()</c>. That commit moved discovery onto the packed
+        /// <c>discoveredBiomeBitWords</c> and demoted the set to a backward-compatible migration read:
+        /// <c>SaveData.cs:159</c> documents it as legacy-only, <c>SaveData.cs:452</c> initializes it to
+        /// <c>null</c>, and the save owner <c>HectonDiscoveryManager.cs:212</c> nulls it again on every
+        /// write. So a fresh root now carries no legacy set at all, and a test that wants the legacy read
+        /// path exercised has to supply the payload itself.
+        /// </para>
+        /// <para>
+        /// The <see cref="Assert.IsNull(object, string)"/> below is deliberate: it fails if
+        /// <c>CreateNew</c> ever starts allocating the legacy set again, which is exactly the pre-move
+        /// behaviour these tests used to depend on.
+        /// </para>
+        /// </summary>
+        private static void SeedLegacyDiscoveredBiomeIds(SaveData data, params int[] legacyBiomeIds)
+        {
+            Assert.IsNotNull(data);
+            Assert.IsNotNull(legacyBiomeIds);
+            Assert.IsNull(
+                data.discoveredBiomeIds,
+                "SaveData.CreateNew must leave the legacy discoveredBiomeIds set null - canonical discovery state is discoveredBiomeBitWords, and HectonDiscoveryManager nulls the legacy set on every write.");
+
+            HashSet<int> legacySet = new HashSet<int>(SaveData.MaxLegacyDiscoveredBiomeIds);
+            for (int i = 0; i < legacyBiomeIds.Length; i++)
+                legacySet.Add(legacyBiomeIds[i]);
+
+            Assert.AreEqual(legacyBiomeIds.Length, legacySet.Count, "duplicate legacy biome id in test arrangement");
+            data.discoveredBiomeIds = legacySet;
         }
 
         private static byte[] BuildDiscoveredBiomeRootMarker(
