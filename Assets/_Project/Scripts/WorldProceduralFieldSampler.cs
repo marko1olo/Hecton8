@@ -1965,6 +1965,51 @@ namespace Hecton8.World
             return math.clamp(math.lerp(baseValue, shapedValue, blend), 0f, 1f);
         }
 
+        // Bounds of the industrial evidence field that shallow photic water can actually produce.
+        // industrialField = ServiceBias * 0.34 + IndustrialFieldNoise * 0.28 + TerrainNoise * 0.10
+        //                 + RuggedBias * 0.08 + deep01 * 0.08 + LandmarkBias * 0.12
+        // Outside a Service/Power/Construction/Progression zone EvaluateServiceBias returns the 0.26
+        // non-match floor (EvaluateZoneBias), deep01 is 0 above 180 m, and soft-water families carry a
+        // low RuggedBias, so the reachable band on the first shallow route is roughly 0.14 .. 0.52 and
+        // never approaches 1. A flat multiplier against that band is what made every technogenic
+        // channel unreachable on the photic route.
+        private const float ShallowTechnogenicTraceOnset = 0.20f;
+        private const float ShallowTechnogenicTraceSaturation = 0.48f;
+
+        /// <summary>
+        /// Shallow-shelf technogenic trace curve for the two photic patterns (FertileShallows,
+        /// ReefNavigation).
+        ///
+        /// world.md:35 and VISION_LOCKS.md:70 require the shallows to carry technogenic history "in
+        /// places" - colony traces, wreck fragments, route hardware, pipes, cables, salvage cuts -
+        /// and world.md:42 lists industrial intrusion as one of the five layers an area must have.
+        /// TASTE.md "The Ocean Contains Structure" rejects a featureless seabed with no navigational
+        /// history.
+        ///
+        /// A flat multiplier cannot express "in places". Scaling the reachable shallow industrial
+        /// band (see the constants above) by 0.22 - 0.26 caps the channel near 0.13, below every
+        /// technogenic floor authored against these channels (0.30 rule.debris.scatter and
+        /// rule.service.scar, 0.32 rule.route.power, 0.36 rule.ruin.cluster.medium, 0.40
+        /// rule.debris.field), so the content was solicited and could never place. Raising the whole
+        /// curve instead would spread scrap evenly over open shelf water, which world.md:18 and
+        /// world.md:160 reject.
+        ///
+        /// So this is a contrast ramp, not a gain: below the onset the shelf stays cleaner than the
+        /// old linear scale left it, and only the top of the industrial band climbs to
+        /// <paramref name="tracePeak"/>. Peaks are authored per channel to clear the floor for that
+        /// channel while staying under the SedimentResources band (0.42 debris, 0.48 service) and far
+        /// under IndustrialService (0.90 debris, 0.96 service), so the industrial ladder still reads
+        /// shelf &lt; sediment flat &lt; service water.
+        /// </summary>
+        private static float ShapeShallowTechnogenicTrace(float industrialField, float tracePeak)
+        {
+            float trace = math.smoothstep(
+                ShallowTechnogenicTraceOnset,
+                ShallowTechnogenicTraceSaturation,
+                industrialField);
+            return trace * tracePeak;
+        }
+
         private static float ResolvePatternShapedHeat(int channelIndex, int resolvedPattern, in PatternHeatContext context)
         {
             return (WorldProceduralPattern)resolvedPattern switch
@@ -1976,15 +2021,15 @@ namespace Hecton8.World
                     2 => context.FertileField * 0.84f,
                     3 => context.ReefField * 0.90f,
                     4 => context.FertileField * 0.62f + context.ShelterField * 0.24f,
-                    5 => context.IndustrialField * 0.26f,
-                    6 => context.IndustrialField * 0.22f + context.LandmarkField * 0.16f,
+                    5 => ShapeShallowTechnogenicTrace(context.IndustrialField, 0.38f),
+                    6 => ShapeShallowTechnogenicTrace(context.IndustrialField, 0.34f) + context.LandmarkField * 0.12f,
                     7 => context.LandmarkField * 0.28f + context.HazardField * 0.16f,
                     8 => context.LandmarkField * 0.48f + context.ReefField * 0.12f,
                     9 => context.FertileField * 0.56f + context.ShelterField * 0.30f,
                     10 => context.HazardField * 0.26f,
                     11 => context.SedimentField * 0.40f + context.FertileField * 0.18f,
                     12 => context.ShelterField * 0.78f,
-                    13 => context.IndustrialField * 0.22f,
+                    13 => ShapeShallowTechnogenicTrace(context.IndustrialField, 0.44f),
                     _ => context.FertileField * 0.58f + context.SedimentField * 0.14f
                 },
                 WorldProceduralPattern.ReefNavigation => channelIndex switch
@@ -1994,15 +2039,15 @@ namespace Hecton8.World
                     2 => context.FertileField * 0.70f + context.ReefField * 0.12f,
                     3 => context.ReefField * 0.94f,
                     4 => context.FertileField * 0.44f + context.ShelterField * 0.22f,
-                    5 => context.IndustrialField * 0.24f,
-                    6 => context.IndustrialField * 0.20f + context.LandmarkField * 0.18f,
+                    5 => ShapeShallowTechnogenicTrace(context.IndustrialField, 0.34f),
+                    6 => ShapeShallowTechnogenicTrace(context.IndustrialField, 0.32f) + context.LandmarkField * 0.14f,
                     7 => context.LandmarkField * 0.38f + context.HazardField * 0.18f,
                     8 => context.LandmarkField * 0.68f + context.ReefField * 0.16f,
                     9 => context.FertileField * 0.42f + context.ShelterField * 0.18f,
                     10 => context.HazardField * 0.28f,
                     11 => context.SedimentField * 0.32f + context.LandmarkField * 0.12f,
                     12 => context.ShelterField * 0.54f + context.ReefField * 0.12f,
-                    13 => context.IndustrialField * 0.22f,
+                    13 => ShapeShallowTechnogenicTrace(context.IndustrialField, 0.44f),
                     _ => context.ReefField * 0.56f + context.LandmarkField * 0.18f
                 },
                 WorldProceduralPattern.SedimentResources => channelIndex switch
@@ -3886,15 +3931,15 @@ namespace Hecton8.World
                     "flora_density" => fertileField * 0.84f,
                     "coral_density" => reefField * 0.90f,
                     "bio_density" => fertileField * 0.62f + shelterField * 0.24f,
-                    "debris_density" => industrialField * 0.26f,
-                    "ruin_density" => industrialField * 0.22f + landmarkField * 0.16f,
+                    "debris_density" => ShapeShallowTechnogenicTrace(industrialField, 0.38f),
+                    "ruin_density" => ShapeShallowTechnogenicTrace(industrialField, 0.34f) + landmarkField * 0.12f,
                     "cave_density" => landmarkField * 0.28f + hazardField * 0.16f,
                     "landmark_strength" => landmarkField * 0.48f + reefField * 0.12f,
                     "fauna_density" => fertileField * 0.56f + shelterField * 0.30f,
                     "hazard_density" => hazardField * 0.26f,
                     "resource_density" => sedimentField * 0.40f + fertileField * 0.18f,
                     "shelter_density" => shelterField * 0.78f,
-                    "service_density" => industrialField * 0.22f,
+                    "service_density" => ShapeShallowTechnogenicTrace(industrialField, 0.44f),
                     _ => fertileField * 0.58f + sedimentField * 0.14f
                 },
                 WorldProceduralPattern.ReefNavigation => channel switch
@@ -3904,15 +3949,15 @@ namespace Hecton8.World
                     "flora_density" => fertileField * 0.70f + reefField * 0.12f,
                     "coral_density" => reefField * 0.94f,
                     "bio_density" => fertileField * 0.44f + shelterField * 0.22f,
-                    "debris_density" => industrialField * 0.24f,
-                    "ruin_density" => industrialField * 0.20f + landmarkField * 0.18f,
+                    "debris_density" => ShapeShallowTechnogenicTrace(industrialField, 0.34f),
+                    "ruin_density" => ShapeShallowTechnogenicTrace(industrialField, 0.32f) + landmarkField * 0.14f,
                     "cave_density" => landmarkField * 0.38f + hazardField * 0.18f,
                     "landmark_strength" => landmarkField * 0.68f + reefField * 0.16f,
                     "fauna_density" => fertileField * 0.42f + shelterField * 0.18f,
                     "hazard_density" => hazardField * 0.28f,
                     "resource_density" => sedimentField * 0.32f + landmarkField * 0.12f,
                     "shelter_density" => shelterField * 0.54f + reefField * 0.12f,
-                    "service_density" => industrialField * 0.22f,
+                    "service_density" => ShapeShallowTechnogenicTrace(industrialField, 0.44f),
                     _ => reefField * 0.56f + landmarkField * 0.18f
                 },
                 WorldProceduralPattern.SedimentResources => channel switch
