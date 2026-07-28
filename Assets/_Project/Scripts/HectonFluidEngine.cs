@@ -1805,6 +1805,22 @@ namespace Hecton8.Physics
         //  NATIVE ARRAYS (Job data)
         // ══════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// A constructed, length-1, permanently-zero stand-in for WaveQueryJob.TerrainHeightSamples when no
+        /// terrain payload exists.
+        ///
+        /// It has to be a real allocation and it has to be PERSISTENT. Real, because the Jobs safety system
+        /// rejects an unconstructed NativeArray in a scheduled job even when the job body never reads it -
+        /// which is what threw 143 times per run and amputated the dispatcher's whole fixed lane walk.
+        /// Persistent, because this is scheduled from FixedTick: a per-frame Allocator.TempJob array here
+        /// would be a per-frame allocation on a hot path.
+        ///
+        /// Length 1 rather than 0 on purpose - a zero-length NativeArray is legal but reads as "empty" in
+        /// several Unity code paths, and 1 element of ushort costs 2 bytes for the lifetime of the engine.
+        /// The job never indexes it: HasTerrainHeightPayload is 0 whenever this is the array in use.
+        /// </summary>
+        private NativeArray<ushort> _emptyTerrainHeightSamples;
+
         private FluidVaultBuffer<float3>         _positions;
         private FluidVaultBuffer<float3>         _previousPositions;
         private FluidVaultBuffer<byte>           _previousPositionValid;
@@ -2446,8 +2462,27 @@ namespace Hecton8.Physics
             ApplyOriginShiftRebase(pendingShift);
         }
 
+        /// <summary>
+        /// Lazily allocates the empty terrain-height stand-in. Allocated once per engine, released in
+        /// <see cref="OnDestroy"/>. See the field docs for why a stand-in is required at all.
+        /// </summary>
+        private NativeArray<ushort> EnsureEmptyTerrainHeightSamples()
+        {
+            if (!_emptyTerrainHeightSamples.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<ushort>[1] - Jobs-safety stand-in so a missing terrain payload
+                // cannot throw out of FixedTick - owner: HectonFluidEngine
+                _emptyTerrainHeightSamples = new NativeArray<ushort>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
+            return _emptyTerrainHeightSamples;
+        }
+
         private void OnDestroy()
         {
+            if (_emptyTerrainHeightSamples.IsCreated)
+                _emptyTerrainHeightSamples.Dispose();
+
             TryUnregisterHotSwapListener();
             ClearOceanSurfaceWaveUniformsIfOwner();
 
@@ -3806,7 +3841,27 @@ namespace Hecton8.Physics
                     VerticalOffsets = _waveOffsets,
                     SurfaceUpVectors = _surfaceUpVectors,
                     Waves = _gerstnerWaves,
-                    TerrainHeightSamples = hasTerrainPayload ? terrainPayload.HeightSamples : default,
+                    // NEVER `default` here. An unconstructed NativeArray inside a SCHEDULED job throws
+                    // InvalidOperationException under the Jobs safety system regardless of whether the job
+                    // body reads it - and HasTerrainHeightPayload below already tells the body not to.
+                    //
+                    // Measured cost of getting this wrong, from Logs/omega_route28.log: 143 identical
+                    // "WaveQueryJob.TerrainHeightSamples has not been assigned or constructed" exceptions,
+                    // one per frame, thrown out of waveJob.Schedule below. This runs in FixedTick, and the
+                    // dispatcher's fixed lane walk has NO try/catch, so the throw unwound out of
+                    // RunDispatcherUpdate every frame. This engine is PriorityLayer.Environment = lane 1, the
+                    // PLAYER is lane 2, and the walk goes 0->3, so the player's whole fixed lane never ran.
+                    //
+                    // Every number the Swim route row printed was that one throw: movementIntent01max=0.000
+                    // because HectonPlayerMovement.FixedTick is the sole writer of the intent field;
+                    // depth=0.000 and pressure=1.000 because RunSlowTick sits after the throw point so
+                    // HectonSurvivalSystem.SlowTick never ran; oxygen frozen at its init value; and
+                    // immersionMax=1.000 a frozen cold-init reading rather than a measurement. It could not
+                    // surface before tonight because the boot never completed - the first throw lands
+                    // immediately after "[GameBootstrapper] Complete".
+                    TerrainHeightSamples = hasTerrainPayload
+                        ? terrainPayload.HeightSamples
+                        : EnsureEmptyTerrainHeightSamples(),
                     WaveCount = activeWaveCount,
                     TimeSeconds = weatherSnapshot.CurrentMeta.TimeAccumulator,
                     WaterLevelY = cinematicWaterLevel,
