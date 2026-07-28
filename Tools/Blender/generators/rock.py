@@ -1166,15 +1166,85 @@ def build_materials(obj: bpy.types.Object) -> list:
             bpy.data.materials.remove(existing)
         material = bpy.data.materials.new(name)
         material.use_nodes = True
-        principled = material.node_tree.nodes.get("Principled BSDF")
-        if principled is not None:
-            principled.inputs["Base Color"].default_value = (*base_color, 1.0)
-            principled.inputs["Roughness"].default_value = roughness
-            if "Metallic" in principled.inputs:
-                principled.inputs["Metallic"].default_value = 0.0
+        _wire_channel_driven_albedo(material, base_color, roughness)
         obj.data.materials.append(material)
         materials.append(material)
     return materials
+
+
+def _wire_channel_driven_albedo(material: bpy.types.Material, base_color: tuple,
+                                roughness: float) -> None:
+    """Albedo = base pigment, stained by G, revealed by R, occluded by B.
+
+    This is the intended runtime contract expressed as Blender nodes, so the
+    ``mode="material"`` contact sheet shows what the channels DO instead of a flat
+    swatch. A grey preview cannot answer whether the mineral staining and the wet/dry
+    contrast read, and per the reference frame that colour is half of what sells a rock.
+    """
+    tree = material.node_tree
+    nodes = tree.nodes
+    links = tree.links
+    nodes.clear()
+
+    output = nodes.new("ShaderNodeOutputMaterial")
+    bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+    attribute = nodes.new("ShaderNodeVertexColor")
+    attribute.layer_name = law.VCOL_ATTRIBUTE_NAME
+    separate = nodes.new("ShaderNodeSeparateColor")
+    links.new(attribute.outputs["Color"], separate.inputs["Color"])
+
+    stain = nodes.new("ShaderNodeMix")
+    stain.data_type = "RGBA"
+    stain.blend_type = "MIX"
+    stain.inputs["A"].default_value = (*base_color, 1.0)
+    stain.inputs["B"].default_value = (*ROCK_ALGAE, 1.0)
+    links.new(separate.outputs["Green"], stain.inputs["Factor"])
+
+    reveal = nodes.new("ShaderNodeMix")
+    reveal.data_type = "RGBA"
+    reveal.blend_type = "MIX"
+    reveal.inputs["B"].default_value = (*ROCK_FRESH, 1.0)
+    links.new(stain.outputs["Result"], reveal.inputs["A"])
+    # Chip reveal is a partial lerp: a fresh spall lightens the surface, it does not
+    # replace the rock.
+    reveal_gain = nodes.new("ShaderNodeMath")
+    reveal_gain.operation = "MULTIPLY"
+    reveal_gain.inputs[1].default_value = 0.55
+    links.new(separate.outputs["Red"], reveal_gain.inputs[0])
+    links.new(reveal_gain.outputs["Value"], reveal.inputs["Factor"])
+
+    # AO darkening, floored so the cavity reads dark without going pure black --
+    # 3dmodel.md forbids using darkness to hide missing work.
+    ao_floor = nodes.new("ShaderNodeMath")
+    ao_floor.operation = "MULTIPLY_ADD"
+    ao_floor.inputs[1].default_value = 0.75
+    ao_floor.inputs[2].default_value = 0.25
+    links.new(separate.outputs["Blue"], ao_floor.inputs[0])
+
+    occlude = nodes.new("ShaderNodeMix")
+    occlude.data_type = "RGBA"
+    occlude.blend_type = "MULTIPLY"
+    occlude.inputs["Factor"].default_value = 1.0
+    links.new(reveal.outputs["Result"], occlude.inputs["A"])
+    ao_color = nodes.new("ShaderNodeCombineColor")
+    links.new(ao_floor.outputs["Value"], ao_color.inputs["Red"])
+    links.new(ao_floor.outputs["Value"], ao_color.inputs["Green"])
+    links.new(ao_floor.outputs["Value"], ao_color.inputs["Blue"])
+    links.new(ao_color.outputs["Color"], occlude.inputs["B"])
+
+    # Algae and wet stain are glossier than dry rock.
+    rough = nodes.new("ShaderNodeMap Range" if False else "ShaderNodeMapRange")
+    rough.inputs["From Min"].default_value = 0.0
+    rough.inputs["From Max"].default_value = 1.0
+    rough.inputs["To Min"].default_value = roughness
+    rough.inputs["To Max"].default_value = max(0.18, roughness - 0.34)
+    links.new(separate.outputs["Green"], rough.inputs["Value"])
+
+    links.new(occlude.outputs["Result"], bsdf.inputs["Base Color"])
+    links.new(rough.outputs["Result"], bsdf.inputs["Roughness"])
+    if "Metallic" in bsdf.inputs:
+        bsdf.inputs["Metallic"].default_value = 0.0
+    links.new(bsdf.outputs["BSDF"], output.inputs["Surface"])
 
 
 def build_uvs(obj: bpy.types.Object, frame: BeddingFrame, size: SizeClass,
@@ -1490,6 +1560,8 @@ class VariantResult:
     validator_failures: list = field(default_factory=list)
     open_boundary_edges: int = 0
     nominal_chip_width_m: float = 0.0
+    shading: Optional[mesh_ops.ShadingResult] = None
+    post_fracture_topology: dict = field(default_factory=dict)
 
 
 def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str,
@@ -1570,6 +1642,26 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     bm.to_mesh(mesh)
     bm.free()
 
+    # Census straight after the cutting stages. Planar bisects are the classic way to
+    # produce a disconnected shell, and DECIMATE collapses edges but cannot delete a
+    # shell -- so many components impose a triangle FLOOR that no number of passes beats.
+    census = mesh_ops.topology_report(obj)
+    result.post_fracture_topology = {
+        "triangles": census.triangles,
+        "components": census.components,
+        "boundaryEdges": census.boundary_edges,
+        "nonManifoldEdges": census.nonmanifold_edges,
+        "smallestComponent": census.smallest_component,
+        "largestComponent": census.largest_component,
+        "irreducibleFloor": census.irreducible_floor,
+        "explainAgainstLod0Budget": census.explain(size.budget(0)),
+    }
+    blackbox.record("post_fracture_census", triangle_count=mesh_ops.triangle_count(mesh),
+                    vertex_count=len(mesh.vertices),
+                    warning="" if census.components == 1 else
+                    "{n} disconnected components impose a triangle floor of {f}".format(
+                        n=census.components, f=census.estimated_triangle_floor))
+
     # Sit the base on z=0 so the preview grid shows real ground contact.
     lo, _hi = mesh_ops.local_bounds(obj)
     for vertex in obj.data.vertices:
@@ -1586,8 +1678,15 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
                       allow_weld=False)
     clean_object(obj, blackbox, "post_lod0_reduce")
 
-    mesh_ops.apply_shading_basis(obj, smooth_angle_deg=law.SMOOTH_ANGLE_DEG,
-                                 weighted=True, keep_sharp=True, blackbox=blackbox)
+    # ``3DMODEL_GEOLOGY_ROCKS.md`` section 4: "Split normals at sharp fracture edges
+    # above 45 degrees. Do not smooth a chipped plane into a soft blob."
+    # law.SMOOTH_ANGLE_DEG is 32, stricter than 45, so every fracture edge is split.
+    # The result is asserted, not assumed: this function used to be a silent no-op
+    # headless, and a secretly flat-shaded rock would have sent me tuning geometry to fix
+    # a shading bug.
+    result.shading = mesh_ops.apply_shading_basis(
+        obj, smooth_angle_deg=law.SMOOTH_ANGLE_DEG, weighted=True, keep_sharp=True,
+        blackbox=blackbox)
 
     # Stage 5: material IDs + UVs.
     build_materials(obj)
@@ -1884,6 +1983,19 @@ def hard_gates(result: VariantResult, size: SizeClass) -> list:
         lines.append("FAIL UV0 unwrap failed")
     else:
         lines.append("PASS UV0 fallback unwrap present alongside triplanar route")
+
+    shading = result.shading
+    if shading is None:
+        lines.append("FAIL shading basis never ran")
+    else:
+        lines.append(("PASS" if shading.smooth_polygons > 0 else "FAIL")
+                     + " {n} polygons marked smooth (not flat-shaded)".format(
+                         n=shading.smooth_polygons))
+        lines.append(("PASS" if shading.sharp_edges > 0 else "FAIL")
+                     + " {n} edges split sharp above {a} deg (fracture planes stay crisp)"
+                     .format(n=shading.sharp_edges, a=law.SMOOTH_ANGLE_DEG))
+        lines.append(("PASS" if shading.weighted_applied else "FAIL")
+                     + " weighted normals applied (FACE_AREA_WITH_ANGLE)")
     return lines
 
 

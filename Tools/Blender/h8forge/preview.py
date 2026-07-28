@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import math
 import os
+import time
 from dataclasses import dataclass, field
 from typing import Optional, Sequence
 
@@ -102,16 +103,29 @@ class PreviewResult:
 # Stale artefact removal  --  AGENTS.md Atomic File Delete Rule
 # ---------------------------------------------------------------------------
 
+# Wall-clock at import, used ONLY to tell this run's artefacts from previous runs'.
+# It never touches geometry, so it does not violate the determinism contract in
+# PROCEDURAL_ASSET_PIPELINE.md -- that contract governs mesh topology, not file cleanup.
+_PROCESS_START = time.time()
+
+
 def clear_render_dir(output_dir: str, name_prefix: str = "") -> int:
-    """Physically delete stale PNG/log artefacts before rendering.
+    """Physically delete STALE PNG/log artefacts before rendering.
 
     ``AGENTS.md``: "Before ANY automated Unity batchmode test or render run, all .png
     diagnostic artifacts and .log files in the output directory must be physically
     deleted ... This prevents hallucinatory visual checks against old screenshots."
 
-    That failure mode is real and severe here: the whole point of this module is that
-    a human-equivalent visual judgement is made from these files. Judging last hour's
-    render and reporting it as this run's result would be fabricated proof.
+    That failure mode is real and severe here: the whole point of this module is that a
+    visual judgement is made from these files, so judging last hour's render and
+    reporting it as this run's result would be fabricated proof.
+
+    Staleness is decided by MTIME against process start, not by filename prefix. Prefix
+    matching looked equivalent and was not: a generator renders a studio sheet, then a
+    flat sheet, then a channel sheet, all under one asset name, so the second call
+    deleted the first call's output. The symptom was a missing studio sheet with no error
+    anywhere -- the file had been created, then removed by the very rule meant to protect
+    it. Files written after this process started belong to this run and are kept.
     """
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir, exist_ok=True)
@@ -122,8 +136,11 @@ def clear_render_dir(output_dir: str, name_prefix: str = "") -> int:
             continue
         if not entry.lower().endswith((".png", ".log", ".exr")):
             continue
+        path = os.path.join(output_dir, entry)
         try:
-            os.remove(os.path.join(output_dir, entry))
+            if os.path.getmtime(path) >= _PROCESS_START:
+                continue  # written by this run; deleting it is the bug, not the rule
+            os.remove(path)
             deleted += 1
         except OSError:
             # A file held open by an image viewer is not a reason to abort a render;

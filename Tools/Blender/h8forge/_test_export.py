@@ -661,6 +661,133 @@ def case_file_contents():
 
 
 # ---------------------------------------------------------------------------
+# The production shading basis
+# ---------------------------------------------------------------------------
+
+def case_weighted_normal_basis_survives():
+    """The basis mesh_ops actually authors, not an artificial tilt.
+
+    ``case_reimport_streams`` rotates flat face normals by a known angle. That is
+    falsifiable, but synthetic. This case builds the basis the way
+    ``mesh_ops.apply_shading_basis`` does after its headless fix -- polygons marked
+    smooth at data level, edges above ``law.SMOOTH_ANGLE_DEG`` marked sharp, then
+    WEIGHTED_NORMAL in FACE_AREA_WITH_ANGLE with keep_sharp -- and proves that basis
+    reaches the FBX intact.
+
+    The distinction is the whole point. ``bpy.ops.object.shade_auto_smooth`` returns
+    ``{'CANCELLED'}`` under ``-b --factory-startup``, so a test that leaned on the
+    operator route would have been round-tripping FLAT shading and calling it proof.
+    This case therefore asserts, before exporting anything, that the basis is
+    neither flat nor uniformly smooth: some corners must differ from their face
+    normal, and some vertices must carry split normals. Either assertion failing
+    means the case has degenerated and proves nothing.
+    """
+    H.case("production shading basis (smooth + sharp edges + WEIGHTED_NORMAL)")
+    _clear_scene()
+    obj = build_probe("MESH_SmallProp_Weighted_LOD0", custom_normals=False)
+    mesh = obj.data
+
+    for polygon in mesh.polygons:
+        polygon.use_smooth = True
+    threshold = math.radians(law.SMOOTH_ANGLE_DEG)
+    edge_faces = {}
+    for polygon in mesh.polygons:
+        for key in polygon.edge_keys:
+            edge_faces.setdefault(key, []).append(polygon)
+    sharp = 0
+    for edge in mesh.edges:
+        faces = edge_faces.get(edge.key, ())
+        if len(faces) != 2:
+            continue
+        dot = max(-1.0, min(1.0, faces[0].normal.dot(faces[1].normal)))
+        if math.acos(dot) > threshold:
+            edge.use_edge_sharp = True
+            sharp += 1
+    mesh.update()
+    H.check(sharp > 0,
+            "the control mesh must have edges above law.SMOOTH_ANGLE_DEG ({0:g} "
+            "deg) to mark sharp, marked {1}".format(law.SMOOTH_ANGLE_DEG, sharp))
+    H.info("marked {0} of {1} edges sharp above {2:g} degrees".format(
+        sharp, len(mesh.edges), law.SMOOTH_ANGLE_DEG))
+
+    modifier = obj.modifiers.new(name="H8_WeightedNormal", type="WEIGHTED_NORMAL")
+    modifier.mode = "FACE_AREA_WITH_ANGLE"
+    modifier.weight = 50
+    modifier.keep_sharp = True
+    bpy.context.view_layer.update()
+
+    # Read the EVALUATED result: that is what the exporter writes with
+    # apply_modifiers=True, and what export_fbx measures.
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    evaluated = obj.evaluated_get(depsgraph)
+    eval_mesh = evaluated.to_mesh()
+    eval_mesh.calc_loop_triangles()
+    normal_matrix = obj.matrix_world.to_3x3().inverted_safe().transposed()
+    eval_normals = [(normal_matrix @ Vector(n.vector)).normalized()
+                    for n in eval_mesh.corner_normals]
+    face_normals = []
+    for polygon in eval_mesh.polygons:
+        for _ in polygon.loop_indices:
+            face_normals.append((normal_matrix @ polygon.normal).normalized())
+    has_custom = bool(getattr(eval_mesh, "has_custom_normals", False))
+    per_vertex = {}
+    for loop_index, loop in enumerate(eval_mesh.loops):
+        per_vertex.setdefault(loop.vertex_index, []).append(eval_normals[loop_index])
+    split_vertices = 0
+    for vectors in per_vertex.values():
+        if any((vectors[0] - v).length > 1e-3 for v in vectors[1:]):
+            split_vertices += 1
+    off_face = sum(1 for a, b in zip(eval_normals, face_normals)
+                   if (a - b).length > 1e-3)
+    evaluated.to_mesh_clear()
+
+    H.info("evaluated basis: has_custom_normals={0}; {1} of {2} corners differ from "
+           "their face normal; {3} of {4} vertices carry split normals".format(
+               has_custom, off_face, len(eval_normals), split_vertices,
+               len(per_vertex)))
+    H.check(off_face > 0,
+            "the weighted-normal basis must actually smooth something. Every corner "
+            "still equals its face normal, which means this case is round-tripping "
+            "FLAT shading and proves nothing about custom normals.")
+    H.check(split_vertices > 0,
+            "keep_sharp must leave at least one vertex with split normals; without "
+            "a split this case cannot distinguish an authored basis from a uniform "
+            "recalculation")
+
+    result = X.export_fbx([obj], out("weighted_basis.fbx"))
+    for line in result.roundtrip_notes:
+        if "corner-normal" in line or "roundtrip VERIFIED" in line:
+            H.info(line)
+    H.check(result.roundtrip_verified,
+            "the weighted-normal basis must round-trip: "
+            + " | ".join(result.roundtrip_notes))
+
+    # Independent check outside the module: compare the re-imported world-space
+    # corner normals against the evaluated source ones.
+    imported = import_matched(result.fbx_path)
+    if H.check(len(imported) == 1, "one object expected from the re-import"):
+        after = world_corner_normals(imported[0])
+        if H.check(len(after) == len(eval_normals),
+                   "corner count {0} -> {1}".format(len(eval_normals), len(after))):
+            worst = max((a - b).length for a, b in zip(eval_normals, after))
+            H.check(worst <= X.TOL_NORMAL,
+                    "the authored weighted/split basis must survive; worst corner "
+                    "deviation {0:.7f} exceeds {1:g}".format(worst, X.TOL_NORMAL))
+            H.info("weighted-normal basis max corner deviation after round trip = "
+                   "{0:.7f}".format(worst))
+            after_face = geometric_corner_normals(imported[0])
+            still_off = sum(1 for a, b in zip(after, after_face)
+                            if (a - b).length > 1e-3)
+            H.check(still_off == off_face,
+                    "the same {0} corners must still differ from their face normal "
+                    "after the round trip, got {1}. A drop toward zero means the "
+                    "importer recalculated flat.".format(off_face, still_off))
+            H.info("{0} corners still smoothed after the round trip (source had "
+                   "{1})".format(still_off, off_face))
+    _clear_scene()
+
+
+# ---------------------------------------------------------------------------
 # Negative controls
 # ---------------------------------------------------------------------------
 
@@ -1259,6 +1386,7 @@ CASES = (
     case_reimport_streams,
     case_axis_and_landmark,
     case_file_contents,
+    case_weighted_normal_basis_survives,
     case_colors_type_matters,
     case_ngon_drops_tangents_without_triangulation,
     case_wrong_axes_is_detected,

@@ -215,7 +215,7 @@ def _arclengths(points):
 
 def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
                   points, segments, offset_fn, part_id, vertex_class,
-                  material_fn, geo_base, geo_lengths, uv_v_offset=0.0):
+                  material_fn, geo_base, geo_lengths, seam_direction=None):
     """Sweep a parametric cross-section along ``points`` and cap both ends.
 
     ``offset_fn(row, u, j, theta) -> (x, y)`` returns the cross-section offset in
@@ -224,26 +224,30 @@ def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
     distance from an axis: scaling displacement by distance-from-axis leaves the
     thick base porcelain-smooth while the thin tip self-intersects.
 
-    UVs are written in METRES here, and they are UNROLLED rather than projected:
+    This function does NOT write UVs. It marks the SEAM -- one cut running pole to
+    pole down the least visible column -- and the conformal solver in
+    :func:`_unwrap_and_pack` does the metric work afterwards.
 
-      U  cumulative chord length around each ring, measured on the ring itself
-      V  cumulative surface distance along the sweep, accumulated PER COLUMN and
-         corrected for the U the column drifts through:
-             dv = sqrt(d3d^2 - du^2)
+    That split is deliberate, and it is the second design here: writing UVs
+    analytically was tried first and measured. Two hand-rolled parameterisations were
+    tested against the real gate. Shared centreline V gave 5037 of ~6100 triangles
+    above the 15 percent aspect ceiling; per-column unrolled V with the
+    ``dv = sqrt(d3d^2 - du^2)`` correction gave 455 triangles with UV area exactly
+    0.0. The second failure is instructive rather than a bug: cumulative U drift
+    accumulates all the way around a ring, so on a tapering tube the drift at the far
+    columns exceeds the row span and the correction collapses. A tapered tube unrolls
+    isometrically to an annulus SECTOR, not to a rectangle, and a leaf-shaped blade
+    plan-form is not developable at all -- no rectangular lattice mapping can be
+    conformal on it. Gaussian curvature, not sloppy code.
 
-    That correction is the difference between passing and failing the UV gate. With
-    a single shared V per row -- centreline arc length -- every quad on a tapered or
-    ribbed tube gets a UV height that does not match the surface distance its own
-    column actually travels, and the measured aspect distortion runs 15-30 percent
-    across essentially the whole mesh. Unrolling per column makes all four UV edges
-    of every quad equal to their 3D counterparts, so what remains is only the
-    diagonal error, which is genuine Gaussian curvature and small.
+    ``3dmodel.md`` section 6 lists the answer first among its approved routes:
+    "Conformal unwrap using LSCM/ABF-style angle preservation for unique surfaces."
+    Blender ships both, so the solver gets the metric problem and this function keeps
+    what a solver cannot infer: WHERE the seam belongs. Section 5 is specific about
+    that -- "seam on the least visible rear side" -- and seam placement is the half
+    that carries the art direction.
 
-    ``3dmodel.md`` section 6 forbids "Stretched polygons above 15 percent aspect
-    distortion for hero/near assets". A later single UNIFORM scale into an atlas
-    rect preserves this; a per-island fit would manufacture the distortion instead.
-
-    Returns the (u_min, v_min, u_max, v_max) UV bounds of the island in metres.
+    Returns the apex vertices and the seam column index, for the caller's records.
     """
     rows = len(points)
     tangents, normals, binormals = _parallel_frames(points)
@@ -282,18 +286,17 @@ def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
                  geo_lengths[rows - 1] + trail_radius * 0.45))
 
     # -- vertices ---------------------------------------------------------
-    # One extra column duplicates column 0 so the seam can carry two different U
-    # values. weld_and_clean merges the duplicated VERTEX afterwards, but UVs live
-    # on loops, so the seam survives as differing corner UVs -- which is what a UV
-    # seam is, and what the FBX exporter will re-split on anyway.
+    # The ring closes on itself: exactly ``segments`` columns, no duplicated seam
+    # column. The seam is a marked EDGE CHAIN, which is what the unwrap solver
+    # consumes, so a duplicated column would only add welded-away vertices.
     grid = []
     for centre, frame_index, u_param, radius_scale, geo_length in plan:
         normal = normals[frame_index]
         binormal = binormals[frame_index]
         row = []
-        for j in range(segments + 1):
-            theta = 2.0 * math.pi * (j % segments) / float(segments)
-            off_x, off_y = offset_fn(frame_index, u_param, j % segments, theta)
+        for j in range(segments):
+            theta = 2.0 * math.pi * j / float(segments)
+            off_x, off_y = offset_fn(frame_index, u_param, j, theta)
             position = centre + normal * (off_x * radius_scale) + \
                 binormal * (off_y * radius_scale)
             vertex = bm.verts.new(position)
@@ -304,37 +307,33 @@ def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
     bm.verts.index_update()
     ring_count = len(grid)
 
-    # -- U in metres: cumulative chord length around each ring -------------
-    u_coords = []
-    for row in grid:
-        cumulative = [0.0]
-        for j in range(1, segments + 1):
-            cumulative.append(cumulative[-1] + (row[j].co - row[j - 1].co).length)
-        u_coords.append(cumulative)
-
-    # -- V in metres: per-column unrolled surface distance -----------------
-    v_coords = [[uv_v_offset] * (segments + 1)]
-    for i in range(1, ring_count):
-        previous = v_coords[-1]
-        row = []
-        for j in range(segments + 1):
-            span = (grid[i][j].co - grid[i - 1][j].co).length
-            drift = u_coords[i][j] - u_coords[i - 1][j]
-            height = span * span - drift * drift
-            row.append(previous[j] + (math.sqrt(height) if height > 0.0 else 0.0))
-        v_coords.append(row)
-
-    u_min = 0.0
-    u_max = max(row[-1] for row in u_coords)
-    v_min = uv_v_offset
-    v_max = max(max(row) for row in v_coords)
+    # -- seam column: the least visible side ------------------------------
+    # Section 5: "Stipes and branches use cylindrical unwrap with seam on the least
+    # visible rear side." Measured at the mid ring against the caller's chosen hide
+    # direction, so the cut lands on the lee/underside rather than on whichever column
+    # happens to be index 0.
+    mid = ring_count // 2
+    mid_frame = plan[mid][1]
+    seam_column = 0
+    if seam_direction is not None and seam_direction.length > 1e-9:
+        hide = seam_direction.normalized()
+        best = -2.0
+        for j in range(segments):
+            theta = 2.0 * math.pi * j / float(segments)
+            world = (normals[mid_frame] * math.cos(theta) +
+                     binormals[mid_frame] * math.sin(theta))
+            score = world.normalized().dot(hide)
+            if score > best:
+                best = score
+                seam_column = j
 
     # -- quads ------------------------------------------------------------
     for i in range(ring_count - 1):
         for j in range(segments):
+            nxt = (j + 1) % segments
             a = grid[i][j]
-            b = grid[i][j + 1]
-            c = grid[i + 1][j + 1]
+            b = grid[i][nxt]
+            c = grid[i + 1][nxt]
             d = grid[i + 1][j]
             if len({a, b, c, d}) != 4:
                 # A collapsed cross-section would make a degenerate quad, which
@@ -344,35 +343,28 @@ def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
             face = bm.faces.new((a, b, c, d))
             face.material_index = material_fn(i, j, ring_count, segments)
             face[part_layer] = part_id
-            corners = ((a, u_coords[i][j], v_coords[i][j]),
-                       (b, u_coords[i][j + 1], v_coords[i][j + 1]),
-                       (c, u_coords[i + 1][j + 1], v_coords[i + 1][j + 1]),
-                       (d, u_coords[i + 1][j], v_coords[i + 1][j]))
-            for loop in face.loops:
-                for vertex, u_value, v_value in corners:
-                    if loop.vert is vertex:
-                        loop[uv_layer].uv = (u_value, v_value)
-                        break
 
     # -- apex fans --------------------------------------------------------
-    # Closing with a shared apex instead of an n-gon cap keeps the part a single UV
-    # island. An n-gon cap would be its own island, and law.UV_MIN_ISLAND_PIXELS = 4
-    # rejects islands that small on a 1024 atlas.
+    # Closing with a shared apex rather than an n-gon cap keeps the shell a single
+    # island once cut, and keeps it closed: 3dmodel.md section 5 requires every sheet
+    # border to be capped, and an open tube end is a border.
+    apexes = []
     for end in (0, ring_count - 1):
         row = grid[end]
         frame_index = plan[end][1]
-        ring_centre = sum((v.co for v in row[:segments]), Vector((0.0, 0.0, 0.0))) \
+        ring_centre = sum((v.co for v in row), Vector((0.0, 0.0, 0.0))) \
             / float(segments)
         direction = tangents[frame_index] * (-1.0 if end == 0 else 1.0)
-        radius = sum((v.co - ring_centre).length for v in row[:segments]) / float(segments)
+        radius = sum((v.co - ring_centre).length for v in row) / float(segments)
         apex_position = ring_centre + direction * max(radius * 0.80, 1e-4)
         apex = bm.verts.new(apex_position)
         apex[geo_layer] = geo_base + max(0.0, plan[end][4] +
                                          (radius if end else -radius))
         apex[cls_layer] = vertex_class
+        apexes.append(apex)
         for j in range(segments):
             first = row[j]
-            second = row[j + 1]
+            second = row[(j + 1) % segments]
             if first is second:
                 continue
             # Winding must follow the quad band it closes, or the shell reports an
@@ -384,24 +376,23 @@ def _sweep_closed(bm, uv_layer, geo_layer, cls_layer, part_layer, *,
                 continue
             face.material_index = material_fn(frame_index, j, ring_count, segments)
             face[part_layer] = part_id
-            u_first = u_coords[end][j]
-            u_second = u_coords[end][j + 1]
-            # The apex corner's V is the real 3D distance from that corner to the
-            # apex, per triangle, so the fan is unrolled on the same basis as the
-            # bands rather than guessed.
-            reach = 0.5 * ((apex_position - first.co).length +
-                           (apex_position - second.co).length)
-            v_base = 0.5 * (v_coords[end][j] + v_coords[end][j + 1])
-            v_apex = v_base + (reach if end else -reach)
-            if v_apex < v_min:
-                v_min = v_apex
-            if v_apex > v_max:
-                v_max = v_apex
-            mapping = {first: (u_first, v_coords[end][j]),
-                       second: (u_second, v_coords[end][j + 1]),
-                       apex: (0.5 * (u_first + u_second), v_apex)}
-            for loop in face.loops:
-                loop[uv_layer].uv = mapping[loop.vert]
+
+    # -- mark the seam chain ----------------------------------------------
+    # Pole to pole down one column. Topologically each part is a sphere, so a single
+    # cut of this shape opens it into a disc -- the domain a conformal solver needs.
+    # Without the apex spokes the cut stops short of the poles and the surface stays
+    # closed, at which point the solver has to invent its own seam.
+    chain = [apexes[0]] + [grid[i][seam_column] for i in range(ring_count)] + \
+        [apexes[1]]
+    seam_edges = 0
+    for index in range(len(chain) - 1):
+        edge = bm.edges.get((chain[index], chain[index + 1]))
+        if edge is not None:
+            edge.seam = True
+            seam_edges += 1
+
+    return {"seamColumn": seam_column, "seamEdges": seam_edges,
+            "rings": ring_count, "segments": segments}
 
     return (u_min, v_min, u_max, v_max)
 
