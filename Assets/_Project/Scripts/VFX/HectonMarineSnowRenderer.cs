@@ -3282,6 +3282,42 @@ namespace Hecton8.Environment
             _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
         }
 
+        /// <summary>
+        /// Gives up on GPU setup permanently: leaves every dispatcher lane before disabling the component.
+        /// </summary>
+        /// <remarks>
+        /// Setting <c>enabled = false</c> is not a way to stop being ticked here. SystemDispatcher checks
+        /// isActiveAndEnabled only on ITSELF (SystemDispatcher.cs:910 and :919) and never on the tickables it
+        /// holds, so a registered ColdTickable keeps being called after the component disables itself.
+        ///
+        /// That is exactly what happened. Every EnsureBuffers failure path set enabled = false and returned
+        /// with _buffersReady still false, so the next ColdTick re-entered, re-failed and re-reported. Three
+        /// consecutive headless probe runs logged the missing-Texture3D assertion 50, 50 and 48 times - one
+        /// fatal-labelled assertion per cold tick for the whole session, arriving through
+        /// SystemDispatcher.RunColdTick and masking real errors in the log.
+        ///
+        /// Every caller is an unrecoverable authoring or shader-compilation gap: a missing authored
+        /// Texture3D, a compute kernel the shader does not contain, or invalid thread-group sizes. None can
+        /// heal at runtime, so leaving the lanes is correct rather than merely quieter. The unregister calls
+        /// mirror the existing teardown at :866-875.
+        /// </remarks>
+        private void DisableAfterUnrecoverableSetupFailure()
+        {
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
+            enabled = false;
+        }
+
         private void EnsureBuffers()
         {
             if (_buffersReady)
@@ -3300,28 +3336,28 @@ namespace Hecton8.Environment
             {
                 UnityEngine.Assertions.Assert.IsNotNull(emptyCaveSdfTexture3D, "Fatal: Missing authored neutral MarineSnow cave SDF Texture3D.");
                 UnityEngine.Assertions.Assert.IsNotNull(emptyAbyssalFlowTexture3D, "Fatal: Missing authored neutral MarineSnow abyssal flow Texture3D.");
-                enabled = false;
+                DisableAfterUnrecoverableSetupFailure();
                 return;
             }
 
             if (!TryResolveKernel("CSMain", out _kernelIndex))
             {
                 LogMissingMainKernel();
-                enabled = false;
+                DisableAfterUnrecoverableSetupFailure();
                 return;
             }
 
             if (!TryResolveKernel("InitializeParticles", out _initializeKernel))
             {
                 LogMissingInitializeKernel();
-                enabled = false;
+                DisableAfterUnrecoverableSetupFailure();
                 return;
             }
 
             if (!TryResolveKernel("ClearVisibleParticles", out _clearVisibleKernel))
             {
                 LogMissingVisibleKernel();
-                enabled = false;
+                DisableAfterUnrecoverableSetupFailure();
                 return;
             }
 
@@ -3330,7 +3366,7 @@ namespace Hecton8.Environment
                 !TryResolveKernel("ClearFogDensity", out _fogDensityClearKernel))
             {
                 LogMissingAuxiliaryKernels();
-                enabled = false;
+                DisableAfterUnrecoverableSetupFailure();
                 return;
             }
 
@@ -3338,14 +3374,14 @@ namespace Hecton8.Environment
                 !TryResolveKernel("CS_RebaseParticles", out _rebaseKernel))
             {
                 LogMissingPropwashKernels();
-                enabled = false;
+                DisableAfterUnrecoverableSetupFailure();
                 return;
             }
 
             if (!CacheKernelThreadGroupSizes())
             {
                 LogInvalidKernelThreadGroups();
-                enabled = false;
+                DisableAfterUnrecoverableSetupFailure();
                 return;
             }
 
