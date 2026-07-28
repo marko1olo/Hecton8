@@ -84,6 +84,7 @@ def weld_and_clean(
     bm: bmesh.types.BMesh,
     merge_distance: float = 1e-4,
     *,
+    fill_boundary_loops: bool = True,
     blackbox: Optional[BlackBox] = None,
 ) -> dict:
     """Merge coincident vertices, drop degenerate geometry, recalculate winding.
@@ -142,6 +143,42 @@ def weld_and_clean(
                 bmesh.ops.delete(bm, geom=orphans, context="VERTS")
     nonmanifold_after = sum(1 for e in bm.edges if len(e.link_faces) > 2)
 
+    # CAP THE RIMS THE REPAIR OPENED. Removing an interior sheet leaves a boundary where it
+    # met the shell, and on a coral that was visible as an open hole at the trunk base with
+    # the interior volume showing through - measured 11 boundary edges before the repair, 88
+    # after. Recorded as "debt" in one commit; looking at the render showed it was a hole,
+    # not an abstraction.
+    #
+    # Filled PER LOOP, not globally. A single holes_fill over every boundary edge bridges
+    # unrelated rims into one outer membrane - a sibling generator hit exactly that and its
+    # tell was an AO mean collapsing to 0.0057, because the real surface ended up buried
+    # inside the bridging sheet.
+    holes_filled = 0
+    if fill_boundary_loops:
+        remaining = set(e for e in bm.edges if len(e.link_faces) == 1)
+        while remaining:
+            seed = remaining.pop()
+            loop = [seed]
+            frontier = [seed]
+            while frontier:
+                edge = frontier.pop()
+                for vert in edge.verts:
+                    for other in vert.link_edges:
+                        if other in remaining and len(other.link_faces) == 1:
+                            remaining.discard(other)
+                            loop.append(other)
+                            frontier.append(other)
+            if len(loop) < 3:
+                continue
+            try:
+                bmesh.ops.holes_fill(bm, edges=loop, sides=0)
+                holes_filled += 1
+            except (RuntimeError, ValueError):
+                # A degenerate rim that will not close is reported rather than retried;
+                # retrying the same op on the same geometry is the same-failure loop the
+                # project's law forbids.
+                pass
+
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 
     stats = {
@@ -152,6 +189,8 @@ def weld_and_clean(
         "nonmanifold_edges_before": nonmanifold_before,
         "nonmanifold_edges_after": nonmanifold_after,
         "interior_faces_deleted": interior_deleted,
+        "boundary_loops_filled": holes_filled,
+        "boundary_edges_after": sum(1 for e in bm.edges if len(e.link_faces) == 1),
     }
     if blackbox is not None:
         blackbox.record(
