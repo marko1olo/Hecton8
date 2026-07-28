@@ -3358,9 +3358,17 @@ namespace Hecton8.Environment
 
             if (emptyCaveSdfTexture3D == null || emptyAbyssalFlowTexture3D == null)
             {
+                // LEAVE THE LANE FIRST. UnityEngine.Assertions.Assert.IsNotNull THROWS here - the project
+                // does not set Assert.raiseExceptions false - so anything placed AFTER these two calls is
+                // unreachable. Two previous attempts at this defect put the unregister and then the
+                // permanent-failure latch below them and neither ever executed, which is why the assertion
+                // count did not fall: 48 occurrences, then 69, then 67, then 60. That sequence was never
+                // instance count either. It is simply how many seconds the gameplay phase ran, because
+                // ColdTick polls at 1 Hz and each poll re-entered this branch.
+                DisableAfterUnrecoverableSetupFailure();
+
                 UnityEngine.Assertions.Assert.IsNotNull(emptyCaveSdfTexture3D, "Fatal: Missing authored neutral MarineSnow cave SDF Texture3D.");
                 UnityEngine.Assertions.Assert.IsNotNull(emptyAbyssalFlowTexture3D, "Fatal: Missing authored neutral MarineSnow abyssal flow Texture3D.");
-                DisableAfterUnrecoverableSetupFailure();
                 return;
             }
 
