@@ -7,13 +7,13 @@
 
 ---
 
-## The Sky Is Operational
+## What This Primer Is For
 
-HECTON-8 is not alone because the sky is empty. It is alone because the sky is crowded, expensive, delayed, legally owned, and always moving.
+Recovery scheduling kept promising windows that navigation had already published as blocked. This primer is the correction: nine bodies, six hazard classes, and one rule at the front of it, that no window is granted before the sky fields are filled.
 
-Ran is the star. Aegir is the giant that owns the local sky in every practical sense: gravity, radiation, transfer windows, relay geometry, debris weather, claim law and insurance timing. HECTON-8 is one ocean moon inside that system, not the center of it and not a free island waiting for a loyal ship to arrive. Every clean recovery path must pass through Aegir traffic, Aegir noise, Aegir custody and Black Keel mass accounting.
+Ran is the star. Aegir is the giant that owns the local sky in every practical sense: gravity, radiation, transfer windows, relay geometry, debris weather, claim law and insurance timing. HECTON-8 is one ocean moon inside that system. Every recovery path that can be insured passes through Aegir traffic, Aegir noise, Aegir custody and Black Keel mass accounting, and these advisory codes are what the carrier reads instead of the sky.
 
-The old public atlas called this arrangement a moon ladder. The name stayed because it was useful. H1 through H9 mark a rising chain of hazards and work sites around the giant: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute. The ladder is not a tourist map. It is a schedule of things that can interrupt a signal, dirty a lens, delay a carrier, change a salvage contract or make a rescue arrive after the person who needed it has already drowned.
+The old public atlas called the arrangement a moon ladder and the name stayed. H1 through H9 mark a rising chain of hazards and work sites around the giant: Skarn, Vela, Claw, Lumen, Thorne, Anvil, Kestrel, HECTON and Mute. The ladder is a schedule of things that can interrupt a signal, dirty a lens, delay a carrier, change a salvage contract, or put a rescue in the water after the person who needed it has drowned.
 
 ## Ran, Aegir, And The Catalog Lie
 

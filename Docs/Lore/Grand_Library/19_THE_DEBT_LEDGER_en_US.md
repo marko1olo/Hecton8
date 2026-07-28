@@ -1,32 +1,40 @@
 <!-- localization_status: source_authority_en_US -->
 # THE DEBT LEDGER
 
-> **Source:** Deep Reach Megacorporation, Human Resources & Actuarial Division.
+> **Source:** Deep Reach Extraterrestrial Development Combine, Human Resources and Actuarial Division.
 > **Speaker:** Automated Actuarial AI.
-> **Reviewer Note:** The financial reality of a Marauder. Why humans choose to jump into a meat-grinder.
+> **Reviewer Note:** The colony's own labour accounting and the return-action pressure built on top of it. The contractor-facing version of the same debt is the Keelmark lien primer.
 
 ---
 
-## 1. The Illusion of Choice
+## 1. Workers As Load
 
-Deep Reach Megacorporation does not use slaves. The optics of slavery are bad for shareholders. Every Marauder operating on HECTON-8 is a willing volunteer who signed a legally binding contract.
+This Division has no field for a person. It has fields for load.
 
-However, this "choice" is a heavily engineered illusion. The core worlds are plagued by systemic poverty and inescapable corporate debt. Citizens are frequently born into debt inherited from their parents, accruing compound interest simply by consuming corporate-produced food and water. When a citizen's Debt Ledger reaches an unmanageable threshold, Deep Reach offers them a way out: a one-way ticket to the *Black Keel* and a chance to work off their ledger as an abyssal Marauder.
+Colony accounting ran a worker through the three rows it used for a pump: allocation, output, exposure. Standing Instruction DR-HR-19 set atmospheric support allocation against productive interval, which is the line that made breathing a variable cost. Where a shift produced under its rated band, the allocation dropped before the schedule did. Shift B on the Sector 44 pump line ran nine consecutive intervals under band. The allocation row carries three step reductions. The schedule row carries none.
 
-## 2. The Mathematics of Survival
+Xenon-Omega containers held a transfer class above personnel in the same tables. That was never written as a preference for cargo. It was written as CONTAINMENT PRIORITY 1 / PERSONNEL PRIORITY 3, and during the evacuation queue the numbers did the rest.
 
-The economy of a Marauder is designed to keep them indebted for as long as possible.
+## 2. Loss Conversion
 
-A single, fist-sized core of raw Xenon-Omega is worth roughly 500,000 credits. This sounds like a fortune, but the corporate ledger is unforgiving. Every Styx drop pod launch costs 50,000 credits. The rental fee for the Class-IV diving suit is 20,000 credits per descent. Replacement oxygen scrubbers, thermal lance fuel, and kinetic harpoons are all sold to the Marauder at a 400% markup. Even if a Marauder successfully retrieves a core and survives the ascent, the net profit applied to their Debt Ledger is often just enough to cover the interest for another month.
+When a worker did not come back, this Division did not record a death. It moved a figure between columns.
 
-## 3. Indentured Servitude
+Keelmark Mutual adjuster Marek Ibarra owns the conversion standard. Under it an unrecovered worker becomes UNRESOLVED LABOUR EXPOSURE and the equipment they were wearing becomes MISSING EQUIPMENT MASS, and the two settle separately because they mature on different schedules. Exposure can be held open for years, which delays payout and preserves claim pressure. Equipment mass settles at the next audit, because a suit has a serial number.
 
-Death does not erase the Debt Ledger.
+That is why the 2147 return lists are shorter than the muster lists and longer than the recovery lists. Nothing was deleted. Every name is in the file. They are in the file as categories.
 
-If a Marauder is crushed by pressure, eaten by a Leviathan, or simply suffocates due to equipment failure, their contract is terminated, but their debt is not. Deep Reach employs a rigorous actuarial protocol: the remaining balance of a deceased Marauder's ledger, plus the cost of any unrecoverable corporate equipment (like the diving suit), is immediately transferred to their designated next of kin. This generational debt cycle ensures a steady, endless supply of desperate new recruits willing to sign the Marauder contract to save their families.
+## 3. Return-Action Pressure
 
-## 4. The Myth of the "Clean Slate"
+The 2190 layer is thinner and colder.
 
-Among the Marauders, there is a persistent rumor: the "Clean Slate."
+Recovery Compliance Office issues return-action packets against this same historic ledger through Vera Sato-Ren's desk. The packets neither offer rescue nor refuse it. They request coordinates, sample custody state, Atlas access state and contractor silence terms, and they list what the Office will adjust in exchange: quarantine hold duration, lien severity, evidence-order pressure, travel certification.
 
-According to the contract, if a Marauder manages to reduce their Debt Ledger to exactly zero, they are relieved of duty. They will be granted a shuttle ticket back to the core worlds, a modest pension, and full corporate citizenship. It is the dream that keeps the Marauders climbing into the Styx pods day after day. However, actuarial statistics reveal a grim reality: in the 112 years of extraction operations on HECTON-8, not a single Marauder has ever achieved a Clean Slate. They always die first.
+A contractor working HECTON-8 in 2190 is not on this Division's payroll. They hold a claim-pool lien, and the pool's figures were derived from these tables under licence. The derivation is licensed. It is not disclosed.
+
+## 4. The Clean Slate Field
+
+Contractors trade a rumour that a lien can be closed outright, the holder released with transit, certification and a settlement figure.
+
+The clause is real. It sits in the pool contract, and this Division holds the actuarial model behind it. One field carries the model: expected intervals to closure against expected intervals to loss. Across the recovery era, audit has recorded no closure under that clause on the HECTON-8 claim. The field is not empty because the clause is fictional. It is empty because loss arrives first, and the model was fitted to that.
+
+Nothing in this file recommends amending the clause. Against review criteria it performs inside tolerance, and review is scheduled by interval rather than by outcome.
