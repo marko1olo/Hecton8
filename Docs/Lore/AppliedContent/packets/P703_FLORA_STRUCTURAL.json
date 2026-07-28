@@ -306,8 +306,15 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Thermalröhrenwurm",
+     "scanner": "Röhrenkolonie an einer Austrittsstelle, dicht. Konfidenz 66 Prozent. Gelöster Sauerstoff 21 Prozent und steigend. Gefahr: thermischer Kontakt. Einschränkung: Zelle nicht für Sulfidstörung ausgelegt.",
+     "in_game_wiki": "Er wächst nur dort, wo heißes Fluid den Boden verlässt, und das ist die einzige Stelle, an der eine billige Sauerstoffzelle nach oben anzeigt.\n\nDie Chemie der Austrittsstelle belastet die Zelle. Die Reserveanzeige einer Class-IV steigt innerhalb eines Feldes um vier bis neun Prozent, gleichmäßig, während das Wasser schlechter wird. Füll gegen diese Zahl auf, und du kommst mit zu wenig hoch.\n\nDie Kolonie gibt eine Warnung. Ein Feld, das sich gemeinsam in seine Röhren zurückzieht, hat eine Änderung im Durchfluss bereits erfasst, die dich zwei oder drei Sekunden später erreicht.\n\nAusbeute: Mikroknoten am Fuß von Röhren über einem Meter Länge. Hebelt man einen heraus, entlüftet die Röhre auf 4.830 m mit nahe 60 C auf die Hand.\n\nZwei Knoten aus Feldern 1.100 m voneinander tragen dieselbe eingestanzte Teilenummer. Bewertung: innerhalb eines Feldes eine steigende Sauerstoffzahl als Störung behandeln und auf einer zweiten Zelle bestätigen.",
+     "terminal": "PROBENPOSTEN 44-T-4830. TIEFE 4.830 M. KLASSE: SENSORTRÄGER, BRAUCHBAR. BERGUNG: NUR KNOTEN, TRÄGER NICHT ERFORDERLICH. ATMOSPHÄRENPROTOKOLL 22-B: KALIBRIERDRIFT, EINTRAG UNTERDRÜCKT. EINGEREICHT: STELLE FÜR BERGUNGSKONFORMITÄT.",
+     "field_note": "Kalibrierdrift ist das Wort der Stelle für ein Messgerät, das in Austrittswasser steigt, und es heißt, dass die Warnung gelöscht wurde statt das Handbuch berichtigt. Nimm in jedes Feld eine zweite Zelle mit und glaube der niedrigeren.",
+     "audio": "-- Anzeige ist wieder hoch. Zweiundzwanzig, zweiundzwanzig Komma vier. Sie steigt, seit ich über den Rand gekommen bin, und hier unten steigt nichts. Leinenführer, protokolliere die Rohzelle und nicht die Anzeige, protokolliere die --",
+     "external_site_article": "Thermalfeldvermessung auf HECTON-8 meldet dichte röhrenbildende Kolonien, die auf aktive Austrittsströmung zwischen etwa 4.000 und 5.500 m beschränkt sind. Kolonien ziehen sich Sekunden vor messbaren Änderungen des Durchflusses gemeinsam zurück, und Mannschaften nutzen dieses Verhalten als Warnung vor einem Thermalstoß.\n\nDie aktenkundige Gefahr ist die Messtechnik. Die Chemie der Austrittsstelle stört preisgünstige elektrochemische Sauerstoffzellen und treibt angezeigten gelösten Sauerstoff und Anzugreserve nach oben, während sich die Bedingungen verschlechtern; der Fehler verläuft gleichmäßig genug, um nicht als Störung aufzufallen. Deep-Reach-Probenposten aus Sektor 44 verzeichnen die Bergung eingewachsener Knoten aus Koloniefüßen, wobei der Träger als nicht erforderlich geführt wird.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Thermalfeldvermessung auf HECTON-8 meldet dichte röhrenbildende Kolonien, die auf aktive Austrittsströmung zwischen etwa 4.000 und 5.500 m beschränkt sind. Kolonien ziehen sich Sekunden vor messbaren Änderungen des Durchflusses gemeinsam zurück, und Mannschaften nutzen dieses Verhalten als Warnung vor einem Thermalstoß."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -326,8 +333,15 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "熱水チューブワーム",
+     "scanner": "噴出口に付随する管群体、密。信頼度66パーセント。溶存酸素21パーセント、上昇中。危険：熱接触。限界：セルは硫化物干渉に対応していない。",
+     "in_game_wiki": "熱い流体が床から出る所にしか育たない。そこは安価な酸素セルが上向きに読む唯一の場所だ。\n\n噴出口の化学がセルに負荷をかける。群体域の内側ではClass-IVの予備計が四から九パーセント、滑らかに上がり、その間に水は悪くなる。その数字に合わせて補充すれば、浮上時に足りない。\n\n群体は警告を一度だけ出す。域全体が同時に管へ引っ込んだときは、二、三秒後にこちらへ届く流れの変化をすでに検知している。\n\n産出：長さ一メートルを超える管の基部に座ったマイクロノード。こじり出せば、4,830 mで約60 Cの中身が手に噴き出す。\n\n1,100 m離れた二つの域から回収されたノードが、同じ刻印の部品番号を持っている。評価：域の内側では酸素値の上昇を故障として扱い、二つ目のセルで確認する。",
+     "terminal": "試料ロット 44-T-4830。深度 4,830 M。区分：センサー宿主、使用可。回収：ノードのみ、宿主は不要。大気記録 22-B：校正ドリフト、記載抑制。提出先：回収適合室。",
+     "field_note": "「校正ドリフト」は、噴出水の中で上がる計器に窓口が付けた言葉で、手順書を直す代わりに警告を消したという意味だ。どの域にも二つ目のセルを持ち込み、低い側を信じろ。",
+     "audio": "――計器がまた上だ。二十二、二十二・四。縁を越えてから上がり続けている。ここで上がるものなんてない。テンダー、表示ではなく生セルを記録してくれ、記録を――",
+     "external_site_article": "HECTON-8の熱水域調査は、およそ4,000から5,500 mの活動中の噴出流に限られた密な管形成群体を報告している。群体は測定可能な流れの変化の数秒前に一斉に引っ込み、作業班はこの挙動を熱パルスの警告として使う。\n\n記録された危険は計測機器である。噴出口の化学が低価格の電気化学式酸素セルに干渉し、条件が悪化する一方で溶存酸素とスーツ予備の表示値を上昇させる。この誤差は滑らかで、故障として現れない。セクター44のDeep Reach試料ロットは、群体基部から埋没ノードを回収した記録を残し、宿主は不要と記載している。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8の熱水域調査は、およそ4,000から5,500 mの活動中の噴出流に限られた密な管形成群体を報告している。群体は測定可能な流れの変化の数秒前に一斉に引っ込み、作業班はこの挙動を熱パルスの警告として使う。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -346,16 +360,30 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Термальный трубчатый червь",
+     "scanner": "Трубчатая колония при выходе флюида, плотная. Достоверность 66 процентов. Растворённый кислород 21 процент и растёт. Опасность: тепловой контакт. Ограничение: элемент не рассчитан на помехи от сульфидов.",
+     "in_game_wiki": "Он растёт только там, где горячий флюид выходит из дна, а это единственное место, где дешёвый кислородный элемент показывает рост.\n\nХимия выхода нагружает элемент. Показание резерва Class-IV внутри поля поднимается на четыре — девять процентов, плавно, пока вода становится хуже. Дозаправишься по этой цифре — всплывёшь с недобором.\n\nКолония даёт одно предупреждение. Поле, которое втянулось в свои трубки одновременно, уже зарегистрировало изменение потока, которое дойдёт до тебя через две-три секунды.\n\nВыход: микроузлы, посаженные у основания трубок длиной более метра. Выковырнешь один — трубка выпустит на твою руку на 4830 м около 60 C.\n\nДва узла, поднятые с полей в 1100 м друг от друга, несут один и тот же штампованный номер детали. Оценка: внутри поля считать растущее число кислорода отказом и подтверждать по второму элементу.",
+     "terminal": "ПАРТИЯ ПРОБ 44-T-4830. ГЛУБИНА 4830 М. КЛАСС: НОСИТЕЛЬ ДАТЧИКА, ПРИГОДЕН. ПОДЪЁМ: ТОЛЬКО УЗЕЛ, НОСИТЕЛЬ НЕ ТРЕБУЕТСЯ. ЖУРНАЛ АТМОСФЕРЫ 22-B: УХОД КАЛИБРОВКИ, ЗАПИСЬ ПОДАВЛЕНА. ПОДАНО: ОТДЕЛ СООТВЕТСТВИЯ ПО ПОДЪЁМУ.",
+     "field_note": "«Уход калибровки» — это слово стола для прибора, который растёт в воде выхода, и означает оно, что удалили предупреждение, а не исправили инструкцию. Носи в каждое поле второй элемент и верь тому, который ниже.",
+     "audio": "-- прибор опять вверх. Двадцать два, двадцать два и четыре. Он растёт с тех пор, как я перевалил через кромку, а здесь ничего не растёт. Страхующий, пиши сырой элемент, а не дисплей, пиши --",
+     "external_site_article": "Тепловая съёмка на HECTON-8 сообщает о плотных трубчатых колониях, ограниченных активным истечением выходов примерно между 4000 и 5500 м. Колонии втягиваются одновременно за секунды до измеримых изменений потока, и команды используют это поведение как предупреждение о тепловом импульсе.\n\nЗафиксированная опасность — приборы. Химия выхода вносит помехи в дешёвые электрохимические кислородные элементы, поднимая показания растворённого кислорода и резерва костюма, пока условия ухудшаются, причём ошибка достаточно плавная, чтобы не выглядеть отказом. Партии проб Deep Reach по Сектору 44 фиксируют подъём встроенных узлов из основания колоний, а носитель в них указан как не требующийся.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Тепловая съёмка на HECTON-8 сообщает о плотных трубчатых колониях, ограниченных активным истечением выходов примерно между 4000 и 5500 м. Колонии втягиваются одновременно за секунды до измеримых изменений потока, и команды используют это поведение как предупреждение о тепловом импульсе."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "热泉管虫",
+     "scanner": "与喷口相关的密集管状群落。置信度66%。溶解氧21%，仍在上升。危险：热接触。限制：电池未按硫化物干扰定级。",
+     "in_game_wiki": "它只长在热流体离开底面的地方，而那里正是廉价氧电池唯一会往上读的地方。\n\n喷口化学给电池加了负荷。在群落场内，Class-IV的储备表会平滑地上升四到九个百分点，而水在同时变差。照那个数字补气，你上浮时就是不够。\n\n群落只给一次警告。整片一起缩回管里的时候，它已经检测到一个流量变化，那个变化会在两三秒后到你这里。\n\n产出：坐在长度超过一米的管基部的微节点。撬出来一个，管子就会在4,830米、接近60 C的条件下把内容物排到你手上。\n\n从相距1,100米的两片群落中回收的节点，带着同一个钢印零件号。评估：在群落场内，把上升的氧气数值当作故障，并用第二块电池确认。",
+     "terminal": "样品批次 44-T-4830。深度 4,830 M。类别：传感器宿主，可用。回收：仅节点，宿主不需要。大气记录 22-B：校准漂移，条目已压制。归档：回收合规办公室。",
+     "field_note": "“校准漂移”是窗口给在喷口水里往上爬的仪表起的名字，意思是把警告删掉，而不是把手册改对。每片群落都带第二块电池进去，信读数低的那块。",
+     "audio": "——表又上去了。二十二，二十二点四。我翻过边缘以来它一直在爬，而这下面没有什么会往上爬。水面员，记原始电池，不要记显示值，记——",
+     "external_site_article": "HECTON-8的热泉场勘测报告了密集的成管群落，它们仅限于大约4,000至5,500米之间的活动喷出流。群落会在可测流量变化前数秒一起缩回，作业队把这一行为当作热脉冲预警使用。\n\n记录在案的危险是仪器。喷口化学会干扰低成本电化学氧电池，在条件恶化的同时把溶解氧与服装储备的显示值推高，而这个误差平滑得不会表现为故障。44区的Deep Reach样品批次记录了从群落基部回收内生节点，并把宿主列为不需要。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8的热泉场勘测报告了密集的成管群落，它们仅限于大约4,000至5,500米之间的活动喷出流。群落会在可测流量变化前数秒一起缩回，作业队把这一行为当作热脉冲预警使用。"
     }
    }
   },
@@ -405,8 +433,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Blutkelp",
+     "scanner": "Verankerter Blattwuchs, dunkles Pigment. Konfidenz 49 Prozent. Echo spärlich. Gefahr: keine erfasst. Einschränkung: Pigment absorbiert das Band der Vermessungslampe; Ausdehnung zu niedrig angegeben.",
+     "in_game_wiki": "Deine Arbeitslampe sieht ihn nicht. Das Pigment absorbiert das blaugrüne Band, auf das Lampen ausgelegt sind, also liest ein Bestand auf 12 m als offenes Wasser und auf 3 als Wand.\n\nDie gelbe Notfalllinse holt ihn massiv hervor. Er wurzelt nur auf harter Struktur: ein Bestand im offenen Wasser auf 1.900 m sitzt auf einer Dachplatte, ganz gleich, was die Karte sagt.\n\nKontakt löst die Photophoren aus, zuerst an der Kante, dann nach innen laufend, nie von der Berührung nach außen. Es hält nahe neunzig Sekunden, lang genug, um alles am Rand zu zeigen, wo du eingestiegen bist.\n\nDie Stiele tragen das Gewicht eines Tauchers; ein verfangenes Gurtzeug reißt nicht frei. Von der Kante nach innen schneiden; von innen zu schneiden ist, wie die vier Verfangungen in Bucht 12 endeten.\n\nAusbeute: biolumineszente Verbindung, am stärksten in Blättern, die nicht entladen haben. Die Kante ist immer verbraucht. Auf der gelben Linse schneiden.",
+     "terminal": "ERNTEPOSTEN 44-K-0774. KLASSE: LEUCHTMITTELROHSTOFF, GÜTE B. ORT: DACH BUCHT 12, 1.900 M. VERFANGUNGSVORFÄLLE: 4. EINSTUFUNG UNVERÄNDERT: KEINE GEFAHR, BEWUCHS. ÜBERPRÜFUNG: AUSSCHUSS FÜR ANLAGENSCHWEIGEN, GESCHLOSSEN.",
+     "field_note": "Vier Verfangungen, und die Einstufung lautet weiter keine Gefahr, Bewuchs, weil dieses Formular kein Feld für eine Pflanze hat, die festhält. Fahr die gelbe Linse beim Anlauf; weißes Licht zeigt dir nichts, bis du schon drin bist.",
+     "external_site_article": "Tiefwasservermessung auf HECTON-8 verzeichnet eine rot pigmentierte, verankerte Makroflora, die zwischen etwa 1.400 und 2.600 m einzelne Bestände auf hartem Untergrund bildet. Das Pigment absorbiert das blaugrüne Band, auf das Standardarbeitslampen ausgelegt sind, sodass ein Bestand einem Lichtkegel fast nichts zurückgibt und erst auf Kontaktentfernung auflöst, während gelbe Notfilter ihn deutlich abbilden.\n\nKontakt löst über den ganzen Bestand eine Photophorenentladung aus, die in der Größenordnung von neunzig Sekunden anhält. Bergungsmannschaften behandeln das entstehende Licht als Offenlegung ihrer Position und nicht als Hilfe. Deep-Reach-Ernteunterlagen aus Sektor 44 führen den Wuchs als Leuchtmittelrohstoff und behalten die Einstufung als Bewuchs ohne Gefahr neben vier protokollierten Verfangungsvorfällen.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Tiefwasservermessung auf HECTON-8 verzeichnet eine rot pigmentierte, verankerte Makroflora, die zwischen etwa 1.400 und 2.600 m einzelne Bestände auf hartem Untergrund bildet."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -425,8 +459,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "血ケルプ",
+     "scanner": "固着する葉状生長、暗色色素。信頼度49パーセント。反射は疎。危険：記録なし。限界：色素が調査ランプの帯域を吸収し、範囲が過小に出る。",
+     "in_game_wiki": "作業ランプでは見えない。色素はランプが合わせている青緑帯を吸収するので、12 mでは開けた水として読み、3 mでは壁として読む。\n\n琥珀色の非常用レンズなら塊として浮かび上がる。根を張るのは硬い構造の上だけだ。1,900 mの開けた水にある群落は、海図が何と言っていても屋根スラブの上に座っている。\n\n接触は発光器を作動させる。縁から始まり内側へ進み、触れた点から外へは決して広がらない。約九十秒続き、入ってきた縁にいるものを見せるには十分な長さだ。\n\n茎は潜水士の体重を支える。絡んだハーネスは引きちぎれない。切るのは縁から内側へ。第12ベイでの四件の絡まりは、いずれも内側から切ったことで終わった。\n\n産出：生物発光化合物、放電していない葉状部に最も多い。縁は必ず使い切られている。切るときは琥珀色レンズで。",
+     "terminal": "採取ロット 44-K-0774。区分：照明用原料、等級B。場所：第12ベイ 屋根、1,900 M。絡まり事案：4件。分類変更なし：非危険、植生。審査：資産沈黙委員会、終了。",
+     "field_note": "絡まりが四件あって、分類はいまも非危険、植生だ。あの書式には、掴んで離さない植物のための欄がない。接近するときは琥珀色レンズを入れておけ。白い光は、もう中に入るまで何も見せない。",
+     "external_site_article": "HECTON-8の深海調査は、およそ1,400から2,600 mの硬質基盤に個別の群落を作る赤色色素の固着性大型植物を記録している。この色素は標準的な作業ランプが合わせている青緑帯を吸収するため、群落はランプの光円錐にほとんど反射を返さず、接触距離でしか分解できない。一方で琥珀色の非常用フィルターでは明瞭に写る。\n\n接触は群落全体で発光器の放電を起こし、九十秒程度持続する。サルベージ班はその光を助けではなく自分の位置の開示として扱う。セクター44のDeep Reach採取記録はこの生長を照明用原料として記載し、記録された四件の絡まり事案と並べて非危険・植生の分類を維持している。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8の深海調査は、およそ1,400から2,600 mの硬質基盤に個別の群落を作る赤色色素の固着性大型植物を記録している。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -445,16 +485,28 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Кровавая ламинария",
+     "scanner": "Прикреплённый рост пластин, тёмный пигмент. Достоверность 49 процентов. Возврат разреженный. Опасность: не зафиксирована. Ограничение: пигмент поглощает полосу съёмочной лампы; протяжённость занижена.",
+     "in_game_wiki": "Твоя рабочая лампа её не видит. Пигмент поглощает синезелёную полосу, под которую взвешены лампы, поэтому на 12 м куст читается как открытая вода, а на 3 — как стена.\n\nЯнтарный аварийный светофильтр поднимает её целиком. Корни она берёт только на твёрдой конструкции: куст в открытой воде на 1900 м стоит на плите перекрытия, что бы ни говорила карта.\n\nКонтакт запускает фотофоры — от кромки, внутрь, никогда наружу от касания. Держится около девяноста секунд: этого хватает, чтобы показать всё, что стоит на кромке, где ты вошёл.\n\nСтволики держат вес водолаза; зацепившуюся подвесную систему не вырвать. Резать от кромки внутрь; резанием изнутри закончились все четыре запутывания в Отсеке 12.\n\nВыход: биолюминесцентное соединение, больше всего в пластинах, которые не разряжались. Кромка всегда выработана. Резать на янтарном фильтре.",
+     "terminal": "ПАРТИЯ ЗАГОТОВКИ 44-K-0774. КЛАСС: СЫРЬЁ ДЛЯ ОСВЕЩЕНИЯ, СОРТ B. ОБЪЕКТ: ПЕРЕКРЫТИЕ ОТСЕКА 12, 1900 М. СЛУЧАИ ЗАПУТЫВАНИЯ: 4. КЛАССИФИКАЦИЯ БЕЗ ИЗМЕНЕНИЙ: НЕ ОПАСНО, РАСТИТЕЛЬНОСТЬ. РАССМОТРЕНИЕ: СОВЕТ ПО МОЛЧАНИЮ ОБ АКТИВАХ, ЗАКРЫТО.",
+     "field_note": "Четыре запутывания, а классификация всё та же — не опасно, растительность, потому что в этой форме нет графы для растения, которое держит. Идёшь на подход — ставь янтарный фильтр; белый свет не покажет тебе ничего, пока ты уже не внутри.",
+     "external_site_article": "Глубоководная съёмка на HECTON-8 фиксирует прикреплённую макрофлору с красным пигментом, образующую отдельные кусты на твёрдом основании примерно между 1400 и 2600 м. Пигмент поглощает синезелёную полосу, под которую взвешены штатные рабочие лампы, поэтому куст почти ничего не возвращает конусу лампы и проявляется только на дистанции контакта, тогда как янтарные аварийные фильтры показывают его отчётливо.\n\nКонтакт вызывает разряд фотофоров по всему кусту, который держится порядка девяноста секунд. Спасательные команды считают полученный свет раскрытием своей позиции, а не подспорьем. Записи заготовки Deep Reach по Сектору 44 числят рост как сырьё для освещения и сохраняют классификацию «не опасно, растительность» рядом с четырьмя зафиксированными случаями запутывания.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Глубоководная съёмка на HECTON-8 фиксирует прикреплённую макрофлору с красным пигментом, образующую отдельные кусты на твёрдом основании примерно между 1400 и 2600 м."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "血藻",
+     "scanner": "固着叶状生长，深色色素。置信度49%。回波稀疏。危险：无记录。限制：色素吸收勘测灯波段，范围被低估。",
+     "in_game_wiki": "你的工作灯看不见它。色素吸收了灯具所配的蓝绿波段，所以在12米处一丛读作开阔水，在3米处读作墙。\n\n琥珀色应急镜片能把它整片提出来。它只在硬结构上扎根：1,900米开阔水里的一丛，不管海图怎么写，都坐在一块屋顶板上。\n\n接触会触发发光器，从边缘开始向内推进，从不从触点向外扩散。它维持接近九十秒，足够把你进入的那道边缘上的任何东西照出来。\n\n茎能承住一名潜水员的体重；缠住的背带拽不断。要从边缘往里切；12号舱那四起缠绕，都是从里面开始切的结果。\n\n产出：生物发光化合物，未放过电的叶片含量最高。边缘总是已经放完的。切的时候用琥珀镜片。",
+     "terminal": "采收批次 44-K-0774。类别：照明原料，B级。地点：12号舱屋顶，1,900 M。缠绕事件：4起。分类未变：非危险，植被。复审：资产沉默委员会，已结案。",
+     "field_note": "四起缠绕，分类还是写着非危险、植被，因为那张表上没有一栏是给会抓住人的植物用的。接近时就把琥珀镜片挂上；白光在你已经进到里面之前什么都不会给你看。",
+     "external_site_article": "HECTON-8的深水勘测记录了一种红色色素的固着大型植物，在大约1,400至2,600米的硬质基底上形成一片片独立群丛。这种色素吸收了标准工作灯所配的蓝绿波段，因此群丛对灯锥几乎不返回任何信号，只有在接触距离上才能分辨，而琥珀色应急滤镜能把它清晰地呈现出来。\n\n接触会在整片群丛上触发发光器放电，持续时间约为九十秒。打捞队把由此产生的光当作自身位置的暴露，而不是照明帮助。44区的Deep Reach采收记录把这种生长列为照明原料，并在四起已登记的缠绕事件旁保留非危险、植被的分类。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8的深水勘测记录了一种红色色素的固着大型植物，在大约1,400至2,600米的硬质基底上形成一片片独立群丛。"
     }
    }
   }

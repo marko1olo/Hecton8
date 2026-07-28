@@ -19,9 +19,15 @@ localization_flags: 0
 
 # Crash Shelf
 
-The bathy-drop was a descent package, not a return craft. It entered Aegir weather, dumped heat through ceramic, and kept one operator alive long enough to raise a shelter. Impact removed the ascent package. What remains is ugly and useful: pressure frame, vitrified ceramic, battery ribs, dry cavities, fractured uplink.
+BD-K8-113 was a descent package. It was never a return craft.
 
-The shelf around the wreck is bright enough to look safe. It is not safe. Every useful piece has a second value as evidence: part number, impact angle, missing ascent bolts, Black Keel handshake log. The first job is shelter. The second is not destroying the record while staying alive.
+Entry burn went into the ceramic the way it was supposed to. The crush frame took the shelf and held. Recoverable: vitrified ablative sheet, battery ribs, two dry cavities, a fractured uplink core that still answers a handshake.
+
+The ascent bay is empty, and its eight mounting holes are clean. No scoring, no witness marks, no sheared bolt stubs. Nothing was torn out of that bay on impact, because nothing was ever bolted into it. Anyone who has fitted a recovery cradle knows what an eight-hole pattern with unmarked seats means.
+
+The handshake log timestamps Black Keel's acknowledgement at four minutes after impact.
+
+Assessment: the shell is shelter, insulation and a power source. Ascent is an engineering problem to be built, not a part to be found.
 
 ## Scanner
 
@@ -37,6 +43,6 @@ Black Keel handshake received. Operator alive. Recovery authority unresolved. Ho
 
 ## Field Note
 
-Leave the crush frame bolted. Pull ceramic, battery ribs and dry boxes only after the first seal holds.
+Leave the crush frame bolted. Pull ceramic, battery ribs and dry boxes only after the first seal holds. And read the handshake line again: it says the ascent package was LOST. Lost is a claim. Count the bolt seats in that bay and you will see what the honest word would have cost them.
 
 <!-- In-Game Wiki; generated from P001_CRASH_SHELF/en_US. -->

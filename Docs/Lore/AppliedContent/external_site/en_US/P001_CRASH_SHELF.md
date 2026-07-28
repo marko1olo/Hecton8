@@ -19,8 +19,8 @@ localization_flags: 0
 
 # Crash Shelf
 
-A bathy-drop shell lies half-buried in salt weed and warm ceramic on the storm shelf. The crush frame survived. The ascent package did not. Inside the wreck are the first salvage decisions: leave the pressure frame intact, pull insulation without opening the shelter seam, keep the fractured uplink dry, and wait for a carrier window that may not belong to the operator.
+A bathy-drop is rated for one direction. The class certification covers entry, heat rejection through an ablative ceramic sheet, and a crush frame that survives contact with a worksite; recovery is a separate contract performed later by a carrier. Nothing in the certification requires an ascent package, and Aegir Reclamation Pool paperwork does not list one as fitted.
 
-Black Keel answers in inventory language: impact survived, ascent lost, uplink fractured, operator alive, recovery authority unresolved. The shelf is beautiful in the useful way HECTON-8 should be beautiful: reef color, storm light, shallow bioluminescence, and a dead machine still warm enough to save you. The wreck is also a record. Strip it too fast and the first proof of what happened becomes scrap.
+Recovered unit BD-K8-113 makes the arrangement legible. Its ascent bay is intact and unused, with an eight-hole mounting pattern showing no bolt witness marks. Public salvage guidance treats the empty bay as ordinary, because it is: the operator is descent cargo, and the return leg is a claim rather than a machine. Crews on dead-claim work describe the same fact in shorter words.
 
 <!-- External Site; generated from P001_CRASH_SHELF/en_US. -->
