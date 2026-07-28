@@ -153,15 +153,27 @@ Two orderings inside that sequence are load-bearing and each was learned by brea
 
 Recorded rather than implied away. Full evidence in `BLENDER_API_TRAPS.md`.
 
-- **Coral LOD2 lands at 584 triangles against a 300 budget**, and the seam-drop retry in
-  `build_lod_chain` did not fire. `bpy.ops.uv.smart_project` sets no `edge.use_seam` flags (measured: 0 of
-  1005 on Suzanne), so `seams_split` was 0 and the retry was unreachable. That observation predates the
-  shading fix, which now marks sharp edges and gives `_split_uv_seams` real input — so re-run the coral
-  and read the black box before trusting either number. The underlying floor is topological regardless:
-  roughly 76 disconnected tip-cluster shells, and the bible's answer at LOD2 is an impostor or card.
-- **`topology_report` has no callers.** Its "the black box records a cause" purpose is unrealised.
-- **The AO bake does not restore `world.light_settings.distance`.** It now bounds its rays correctly, but
-  leaves the world's AO distance changed for the rest of the session, including later preview renders.
+All four entries below were CLOSED on 2026-07-29 and are kept as a record of what the wrong diagnosis
+cost, because three of the four were misattributions rather than gaps.
+
+- ~~**Coral LOD2 lands at 584 triangles against a 300 budget.**~~ CLOSED: it measures **287/300**.
+  The cause was never the seam-drop retry and never "roughly 76 disconnected tip-cluster shells" —
+  the component count was **4**. It was **144 non-manifold edges**, identical at every LOD, because
+  Quadric Edge Collapse will not collapse across one. `weld_and_clean` now keeps the two largest
+  faces at any edge shared by three or more and deletes the rest; 584 → 287 with no other change.
+  The "76 shells" figure was reasoning from a plausible mechanism instead of reading the number, and
+  it survived here and in two commit messages because nobody called the tool.
+- ~~**`topology_report` has no callers.**~~ CLOSED: **five call sites**, on every LOD and bracketing
+  the decimation. That bracketing immediately paid for itself — see the next entry.
+- ~~**The AO bake does not restore `world.light_settings.distance`.**~~ CLOSED: it restores it, proven
+  leak-free by a 0.04 / 9.0 / 0.04 sequence returning 1.00000 / 0.50000 / 1.00000. The replacement
+  trap is a *hardcoded* ray distance: 0.22 m on a 0.55 m colony is 40% of the asset and collapses
+  the bake to a global sky term (measured 0.792 sparse → 0.023 dense). Derive it from feature size.
+- **NEW, and it is the one still open: `reduce_to_budget` introduces boundary and non-manifold
+  edges.** Measured across the decimation on a clean input — in 34096 tris / boundary 0 /
+  non-manifold 0, out 5865 / boundary 2 / non-manifold 1. Blender's Decimate/COLLAPSE makes them.
+  A small count after a LOD build is a decimator artefact; do not hunt it in the growth grammar.
+  Judged not worth chasing at 1 edge, but it must stop being attributed to generators.
 
 ## Previews and the visual verification loop
 
