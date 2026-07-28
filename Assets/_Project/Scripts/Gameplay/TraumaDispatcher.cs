@@ -143,6 +143,36 @@ namespace Hecton8.Gameplay
             ? VehicleLeakOxygenDrainMultiplier
             : 1f;
 
+        /// <summary>
+        /// Installs the player trauma router on the bootstrap-published player root when the authored
+        /// prefab does not already carry one.
+        /// </summary>
+        /// <remarks>
+        /// Must run AFTER <see cref="PlayerTransportCoordinator.EnsureOnPlayerRoot"/> and
+        /// <see cref="HectonPlayerHealth.EnsureOnPlayerRoot"/>: this type resolves both by
+        /// <c>TryGetComponent</c> on its own GameObject in <c>Awake</c>/<c>OnEnable</c> only, and it
+        /// subscribes to <c>PlayerTransportCoordinator.ActiveTransportLifecycleChanged</c> in
+        /// <c>OnEnable</c>. A coordinator that appears later is never picked up for the session.
+        /// </remarks>
+        /// <param name="playerRoot">Bootstrap-published player root.</param>
+        internal static void EnsureOnPlayerRoot(GameObject playerRoot)
+        {
+            if (playerRoot == null)
+                return;
+
+            if (playerRoot.TryGetComponent(out TraumaDispatcher _))
+                return;
+
+            // Unguarded on purpose - see the rationale block at
+            // PlayerRuntimeContextService.SyncPlayerContextColdInternal, which owns the call order and
+            // the inactive-player-root argument. Short form: the two [RequireComponent] declarations on
+            // this type (HectonSurvivalSystem, HectonPlayerMovement) pin it to the player root, and its
+            // absence is what makes HectonSurvivalSystem's vehicle-leak oxygen drain (:2164), trauma
+            // stress fold (:2430) and flooded-compartment thermal override (:2785, :2792) inert. An
+            // editor-only guard would ship those four branches dead.
+            playerRoot.AddComponent<TraumaDispatcher>(); // COLD ALLOC: TraumaDispatcher[1] - player habitat/transport trauma router install on the bootstrap-published player root - owner: PlayerRuntimeContextService
+        }
+
         private void Awake()
         {
             CacheRegistryServicesCold();

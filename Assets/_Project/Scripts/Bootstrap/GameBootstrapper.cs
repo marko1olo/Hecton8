@@ -7994,6 +7994,7 @@ namespace Hecton8.Bootstrap
                 GlobalRegistry.BeginSceneRuntimePublicationGate();
                 installerPublicationGateOpen = true;
 
+                Hecton8.World.WorldRuntimeInstaller.EnsureRuntimeSystems();
                 Hecton8.Meta.MetaRuntimeInstaller.EnsureRuntimeSystems();
                 Hecton8.Economy.EconomyRuntimeInstaller.EnsureRuntimeSystems();
                 Hecton8.Ecosystem.EcosystemRuntimeInstaller.EnsureRuntimeSystems();

@@ -494,6 +494,28 @@ namespace Hecton8.Gameplay
             s_x001HectonPlayerHealthSignalPushDropCount = 0;
         }
 
+        /// <summary>
+        /// Installs the player health owner on the bootstrap-published player root when the authored
+        /// prefab does not already carry one.
+        /// </summary>
+        /// <param name="playerRoot">Bootstrap-published player root.</param>
+        internal static void EnsureOnPlayerRoot(GameObject playerRoot)
+        {
+            if (playerRoot == null)
+                return;
+
+            if (playerRoot.TryGetComponent(out HectonPlayerHealth _))
+                return;
+
+            // Unguarded on purpose - see the rationale block at
+            // PlayerRuntimeContextService.SyncPlayerContextColdInternal, which owns the call order and
+            // the inactive-player-root argument. Short form: this is the player's only damage/injury
+            // owner, the only ISaveable that writes SaveData.playerStats.health (:1287), and the only
+            // CombatEntityKind.Player target handed to CombatDamageRuntime (:1531). An editor-only
+            // guard would ship a player build with no health model at all.
+            playerRoot.AddComponent<HectonPlayerHealth>(); // COLD ALLOC: HectonPlayerHealth[1] - player damage/injury/toxicity owner install on the bootstrap-published player root - owner: PlayerRuntimeContextService
+        }
+
         /// <summary>Initializes the health system.</summary>
         private void Awake()
         {

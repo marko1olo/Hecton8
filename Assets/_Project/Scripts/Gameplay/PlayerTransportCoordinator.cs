@@ -37,6 +37,30 @@ namespace Hecton8.Gameplay
         /// </summary>
         public event Action<IPlayerTransportLifecycleOwner> ActiveTransportLifecycleChanged;
 
+        /// <summary>
+        /// Installs the transport coordinator on the bootstrap-published player root when the authored
+        /// prefab does not already carry one.
+        /// </summary>
+        /// <param name="playerRoot">Bootstrap-published player root.</param>
+        internal static void EnsureOnPlayerRoot(GameObject playerRoot)
+        {
+            if (playerRoot == null)
+                return;
+
+            if (playerRoot.TryGetComponent(out PlayerTransportCoordinator _))
+                return;
+
+            // Unguarded on purpose - see the rationale block at
+            // PlayerRuntimeContextService.SyncPlayerContextColdInternal, which owns the call order and
+            // the inactive-player-root argument. Short form: the player root is this type's authored
+            // home - HectonPlayerMovement.ResolvePlayerTransportCoordinatorCold (:5544) and
+            // ResolveReferencesCold below both TryGetComponent it off their own GameObject, and
+            // MountablePlayerTransport.ResolveRiderReferences (:908-915) refuses the mount outright when
+            // the rider has none. An editor-only guard would ship a build where no vehicle can be
+            // boarded.
+            playerRoot.AddComponent<PlayerTransportCoordinator>(); // COLD ALLOC: PlayerTransportCoordinator[1] - player transport source resolver install on the bootstrap-published player root - owner: PlayerRuntimeContextService
+        }
+
         private void Awake()
         {
             ResolveReferencesCold();

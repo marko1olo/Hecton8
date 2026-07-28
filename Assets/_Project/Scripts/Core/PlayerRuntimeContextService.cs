@@ -876,6 +876,54 @@ namespace Hecton8.Core
             if (_playerObject != null)
             {
                 PlayerKinematicsRuntime.EnsureOnPlayerRoot(_playerObject);
+
+                // Three of the eleven handles resolved below could never be non-null: no prefab carried
+                // HectonPlayerHealth, TraumaDispatcher or PlayerTransportCoordinator, and no shipped code
+                // added them. The reads succeeded and returned false, so the failure was silent -
+                // PlayerHealth, TraumaDispatcher and PlayerTransportCoordinator were permanently null on
+                // this service and on every consumer that resolves through it. What that cost:
+                // HectonSurvivalSystem read RadiationExposure/Stress that HectonPlayerHealth owns, so the
+                // player had no damage/injury model; its vehicle-leak oxygen drain (:2164), trauma stress
+                // fold (:2430) and flooded-compartment thermal override (:2785, :2792) all sat behind
+                // "_traumaDispatcher == null"; and MountablePlayerTransport.ResolveRiderReferences
+                // (:908-915) refuses to mount a rider with no coordinator, so no vehicle was boardable.
+                //
+                // The installs sit BEFORE the TryGetComponent block on purpose: added after it, the
+                // handles would stay null for this whole pass. Order inside the block is a real
+                // dependency, not style. None of the three declares [DefaultExecutionOrder], so Unity
+                // gives no ordering guarantee and the constructor order is the only lever:
+                //   1. PlayerTransportCoordinator - TraumaDispatcher.OnEnable subscribes to its
+                //      ActiveTransportLifecycleChanged event and only re-resolves the coordinator in
+                //      Awake/OnEnable, so one that appears later is never picked up for the session.
+                //   2. HectonPlayerHealth - TraumaDispatcher.ResolveReferences takes it by
+                //      TryGetComponent in Awake; without it, PublishParasiteSporePoisonStatus silently
+                //      degrades to this dispatcher's own GameObject for the combat target id.
+                //   3. TraumaDispatcher last, so both of its siblings already exist.
+                //
+                // Deliberately NOT wrapped in "#if UNITY_EDITOR || DEVELOPMENT_BUILD". The guard on
+                // PlayerKinematicsRuntime.EnsureOnPlayerRoot above (:1650) and on
+                // SomaticKinematicsRuntime (:1218) is a judged, separate scope - those are VR/IK bridges
+                // that allocate DataVault handles and register dispatcher lanes. Nothing in these three
+                // is an editor concern; guarding them is what produced the defect.
+                //
+                // THE PLAYER ROOT CAN BE INACTIVE HERE, AND THAT IS FINE - DO NOT FORCE IT ACTIVE.
+                // GameBootstrapper.DisablePlayer (:7889) publishes the root to BootstrapState and then
+                // SetActive(false)s it, and BootstrapState.IsProductionPlayerAuthorityObject (:103) never
+                // checks active state, so CurrentPlayerObject stays non-null while the root is dead for
+                // every scene-readiness step up to ActivatePlayer (:7904). TryGetComponent resolves on an
+                // inactive object, so the handles below are correct in the same pass, and Unity defers
+                // the new components' Awake/OnEnable to ActivatePlayer's SetActive(true) (:7914) instead
+                // of dropping them - which is the Kinematic Arrest Gate release, exactly when a suspended
+                // player should start ticking. The four player installers at GameBootstrapper.cs:8000-8003
+                // already depend on that same deferral, and HectonSurvivalSystem.OnEnable re-enters this
+                // method through TryBindPlayerRoot at that activation, so a second pass runs with the root
+                // live regardless. The forced SetActive(true) in EcosystemRuntimeInstaller.cs:69-71 is not
+                // precedent for copying here: that is a __HECTON_* runtime root nothing else ever
+                // activates, whereas forcing the player root active would break the arrest gate.
+                PlayerTransportCoordinator.EnsureOnPlayerRoot(_playerObject);
+                HectonPlayerHealth.EnsureOnPlayerRoot(_playerObject);
+                TraumaDispatcher.EnsureOnPlayerRoot(_playerObject);
+
                 _playerObject.TryGetComponent(out _playerMovement);
                 _playerObject.TryGetComponent(out _playerBuoyancyAirState);
                 _playerObject.TryGetComponent(out _playerRigidbody);
