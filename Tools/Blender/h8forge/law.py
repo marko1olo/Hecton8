@@ -359,6 +359,23 @@ UV_STRETCH_MAX_DISTANT = 0.25
 UV_STRETCH_AREA_FRACTION_MAX = 0.10
 UV_STRETCH_OUTLIER_MULTIPLIER = 6.0
 
+# The outlier ceiling must ALSO ignore slivers, or it reintroduces the very bug the
+# area-weighted population test was written to remove -- judged on a single triangle with
+# no regard for whether that triangle covers any visible surface.
+#
+# Measured on a kelp LOD: a failing triangle had world edge lengths
+# [0.0529, 0.0443, 0.0972] where 0.0529 + 0.0443 ~= 0.0972. That is a collinear sliver --
+# 9.7 cm long, 1.8 mm altitude, roughly 0.9 cm2 of surface. On a plant with ~0.5 m2 of
+# surface it is 0.017% of what the player sees, and sigma_max/sigma_min is numerically
+# ill-conditioned on a near-degenerate triangle, so the metric amplifies rounding error
+# there rather than measuring stretch. Ten documented attempts to remove such slivers
+# geometrically all converged just under whatever threshold was set, then produced a
+# DIFFERENT outlier -- the signature of chasing a numerical artefact, not a defect.
+#
+# Expressed relative to the MEAN triangle area so it is scale-independent: a triangle far
+# smaller than its mesh's typical triangle is a sliver whatever the asset's size.
+UV_STRETCH_OUTLIER_MIN_AREA_RATIO = 0.10
+
 # Organic surfaces get a wider per-triangle limit than manufactured panels. 3dmodel.md
 # section 6 permits box/projection unwrap "for industrial panels only when each face has
 # calibrated texel density", i.e. the tight limit is aimed at flat calibrated panels;

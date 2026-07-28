@@ -250,6 +250,8 @@ class StemPlan:
     rib_count: int
     rib_phase: float
     lobe_amplitude: float
+    outline_bias: float
+    outline_bias_phase: float
     rib_relief: float
     gill_depth: float
     cup_sign: float
@@ -308,14 +310,16 @@ def triangles_per_stem(segments: int, stem_rings: int, cap_top_rings: int,
     datablock rather than trusted.
     """
     stem_segments, ratio = stem_segment_count(segments)
-    coarse_bands = max(0, stem_rings - 2)
-    transition = (ratio + 1) * stem_segments if ratio > 1 else 2 * stem_segments
-    cap_bands = cap_bottom_rings + (rim_rings + 1) + (cap_top_rings - 1)
-    return (stem_segments                      # foot fan
-            + 2 * stem_segments * coarse_bands  # stem tube
-            + transition                        # coarse -> hub
-            + 2 * segments * cap_bands          # cap underside, rim, top
-            + segments)                         # apex fan
+    # The coarse->fine refinement sits on the cap UNDERSIDE, not in the neck: see
+    # _build_stem for why the neck was the wrong place for it.
+    refinement = ((ratio + 1) * stem_segments if ratio > 1
+                  else 2 * stem_segments)
+    cap_bands = (cap_bottom_rings - 1) + (rim_rings + 1) + (cap_top_rings - 1)
+    return (stem_segments                              # foot fan
+            + 2 * stem_segments * (stem_rings - 1)     # stem tube, all coarse
+            + refinement                               # hub -> first full cap ring
+            + 2 * segments * cap_bands                 # cap underside, rim, top
+            + segments)                                # apex fan
 
 
 def _fit_density(*, rib_count: int, segments_per_rib: int, stem_rings: int,
@@ -475,10 +479,23 @@ def plan_clump(rng, *, quality: float, cap_radius: float, height: float) -> Clum
             bend=_rng_range(rng, 0.10, 0.30),
             lean=lean,
             tilt_deg=_rng_range(rng, 9.0, 34.0),
-            cap_offset_frac=_rng_range(rng, 0.10, 0.32),
+            # Bounded by the HUB radius, not the cap radius. At 0.10-0.32 of the cap
+            # radius the offset reached 50 mm against a 20 mm hub, so the stem's top ring
+            # and the cap's hub ring barely overlapped and the transition band was a
+            # violently skewed shear -- a coarse vertex ended up collinear with a hub
+            # chord (sigma 19.1 against a 3.3 ceiling). hub_fraction is 0.13, so half the
+            # hub radius is 0.065 of the cap radius; this stays inside that.
+            cap_offset_frac=_rng_range(rng, 0.030, 0.060),
             rib_count=rib_count,
             rib_phase=_rng_range(rng, 0.0, math.tau),
             lobe_amplitude=_rng_range(rng, 0.055, 0.115),
+            # The visible "cap not centred on its stem" read comes from an ASYMMETRIC
+            # OUTLINE, not from displacing the hub: the cap simply extends further on one
+            # side. That is also what the reference shows -- in beauty.webp the fans are
+            # kidney-shaped about their attachment rather than discs pushed sideways --
+            # and unlike a hub offset it costs nothing in weld quality.
+            outline_bias=_rng_range(rng, 0.10, 0.24),
+            outline_bias_phase=_rng_range(rng, 0.0, math.tau),
             rib_relief=_rng_range(rng, 0.030, 0.070),
             gill_depth=_rng_range(rng, 0.24, 0.44),
             cup_sign=1.0 if rng.random() < 0.62 else -1.0,
@@ -488,8 +505,16 @@ def plan_clump(rng, *, quality: float, cap_radius: float, height: float) -> Clum
             # 155 mm radius -- a knife edge that also read as a 4 px UV island and a
             # 15:1 sliver band. Thicker is both what the bible wants and what the
             # geometry needs.
-            thickness_hub=_rng_range(rng, 0.165, 0.235),
-            thickness_rim=_rng_range(rng, 0.075, 0.115),
+            # An ABSOLUTE floor of 11 mm on the rim rides on top of the fraction. A small
+            # juvenile cap of 51 mm radius took the fraction literally and produced a
+            # 4.7 mm rim, whose UV island measured 181 x 3.36 px -- under
+            # law.UV_MIN_ISLAND_PIXELS at 512 px/m. Proportionally thicker young caps are
+            # also correct: a button IS chunky relative to its width, and it thins as it
+            # expands.
+            thickness_hub=max(_rng_range(rng, 0.165, 0.235),
+                              0.017 / max(1e-4, stem_cap_radius)),
+            thickness_rim=min(0.30, max(_rng_range(rng, 0.075, 0.115),
+                                        0.011 / max(1e-4, stem_cap_radius))),
             tear_sectors=tuple(tears),
             edge_jitter=tuple(float(x) for x in rng.normal(0.0, 0.016, size=segments)),
             ridge_count=int(4 + round(_rng_range(rng, 0.0, 3.0))),
@@ -627,7 +652,10 @@ def _cap_edge_radius(plan: StemPlan, theta: float, segment_index: int) -> float:
     """
     lobe = 1.0 + plan.lobe_amplitude * math.cos(plan.rib_count * theta
                                                 + plan.rib_phase)
-    radius = plan.cap_radius * lobe
+    # Low-frequency asymmetry: the cap reaches further on one side, which is what makes
+    # it read as off-centre on its stem without displacing the hub.
+    bias = 1.0 + plan.outline_bias * math.cos(theta - plan.outline_bias_phase)
+    radius = plan.cap_radius * lobe * bias
 
     for centre, half_width, depth in plan.tear_sectors:
         delta = abs(((theta - centre + math.pi) % math.tau) - math.pi)
@@ -851,6 +879,23 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
                     2.5, noise.sample(t, theta / math.tau)))
                 points.append(position + frame_x * (radius * math.cos(theta))
                               + frame_y * (radius * math.sin(theta)))
+
+            if i == len(axis) - 2:
+                # Guarantee axial clearance to the hub ring at EVERY column. The hub ring
+                # is tilted by up to 34 degrees and offset off the stem axis, so its plane
+                # cuts the coarse ring's plane: on one side the two rings nearly coincide,
+                # and the transition triangles there came out collinear to 8 microns in
+                # 22 mm -- a zero-area world triangle mapped to a healthy UV one, which is
+                # sigma_min = 0 by definition (measured 58.0 against a 3.3 ceiling). The
+                # cosine spacing shortened the average step and made this worse, not
+                # better, because the deficit is geometric, not a sampling artefact.
+                mean_radius = max(1e-4, ring_circumference[-1] / math.tau
+                                  if ring_circumference else 0.01)
+                clearance = min((hub_ring[j * ratio] - points[j]).dot(tip_tangent)
+                                for j in range(count))
+                deficit = 0.45 * mean_radius - clearance
+                if deficit > 0.0:
+                    points = [p - tip_tangent * deficit for p in points]
 
         # u is the REAL accumulated arc around the ring, normalised by that ring's own
         # circumference. Uniform index spacing looked equivalent and is not: the
@@ -1118,30 +1163,37 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
         ])
     rim_total = rim_arc[-1]
 
-    # The rim band continues the UNDERSIDE island's polar map outward rather than
-    # occupying an island of its own. A separate strip measured 448 x 3.95 px at 512
-    # px/m -- under law.UV_MIN_ISLAND_PIXELS, because a 15 cm cap really does have an
-    # 8 mm rim and no texel density fixes that for a strip one band tall. Folding it
-    # into the underside annulus removes the sliver island AND gives the texture a
-    # continuous run from the gills over the edge, which is how a plate's rim reads.
-    outer_arc = [hub_arc + bottom_arc[-1][j] for j in range(segments)]
+    # The rim gets its OWN island with a pure arc-length strip map: u is the accumulated
+    # circumferential arc along the rim, v the accumulated distance across the band. That
+    # is isometric in both directions, whereas continuing the underside's polar map put
+    # the band's radial coordinate on a lobed, torn radius and sheared it (measured
+    # sigma 3.56 with all three edge scales inside 17% of each other -- pure shear).
+    #
+    # A separate island was rejected earlier for a real reason that no longer applies: at
+    # a 6-11 mm rim it measured 448 x 3.95 px, under law.UV_MIN_ISLAND_PIXELS. The rim is
+    # now 12-18 mm because 3DMODEL_FLORA_CORAL.md section 3 asks plate coral for "thick
+    # rims", which puts the island at 7-9 px and above the floor.
+    rim_circumference = 0.0
+    rim_u = [0.0] * segments
+    for j in range(segments):
+        rim_u[j] = rim_circumference
+        rim_circumference += (accum.positions[rim_top[(j + 1) % segments]]
+                              - accum.positions[rim_top[j]]).length
+    rim_u = [value - rim_circumference * 0.5 for value in rim_u]
     for i in range(len(rim_rows) - 1):
         upper = rim_rows[i]
         lower = rim_rows[i + 1]
         for j in range(segments):
             k = (j + 1) % segments
-            # Radius grows across the band by the real distance travelled at THAT
-            # angle, so a thin torn sector does not get the same texel run as a thick
-            # one. Rim rows run top -> bottom, and the underside map is measured from
-            # the hub, so the band is traversed from its far edge back inward.
-            r_up_j = outer_arc[j] + (rim_total[j] - rim_arc[i][j])
-            r_lo_j = outer_arc[j] + (rim_total[j] - rim_arc[i + 1][j])
-            r_up_k = outer_arc[k] + (rim_total[k] - rim_arc[i][k])
-            r_lo_k = outer_arc[k] + (rim_total[k] - rim_arc[i + 1][k])
+            # v is the real distance across the band at THAT angle, so a thin torn
+            # sector does not get the same texel run as a thick one.
+            wrap = rim_circumference if k == 0 else 0.0
             accum.quad(
                 upper[j], lower[j], lower[k], upper[k], SLOT_RIM,
-                _polar_uv(island_bottom, thetas, (j, j, k, k),
-                          (r_up_j, r_lo_j, r_lo_k, r_up_k)))
+                ((island_rim, rim_u[j], rim_arc[i][j]),
+                 (island_rim, rim_u[j], rim_arc[i + 1][j]),
+                 (island_rim, rim_u[k] + wrap, rim_arc[i + 1][k]),
+                 (island_rim, rim_u[k] + wrap, rim_arc[i][k])))
 
     return {
         "height": round(plan.height, 5),

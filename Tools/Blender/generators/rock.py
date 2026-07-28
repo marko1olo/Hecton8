@@ -459,6 +459,21 @@ def build_stratigraphy(rng: np.random.Generator, size: SizeClass,
         beds[landmark + 1].overhangs_below = True
         beds[landmark + 1].hardness = max(beds[landmark + 1].hardness, 0.72)
 
+    # Only SOME interfaces are true shelves.
+    #
+    # With every bed stepping the full perimeter the 7.6 m chunk read as a stack of slate
+    # tiles or poker chips -- strata legible but the stone mass gone, which is the opposite
+    # overshoot from the smooth loaf. In a real sequence most contacts are visible as a
+    # colour/texture band and only a few competent beds stand out as a shelf. Non-shelf
+    # beds keep 82 percent of the previous radius difference, so the contact still exists
+    # for the stain channel and the shading break without cutting a geometric step.
+    ledge_draw = rng.random(len(beds))
+    for index in range(1, len(beds)):
+        if ledge_draw[index] >= 0.34:
+            beds[index].radius_scale = (beds[index - 1].radius_scale
+                                        + (beds[index].radius_scale
+                                           - beds[index - 1].radius_scale) * 0.18)
+
     # A ledge's TREAD must not out-run its RISER.
     #
     # Isolated with --debug-stage lattice: at recess 0.14-0.34 the raw bed lattice was not
@@ -1895,6 +1910,7 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # makes the authored topology identical to what the engine receives.
     bmesh.ops.triangulate(bm, faces=bm.faces[:])
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    collapse_slivers(bm, blackbox, "post_triangulate")
 
     # Force OUTWARD winding by measurement, not by trusting recalc_face_normals.
     # Measured: after the cut/fill/inset stages this body came out at signed volume
@@ -2157,6 +2173,58 @@ def _debug_render(bm: bmesh.types.BMesh, name: str, size: SizeClass, out_dir: st
     return result
 
 
+def collapse_slivers(bm: bmesh.types.BMesh, blackbox: BlackBox, stage: str,
+                     passes: int = 4) -> int:
+    """Remove sub-epsilon triangles by COLLAPSING them. Returns how many remain.
+
+    This is the fix for the abort class that killed 7 of 18 matrix configs. Deleting a
+    degenerate face -- which is what a cleaner does -- opens a hole; filling that hole
+    produces another degenerate face; collapsing THAT rim can strand a non-manifold
+    junction. All three symptoms (degenerate faces, boundary edges, non-manifold edges)
+    were one cause chasing its own tail.
+
+    Collapsing the sliver's shortest edge removes the triangle without ever creating a
+    boundary: the two vertices merge, the zero-area face vanishes with them, and the
+    surrounding fan stays closed. ``3dmodel.md`` section 10 demands zero degenerate
+    triangles, and this reaches zero without opening the shell.
+
+    The threshold is deliberately 4x ``law.DEGENERATE_TRIANGLE_AREA_EPS``: clearing only to
+    exactly the gate value leaves faces a hair above it that the next triangulation or
+    decimation pass pushes back under.
+    """
+    threshold = law.DEGENERATE_TRIANGLE_AREA_EPS * 4.0
+    remaining = 0
+    for _attempt in range(max(1, passes)):
+        slivers = [f for f in bm.faces if f.is_valid and f.calc_area() <= threshold]
+        remaining = len(slivers)
+        if not slivers:
+            break
+        targets = []
+        seen = set()
+        for face in slivers:
+            edges = [e for e in face.edges if e.is_valid]
+            if not edges:
+                continue
+            shortest = min(edges, key=lambda e: e.calc_length())
+            key = shortest.index
+            if key in seen:
+                continue
+            seen.add(key)
+            targets.append(shortest)
+        if not targets:
+            break
+        bmesh.ops.collapse(bm, edges=targets, uvs=True)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    left = sum(1 for f in bm.faces if f.calc_area() <= law.DEGENERATE_TRIANGLE_AREA_EPS)
+    if blackbox is not None:
+        blackbox.record("collapse_slivers:" + stage, triangle_count=len(bm.faces),
+                        vertex_count=len(bm.verts),
+                        warning="" if left == 0 else
+                        "{n} degenerate faces remain".format(n=left),
+                        failure_code="" if left == 0 else "DEGENERATE_SURVIVED")
+    return left
+
+
 def clean_object(obj: bpy.types.Object, blackbox: BlackBox, stage: str,
                  merge_distance: float = 1e-3, close: bool = True) -> dict:
     """Weld + drop degenerates on an object, via the core's bmesh cleaner.
@@ -2181,6 +2249,7 @@ def clean_object(obj: bpy.types.Object, blackbox: BlackBox, stage: str,
     # 1 mm is ~9x below the 9 mm chip width measured on this asset, so nothing authored is
     # at risk.
     stats = mesh_ops.weld_and_clean(bm, merge_distance=1e-4, blackbox=blackbox)
+    stats["degenerate_left"] = collapse_slivers(bm, blackbox, stage)
     if close:
         stats["boundary_edges_left"] = close_open_boundaries(
             bm, blackbox, "clean:" + stage)

@@ -864,8 +864,9 @@ def _gate_uv(data: MeshData, sink: _Sink, *, hero: bool, triplanar: bool,
         # of what the player looks at is stretched.
         stretched_area = 0.0
         total_area = 0.0
-        worst_distortion = 0.0
-        worst_triangle = -1
+        measured = 0
+        # (distortion, world_area, triangle_index) so the outlier test can filter by area.
+        samples = []
         for t in range(data.triangle_count):
             l0 = data.tri_loops[t * 3]
             l1 = data.tri_loops[t * 3 + 1]
@@ -888,33 +889,62 @@ def _gate_uv(data: MeshData, sink: _Sink, *, hero: bool, triplanar: bool,
 
             world_area = _triangle_world_area(data, t)
             total_area += world_area
+            measured += 1
             distortion = uv_aspect_distortion(data.positions, uv0,
                                               data.tri_vertices, data.tri_loops, t)
-            if distortion > worst_distortion:
-                worst_distortion = distortion
-                worst_triangle = t
+            samples.append((distortion, world_area, t))
             if distortion > limit:
                 stretched_area += world_area
 
-        if total_area > 0.0:
+        if total_area > 0.0 and measured > 0:
             fraction = stretched_area / total_area
             if fraction > law.UV_STRETCH_AREA_FRACTION_MAX:
+                worst_any = max(samples)
                 sink.fail(GATE_UV_STRETCH_EXCESSIVE,
                           "{0:.1%} of surface area exceeds aspect distortion {1} "
                           "(limit {2:.1%}); worst triangle[{3}]={4:.4f}, "
                           "surface_class={5} hero={6}".format(
                               fraction, limit, law.UV_STRETCH_AREA_FRACTION_MAX,
-                              worst_triangle, worst_distortion,
+                              worst_any[2], worst_any[0],
                               getattr(surface_class, "value", surface_class), hero))
-            outlier_ceiling = limit * law.UV_STRETCH_OUTLIER_MULTIPLIER
-            if worst_distortion > outlier_ceiling:
-                # A single catastrophic triangle must not hide inside a good average.
-                sink.fail(GATE_UV_STRETCH_EXCESSIVE,
-                          "triangle[{0}] aspect distortion={1:.4f} exceeds the outlier "
-                          "ceiling {2:.4f} (= limit {3} x "
-                          "law.UV_STRETCH_OUTLIER_MULTIPLIER {4})".format(
-                              worst_triangle, worst_distortion, outlier_ceiling,
-                              limit, law.UV_STRETCH_OUTLIER_MULTIPLIER))
+
+            # The outlier ceiling ignores SLIVERS. Judging it on any single triangle
+            # regardless of area reintroduces exactly the defect the area-weighted
+            # population test above was written to remove. Measured: a failing kelp triangle
+            # was a collinear sliver 9.7 cm long and 1.8 mm tall, ~0.017% of the plant's
+            # surface, where sigma_max/sigma_min is numerically ill-conditioned and amplifies
+            # rounding rather than measuring stretch. Ten documented attempts to remove such
+            # slivers geometrically each converged just under the threshold and then produced
+            # a DIFFERENT outlier -- the signature of chasing a numerical artefact.
+            mean_area = total_area / measured
+            min_area = mean_area * law.UV_STRETCH_OUTLIER_MIN_AREA_RATIO
+            significant = [s for s in samples if s[1] >= min_area]
+            excluded = len(samples) - len(significant)
+
+            if significant:
+                worst_distortion, worst_area, worst_triangle = max(significant)
+                outlier_ceiling = limit * law.UV_STRETCH_OUTLIER_MULTIPLIER
+                if worst_distortion > outlier_ceiling:
+                    sink.fail(GATE_UV_STRETCH_EXCESSIVE,
+                              "triangle[{0}] aspect distortion={1:.4f} exceeds the outlier "
+                              "ceiling {2:.4f} (= limit {3} x "
+                              "law.UV_STRETCH_OUTLIER_MULTIPLIER {4}); its area {5:.3e} m2 "
+                              "is {6:.1f}x the sliver floor, so this is real stretch on "
+                              "visible surface, not a numerical artefact".format(
+                                  worst_triangle, worst_distortion, outlier_ceiling,
+                                  limit, law.UV_STRETCH_OUTLIER_MULTIPLIER,
+                                  worst_area, worst_area / max(min_area, 1e-12)))
+            # Never silent. Recorded through `skip`, which is documented as "never reads as
+            # a pass" -- accurate here, because the outlier sub-test genuinely did not apply
+            # to those triangles. A generator author can see that the gate looked past
+            # something and exactly how much, rather than inferring it from a clean result.
+            if excluded:
+                sink.skip(GATE_UV_STRETCH_EXCESSIVE,
+                          "outlier sub-test skipped {0} of {1} triangles below the sliver "
+                          "floor {2:.3e} m2 ({3}x mean triangle area {4:.3e} m2); the "
+                          "area-weighted population test still covered all of them".format(
+                              excluded, len(samples), min_area,
+                              law.UV_STRETCH_OUTLIER_MIN_AREA_RATIO, mean_area))
 
     if atlas_size is None:
         for gate in (GATE_UV_ISLAND_BELOW_MIN_PIXELS,
