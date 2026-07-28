@@ -204,6 +204,17 @@ namespace Hecton8.Core
         /// spatially, so this avoids full tile scans on repeated queries.
         /// </summary>
         private TerrainTile _lastResolvedTerrainTile;
+
+        /// <summary>
+        /// World XZ of the tile-grid origin and the tile size, refreshed cold by
+        /// <see cref="RefreshTerrainTileCacheCold"/>. Zero size means "no grid" and every containment test
+        /// refuses. See <see cref="TileContainsWorldXZ"/> for why these exist.
+        /// </summary>
+        private float _tileGridOriginX;
+        private float _tileGridOriginZ;
+        private float _tileGridSizeX;
+        private float _tileGridSizeZ;
+
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private TerrainData _cachedBiomeTerrainData;
         private Texture2D[] _cachedBiomeAlphaTextures = Array.Empty<Texture2D>();
@@ -2691,8 +2702,14 @@ namespace Hecton8.Core
             float clampedDetailDensity = Mathf.Clamp(detailDensity, 0.4f, 1.2f);
             int clampedHeightmapMaximumLod = Mathf.Clamp(heightmapMaximumLod, 0, 3);
             Vector3 playerPosition = playerTransform.position;
-            int playerTileX = Mathf.FloorToInt(playerPosition.x / Mathf.Max(1f, mapMagicObject.tileSize.x));
-            int playerTileZ = Mathf.FloorToInt(playerPosition.z / Mathf.Max(1f, mapMagicObject.tileSize.z));
+            // Holder-relative, for the same reason TileContainsWorldXZ is: tile coords are laid out from the
+            // holder, not from the world origin. Dividing a raw world position by tileSize targets the wrong
+            // tile ring by one whenever the holder is off-origin, so main-detail promotion lands on a
+            // neighbour of the tile the player is actually standing on.
+            int playerTileX = Mathf.FloorToInt(
+                (playerPosition.x - _tileGridOriginX) / Mathf.Max(1f, mapMagicObject.tileSize.x));
+            int playerTileZ = Mathf.FloorToInt(
+                (playerPosition.z - _tileGridOriginZ) / Mathf.Max(1f, mapMagicObject.tileSize.z));
 
             List<TerrainTile> terrainTiles = _cachedTerrainTiles;
             int tileCount = terrainTiles.Count;
@@ -2761,10 +2778,51 @@ namespace Hecton8.Core
         ///
         /// ZERO GC: no Unity global terrain fallback.
         /// </summary>
+        /// <summary>
+        /// Holder-relative, half-open tile containment. Replaces every use of MapMagic's
+        /// <c>TerrainTile.ContainsWorldPosition</c>, which is misnamed and wrong here in two independent ways.
+        ///
+        /// WRONG WAY ONE - NO HOLDER OFFSET. It builds its rect from <c>coord * tileSize</c> in MapMagic's own
+        /// coordinate system; MapMagic's TerrainTileManager admits as much in a comment, calling them
+        /// "Map-Magic relative rects actually". Tile DEPLOYMENT is holder-relative, so with the holder at
+        /// (-18, -2.8, 42) in 02_HECTON_WORLD every world query is offset by (+18, -42). Any query within 18 m
+        /// of an X grid line or 42 m of a Z grid line resolves the WRONG tile, and the math.saturate in the
+        /// height read then clamps the sample to that tile's edge and returns it as a plausible height with no
+        /// error. Silently wrong is the worst failure mode this codebase has.
+        ///
+        /// WRONG WAY TWO - EXCLUSIVE ON BOTH BOUNDS. It tests <c>x &gt; min &amp;&amp; x &lt; min + size</c>, so a
+        /// point exactly ON a grid line belongs to NO tile. THAT was the boot blocker: the spawner's
+        /// searchOrigin is authored at (0,0), tileSize is 15000, and for x = 0 the coord-0 rect gives
+        /// <c>0 &gt; 0</c> false, coord-(-1) gives <c>0 &lt; -15000 + 15000</c> false, and coord-1 gives
+        /// <c>0 &gt; 15000</c> false. Zero tiles claimed the point, TryGetHeight returned false forever, and
+        /// Step 7 died on "ITerrainProvider is available but has no finite height at the search origin" while
+        /// nine pinned, active, collidered tiles covered a 45 km x 45 km block containing that exact point.
+        ///
+        /// Note the trap: this refusal is INDEPENDENT of the holder transform. Re-centring the terrain to
+        /// (0,0,0) leaves the coord-0 rect starting at 0.0 and <c>0 &gt; 0</c> still false, so anyone who only
+        /// moves the holder gets the identical log line and concludes the diagnosis was wrong. Half-open
+        /// <c>[min, max)</c> is what fixes it; the holder offset fixes the separate wrong-tile defect.
+        ///
+        /// MapMagic's own TerrainTile.cs is deliberately NOT patched - editing vendor code is a re-sync trap.
+        /// </summary>
+        private bool TileContainsWorldXZ(TerrainTile tile, float x, float z)
+        {
+            if (tile == null || _tileGridSizeX <= 0f || _tileGridSizeZ <= 0f)
+                return false;
+
+            float localX = x - _tileGridOriginX;
+            float localZ = z - _tileGridOriginZ;
+            float minX = tile.coord.x * _tileGridSizeX;
+            float minZ = tile.coord.z * _tileGridSizeZ;
+
+            return localX >= minX && localX < minX + _tileGridSizeX &&
+                   localZ >= minZ && localZ < minZ + _tileGridSizeZ;
+        }
+
         private Terrain FindTerrainAt(float x, float z)
         {
             if (_lastResolvedTerrainTile != null &&
-                _lastResolvedTerrainTile.ContainsWorldPosition(x, z))
+                TileContainsWorldXZ(_lastResolvedTerrainTile, x, z))
             {
                 Terrain cachedTerrain = ResolveTileTerrain(_lastResolvedTerrainTile);
                 if (cachedTerrain != null && cachedTerrain.terrainData != null)
@@ -2777,7 +2835,7 @@ namespace Hecton8.Core
             for (int i = 0; i < tileCount; i++)
             {
                 TerrainTile tile = terrainTiles[i];
-                if (tile == null || !tile.ContainsWorldPosition(x, z))
+                if (tile == null || !TileContainsWorldXZ(tile, x, z))
                     continue;
 
                 Terrain tileTerrain = ResolveTileTerrain(tile);
@@ -2876,7 +2934,7 @@ namespace Hecton8.Core
 
             Vector3 position = playerTransform.position;
             if (_lastResolvedTerrainTile != null &&
-                _lastResolvedTerrainTile.ContainsWorldPosition(position.x, position.z))
+                TileContainsWorldXZ(_lastResolvedTerrainTile, position.x, position.z))
             {
                 Terrain cachedTerrain = ResolveTileTerrain(_lastResolvedTerrainTile);
                 if (cachedTerrain != null && cachedTerrain.terrainData != null)
@@ -2890,7 +2948,7 @@ namespace Hecton8.Core
             for (int i = 0; i < tileCount; i++)
             {
                 TerrainTile tile = terrainTiles[i];
-                if (tile == null || !tile.ContainsWorldPosition(position.x, position.z))
+                if (tile == null || !TileContainsWorldXZ(tile, position.x, position.z))
                     continue;
 
                 Terrain tileTerrain = ResolveTileTerrain(tile);
@@ -3026,6 +3084,10 @@ namespace Hecton8.Core
                 _cachedTerrainTiles.Clear();
                 _cachedTerrainTileRootCount = -1;
                 _lastResolvedTerrainTile = null;
+                _tileGridOriginX = 0f;
+                _tileGridOriginZ = 0f;
+                _tileGridSizeX = 0f;
+                _tileGridSizeZ = 0f;
                 InvalidateBiomeTextureCache();
                 return;
             }
@@ -3033,6 +3095,21 @@ namespace Hecton8.Core
             Transform mapMagicTransform = mapMagicObject.transform;
             if (mapMagicTransform == null)
                 return;
+
+            // Cached cold so no query path ever reads a Transform. The holder's world XZ is the origin of
+            // the tile grid: tile DEPLOYMENT is holder-relative (MapMagic's TileManager uses
+            // holder.transform.InverseTransformPoint) while every world-space consumer of the grid assumed
+            // holder-at-origin. Those two agree only when the holder sits at (0,0,0), and in
+            // 02_HECTON_WORLD it sits at (-18, -2.8, 42) - unauthored drift, since nothing in this tree
+            // writes that transform.
+            //
+            // If MapMagicObject.shift is ever enabled the holder moves at runtime and these go stale; it is
+            // a vendor feature nobody drives here, and enabling it requires forcing a cache refresh on shift.
+            Vector3 holderPosition = mapMagicTransform.position;
+            _tileGridOriginX = holderPosition.x;
+            _tileGridOriginZ = holderPosition.z;
+            _tileGridSizeX = mapMagicObject.tileSize.x;
+            _tileGridSizeZ = mapMagicObject.tileSize.z;
 
             int rootChildCount = mapMagicTransform.childCount;
             _cachedTerrainTiles.Clear();
