@@ -42,7 +42,24 @@ namespace Hecton8.Editor.Structures
 
     public sealed class ModuleArchitect1712 : EditorWindow
     {
-        private const string SocketLane = "h8.structure.hardsurface";
+        // Socket compatibility lanes, using the authored kit's vocabulary read off the seven
+        // production templates in Assets/_Project/Data/Construction/StandardModuleTemplates:
+        // "Habitat" on 17 sockets, "Exterior" on exactly one (BaseModuleTemplate_Airlock's South
+        // hatch), "Dock" on exactly one (BaseModuleTemplate_Moonpool's Bottom socket).
+        //
+        // The lane is not cosmetic metadata, it is a hard connectivity gate on both live paths:
+        // snapping rejects a pair whose 24-bit lane hashes differ unless one side is empty
+        // (ShinobuSocketConstructionData.cs:1156-1161, reached from
+        // ShinobuSocketConstructionJobs.cs:133), and habitat-graph adjacency plus placement
+        // validation reject a pair whose lane bitmasks do not intersect
+        // (BaseModuleCatalogRuntime.cs:862-865, used at HabitatGraphManager.cs:4449 and
+        // HabitatConstructionManager.cs:936). The single private lane this generator used to write,
+        // "h8.structure.hardsurface", appeared on no authored template, so every fabricated module
+        // was unconnectable to every hand-authored one on both paths. Only the empty string is a
+        // wildcard (ShinobuSocketConstructionData.cs:1274-1275), and these sockets are not universal.
+        private const string HabitatSocketLane = "Habitat";
+        private const string ExteriorSocketLane = "Exterior";
+        private const string DockSocketLane = "Dock";
         private const string WorldStaticLayerName = "World_Static";
         private const string DefaultModuleCatalogFolder = "Assets/_Project/Data/Construction";
         private const string DefaultModuleCatalogPath = DefaultModuleCatalogFolder + "/ModuleCatalog_Starter.asset";
@@ -64,23 +81,42 @@ namespace Hecton8.Editor.Structures
         private const int Lod1TriangleBudget = 5000;
         private const int Lod2TriangleBudget = 700;
 
-        // Manufactured-detail triangle bound, per module, measured against the six live specs.
-        // Worst case is H8_A1712_ReactorRoom_01 at quality 1.0 and detail tier 0: six faces, each
-        // carrying a perimeter frame, up to MaxRibsPerFace vertical ribs, up to MaxBeltsPerFace belt
-        // segments per column, one recessed sub-panel per lattice cell, a bolted connector flange on
-        // four of the faces, a bolt ring, one service plate, and one conduit run - measured at 6,360
-        // triangles. 7,168 is that figure plus 12 percent headroom.
+        // Manufactured-detail triangle bound, per module, sized against the six live specs. Detail
+        // density is driven by lattice cell count, and the cell count per face is
+        // (ribs + 1) * (belts + 1) where each divisor is
+        // ModuleHardSurfaceDetail1712.ResolveDivisions(span, cap) = clamp(ceil(span / 1.45) - 1, 0,
+        // cap) with caps MaxRibsPerFace 8 and MaxBeltsPerFace 6. It is therefore bounded by the caps,
+        // not by module size, but the caps are not yet saturated at these sizes so a resize still
+        // moves the figure.
+        //
+        // The previous worst case was H8_A1712_ReactorRoom_01 (10.8 x 3.7 x 9.6) at quality 1.0 and
+        // detail tier 0 - six faces, each with a perimeter frame, ribs, belts, one recessed sub-panel
+        // per lattice cell, a bolted connector flange on four faces, a bolt ring, one service plate
+        // and one conduit run - measured at 6,360 triangles, over 202 lattice cells summed across the
+        // six faces at those extents.
+        //
+        // The new worst case is H8_A1712_VerticalShaft_01 at the Moonpool envelope 12 x 8 x 10, whose
+        // six faces sum to 262 cells: 1.297x the old worst, so about 8,249 triangles. 9,216 is that
+        // figure plus 11.7 percent headroom. Second worst is H8_A1712_ReactorRoom_01 at the
+        // MultiPurpose_Room envelope 10 x 6 x 10, at 210 cells. Both stay well clear of
+        // Lod0TriangleBudget 15,000.
         //
         // These constants size List<T> capacity only. Unlike a fixed array they cannot truncate or
         // overflow: an underestimate costs one capacity doubling in an editor-only cold path, and any
         // mesh that genuinely exceeds Lod0TriangleBudget is rejected by AssertTriangleBudget before
-        // it can be saved. The bound is therefore an allocation target, not a correctness gate.
-        private const int MaxManufacturedDetailTriangleCount = 7168;
+        // it can be saved. The bound is an allocation target, not a correctness gate. The cell counts
+        // above are arithmetic over ResolveDivisions, NOT a measurement; the per-LOD triangle counts
+        // the bake prints are the only measured evidence.
+        private const int MaxManufacturedDetailTriangleCount = 9216;
 
-        // COLD ALLOC: List<Vector3> x2 + List<Vector4> x2 + List<Vector2> + List<int> at
-        // GeneratedVertexCapacity(21756) - 1.39 MB total, editor bake scratch, freed when the bake
-        // returns. Not lazy/streamed because the whole mesh is authored in one pass and a growing
-        // buffer would re-copy up to five parallel streams. - owner: ModuleArchitect1712
+        // COLD ALLOC: List<Vector3> x2 + List<Vector4> x2 + List<Vector2> at
+        // GeneratedVertexCapacity(28152) - 64 B per vertex across the five parallel streams, so
+        // 1.80 MB - plus List<int> at GeneratedIndexCapacity(28296), 0.11 MB. Editor-only bake
+        // scratch, freed when the bake returns. Not lazy/streamed because the whole mesh is authored
+        // in one pass and a growing buffer would re-copy up to five parallel streams.
+        // (The former comment quoted 21756 vertices / 1.39 MB; the formula below evaluates to 22008
+        // for a 7,168-triangle detail bound, so that figure was stale by 252 vertices.)
+        // - owner: ModuleArchitect1712
         private const int GeneratedVertexCapacity =
             (MaxSocketFaceQuadCount * 4) +
             (MaxEdgeBevelQuadCount * 4) +
@@ -158,14 +194,82 @@ namespace Hecton8.Editor.Structures
             {
                 EnsureAssetFolder(settings.OutputFolder);
                 Material material = ResolveMaterial(settings.MaterialPath);
+                // Extents are HALF sizes. Two halves of one contract depend on them: proxyBoundsSize
+                // is written as extents * 2 (CreateOrUpdateTemplate), and every socket is placed on
+                // the extent plane of its own axis (BuildSocketDefinitions). The hand-authored kit
+                // obeys the identical contract - in all seven production templates each socket's
+                // localPosition is exactly proxyBoundsSize/2 on its axis - so the two sides never
+                // disagreed about meaning, only about numbers.
+                //
+                // The numbers below are pinned to the recipe template that OWNS the placed module at
+                // runtime. BaseModule.ApplyBuildableTemplate (BaseModule.cs:4802-4816, called from
+                // ConstructionManager.cs:825 on placement and :2873 on save restore) and
+                // BaseModule.ReadBuildablePower (BaseModule.cs:4793-4794) both overwrite the
+                // prefab's own moduleTemplate with the recipe's, so the recipe's proxy bounds and
+                // socket planes are what the geometry must match. The prefab's authored template is
+                // discarded and cannot win.
+                //
+                //   bound recipe             recipe template     proxyBoundsSize   extents here
+                //   Build_Corridor_Straight  CorridorStraight     4 x 4 x  8       (2,   2,   4)
+                //   Build_Junction_X         JunctionX            8 x 4 x  8       (4,   2,   4)
+                //   Build_Junction_T         JunctionT            8 x 4 x  8       (4,   2,   4)
+                //   Build_Airlock_Hatch      Airlock              6 x 5 x  6       (3,   2.5, 3)
+                //   Build_MultiPurpose_Room  MultiPurposeRoom    10 x 6 x 10       (5,   3,   5)
+                //   Build_Moonpool_Bay       Moonpool            12 x 8 x 10       (6,   4,   5)
+                //
+                // The previous extents gave the six modules six different ceiling heights - 2.7, 2.9,
+                // 2.5, 2.9, 3.7 and 4.8 m - so the set could not butt against itself without a step
+                // at the seam, let alone against the kit. `3DMODEL_HARD_SURFACE_MODULES.md` section 4
+                // is explicit on both counts: "Socket boxes may drive placement, but generated visual
+                // modules must add ..." and "Socket-compatible modules must share seam dimensions
+                // exactly so no cracks appear." The socket box is the given; this generator conforms.
+                //
+                // H8_A1712_Corridor_01 is pinned to the corridor template even though
+                // Build_Corridor_Straight still ships the legacy PFB_Module_Corridor, so the
+                // generated family stays seam-compatible with itself and is a drop-in the day that
+                // recipe is upgraded to real geometry.
+                //
+                // Module names are persisted IDENTITY and are deliberately unchanged: stableId and
+                // templateHashId are LocHash over spec.Name (CreateOrUpdateTemplate below) and
+                // BuildableData.ModuleHashId reads that template hash (BuildableData.cs:213-225).
+                // Renaming H8_A1712_ServiceCap_01 to match the T-junction role it now fills would
+                // move a persisted identity and needs a save migration; resizing does not, because
+                // no geometric field reaches the hash.
                 ModuleSpec[] specs =
                 {
-                    new ModuleSpec("H8_A1712_Corridor_01", new float3(3.8f, 1.35f, 6.0f), SocketMask.NorthSouth, 0xC011D012u),
-                    new ModuleSpec("H8_A1712_Junction_01", new float3(4.6f, 1.45f, 4.6f), SocketMask.Cross, 0xC011D04Au),
-                    new ModuleSpec("H8_A1712_ServiceCap_01", new float3(4.2f, 1.25f, 3.2f), SocketMask.NorthEastWest, 0xC011D0A7u),
-                    new ModuleSpec("H8_A1712_Airlock_01", new float3(3.4f, 1.45f, 3.8f), SocketMask.NorthSouth, 0xC011DA11u, BuildableFamily.Structure, -18f, 15, false, true),
-                    new ModuleSpec("H8_A1712_ReactorRoom_01", new float3(5.4f, 1.85f, 4.8f), SocketMask.Cross, 0xC011D9E4u, BuildableFamily.Utility, 450f, 5, true, false),
-                    new ModuleSpec("H8_A1712_VerticalShaft_01", new float3(3.2f, 2.4f, 3.2f), SocketMask.NorthSouth | SocketMask.Vertical, 0xC011D171u)
+                    new ModuleSpec("H8_A1712_Corridor_01", new float3(2f, 2f, 4f), SocketMask.NorthSouth, 0xC011D012u),
+                    new ModuleSpec("H8_A1712_Junction_01", new float3(4f, 2f, 4f), SocketMask.Cross, 0xC011D04Au),
+                    new ModuleSpec("H8_A1712_ServiceCap_01", new float3(4f, 2f, 4f), SocketMask.NorthEastWest, 0xC011D0A7u),
+                    new ModuleSpec(
+                        "H8_A1712_Airlock_01",
+                        new float3(3f, 2.5f, 3f),
+                        SocketMask.NorthSouth,
+                        0xC011DA11u,
+                        BuildableFamily.Structure,
+                        -18f,
+                        15,
+                        false,
+                        true,
+                        // BaseModuleTemplate_Airlock authors its South socket as the ocean-facing
+                        // hatch on lane Exterior, not Habitat.
+                        new ModuleSpec.SocketLaneOverride(ModuleSocketDirection.South, ExteriorSocketLane)),
+                    new ModuleSpec("H8_A1712_ReactorRoom_01", new float3(5f, 3f, 5f), SocketMask.Cross, 0xC011D9E4u, BuildableFamily.Utility, 450f, 5, true, false),
+                    new ModuleSpec(
+                        "H8_A1712_VerticalShaft_01",
+                        new float3(6f, 4f, 5f),
+                        // Bottom only, no Top. BaseModuleTemplate_Moonpool declares exactly three
+                        // sockets: North, South, and one Bottom socket on lane Dock at y = -4. The
+                        // previous SocketMask.Vertical also emitted a Top socket with no authored
+                        // inverse anywhere in the kit, and a socket that can never resolve is a
+                        // permanent snap candidate plus a hole cut in the ceiling mesh and collider.
+                        SocketMask.NorthSouth | SocketMask.Bottom,
+                        0xC011D171u,
+                        BuildableFamily.Habitat,
+                        GeneratedModulePowerRatingWatts,
+                        GeneratedModulePowerPriority,
+                        false,
+                        false,
+                        new ModuleSpec.SocketLaneOverride(ModuleSocketDirection.Bottom, DockSocketLane))
                 };
 
                 int vertexCount = 0;
@@ -648,7 +752,10 @@ namespace Hecton8.Editor.Structures
             if ((spec.SocketMask & mask) == 0 || index >= definitions.Length)
                 return;
 
-            definitions[index++] = new BaseModuleTemplate.SocketDefinition(localPosition, direction, SocketLane);
+            definitions[index++] = new BaseModuleTemplate.SocketDefinition(
+                localPosition,
+                direction,
+                spec.ResolveSocketLane(direction));
         }
 
         private static void WriteSocketDefinitions(SerializedProperty property, BaseModuleTemplate.SocketDefinition[] definitions)
@@ -1319,6 +1426,24 @@ namespace Hecton8.Editor.Structures
 
         private readonly struct ModuleSpec
         {
+            /// <summary>
+            /// Compatibility lane for one socket direction, for the two sockets in the authored kit
+            /// that are not on the Habitat lane. A direction with no override uses
+            /// <see cref="HabitatSocketLane"/>, which is what 17 of the 19 authored sockets use.
+            /// </summary>
+            public readonly struct SocketLaneOverride
+            {
+                public SocketLaneOverride(ModuleSocketDirection direction, string lane)
+                {
+                    Direction = direction;
+                    Lane = lane;
+                }
+
+                public ModuleSocketDirection Direction { get; }
+
+                public string Lane { get; }
+            }
+
             public readonly string Name;
             public readonly float3 Extents;
             public readonly SocketMask SocketMask;
@@ -1328,6 +1453,7 @@ namespace Hecton8.Editor.Structures
             public readonly int PowerPriority;
             public readonly bool IsStructuralAnchor;
             public readonly bool IsEmergencyAirlock;
+            private readonly SocketLaneOverride[] _socketLaneOverrides;
 
             public ModuleSpec(string name, float3 extents, SocketMask socketMask, uint seed)
                 : this(name, extents, socketMask, seed, BuildableFamily.Habitat, GeneratedModulePowerRatingWatts, GeneratedModulePowerPriority, false, false)
@@ -1343,7 +1469,8 @@ namespace Hecton8.Editor.Structures
                 float powerRatingWatts,
                 int powerPriority,
                 bool isStructuralAnchor,
-                bool isEmergencyAirlock)
+                bool isEmergencyAirlock,
+                params SocketLaneOverride[] socketLaneOverrides)
             {
                 Name = name;
                 Extents = extents;
@@ -1354,6 +1481,25 @@ namespace Hecton8.Editor.Structures
                 PowerPriority = math.clamp(powerPriority, 0, 100);
                 IsStructuralAnchor = isStructuralAnchor;
                 IsEmergencyAirlock = isEmergencyAirlock;
+                _socketLaneOverrides = socketLaneOverrides;
+            }
+
+            /// <summary>
+            /// Resolves the authored compatibility lane for one socket direction. Linear scan over at
+            /// most one entry, in an editor-only cold bake path called once per socket.
+            /// </summary>
+            public string ResolveSocketLane(ModuleSocketDirection direction)
+            {
+                if (_socketLaneOverrides != null)
+                {
+                    for (int i = 0; i < _socketLaneOverrides.Length; i++)
+                    {
+                        if (_socketLaneOverrides[i].Direction == direction)
+                            return _socketLaneOverrides[i].Lane;
+                    }
+                }
+
+                return HabitatSocketLane;
             }
         }
     }
