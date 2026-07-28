@@ -103,6 +103,8 @@ GameObject:
   - component: {fileID: 6297894015317484069}
   - component: {fileID: 1637454267042949895}
   - component: {fileID: 6964830624448832012}
+  - component: {fileID: 4416635404979717013}
+  - component: {fileID: 5664053397141791723}
   m_Layer: 0
   m_Name: PFB_Module_Corridor
   m_TagString: Untagged
@@ -326,6 +328,96 @@ MonoBehaviour:
   _debugDrainProgress: 0
   _debugTrackedObjectCount: 0
   _debugSolarEmpBlackoutSeconds: 0
+--- !u!114 &4416635404979717013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 289323947487979299}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10f8378104416704e97b22c1177708f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.StorageCrate
+  initialState: 1
+  canBeOpened: 1
+  animator: {fileID: 0}
+  openTriggerName: Open
+  closeTriggerName: Close
+  containedItems:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  removeItemsOnTake: 1
+  openSound: {fileID: 0}
+  closeSound: {fileID: 0}
+  crateVolume: 0.7
+  openText: Open Crate
+  accessText: Access Crate
+  lockedText: Locked
+  OnOpening:
+    m_PersistentCalls:
+      m_Calls: []
+  OnOpened:
+    m_PersistentCalls:
+      m_Calls: []
+  OnOpenInventory:
+    m_PersistentCalls:
+      m_Calls: []
+  OnClosed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnItemTaken:
+    m_PersistentCalls:
+      m_Calls: []
+  OnEmpty:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &5664053397141791723
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 289323947487979299}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ce8a81f4752dd449b8e120da44004ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Power.PowerNode
+  authoredNeighborNodes: []
+  fallbackPowerRating: 0
+  fallbackPowerPriority: 50
 --- !u!1 &1422788106725144899
 GameObject:
   m_ObjectHideFlags: 0
