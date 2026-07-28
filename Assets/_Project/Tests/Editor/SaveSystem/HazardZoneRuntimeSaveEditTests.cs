@@ -3031,21 +3031,72 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void BuildableIdentityRuntime_BuildableDataChecksCanonicalPersistentId()
         {
-            string buildableDataSource = File.ReadAllText(Path.Combine(
-                Directory.GetCurrentDirectory(),
-                "Assets/_Project/Scripts/BuildableData.cs"));
+            // This used to require three literals in BuildableData.cs, including the body of a helper named
+            // ResolveCanonicalPersistentId. Naming a helper is not the rule; producing the canonical id is.
+            //
+            // The rule, stated as behaviour: the id a BuildableData answers to must be the SAME string the
+            // save layer persists for it. SaveData trims every persisted module id
+            // (SaveData.SanitizePersistenceString, SaveData.cs:99-102, via ModuleDTO.SanitizePersistenceId),
+            // and ModuleCatalog.FindDataById trims the id it is handed before the dictionary probe. So on
+            // load a module authored with a padded stable id is looked up by its TRIMMED id, and
+            // MatchesPersistentId is the predicate that has to say yes.
+            //   - The blank cases are the discriminator: an id of "   " must be refused outright, or a
+            //     whitespace-named module answers to it and the wrong blueprint is restored.
+            //   - The padded/trimmed pair is the load path itself.
+            Hecton8.Building.BuildableData padded = null;
+            Hecton8.Building.BuildableData canonical = null;
+            try
+            {
+                canonical = CreateBakedBuildableData("BuildableData.Canonical", "Habitat_Corridor");
+                padded = CreateBakedBuildableData("BuildableData.Padded", " Habitat_Corridor ");
 
-            StringAssert.Contains("public string PersistentId => ResolveCanonicalPersistentId(stableId, name);", buildableDataSource);
-            StringAssert.Contains("private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)", buildableDataSource);
-            int buildableCanonicalIndex = buildableDataSource.IndexOf(
-                "private static string ResolveCanonicalPersistentId(string authoredId, string fallbackName)",
-                StringComparison.Ordinal);
-            Assert.GreaterOrEqual(buildableCanonicalIndex, 0, buildableDataSource);
-            int buildableCanonicalTrimIndex = buildableDataSource.IndexOf(
-                "return string.IsNullOrWhiteSpace(id) ? string.Empty : id.Trim();",
-                buildableCanonicalIndex,
-                StringComparison.Ordinal);
-            Assert.Greater(buildableCanonicalTrimIndex, buildableCanonicalIndex, buildableDataSource);
+                Assert.IsTrue(
+                    canonical.MatchesPersistentId("Habitat_Corridor"),
+                    "A module did not match its own authored stable id.");
+                Assert.IsFalse(
+                    canonical.MatchesPersistentId(null),
+                    "A null id matched a module.");
+                Assert.IsFalse(
+                    canonical.MatchesPersistentId(string.Empty),
+                    "An empty id matched a module.");
+                Assert.IsFalse(
+                    canonical.MatchesPersistentId(" \t\r\n"),
+                    "A whitespace-only id matched a module, so a blank persisted prefabId restores an " +
+                        "arbitrary blueprint instead of being refused.");
+                Assert.IsFalse(
+                    canonical.MatchesPersistentId("Habitat_Airlock"),
+                    "A different module's id matched.");
+
+                Assert.AreEqual(
+                    ModuleDTO.SanitizePersistenceId(" Habitat_Corridor "),
+                    padded.PersistentId,
+                    "BuildableData.PersistentId is not the canonical form the save layer persists, so the " +
+                        "module answers to one string and the save file carries another.");
+                Assert.IsTrue(
+                    padded.MatchesPersistentId("Habitat_Corridor"),
+                    "A module authored with a padded stable id did not match the trimmed id that SaveData " +
+                        "persists for it, so ModuleCatalog.FindDataById cannot resolve it on load.");
+                Assert.IsTrue(
+                    canonical.MatchesPersistentId(" Habitat_Corridor "),
+                    "A padded lookup id did not match a canonically authored module.");
+            }
+            finally
+            {
+                DestroyScriptableObjectIfCreated(padded);
+                DestroyScriptableObjectIfCreated(canonical);
+            }
+        }
+
+        private static Hecton8.Building.BuildableData CreateBakedBuildableData(
+            string assetName,
+            string authoredStableId)
+        {
+            Hecton8.Building.BuildableData data =
+                UnityEngine.ScriptableObject.CreateInstance<Hecton8.Building.BuildableData>();
+            data.name = assetName;
+            SetPrivateInstanceField(data, "stableId", authoredStableId);
+            InvokePrivateInstanceMethod(data, "RebuildCache");
+            return data;
         }
 
         [Test]
