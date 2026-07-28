@@ -67,6 +67,62 @@ Not proven by that log:
 | Data Monolith runtime boot | `[~]` | Unity import/player boot/checksum proof for `static_data.h8bin` |
 | RT/VRAM retained owner set | `[!]` | Memory Profiler / Frame Debugger owner isolation |
 | Tool durability does not persist | `[!]` | load a save after breaking a tool and read its durability back |
+| Two MonoBehaviour services cannot reach a scene | `[!]` | a pre-Ready bootstrap lane, then Play Mode proof that both slots resolve non-null |
+
+### Two sole-implementation services are unreachable at runtime — verified 2026-07-28
+
+Not a lead: every step below was checked by hand, and the scan method was validated against a control
+before any negative result was accepted.
+
+**1. `WorldChunkResidencyManager`** — `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:590`,
+6536 lines, `MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IBaseAirlockEventListener,
+IStreamingBackpressureService, IGlobalRegistryHotSwapListener, IDisposable`.
+
+- It is the ONLY type implementing `IStreamingBackpressureService`.
+- Zero construction sites: no `new WorldChunkResidencyManager(` and no
+  `AddComponent<WorldChunkResidencyManager>` anywhere under `Assets`.
+- Absent from all 999 `.unity` and `.prefab` files, by class name AND by script GUID
+  (`8de4f944c53c4f448bff65e8fd01a4db`).
+- It is deliberate, and the reason is written down at `WorldRuntimeInstaller.cs:116-125`: the slot
+  `GlobalRegistryServiceSlot.StreamingBackpressureRuntime` is HARD-DENIED by
+  `GlobalRegistry.IsSceneRuntimeHotSwapSlot` (`GlobalRegistry.cs:7182`), the publication gate cannot issue
+  a token for a denied slot, `OnEnable` registration at `:2491` would throw `CriticalBootException`, and
+  installers run in sequence with no `try`/`catch` — so adding it there would abort every installer after
+  it. That comment names the fix itself: "It needs a pre-Ready bootstrap lane, not this one."
+- Live consumers therefore hold a field that can only ever be null:
+  `PrologueSequenceRegistryBridge.cs:56`, `:324`, `:608` and `PDAMapTab.cs:187`.
+- Player consequence: no chunk residency, no load/unload radius, no streaming backpressure, no far-field
+  HLOD impostors, and the `BufferID.WorldChunkResidencyManager_ActiveImpostor*` DataVault entries are never
+  populated. `AGENTS.md` `Memory Management & Chunk Dispose` has no owner on this route.
+
+**2. `AssetLifecycleGovernor`** — `Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs:27`,
+`MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IAssetLifecyclePressureSink,
+IGlobalRegistryHotSwapListener`. Sole implementation of `IAssetLifecyclePressureSink`. Its only two
+construction sites are its own tests — `Tests/PlayMode/Optimization/AssetLifecycleGovernorTickTests.cs:17`
+and `Tests/Editor/Optimization/AssetLifecycleGovernorDumpTests.cs:18`. Absent by name and by GUID
+(`0e7cdf0573f867d4983dde747e5c4c22`) from all 999 scene and prefab files. Its slot
+`AssetLifecycleRuntime` sits in the same hard-denied switch block.
+
+**The negative result matters as much, and is recorded so nobody repeats the near-miss.** The denied block
+at `GlobalRegistry.cs:7178-7184` covers SEVEN slots, and all seven have exactly one implementation each
+that is absent from every scene — which looks like seven blocked subsystems and is not. Five of them are
+plain classes, not MonoBehaviours, with real construction sites in runtime code: `H8MacroDatabaseService`
+(4 sites), `BurstTokenBucketJobAdmissionService` (4), `AssetLoadDispatcher` (1), `ModuloSimulationBucketer`
+(1), `HardwareThermalService` (1). For a non-MonoBehaviour service, construction in code is the correct
+pattern and scene absence means nothing. Only the two MonoBehaviours above need a scene or an
+`AddComponent` they never get.
+
+**Method, stated so the next audit can repeat it.** Scene absence was checked by byte-scanning all 999
+`.unity` and `.prefab` files for the class name as ASCII and UTF-16LE, and separately for the script GUID
+in four forms — ASCII lower, ASCII upper, raw 16 bytes, and the nibble-swapped byte order Unity's binary
+serialiser uses. `02_HECTON_WORLD.unity` is binary, so a text grep alone proves nothing: the control
+`WorldStreamingDirector` (guid `547a39a8034a57a47b65413eb12885d2`) was found in 6 files, and in the
+production scene only in the nibble-swapped form. A negative result without that control is worthless.
+
+Deliberately not fixed here. Building a pre-Ready bootstrap lane changes boot ordering and registry
+publication policy, which needs `Docs/SYSTEMS_CONTRACTS.md`, the global-authority route card, and Unity
+Play Mode proof that both slots resolve non-null. Filed as a `BLOCKER` with the exact missing condition,
+per `AGENTS.md` Deliverable class lock.
 
 ### Tool durability does not persist — static evidence, 2026-07-28
 
