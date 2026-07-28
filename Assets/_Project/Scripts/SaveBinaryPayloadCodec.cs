@@ -1655,8 +1655,9 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            if (!reader.ReadInt(out value.cellCount) ||
-                !reader.ReadStructArrayBounded(
+            // WriteVoxelDeltaCellArraySlice emits a single length prefix and then the cells; there is no
+            // separate logical cell count on the wire, so the decoded array length IS the cell count.
+            if (!reader.ReadStructArrayBounded(
                     out value.cells,
                     VoxelDeltaChunkDTO.CellCount,
                     nameof(value.cells)))
@@ -1665,7 +1666,7 @@ namespace Hecton8.SaveSystem
             }
 
             value.cells ??= Array.Empty<VoxelDeltaCellDTO>();
-            value.cellCount = ClampCollectionCount(value.cellCount, value.cells, VoxelDeltaChunkDTO.CellCount);
+            value.cellCount = ResolveDecodedCollectionCount(value.cells, VoxelDeltaChunkDTO.CellCount);
             SanitizeVoxelDeltaCells(value.cells, value.cellCount);
             value.storageFlags = VoxelDeltaChunkDTO.StorageDense;
             value.dirtyMaskWords = Array.Empty<uint>();
