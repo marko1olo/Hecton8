@@ -46,7 +46,7 @@ Experienced crews do not ask what a find is worth first. They ask what it does a
 
 A quarantine locker converts uncertainty into billable time.
 
-The good ones are pressure-rated, drain-backed and sensor-lined: volatile sniffer, humidity trend, heat curve against a reference, a movement channel sensitive to 0.2 mm, and a surface-chemistry match against risk tables written in 2103. The cheap ones are boxes with confident labels. The Keel owns eleven of the first kind and thirty-one of the second, and the hold notice is identical for both.
+The good ones are pressure-rated, drain-backed and sensor-lined: volatile sniffer, humidity trend, heat curve against a reference, a movement channel sensitive to 0.2 mm, and a surface-chemistry match against risk tables written in 2103. The cheap ones are boxes with confident labels. Eleven of the first kind are aboard and thirty-one of the second, and the hold notice printed for them is identical.
 
 ```text
 HOLD NOTICE / LOCKER D-14 / LOT 44-Q-1188
@@ -55,12 +55,12 @@ CLASS PENDING.: trace / viable / harmonic (assay queued)
 MINIMUM HOLD..: 72 h
 FEE...........: 1.10 t-window equivalent per 24 h, from 09:41
 RELEASE BY....: Quarantine Review Gate, two signatures
-NOTE..........: items 1-6 share the locker. Release is by lot, not item.
+NOTE..........: items 1-7 share the locker. Release is by lot, not item.
 ```
 
-`Release is by lot, not item` is the line crews argue with and never win. One torn glove holds the cutter head, the memory core and all three tubes for as long as the assay queue takes, and the meter runs against the whole lot.
+`Release is by lot, not item` is the line crews argue with and never win. One unclassified film on one pump housing holds the cutter head, the memory core, all three tubes and the glove for as long as the assay queue takes, and the meter runs against the whole lot.
 
-The logic is ugly and it is not stupid. A closed tender is a small volume of air with sixty people breathing it. A bad return spreads into filters, freezers, bunk vents, skin breaks and lungs, and a viable contaminant aboard is a second organism learning the plumbing at the ship's expense.
+The logic is ugly and it is not stupid. A closed tender is a small volume of air with sixty people breathing it. Bad returns spread into filters, freezers, bunk vents, skin breaks and lungs, and a viable contaminant aboard becomes a second organism learning the plumbing at the ship's expense.
 
 Crews mark the lockers the way prisoners mark walls. The inner face of D-14 carries fourteen scratched dates, a running fee total, the words `sensor 2 lies cold`, and a name with a line through it.
 

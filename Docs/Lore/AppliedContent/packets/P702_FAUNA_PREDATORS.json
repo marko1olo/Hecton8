@@ -58,8 +58,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Nischenlauerer",
+     "scanner": "Großwüchsiger Lauerfresser, besetzt eine geschnittene Öffnung. Konfidenz 71 Prozent. Gefahr: Angriffsreichweite übersteigt sichtbare Körperlänge. Einschränkung: ohne zweiten Winkel keine Größenbestimmung.",
+     "in_game_wiki": "Er jagt nicht. Er mietet ein Loch und wartet, bis der Korridor liefert.\n\nEine benutzte Nische sieht falsch aus, bevor sie gefährlich aussieht. Jede unbesetzte Lippe in einem gefluteten Flügel trägt einen weichen Kragen aus Schlick. Eine besetzte ist blank gewischt, weil das Tier sie einige hundert Mal betreten und verlassen hat. Lies die Lippen, nicht das Dunkel.\n\nEr beginnt den Angriff damit, Wasser aus der Nische zu drücken. Auf einer Class-IV kommt das als Druckstoß auf die Brustplatte an, etwa eine halbe Sekunde vor dem Kontakt. Taucher, die dem Stoß trauen, überleben. Taucher, die auf ihren Lichtkegel schauen, nicht.\n\nGeschnittene Öffnungen zieht er natürlichen vor. Erklärt hat die Vorliebe niemand. Bewertung: eine blanke Lippe von oben und außerhalb ihres Schlundes anfahren oder den Flügel ganz umfahren.",
+     "terminal": "PROBE 44-B-207. KLASSE: ZUGANGSKONTROLLMITTEL, BEILÄUFIG. ORT: ÖSTLICHER UNTERER VERSORGUNGSSCHLUND. VERMERK: FLÜGELSPERRUNG OHNE GEPLANTE SCHLEUSENREPARATUR AUFRECHTERHALTEN. ÜBERPRÜFUNG: NICHT ERFORDERLICH.",
+     "field_note": "Die Gesellschaft hat ihn als Zugangskontrolle eingetragen, weil er Leute billiger aus dem Ostflügel hielt als eine funktionierende Tür. Hollis hat er auch draußen gehalten. Prüf die Lippen auf Wischspuren, bevor du eine Hand hineingibst.",
+     "external_site_article": "Bergungsmannschaften von Aegir beschreiben einen schwerleibigen Lauerfresser, der geschnittene Öffnungen in gefluteter Industriestruktur besetzt und nicht natürliche Hohlräume. Die gemeldete Angriffsreichweite übersteigt die sichtbare Körperlänge, was die visuelle Schätzung eines sicheren Abstands unbrauchbar macht.\n\nFeldpraxis auf HECTON-8 ist, den Schlickkragen um eine Öffnung zu lesen und nicht zu versuchen, das Tier zu sehen. Deep-Reach-Unterlagen aus Sektor 44 führen die Art als beiläufiges Zugangskontrollmittel, eine Kategorie, die einen gesperrten Korridor beschreibt, ohne zu beschreiben, warum der Korridor gesperrt ist.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Bergungsmannschaften von Aegir beschreiben einen schwerleibigen Lauerfresser, der geschnittene Öffnungen in gefluteter Industriestruktur besetzt und nicht natürliche Hohlräume. Die gemeldete Angriffsreichweite übersteigt die sichtbare Körperlänge, was die visuelle Schätzung eines sicheren Abstands unbrauchbar macht."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -78,8 +84,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "穴待ち",
+     "scanner": "大型の待ち伏せ摂食種、切り抜き開口を占有。信頼度71パーセント。危険：打撃距離が可視体長を超える。限界：第二の角度がなければ体長を測定できない。",
+     "in_game_wiki": "狩りはしない。穴を借りて、通路が届けるのを待つ。\n\n使われている窪みは、危険に見えるより先に不自然に見える。冠水した翼区で、空いている縁にはどれも柔らかいシルトの襟がある。使われている縁は拭ったようにきれいだ。動物が数百回そこを出入りしているからだ。読むのは縁で、暗がりではない。\n\n打撃はまず窪みから水を押し出すことで始まる。Class-IVでは、接触の約0.5秒前に胸板への圧の一突きとして届く。その一突きを信じる潜水士は生き残る。ランプの光円錐を見ている潜水士は残らない。\n\n自然の開口よりも切り抜き開口を好む。その好みを説明した者はいない。評価：きれいな縁へは上方から、その喉の外側を通って接近する。あるいは翼区ごと迂回する。",
+     "terminal": "標本 44-B-207。区分：入退管理資産、付随。位置：東側下層 作業用喉部。備考：翼区閉鎖は所定の閘門修理を行わずに維持。再審査：不要。",
+     "field_note": "会社がこれを入退管理として記録したのは、動くドアより安く東翼区から人を遠ざけたからだ。ホリスも入れなかった。手を入れる前に、縁の拭き跡を確かめろ。",
+     "external_site_article": "Aegirのサルベージ班は、自然の空洞ではなく、冠水した産業構造の切り抜き開口を占有する重躯の待ち伏せ摂食種を記述している。報告されている打撃距離は可視体長を超えるため、安全距離を目視で見積もることは信頼できない。\n\nHECTON-8の現場手順では、動物を見ようとするのではなく開口周りのシルトの襟を読む。セクター44のDeep Reach記録はこの種を付随的な入退管理資産に分類している。この区分は閉鎖された通路を記述するが、通路が閉鎖された理由は記述しない。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Aegirのサルベージ班は、自然の空洞ではなく、冠水した産業構造の切り抜き開口を占有する重躯の待ち伏せ摂食種を記述している。報告されている打撃距離は可視体長を超えるため、安全距離を目視で見積もることは信頼できない。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -98,16 +110,28 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Норный засадчик",
+     "scanner": "Крупнотелый засадный хищник, занимает прорезанный проём. Достоверность 71 процент. Опасность: дальность удара превышает видимую длину тела. Ограничение: без второго ракурса размер животного не определяется.",
+     "in_game_wiki": "Он не охотится. Он снимает нору и ждёт, пока коридор доставит.\n\nЗанятый карман выглядит неправильно раньше, чем выглядит опасным. У каждой незанятой кромки в затопленном крыле мягкий воротник ила. У занятой она вытерта дочиста, потому что животное входило и выходило через неё несколько сотен раз. Читай кромки, а не темноту.\n\nУдар он начинает с выталкивания воды из кармана. На Class-IV это приходит как толчок давления в грудную пластину примерно за полсекунды до контакта. Водолазы, которые доверяют толчку, выживают. Водолазы, которые смотрят в конус своей лампы, — нет.\n\nПрорезанные проёмы он предпочитает естественным. Предпочтение никто не объяснил. Оценка: подходить к чистой кромке сверху и вне её горловины либо обходить крыло целиком.",
+     "terminal": "ОБРАЗЕЦ 44-B-207. КЛАСС: СРЕДСТВО КОНТРОЛЯ ДОСТУПА, ПОПУТНОЕ. МЕСТО: ВОСТОЧНАЯ НИЖНЯЯ СЛУЖЕБНАЯ ГОРЛОВИНА. ПРИМЕЧАНИЕ: ЗАКРЫТИЕ КРЫЛА ОБЕСПЕЧЕНО БЕЗ ПЛАНОВОГО РЕМОНТА ШЛЮЗА. ПЕРЕСМОТР: НЕ ТРЕБУЕТСЯ.",
+     "field_note": "Компания оформила его как контроль доступа, потому что он держал людей вне восточного крыла дешевле, чем рабочая дверь. Холлиса он тоже не пустил. Проверь кромки на вытертость, прежде чем сунуть руку.",
+     "external_site_article": "Спасательные команды Aegir описывают тяжелотелого засадного хищника, который занимает прорезанные проёмы в затопленных промышленных конструкциях, а не естественные полости. Заявленная дальность удара превышает видимую длину тела, из-за чего визуальная оценка безопасной дистанции ненадёжна.\n\nНа практике на HECTON-8 читают иловый воротник вокруг проёма, а не пытаются разглядеть само животное. Записи Deep Reach по Сектору 44 относят вид к попутным средствам контроля доступа — категория описывает закрытый коридор, не описывая, почему коридор закрылся.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Спасательные команды Aegir описывают тяжелотелого засадного хищника, который занимает прорезанные проёмы в затопленных промышленных конструкциях, а не естественные полости. Заявленная дальность удара превышает видимую длину тела, из-за чего визуальная оценка безопасной дистанции ненадёжна."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "洞口伏击者",
+     "scanner": "大型伏击摄食种，占据切割开口。置信度71%。危险：打击距离超过可见体长。限制：没有第二个角度无法判定个体尺寸。",
+     "in_game_wiki": "它不捕猎。它租一个洞，等走廊把东西送来。\n\n被占用的凹口先显得不对，才显得危险。在淹没的翼区里，每一个空着的口沿都有一圈松软的淤泥。被占用的那个是擦干净的，因为动物已经进出过几百次。读口沿，别读黑暗。\n\n它出手时先把水从凹口里推出来。在Class-IV上，这会在接触前约0.5秒变成胸板上的一次压力轻击。相信这一击的潜水员活下来。盯着自己灯锥的潜水员活不下来。\n\n它偏好切割开口，不偏好天然开口。这个偏好没人解释过。评估：从上方、从它喉口的外侧接近干净的口沿，或者干脆绕开整个翼区。",
+     "terminal": "标本 44-B-207。类别：出入管制资产，附带。位置：东侧下层检修喉道。备注：翼区封闭在未进行计划闸门维修的情况下维持。复审：不需要。",
+     "field_note": "公司把它记成出入管制，因为它把人挡在东翼区外面比一扇能用的门更便宜。它也把霍利斯挡在了外面。伸手之前，先做口沿擦拭检查。",
+     "external_site_article": "Aegir的打捞队描述了一种重体伏击摄食种，它占据淹没工业结构中的切割开口，而不是天然空腔。报告的打击距离超过可见体长，因此用目视估算安全间距并不可靠。\n\nHECTON-8上的现场做法是读开口周围的淤泥圈，而不是试图看清那只动物。44区的Deep Reach记录把该物种列为附带的出入管制资产，这个类别描述了一条被封闭的走廊，却没有描述走廊为什么封闭。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Aegir的打捞队描述了一种重体伏击摄食种，它占据淹没工业结构中的切割开口，而不是天然空腔。报告的打击距离超过可见体长，因此用目视估算安全间距并不可靠。"
     }
    }
   },
@@ -158,8 +182,15 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Salzlaugenjäger",
+     "scanner": "Verfolgungsräuber, hält eine Dichtegrenze. Konfidenz 58 Prozent. Gefahr: Kontakttiefe über der Halokline unzuverlässig. Einschränkung: Echo kann ein Spiegelbild sein, nicht das Tier.",
+     "in_game_wiki": "Er jagt entlang der Salzlaugengrenze, weil die Grenze für ihn lügt.\n\nAn einer Dichtegrenze wird Schall gebrochen. Ein Jäger, der auf dieser Linie reitet, kommt im Sonar in zwei Tiefen gleichzeitig zurück, und das saubere Echo ist meist das falsche. Station 88 wurde aus demselben Grund zweimal in zwei Tiefen erfasst. Den Trick hat nicht das Tier erfunden, aber es nutzt die Schicht so, wie ein Marauder ein Wrack nutzt.\n\nEr prüft, bevor er zugreift. Der erste Vorbeizug erfolgt auf Abstand, seitlich hinter der Schulter, um zu lernen, ob du dich umdrehst. Dreh dich um und stell dich ihm, und der Zug endet. Schwimm weiter, und der zweite Anlauf ist kein Vorbeizug.\n\nSalzlauge bleibt auf der Haut. Eine angeschrammte Anzugdichtung zeigt normal an und versagt eine Schicht später.\n\nEr patrouilliert den ausgeschilderten Evakuierungskorridor aus Sektor 44 heraus. Bewertung: ihm zuwenden, dann auf einer Route weg, die er nicht kennen kann.",
+     "terminal": "PROBE 44-B-311. KLASSE: VERWERTBARE BIOMASSE, ZURÜCKGESTELLT. ROUTENÜBERSCHNEIDUNG: EVAKUIERUNGSKORRIDOR 6 (2147 AUSSER BETRIEB GENOMMEN). DICHTUNGSEINWIRKUNG: SALZLAUGE, KLASSE 2. ANSPRUCHSWORTLAUT: GERÄTEVERSCHLEISS, NICHT PERSONENEINWIRKUNG.",
+     "field_note": "Dreh dich um und sieh ihn an. Das ist die ganze Regel, und sie kostet dich nichts. Und prüfe deine Dichtung am Ende der Schicht, nicht am Ende der Route - das Messgerät sagt in Ordnung, bis es gar nichts mehr sagt.",
+     "audio": "-- er ist wieder auf der Schimmerlinie, genau wie gestern, und der Plot hat ihn zwanzig Meter unter mir. Er ist nicht zwanzig Meter unter mir. Corran, wenn du das saubere Echo liest, dann liest du das --",
+     "external_site_article": "Berichte aus den Salzlaugenschluchten von Aegir beschreiben einen Verfolgungsräuber, der an Dichtegrenzen Position hält, wo akustische Echos sich aufspalten und verdoppeln. Mannschaften melden ein einzelnes Tier, das auf derselben Anzeige in zwei Tiefen erscheint, wobei sich das schärfere Echo als falsch erweist.\n\nFeldpraxis auf HECTON-8 ist, sich dem Tier beim ersten Vorbeizug zuzuwenden statt zu beschleunigen. Deep-Reach-Unterlagen aus Sektor 44 vermerken, dass die Patrouille der Art einen außer Betrieb genommenen Evakuierungskorridor überschneidet, und stufen Salzlaugenkontakt als Geräteverschleiß ein.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Berichte aus den Salzlaugenschluchten von Aegir beschreiben einen Verfolgungsräuber, der an Dichtegrenzen Position hält, wo akustische Echos sich aufspalten und verdoppeln. Mannschaften melden ein einzelnes Tier, das auf derselben Anzeige in zwei Tiefen erscheint, wobei sich das schärfere Echo als falsch erweist."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -178,8 +209,15 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "塩層追い",
+     "scanner": "追跡型捕食者、密度境界を保持。信頼度58パーセント。危険：ハロクライン越しでは接触深度が信用できない。限界：反射は動物ではなく鏡像の可能性がある。",
+     "in_game_wiki": "塩水境界に沿って狩る。境界がこの動物のために嘘をつくからだ。\n\n密度境界では音が曲がる。その線に乗った追い手はソナー上で二つの深度に同時に返り、きれいな反射のほうがたいてい偽物だ。第88ステーションが二つの深度で二重に記録されたのも同じ理由だ。この手口を発明したのは動物ではないが、Marauderが沈船を使うのと同じように層を使う。\n\n踏み込む前に試す。最初の一回は距離を取って肩の外側を通り、こちらが振り向くかを確かめる。振り向いて正面を向けば、その通過は終わる。泳ぎ続ければ、二度目の接近は通過ではない。\n\n塩水は皮膚に残る。擦れたスーツのシールは正常と表示され、一交代あとに破れる。\n\nセクター44から出る標示済みの避難通路を巡回している。評価：正面を向き、それから相手が知るはずのない経路で離脱する。",
+     "terminal": "標本 44-B-311。区分：回収可能バイオマス、保留。経路重複：避難通路6（2147年 供用終了）。シール曝露：塩水、クラス2。請求文言：機材劣化。人員への曝露ではない。",
+     "field_note": "振り向いて見ろ。規則はそれだけで、こちらの損は何もない。それとシールの点検は経路の終わりではなく交代の終わりにやれ。計器は「正常」と言い続け、そのあと何も言わなくなる。",
+     "audio": "――またあの揺らぎの線の上だ、昨日と同じ、そして表示は俺の二十メートル下になっている。二十メートル下にはいない。コラン、きれいな反射を読んでいるなら、読んでいるのは――",
+     "external_site_article": "Aegirの塩水峡谷からの報告は、音響反射が分裂し二重化する密度境界に沿って定位する追跡型捕食者を記述している。作業班は、同一の表示上で一頭が二つの深度に現れ、より鋭い反射のほうが偽であったと報告している。\n\nHECTON-8の現場手順は、最初の通過で加速するのではなく動物に正面を向けることである。セクター44のDeep Reach記録は、この種の巡回が供用を終えた避難通路と重なることを記載し、塩水接触を機材劣化として分類している。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Aegirの塩水峡谷からの報告は、音響反射が分裂し二重化する密度境界に沿って定位する追跡型捕食者を記述している。作業班は、同一の表示上で一頭が二つの深度に現れ、より鋭い反射のほうが偽であったと報告している。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -198,16 +236,30 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Рассольный преследователь",
+     "scanner": "Преследующий хищник, держится на границе плотностей. Достоверность 58 процентов. Опасность: глубина контакта через галоклин недостоверна. Ограничение: возврат может быть отражением, а не животным.",
+     "in_game_wiki": "Он охотится по рассольной границе, потому что граница врёт в его пользу.\n\nНа границе плотностей звук изгибается. Преследователь, идущий по этой линии, возвращается на сонар сразу на двух глубинах, и более чистый возврат обычно ложный. Станцию 88 по той же причине записали дважды, на двух глубинах. Приём придумало не животное, но слой он использует так, как Marauder использует затонувшее судно.\n\nОн пробует прежде, чем идти. Первый проход — на дистанции, у тебя за плечом, чтобы узнать, повернёшься ли ты. Повернись к нему лицом — и проход закончится. Продолжишь плыть — второй подход будет уже не проходом.\n\nРассол остаётся на коже. Задетое уплотнение костюма показывает норму и отказывает смену спустя.\n\nОн патрулирует размеченный коридор эвакуации из Сектора 44. Оценка: развернуться к нему, потом уходить маршрутом, о котором ему знать неоткуда.",
+     "terminal": "ОБРАЗЕЦ 44-B-311. КЛАСС: ИЗВЛЕКАЕМАЯ БИОМАССА, ОТЛОЖЕНО. ПЕРЕСЕЧЕНИЕ МАРШРУТА: КОРИДОР ЭВАКУАЦИИ 6 (ВЫВЕДЕН ИЗ ЭКСПЛУАТАЦИИ В 2147). ВОЗДЕЙСТВИЕ НА УПЛОТНЕНИЯ: РАССОЛ, КЛАСС 2. ПРЕТЕНЗИОННАЯ ФОРМУЛИРОВКА: ДЕГРАДАЦИЯ ОБОРУДОВАНИЯ, НЕ ВОЗДЕЙСТВИЕ НА ПЕРСОНАЛ.",
+     "field_note": "Развернись и посмотри на него. Это всё правило, и оно тебе ничего не стоит. И проверяй уплотнение в конце смены, а не в конце маршрута — прибор будет говорить «норма» до того момента, когда не скажет ничего.",
+     "audio": "-- он опять на линии мерцания, как вчера, а на планшете он в двадцати метрах под мной. Он не в двадцати метрах под мной. Корран, если ты читаешь чистый возврат, ты читаешь --",
+     "external_site_article": "Сообщения из рассольных каньонов Aegir описывают преследующего хищника, который держится вдоль границ плотности, где акустические возвраты расщепляются и удваиваются. Команды сообщают, что одно животное появляется на одном экране на двух глубинах, причём более резкий возврат оказывается ложным.\n\nНа HECTON-8 практика — развернуться к животному на первом проходе, а не ускоряться. Записи Deep Reach по Сектору 44 отмечают, что маршрут патрулирования вида пересекается с выведенным из эксплуатации коридором эвакуации, и относят контакт с рассолом к деградации оборудования.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Сообщения из рассольных каньонов Aegir описывают преследующего хищника, который держится вдоль границ плотности, где акустические возвраты расщепляются и удваиваются. Команды сообщают, что одно животное появляется на одном экране на двух глубинах, причём более резкий возврат оказывается ложным."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "卤层追猎者",
+     "scanner": "追击型捕食者，保持在密度界面上。置信度58%。危险：跨盐跃层的接触深度不可信。限制：回波可能是镜像，不是动物本体。",
+     "in_game_wiki": "它沿着卤水界面捕猎，因为这个界面替它撒谎。\n\n声音在密度界面上会弯折。骑在这条线上的追猎者会在声呐上同时出现在两个深度，而更干净的那个回波通常是假的。88号站被记成两个深度上的两条记录，原因相同。这个手法不是这种动物发明的，但它用这一层的方式，就像Marauder用沉船。\n\n它先试，再下手。第一次经过是在距离外、从你肩侧掠过，为了弄清你会不会转身。转身正面对它，这次经过就结束。继续往前游，第二次靠近就不是经过了。\n\n卤水会留在皮肤上。被刮过的服装密封件读数正常，一个班之后失效。\n\n它在从44区出去的标记疏散通道上巡游。评估：正面对它，然后走一条它没有理由知道的路线离开。",
+     "terminal": "标本 44-B-311。类别：可回收生物质，暂缓。路线重叠：疏散通道6（2147年退役）。密封件接触：卤水，2级。索赔用语：设备劣化，非人员暴露。",
+     "field_note": "转身看它。规则就这一条，而且不花你任何代价。另外，密封件要在班次结束时检查，不是在路线结束时检查——仪表会一直说正常，直到它什么都不说。",
+     "audio": "——它又在那条闪动线上了，跟昨天一样，而图上显示它在我下面二十米。它不在我下面二十米。科兰，如果你在读那个干净的回波，你读的是——",
+     "external_site_article": "来自Aegir卤水峡谷的报告描述了一种追击型捕食者，它停在密度界面上，那里的声学回波会分裂并成对出现。作业队报告同一台显示上一只动物出现在两个深度，而较清晰的那个回波是假的。\n\nHECTON-8上的现场做法是在它第一次经过时正面对它，而不是加速。44区的Deep Reach记录指出该物种的巡游路线与一条已退役的疏散通道重叠，并把卤水接触归类为设备劣化。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "来自Aegir卤水峡谷的报告描述了一种追击型捕食者，它停在密度界面上，那里的声学回波会分裂并成对出现。作业队报告同一台显示上一只动物出现在两个深度，而较清晰的那个回波是假的。"
     }
    }
   },
@@ -257,8 +309,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Schattenabfänger",
+     "scanner": "Kontakt zeitweise. Konfidenz fallend. Gefahr: läuft auf die berechnete Position zu, nicht auf die aktuelle. Einschränkung: Kontaktverlust bedeutet nicht Abzug.",
+     "in_game_wiki": "Er folgt dir nicht. Er kommt dort an, wo du hinwolltest.\n\nAuf einer offenen Querung hält der Kontakt eine weite Peilung, passt sich deiner Geschwindigkeit an, ohne sich deinem Kurs anzupassen, und verlässt dann die Anzeige. Diese Lücke ist der Angriff. Er gibt keinen Schall mehr zurück, weil er jetzt auf deiner Peilung liegt, und ein Taucher, der den Plot liest, sieht einen leeren Schirm und wird ruhig.\n\nGeschwindigkeit hilft nicht. Deine Geschwindigkeit hat er schon gelöst. Das Ziel zu wechseln hilft, weil die Lösung gegen das alte gerechnet wurde.\n\nDrei Anzugbaken der Schicht D standen auf einer offenen Querung innerhalb von vierzig Metern zueinander still, ohne Struktur als Deckung. Die Bergungsliste trug die Koordinaten ein und schloss den Eintrag.\n\nBewertung: fällt der Kontakt auf einer Querung aus, ändere, wohin du unterwegs bist, nicht wie schnell du dort ankommst.",
+     "terminal": "FELDKENNUNG PROBE 2147-D-09. KLASSE: VERWERTBARE BIOMASSE. VORFALLBEZUG: TRANSITVERLUST SCHICHT D, 3 EINHEITEN. VERLUSTURSACHE: ROUTENWAHL. BERGUNG: KOORDINATEN ERFASST, EINTRAG GESCHLOSSEN.",
+     "field_note": "Verlustursache, Routenwahl. Drei Leute haben dieselbe gerade Linie über offenes Wasser gewählt, und das Formular hat die Linie beschuldigt. Brich deinen Kurs, wenn der Schirm leer wird.",
+     "external_site_article": "Aegirs Tieftransitmannschaften melden einen Räuber, der auf die berechnete Position eines Tauchers zuläuft statt von hinten zu folgen, und der in den Sekunden vor dem Kontakt keinen Sonarkontakt mehr zurückgibt.\n\nDie derzeitige Feldpraxis auf HECTON-8 behandelt Kontaktverlust während einer offenen Querung als die Warnung selbst und verlangt einen Zielwechsel statt höherer Geschwindigkeit. Ein Transitverlust von Deep Reach im Jahr 2147 mit drei Personen ist mit der Verlustursache Routenwahl erfasst.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Aegirs Tieftransitmannschaften melden einen Räuber, der auf die berechnete Position eines Tauchers zuläuft statt von hinten zu folgen, und der in den Sekunden vor dem Kontakt keinen Sonarkontakt mehr zurückgibt."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -277,8 +335,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "影迎撃",
+     "scanner": "接触は断続。信頼度は低下中。危険：現在位置ではなく予測位置へ寄せる。限界：接触喪失は離脱を意味しない。",
+     "in_game_wiki": "追ってはこない。こちらが向かっていた場所に先に着く。\n\n開けた横断では、接触は広い方位を保ち、こちらの針路には合わせずに速度だけを合わせ、それから表示から消える。その空白が攻撃だ。音を返さなくなったのは、いまこちらの方位上にいるからで、表示を読む潜水士は空の画面を見て気を緩める。\n\n速度は効かない。こちらの速度はすでに解かれている。効くのは目的地の変更だ。解は古い目的地に対して計算されている。\n\nD交代のスーツ発信機三つが、遮蔽になる構造のない開けた横断で、互いに四十メートル以内で停止した。回収待ち一覧は座標を記載し、その項目を閉じた。\n\n評価：横断中に接触が消えたら、着く速さではなく、向かう先を変える。",
+     "terminal": "標本 現場照会 2147-D-09。区分：回収可能バイオマス。事案関連：D交代 移動中喪失、3名。喪失原因：経路選択。回収：座標記載、項目終了。",
+     "field_note": "喪失原因、経路選択。三人が開けた水域を同じ直線で渡り、書式はその直線のせいにした。画面がきれいになったら針路を折れ。",
+     "external_site_article": "Aegirの深部移動班は、背後から追跡するのではなく潜水士の予測位置へ寄せ、接触の数秒前にソナー反射を返さなくなる捕食者を報告している。\n\nHECTON-8の現在の現場手順は、開けた横断中の接触喪失そのものを警告として扱い、速度を上げるのではなく目的地の変更を求める。2147年、Deep Reachの移動中喪失で三名が失われた事案は、喪失原因を経路選択として記録されている。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Aegirの深部移動班は、背後から追跡するのではなく潜水士の予測位置へ寄せ、接触の数秒前にソナー反射を返さなくなる捕食者を報告している。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -297,16 +361,28 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Теневой перехватчик",
+     "scanner": "Контакт прерывистый. Достоверность падает. Опасность: сближается с расчётной позицией, а не с текущей. Ограничение: потеря контакта не означает уход.",
+     "in_game_wiki": "Он не идёт за тобой. Он приходит туда, куда ты шёл.\n\nНа открытом переходе контакт держит широкий пеленг, повторяет твою скорость, не повторяя твой курс, а затем уходит с экрана. Этот пробел и есть атака. Звук он перестал возвращать потому, что теперь он у тебя на пеленге, а водолаз, читающий планшет, видит пустой экран и расслабляется.\n\nСкорость не помогает. Твою скорость он уже решил. Помогает смена точки назначения, потому что решение считалось против прежней.\n\nТри костюмных маяка смены D остановились в пределах сорока метров друг от друга на открытом переходе, где укрыться не за чем. Очередь на подъём внесла координаты и закрыла запись.\n\nОценка: когда контакт пропадает на переходе, меняй, куда ты идёшь, а не как быстро туда добираешься.",
+     "terminal": "ПОЛЕВОЙ ШИФР ОБРАЗЦА 2147-D-09. КЛАСС: ИЗВЛЕКАЕМАЯ БИОМАССА. СВЯЗЬ С ПРОИСШЕСТВИЕМ: ПОТЕРЯ НА ПЕРЕХОДЕ, СМЕНА D, 3 ЕДИНИЦЫ. ПРИЧИНА ПОТЕРИ: ВЫБОР МАРШРУТА. ПОДЪЁМ: КООРДИНАТЫ ЗАНЕСЕНЫ, ЗАПИСЬ ЗАКРЫТА.",
+     "field_note": "Причина потери — выбор маршрута. Три человека выбрали одну и ту же прямую через открытую воду, и форма обвинила прямую. Ломай курс, когда экран становится чистым.",
+     "external_site_article": "Команды глубинных переходов Aegir сообщают о хищнике, который сближается с расчётной позицией водолаза, а не отслеживает его сзади, и который перестаёт возвращать контакт сонара за секунды до касания.\n\nТекущая практика на HECTON-8 считает потерю контакта на открытом переходе самим предупреждением и требует смены точки назначения, а не увеличения скорости. Потеря на переходе у Deep Reach в 2147 году с тремя людьми зафиксирована с причиной потери «выбор маршрута».",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Команды глубинных переходов Aegir сообщают о хищнике, который сближается с расчётной позицией водолаза, а не отслеживает его сзади, и который перестаёт возвращать контакт сонара за секунды до касания."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "暗影拦截者",
+     "scanner": "接触间断。置信度下降中。危险：向推算位置合拢，不是向当前位置。限制：接触丢失并不表示它已离开。",
+     "in_game_wiki": "它不跟着你走。它到你原本要去的地方等你。\n\n在开阔横渡上，接触保持一个大方位，跟上你的速度但不跟你的航向，然后从显示上消失。那段空白就是攻击。它不再返回声音，是因为它此刻已在你的方位线上，而读着图的潜水员看到一块空屏，就放松了。\n\n加速没用。你的速度它已经解出来了。有用的是换目的地，因为那个解是照着旧目的地算的。\n\nD班的三个服装信标在一段没有任何结构可掩护的开阔横渡上停止，彼此相距不到四十米。回收队列登记了坐标，然后把条目关掉。\n\n评估：横渡中接触消失时，改你要去的地方，不是改你多快到。",
+     "terminal": "标本现场编号 2147-D-09。类别：可回收生物质。事件关联：D班转移损失，3人。损失原因：路线选择。回收：坐标已录，条目已关闭。",
+     "field_note": "损失原因，路线选择。三个人挑了同一条穿过开阔水域的直线，表格怪那条直线。屏幕变干净的时候，把航向折掉。",
+     "external_site_article": "Aegir的深水转移作业队报告了一种捕食者，它不是从后面跟踪，而是向潜水员的推算位置合拢，并在接触前的几秒内停止返回声呐接触。\n\nHECTON-8目前的现场做法把开阔横渡中的接触丢失本身当作警告，并要求更换目的地而不是提高速度。2147年Deep Reach一起涉及三名人员的转移损失记录中，损失原因写为路线选择。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Aegir的深水转移作业队报告了一种捕食者，它不是从后面跟踪，而是向潜水员的推算位置合拢，并在接触前的几秒内停止返回声呐接触。"
     }
    }
   }

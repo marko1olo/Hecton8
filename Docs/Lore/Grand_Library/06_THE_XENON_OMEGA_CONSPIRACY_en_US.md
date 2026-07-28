@@ -16,7 +16,7 @@ FIELD SYNONYM (CONTRACT):  blue debt
 HANDLING CLASSES:          trace / viable / harmonic / custody-grade / Atlas-compatible
 ```
 
-Every reader of that card wants a different field. Contractors read the handling class, to find out whether the mass will rupture a cheap canister at 900 m. Suit techs read it for the pressure history. Keelmark reads it to decide whether the mass is evidence, salvage, contamination or payable cargo, because those four words pay differently. Deep Reach reads it to find out whether the sample can still answer Atlas.
+Every reader of that card wants a different field. Contractors read the handling class to find out whether the mass will rupture a cheap canister at 900 m. Suit techs read it for the pressure history. Keelmark reads it to decide whether the mass is evidence, salvage, contamination or payable cargo, because those four words pay differently. Deep Reach reads it to find out whether the sample can still answer Atlas.
 
 None of that makes the material magic. Xenon-Omega is a pressure-kept process family: xenon-rich clathrate and defect lattices, brine chemistry, mineral stress, biological catalysts, thermal cycling and industrial containment, held in a history the sample keeps physically. That is the whole of the science on this shelf. The paperwork attached to it runs to nineteen sections, and the deaths are in the paperwork.
 
@@ -63,7 +63,7 @@ module isolated, vault dry          substrate protection, class 3
 evacuation queue unsigned           authorization hold, class 1
 ```
 
-Read the right column alone and the page is a maintenance aid. Read the left column alone and it is seventeen people behind a jammed actuator. Both columns are in the same hand.
+Read the right column alone and the page is a maintenance aid. Read the left column alone and it is six people in a sealed compartment and eleven more at a jammed actuator. Both columns are in the same hand.
 
 ## The Five Papers
 
@@ -137,6 +137,6 @@ KM-LC-6        establishes  ninety-one names converted into five codes
 RC-RA-2190-77  establishes  the present field order: payload, then help
 ```
 
-Every line in the right-hand column is answered by an object still in the water. A hold sheet is paper until somebody brings up the actuator it was holding, and a conversion table is arithmetic until somebody brings up a name that was coded as load.
+Every "does not" line is answered by an object that is still in the water. A hold sheet is paper until somebody brings up the actuator it was holding, and a conversion table is arithmetic until somebody brings up a name that was coded as load.
 
 Handling note for contractor copies. Custody, not conclusion, is what the Return Action Queue accepts. A quoted memo with no accession behind it weighs the same as a rumour, and a sample with no signature at both ends is cargo. Bring the number, the object, and the hand that carried it out of the water, or bring nothing and file it as a survey.

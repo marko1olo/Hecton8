@@ -28,7 +28,7 @@ LOAD PRIORITY SHEET LP-3 / SECTOR 44 / REV 4
 9  Outlets, general and tool charging............. shed at 62 pct bus
 ```
 
-Line 4 puts the morgue on the same shed step as the medicine, three steps above the doors. That was liability, not cruelty. Remains warming in a sealed room generate a loss category Keelmark Mutual prices well above a stuck hatch.
+Line 4 puts the morgue on the same shed step as the medicine, two steps above the doors and one above the door history. That was liability rather than cruelty. Remains warming in a sealed room generate a loss category Keelmark Mutual prices well above a stuck hatch.
 
 After abandonment the sheet stopped describing the building. A room can read occupied because one line 8 circuit still holds, or dead because a line 1 load upstream has taken every cell it can reach. The question at a doorway is which line is paying for the light.
 
@@ -36,7 +36,7 @@ After abandonment the sheet stopped describing the building. A room can read occ
 
 A brownout is the sheet above, executed downward, at whatever speed the bus falls.
 
-At 84 percent of nominal the seal heaters go. Log retention drops four points later, which is why so many Sector 44 door histories stop mid-cycle. At 74 the door motors stop while the locks stay engaged, because the locks fail secure by design and starvation is indistinguishable from procedure afterwards. Below 62 the outlets a repair crew was counting on are gone and the corridor is still lit.
+At 84 percent of nominal the seal heaters go. Log retention drops six points later, which is why so many Sector 44 door histories stop mid-cycle. At 74 the door motors stop while the locks stay engaged, because the locks fail secure by design and starvation is indistinguishable from procedure afterwards. Below 62 the outlets a repair crew was counting on are gone and the corridor is still lit.
 
 Abandoned systems ignore the sheet. Salted contactors weld shut. Patched corridors back-feed panels that were supposed to die in 2147. A dead sensor keeps its warning lamp burning because the lamp draws 0.3 watts and the loop it reported on draws 40. Pumps run without reporting at all, because telemetry is line 5 and the pump is line 1.
 
@@ -62,7 +62,7 @@ NOTE    Any step taken out of order is written on this card with a time.
         The card leaves with the crew. It is the only record that exists.
 ```
 
-The last two lines of CS-7 have kept more people out of arbitration than the first four have kept alive. The card in Shallow Annex P-63 carries fourteen out-of-order entries in four different hands, and the earliest is dated 2151.
+The last two lines of CS-7 have kept more people out of arbitration than the first four have kept alive. One CS-7 card did not leave with its crew. It is still in Shallow Annex P-63, and it carries fourteen out-of-order entries in four different hands, the earliest dated 2151.
 
 ## 4. Borrowed Power
 
@@ -92,7 +92,7 @@ B5  warm at rest. do not touch until B4 is proven
 B6  ours. 2190. runs the charger. pull it when we leave
 ```
 
-Line B2 is worth more than the panel schedule bolted beside it. Somebody paid for that line with an afternoon, and the schedule has never been corrected.
+Line B2 is worth more than the panel schedule bolted beside it. The printed schedule still reads `Hab Lighting B`, and it has read that since 2141.
 
 ## 6. Power As Evidence
 

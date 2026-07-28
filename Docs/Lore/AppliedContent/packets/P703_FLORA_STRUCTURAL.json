@@ -58,8 +58,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Röhrenkoralle",
+     "scanner": "Koloniebildender Röhrenwuchs auf tragender Platte. Bedeckung 60 Prozent. Konfidenz 84 Prozent. Gefahr: keine bei Kontakt. Einschränkung: Oberflächenauflage nicht von gefülltem Riss zu trennen.",
+     "in_game_wiki": "Eine Röhrenbahn auf einer Fabrikwand heißt, dass die Wand dahinter gerissen ist. Der Wuchs folgt Rissen und füllt sie; Raum 6 des Westlichen Nasslagers hält er seit 2147 bei 3.4 MPa.\n\nLebende Bahnen sind an der Spitze blass und am Fuß eisenfleckig; tote behalten ihre Form über Jahrzehnte. Lies die Farbe, nicht die Kontur.\n\nDer Plattenstempel liegt unter der Koralle. Ein Raum, dessen Panelnummer nicht lesbar ist, kann nicht zertifiziert werden, also wurde die Akte zu Raum 6 mit einer Außenbegehung und einer Unterschrift geschlossen.\n\nSchneide eine Bahn an, die eine Naht kreuzt, und du schneidest den Flicken, nicht die Pflanze. Ein Brenner hat dreiundvierzig Jahre Dichtung in unter einer Minute weggenommen.\n\nJeder gefüllte Riss ist zuerst von der Druckseite geschlossen. Ausbeute: Biofaser-Dichtmasse, am stärksten am gefleckten Fuß. Nur von intakter Platte abnehmen.",
+     "terminal": "REPARATURNACHWEIS 44-W-0612. KLASSE: STRUKTURINSTANDSETZUNG, MATERIAL ÖRTLICH BESCHAFFT. PANELKENNUNG: NICHT WIEDERHERSTELLBAR. RAUM 6: ÜBER AUSSENBEGEHUNG ZERTIFIZIERT. PRÜFINTERVALL: ERLASSEN. EINGEREICHT: ATLAS KONTINUITÄTSBÜRO.",
+     "field_note": "Über Außenbegehung zertifiziert heißt, dass jemand außen um einen gefluteten Raum gegangen ist, die Panelnummer nicht gefunden und trotzdem gezeichnet hat. Prüf die Farbe der Spitzen, bevor du einer Wand traust, und setz nie einen Brenner durch eine Bahn, die eine Naht kreuzt.",
+     "external_site_article": "Aegir-Bergungsmannschaften auf HECTON-8 melden einen koloniebildenden, röhrenbildenden Organismus, der sich entlang von Rissen in Industrieplatte ansiedelt und nicht über intakter Fläche, wobei er Risse in seit 2147 unbetreuter Struktur füllt und druckdicht verschließt. Es wurden Räume geborgen, die mehrere Megapascal allein durch den Wuchs halten.\n\nDerselbe Wuchs überdeckt die eingestanzte Panelkennung, die für die Strukturzertifizierung verwendet wird. Deep-Reach-Reparaturnachweise aus Sektor 44 schließen solche Räume über Außenbegehung ab, ein Verfahren, das feststellt, dass ein Raum intakt ist, ohne festzustellen, welcher Raum es ist. Feldpraxis ist, jede Bahn, die eine Schweißnaht kreuzt, als tragend zu behandeln.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Aegir-Bergungsmannschaften auf HECTON-8 melden einen koloniebildenden, röhrenbildenden Organismus, der sich entlang von Rissen in Industrieplatte ansiedelt und nicht über intakter Fläche, wobei er Risse in seit 2147 unbetreuter Struktur füllt und druckdicht verschließt. Es wurden Räume geborgen, die mehrere Megapascal allein durch den Wuchs halten."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -78,8 +84,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "管状サンゴ",
+     "scanner": "耐荷重板上の群体性管状生長。被覆60パーセント。信頼度84パーセント。危険：接触時はなし。限界：表面付着物と充填された亀裂を分離できない。",
+     "in_game_wiki": "工場壁の管の筋は、その背後の壁が割れているという意味だ。生長は亀裂をたどって埋める。西湿式倉庫の第6室は2147年から3.4 MPaで押さえられている。\n\n生きている筋は先端が淡く、基部は鉄で染まる。死んだ筋は数十年そのままの形を保つ。読むのは色で、輪郭ではない。\n\n板の刻印はサンゴの下にある。パネル番号が読めない室は認証できないので、第6室の書類は外部踏査と署名一つで閉じられた。\n\n継ぎ目を横切る筋を切れば、切ったのは植物ではなく当て板だ。トーチは四十三年分の封止を一分足らずで落とした。\n\n充填された亀裂はどれも圧力側から先に閉じている。産出：バイオファイバー封止材、染まった基部が最も多い。健全な板からのみ剥がすこと。",
+     "terminal": "修理記録 44-W-0612。区分：構造補修、資材は現地調達。パネル識別：復元不能。第6室：外部踏査により認証。点検間隔：免除。提出先：ATLAS 継続性室。",
+     "field_note": "「外部踏査により認証」とは、だれかが冠水した室の外側を歩き、パネル番号を見つけられず、それでも署名したという意味だ。壁を信じる前に先端の色を確かめろ。そして継ぎ目を横切る筋にトーチを入れるな。",
+     "external_site_article": "HECTON-8のAegirサルベージ班は、健全な面ではなく産業用板の亀裂に沿って定着し、2147年以降手が入っていない構造の亀裂を埋めて圧力封止する群体性の管形成生物を報告している。生長のみで数メガパスカルを保持した状態で回収された室もある。\n\n同じ生長が、構造認証に用いる打刻パネル識別を覆う。セクター44のDeep Reach修理記録はそうした室を外部踏査で完了扱いにしている。これは室が健全であることは確定するが、それがどの室であるかは確定しない方法である。現場では溶接継ぎ目を横切る筋はすべて耐荷重として扱う。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8のAegirサルベージ班は、健全な面ではなく産業用板の亀裂に沿って定着し、2147年以降手が入っていない構造の亀裂を埋めて圧力封止する群体性の管形成生物を報告している。生長のみで数メガパスカルを保持した状態で回収された室もある。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -98,16 +110,28 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Трубчатый коралл",
+     "scanner": "Колониальный трубчатый рост на несущей обшивке. Покрытие 60 процентов. Достоверность 84 процента. Опасность: при контакте нет. Ограничение: поверхностный налёт от заполненной трещины не отделяется.",
+     "in_game_wiki": "Трубчатая дорожка на заводской стене означает, что стена за ней треснута. Рост идёт по трещинам и заполняет их; Помещение 6 Западного мокрого склада он держит при 3.4 MPa с 2147 года.\n\nЖивые дорожки бледные на кончике и с железистым налётом у основания; мёртвые держат форму десятилетиями. Читай цвет, а не контур.\n\nКлеймо обшивки — под кораллом. Помещение, чей номер панели прочитать нельзя, сертифицировать нельзя, поэтому дело Помещения 6 закрыли по наружному обследованию и одной подписи.\n\nСрежешь дорожку, пересекающую шов, — срежешь заплату, а не растение. Резак снял сорок три года герметичности меньше чем за минуту.\n\nКаждая заполненная трещина закрыта сначала со стороны давления. Выход: биоволоконный герметик, больше всего у окрашенного основания. Снимать только с целой обшивки.",
+     "terminal": "ЗАПИСЬ О РЕМОНТЕ 44-W-0612. КЛАСС: УСТРАНЕНИЕ ДЕФЕКТОВ КОНСТРУКЦИИ, МАТЕРИАЛ МЕСТНОГО ПРОИСХОЖДЕНИЯ. ИДЕНТИФИКАЦИЯ ПАНЕЛИ: НЕ ВОССТАНАВЛИВАЕТСЯ. ПОМЕЩЕНИЕ 6: СЕРТИФИЦИРОВАНО ПО НАРУЖНОМУ ОБСЛЕДОВАНИЮ. ИНТЕРВАЛ ОСМОТРА: ОТМЕНЁН. ПОДАНО: ОТДЕЛ НЕПРЕРЫВНОСТИ ATLAS.",
+     "field_note": "«Сертифицировано по наружному обследованию» значит, что кто-то обошёл затопленное помещение снаружи, не нашёл номер панели и всё равно подписал. Проверь цвет кончиков, прежде чем довериться стене, и никогда не суй резак в дорожку, которая пересекает шов.",
+     "external_site_article": "Спасательные команды Aegir на HECTON-8 сообщают о колониальном трубчатом организме, который закрепляется по трещинам в промышленной обшивке, а не по целой поверхности, заполняя и запирая под давлением трещины в конструкциях, оставленных без присмотра с 2147 года. Есть помещения, поднятые с давлением в несколько мегапаскалей, которое держит только рост.\n\nТот же рост покрывает выштампованную идентификацию панели, по которой выполняется сертификация конструкций. Ремонтные записи Deep Reach по Сектору 44 закрывают такие помещения по наружному обследованию — метод, который устанавливает, что помещение целое, не устанавливая, какое это помещение. На практике любую дорожку, пересекающую сварной шов, считают несущей.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Спасательные команды Aegir на HECTON-8 сообщают о колониальном трубчатом организме, который закрепляется по трещинам в промышленной обшивке, а не по целой поверхности, заполняя и запирая под давлением трещины в конструкциях, оставленных без присмотра с 2147 года. Есть помещения, поднятые с давлением в несколько мегапаскалей, которое держит только рост."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "管状珊瑚",
+     "scanner": "承载板上的群体管状生长。覆盖60%。置信度84%。危险：接触无危险。限制：无法把表面附着物与已填充裂缝分开。",
+     "in_game_wiki": "工厂墙面上的一条管迹，意思是它后面的墙裂了。这种生长沿裂缝走并把裂缝填满；西湿式库房6号房间自2147年起就是它以3.4 MPa撑着的。\n\n活的管迹尖端发白、基部带铁锈色；死的能保持形状几十年。读颜色，不要读轮廓。\n\n板材钢印在珊瑚下面。面板编号读不出来的房间无法认证，所以6号房间的档案是靠一次外部踏勘和一个签字结掉的。\n\n切一条横跨焊缝的管迹，你切掉的是补片，不是植物。一把焊枪不到一分钟就削掉了四十三年的密封。\n\n每一条被填满的裂缝都是先从压力侧封住的。产出：生物纤维密封剂，染色的基部最多。只从完好的板材上取。",
+     "terminal": "维修记录 44-W-0612。类别：结构修补，材料就地取得。面板识别：无法复原。6号房间：以外部踏勘认证。检查间隔：免除。归档：ATLAS 连续性办公室。",
+     "field_note": "“以外部踏勘认证”的意思是，有人绕着一个淹没的房间外面走了一圈，找不到面板编号，还是签了字。信一面墙之前先查尖端颜色，而且绝不要把焊枪伸进横跨焊缝的管迹。",
+     "external_site_article": "HECTON-8上的Aegir打捞队报告了一种群体性成管生物，它沿工业板材的裂缝定殖，而不是铺在完好表面上，把自2147年起无人照管的结构裂缝填满并压力封住。已有房间在仅靠这种生长的情况下承住数兆帕被回收。\n\n同样的生长覆盖了用于结构认证的钢印面板识别。44区的Deep Reach维修记录以外部踏勘结掉这类房间，这种方法能确定房间是完好的，却不能确定它是哪个房间。现场做法是把任何横跨焊缝的管迹都当作承载件。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8上的Aegir打捞队报告了一种群体性成管生物，它沿工业板材的裂缝定殖，而不是铺在完好表面上，把自2147年起无人照管的结构裂缝填满并压力封住。已有房间在仅靠这种生长的情况下承住数兆帕被回收。"
     }
    }
   },
@@ -157,8 +181,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "de_DE": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Eisenkoralle",
+     "scanner": "Mineralisierter Kolonienwuchs auf eisenhaltigem Untergrund. Metallecho stark. Konfidenz 77 Prozent. Gefahr: schleift Handschuhnähte auf. Einschränkung: Kruste und Untergrund kommen als eine Masse zurück.",
+     "in_game_wiki": "Er wächst nur auf Metall. Ein Bestand im offenen Schlick kartiert, was darunter begraben liegt.\n\nDie Farbe liest den Untergrund: rostrot über Baustahl, grauschwarz über Maschinenlegierung, stumpfblau dort, wo die Platte darunter Spuren von XO führt.\n\nDas Skelett ist härter als die Handflächenplatte einer Class-IV. Zwei Schichten Schleppen über einen Bestand öffnen eine Handschuhnaht, und die zeigt sich nicht als Leck, bis du die Hand beugst.\n\nKruste über einem Riss läuft dreimal dicker als Kruste auf intakter Platte 200 mm daneben. Im Metall erklärt das nichts. Wo sie eine Schweißnaht überbrückt, ist die Naht nicht mehr prüfbar.\n\nDie Ausbeute ist die Kruste selbst, am reichsten dort, wo sie am dicksten ist. Platte, die mit Kruste geschnitten wird, wird brutto abgerechnet, und ein Fenster von 4.8 Tonnen wird nicht aufgeschlüsselt, also klopf sie am Wrack ab, nicht auf der Keel.",
+     "terminal": "ANALYSEPOSTEN 44-N-118. KLASSE: VERWERTBARES MINERAL, GEHALT OFFEN. UNTERGRUND: BAUSTAHL, HERKUNFT NICHT FESTGESTELLT. NÄHTE 12 BIS 19: ÜBERWACHSEN, PRÜFUNG GESCHLOSSEN. MASSE BRUTTO ANGERECHNET. STELLE: KEELMARK SCHADENSSTELLE.",
+     "field_note": "Masse brutto angerechnet heißt, die Kruste läuft auf deinem Fenster mit und die Stelle behält die Differenz. Wenn eine Bruchfläche blau hochkommt, ist das kein Gehalt, das ist blaue Schuld, und du meldest sie, bevor du sie anfasst.",
+     "external_site_article": "Bergungsregister von HECTON-8 beschreiben einen mineralisierenden Kolonienwuchs, der sich nur auf eisenhaltigem und legiertem Untergrund ansiedelt, weshalb stehende Kruste ein verlässliches Oberflächenmerkmal für begrabene Struktur ist. Die Krustenfarbe wird im Feld genutzt, um abzuschätzen, was darunter liegt, einschließlich einer blauen Verfärbung, die mit Spurengehalten von Xenon-Omega einhergeht.\n\nZwei praktische Kosten sind aktenkundig. Das Skelett schleift Handschuhnähte des Anzugs auf und erzeugt Ausfälle, die eine statische Dichtheitsprüfung bestehen, und Deep-Reach-Analyseposten rechnen geborgene Kruste mit Bruttomasse auf die Tonnage der bergenden Partei an, ohne Kruste und Untergrund zu trennen. Unterlagen aus Sektor 44 schließen außerdem Nahtprüfungen mit dem Vermerk überwachsen.",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Bergungsregister von HECTON-8 beschreiben einen mineralisierenden Kolonienwuchs, der sich nur auf eisenhaltigem und legiertem Untergrund ansiedelt, weshalb stehende Kruste ein verlässliches Oberflächenmerkmal für begrabene Struktur ist."
     },
     "es_ES": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -177,8 +207,14 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ja_JP": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "鉄サンゴ",
+     "scanner": "鉄質基材上の鉱化した群体生長。金属反射強。信頼度77パーセント。危険：グローブの縫い目を削る。限界：外殻と基材が一つの塊として返る。",
+     "in_game_wiki": "金属の上にしか育たない。開けたシルトの中の群落は、その下に埋まっているものを示す。\n\n色が基材を読む。構造用鋼の上では赤錆色、機械用合金の上では灰黒色、下の板が微量のXOを含む所では鈍い青。\n\n骨格はClass-IVの手のひら板より硬い。群落の上を二交代引き回せばグローブの縫い目が開き、それは手を曲げるまで漏れとして表示されない。\n\n亀裂の上の外殻は、200 mm離れた健全な板の外殻より三倍厚くなる。金属側にこれを説明するものはない。溶接継ぎ目を橋渡ししている所では、その継ぎ目は二度と点検できない。\n\n産出は外殻そのもので、厚い所が最も多い。外殻付きで切った板は総量で計上され、4.8トンの枠は内訳を出さないので、削るのは沈没物のところでやれ。Keelの上ではやるな。",
+     "terminal": "分析ロット 44-N-118。区分：回収可能鉱物、品位未定。基材：構造用鋼、由来未確定。継ぎ目12〜19：被覆、点検終了。質量は総量で計上。窓口：KEELMARK 損失デスク。",
+     "field_note": "「質量は総量で計上」とは、外殻もあんたの枠に乗り、差額は窓口が取るという意味だ。破面が青く出たら、それは品位ではない。青い負債だ。触る前に記録に上げろ。",
+     "external_site_article": "HECTON-8のサルベージ台帳は、鉄質および合金の基材にのみ定着する鉱化性の群体生長を記述している。そのため立っている外殻は、埋没した構造を示す信頼できる表面指標になる。現場では外殻の色で下にあるものを推定し、微量のXenon-Omega含有に伴う青い変色も判断材料に含める。\n\n実務上の負担が二点記録されている。骨格はスーツのグローブ縫い目を削り、静的な気密確認を通ってしまう不具合を生じる。またDeep Reachの分析ロットは、回収された外殻を基材と分離せずに総質量で回収側のトン数に計上する。セクター44の記録は、被覆と記載された継ぎ目点検も終了扱いにしている。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8のサルベージ台帳は、鉄質および合金の基材にのみ定着する鉱化性の群体生長を記述している。そのため立っている外殻は、埋没した構造を示す信頼できる表面指標になる。"
     },
     "ko_KR": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -197,16 +233,28 @@
      "blocker": "awaiting localization wave after English acceptance"
     },
     "ru_RU": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "Железный коралл",
+     "scanner": "Минерализованный колониальный рост на железосодержащей подложке. Металлический возврат сильный. Достоверность 77 процентов. Опасность: истирает швы перчаток. Ограничение: кора и подложка возвращаются одной массой.",
+     "in_game_wiki": "Он растёт только на металле. Куст в открытом иле показывает, что под ним закопано.\n\nЦвет читает подложку: ржаво-красный над конструкционной сталью, серо-чёрный над машинным сплавом, тускло-синий там, где обшивка ниже несёт следовой XO.\n\nСкелет твёрже ладонной пластины Class-IV. Две смены протаскивания по кусту раскроют шов перчатки, и как утечка он не прочитается, пока не согнёшь кисть.\n\nКора над трещиной идёт втрое толще, чем кора на целой обшивке в 200 mm от неё. В металле этому нет объяснения. Там, где она перекрывает сварной шов, шов больше не осмотреть.\n\nВыход — сама кора, богаче всего там, где толще. Обшивку, срезанную с корой, выставляют по брутто, а окно в 4.8 тонны не расписывают по позициям, поэтому обколачивай её на обломке, а не на Keel.",
+     "terminal": "ПАРТИЯ АНАЛИЗА 44-N-118. КЛАСС: ИЗВЛЕКАЕМЫЙ МИНЕРАЛ, СОРТНОСТЬ НЕ УСТАНОВЛЕНА. ПОДЛОЖКА: КОНСТРУКЦИОННАЯ СТАЛЬ, ПРОИСХОЖДЕНИЕ НЕ УСТАНОВЛЕНО. ШВЫ 12–19: ЗАРОСЛИ, ОСМОТР ЗАКРЫТ. МАССА ЗАЧТЕНА ПО БРУТТО. СТОЛ: СТОЛ УБЫТКОВ KEELMARK.",
+     "field_note": "«Масса зачтена по брутто» значит, что кора идёт в твоё окно, а разницу оставляет себе стол. Если излом вышел синим, это не сортность, это синий долг, и его вносят в журнал прежде, чем к нему прикоснуться.",
+     "external_site_article": "Спасательные реестры HECTON-8 описывают минерализующий колониальный рост, который закрепляется только на железосодержащей и сплавной подложке, поэтому стоящая кора — надёжный поверхностный признак закопанной конструкции. Цвет коры используют в поле для оценки того, что лежит ниже, включая синеватое изменение, связанное со следовым содержанием Xenon-Omega.\n\nНа учёте две практические издержки. Скелет истирает швы перчаток костюма, давая отказы, которые проходят статическую проверку герметичности, а аналитические партии Deep Reach зачитывают поднятую кору по массе брутто против тоннажа поднимающей стороны, не разделяя кору и подложку. Записи по Сектору 44 также закрывают осмотры швов с пометкой «заросло».",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "Спасательные реестры HECTON-8 описывают минерализующий колониальный рост, который закрепляется только на железосодержащей и сплавной подложке, поэтому стоящая кора — надёжный поверхностный признак закопанной конструкции."
     },
     "uk_UA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
      "blocker": "awaiting localization wave after English acceptance"
     },
     "zh_CN": {
-     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
-     "blocker": "awaiting localization wave after English acceptance"
+     "title": "铁珊瑚",
+     "scanner": "铁质基材上的矿化群体生长。金属回波强。置信度77%。危险：磨蚀手套接缝。限制：结壳与基材作为同一质量返回。",
+     "in_game_wiki": "它只长在金属上。开阔淤泥里的一丛，能标出下面埋着什么。\n\n颜色读基材：结构钢上是铁锈红，机用合金上是灰黑，下面板材含微量XO的地方是暗蓝。\n\n骨架比Class-IV的掌板硬。在一丛上拖两个班就会磨开手套接缝，而在你弯手之前，它不会读成泄漏。\n\n裂缝上的结壳比200 mm外完好板材上的结壳厚三倍。金属本身解释不了这一点。它桥住焊缝的地方，那道焊缝就再也没法检查。\n\n产出就是结壳本身，最厚处最富。带着结壳切下来的板材按毛重计费，而4.8吨的额度不列明细，所以在残骸边上敲，不要在Keel上敲。",
+     "terminal": "化验批次 44-N-118。类别：可回收矿物，品位待定。基材：结构钢，来源未确定。焊缝12至19：被覆盖，检查已关闭。质量按毛重计入。窗口：KEELMARK 损失台。",
+     "field_note": "“质量按毛重计入”的意思是结壳算在你的额度里，差额归窗口。断口出来是蓝的，那不是品位，那是蓝色债务，你要在动手之前先上报。",
+     "external_site_article": "HECTON-8的打捞登记描述了一种矿化群体生长，它只在铁质与合金基材上定殖，因此立着的结壳是判断埋藏结构的可靠表面指标。现场用结壳颜色估计下面是什么，包括与微量Xenon-Omega含量相关的蓝色变色。\n\n记录在案的实际代价有两项。骨架会磨蚀服装手套接缝，产生能通过静态密封检查的失效；而Deep Reach的化验批次在不区分结壳与基材的情况下，按毛重把回收的结壳计入回收方吨数。44区的记录还把标注为被覆盖的焊缝检查关闭。",
+     "localization_status": "draft_machine_or_llm",
+     "external_site": "HECTON-8的打捞登记描述了一种矿化群体生长，它只在铁质与合金基材上定殖，因此立着的结壳是判断埋藏结构的可靠表面指标。"
     }
    }
   },

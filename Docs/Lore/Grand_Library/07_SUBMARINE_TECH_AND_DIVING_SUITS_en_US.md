@@ -16,9 +16,9 @@ GRADE C  serviceable, rating derated by inspection, documented
 GRADE X  no valid certification; use voids all recovery obligation
 ```
 
-Grade X is the only line most contractors will ever meet. Forty-three years past the Tide, every plate in this water has exceeded its cycle count, and the inspection that would move a part from X to C wants a bench, a witness and a stamp that no longer exists anywhere in the Aegir system. So the trade keeps a fifth grade nobody prints: it held last time, at that depth, in that hand.
+Grade X is the only line most contractors will ever meet. Forty-three years past the Tide every plate in this water has exceeded its cycle count, and moving a part from X back to C wants a bench, a witness and a stamp that no longer exists in the Aegir system. So the trade keeps a fifth grade nobody prints: it held last time, at that depth, in that hand.
 
-The hardware is honest in a way the plate is not. A seal holds at 22 MPa or it does not. Pumps are more forgiving -- derate one forty percent and it will still pass brine, badly, for a while. Hinges give no warning at all: twenty years of salt, then the pin shears with the handle still moving. Deep Reach sold the public a frontier and stamped GRADE A on it. The stamp is still bolted to the frame, still legible, and wrong by four decades.
+The hardware is honest in a way the plate is not. A seal holds at 22 MPa or it does not. Pumps are more forgiving -- derate one forty percent and it will still pass brine, badly, for a while. Hinges give no warning at all: twenty years of salt, then the pin shears with the handle still moving. Deep Reach stamped GRADE A on all of it, and the stamp is still bolted to the frame, still legible, and wrong by four decades.
 
 ## Descent Is Delivery, Not Rescue
 
@@ -102,11 +102,11 @@ Tethers are shorter and meaner than the stories suggest: work leads, receiver co
 
 Weapons are tools with worse circumstances and the same service grades.
 
-A CT-11 cutter is rated for hull lips, jammed pressure doors, pipe cages, dead bolts and salvage cuts, at 6 mm of service metal per pass. Pointing one at living biology means distance was lost several minutes earlier. Harpoon drivers buy space and do nothing else. The charge lance opens a route and creates a second problem in the same second. Drills take a sample, wake a sensor path, or ruin the exact surface that would have proved custody, the same 12 mm bit doing all three depending on where it lands.
+A CT-11 cutter is rated for hull lips, jammed pressure doors, pipe cages, dead bolts and salvage cuts, at 6 mm of service metal per pass. Pointing one at living biology means distance was lost several minutes earlier. Harpoon drivers buy space and nothing else. Drills take a sample, wake a sensor path, or ruin the exact surface that would have proved custody, the same 12 mm bit doing all three depending on where it lands.
 
 Pressure makes every reaction expensive. Gas pockets behave badly, heat becomes steam and stress and noise, and a fast projectile loses its arrogance inside two metres. Most good equipment down here is built to buy four or five seconds in which work is still an option for a frightened person.
 
-Which is why the valuable kit looks unimpressive on a bench: seal picks, marked repair tape, cable splints, scrubber keys, sample sleeves, bolt splitters, sludge brushes, pressure chalk, quiet clamps, tether hooks. None of it carries a plate rating worth quoting. All of it carries a replacement interval that nobody has honoured since 2147.
+Which is why the valuable kit looks unimpressive on a bench: seal picks, marked repair tape, cable splints, scrubber keys, sample sleeves, bolt splitters, pressure chalk, tether hooks. None of it carries a plate rating worth quoting. All of it carries a replacement interval nobody has honoured since 2147.
 
 ## Maintenance Is Memory
 
@@ -126,7 +126,7 @@ CS-4 SERVICE CARD   UNIT 44-118
 
 Three days between the last grade and the issue. Nothing on the card is falsified. It says GRADE X in the technician's own hand and then records the unit going outside anyway, because the route board and the service bench answered to different offices and only one of them had a storm window closing. The tape on line two is the workaround that made line three necessary.
 
-Metal lies less gracefully than paper. A service card reading "seal replaced" means little when the latch lip still holds old salt in the groove. The frame listed as nonfunctional in the registry may be the only one on the route with honest ballast history. A pod that failed its return can still be the cleanest surviving witness to what the carrier asked for first.
+Metal lies less gracefully than paper. A card reading "seal replaced" means little when the latch lip still holds old salt in the groove, and the frame listed as nonfunctional may be the only one on the route with honest ballast history. A pod that failed its return is often the cleanest surviving witness to what the carrier asked for first.
 
 ## What A Workaround Costs
 

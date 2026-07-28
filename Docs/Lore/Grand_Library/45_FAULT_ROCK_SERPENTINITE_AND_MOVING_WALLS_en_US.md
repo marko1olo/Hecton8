@@ -11,7 +11,7 @@
 
 New divers fear the animals. The expensive mistake is trusting the wall.
 
-This is an ocean moon under tidal stress from Aegir, and that stress moves through stone continuously and slowly. Extensometer X-23, bolted across a cable trench on factory level 3 at 1,180 m, has logged 21 mm of convergence since it was set in 2144. Nineteen of those millimetres arrived inside four separate weeks. The remaining two took forty-two years.
+This is an ocean moon under tidal stress from Aegir, and that stress moves through stone continuously and slowly. Extensometer X-23, bolted across a cable trench on factory level 3 at 1,180 m, has logged 21 mm of convergence since it was set in 2144. Nineteen of those millimetres arrived inside four separate weeks. The remaining two took forty-six years.
 
 Two centimetres is a joke in air. At 1,180 m, under 11.8 MPa, two centimetres binds a latch, shears a conduit, crushes a route tag, and converts a squeeze that three crews walked through into a compartment with one exit.
 
@@ -26,6 +26,8 @@ X-40   3,320 m   3.0 m     103 mm           19 mm      no classification
 ```
 
 Four of the five heads are filed `stable`. In GT-44, `stable` means the ninety-day rate did not cross the threshold for a survey callout, and the threshold is 12 mm. X-29 was filed stable at 11 mm for six consecutive quarters before the quarter when it was not.
+
+The carbon puts X-29's ninety-day rate at 13 mm. The filed report puts it at 11. Both readings came off the same head in the same quarter, one taken on the flood tide and one on the ebb, and only the ebb number was submitted.
 
 Deep Reach maps marked rock stable unless an instrument proved otherwise. Marauders mark rock hostile unless it has behaved recently. Stone does not chase anybody. It keeps doing what it was already doing after a body, a tether, a pod anchor or an oxygen line arrives in the way.
 
@@ -68,7 +70,7 @@ RETURN 5  "open gap, 900 mm"    hand: polished fracture, 210 mm, will
                                 not pass a tether and a body together
 ```
 
-Return 5 is the one that kills, and the number is not invented. The gap was 900 mm when SV-44-3 was drawn in 2143.
+Return 5 is the one that kills, and the scanner did not invent the figure. It is quoting SV-44-3, where the gap measured 900 mm on the day the sheet was drawn in 2143.
 
 Atlas-6 built loops through these zones deliberately, using the wet films and the shell growth as circuit elements, which is how a Black Keel tool can read the same route as a fault, a ghost, a short and a priceable anomaly on four consecutive passes.
 
