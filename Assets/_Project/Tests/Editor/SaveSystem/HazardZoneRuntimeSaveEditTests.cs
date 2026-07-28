@@ -88,25 +88,54 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual("02_HECTON_WORLD", SaveMetadata.NormalizeSceneName("02_HECTON_WORLD"));
             Assert.AreEqual("02_HECTON_WORLD", SaveMetadata.NormalizeSceneName(" 02_HECTON_WORLD "));
 
+            // The storage half of this test used to be a text match on the exact call expression
+            // "string sceneName = SaveMetadata.NormalizeSceneName(metadata.SceneName);". It went red with
+            // no behaviour change at all when SaveSidecarStorage.cs:68/:149/:525 qualified those calls as
+            // Hecton8.SaveSystem.SaveMetadata.NormalizeSceneName(...). Replaced by the behaviour it was
+            // standing in for: a real sidecar write + read round trip through the internal storage entry
+            // points, which proves the normalizer runs on BOTH sides of the boundary and that the byte
+            // sizing path agrees with the writer.
+            //   - " 02_HECTON_WORLD " is the trim case.
+            //   - " \t\r\n" is the discriminator against the pre-fix shape: string.IsNullOrEmpty is FALSE
+            //     for whitespace, so the old code stored raw whitespace and the slot list rendered blank.
+            //   - null exercises the sizing path: SaveSidecarStorage sizes the staging buffer from the
+            //     normalized name (:525) and the writer writes the normalized name (:83). If either side
+            //     used the raw value, "Unknown" (7 chars) would not fit the 0-char budget and the write
+            //     would fail outright rather than silently disagree.
+            string sidecarPath = Path.Combine(
+                Path.GetTempPath(),
+                "H8SaveMetadataSceneName_" + Guid.NewGuid().ToString("N") + ".meta");
+            try
+            {
+                AssertSidecarNormalizesSceneNameAcrossStorage(sidecarPath, "02_HECTON_WORLD", "02_HECTON_WORLD");
+                AssertSidecarNormalizesSceneNameAcrossStorage(sidecarPath, " 02_HECTON_WORLD ", "02_HECTON_WORLD");
+                AssertSidecarNormalizesSceneNameAcrossStorage(sidecarPath, " \t\r\n", SaveMetadata.UnknownSceneName);
+                AssertSidecarNormalizesSceneNameAcrossStorage(sidecarPath, string.Empty, SaveMetadata.UnknownSceneName);
+                AssertSidecarNormalizesSceneNameAcrossStorage(sidecarPath, null, SaveMetadata.UnknownSceneName);
+            }
+            finally
+            {
+                DeleteSidecarScratchFile(sidecarPath);
+                DeleteSidecarScratchFile(sidecarPath + ".tmp");
+            }
+
+            // SOURCE GUARDS - not convertible from this assembly, and each one says why.
+            //   SaveBinaryStorage: both scene-name sites are `private static` members of an `internal`
+            //     class (TryPrepareMetadataStrings on write, the metadata decoder on read), so the only
+            //     behavioural route is producing a complete .sav file with a full SaveData graph, which an
+            //     EditMode assembly cannot assemble without the runtime bootstrap.
+            //   SaveManager / MainMenuController / SaveSlotUI / SaveSlotHoverPreview: MonoBehaviours whose
+            //     scene-name path only runs from a live save service and a built Canvas + TMP slot rig.
+            // These stay strict, and stay pinned to the live expressions - they are audits, not proof, and
+            // the round trip above is what actually protects the invariant.
             string root = Directory.GetCurrentDirectory();
-            string metadata = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/SaveMetadata.cs"));
-            string sidecar = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/SaveSidecarStorage.cs"));
             string binary = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/SaveBinaryStorage.cs"));
             string manager = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/SaveManager.cs"));
             string mainMenu = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/MainMenuController.cs"));
             string slotUi = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/SaveSlotUI.cs"));
             string hoverPreview = File.ReadAllText(Path.Combine(root, "Assets/_Project/Scripts/UI/SaveSlotHoverPreview.cs"));
 
-            StringAssert.Contains("public const string UnknownSceneName = \"Unknown\";", metadata);
-            StringAssert.Contains("public string sceneName => NormalizeSceneName(SceneName);", metadata);
-            StringAssert.Contains("return string.IsNullOrWhiteSpace(sceneName) ? UnknownSceneName : sceneName.Trim();", metadata);
-
-            StringAssert.Contains("string sceneName = SaveMetadata.NormalizeSceneName(metadata.SceneName);", sidecar);
-            StringAssert.Contains("writer.WriteString(sceneName)", sidecar);
-            StringAssert.Contains("loaded.SceneName = SaveMetadata.NormalizeSceneName(loaded.SceneName);", sidecar);
-            StringAssert.Contains("TryAddStringByteCount(ref total, SaveMetadata.NormalizeSceneName(metadata.SceneName), out error)", sidecar);
-
-            StringAssert.Contains("string sceneName = SaveMetadata.NormalizeSceneName(metadata.SceneName);", binary);
+            StringAssert.Contains("sceneName = SaveMetadata.NormalizeSceneName(metadata.SceneName);", binary);
             StringAssert.Contains("SceneName = SaveMetadata.NormalizeSceneName(sceneName)", binary);
             StringAssert.DoesNotContain("string sceneName = string.IsNullOrEmpty(metadata.SceneName) ? \"Unknown\" : metadata.SceneName;", binary);
             StringAssert.DoesNotContain("SceneName = sceneName,", binary);
@@ -125,6 +154,49 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("sceneName = SaveMetadata.NormalizeSceneName(sceneName);", hoverPreview);
             StringAssert.DoesNotContain("string.IsNullOrEmpty(sceneName)", slotUi);
             StringAssert.DoesNotContain("string.IsNullOrEmpty(sceneName)", hoverPreview);
+        }
+
+        private static void AssertSidecarNormalizesSceneNameAcrossStorage(
+            string sidecarPath,
+            string authoredSceneName,
+            string expectedSceneName)
+        {
+            SaveMetadata written = new SaveMetadata
+            {
+                SlotName = "slot_0",
+                GameVersion = "sidecar-scene-name-round-trip",
+                Timestamp = DateTime.UtcNow.Ticks,
+                PlayTimeSeconds = 12.5f,
+                SceneName = authoredSceneName,
+                PlayerPosition = new Vector3(3f, -4f, 5f),
+                WorldSeed = 4242,
+                WorldGenerationVersionId = 7,
+                Checksum = "00000000"
+            };
+
+            Assert.IsTrue(
+                SaveSidecarStorage.SaveMetadata(written, sidecarPath, out string writeError),
+                "Sidecar write rejected scene name '" + (authoredSceneName ?? "<null>") + "': " + writeError);
+            Assert.IsTrue(
+                SaveSidecarStorage.LoadMetadata(sidecarPath, out SaveMetadata loaded, out string readError),
+                "Sidecar read rejected scene name '" + (authoredSceneName ?? "<null>") + "': " + readError);
+            Assert.IsNotNull(loaded);
+            Assert.AreEqual(
+                expectedSceneName,
+                loaded.SceneName,
+                "Stored scene name was not normalized across the sidecar boundary.");
+            Assert.AreEqual(
+                expectedSceneName,
+                loaded.sceneName,
+                "UI-facing scene name accessor did not normalize the stored value.");
+            Assert.AreEqual("slot_0", loaded.SlotName);
+            Assert.AreEqual(4242, loaded.WorldSeed);
+        }
+
+        private static void DeleteSidecarScratchFile(string path)
+        {
+            if (File.Exists(path))
+                File.Delete(path);
         }
 
         [Test]
