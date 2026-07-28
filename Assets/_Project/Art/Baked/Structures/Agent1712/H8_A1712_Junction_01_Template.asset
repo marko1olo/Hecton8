@@ -1,0 +1,61 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 051b2a59c8e741e4cb17d83cb1929fa5, type: 3}
+  m_Name: H8_A1712_Junction_01_Template
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Building.BaseModuleTemplate
+  stableId: H8_A1712_Junction_01
+  templateHashId: 446553929
+  snapPoints:
+  - x: 0
+    y: 0
+    z: 4.6
+  - x: 0
+    y: 0
+    z: -4.6
+  - x: 4.6
+    y: 0
+    z: 0
+  - x: -4.6
+    y: 0
+    z: 0
+  socketDefinitions:
+  - localPosition: {x: 0, y: 0, z: 4.6}
+    direction: 0
+    compatibleType: h8.structure.hardsurface
+  - localPosition: {x: 0, y: 0, z: -4.6}
+    direction: 1
+    compatibleType: h8.structure.hardsurface
+  - localPosition: {x: 4.6, y: 0, z: 0}
+    direction: 2
+    compatibleType: h8.structure.hardsurface
+  - localPosition: {x: -4.6, y: 0, z: 0}
+    direction: 3
+    compatibleType: h8.structure.hardsurface
+  proxyBoundsCenter: {x: 0, y: 0, z: 0}
+  proxyBoundsSize: {x: 9.2, y: 2.9, z: 9.2}
+  buildCost: []
+  powerDrawKW: 0.010000001
+  airVolumeM3: 135.00081
+  isStructuralAnchor: 0
+  isEmergencyAirlock: 0
+  defaultIntegrityState: 0.935
+  floodedBelowIntegrityState: 0.42
+  oxygenOfflineBelowIntegrityState: 0.32
+  projectedDragAreaSquareMeters: 38.087997
+  moduleYieldStrengthNewtons: 5483817
+  breachAreaSquareMeters: 0.955
+  structuralDryMassKilograms: 25409.215
+  buoyancyDisplacementVolumeCubicMeters: 27.268427
+  maximumUnmooredAccelerationMetersPerSecondSquared: 16
+  maximumCenterOfMassShiftMeters: 0.551
+  centerOfMassShiftTauSeconds: 1
+  vfxSockets: []

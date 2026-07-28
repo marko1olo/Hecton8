@@ -17,8 +17,9 @@ MonoBehaviour:
   icon: {fileID: 0}
   description: General-purpose crew compartment.
   family: 1
+  blueprintQuestFlagId: 0
   ghostPrefab: {fileID: 0}
-  finalPrefab: {fileID: 0}
+  finalPrefab: {fileID: 1475445993294761913, guid: 88386a73c6c084a4a8c22ad86fa5bb28, type: 3}
   moduleTemplate: {fileID: 11400000, guid: 5cda8e53d2732bd46827430fc4ed290d, type: 2}
   buildCost: []
   powerRating: -12

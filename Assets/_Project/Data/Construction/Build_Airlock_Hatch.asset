@@ -17,8 +17,9 @@ MonoBehaviour:
   icon: {fileID: 0}
   description: Emergency ingress hatch with lockdown authority.
   family: 2
+  blueprintQuestFlagId: 0
   ghostPrefab: {fileID: 0}
-  finalPrefab: {fileID: 0}
+  finalPrefab: {fileID: 3720669919621297738, guid: c9971a393e365284c8707293c082b6c1, type: 3}
   moduleTemplate: {fileID: 11400000, guid: 5eef2f98101d3404884e8931c158ae8d, type: 2}
   buildCost: []
   powerRating: -6

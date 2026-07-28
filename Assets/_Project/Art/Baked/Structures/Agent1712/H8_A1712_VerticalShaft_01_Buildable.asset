@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 98a2e1b49b31ede4386a6c6f3c5b0c81, type: 3}
-  m_Name: Build_Moonpool_Bay
+  m_Name: H8_A1712_VerticalShaft_01_Buildable
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Building.BuildableData
-  moduleName: Moonpool
-  stableId: Build_Moonpool_Bay
+  moduleName: H8_A1712_VerticalShaft_01
+  stableId: H8_A1712_VerticalShaft_01
   icon: {fileID: 0}
-  description: Vehicle ingress bay with open docking well.
-  family: 2
+  description: Generated pressure-rated hard-surface module baked by ModuleArchitect1712.
+  family: 1
   blueprintQuestFlagId: 0
   ghostPrefab: {fileID: 0}
   finalPrefab: {fileID: 6378744787296289934, guid: 23215d15f13e0f74d9e6e3d003095961, type: 3}
-  moduleTemplate: {fileID: 11400000, guid: 2972b9ac528113645ba3cd024ffc7873, type: 2}
+  moduleTemplate: {fileID: 11400000, guid: a4ebcbe19762962499e475b71b3e2ef3, type: 2}
   buildCost: []
-  powerRating: -18
-  powerPriority: 35
+  powerRating: -10
+  powerPriority: 50

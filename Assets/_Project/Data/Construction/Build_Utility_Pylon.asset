@@ -20,7 +20,7 @@ MonoBehaviour:
   blueprintQuestFlagId: 0
   ghostPrefab: {fileID: 0}
   finalPrefab: {fileID: 64260289537814543, guid: 1171decc9d7897e48b74478799d80969, type: 3}
-  moduleTemplate: {fileID: 0}
+  moduleTemplate: {fileID: 11400000, guid: a5f89ad57cc21c24f9b98e164bf929d3, type: 2}
   buildCost:
   - item: {fileID: 11400000, guid: a62760814dd69bf468e839b971d92243, type: 2}
     amount: 1

@@ -17,8 +17,9 @@ MonoBehaviour:
   icon: {fileID: 0}
   description: Three-way habitat junction for branch routing.
   family: 0
+  blueprintQuestFlagId: 0
   ghostPrefab: {fileID: 0}
-  finalPrefab: {fileID: 0}
+  finalPrefab: {fileID: 842066932562619614, guid: cefa0d3374d01ac409ba25b82cb08758, type: 3}
   moduleTemplate: {fileID: 11400000, guid: 6f506215a30fd5749af49708a08b972f, type: 2}
   buildCost: []
   powerRating: -8
