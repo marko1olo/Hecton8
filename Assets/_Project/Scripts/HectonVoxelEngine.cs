@@ -8062,11 +8062,51 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private bool _bakeGhostMaterialGapAnnounced;
+#endif
+
+    /// <summary>
+    /// Announces a missing bake-ghost material once. It no longer throws, and that is the whole point.
+    ///
+    /// This method used to be nothing but UnityEngine.Assertions.Assert.IsNotNull, which THROWS in this
+    /// project - nothing under Assets sets Assert.raiseExceptions false. It is called from OnEnable, and the
+    /// SEVEN statements after that call therefore never ran: EnsureVoxelMeshPipelineBlackBox,
+    /// EnsureStreamingScratchSlots, HectonVoxelVolume.TryEnsurePublishedSonarVaultPayloadCapacity,
+    /// WarmVoxelMeshPoolsAsync, CacheVoxelDeltaProcessorCold, and MCTables.Initialize.
+    ///
+    /// So runtime voxel carving and delta-save replay were dead because _deltaProcessor was never cached, and
+    /// the marching-cubes tables were never initialised - all to guard a cosmetic material.
+    ///
+    /// Runtime-proven, not inferred: Logs/omega_route22.log:7192 and :7809 show it throwing TWICE per run
+    /// with "Assertion failure. Value was Null", entered through WorldRuntimeInstaller's
+    /// GameObject.SetActive(true).
+    ///
+    /// The assert was indefensible because the material is optional by construction. Its sole consumer,
+    /// HectonVoxelVolume.cs:4142-4144, already reads
+    /// ResolvedVoxelBakeGhostMaterial != null ? ResolvedVoxelBakeGhostMaterial : voxelMaterial - a null
+    /// simply falls back to the normal voxel material. A survivable cosmetic gap was costing this engine its
+    /// entire cold-init tail.
+    ///
+    /// The gap itself is real and still wants authoring: voxelBakeGhostMaterial is a serialized field on this
+    /// component and is null on the world runtime root today. This says so once, in the log, instead of
+    /// unwinding OnEnable.
+    /// </summary>
     void EnsureVoxelBakeGhostMaterial()
     {
-        UnityEngine.Assertions.Assert.IsNotNull(
-            voxelBakeGhostMaterial,
-            "Fatal: Missing authored voxelBakeGhostMaterial. Runtime voxel bake ghost material synthesis is forbidden.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (voxelBakeGhostMaterial != null || _bakeGhostMaterialGapAnnounced)
+            return;
+
+        _bakeGhostMaterialGapAnnounced = true;
+        Debug.LogWarning(
+            "[HectonVoxelEngine] voxelBakeGhostMaterial is not assigned on '" + name +
+            "'. Bake-ghost visuals fall back to voxelMaterial (HectonVoxelVolume.cs:4142-4144), so this is " +
+            "cosmetic and NOT fatal - it used to abort OnEnable and take MCTables.Initialize and " +
+            "CacheVoxelDeltaProcessorCold with it. Assign the field to restore the bake-ghost look. " +
+            "Reported once per engine instance.",
+            this);
+#endif
     }
 
     static async Awaitable AwaitForJobCompletionAsync(JobHandle handle, CancellationToken ct, string context)
