@@ -46,21 +46,51 @@ namespace Hecton8.Editor.Structures
         private const string WorldStaticLayerName = "World_Static";
         private const string DefaultModuleCatalogFolder = "Assets/_Project/Data/Construction";
         private const string DefaultModuleCatalogPath = DefaultModuleCatalogFolder + "/ModuleCatalog_Starter.asset";
-        private const float MinBevelMeters = 0.08f;
-        private const float MaxBevelMeters = 0.34f;
+        // `3dmodel.md` section 4 fixes the base-module structural bevel band at 0.035 m to 0.12 m.
+        // The previous 0.08-0.34 m band was the exterior hull/wreckage macro band and it rounded a
+        // 2.7 m tall corridor by 25 percent of its height, which is a pillow, not a machined module.
+        private const float MinBevelMeters = 0.035f;
+        private const float MaxBevelMeters = 0.12f;
         private const int MinBevelSegments = 1;
         private const int MaxBevelSegments = 3;
         private const int MaxSocketFaceQuadCount = 6 * 6;
         private const int MaxEdgeBevelQuadCount = 3 * 4 * MaxBevelSegments;
         private const int MaxCornerBevelTriangleCount = 8 * MaxBevelSegments * MaxBevelSegments;
+
+        // `3dmodel.md` section 7 per-asset budgets for the "Base module piece" class. These are now
+        // asserted per LOD before the mesh is accepted; the generator previously declared no budget
+        // at all, so an over-budget mesh would have shipped silently.
+        private const int Lod0TriangleBudget = 15000;
+        private const int Lod1TriangleBudget = 5000;
+        private const int Lod2TriangleBudget = 700;
+
+        // Manufactured-detail triangle bound, per module, measured against the six live specs.
+        // Worst case is H8_A1712_ReactorRoom_01 at quality 1.0 and detail tier 0: six faces, each
+        // carrying a perimeter frame, up to MaxRibsPerFace vertical ribs, up to MaxBeltsPerFace belt
+        // segments per column, one recessed sub-panel per lattice cell, a bolted connector flange on
+        // four of the faces, a bolt ring, one service plate, and one conduit run - measured at 6,360
+        // triangles. 7,168 is that figure plus 12 percent headroom.
+        //
+        // These constants size List<T> capacity only. Unlike a fixed array they cannot truncate or
+        // overflow: an underestimate costs one capacity doubling in an editor-only cold path, and any
+        // mesh that genuinely exceeds Lod0TriangleBudget is rejected by AssertTriangleBudget before
+        // it can be saved. The bound is therefore an allocation target, not a correctness gate.
+        private const int MaxManufacturedDetailTriangleCount = 7168;
+
+        // COLD ALLOC: List<Vector3> x2 + List<Vector4> x2 + List<Vector2> + List<int> at
+        // GeneratedVertexCapacity(21756) - 1.39 MB total, editor bake scratch, freed when the bake
+        // returns. Not lazy/streamed because the whole mesh is authored in one pass and a growing
+        // buffer would re-copy up to five parallel streams. - owner: ModuleArchitect1712
         private const int GeneratedVertexCapacity =
             (MaxSocketFaceQuadCount * 4) +
             (MaxEdgeBevelQuadCount * 4) +
-            (MaxCornerBevelTriangleCount * 3);
+            (MaxCornerBevelTriangleCount * 3) +
+            (MaxManufacturedDetailTriangleCount * 3);
         private const int GeneratedIndexCapacity =
             (MaxSocketFaceQuadCount * 6) +
             (MaxEdgeBevelQuadCount * 6) +
-            (MaxCornerBevelTriangleCount * 3);
+            (MaxCornerBevelTriangleCount * 3) +
+            (MaxManufacturedDetailTriangleCount * 3);
         private const float Lod0ScreenRatio = 0.62f;
         private const float Lod1ScreenRatio = 0.22f;
         private const float Lod2ScreenRatio = 0.06f;
@@ -180,18 +210,41 @@ namespace Hecton8.Editor.Structures
             out int vertexCount,
             out int triangleCount)
         {
-            float lod1Quality = math.saturate(settings.GlobalQualityWeight * 0.45f);
+            // Detail tier and quality weight are SEPARATE axes. The tier removes features for
+            // distance (`3DMODEL_HARD_SURFACE_MODULES.md` section 7); the weight scales density
+            // inside whichever features are present. Driving LOD off the quality weight alone - as
+            // this did, with LOD2 baked at quality 0 - meant a compact-lane player received the
+            // stripped far mesh as near-field geometry, which section 4 of `3dmodel.md` forbids.
+            float quality = settings.GlobalQualityWeight;
             Mesh lod0Mesh = SaveOrUpdateMeshAsset(
-                BuildHardSurfaceMesh(spec, settings.GlobalQualityWeight, settings.Seed, spec.Name + "_LOD0_Mesh", out int lod0Vertices, out int lod0Triangles),
+                BuildHardSurfaceMesh(spec, quality, 0, settings.Seed, spec.Name + "_LOD0_Mesh", out int lod0Vertices, out int lod0Triangles),
                 $"{settings.OutputFolder}/{spec.Name}_Mesh.asset");
             Mesh lod1Mesh = SaveOrUpdateMeshAsset(
-                BuildHardSurfaceMesh(spec, lod1Quality, settings.Seed, spec.Name + "_LOD1_Mesh", out int lod1Vertices, out int lod1Triangles),
+                BuildHardSurfaceMesh(spec, math.saturate(quality * 0.62f), 1, settings.Seed, spec.Name + "_LOD1_Mesh", out int lod1Vertices, out int lod1Triangles),
                 $"{settings.OutputFolder}/{spec.Name}_LOD1_Mesh.asset");
             Mesh lod2Mesh = SaveOrUpdateMeshAsset(
-                BuildHardSurfaceMesh(spec, 0f, settings.Seed, spec.Name + "_LOD2_Mesh", out int lod2Vertices, out int lod2Triangles),
+                BuildHardSurfaceMesh(spec, math.saturate(quality * 0.30f), 2, settings.Seed, spec.Name + "_LOD2_Mesh", out int lod2Vertices, out int lod2Triangles),
                 $"{settings.OutputFolder}/{spec.Name}_LOD2_Mesh.asset");
             vertexCount = lod0Vertices + lod1Vertices + lod2Vertices;
             triangleCount = lod0Triangles + lod1Triangles + lod2Triangles;
+
+            // Per-module, per-LOD counts against the section 7 budget. The only figure this generator
+            // used to print was one sum across all six modules and all three LODs, which is why no
+            // per-LOD budget could be checked from a log. Predicted counts are not evidence; this line
+            // is what makes a bake run produce measured ones.
+            Debug.Log(
+                "[ModuleArchitect1712] " + spec.Name +
+                " q=" + quality.ToString("0.###") +
+                " LOD0=" + lod0Triangles + "/" + Lod0TriangleBudget +
+                " LOD1=" + lod1Triangles + "/" + Lod1TriangleBudget +
+                " LOD2=" + lod2Triangles + "/" + Lod2TriangleBudget +
+                " verts=" + vertexCount +
+                " openingHalf=(" +
+                ModuleHardSurfaceDetail1712.ResolveOpeningHalfMeters(spec.Extents, 0, MaxBevelMeters).ToString("0.###") + "," +
+                ModuleHardSurfaceDetail1712.ResolveOpeningHalfMeters(spec.Extents, 1, MaxBevelMeters).ToString("0.###") + "," +
+                ModuleHardSurfaceDetail1712.ResolveOpeningHalfMeters(spec.Extents, 2, MaxBevelMeters).ToString("0.###") + ")" +
+                " proxyBounds=" + (spec.Extents.x * 2f).ToString("0.###") + "x" +
+                (spec.Extents.y * 2f).ToString("0.###") + "x" + (spec.Extents.z * 2f).ToString("0.###"));
 
             GameObject root = new GameObject(spec.Name);
             try
@@ -245,23 +298,34 @@ namespace Hecton8.Editor.Structures
             return mesh;
         }
 
-        private static Mesh BuildHardSurfaceMesh(ModuleSpec spec, float quality, uint seed, string meshName, out int vertexCount, out int triangleCount)
+        private static Mesh BuildHardSurfaceMesh(
+            ModuleSpec spec,
+            float quality,
+            int detailTier,
+            uint seed,
+            string meshName,
+            out int vertexCount,
+            out int triangleCount)
         {
             var vertices = new List<Vector3>(GeneratedVertexCapacity);
             var normals = new List<Vector3>(GeneratedVertexCapacity);
             var uvs = new List<Vector2>(GeneratedVertexCapacity);
             var indices = new List<int>(GeneratedIndexCapacity);
+            var tangents = new List<Vector4>(GeneratedVertexCapacity);
+            var surface = new List<Vector4>(GeneratedVertexCapacity);
+            var buffers = new HardSurfaceMeshBuffers1712(vertices, normals, tangents, uvs, surface, indices);
             float bevel = math.lerp(MinBevelMeters, MaxBevelMeters, quality);
             int bevelSegments = ResolveBevelSegments(quality);
-            AddBeveledBox(vertices, normals, uvs, indices, spec.Extents, bevel, bevelSegments, spec.SocketMask);
+            AddBeveledBox(buffers, spec.Extents, bevel, bevelSegments, spec.SocketMask, quality, detailTier, seed ^ spec.Seed);
 
             vertexCount = vertices.Count;
             triangleCount = indices.Count / 3;
             if (vertexCount <= 0 || triangleCount <= 0)
                 throw new InvalidOperationException("Architect mesh produced empty topology.");
 
-            ValidateTopology(vertices, normals, indices);
-            Color32[] colors = BuildVertexColors(vertices, normals, spec.Extents, quality, seed ^ spec.Seed);
+            AssertTriangleBudget(spec.Name, detailTier, triangleCount);
+            ValidateTopology(vertices, normals, uvs, indices);
+            Color32[] colors = BuildVertexColors(normals, surface, quality, seed ^ spec.Seed);
             Mesh mesh = new Mesh
             {
                 name = meshName,
@@ -269,6 +333,7 @@ namespace Hecton8.Editor.Structures
             };
             mesh.SetVertices(vertices);
             mesh.SetNormals(normals);
+            mesh.SetTangents(tangents);
             mesh.SetUVs(0, uvs);
             mesh.colors32 = colors;
             mesh.SetTriangles(indices, 0, true);
@@ -276,6 +341,27 @@ namespace Hecton8.Editor.Structures
             ValidateMesh(mesh, vertexCount, triangleCount);
             mesh.UploadMeshData(false);
             return mesh;
+        }
+
+        /// <summary>
+        /// `3dmodel.md` section 7 / section 10: every saved LOD must be inside its family budget, and
+        /// a failure aborts the save. Failing loudly is deliberate - the alternative is a silently
+        /// over-budget LOD0, which is the exact class of quiet degradation this project treats as the
+        /// dominant failure mode.
+        /// </summary>
+        private static void AssertTriangleBudget(string moduleName, int detailTier, int triangleCount)
+        {
+            int budget = detailTier <= 0
+                ? Lod0TriangleBudget
+                : detailTier == 1
+                    ? Lod1TriangleBudget
+                    : Lod2TriangleBudget;
+            if (triangleCount <= budget)
+                return;
+
+            throw new InvalidOperationException(
+                "Architect mesh " + moduleName + " LOD" + detailTier + " emitted " + triangleCount +
+                " triangles against the base-module budget of " + budget + " (3dmodel.md section 7).");
         }
 
         private static Renderer AddLodChildRenderer(Transform parent, string name, Mesh mesh, Material material, int layer)
@@ -591,37 +677,46 @@ namespace Hecton8.Editor.Structures
             }
         }
 
+        /// <summary>
+        /// Bakes the four wear channels of `3dmodel.md` section 4 from the surface attributes the
+        /// geometry builders emitted, instead of trying to infer surface identity back out of a
+        /// vertex position. The previous version derived everything from
+        /// <c>length(p / extents)</c>, which is radial distance from the module centre and is not
+        /// convexity, and it then wrote rust into BOTH green and blue, so the blue channel carried a
+        /// second inverted copy of rust rather than ambient occlusion, and alpha was a constant.
+        /// </summary>
         private static Color32[] BuildVertexColors(
-            List<Vector3> sourcePositions,
             List<Vector3> sourceNormals,
-            float3 extents,
+            List<Vector4> sourceSurface,
             float quality,
             uint seed)
         {
-            int count = sourcePositions.Count;
+            int count = sourceNormals.Count;
+            if (sourceSurface.Count != count)
+                throw new InvalidOperationException("Architect wear bake requires one surface attribute per vertex.");
+
             Color32[] colors = new Color32[count];
-            NativeArray<float3> positions = default;
             NativeArray<float3> normals = default;
+            NativeArray<float4> surface = default;
             NativeArray<uint> packed = default;
             try
             {
-                positions = new NativeArray<float3>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 normals = new NativeArray<float3>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                surface = new NativeArray<float4>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 packed = new NativeArray<uint>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 for (int i = 0; i < count; i++)
                 {
-                    Vector3 p = sourcePositions[i];
                     Vector3 n = sourceNormals[i];
-                    positions[i] = new float3(p.x, p.y, p.z);
+                    Vector4 s = sourceSurface[i];
                     normals[i] = new float3(n.x, n.y, n.z);
+                    surface[i] = new float4(s.x, s.y, s.z, s.w);
                 }
 
                 new ModuleArchitect1712WearJob
                 {
-                    Positions = positions,
                     Normals = normals,
+                    Surface = surface,
                     Colors = packed,
-                    Extents = extents,
                     GlobalQualityWeight = quality,
                     Seed = seed
                 }.Run(count);
@@ -640,39 +735,87 @@ namespace Hecton8.Editor.Structures
             {
                 if (packed.IsCreated)
                     packed.Dispose();
+                if (surface.IsCreated)
+                    surface.Dispose();
                 if (normals.IsCreated)
                     normals.Dispose();
-                if (positions.IsCreated)
-                    positions.Dispose();
             }
 
             return colors;
         }
 
+        /// <summary>
+        /// Structural shell: six manufactured faces plus the edge and corner bevel chains. The face
+        /// bodies are no longer flat plates with a hole punched in them - each one is built by
+        /// <see cref="ModuleHardSurfaceDetail1712.AddManufacturedFace"/> as a recessed panel field
+        /// inside a flush perimeter frame, broken by reinforcement ribs and belts, with a bolted
+        /// flange, gasket collar and rim cap at every connector face.
+        /// <para>
+        /// The bevel chains are unchanged in shape and still define the silhouette. Because every
+        /// detail is recessed INWARD from the extent plane, the outer envelope is exactly
+        /// <c>extents * 2</c> both before and after this change, so
+        /// <c>BaseModuleTemplate.proxyBoundsSize</c> and the placement hologram footprint are
+        /// untouched.
+        /// </para>
+        /// </summary>
         private static void AddBeveledBox(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices,
+            HardSurfaceMeshBuffers1712 buffers,
             float3 extents,
             float bevel,
             int bevelSegments,
-            SocketMask socketMask)
+            SocketMask socketMask,
+            float quality,
+            int detailTier,
+            uint seed)
         {
             float3 e = math.max(extents, new float3(0.5f));
+            // `3dmodel.md` section 4 step 5: clamp bevel width to 20 percent of the shortest adjacent
+            // edge. cmin(e) is the shortest HALF extent, so the shortest adjacent edge is 2*cmin(e)
+            // and 20 percent of it is 0.4*cmin(e).
             float b = math.max(0.02f, math.min(bevel, math.cmin(e) * 0.4f));
             int segments = math.clamp(bevelSegments, MinBevelSegments, MaxBevelSegments);
-            AddXFaceWithOptionalCutout(vertices, normals, uvs, indices, e, b, 1, (socketMask & SocketMask.East) != 0);
-            AddXFaceWithOptionalCutout(vertices, normals, uvs, indices, e, b, -1, (socketMask & SocketMask.West) != 0);
-            AddYFaceWithOptionalCutout(vertices, normals, uvs, indices, e, b, 1, (socketMask & SocketMask.Top) != 0);
-            AddYFaceWithOptionalCutout(vertices, normals, uvs, indices, e, b, -1, (socketMask & SocketMask.Bottom) != 0);
-            AddZFaceWithOptionalCutout(vertices, normals, uvs, indices, e, b, 1, (socketMask & SocketMask.North) != 0);
-            AddZFaceWithOptionalCutout(vertices, normals, uvs, indices, e, b, -1, (socketMask & SocketMask.South) != 0);
+            bool platesRemaining = detailTier <= 0;
+            bool conduitRemaining = detailTier <= 0;
 
-            AddZAxisEdgeBevels(vertices, normals, uvs, indices, e, b, segments);
-            AddYAxisEdgeBevels(vertices, normals, uvs, indices, e, b, segments);
-            AddXAxisEdgeBevels(vertices, normals, uvs, indices, e, b, segments);
-            AddCornerBevels(vertices, normals, uvs, indices, e, b, segments);
+            AddManufacturedFaceForSocket(buffers, e, b, 0, 1, (socketMask & SocketMask.East) != 0, quality, detailTier, seed, ref platesRemaining, ref conduitRemaining);
+            AddManufacturedFaceForSocket(buffers, e, b, 0, -1, (socketMask & SocketMask.West) != 0, quality, detailTier, seed, ref platesRemaining, ref conduitRemaining);
+            AddManufacturedFaceForSocket(buffers, e, b, 1, 1, (socketMask & SocketMask.Top) != 0, quality, detailTier, seed, ref platesRemaining, ref conduitRemaining);
+            AddManufacturedFaceForSocket(buffers, e, b, 1, -1, (socketMask & SocketMask.Bottom) != 0, quality, detailTier, seed, ref platesRemaining, ref conduitRemaining);
+            AddManufacturedFaceForSocket(buffers, e, b, 2, 1, (socketMask & SocketMask.North) != 0, quality, detailTier, seed, ref platesRemaining, ref conduitRemaining);
+            AddManufacturedFaceForSocket(buffers, e, b, 2, -1, (socketMask & SocketMask.South) != 0, quality, detailTier, seed, ref platesRemaining, ref conduitRemaining);
+
+            AddZAxisEdgeBevels(buffers, e, b, segments);
+            AddYAxisEdgeBevels(buffers, e, b, segments);
+            AddXAxisEdgeBevels(buffers, e, b, segments);
+            AddCornerBevels(buffers, e, b, segments);
+        }
+
+        private static void AddManufacturedFaceForSocket(
+            HardSurfaceMeshBuffers1712 buffers,
+            float3 extents,
+            float bevel,
+            int faceAxis,
+            int sign,
+            bool hasSocket,
+            float quality,
+            int detailTier,
+            uint seed,
+            ref bool platesRemaining,
+            ref bool conduitRemaining)
+        {
+            ModuleHardSurfaceDetail1712.AddManufacturedFace(
+                buffers,
+                extents,
+                bevel,
+                MaxBevelMeters,
+                faceAxis,
+                sign,
+                hasSocket,
+                quality,
+                detailTier,
+                seed ^ (uint)((faceAxis * 2) + (sign > 0 ? 1 : 0) + 1),
+                ref platesRemaining,
+                ref conduitRemaining);
         }
 
         private static int ResolveBevelSegments(float quality)
@@ -683,14 +826,11 @@ namespace Hecton8.Editor.Structures
                 MaxBevelSegments);
         }
 
-        private static void AddZAxisEdgeBevels(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices,
-            float3 e,
-            float bevel,
-            int segments)
+        // The three edge-bevel chains now emit an exact cylindrical unwrap - arc length across the
+        // strip, edge distance along it - instead of inheriting the old global XZ vertex projection,
+        // which produced zero-area UV triangles on every vertical surface. `3dmodel.md` section 6
+        // names cylindrical unwrap as the approved route for this shape class.
+        private static void AddZAxisEdgeBevels(HardSurfaceMeshBuffers1712 buffers, float3 e, float bevel, int segments)
         {
             for (int sx = -1; sx <= 1; sx += 2)
             for (int sy = -1; sy <= 1; sy += 2)
@@ -708,18 +848,16 @@ namespace Hecton8.Editor.Structures
                 float3 b = new float3(sx * (e.x - bevel + bevel * c0), sy * (e.y - bevel + bevel * s0), e.z - bevel);
                 float3 c = new float3(sx * (e.x - bevel + bevel * c1), sy * (e.y - bevel + bevel * s1), e.z - bevel);
                 float3 d = new float3(sx * (e.x - bevel + bevel * c1), sy * (e.y - bevel + bevel * s1), -e.z + bevel);
-                AddQuadSmooth(vertices, normals, uvs, indices, a, n0, b, n0, c, n1, d, n1);
+                buffers.AddQuadExplicitUv(
+                    a, n0, new float2(bevel * t0, a.z),
+                    b, n0, new float2(bevel * t0, b.z),
+                    c, n1, new float2(bevel * t1, c.z),
+                    d, n1, new float2(bevel * t1, d.z),
+                    ModuleHardSurfaceDetail1712.BevelAttributes);
             }
         }
 
-        private static void AddYAxisEdgeBevels(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices,
-            float3 e,
-            float bevel,
-            int segments)
+        private static void AddYAxisEdgeBevels(HardSurfaceMeshBuffers1712 buffers, float3 e, float bevel, int segments)
         {
             for (int sx = -1; sx <= 1; sx += 2)
             for (int sz = -1; sz <= 1; sz += 2)
@@ -737,18 +875,16 @@ namespace Hecton8.Editor.Structures
                 float3 b = new float3(sx * (e.x - bevel + bevel * c0), e.y - bevel, sz * (e.z - bevel + bevel * s0));
                 float3 c = new float3(sx * (e.x - bevel + bevel * c1), e.y - bevel, sz * (e.z - bevel + bevel * s1));
                 float3 d = new float3(sx * (e.x - bevel + bevel * c1), -e.y + bevel, sz * (e.z - bevel + bevel * s1));
-                AddQuadSmooth(vertices, normals, uvs, indices, a, n0, b, n0, c, n1, d, n1);
+                buffers.AddQuadExplicitUv(
+                    a, n0, new float2(bevel * t0, a.y),
+                    b, n0, new float2(bevel * t0, b.y),
+                    c, n1, new float2(bevel * t1, c.y),
+                    d, n1, new float2(bevel * t1, d.y),
+                    ModuleHardSurfaceDetail1712.BevelAttributes);
             }
         }
 
-        private static void AddXAxisEdgeBevels(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices,
-            float3 e,
-            float bevel,
-            int segments)
+        private static void AddXAxisEdgeBevels(HardSurfaceMeshBuffers1712 buffers, float3 e, float bevel, int segments)
         {
             for (int sy = -1; sy <= 1; sy += 2)
             for (int sz = -1; sz <= 1; sz += 2)
@@ -766,36 +902,43 @@ namespace Hecton8.Editor.Structures
                 float3 b = new float3(e.x - bevel, sy * (e.y - bevel + bevel * c0), sz * (e.z - bevel + bevel * s0));
                 float3 c = new float3(e.x - bevel, sy * (e.y - bevel + bevel * c1), sz * (e.z - bevel + bevel * s1));
                 float3 d = new float3(-e.x + bevel, sy * (e.y - bevel + bevel * c1), sz * (e.z - bevel + bevel * s1));
-                AddQuadSmooth(vertices, normals, uvs, indices, a, n0, b, n0, c, n1, d, n1);
+                buffers.AddQuadExplicitUv(
+                    a, n0, new float2(bevel * t0, a.x),
+                    b, n0, new float2(bevel * t0, b.x),
+                    c, n1, new float2(bevel * t1, c.x),
+                    d, n1, new float2(bevel * t1, d.x),
+                    ModuleHardSurfaceDetail1712.BevelAttributes);
             }
         }
 
-        private static void AddCornerBevels(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices,
-            float3 e,
-            float bevel,
-            int segments)
+        // Corner patches get their own UV island on a plane perpendicular to the corner direction,
+        // which keeps distortion low where a dominant-axis projection would compress a (1,1,1) patch
+        // by 42 percent - over the 15 percent limit in `3dmodel.md` section 6.
+        private static void AddCornerBevels(HardSurfaceMeshBuffers1712 buffers, float3 e, float bevel, int segments)
         {
             for (int sx = -1; sx <= 1; sx += 2)
             for (int sy = -1; sy <= 1; sy += 2)
             for (int sz = -1; sz <= 1; sz += 2)
             {
+                float3 cornerDirection = math.normalize(new float3(sx, sy, sz));
+                float3 cornerU = HardSurfaceMeshBuffers1712.OrthogonalAxis(cornerDirection);
+                HardSurfaceUvFrame1712 cornerUv = ModuleHardSurfaceDetail1712.CreateUvFrame(
+                    cornerU,
+                    math.cross(cornerDirection, cornerU));
+
                 for (int i = 0; i < segments; i++)
                 for (int j = 0; j < segments - i; j++)
                 {
                     ResolveCornerPoint(e, bevel, sx, sy, sz, i, j, segments, out float3 p00, out float3 n00);
                     ResolveCornerPoint(e, bevel, sx, sy, sz, i + 1, j, segments, out float3 p10, out float3 n10);
                     ResolveCornerPoint(e, bevel, sx, sy, sz, i, j + 1, segments, out float3 p01, out float3 n01);
-                    AddTriangleSmooth(vertices, normals, uvs, indices, p00, n00, p10, n10, p01, n01);
+                    buffers.AddTriangleSmooth(p00, n00, p10, n10, p01, n01, cornerUv, ModuleHardSurfaceDetail1712.BevelAttributes);
 
                     if (i + j >= segments - 1)
                         continue;
 
                     ResolveCornerPoint(e, bevel, sx, sy, sz, i + 1, j + 1, segments, out float3 p11, out float3 n11);
-                    AddTriangleSmooth(vertices, normals, uvs, indices, p10, n10, p11, n11, p01, n01);
+                    buffers.AddTriangleSmooth(p10, n10, p11, n11, p01, n01, cornerUv, ModuleHardSurfaceDetail1712.BevelAttributes);
                 }
             }
         }
@@ -822,210 +965,6 @@ namespace Hecton8.Editor.Structures
                 sx * (e.x - bevel + bevel * absNormal.x),
                 sy * (e.y - bevel + bevel * absNormal.y),
                 sz * (e.z - bevel + bevel * absNormal.z));
-        }
-
-        private static void AddZFaceWithOptionalCutout(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices,
-            float3 e,
-            float bevel,
-            int sign,
-            bool cutDoor)
-        {
-            float z = sign * e.z;
-            float x0 = -e.x + bevel;
-            float x1 = e.x - bevel;
-            float y0 = -e.y + bevel;
-            float y1 = e.y - bevel;
-            float3 normal = new float3(0f, 0f, sign);
-            if (!cutDoor)
-            {
-                AddFace(vertices, normals, uvs, indices, new float3(x0, y0, z), new float3(x1, y0, z), new float3(x1, y1, z), new float3(x0, y1, z), normal);
-                return;
-            }
-
-            float holeHalfX = math.min((x1 - x0) * 0.38f, 1.15f);
-            float holeHalfY = math.min((y1 - y0) * 0.42f, 0.95f);
-            float hx0 = -holeHalfX;
-            float hx1 = holeHalfX;
-            float hy0 = -holeHalfY;
-            float hy1 = holeHalfY;
-            AddFace(vertices, normals, uvs, indices, new float3(x0, y0, z), new float3(x1, y0, z), new float3(x1, hy0, z), new float3(x0, hy0, z), normal);
-            AddFace(vertices, normals, uvs, indices, new float3(x0, hy1, z), new float3(x1, hy1, z), new float3(x1, y1, z), new float3(x0, y1, z), normal);
-            AddFace(vertices, normals, uvs, indices, new float3(x0, hy0, z), new float3(hx0, hy0, z), new float3(hx0, hy1, z), new float3(x0, hy1, z), normal);
-            AddFace(vertices, normals, uvs, indices, new float3(hx1, hy0, z), new float3(x1, hy0, z), new float3(x1, hy1, z), new float3(hx1, hy1, z), normal);
-        }
-
-        private static void AddXFaceWithOptionalCutout(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices,
-            float3 e,
-            float bevel,
-            int sign,
-            bool cutDoor)
-        {
-            float x = sign * e.x;
-            float z0 = -e.z + bevel;
-            float z1 = e.z - bevel;
-            float y0 = -e.y + bevel;
-            float y1 = e.y - bevel;
-            float3 normal = new float3(sign, 0f, 0f);
-            if (!cutDoor)
-            {
-                AddFace(vertices, normals, uvs, indices, new float3(x, y0, z0), new float3(x, y0, z1), new float3(x, y1, z1), new float3(x, y1, z0), normal);
-                return;
-            }
-
-            float holeHalfZ = math.min((z1 - z0) * 0.38f, 1.15f);
-            float holeHalfY = math.min((y1 - y0) * 0.42f, 0.95f);
-            float hz0 = -holeHalfZ;
-            float hz1 = holeHalfZ;
-            float hy0 = -holeHalfY;
-            float hy1 = holeHalfY;
-            AddFace(vertices, normals, uvs, indices, new float3(x, y0, z0), new float3(x, y0, z1), new float3(x, hy0, z1), new float3(x, hy0, z0), normal);
-            AddFace(vertices, normals, uvs, indices, new float3(x, hy1, z0), new float3(x, hy1, z1), new float3(x, y1, z1), new float3(x, y1, z0), normal);
-            AddFace(vertices, normals, uvs, indices, new float3(x, hy0, z0), new float3(x, hy0, hz0), new float3(x, hy1, hz0), new float3(x, hy1, z0), normal);
-            AddFace(vertices, normals, uvs, indices, new float3(x, hy0, hz1), new float3(x, hy0, z1), new float3(x, hy1, z1), new float3(x, hy1, hz1), normal);
-        }
-
-        private static void AddYFaceWithOptionalCutout(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices,
-            float3 e,
-            float bevel,
-            int sign,
-            bool cutHatch)
-        {
-            float y = sign * e.y;
-            float x0 = -e.x + bevel;
-            float x1 = e.x - bevel;
-            float z0 = -e.z + bevel;
-            float z1 = e.z - bevel;
-            float3 normal = new float3(0f, sign, 0f);
-            if (!cutHatch)
-            {
-                AddFace(vertices, normals, uvs, indices, new float3(x0, y, z0), new float3(x1, y, z0), new float3(x1, y, z1), new float3(x0, y, z1), normal);
-                return;
-            }
-
-            float holeHalfX = math.min((x1 - x0) * 0.38f, 1.15f);
-            float holeHalfZ = math.min((z1 - z0) * 0.38f, 1.15f);
-            float hx0 = -holeHalfX;
-            float hx1 = holeHalfX;
-            float hz0 = -holeHalfZ;
-            float hz1 = holeHalfZ;
-            AddFace(vertices, normals, uvs, indices, new float3(x0, y, z0), new float3(x1, y, z0), new float3(x1, y, hz0), new float3(x0, y, hz0), normal);
-            AddFace(vertices, normals, uvs, indices, new float3(x0, y, hz1), new float3(x1, y, hz1), new float3(x1, y, z1), new float3(x0, y, z1), normal);
-            AddFace(vertices, normals, uvs, indices, new float3(x0, y, hz0), new float3(hx0, y, hz0), new float3(hx0, y, hz1), new float3(x0, y, hz1), normal);
-            AddFace(vertices, normals, uvs, indices, new float3(hx1, y, hz0), new float3(x1, y, hz0), new float3(x1, y, hz1), new float3(hx1, y, hz1), normal);
-        }
-
-        private static void AddFace(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices,
-            float3 a,
-            float3 b,
-            float3 c,
-            float3 d,
-            float3 normal)
-        {
-            AddTriangle(vertices, normals, uvs, indices, a, b, c, normal);
-            AddTriangle(vertices, normals, uvs, indices, a, c, d, normal);
-        }
-
-        private static void AddQuadSmooth(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices,
-            float3 a,
-            float3 na,
-            float3 b,
-            float3 nb,
-            float3 c,
-            float3 nc,
-            float3 d,
-            float3 nd)
-        {
-            AddTriangleSmooth(vertices, normals, uvs, indices, a, na, b, nb, c, nc);
-            AddTriangleSmooth(vertices, normals, uvs, indices, a, na, c, nc, d, nd);
-        }
-
-        private static void AddTriangle(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices,
-            float3 a,
-            float3 b,
-            float3 c,
-            float3 normal)
-        {
-            float3 n = math.normalizesafe(normal, new float3(0f, 1f, 0f));
-            if (math.dot(math.cross(b - a, c - a), n) < 0f)
-            {
-                float3 swap = b;
-                b = c;
-                c = swap;
-            }
-
-            int start = vertices.Count;
-            AddVertex(vertices, normals, uvs, a, n);
-            AddVertex(vertices, normals, uvs, b, n);
-            AddVertex(vertices, normals, uvs, c, n);
-            indices.Add(start);
-            indices.Add(start + 1);
-            indices.Add(start + 2);
-        }
-
-        private static void AddTriangleSmooth(
-            List<Vector3> vertices,
-            List<Vector3> normals,
-            List<Vector2> uvs,
-            List<int> indices,
-            float3 a,
-            float3 na,
-            float3 b,
-            float3 nb,
-            float3 c,
-            float3 nc)
-        {
-            na = math.normalizesafe(na, new float3(0f, 1f, 0f));
-            nb = math.normalizesafe(nb, na);
-            nc = math.normalizesafe(nc, na);
-            float3 avgNormal = math.normalizesafe(na + nb + nc, na);
-            if (math.dot(math.cross(b - a, c - a), avgNormal) < 0f)
-            {
-                float3 swapPosition = b;
-                b = c;
-                c = swapPosition;
-                float3 swapNormal = nb;
-                nb = nc;
-                nc = swapNormal;
-            }
-
-            int start = vertices.Count;
-            AddVertex(vertices, normals, uvs, a, na);
-            AddVertex(vertices, normals, uvs, b, nb);
-            AddVertex(vertices, normals, uvs, c, nc);
-            indices.Add(start);
-            indices.Add(start + 1);
-            indices.Add(start + 2);
-        }
-
-        private static void AddVertex(List<Vector3> vertices, List<Vector3> normals, List<Vector2> uvs, float3 position, float3 normal)
-        {
-            vertices.Add(new Vector3(position.x, position.y, position.z));
-            normals.Add(new Vector3(normal.x, normal.y, normal.z));
-            uvs.Add(new Vector2(position.x, position.z));
         }
 
         private static void AddCollisionProxies(GameObject root, float3 extents, SocketMask socketMask)
@@ -1064,8 +1003,12 @@ namespace Hecton8.Editor.Structures
                 return;
             }
 
-            float holeHalfZ = math.min(extents.z * 0.42f, 1.15f);
-            float holeHalfY = math.min(extents.y * 0.55f, 0.95f);
+            // Same helper the visual door cut-out calls. Previously the collider used
+            // min(extents*0.55, 0.95) for the lintel while the mesh used
+            // 0.42*(fullSpan - 2*bevel), so on H8_A1712_Airlock_01 the collider lintel hung 13 cm
+            // into the visible opening and the mesh hole changed size with the quality weight.
+            float holeHalfZ = ModuleHardSurfaceDetail1712.ResolveOpeningHalfMeters(extents, 2, MaxBevelMeters);
+            float holeHalfY = ModuleHardSurfaceDetail1712.ResolveOpeningHalfMeters(extents, 1, MaxBevelMeters);
             float sideDepth = math.max(thickness, extents.z - holeHalfZ);
             float topHeight = math.max(thickness, extents.y - holeHalfY);
             AddBoxColliderProxy(
@@ -1102,8 +1045,8 @@ namespace Hecton8.Editor.Structures
                 return;
             }
 
-            float holeHalfX = math.min(extents.x * 0.42f, 1.15f);
-            float holeHalfY = math.min(extents.y * 0.55f, 0.95f);
+            float holeHalfX = ModuleHardSurfaceDetail1712.ResolveOpeningHalfMeters(extents, 0, MaxBevelMeters);
+            float holeHalfY = ModuleHardSurfaceDetail1712.ResolveOpeningHalfMeters(extents, 1, MaxBevelMeters);
             float sideWidth = math.max(thickness, extents.x - holeHalfX);
             float topHeight = math.max(thickness, extents.y - holeHalfY);
             AddBoxColliderProxy(
@@ -1140,8 +1083,8 @@ namespace Hecton8.Editor.Structures
                 return;
             }
 
-            float holeHalfX = math.min(extents.x * 0.42f, 1.15f);
-            float holeHalfZ = math.min(extents.z * 0.42f, 1.15f);
+            float holeHalfX = ModuleHardSurfaceDetail1712.ResolveOpeningHalfMeters(extents, 0, MaxBevelMeters);
+            float holeHalfZ = ModuleHardSurfaceDetail1712.ResolveOpeningHalfMeters(extents, 2, MaxBevelMeters);
             float sideWidth = math.max(thickness, extents.x - holeHalfX);
             float sideDepth = math.max(thickness, extents.z - holeHalfZ);
             AddBoxColliderProxy(
@@ -1212,6 +1155,43 @@ namespace Hecton8.Editor.Structures
             return material;
         }
 
+        /// <summary>
+        /// UV-aware overload, added ADDITIVELY to unblock the assembly without guessing at an in-flight
+        /// refactor.
+        ///
+        /// A call site passes (vertices, normals, uvs, indices) while the declaration below took three
+        /// parameters, so Hecton8.Editor failed with CS1501 and Unity refused to enter play mode - which
+        /// blocked every route measurement in the project, not just this generator. The CS7036 the compiler
+        /// also reported against BuildVertexColors on the next line is a CASCADE, not a real defect: `seed`
+        /// is a genuine parameter of the enclosing BuildHardSurfaceMesh and the call is well-formed.
+        ///
+        /// Written as an overload rather than by editing the existing signature or deleting the argument,
+        /// because the call site is the newer code and the intent is clearly to START validating UVs. An
+        /// overload cannot revert that intent: whoever owns this refactor can fold it into the three-arg
+        /// version and delete this, and nothing they wrote had to be guessed at.
+        ///
+        /// The UV invariant checked is the only one that is universally true - one UV per vertex, all finite -
+        /// mirroring exactly what the three-arg version already asserts for normals.
+        /// </summary>
+        private static void ValidateTopology(
+            List<Vector3> vertices,
+            List<Vector3> normals,
+            List<Vector2> uvs,
+            List<int> indices)
+        {
+            ValidateTopology(vertices, normals, indices);
+
+            if (uvs == null || uvs.Count != vertices.Count)
+                throw new InvalidOperationException("Architect topology validation rejected malformed UV buffer.");
+
+            for (int i = 0; i < uvs.Count; i++)
+            {
+                Vector2 uv = uvs[i];
+                if (!float.IsFinite(uv.x) || !float.IsFinite(uv.y))
+                    throw new InvalidOperationException("Architect topology validation rejected non-finite UV data.");
+            }
+        }
+
         private static void ValidateMesh(Mesh mesh, int vertexCount, int triangleCount)
         {
             if (mesh == null || vertexCount <= 0 || triangleCount <= 0)
@@ -1226,13 +1206,15 @@ namespace Hecton8.Editor.Structures
             }
         }
 
-        private static void ValidateTopology(List<Vector3> vertices, List<Vector3> normals, List<int> indices)
+        private static void ValidateTopology(List<Vector3> vertices, List<Vector3> normals, List<Vector2> uvs, List<int> indices)
         {
             if (vertices == null ||
                 normals == null ||
+                uvs == null ||
                 indices == null ||
                 vertices.Count <= 0 ||
                 vertices.Count != normals.Count ||
+                vertices.Count != uvs.Count ||
                 indices.Count <= 0 ||
                 indices.Count % 3 != 0)
             {
@@ -1243,8 +1225,12 @@ namespace Hecton8.Editor.Structures
             {
                 Vector3 position = vertices[i];
                 Vector3 normal = normals[i];
+                Vector2 uv = uvs[i];
                 if (!IsFinite(position) || !IsFinite(normal) || normal.sqrMagnitude < 0.25f || normal.sqrMagnitude > 2.25f)
                     throw new InvalidOperationException("Architect topology validation rejected non-finite vertex data.");
+
+                if (float.IsNaN(uv.x) || float.IsInfinity(uv.x) || float.IsNaN(uv.y) || float.IsInfinity(uv.y))
+                    throw new InvalidOperationException("Architect topology validation rejected non-finite UV data.");
             }
 
             for (int i = 0; i < indices.Count; i += 3)
@@ -1273,6 +1259,21 @@ namespace Hecton8.Editor.Structures
                     triangleNormal);
                 if (math.dot(triangleNormal, authoredNormal) < 0.25f)
                     throw new InvalidOperationException("Architect topology validation rejected inverted triangle winding.");
+
+                // `3dmodel.md` section 10: no zero-area UV triangle on a textured surface. The
+                // material on these modules is URP Lit with _NORMALMAP, _PARALLAXMAP,
+                // _METALLICSPECGLOSSMAP and _OCCLUSIONMAP all sampling UV0, so a collapsed UV
+                // triangle is four broken maps, not a cosmetic detail. The previous global
+                // uv = (position.x, position.z) projection collapsed every vertical surface, which
+                // is four of the six module faces.
+                Vector2 uvA = uvs[ia];
+                Vector2 uvB = uvs[ib];
+                Vector2 uvC = uvs[ic];
+                float uvArea = math.abs(
+                    ((uvB.x - uvA.x) * (uvC.y - uvA.y)) -
+                    ((uvC.x - uvA.x) * (uvB.y - uvA.y)));
+                if (!math.isfinite(uvArea) || uvArea <= 1e-10f)
+                    throw new InvalidOperationException("Architect topology validation rejected zero-area UV triangle.");
             }
         }
 
@@ -1394,35 +1395,78 @@ namespace Hecton8.Editor.Structures
         }
     }
 
+    /// <summary>
+    /// Offline wear bake. Consumes the per-vertex surface attributes the geometry builders emitted
+    /// and applies the channel contract of `3dmodel.md` section 4 and
+    /// `3DMODEL_HARD_SURFACE_MODULES.md` section 5 literally:
+    /// R = edge wear as <c>convexity * exposureMask * materialWearCoefficient</c>,
+    /// G = grime as <c>cavity * downwardBias * wetnessRoute</c>,
+    /// B = ambient occlusion, high on exposed faces and low in crevices,
+    /// A = decal eligibility, or an emissive seam strip at or above the emissive threshold.
+    /// </summary>
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct ModuleArchitect1712WearJob : IJobParallelFor
     {
-        [ReadOnly] public NativeArray<float3> Positions;
         [ReadOnly] public NativeArray<float3> Normals;
+        [ReadOnly] public NativeArray<float4> Surface;
         public NativeArray<uint> Colors;
-        public float3 Extents;
         public float GlobalQualityWeight;
         public uint Seed;
 
         public void Execute(int index)
         {
-            float3 p = Positions[index];
             float3 n = math.normalizesafe(Normals[index], new float3(0f, 1f, 0f));
+            float4 s = Surface[index];
             float q = math.saturate(GlobalQualityWeight);
-            float3 safeExtents = math.max(Extents, new float3(0.001f));
-            float edge = math.saturate(math.length(p / safeExtents) * 0.58f);
-            float damp = math.saturate(1f - n.y * 0.35f);
+            float convexity = math.saturate(s.x);
+            float cavity = math.saturate(s.y);
+            float decalOrEmissive = math.saturate(s.w);
+            float wearCoefficient = ResolveWearCoefficient((int)math.round(s.z));
+
+            // Upward faces are salt-polished and rain-washed; downward faces trap water and silt.
+            float exposure = math.saturate(0.35f + (0.65f * ((n.y * 0.5f) + 0.5f)));
+            float downwardBias = math.saturate(0.5f - (n.y * 0.5f));
             float noise = Hash01((uint)index ^ Seed);
-            float wear = math.saturate(edge * 0.55f + damp * 0.25f + noise * (0.18f + q * 0.12f));
-            float rust = math.saturate((1f - math.saturate(n.y * 0.5f + 0.5f)) * (0.25f + q * 0.5f) + noise * 0.14f);
-            byte r = ToByte(math.lerp(0.32f, 0.78f, wear));
-            byte g = ToByte(math.lerp(0.35f, 0.22f, rust));
-            byte b = ToByte(math.lerp(0.36f, 0.16f, rust));
-            byte a = ToByte(math.saturate(0.72f + q * 0.28f));
+
+            float wear = math.saturate((convexity * exposure * wearCoefficient) + ((noise - 0.5f) * 0.10f));
+            float grime = math.saturate((cavity * (0.35f + downwardBias) * (0.40f + (0.60f * q))) + ((noise - 0.5f) * 0.08f));
+            float occlusion = math.saturate(1f - cavity);
+
+            byte r = ToByte(wear);
+            byte g = ToByte(grime);
+            byte b = ToByte(occlusion);
+            byte a = ToByte(decalOrEmissive);
             Colors[index] = (uint)r |
                             ((uint)g << 8) |
                             ((uint)b << 16) |
                             ((uint)a << 24);
+        }
+
+        /// <summary>
+        /// `materialWearCoefficient` of the section 5 wear formula, by surface role. Exposed convex
+        /// rims wear hardest; recessed step walls barely wear at all. Kept as a switch so Burst
+        /// resolves it to a jump table with no managed lookup.
+        /// </summary>
+        private static float ResolveWearCoefficient(int role)
+        {
+            switch (role)
+            {
+                case 0: return 0.35f;   // Panel
+                case 1: return 0.75f;   // Frame
+                case 2: return 0.85f;   // Rib
+                case 3: return 1.00f;   // Chamfer
+                case 4: return 0.20f;   // StepWall
+                case 5: return 0.90f;   // DoorFlange
+                case 6: return 1.00f;   // DoorLip
+                case 7: return 0.45f;   // Collar
+                case 8: return 0.55f;   // Gasket
+                case 9: return 0.95f;   // Bolt
+                case 10: return 0.70f;  // Plate
+                case 11: return 0.40f;  // Conduit
+                case 12: return 1.00f;  // Bevel
+                case 13: return 0.80f;  // Rim
+                default: return 0.50f;
+            }
         }
 
         private static float Hash01(uint value)
