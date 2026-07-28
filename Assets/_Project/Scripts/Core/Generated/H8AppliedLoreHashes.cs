@@ -6,6 +6,14 @@ namespace Hecton8.Core.Generated
 {
     public static class H8AppliedLoreHashes
     {
+        public const uint AL_EVAC_QUEUE = 0x08F957DAu;
+        public const uint AL_HULL_CHOIR = 0xDFDE4972u;
+        public const uint AL_PAYROLL_DEAD = 0x0769F3A1u;
+        public const uint AL_PUMP_BLESSING = 0x486D65DDu;
+        public const uint AL_SCRUBBER_BED = 0x48512E61u;
+        public const uint AL_SERVICE_CHAPEL = 0x84D62A52u;
+        public const uint AL_SHIFT_B_AIR_COUNT = 0x6A7CF97Du;
+        public const uint AL_WINDOW_WATCH = 0xD3F0D25Du;
         public const uint P001_CRASH_SHELF = 0xBBDE0731u;
         public const uint P002_BLACK_KEEL_CONTACT = 0x29404F82u;
         public const uint P003_BARNARD_MARK = 0xE1A514C7u;
@@ -585,6 +593,38 @@ namespace Hecton8.Core.Generated
         public const uint P6803_TONNE_WINDOW_BODY_LEDGER = 0xEBF9C2E3u;
         public const uint P6804_BLANK_QUARANTINE_BERTH_RECEIPT = 0x7289D30Cu;
         public const uint P6805_RECEIVER_COUNTERSTAMP_ROOM_NUMBER = 0x034E3FC6u;
+        public const uint P700_IRON_MINNOW = 0x14223508u;
+        public const uint P700_SHORE_SKIMMER = 0x07057235u;
+        public const uint P700_SILT_DRIFTER = 0x9AF15482u;
+        public const uint P700_WALL_GLIDER = 0x827097B7u;
+        public const uint P701_BRINE_SIPHONER = 0x0CBD4D99u;
+        public const uint P701_COLD_VEIL_EEL = 0xCB7F9002u;
+        public const uint P701_GLASSWORM_JUVENILE = 0xCEFF847Au;
+        public const uint P701_LANTERN_SIFTER = 0x2F9ACFF4u;
+        public const uint P702_BRINE_STALKER = 0xF683F7E0u;
+        public const uint P702_POCKET_AMBUSHER = 0xF558FCB1u;
+        public const uint P702_SHADOW_INTERCEPTOR = 0xBB86062Fu;
+        public const uint P703_BLOOD_KELP = 0xC0F95B37u;
+        public const uint P703_IRON_CORAL = 0xA424D13Eu;
+        public const uint P703_THERMAL_TUBEWORM = 0x3F008D7Bu;
+        public const uint P703_TUBULAR_CORAL = 0xCEA9FF8Du;
+        public const uint P704_CATHEDRAL_KELP = 0x1B8C0994u;
+        public const uint P704_GHOST_WEED = 0xF1F82F14u;
+        public const uint P704_RIFT_RIBBON = 0x4FFB19AFu;
+        public const uint P706_AL_ATLAS_REPLY = 0x8BEBFE9Du;
+        public const uint P706_AL_COLD_MIST_LEAK = 0xE741695Bu;
+        public const uint P706_AL_LAST_SHIFT_MARKER = 0x9C96056Bu;
+        public const uint P706_AL_LEVIATHAN_BEARING = 0xA336FC4Au;
+        public const uint P706_AL_MANUAL_GAUGE = 0x1845F051u;
+        public const uint P706_AL_NARCOSIS_TEST = 0xBDD56FD8u;
+        public const uint P706_AL_THERMAL_POCKET = 0x39E5508Du;
+        public const uint P707_ALPHA_LEVIATHAN_FILE = 0x6834E8E2u;
+        public const uint P708_PAD_ATLAS_AUTONOMY_DENIAL = 0xDFDC2859u;
+        public const uint P708_PAD_BIOMASS_EUPHEMISM = 0xB5DAC957u;
+        public const uint P708_PAD_CONTAINER_PRIORITY = 0x99F3E3CFu;
+        public const uint P708_PAD_OXYGEN_PRODUCTIVITY = 0xB2FE51C0u;
+        public const uint P708_PAD_PRESSURE_BONUS = 0x9A690BC0u;
+        public const uint P708_PAD_PR_DRAFT_LANGUAGE = 0xD19AAEF4u;
 
         public const uint Locale_en_US = 0x6C199F07u;
         public const uint Locale_ru_RU = 0x5FBC7928u;

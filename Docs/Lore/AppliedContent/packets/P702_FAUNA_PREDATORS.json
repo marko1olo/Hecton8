@@ -50,7 +50,8 @@
      "terminal": "SPECIMEN 44-B-207. CLASS: ACCESS CONTROL ASSET, INCIDENTAL. LOCATION: EAST LOWER SERVICE THROAT. NOTE: WING CLOSURE MAINTAINED WITHOUT SCHEDULED LOCK REPAIR. REVIEW: NOT REQUIRED.",
      "field_note": "Company logged it as access control because it kept people out of the east wing cheaper than a working door. It kept Hollis out too. Wipe test the lips before you commit a hand.",
      "external_site_article": "Aegir salvage crews describe a heavy-bodied ambush feeder that occupies cut openings in flooded industrial structure rather than natural cavities. Reported strike range exceeds visible body length, which makes visual estimation of a safe standoff unreliable.\n\nField practice on HECTON-8 is to read the silt collar around an opening rather than attempt to see the animal. Deep Reach records from Sector 44 classify the species as an incidental access control asset, a category that describes a closed corridor without describing why the corridor closed.",
-     "localization_status": "source_authority"
+     "localization_status": "source_authority",
+     "external_site": "Aegir salvage crews describe a heavy-bodied ambush feeder that occupies cut openings in flooded industrial structure rather than natural cavities. Reported strike range exceeds visible body length, which makes visual estimation of a safe standoff unreliable."
     },
     "ar_SA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -149,7 +150,8 @@
      "field_note": "Turn and look at it. That is the whole rule and it costs you nothing. And check your seal at the end of the shift, not at the end of the route - the gauge will say fine right up until it says nothing.",
      "audio": "-- it's on the shimmer line again, same as yesterday, and the plot has it twenty metres under me. It is not twenty metres under me. Corran, if you are reading the clean return you are reading the --",
      "external_site_article": "Reports from the Aegir brine canyons describe a pursuit predator that holds position along density interfaces, where acoustic returns split and duplicate. Crews report a single animal appearing at two depths on the same display, with the sharper return proving false.\n\nHECTON-8 field practice is to face the animal on its first pass rather than accelerate. Deep Reach records from Sector 44 note the species' patrol overlapping a decommissioned evacuation corridor, and classify brine contact as equipment degradation.",
-     "localization_status": "source_authority"
+     "localization_status": "source_authority",
+     "external_site": "Reports from the Aegir brine canyons describe a pursuit predator that holds position along density interfaces, where acoustic returns split and duplicate. Crews report a single animal appearing at two depths on the same display, with the sharper return proving false."
     },
     "ar_SA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",
@@ -247,7 +249,8 @@
      "terminal": "SPECIMEN FIELD REF 2147-D-09. CLASS: RECOVERABLE BIOMASS. INCIDENT LINK: SHIFT D TRANSIT LOSS, 3 UNITS. CAUSE OF LOSS: ROUTE SELECTION. RECOVERY: COORDINATES FILED, ENTRY CLOSED.",
      "field_note": "Cause of loss, route selection. Three people picked the same straight line across open water and the form blamed the line. Break your heading when the screen goes clean.",
      "external_site_article": "Aegir deep-transit crews report a predator that closes on a diver's projected position rather than tracking from behind, and that ceases to return sonar contact in the seconds before contact is made.\n\nCurrent field practice on HECTON-8 treats loss of contact during an open crossing as the warning itself, and calls for a change of destination rather than an increase in speed. A 2147 Deep Reach transit loss involving three personnel is recorded with cause of loss given as route selection.",
-     "localization_status": "source_authority"
+     "localization_status": "source_authority",
+     "external_site": "Aegir deep-transit crews report a predator that closes on a diver's projected position rather than tracking from behind, and that ceases to return sonar contact in the seconds before contact is made."
     },
     "ar_SA": {
      "localization_status": "BLOCKED_TRANSLATION_DRAFT",

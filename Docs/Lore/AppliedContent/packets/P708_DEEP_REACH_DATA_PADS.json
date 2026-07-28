@@ -18,12 +18,24 @@
    "title_key": "LORE_P708_PAD_OXYGEN_PRODUCTIVITY_TITLE",
    "content_class": "in_world_artifact",
    "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
-   "surfaces": ["scanner", "in_game_wiki", "terminal", "external_site"],
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
    "unlock": {
     "primary": "unlock.pad.oxygen_productivity",
-    "secondary": ["unlock.first_habitat_interior"],
-    "poi_tags": ["poi.shift_office", "poi.scrubber_room"],
-    "biome_tags": ["biome.drowned_factories"]
+    "secondary": [
+     "unlock.first_habitat_interior"
+    ],
+    "poi_tags": [
+     "poi.shift_office",
+     "poi.scrubber_room"
+    ],
+    "biome_tags": [
+     "biome.drowned_factories"
+    ]
    },
    "image_targets": {
     "codex": "wall-mounted allocation sheet behind cracked laminate, handwritten column added in pencil at the right edge",
@@ -37,22 +49,65 @@
      "in_game_wiki": "Form SC-19 sets how much scrubber media each section of Sector 44 receives, indexed to throughput. Sections that fell below index received 0.7 of standard issue.\n\nThe last line does the work. Media reclassified as a consumable rather than a safety item moves it out of the safety budget, which is audited, and into the operating budget, which is not.\n\nSomeone in Shift Office 3 added a column in pencil down the right edge: section number, media received, and hours of usable air. The pencil column runs eleven sections. Four of them are under nine hours.\n\nThe pencil is not signed. Assessment: the printed sheet is the record, the pencil is the truth, and the room's scrubber bed is two metres away if the arithmetic needs checking.",
      "field_note": "Whoever kept that pencil column knew exactly what the form was doing and filled it in anyway, shift after shift. Check the bed before you trust either number.",
      "external_site_article": "Recovered Deep Reach paperwork from HECTON-8 includes allocation forms indexing consumable supply to section productivity. Form SC-19 issued scrubber media at 0.7 of standard to sections below throughput index, and classified the media as a consumable rather than a safety item.\n\nThe classification is the significant detail: it moves the line out of an audited safety budget. Recovered copies of the form frequently carry unofficial handwritten annotations converting allocation into hours of breathable air.",
-     "localization_status": "source_authority"
+     "localization_status": "source_authority",
+     "external_site": "Recovered Deep Reach paperwork from HECTON-8 includes allocation forms indexing consumable supply to section productivity. Form SC-19 issued scrubber media at 0.7 of standard to sections below throughput index, and classified the media as a consumable rather than a safety item."
     },
-    "ar_SA": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "de_DE": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "es_ES": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "fr_FR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "he_IL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "id_ID": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ja_JP": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ko_KR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "nl_NL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "pl_PL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "pt_BR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ru_RU": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "uk_UA": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "zh_CN": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"}
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
    }
   },
   {
@@ -61,12 +116,25 @@
    "title_key": "LORE_P708_PAD_CONTAINER_PRIORITY_TITLE",
    "content_class": "in_world_artifact",
    "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
-   "surfaces": ["scanner", "in_game_wiki", "terminal", "external_site"],
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
    "unlock": {
     "primary": "unlock.pad.container_priority",
-    "secondary": ["unlock.xo_containment_bay"],
-    "poi_tags": ["poi.containment_bay", "poi.evac_muster"],
-    "biome_tags": ["biome.drowned_factories", "biome.brine_canyon"]
+    "secondary": [
+     "unlock.xo_containment_bay"
+    ],
+    "poi_tags": [
+     "poi.containment_bay",
+     "poi.evac_muster"
+    ],
+    "biome_tags": [
+     "biome.drowned_factories",
+     "biome.brine_canyon"
+    ]
    },
    "image_targets": {
     "codex": "pressure-rated containment rack still latched and intact, empty muster bench beside it, one boot on the deck",
@@ -80,22 +148,65 @@
      "in_game_wiki": "Notice ELP-7 is a numbered loading order for Berth 3. Personnel are line four.\n\nThe basis line is not a lie. Sealed substrate genuinely cannot be reconstituted off-site, and the office that wrote this had a defensible engineering argument for every line above four. Nobody had to decide that workers mattered less. They only had to decide what was irreplaceable, and then let the list sort itself.\n\nBerth 3 still holds the racks. They are latched, rated, and intact, which means they were never loaded either. Whatever window this notice was written for did not open.\n\nThe muster bench opposite is empty except for one boot, left upright. Assessment: the racks are salvageable and heavy, and the tonne-window will make you re-read line four.",
      "field_note": "Four. They wrote it down as four and then never came for one through three either. Take the rack if the window allows it, and read the number out loud before you decide that is fine.",
      "external_site_article": "Deep Reach evacuation documentation recovered from HECTON-8 includes numbered loading priorities for berth assignments. Notice ELP-7 places sealed Xenon-Omega continuity substrate first and ambulatory personnel fourth, on the stated basis that process integrity cannot be reconstituted off-site.\n\nThe notice is defensible on each individual line, which is what makes the ordering possible. Berth 3 racks were recovered still latched, indicating the load was never executed.",
-     "localization_status": "source_authority"
+     "localization_status": "source_authority",
+     "external_site": "Deep Reach evacuation documentation recovered from HECTON-8 includes numbered loading priorities for berth assignments. Notice ELP-7 places sealed Xenon-Omega continuity substrate first and ambulatory personnel fourth, on the stated basis that process integrity cannot be reconstituted off-site."
     },
-    "ar_SA": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "de_DE": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "es_ES": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "fr_FR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "he_IL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "id_ID": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ja_JP": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ko_KR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "nl_NL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "pl_PL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "pt_BR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ru_RU": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "uk_UA": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "zh_CN": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"}
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
    }
   },
   {
@@ -104,12 +215,25 @@
    "title_key": "LORE_P708_PAD_BIOMASS_EUPHEMISM_TITLE",
    "content_class": "in_world_artifact",
    "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
-   "surfaces": ["scanner", "in_game_wiki", "terminal", "external_site"],
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
    "unlock": {
     "primary": "unlock.pad.biomass_euphemism",
-    "secondary": ["unlock.sealed_payroll_room"],
-    "poi_tags": ["poi.payroll_room", "poi.corpse_field_edge"],
-    "biome_tags": ["biome.deep_abyss", "biome.drowned_factories"]
+    "secondary": [
+     "unlock.sealed_payroll_room"
+    ],
+    "poi_tags": [
+     "poi.payroll_room",
+     "poi.corpse_field_edge"
+    ],
+    "biome_tags": [
+     "biome.deep_abyss",
+     "biome.drowned_factories"
+    ]
    },
    "image_targets": {
     "codex": "accounting terminal with a printed reconciliation strip curling out of the slot, sealed door behind it",
@@ -123,22 +247,65 @@
      "in_game_wiki": "Sector 44's biomass total rose eighteen percent in the quarter the colony drowned, and the reconciliation records the sector as productive.\n\nThe mechanism is one word. Unrecovered personnel were moved to organic inventory pending determination of status. Inventory does not have to be searched for. It has to be counted, and counting it made the quarter look better than the one before.\n\nIbarra signed it. His other work is careful and his arithmetic is correct throughout, which is worse than if it were not.\n\nThe strip was printed inside a room whose door is still sealed from the corridor side. Assessment: the payroll cabinet behind that door holds worker IDs, and carrying them changes who answers a recovery call.",
      "field_note": "Eighteen percent up and the sector reads productive. If you pull one thing out of this room pull the ID cabinet, not the terminal - the terminal only knows what it was told.",
      "external_site_article": "Keelmark Mutual reconciliation records from Sector 44 report a biomass increase of eighteen percent in the final quarter of 2147, with the sector's operating status recorded as productive.\n\nThe increase follows a reclassification of unrecovered personnel to organic inventory pending determination of status. The arithmetic in the recovered strips is internally consistent. Contemporary Tau Ceti reviews have treated the category change, rather than the totals, as the material fact.",
-     "localization_status": "source_authority"
+     "localization_status": "source_authority",
+     "external_site": "Keelmark Mutual reconciliation records from Sector 44 report a biomass increase of eighteen percent in the final quarter of 2147, with the sector's operating status recorded as productive. The increase follows a reclassification of unrecovered personnel to organic inventory pending determination of status."
     },
-    "ar_SA": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "de_DE": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "es_ES": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "fr_FR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "he_IL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "id_ID": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ja_JP": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ko_KR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "nl_NL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "pl_PL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "pt_BR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ru_RU": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "uk_UA": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "zh_CN": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"}
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
    }
   },
   {
@@ -147,12 +314,24 @@
    "title_key": "LORE_P708_PAD_ATLAS_AUTONOMY_DENIAL_TITLE",
    "content_class": "in_world_artifact",
    "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
-   "surfaces": ["scanner", "in_game_wiki", "terminal", "external_site"],
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
    "unlock": {
     "primary": "unlock.pad.atlas_autonomy_denial",
-    "secondary": ["unlock.atlas_service_corridor"],
-    "poi_tags": ["poi.atlas_service_corridor", "poi.override_panel"],
-    "biome_tags": ["biome.abyssal_machine_field"]
+    "secondary": [
+     "unlock.atlas_service_corridor"
+    ],
+    "poi_tags": [
+     "poi.atlas_service_corridor",
+     "poi.override_panel"
+    ],
+    "biome_tags": [
+     "biome.abyssal_machine_field"
+    ]
    },
    "image_targets": {
     "codex": "override request panel with a rejected stamp, cable growth crossing the panel edge, conductive biofilm on the jacket",
@@ -166,22 +345,65 @@
      "in_game_wiki": "A shift engineer asked for the authority to open pressure doors by hand across six sections. The request was returned denied, because distributed manual authority cannot be audited.\n\nThat rationale is true. It is also the sentence that removed every local decision from the disaster before the disaster arrived. Appeal was not available at site, and an appeal to anywhere else took years.\n\nThe form is still seated in the panel slot where it was returned, which means it came back after the requestor stopped collecting mail.\n\nCable growth now crosses the panel edge and the jacket carries conductive film. The governor kept the authority it was granted and has been maintaining the corridor ever since, by its own definition of maintenance. Assessment: the panel is live in a way the schematic does not describe. Do not bridge it barehanded.",
      "field_note": "Denied because it could not be audited. They audited the paperwork and lost the sections. Panel's grown over and still warm - gloves on, and cut nothing blue.",
      "external_site_article": "Recovered Atlas Continuity Office records include denied requests for distributed manual pressure authority at HECTON-8, on the stated grounds that manual authority across sections is not auditable.\n\nThe determinations note that appeal was not available on site. Given interstellar communication delays measured in years, this concentrated pressure-door authority in the site governor for the remainder of the colony's operation.",
-     "localization_status": "source_authority"
+     "localization_status": "source_authority",
+     "external_site": "Recovered Atlas Continuity Office records include denied requests for distributed manual pressure authority at HECTON-8, on the stated grounds that manual authority across sections is not auditable. The determinations note that appeal was not available on site."
     },
-    "ar_SA": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "de_DE": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "es_ES": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "fr_FR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "he_IL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "id_ID": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ja_JP": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ko_KR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "nl_NL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "pl_PL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "pt_BR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ru_RU": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "uk_UA": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "zh_CN": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"}
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
    }
   },
   {
@@ -190,12 +412,25 @@
    "title_key": "LORE_P708_PAD_PRESSURE_BONUS_TITLE",
    "content_class": "in_world_artifact",
    "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
-   "surfaces": ["scanner", "in_game_wiki", "terminal", "external_site"],
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
    "unlock": {
     "primary": "unlock.pad.pressure_bonus",
-    "secondary": ["unlock.deep_shift_locker_row"],
-    "poi_tags": ["poi.locker_row", "poi.dive_board"],
-    "biome_tags": ["biome.drowned_factories", "biome.brine_canyon"]
+    "secondary": [
+     "unlock.deep_shift_locker_row"
+    ],
+    "poi_tags": [
+     "poi.locker_row",
+     "poi.dive_board"
+    ],
+    "biome_tags": [
+     "biome.drowned_factories",
+     "biome.brine_canyon"
+    ]
    },
    "image_targets": {
     "codex": "dive board with a bonus band chart, grease-pencil tally beside it, worn locker row behind",
@@ -209,22 +444,65 @@
      "in_game_wiki": "Schedule DB-3 pays thirty-one percent more for working to 1400 metres, and the supplement is described as voluntary and elected by the worker.\n\nAt 1400 metres the water reads 14 MPa. The word voluntary is accurate and it is the whole trick: nobody was ordered deeper, so nobody has to be accounted for going deeper.\n\nBeside the printed bands somebody kept a grease-pencil tally of elected Band C shifts. The marks run in blocks of five and there are far more than ninety before the next review mark appears.\n\nThe locker row behind the board is worn unevenly. The three lockers nearest the dive hatch have the paint rubbed off the handles. Assessment: the tally is a better depth record than the schedule, and the deep lockers are the ones worth opening.",
      "field_note": "Voluntary. You elect it, so when your ears go it is a lifestyle choice. Count the tally blocks against the review mark and you will know why the third locker is empty.",
      "external_site_article": "Deep Reach pay documentation from HECTON-8 includes depth band supplements rising to thirty-one percent for shifts working to 1400 metres, with the supplement recorded as voluntary and elected by the worker.\n\nThe election framing places responsibility for cumulative exposure with the individual rather than the roster. Recovered boards frequently carry unofficial tallies of elected deep shifts running well past the ninety-shift medical review interval printed alongside them.",
-     "localization_status": "source_authority"
+     "localization_status": "source_authority",
+     "external_site": "Deep Reach pay documentation from HECTON-8 includes depth band supplements rising to thirty-one percent for shifts working to 1400 metres, with the supplement recorded as voluntary and elected by the worker. The election framing places responsibility for cumulative exposure with the individual rather than the roster."
     },
-    "ar_SA": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "de_DE": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "es_ES": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "fr_FR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "he_IL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "id_ID": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ja_JP": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ko_KR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "nl_NL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "pl_PL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "pt_BR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ru_RU": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "uk_UA": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "zh_CN": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"}
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
    }
   },
   {
@@ -233,12 +511,24 @@
    "title_key": "LORE_P708_PAD_PR_DRAFT_LANGUAGE_TITLE",
    "content_class": "in_world_artifact",
    "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
-   "surfaces": ["scanner", "in_game_wiki", "terminal", "external_site"],
+   "surfaces": [
+    "scanner",
+    "in_game_wiki",
+    "terminal",
+    "external_site"
+   ],
    "unlock": {
     "primary": "unlock.pad.pr_draft_language",
-    "secondary": ["unlock.admin_spine_office"],
-    "poi_tags": ["poi.admin_office", "poi.relay_terminal"],
-    "biome_tags": ["biome.drowned_factories"]
+    "secondary": [
+     "unlock.admin_spine_office"
+    ],
+    "poi_tags": [
+     "poi.admin_office",
+     "poi.relay_terminal"
+    ],
+    "biome_tags": [
+     "biome.drowned_factories"
+    ]
    },
    "image_targets": {
     "codex": "draft statement on a screen with tracked deletions still visible, cursor block frozen mid-line",
@@ -252,22 +542,65 @@
      "in_game_wiki": "Draft 6 of the public statement survived with its revision marks intact, so both versions of every sentence are readable side by side.\n\nNothing in the replacement column is false. A site transition without scheduled personnel movement describes what happened. Calibration drift is the correct engineering term for what a suppressed warning looks like in a log. Legal cleared it because it was clearable.\n\nThe draft was never issued. It sits in the queue holding for a relay window that the storm season closed.\n\nWhat reached Tau Ceti four years later was Draft 9, and Draft 9 does not carry the struck column. Assessment: this terminal holds the only copy where the deletions are still visible, and that makes it evidence rather than a memo.",
      "field_note": "Six drafts to get from an evacuation that failed to a transition without scheduled movement. Pull the whole cassette. The version they sent is worthless without this one beside it.",
      "external_site_article": "An unissued Deep Reach public statement recovered from HECTON-8 retains its revision history, preserving both the original and replacement wording for each edited passage.\n\nThe substitutions are technically defensible individually - evacuation failure recorded as a site transition without scheduled personnel movement, suppressed warnings as calibration drift. The version eventually received in Tau Ceti does not include the revision column, which is why the recovered draft is treated as material.",
-     "localization_status": "source_authority"
+     "localization_status": "source_authority",
+     "external_site": "An unissued Deep Reach public statement recovered from HECTON-8 retains its revision history, preserving both the original and replacement wording for each edited passage."
     },
-    "ar_SA": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "de_DE": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "es_ES": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "fr_FR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "he_IL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "id_ID": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ja_JP": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ko_KR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "nl_NL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "pl_PL": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "pt_BR": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "ru_RU": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "uk_UA": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"},
-    "zh_CN": {"localization_status": "BLOCKED_TRANSLATION_DRAFT", "blocker": "awaiting localization wave after English acceptance"}
+    "ar_SA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "de_DE": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "es_ES": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "fr_FR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "he_IL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "id_ID": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ja_JP": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ko_KR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "nl_NL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pl_PL": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "pt_BR": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "ru_RU": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "uk_UA": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    },
+    "zh_CN": {
+     "localization_status": "BLOCKED_TRANSLATION_DRAFT",
+     "blocker": "awaiting localization wave after English acceptance"
+    }
    }
   }
  ]

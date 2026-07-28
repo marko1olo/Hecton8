@@ -1,0 +1,54 @@
+{
+ "schema": "H8.RELEASE_SET_MANIFEST.V0",
+ "release_set_id": "RS704_FLORA_HAZARD_LAYER",
+ "status": "source_authority_localized_drafts_pending_native_review_and_runtime_bake",
+ "canonical_importer_ready": true,
+ "packet_sources": [
+  "Docs/Lore/AppliedContent/packets/P704_FLORA_HAZARD.json"
+ ],
+ "packets": [
+  "P704_GHOST_WEED",
+  "P704_CATHEDRAL_KELP",
+  "P704_RIFT_RIBBON"
+ ],
+ "locales_present_in_packet_json": [
+  "en_US",
+  "ar_SA",
+  "de_DE",
+  "es_ES",
+  "fr_FR",
+  "he_IL",
+  "id_ID",
+  "ja_JP",
+  "ko_KR",
+  "nl_NL",
+  "pl_PL",
+  "pt_BR",
+  "ru_RU",
+  "uk_UA",
+  "zh_CN"
+ ],
+ "markdown_publication_locales_present": [
+  "en_US"
+ ],
+ "surfaces": [
+  "audio_subtitle",
+  "external_site",
+  "in_game_wiki",
+  "scanner",
+  "terminal"
+ ],
+ "runtime_contract": {
+  "runtime_must_not_parse_markdown": true,
+  "runtime_must_not_generate_translation": true,
+  "expected_bake_output": [
+   "packet_id_hash",
+   "loc_id_hashes",
+   "surface_enum",
+   "unlock_id",
+   "seed_tags",
+   "localized_string_pool_offsets"
+  ]
+ },
+ "localization_note": "en_US is source_authority. All 14 other locale rows are explicit BLOCKED_TRANSLATION_DRAFT pending the localization wave, per localization.md:129, which forbids translating before the English authority row is accepted."
+}

@@ -265,6 +265,36 @@ def optional_text(localized: dict[str, Any], field: str) -> str:
     return sanitize_localized_text(value) if isinstance(value, str) else ""
 
 
+AUDIO_SURFACE_NAMES = ("audio", "audio_subtitle", "audio_transcript")
+
+AUTHORITY_LOCALE = "en_US"
+
+
+def row_is_blocked_translation(localized: dict[str, Any]) -> bool:
+    """True for a locale row that honestly declares it has no usable draft yet.
+
+    writing.md and localization.md both list BLOCKED_TRANSLATION_DRAFT as a valid production status and
+    require it INSTEAD of a fabricated translation or a copy of the English row. Such a row carries a
+    blocker rather than text, so the bake needs a fallback instead of a hard failure.
+    """
+    status = str(localized.get("localization_status", "")).strip().upper()
+    return status == "BLOCKED_TRANSLATION_DRAFT"
+
+
+def packet_declares_audio_surface(packet: dict[str, Any]) -> bool:
+    """True when the packet publishes to an audio surface.
+
+    A packet with no speaker - a coral, a kelp stand, a bottom feeder - has no audio surface in its
+    `surfaces` list, and requiring an audio row from it would mean fabricating a spoken line to fill a
+    column. Packets that omit `surfaces` entirely keep the old strict behaviour, so nothing already in the
+    corpus loosens.
+    """
+    surfaces = packet.get("surfaces")
+    if not isinstance(surfaces, list) or not surfaces:
+        return True
+    return any(str(s).strip().lower() in AUDIO_SURFACE_NAMES for s in surfaces)
+
+
 def split_localization_status(value: str) -> tuple[str, bool]:
     text = value.strip()
     draft = False
@@ -380,12 +410,23 @@ def packet_rows(packets: list[dict[str, Any]]) -> list[dict[str, str]]:
             raise ValueError(f"Packet localized must be object: {packet_id}")
 
         surface_mask = str(resolve_packet_surface_mask(packet))
+        authority_row = localized_by_locale.get(AUTHORITY_LOCALE)
         for locale in TARGET_LOCALES:
             localized = localized_by_locale.get(locale)
             if not isinstance(localized, dict):
                 raise ValueError(f"Missing locale: packet={packet_id} locale={locale}")
 
             flags = localized_row_flags(localized, locale, packet)
+            # A row that honestly declares BLOCKED_TRANSLATION_DRAFT carries a blocker instead of text.
+            # writing.md and localization.md both list that status as valid and REQUIRE it rather than a
+            # fabricated or copied translation, but this importer demanded text in all 15 locales, so
+            # law-compliant authoring could not be baked at all. Bake the authority row's text as the
+            # runtime fallback and keep the draft flag, which is what localization.md's "explicit fallback
+            # language and missing-string display policy" asks for. The authoring source stays honest: it
+            # still says BLOCKED_TRANSLATION_DRAFT with its blocker.
+            if locale != AUTHORITY_LOCALE and row_is_blocked_translation(localized) and isinstance(authority_row, dict):
+                localized = {**authority_row, **{k: v for k, v in localized.items() if v}}
+                flags |= ROW_FLAG_DRAFT_LOCALIZATION
             rows.append(
                 {
                     "packet_id": packet_id,
@@ -397,7 +438,16 @@ def packet_rows(packets: list[dict[str, Any]]) -> list[dict[str, str]]:
                     "title": require_text(localized, "title", packet_id, locale),
                     "scanner": require_text(localized, "scanner", packet_id, locale),
                     "terminal": require_text(localized, "terminal", packet_id, locale),
-                    "audio": require_text(localized, "audio", packet_id, locale),
+                    # Audio is required only when the packet actually declares an audio surface. Demanding it
+                    # unconditionally forced a spoken line onto entries that have no speaker - a coral, a
+                    # kelp stand, a silt feeder - which is inventing content to satisfy a column. The
+                    # surface list is the packet's own declaration of which surfaces it publishes to, and
+                    # surface_mask already carries that to the runtime.
+                    "audio": (
+                        require_text(localized, "audio", packet_id, locale)
+                        if packet_declares_audio_surface(packet)
+                        else optional_text(localized, "audio")
+                    ),
                     "in_game_wiki": require_text(localized, "in_game_wiki", packet_id, locale),
                     "external_site": require_text(localized, "external_site", packet_id, locale),
                     "field_note": optional_text(localized, "field_note"),
