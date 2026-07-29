@@ -34,11 +34,9 @@ namespace Hecton8.Physiology
         private const double DefaultSeaLevelAupY = 14.02d;
         private const float ToxicityExposureFallbackDeltaScalePerSecond = 0.08f;
         private const float AuthoritativeUpdateIntervalSeconds = 0.1f;
-        // Oxygen-critical bridge. Re-publish only after a meaningful further drop so the 32-slot
-        // OxygenCriticalSignal lane and the VocalWarningSystem OxygenLow queue are not spammed at tick rate.
-        private const float OxygenCriticalRepublishEpsilon = 0.01f;
-        // Below this drain rate a time-to-zero projection is meaningless; report the unknown ceiling instead
-        // of dividing by ~0 and handing consumers a fake countdown.
+        // Below this drain rate even the crude severity proxy in OxygenCriticalSignal.SecondsRemaining is
+        // meaningless; report the unknown ceiling instead of dividing by ~0. See PublishOxygenCriticalBridge
+        // for why that field is NOT a countdown to zero.
         private const float OxygenCriticalMinDrainPerSecond = 0.0001f;
         private const float OxygenCriticalUnknownSecondsRemaining = 3600f;
 #if UNITY_EDITOR
@@ -76,6 +74,11 @@ namespace Hecton8.Physiology
         private static readonly uint _Co2ToxicityFullHash = HashLowerAsciiString("co2_toxicity_full");
         private static readonly uint _SurvivalVitalsQueueDropWarningHash = HashLowerAsciiString("shinobu_survival_vitals_queue_drop");
         private static readonly uint _SurvivalVitalsQueueContextHash = HashLowerAsciiString("shinobu_survival_vitals");
+        // Wiring-gap telemetry for the environment seed's inventory mask. A missing SuitUpgradeManager is the
+        // one remaining way ThermalSuitUpgrade can read as absent for a player who actually installed it, and
+        // it used to be indistinguishable from "no upgrade" because the seed hardcoded 0u.
+        private static readonly uint _SuitUpgradeRuntimeMissingHash = HashLowerAsciiString("suit_upgrade_runtime_missing");
+        private static readonly uint _InventorySeedRequesterHash = HashLowerAsciiString("shinobu_physiology_inventory_seed");
         private static readonly ulong JobMutationGuardMask =
             MutationGuardBit(BufferID.ShinobuPhysiologyVitals) |
             MutationGuardBit(BufferID.ShinobuDecompressionStates) |
@@ -215,8 +218,7 @@ namespace Hecton8.Physiology
         private float _previousDepthMeters;
         private uint _playerToxicityTargetHash;
         private BreathingGasFractionsDTO _breathingGasOverride;
-        private bool _oxygenCriticalLatched;
-        private float _lastPublishedOxygenCritical01 = -1f;
+        private bool _suitUpgradeRuntimeMissingReported;
 
         public static bool TryGetActive(out ShinobuPhysiologyRuntime runtime)
         {
@@ -526,6 +528,45 @@ namespace Hecton8.Physiology
         public void LateFrameTick()
         {
             TryFinalizeFrameJobNoWait();
+
+            // OXYGEN-CRITICAL HEARTBEAT, DELIBERATELY NOT ON THE JOB-COMPLETION EDGE.
+            //
+            // This used to be published from FinishFrameJobCompletion, i.e. once per completed physiology
+            // tick. That could not reach HectonSurvivalSystem, and the reason is pure cadence arithmetic:
+            //
+            //   * SignalBus<T>.FlushPostSimulation zeroes _frameSnapshotCount unconditionally
+            //     (SignalBusRuntime.cs:900) and refills by DEQUEUEING the ring (:958), so a pushed signal
+            //     appears in exactly one flush output and is then gone.
+            //   * That flush runs once per frame, last thing in RunMasterPostSimulationPhase
+            //     (SystemDispatcher.cs:3036), and RunSlowTick runs BEFORE it in the same frame (:5322 then
+            //     :5327). So a consumer reading GetFrameSnapshot() during SlowTick(S) sees the output of
+            //     flush(S-1) - i.e. only what was pushed between flush(S-2) and flush(S-1).
+            //   * The consumer is HectonSurvivalSystem.ConsumeOxygenCriticalSignals, called only from
+            //     SlowTick (HectonSurvivalSystem.cs:1111). Both systems are ISlowTickable on the same
+            //     accumulator, so they tick on the SAME frames, ~6 frames apart at 60 fps.
+            //
+            // A producer on the slow cadence therefore pushes on frame S and the next consumer read is at
+            // frame S+6, by which time flush(S+1)..flush(S+5) have each replaced the snapshot. Publishing
+            // "once per slow tick" cannot ever land in the window a slow tick reads - and republishing on
+            // the slow cadence does not help either, because it repeats the same miss.
+            //
+            // Worse, the failure was frame-rate dependent in the direction that hides it: when dt >= 0.05 s
+            // the slow accumulator crosses every 1-2 frames (and MaxCadenceSubstepsPerFrame = 4 allows
+            // several substeps in one frame), so delivery becomes LIKELY in the low-frame-rate headless
+            // regime we measure in and unlikely at 60 fps. A batchmode probe could have shown this bridge
+            // working while no player ever saw it.
+            //
+            // LateFrameTick runs every frame (dispatcher lane at :5561), so publishing here makes the
+            // arithmetic frame-rate independent: for ANY slow-tick frame S, the push from LateFrame(S-2)
+            // is in flush(S-1), which is exactly the snapshot SlowTick(S) reads. That holds at 60 fps, at
+            // 5 fps, and when several slow substeps land in one frame.
+            //
+            // `!_jobScheduled` is the gate because the physiology jobs own VitalsExport and PhysiologyScalars
+            // while in flight; reading them mid-flight is the race every other reader in this file guards
+            // against the same way (see TryGetVitalsExport). `_defaultsInitialized` keeps the per-frame vault
+            // handle resolve out of the pre-boot frames, where the export row carries no status yet.
+            if (!_jobScheduled && _defaultsInitialized)
+                PublishOxygenCriticalBridge();
         }
 
         /// <summary>
@@ -547,7 +588,12 @@ namespace Hecton8.Physiology
                 AscentRateMetersPerSecond = ascentRateMetersPerSecond,
                 Frame = _simulationFrameCounter,
                 Flags = MockPressureSignal.ActiveFlag,
-                AmbientTemperatureCelsius = mockAmbientTemperatureCelsius
+                AmbientTemperatureCelsius = mockAmbientTemperatureCelsius,
+                // MockEnvironmentDropJob does `env.InventoryMask = pressure.InventoryMask` unconditionally
+                // when the ActiveFlag is set (ShinobuPhysiologyJobs.cs:590). Leaving this field default here
+                // would silently overwrite the seeded suit mask with 0 for the whole injected-pressure run,
+                // which is exactly the class of bug the seed's old hardcoded 0u was.
+                InventoryMask = ResolveInventoryMask()
             };
             return true;
         }
@@ -573,7 +619,10 @@ namespace Hecton8.Physiology
                 AscentRateMetersPerSecond = 0f,
                 Frame = _simulationFrameCounter,
                 Flags = MockPressureSignal.ActiveFlag | MockPressureSignal.HabitatOverrideFlag | MockPressureSignal.HyperbaricTreatmentFlag | (stateMask & 0xFFF0u),
-                AmbientTemperatureCelsius = mockAmbientTemperatureCelsius
+                AmbientTemperatureCelsius = mockAmbientTemperatureCelsius,
+                // Same overwrite hazard as InjectMockPressure (ShinobuPhysiologyJobs.cs:590): a hyperbaric
+                // chamber session must not strip the player's thermal insulation as a side effect.
+                InventoryMask = ResolveInventoryMask()
             };
             return true;
         }
@@ -1417,11 +1466,66 @@ namespace Hecton8.Physiology
                 AmbientPressureAtm = ambientPressureAtm,
                 AmbientTemperatureCelsius = math.isfinite(mockAmbientTemperatureCelsius) ? mockAmbientTemperatureCelsius : 2f,
                 SystemHealthIndex01 = ResolveSystemHealthIndex01(),
-                InventoryMask = 0u,
+                InventoryMask = ResolveInventoryMask(),
                 Frame = frame,
                 Flags = flags,
                 AscentRateMetersPerSecond = ascentRate
             };
+        }
+
+        /// <summary>
+        /// Resolves MockEnvironmentVitalsSignal.InventoryMask from the real suit-upgrade owner.
+        ///
+        /// This used to be a hardcoded `InventoryMask = 0u` in the environment seed, which meant
+        /// OxygenConsumptionJob's `(env.InventoryMask &amp; ShinobuInventoryBits.ThermalSuitUpgrade) != 0u`
+        /// (ShinobuPhysiologyJobs.cs:1285) was false for every entity, forever. Thermal insulation resolved to
+        /// 0 no matter what the player had installed, and nothing anywhere reported it - the hypothermia curve
+        /// just ran as if the suit were bare. Silent, uniform, plausible output: the exact failure class
+        /// COMMON_SENSE calls out.
+        ///
+        /// SuitUpgradeManager.EffectiveUpgradeMask is the authoritative "what the suit actually provides" mask
+        /// (installed AND supported AND not broken - SuitUpgradeManager.cs:1313-1324). GlobalRegistry.SuitUpgrades
+        /// is read directly rather than cached in RebindColdServices because it is a static field read with no
+        /// per-tick cost, and caching it would go stale: RegisterSuitUpgradeRuntime goes through
+        /// RegisterServiceAllowSameInstance, not ReplaceService, so a late registration does not necessarily
+        /// reach IGlobalRegistryHotSwapListener.
+        ///
+        /// PRECISION LIMIT, STATED RATHER THAN HIDDEN: the DTO carries one BIT and the job maps it to a fixed
+        /// tuning.ThermalSuitInsulation01, while the suit resolver produces a continuous ThermalResistance
+        /// that DepthModuleMk4 also contributes 0.45 to (SuitUpgradeResolver.cs:118). Only the two upgrades
+        /// that are actually thermal (ThermalLining, ThermalGenerator) set the bit here; a Mk4 hull does not,
+        /// because granting full thermal-suit insulation for a depth module would overstate it. Carrying the
+        /// float through instead of the bit needs a DTO and job change, which are not this file's.
+        /// </summary>
+        private uint ResolveInventoryMask()
+        {
+            Hecton8.Gameplay.SuitUpgradeManager suitUpgrades = GlobalRegistry.SuitUpgrades;
+            if (suitUpgrades == null)
+            {
+                // LOUD, NOT SILENT. Without this owner the mask is genuinely unknowable from here, and an
+                // unknowable mask reads identically to "player owns nothing" downstream. Report once so the
+                // wiring gap is visible instead of being absorbed as a cold hypothermia curve.
+                if (!_suitUpgradeRuntimeMissingReported)
+                {
+                    _suitUpgradeRuntimeMissingReported = true;
+                    GlobalTelemetryBus.PublishDependencyOrderWarning(
+                        _SuitUpgradeRuntimeMissingHash,
+                        _InventorySeedRequesterHash);
+                    H8Debug.LogWarning(
+                        "[SHINOBU_PHYSIOLOGY] No SuitUpgradeManager registered; environment InventoryMask seeds as 0 and ThermalSuitUpgrade insulation cannot apply.");
+                }
+
+                return 0u;
+            }
+
+            _suitUpgradeRuntimeMissingReported = false;
+            ulong effectiveMask = suitUpgrades.EffectiveUpgradeMask;
+            const ulong ThermalUpgradeMask =
+                Hecton8.Gameplay.SuitUpgradeResolver.ThermalLining |
+                Hecton8.Gameplay.SuitUpgradeResolver.ThermalGenerator;
+            return (effectiveMask & ThermalUpgradeMask) != 0UL
+                ? ShinobuInventoryBits.ThermalSuitUpgrade
+                : 0u;
         }
 
         private uint RefreshPlayerToxicityTargetHash()
@@ -1699,7 +1803,9 @@ namespace Hecton8.Physiology
                 {
                     PatchLatestTelemetryExecutionTime(vault, elapsedMicroseconds);
                     PublishSurvivalVitals(vault);
-                    PublishOxygenCriticalBridge(vault);
+                    // PublishOxygenCriticalBridge is NOT called here. It runs from LateFrameTick every frame
+                    // while the critical bit is set; a completion-edge push cannot reach the consumer's read
+                    // window. The full cadence argument is in LateFrameTick.
                     PublishVisualSyncScalars(vault);
                     TryDumpAutopsyIfFatal(vault);
                 }
@@ -1789,35 +1895,52 @@ namespace Hecton8.Physiology
         }
 
         /// <summary>
-        /// Bridges this runtime's oxygen truth onto the one lane the suit-tank survival clock actually reads.
+        /// Publishes this runtime's oxygen-critical STATE onto OxygenCriticalSignal, once per frame while a
+        /// critical/hypoxic/fatal oxygen bit is set. Called from LateFrameTick, never from the job-completion
+        /// edge - the cadence argument for that is written out in full there.
         ///
-        /// WHY THIS EXISTS. OxygenConsumptionJob already drains PhysiologyDTO.BloodOxygen every tick, and
-        /// PublishSurvivalVitals already reports it - but SurvivalVitalsChangedSignal is consumed only by
+        /// WHY THIS EXISTS. OxygenConsumptionJob drains PhysiologyDTO.BloodOxygen every tick and
+        /// PublishSurvivalVitals reports it, but SurvivalVitalsChangedSignal is consumed only by
         /// VocalWarningSystem, AdaptiveStemAudioMixer and the death recorder in SignalBridgeState, and
-        /// HypoxiaSignal has no gameplay consumer at all. Neither lane touches HectonSurvivalSystem's suit
-        /// tank (Standard_Suit_V1.asset maxOxygen 139.24). The ONLY lane that does is OxygenCriticalSignal,
-        /// min-folded in HectonSurvivalSystem.ConsumeOxygenCriticalSignals - and before this method the only
-        /// producer in the project was a predator biting a bio-cable (BioCableIK). So falling blood oxygen
-        /// reached the audio mixer and never reached the survival clock.
+        /// HypoxiaSignal has no gameplay consumer at all. OxygenCriticalSignal is the only lane
+        /// HectonSurvivalSystem reads, and before this method the only producer in the project was a predator
+        /// biting a bio-cable (BioCableIK). So falling blood oxygen reached the audio mixer and nothing else.
         ///
-        /// WHY THE MIN-FOLD IS THE RIGHT TARGET. ConsumeOxygenCriticalSignals runs immediately AFTER
-        /// UpdateOxygen in the same SlowTick, and folds with math.min then clamps with math.max(0f, ...).
-        /// That ordering is what makes this survive the recorded surface-refill defect: when a stale movement
-        /// handle pins depth at 0, UpdateOxygen takes the "not underwater" branch and refills at 15/s, but a
-        /// later min-fold cannot be outrun by an earlier refill. Draining through any earlier branch could be.
+        /// WHAT THIS DOES *NOT* DO - READ BEFORE TRUSTING IT. It does not close the gap to the suit-tank
+        /// survival clock, and three earlier claims in this comment block were wrong:
         ///
-        /// Edge-gated on purpose: pushed only while a critical/hypoxic/fatal oxygen bit is set, and then only
-        /// when oxygen has fallen a further OxygenCriticalRepublishEpsilon, so neither the 32-slot lane nor
-        /// the OxygenLow voice queue is spammed at tick rate.
+        ///   1. The min-fold in HectonSurvivalSystem.ConsumeOxygenCriticalSignals is a NO-OP for physiology
+        ///      today, because Oxygen01 is deliberately published as 1f (see the block at the assignment
+        ///      below). `math.min(targetOxygen, maxOxygen * 1f)` cannot lower anything. The live effect of
+        ///      this lane is the WARNING channel, plus whatever a future consumer does with Severity/Flags.
+        ///   2. "A later min-fold cannot be outrun by an earlier refill" is only true WITHIN one slow tick.
+        ///      UpdateOxygen and ConsumeOxygenCriticalSignals do run in that order in the same SlowTick body
+        ///      (HectonSurvivalSystem.cs:1110-1111), so one delivered clamp survives that tick's refill - but
+        ///      the surface branch refills at surfaceOxygenRefillRate EVERY slow tick, unconditionally. A
+        ///      stateless per-frame-snapshot min-fold is not a latch, so it cannot hold a clamp across ticks
+        ///      no matter how it is delivered. A sustained clamp needs latching authority in the consumer,
+        ///      which is not this file's to build.
+        ///   3. The old edge gate - publish on first entry, then only after a further 0.01 fall in blood O2 -
+        ///      made the producer even less able to act as a clamp: at the measured drain the next edge is
+        ///      tens of slow ticks away, during which the surface refill adds far more than the clamp removed.
+        ///      That gate is gone. While the bit is set this publishes state every frame, which is the only
+        ///      shape a stateless per-frame min-fold consumer can consume.
+        ///
+        /// LANE SEMANTICS. Physiology's rows are a STATE HEARTBEAT, not events. Frame stays at
+        /// _simulationFrameCounter (the physiology tick that produced the state), so a repeated Frame value
+        /// from this SourceId identifies a repeat rather than a new event - that is deliberate, and it is how
+        /// an event-shaped consumer should de-duplicate. The lane holds 32 slots and is drained by every
+        /// flush, so one push per frame leaves queue depth 1. VocalWarningSystem slots by warning id
+        /// (AlarmBitmaskOps.Insert is one slot per id), so a heartbeat holds the OxygenLow alarm asserted
+        /// while the player is actually hypoxic instead of blinking it once every few seconds; it does not
+        /// grow the queue.
         ///
         /// SourceId is this runtime's own hash, which also keeps FluidPipeGraphRuntime out of it - that
         /// consumer early-continues on any SourceId that is not SourceBioCablePredatorBite, so the
         /// life-support-cutoff branch there cannot be tripped by physiology.
         /// </summary>
-        private void PublishOxygenCriticalBridge(IDataVault vault)
+        private void PublishOxygenCriticalBridge()
         {
-            _ = vault;
-
             NativeArray<VitalsExportDTO> exports = OpenPhysiologyVaultArray(ref _exportHandle, BufferID.ShinobuVitalsExport, entityCapacity);
             if (!exports.IsCreated || exports.Length <= 0)
                 return;
@@ -1828,20 +1951,25 @@ namespace Hecton8.Physiology
                                                  ShinobuPhysiologyFlags.Hypoxia |
                                                  ShinobuPhysiologyFlags.FatalOxygen)) != 0u;
             if (!oxygenCritical)
-            {
-                // Recovered (or never critical): drop the latch so the next descent re-publishes from scratch.
-                _oxygenCriticalLatched = false;
-                _lastPublishedOxygenCritical01 = -1f;
                 return;
-            }
 
             float oxygen01 = math.saturate(ShinobuPhysiologyJobMath.SanitizeUnit(export.BloodOxygen));
-            if (_oxygenCriticalLatched && oxygen01 >= _lastPublishedOxygenCritical01 - OxygenCriticalRepublishEpsilon)
-                return;
 
-            // Real countdown, not a placeholder. OxygenDrainPerSecond is the rate OxygenConsumptionJob already
-            // resolved this tick from heart rate, adrenaline, trauma, toxemia, shiver, ambient pressure and
-            // stamina drain, in the same 0-1 units as BloodOxygen - so the quotient is seconds.
+            // SecondsRemaining IS NOT A COUNTDOWN TO ZERO. It was commented as one; it is not, for three
+            // independent reasons, all of them in OxygenConsumptionJob:
+            //
+            //   * The drain actually applied is `OxygenDrainPerSecond * hypoxicDrainScale * dt`, where
+            //     hypoxicDrainScale = 0.2 + hypoxia01 + carbonDioxideToxicity01 * 0.5
+            //     (ShinobuPhysiologyJobs.cs:1333-1334). This quotient omits that factor entirely, so it is
+            //     wrong by 1/hypoxicDrainScale - five times too SHORT at the 0.2 floor.
+            //   * BloodOxygen is also lerped back toward oxygenAvailability01 every tick, before the drain
+            //     (:1332). While the breathing gas is adequate that restoring term can exceed the drain, so
+            //     the value is not even monotonically falling and "time to zero" is not well defined.
+            //   * :1334 floors the result at tuning.MinOxygen01, so zero is not a reachable state.
+            //
+            // What it is: a bounded, monotone-in-drain severity hint. Kept because the DTO field exists and
+            // consumers read it as a magnitude, not because it predicts a death time. A real countdown needs
+            // the job to export the effective drain it applied; that is not this file.
             NativeArray<PhysiologyScalarsDTO> scalars = OpenPhysiologyVaultArray(ref _scalarHandle, BufferID.ShinobuPhysiologyScalars, entityCapacity);
             float drainPerSecond = scalars.IsCreated && scalars.Length > 0
                 ? math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(scalars[0].OxygenDrainPerSecond, 0f))
@@ -1887,17 +2015,11 @@ namespace Hecton8.Physiology
                 ? OxygenCriticalSignal.FlagLifeSupportCutoff
                 : 0);
 
-            if (!SignalBus<OxygenCriticalSignal>.TryPushTracked(in signal, ref s_x001ShinobuPhysiologyRuntimeSignalPushDropCount))
-            {
-                // TryPushTracked already counted the drop - calling ReportSurvivalVitalsSignalDrop here would
-                // double-count it (that helper exists for SurvivalSignalRoute, which does not take the counter).
-                // Returning without touching the latch is what makes a drop recoverable: _lastPublishedOxygenCritical01
-                // stays stale, so the next completed tick re-evaluates and re-publishes the same edge.
-                return;
-            }
-
-            _oxygenCriticalLatched = true;
-            _lastPublishedOxygenCritical01 = oxygen01;
+            // TryPushTracked already counts a drop, so nothing else to do on failure - and with a per-frame
+            // heartbeat a single dropped push self-heals on the next frame. Deliberately not calling
+            // ReportSurvivalVitalsSignalDrop: that helper exists for SurvivalSignalRoute, which does not take
+            // the counter, and calling it here would double-count.
+            SignalBus<OxygenCriticalSignal>.TryPushTracked(in signal, ref s_x001ShinobuPhysiologyRuntimeSignalPushDropCount);
         }
 
         private static void ReportSurvivalVitalsSignalDrop()
@@ -2862,10 +2984,6 @@ namespace Hecton8.Physiology
             _insideHabitat = false;
             _activeHabitatRoomId = -1;
             _decompressionTelemetryCursor = 0;
-            // A vault hot-swap or teardown invalidates the oxygen-critical edge history; keeping the latch
-            // would suppress the first re-publish after the rebind and silently re-open the gap this bridge closes.
-            _oxygenCriticalLatched = false;
-            _lastPublishedOxygenCritical01 = -1f;
         }
 
 #if UNITY_EDITOR
