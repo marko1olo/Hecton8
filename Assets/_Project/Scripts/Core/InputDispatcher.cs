@@ -150,6 +150,14 @@ namespace Hecton8.Core
 #endif
             ;
 
+        // Just ShinobuInputProfile (70524 -> guard bit 60 -> folded active-lock residue 28), for the one
+        // write that must land whether or not the broad 14-buffer owner guard above can be taken. The broad
+        // mask claims 13 of the vault's 32 folded active-lock residues, so ANY unrelated buffer sharing one of
+        // them refuses it; this mask claims one. Seeding the profile through the broad mask is what made the
+        // defaults hostage to a lock that has nothing to do with the profile.
+        private static readonly ulong InputProfileOnlyMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuInputProfile);
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         // The vault does NOT compare _activeLocks against the 64-bit guard mask. It folds the mask onto its
         // 32-bit active-lock space with low|high (GlobalDataVault.cs:2930-2932) and refuses the guard when
@@ -388,6 +396,13 @@ namespace Hecton8.Core
         private bool _xrVaultBuffersCleared;
         private int _ownerThreadId;
         private int _inputMutationGuardDepth;
+        // Latched true only once InitializeDefaultInputProfile has actually written the Default* constants into
+        // the vault copy. Separate from _deterministicVaultBuffersCleared because the profile seed no longer
+        // rides on the broad owner guard that flag gates.
+        private bool _inputProfileDefaultsSeeded;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private bool _inputProfileSeedFailureReported;
+#endif
         private IDataVault _inputMutationGuardVault;
         private Vector2 _lookBlendFrom;
         private Vector2 _lastDeliveredLookDelta;
@@ -991,8 +1006,12 @@ namespace Hecton8.Core
                 " buffer unrelated to input is pinned or write-locked on a colliding residue, because the" +
                 " vault folds the 64-bit guard mask onto 32 active-lock bits with (bufferId & 31) and this" +
                 " owner claims 13 of those 32. buffersCleared=False additionally means the guarded cold block" +
-                " at EnsureDeterministicInputNativeBuffers never ran, so ShinobuInputProfile still holds" +
-                " UninitializedMemory rather than InitializeDefaultInputProfile's values.");
+                " at EnsureDeterministicInputNativeBuffers never ran, so the buffers it clears there still hold" +
+                " their allocation-time contents." +
+                " NOTE: this no longer implicates ShinobuInputProfile. That buffer is allocated ClearMemory and" +
+                " seeded by TryEnsureDefaultInputProfileSeeded under a narrow single-buffer mask outside that" +
+                " block, with a SlowTick retry; a seed failure prints [H8_INPUTPROFILE] separately. Read" +
+                " [H8_INPUTPIN] too - code 5 can be this owner's OWN haptic schedule pins.");
         }
 
         private void DiagReportBufferRefusal()
@@ -1174,6 +1193,11 @@ namespace Hecton8.Core
         public void SlowTick()
         {
             RefreshViewportSnapshotSlowSample();
+            // The profile seed's only retry lane. EnsureDeterministicInputNativeBuffers cannot serve as one:
+            // it returns at its top once the buffers are ready and valid, so its seed attempt is one-shot.
+            // Costs one bool test per slow tick once seeded, and nothing else.
+            if (!_inputProfileDefaultsSeeded && _deterministicVaultBuffersReady)
+                TryEnsureDefaultInputProfileSeeded();
         }
 
         public void PreSimulationInputTick(float deltaTime)
@@ -1719,17 +1743,39 @@ namespace Hecton8.Core
                     ButtonMaskWindowCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
+                // ClearMemory, NOT UninitializedMemory, and these two are the only entries in this list that
+                // need it. Their readers cannot survive dirty bytes and both are read BEFORE any writer runs:
+                //   ShinobuInputBlockMask  -> ReadInputBlockMask() returns inputBlockMask[0] raw, with no
+                //     validation of any kind, straight into ApplyInputBlockMask. A dirty low bit there zeroes
+                //     MoveDelta/LookDelta/ActionsBitmask every frame - input dies looking exactly like "the
+                //     player is not pressing anything". Every writer of this buffer (ClearVaultBuffer at the
+                //     cold block, SetInputBlockMask) is behind TryAcquireInputMutationGuard, so when the guard
+                //     is contended nothing ever overwrites the garbage.
+                //   ShinobuInputProfile    -> ReadInputProfile() sanitises the eight floats (defaults fallback
+                //     plus per-field clamp) but NEVER touches .Flags, and a dirty bit 0 there is
+                //     InputProfileFlagEnableMockCollision - it silently switches the haptic synth onto the mock
+                //     impulse storm path (HectonInputRuntime_HapticSynth.cs:167,:367) and takes an extra vault
+                //     pin with it.
+                // The vault honours the option (GlobalDataVault.ShouldClear, :6463) and its arena reuses freed
+                // blocks (TryAllocateBlockLocked, :6114-6160), so UninitializedMemory here really can hand
+                // back a previous tenant's bytes rather than fresh zero pages. SanitizeFinitePayload<T> does
+                // not help: it only special-cases float/float2/float3/float4, never a DTO struct.
+                // Zero is the correct, already-handled value for both: 0u block mask makes ApplyInputBlockMask
+                // early-return, and an all-zero profile has OuterDeadzone == 0f, which is exactly the
+                // ReadInputProfile reject condition that returns the full Default* fallback. Cost is one
+                // MemClear of 4 + 64 bytes at cold allocation; the clear happens inside the vault's own block
+                // mutation gate, so it does NOT depend on this owner's mutation guard.
                 OpenOrAcquireInputBufferForOwnerRoute(
                     ref _inputBlockMaskHandle,
                     BufferID.ShinobuInputBlockMask,
                     1,
-                    NativeArrayOptions.UninitializedMemory,
+                    NativeArrayOptions.ClearMemory,
                     out _) &&
                 OpenOrAcquireInputBufferForOwnerRoute(
                     ref _inputProfileHandle,
                     BufferID.ShinobuInputProfile,
                     1,
-                    NativeArrayOptions.UninitializedMemory,
+                    NativeArrayOptions.ClearMemory,
                     out _) &&
                 OpenOrAcquireInputBufferForOwnerRoute(
                     ref _inputTelemetryHandle,
@@ -1776,6 +1822,12 @@ namespace Hecton8.Core
             if (!_deterministicVaultBuffersReady)
                 return;
 
+            // BEFORE the broad guard and before the _deterministicVaultBuffersCleared early-return, because
+            // the block below is one-shot: from the next call onward this method returns at its top on
+            // _deterministicVaultBuffersReady && ValidateDeterministicInputBuffers(). Anything that lives only
+            // inside that block gets a single attempt and no retry.
+            TryEnsureDefaultInputProfileSeeded();
+
             if (_deterministicVaultBuffersCleared)
                 return;
 
@@ -1798,7 +1850,10 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
                 ClearVaultBuffer(ref _inputProfileCsvScratchHandle);
 #endif
-                InitializeDefaultInputProfile();
+                // Reached with the broad guard held at depth 1, so this takes the depth>0 branch and writes
+                // directly rather than asking the vault for the narrow mask it would collide with. Normally a
+                // no-op, because the call above this block already seeded it.
+                TryEnsureDefaultInputProfileSeeded();
                 _deterministicVaultBuffersCleared = true;
             }
             finally
@@ -1911,7 +1966,18 @@ namespace Hecton8.Core
             }
 
             IDataVault vault = _dataVault;
-            if (vault == null || !IsOwnerThread() || !vault.TryAcquireMutationGuard(InputOwnerMutationGuardMask))
+            if (vault == null || !IsOwnerThread())
+                return false;
+
+            // Drop our OWN stale haptic schedule pins before asking the vault, or this owner deadlocks against
+            // itself: those pins sit on vault active-lock residues inside the fold of
+            // InputOwnerMutationGuardMask, so they refuse this guard. Only pins stamped with an earlier
+            // dispatcher frame are released - a current-frame pin may still have a job reading the buffers.
+            // Full derivation of the residue collision is on ReleaseStaleHapticSynthesisSchedulePins in
+            // HectonInputRuntime_HapticSynth.cs. Cheap: one uint test when nothing is pinned.
+            ReleaseStaleHapticSynthesisSchedulePins();
+
+            if (!vault.TryAcquireMutationGuard(InputOwnerMutationGuardMask))
                 return false;
 
             _inputMutationGuardVault = vault;
@@ -2049,10 +2115,82 @@ namespace Hecton8.Core
             handle = default;
         }
 
-        private void InitializeDefaultInputProfile()
+        // -------------------------------------------------------------------------------------------------
+        // Seeds ShinobuInputProfile with the Default* constants WITHOUT depending on the broad owner
+        // mutation guard.
+        //
+        // WHY. Before this split, the only call to InitializeDefaultInputProfile sat inside the
+        // TryAcquireInputMutationGuard block of EnsureDeterministicInputNativeBuffers, and that block gets
+        // ONE attempt per ready-transition: the method returns at its top whenever
+        // _deterministicVaultBuffersReady && ValidateDeterministicInputBuffers(), which is true from the very
+        // next call onward. So a guard that happened to be contended on the single frame the buffers became
+        // ready left the profile unseeded for the rest of the session with no retry and no message. probe7
+        // reports publishGuardFail=1240 of 1240 attempts, i.e. the guard was contended for that whole run.
+        //
+        // Two independent changes make the seed reachable: the narrow single-buffer mask here, and the
+        // SlowTick retry that can re-attempt after the one-shot cold block is behind us. The buffer is also
+        // now allocated ClearMemory, so even a total seed failure leaves zeros, and zeros are the value
+        // ReadInputProfile already rejects into its Default* fallback - the seed is a correctness nicety for
+        // direct readers of the vault copy (the Editor tuner window, the CSV stage), not the safety net.
+        // -------------------------------------------------------------------------------------------------
+        private bool TryEnsureDefaultInputProfileSeeded()
+        {
+            if (_inputProfileDefaultsSeeded)
+                return true;
+
+            // An enclosing block already holds the broad owner mask, which CONTAINS the profile bit. Asking
+            // the vault for the narrow mask here would collide with our own held bit and refuse
+            // (TryAcquireMutationGuard, GlobalDataVault.cs:2935), so write under the guard we already own.
+            if (_inputMutationGuardDepth > 0)
+                return TryWriteDefaultInputProfile();
+
+            IDataVault vault = _dataVault;
+            if (vault == null || !IsOwnerThread() || !vault.TryAcquireMutationGuard(InputProfileOnlyMutationGuardMask))
+            {
+                ReportInputProfileSeedFailureOnce();
+                return false;
+            }
+
+            try
+            {
+                return TryWriteDefaultInputProfile();
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(InputProfileOnlyMutationGuardMask);
+            }
+        }
+
+        private void ReportInputProfileSeedFailureOnce()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Fail loudly, once. Silent failure here is what let an unseeded profile look identical to a
+            // seeded one for a whole session.
+            if (_inputProfileSeedFailureReported || _dataVault == null)
+                return;
+
+            _inputProfileSeedFailureReported = true;
+            // COLD ALLOC: one seed-failure string per session - owner: InputDispatcher
+            Hecton8.Core.H8Debug.LogError(
+                "[H8_INPUTPROFILE] seed=REFUSED ShinobuInputProfile still holds its allocation-time value." +
+                " ownerThread=" + _ownerThreadId +
+                " callThread=" + Thread.CurrentThread.ManagedThreadId +
+                " narrowMask=" + InputProfileOnlyMutationGuardMask +
+                " vaultGuardMask=" + _dataVault.ActiveMutationGuardMask +
+                " vaultActiveLocks=" + _dataVault.ActiveBurstLockMask +
+                " fence=" + _dataVault.IsCompactionFenceActive +
+                " buffersReady=" + _deterministicVaultBuffersReady +
+                " - the buffer is allocated ClearMemory so the live values are zeros, and ReadInputProfile" +
+                " rejects OuterDeadzone==0f into its Default* fallback, so control feel is still correct." +
+                " What is NOT correct is any direct reader of the vault copy: the Editor curve/haptics tuner" +
+                " and the input_profiles.csv stage will show zeros instead of the defaults.");
+#endif
+        }
+
+        private bool TryWriteDefaultInputProfile()
         {
             if (!TryResolveInputBuffer(in _inputProfileHandle, 1, out NativeArray<InputProfileDTO> profiles))
-                return;
+                return false;
 
             InputProfileDTO profile = profiles[0];
             profile.InnerDeadzone = DefaultInnerDeadzone;
@@ -2076,6 +2214,8 @@ namespace Hecton8.Core
 
             Interlocked.Exchange(ref _inputProfileCsvStageFault, 0);
 #endif
+            _inputProfileDefaultsSeeded = true;
+            return true;
         }
 
 #if UNITY_EDITOR

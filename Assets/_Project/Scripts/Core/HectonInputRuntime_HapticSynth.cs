@@ -48,7 +48,17 @@ namespace Hecton8.Core
         private uint _hapticSynthesisScheduledSchemeHash;
         private uint _hapticSynthesisPinnedBufferMask;
         private IDataVault _hapticSynthesisPinnedBufferVault;
+        // Dispatcher frame index the current pin set was taken on; -1 when nothing is pinned. This is the
+        // discriminator that lets TryAcquireInputMutationGuard tell "a job on THIS frame may still be reading
+        // these buffers" from "POST_SIMULATION was skipped and these pins are stale". See
+        // ReleaseStaleHapticSynthesisSchedulePins.
+        private int _hapticSynthesisPinnedBufferFrame = -1;
         private long _hapticSynthesisScheduleTimestamp;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // 0 = nothing reported, 1 = stale-frame overlap reported, 2 = same-frame overlap reported. Both kinds
+        // print at most once per session; the first occurrence of each always prints.
+        private int _hapticPinGuardOverlapReported;
+#endif
 
         private void TryRegisterHapticSynthesisPostSimulation()
         {
@@ -1062,6 +1072,7 @@ namespace Hecton8.Core
                 if (!TryValidateHapticSynthesisScheduleBuffers(includeMockImpulses))
                     return false;
 
+                _hapticSynthesisPinnedBufferFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
                 pinned = true;
                 return true;
             }
@@ -1072,12 +1083,96 @@ namespace Hecton8.Core
             }
         }
 
+        // -------------------------------------------------------------------------------------------------
+        // Breaks the self-deadlock this class can otherwise inflict on its own input publish.
+        //
+        // THE COLLISION IS REAL AND ARITHMETIC. GlobalDataVault does not compare the 64-bit mutation-guard
+        // mask against its lock state directly. TryAcquireMutationGuard folds it with low|high into a 32-bit
+        // activeConflictMask (GlobalDataVault.cs:2930-2932) and refuses when any folded bit is set in
+        // _activeLocks (HasActiveLockConflictForMutationMask, :3253-3256). Active-lock bits are
+        // 1 << (bufferId & 31) (ResolveActiveLockBit, :3008-3012). InputOwnerMutationGuardMask therefore folds
+        // to residues {0,1,2,3,5,24..31} = 0xFF00002F. The six buffers TryPinHapticSynthesisScheduleBuffers
+        // pins land on residues 70975->31, 70976->0, 70977->1, 70978->2, 70979->3, 70980->4: FIVE of the six
+        // are inside 0xFF00002F. Only ShinobuHapticSynthesisTuning (70980 -> residue 4) is clean. So while
+        // this owner holds its own haptic pins, this owner cannot acquire its own input mutation guard, and
+        // PublishDeterministicInputState fails with publishGuardFail - input dies.
+        //
+        // WHY IT HAS NOT FIRED YET, AND WHY THAT IS NOT SAFETY. Two accidents, not invariants:
+        //   1. ScheduleHapticSynthesisSimulation returns before pinning when the scheme hash is
+        //      keyboard/mouse (:109-110).
+        //   2. The pins are taken in SIMULATION and released in POST_SIMULATION of the same frame
+        //      (ConsumeScheduledHapticSynthesis, :256), which never overlaps PRE_SIMULATION.
+        // Accident 1 is weaker than "you need a gamepad". CaptureState promotes an automation override's
+        // scheme hash into _currentInputSchemeHash whenever it is nonzero (InputDispatcher.cs, CaptureState,
+        // the automationOverrideApplied branch), and Shinobu38QaWatchdogRuntime.PublishAutomationInputOverride
+        // (:2079) publishes CurrentInputSchemeHash = 0x53373951, which is not InputSchemeHashKeyboardMouse. So
+        // a HEADLESS run with no input device at all reaches the pin path as soon as that watchdog publishes.
+        // Accident 2 holds only while POST_SIMULATION actually runs. Skip it once - a NoOp-latched dispatcher,
+        // an unregistered post-sim system, an exception upstream in the phase - and the pins survive into the
+        // NEXT frame's PRE_SIMULATION. From then on every publish is refused and the next SIMULATION re-pins,
+        // so input stays dead for the rest of the session.
+        //
+        // WHAT THIS DOES. Makes the cross-frame overlap structurally impossible instead of incidentally
+        // avoided: the guard path releases any pin set stamped with an EARLIER dispatcher frame, because a
+        // previous frame's job chain is no longer in flight. A pin set stamped with the CURRENT frame is left
+        // alone - releasing it could let the defragmenter move memory under a live job, which is the whole
+        // reason the pin exists - and reported instead of failing silently. The residue collision itself is
+        // not fixable from this class; that needs either non-colliding haptic buffer IDs in H8Memory.cs or a
+        // vault that does not fold 64 guard bits onto 32 lock bits.
+        //
+        // CurrentFrameIndex, NOT CurrentFrameId, and that is not interchangeable. probe7's [H8_INPUTHOP]
+        // census reports frameIndex advancing (303, 304, 313 across the three emissions) while frameId is
+        // pinned at 0 for the whole run. Stamping with CurrentFrameId would make pinFrame == currentFrame
+        // always true and this entire release path inert.
+        // -------------------------------------------------------------------------------------------------
+        private void ReleaseStaleHapticSynthesisSchedulePins()
+        {
+            if (_hapticSynthesisPinnedBufferMask == 0u)
+                return;
+
+            int pinFrame = _hapticSynthesisPinnedBufferFrame;
+            if (pinFrame >= 0 && pinFrame == Hecton8.Core.SystemDispatcher.CurrentFrameIndex)
+            {
+                ReportHapticPinGuardOverlapOnce(pinFrame, sameFrame: true);
+                return;
+            }
+
+            ReportHapticPinGuardOverlapOnce(pinFrame, sameFrame: false);
+            ReleaseHapticSynthesisSchedulePins();
+        }
+
+        private void ReportHapticPinGuardOverlapOnce(int pinFrame, bool sameFrame)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_hapticPinGuardOverlapReported == (sameFrame ? 2 : 1))
+                return;
+
+            _hapticPinGuardOverlapReported = sameFrame ? 2 : 1;
+            // COLD ALLOC: one overlap string per distinct kind per session - owner: InputDispatcher
+            Hecton8.Core.H8Debug.LogWarning(
+                "[H8_INPUTPIN] hapticPinsHeldAtGuardAcquire sameFrame=" + sameFrame +
+                " pinFrame=" + pinFrame +
+                " currentFrame=" + Hecton8.Core.SystemDispatcher.CurrentFrameIndex +
+                " pinMask=" + _hapticSynthesisPinnedBufferMask +
+                " scheduledForPostSim=" + _hapticSynthesisScheduledForPostSimulation +
+                " scheduledSchemeHash=" + _hapticSynthesisScheduledSchemeHash +
+                " - this owner's haptic pins occupy vault active-lock residues inside 0xFF00002F, which is the" +
+                " fold of InputOwnerMutationGuardMask, so they refuse this owner's OWN input mutation guard." +
+                " sameFrame=False was stale (POST_SIMULATION did not run) and has been released, so the" +
+                " publish should proceed. sameFrame=True means the guard was requested inside the frame that" +
+                " took the pins - the late-frame self-pump after a skipped POST_SIMULATION is the known route -" +
+                " and the pins were NOT released, because a scheduled job may still be reading those buffers." +
+                " In that case expect [H8_INPUTREFUSE] stage=GUARD code=5 on the same frame.");
+#endif
+        }
+
         private void ReleaseHapticSynthesisSchedulePins()
         {
             IDataVault vault = _hapticSynthesisPinnedBufferVault;
             uint mask = _hapticSynthesisPinnedBufferMask;
             _hapticSynthesisPinnedBufferMask = 0u;
             _hapticSynthesisPinnedBufferVault = null;
+            _hapticSynthesisPinnedBufferFrame = -1;
             if (vault != null && mask != 0u)
             {
                 TryUnlockHapticSynthesisScheduleBuffer(vault, mask, HapticSynthesisPinMockImpulses, BufferID.ShinobuHapticSynthesisMockImpulses);
