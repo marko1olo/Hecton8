@@ -937,6 +937,49 @@ def build_lod_chain(
                 modifier.use_collapse_triangulate = True
                 _make_sole_active(clone)
                 bpy.ops.object.modifier_apply(modifier=modifier.name)
+
+            # REDO BOTH POST-DECIMATION STEPS ON THE REBUILT MESH. This branch throws the
+            # first clone away and decimates a fresh copy of LOD0, so everything that ran
+            # on the discarded one has to run again - and until now neither did.
+            #
+            # The consequence was silent in the worst way: the black box still held the
+            # clean `lod{i}_reunwrap` numbers measured on the mesh that was DELETED, while
+            # the mesh that actually shipped carried LOD0's collapse-mangled
+            # parameterisation. The evidence said the level was fine and the level was not.
+            # Coral measured worst aspect distortion 407.07 before its reunwrap was wired
+            # at all, so this path is one dense seed away from shipping that.
+            #
+            # The duplicate-face purge matters just as much here: Decimate/COLLAPSE can
+            # pull two triangles onto the same vertex triple, FBX merges the pair on
+            # import, and the round-trip gate then rejects the whole package for losing
+            # exactly one triangle. That is the defect that cost five hypotheses to find,
+            # and this branch was still exposed to it.
+            if seams_split:
+                weld_stats = _weld_coincident(clone)
+                if blackbox is not None:
+                    blackbox.record(
+                        "lod{i}_reweld_after_seam_drop".format(i=index),
+                        vertex_count=weld_stats["vertsAfter"],
+                        triangle_count=triangle_count(clone.data),
+                        warning="merged {m} coincident verts, removed {d} duplicate "
+                                "faces; boundary {be}, non-manifold {nm}".format(
+                                    m=weld_stats["merged"],
+                                    d=weld_stats["duplicateFacesRemoved"],
+                                    be=weld_stats["boundaryEdges"],
+                                    nm=weld_stats["nonManifoldEdges"]))
+            if reunwrap is not None:
+                before = uv_stretch_stats(clone)
+                reunwrap(clone, index)
+                after = uv_stretch_stats(clone)
+                if blackbox is not None:
+                    blackbox.record(
+                        "lod{i}_reunwrap_after_seam_drop".format(i=index),
+                        vertex_count=len(clone.data.vertices),
+                        triangle_count=triangle_count(clone.data),
+                        warning="uv worst {b:.2f}->{a:.2f} p95 {bp:.3f}->{ap:.3f} "
+                                "(rebuilt without seam splits)".format(
+                                    b=before["worst"], a=after["worst"],
+                                    bp=before["p95"], ap=after["p95"]))
             final_tris = triangle_count(clone.data)
 
         out.append(LodLevel(index, clone, final_tris, budget, ratio_used))
