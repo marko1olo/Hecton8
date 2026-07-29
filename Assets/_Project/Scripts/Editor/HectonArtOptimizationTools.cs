@@ -365,6 +365,27 @@ namespace Hecton8.Editor
             return bakedCount;
         }
 
+        /// <summary>
+        /// 3dmodel.md section 4 gives hard-surface G to "rust, oxidation, biofilm, or fluid stain
+        /// phase/amount". This tool derives everything from vertex height and normal direction and
+        /// has no oxidation input at all, so the channel stays at 0 -- the same no-data value the
+        /// compliant Blender writer uses for its hard-surface oxidation channel
+        /// (h8forge/vertexcolor.py write_hard_surface_channels: <c>get_g = channel(oxidation, 0.0)</c>).
+        /// The wear term that used to sit here has moved to R, which is its contract role.
+        /// </summary>
+        private const byte NoOxidationData = 0;
+
+        /// <summary>
+        /// 3dmodel.md section 4 gives hard-surface A to an OPTIONAL emission, warning paint, or decal
+        /// eligibility mask, and h8forge/vertexcolor.py write_hard_surface_channels defaults it to
+        /// 0.0 rather than 1.0: an absent emission mask means nothing emits. Note this differs from
+        /// the ORGANIC contract, whose A defaults to 1.0 -- the two are not interchangeable. This was
+        /// previously a hardcoded 255, which claims every vertex is fully emission and decal
+        /// eligible; on a shader that multiplies an emissive or decal term by COLOR.a that is a
+        /// blanket opt-in rather than a mask.
+        /// </summary>
+        private const byte NoEmissionMask = 0;
+
         private static Mesh BuildVertexColorBake(Mesh source, string meshName)
         {
             if (source == null)
@@ -404,10 +425,37 @@ namespace Hecton8.Editor
                 float y01 = Mathf.Clamp01((vertices[i].y - bounds.min.y) * invHeight);
                 float up = Mathf.Clamp01(normals[i].y);
                 float side = 1f - Mathf.Abs(normals[i].y);
-                byte ao = (byte)Mathf.RoundToInt(Mathf.Lerp(140f, 255f, y01) * Mathf.Lerp(0.8f, 1f, up));
-                byte wear = (byte)Mathf.RoundToInt(255f * up * up * Mathf.SmoothStep(0.2f, 1f, y01));
-                byte cavity = (byte)Mathf.RoundToInt(255f * Mathf.Clamp01(side * (1f - y01)));
-                colors.Add(new Color32(ao, wear, cavity, 255));
+
+                // HARD-SURFACE vertex colour contract, 3dmodel.md section 4: R = exposed edge wear
+                // or salt-polished rim, G = rust / oxidation / biofilm / fluid stain, B = baked
+                // ambient occlusion and cavity darkness, A = optional emission / warning paint /
+                // decal eligibility. This is NOT the organic contract in
+                // 3DMODEL_FLORA_CORAL.md section 2; only B means the same thing in both.
+                //
+                // This used to emit Color32(ao, wear, cavity, 255): the occlusion term sat in R, the
+                // wear term in G, and a separate inverted-polarity cavity term in B. Every channel
+                // was off by one role. That mattered more here than in a single generator, because
+                // SetColors below OVERWRITES all four channels on whatever mesh this is pointed at,
+                // so running it over an asset that already carried a correct bake replaced that bake
+                // with a mis-ordered one.
+                float wear01 = Mathf.Clamp01(up * up * Mathf.SmoothStep(0.2f, 1f, y01));
+                float exposure01 = Mathf.Lerp(140f / 255f, 1f, y01) * Mathf.Lerp(0.8f, 1f, up);
+                float cavity01 = Mathf.Clamp01(side * (1f - y01));
+
+                // Cavity darkness folds INTO B rather than occupying its own channel: the contract
+                // makes B "ambient occlusion and cavity darkness", one channel covering both, and AO
+                // polarity is low-in-crevice. As a standalone channel the cavity term was inverted
+                // against every other B in the project, so it brightened crevices instead.
+                //
+                // These are height-and-normal heuristics, not a ray-traced bake. They are honest for
+                // wear, which is a mask an artist would paint anyway; h8forge/vertexcolor.py
+                // curvature_edge_wear is explicit that such an estimate is NOT honest for occlusion.
+                // B is therefore an approximation here and a Cycles bake still outranks it.
+                float occlusion01 = Mathf.Clamp01(exposure01 * (1f - cavity01));
+
+                byte wear = (byte)Mathf.RoundToInt(255f * wear01);
+                byte occlusion = (byte)Mathf.RoundToInt(255f * occlusion01);
+                colors.Add(new Color32(wear, NoOxidationData, occlusion, NoEmissionMask));
             }
 
             mesh.SetColors(colors);

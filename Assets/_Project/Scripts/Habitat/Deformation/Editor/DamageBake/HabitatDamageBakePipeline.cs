@@ -651,9 +651,33 @@ namespace Hecton8.Habitat.Deformation.Editor
                 TangentSnorm = PackSnorm4x8(tangent),
                 UvX = (ushort)math.f32tof16(uv0.x),
                 UvY = (ushort)math.f32tof16(uv0.y),
-                ColorRgba = PackColor(tear, heat, heat, 255)
+                // HARD-SURFACE vertex colour contract, 3dmodel.md section 4: R = exposed edge wear or
+                // salt-polished rim, G = rust / oxidation / biofilm / fluid stain, B = baked ambient
+                // occlusion and cavity darkness, A = optional emission / warning paint / decal
+                // eligibility. This is the hard-surface set, NOT the organic one in
+                // 3DMODEL_FLORA_CORAL.md section 2; only B carries the same meaning in both.
+                //
+                // B used to be a second copy of `heat`, which left baked occlusion with nowhere to
+                // live and put a stress field where every other shader in the project expects
+                // occlusion. There is no ambient occlusion available to write here: this job runs
+                // per-vertex over Source[index] with only a position and a normal, and real occlusion
+                // needs neighbouring geometry or a ray-traced bake. NoBakedOcclusion is the honest
+                // no-data value rather than an invented gradient -- see its remarks.
+                ColorRgba = PackColor(tear, heat, NoBakedOcclusion, 255)
             };
         }
+
+        /// <summary>
+        /// Vertex colour channel B is baked ambient occlusion in the hard-surface contract
+        /// (3dmodel.md section 4). This job has no occlusion input, so 255 -- fully unoccluded -- is
+        /// written instead of a substitute. That matches the missing-AO default the compliant Blender
+        /// writer uses and the reason it states (h8forge/vertexcolor.py write_hard_surface_channels
+        /// passes <c>get_b = channel(ao, 1.0)</c>: "a darkening default would bake fake shadow into
+        /// every asset whose AO bake failed"). A curvature or normal-direction proxy is deliberately
+        /// not substituted, because vertexcolor.py curvature_edge_wear is explicit that a geometric
+        /// estimate is honest for wear and is NOT honest for occlusion.
+        /// </summary>
+        private const byte NoBakedOcclusion = 255;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint PackSnorm4x8(float4 value)
