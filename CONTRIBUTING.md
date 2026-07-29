@@ -93,6 +93,15 @@ Roughly 35 seconds for `Hecton8.Core`. Output goes to `Temp/CodexBuild/`.
 > `--also-editor` compiles both, which is what you want — the fix must not trade a player error for an
 > editor one. `--all-runtime` sweeps every first-party assembly that ships. Exit code 1 on failure.
 >
+> **Do not run the lock-free editor gate first and then `--all-runtime` in the same tree.** Both write to
+> `Temp/CodexBuild/`, so an editor-configuration build leaves artifacts that the player sweep then links
+> against, and the mismatch surfaces as a `CS0103` in a file that is perfectly fine. Measured 2026-07-29:
+> a plain `dotnet build Hecton8.Core.csproj` followed by `--all-runtime` reported `1 player error` in
+> `HectonPlayerSpawner.cs`; `--assembly Hecton8.Core` alone reported 0, and a clean `--all-runtime`
+> reported **0 across all seven shipping assemblies**. Chasing that phantom cost three runs and a hunt for
+> an unbalanced `#if` that did not exist — the directives in that file are balanced, final depth 0. If the
+> sweep disagrees with a single-assembly run, distrust the sweep that came second, not the source.
+>
 > Fix by **moving the guard boundary**, not by guarding the call site — *unless the feature really is
 > editor-only*. Determining which requires reading what the code actually touches, not what it is
 > named. A worked example of the exception: `ShinobuFloraFaunaSymbiosisSolver
