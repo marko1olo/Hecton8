@@ -408,6 +408,27 @@ namespace Hecton8.Bootstrap
         /// what writes the loud record, so readiness can never silently report ready.
         /// </summary>
         private static bool _debrisManagerBootstrapNodeNotInstalled;
+        /// <summary>
+        /// True when the <c>SpatialAudioManager</c> bootstrap node fell back to <see cref="NoOpAudioService"/> and
+        /// therefore passed under the recorded stub exemption instead of a real readiness result.
+        /// </summary>
+        /// <remarks>
+        /// This exists because <see cref="NoOpAudioService"/> now reports <c>IsInitialized == false</c> and
+        /// <c>IsAudioRuntimeReady == false</c> - it holds no audio, so it must not claim readiness to the consumers
+        /// that gate on those two properties. That honesty would otherwise be fatal to the whole boot rather than
+        /// to audio alone: <see cref="IsBootstrapAudioServiceUsable"/> is what
+        /// <see cref="IsBootstrapDependencyNodeReady(BootstrapDependencyNode, object)"/> and
+        /// <see cref="IsBootstrapDependencyHeartbeatReady"/> consult for this node, and a failed Environment-phase
+        /// node abandons the Player phase, the UI phase, the CoreReady marker, <c>GlobalRegistry.LockReady</c> and
+        /// scene activation (the same reasoning written out at <see cref="ReportDebrisManagerBootstrapNodeState"/>).
+        /// Audio is optional; silence must not cost the session.
+        /// <para>
+        /// Assigned (never OR-ed) by <see cref="TryRegisterNoOpAudioFallback"/>, which is what writes the loud
+        /// record, so an unrecorded stub can never pass. Cleared the moment a real owner claims the slot, so the
+        /// exemption cannot survive from an earlier boot into a boot where audio genuinely works.
+        /// </para>
+        /// </remarks>
+        private static bool _audioBootstrapNodeStubbed;
         private static string _lastDataMonolithBootstrapStatus = "none";
 #if UNITY_EDITOR
         private static string _pendingDirtySceneReloadPath;
@@ -5536,7 +5557,7 @@ namespace Hecton8.Bootstrap
         {
             object service = ResolveBootstrapDependencyService(node);
             if (node == BootstrapDependencyNode.SpatialAudioManager)
-                return _headlessBootMode || IsBootstrapAudioServiceUsable(service as IAudioService);
+                return IsSpatialAudioBootstrapNodeReady(service);
 
             if (service is IServiceHeartbeat heartbeat)
                 return heartbeat.IsServiceReady && heartbeat.HeartbeatState != ServiceHeartbeatState.Failed;
@@ -5564,7 +5585,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.FaunaSimulation:
                     return service is IFaunaSim faunaSimulation && faunaSimulation.IsReady;
                 case BootstrapDependencyNode.SpatialAudioManager:
-                    return _headlessBootMode || IsBootstrapAudioServiceUsable(service as IAudioService);
+                    return IsSpatialAudioBootstrapNodeReady(service);
                 case BootstrapDependencyNode.ConstructionManager:
                     return service != null || GlobalRegistry.Logistics == null;
                 default:
@@ -5681,7 +5702,7 @@ namespace Hecton8.Bootstrap
             Exception exception)
         {
             if (node == BootstrapDependencyNode.SpatialAudioManager)
-                return TryRegisterNoOpAudioFallback("SpatialAudioManager init exception");
+                return TryRegisterNoOpAudioFallback("SpatialAudioManager init exception", exception);
 
             GlobalRegistryServiceSlot slot = ResolveRegistrySlotForBootstrapNode(node);
             if (GlobalRegistry.TryReplaceBootstrapServiceWithStableProxy(slot))
@@ -5766,6 +5787,33 @@ namespace Hecton8.Bootstrap
                 return heartbeat.IsServiceReady && heartbeat.HeartbeatState != ServiceHeartbeatState.Failed;
 
             return service != null || _debrisManagerBootstrapNodeNotInstalled;
+        }
+
+        /// <summary>
+        /// Reports whether boot may proceed past the <c>SpatialAudioManager</c> node.
+        /// </summary>
+        /// <remarks>
+        /// A real owner is gated on its own <c>IsAudioRuntimeReady</c>, so the node genuinely works or genuinely
+        /// fails. A stubbed slot passes only through the exemption that
+        /// <see cref="TryRegisterNoOpAudioFallback"/> has already recorded loudly; if that record was never written,
+        /// an unusable slot reports NOT ready rather than inventing readiness.
+        /// <para>
+        /// The exemption term is what keeps <see cref="NoOpAudioService"/> honest without killing the session.
+        /// <see cref="NoOpAudioService.IsInitialized"/> and <see cref="NoOpAudioService.IsAudioRuntimeReady"/> are
+        /// now <c>false</c>, so before this term existed the stub would have failed this predicate, failed the
+        /// Environment phase and aborted the whole boot - a strictly worse outcome than silent audio.
+        /// </para>
+        /// <para>
+        /// Allocation-free and log-free by contract: <see cref="WaitForBootstrapDependencyHeartbeatAsync"/> polls
+        /// this every frame while the node is pending, so it must not format strings or log. The single loud record
+        /// is written once per boot by the fallback registrar instead.
+        /// </para>
+        /// </remarks>
+        private static bool IsSpatialAudioBootstrapNodeReady(object service)
+        {
+            return _headlessBootMode ||
+                   IsBootstrapAudioServiceUsable(service as IAudioService) ||
+                   _audioBootstrapNodeStubbed;
         }
 
         private static bool InitializeBootstrapDependencyNode(BootstrapDependencyNode node)
@@ -6674,7 +6722,7 @@ namespace Hecton8.Bootstrap
             {
                 SpatialAudioManager spatialAudioManager = EnsureAudioServiceRegistered();
                 if (spatialAudioManager == null)
-                    return TryRegisterNoOpAudioFallback("SpatialAudioManager missing");
+                    return TryRegisterNoOpAudioFallback("SpatialAudioManager missing", null);
 
                 spatialAudioManager.InitializeService();
                 long elapsedMilliseconds =
@@ -6682,33 +6730,138 @@ namespace Hecton8.Bootstrap
                 if (elapsedMilliseconds > OptionalServiceTimeoutMilliseconds)
                     LogOptionalBootstrapWarning("SpatialAudioManager exceeded the optional-service bootstrap budget.");
 
-                if (IsBootstrapAudioServiceUsable(GlobalRegistry.Audio))
+                IAudioService initializedAudioService = GlobalRegistry.Audio;
+                if (IsBootstrapAudioServiceUsable(initializedAudioService))
+                {
+                    // A real owner holds the slot and is runtime-ready. Drop any exemption from a previous attempt so
+                    // it can never mask a later regression.
+                    _audioBootstrapNodeStubbed = false;
                     return true;
+                }
 
-                return TryRegisterNoOpAudioFallback("SpatialAudioManager did not register IAudioService");
+                // The old single message here said "did not register IAudioService" for all three of these states,
+                // which is false in two of them and sent the reader hunting a registration bug that did not exist.
+                // IsBootstrapAudioServiceUsable failing does NOT imply registration failed: SpatialAudioManager
+                // registers itself inside InitializeService and then gates IsAudioRuntimeReady on a five-term
+                // conjunction (slot ownership of BOTH the audio and virtualization slots, isActiveAndEnabled,
+                // IsInitialized, and IsVirtualizationReady - which is itself six vault-backed buffer handles).
+                // Any one of those can be the live cause and they demand different fixes, so name which state we are
+                // actually in.
+                string usabilityCause;
+                if (initializedAudioService == null)
+                    usabilityCause = "SpatialAudioManager left the IAudioService slot empty";
+                else if (!ReferenceEquals(initializedAudioService, spatialAudioManager))
+                    usabilityCause = "IAudioService slot holds a different owner than the initialized SpatialAudioManager";
+                else if (!initializedAudioService.IsInitialized)
+                    usabilityCause = "SpatialAudioManager registered but IsInitialized is false (runtime owner aborted or init returned early)";
+                else if (!initializedAudioService.IsAudioRuntimeReady)
+                    usabilityCause = "SpatialAudioManager registered and initialized but IsAudioRuntimeReady is false (check slot co-ownership of IAudioVirtualizationService and the vault-backed IsVirtualizationReady buffers)";
+                else
+                    usabilityCause = "SpatialAudioManager reports ready but its Behaviour is not active and enabled";
+
+                return TryRegisterNoOpAudioFallback(usabilityCause, null);
             }
-            catch (Exception)
+            catch (Exception exception)
             {
-                return TryRegisterNoOpAudioFallback("SpatialAudioManager init exception");
+                return TryRegisterNoOpAudioFallback("SpatialAudioManager init exception", exception);
             }
         }
 
-        private static bool TryRegisterNoOpAudioFallback(string reason)
+        /// <summary>
+        /// Installs <see cref="NoOpAudioService"/> in the <c>IAudioService</c> slot, records the substitution loudly
+        /// once with its cause, and reports that boot may proceed past the audio node.
+        /// </summary>
+        /// <param name="reason">
+        /// Which of the three distinct causes fired. This parameter used to be accepted and never read - all three
+        /// causes collapsed into one message, and the three demand opposite fixes (author the component, fix its
+        /// registration, fix the throw). It is now in the record.
+        /// </param>
+        /// <param name="exception">
+        /// The exception that aborted audio init, or <c>null</c> when the cause was not a throw. Previously
+        /// destroyed by a <c>catch (Exception)</c> that bound no variable.
+        /// </param>
+        /// <returns>
+        /// Always <c>true</c>. The return value answers "may boot continue", not "is audio ready" - those were the
+        /// same bit while the stub claimed readiness, and conflating them is what hid this for a whole session.
+        /// Audio readiness is now answered honestly (and negatively) by
+        /// <see cref="IsBootstrapAudioServiceUsable"/>; boot survival is answered here.
+        /// </returns>
+        private static bool TryRegisterNoOpAudioFallback(string reason, Exception exception)
         {
             IAudioService audioService = GlobalRegistry.Audio;
             if (ReferenceEquals(audioService, NoOpAudioService.Shared))
+            {
+                // Already recorded this boot. Do not log again; keep the exemption asserted.
+                _audioBootstrapNodeStubbed = true;
                 return true;
+            }
 
             if (audioService == null)
                 GlobalRegistry.RegisterAudioService(NoOpAudioService.Shared);
             else
                 GlobalRegistry.ReplaceAudioServiceForBootstrap(NoOpAudioService.Shared);
 
+            // Assigned, not OR-ed, and only after the slot swap actually happened.
+            _audioBootstrapNodeStubbed = ReferenceEquals(GlobalRegistry.Audio, NoOpAudioService.Shared);
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             LogOptionalBootstrapWarning("Injected NoOp audio service.");
 #endif
-            audioService = GlobalRegistry.Audio;
-            return IsBootstrapAudioServiceUsable(audioService);
+            ReportAudioBootstrapStubInstalled(reason, exception);
+
+            // Deliberately NOT IsBootstrapAudioServiceUsable(GlobalRegistry.Audio) when the stub is in the slot: that
+            // predicate is now correctly false for the stub, and returning false here would fail the Environment
+            // phase and kill the entire boot over an optional subsystem.
+            if (_audioBootstrapNodeStubbed)
+                return true;
+
+            // The registry refused the swap, so the exemption does not apply and the slot still holds whatever was
+            // there before. Answer honestly about that owner rather than inheriting the stub's verdict.
+            return IsBootstrapAudioServiceUsable(GlobalRegistry.Audio);
+        }
+
+        /// <summary>
+        /// Writes the one loud, named, player-reachable record that the audio subsystem is a placeholder.
+        /// </summary>
+        /// <remarks>
+        /// The <see cref="RuntimeDiagnosticsTrace"/> write is deliberately outside the editor/development guard.
+        /// The previous message went only through <see cref="LogOptionalBootstrapWarning"/>, which is
+        /// <c>[Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]</c> and was additionally wrapped in
+        /// <c>#if</c> at its call site - so in a release player the whole audio subsystem could be replaced by a
+        /// stub and not one byte was logged. Cold path: runs at most once per boot from the node initializer.
+        /// </remarks>
+        private static void ReportAudioBootstrapStubInstalled(string reason, Exception exception)
+        {
+            string cause = string.IsNullOrEmpty(reason) ? "unspecified" : reason;
+
+            RuntimeDiagnosticsTrace.EnsureSession("bootstrap_blackbox");
+            RuntimeDiagnosticsTrace.WriteEvent("bootstrap.audio.stub_installed", cause);
+            if (exception != null)
+            {
+                RuntimeDiagnosticsTrace.WriteEvent(
+                    "bootstrap.audio.stub_installed.exception",
+                    exception.GetType().Name + ": " + exception.Message);
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError(
+                "[GameBootstrapper] AUDIO IS A STUB: IAudioService slot holds NoOpAudioService, which discards " +
+                "every queued event. No SFX, no ambience, no music, no vocal warnings, no acoustic zones for this " +
+                "entire session. cause=" + cause + " This node is EXEMPT, not ready: the stub reports " +
+                "IsInitialized=false and IsAudioRuntimeReady=false, so consumers that gate on either will now " +
+                "correctly refuse instead of queueing into silence, and boot continues on purpose because audio " +
+                "is optional and failing the node would abort the whole session. ACTION: fix the SpatialAudioManager " +
+                "node for the cause named above - author the missing component, fix its IAudioService/" +
+                "IAudioVirtualizationService registration and IsAudioRuntimeReady conjunction, or fix the throw " +
+                "reported next.");
+            if (exception != null)
+            {
+                Debug.LogError(
+                    "[GameBootstrapper] SpatialAudioManager.InitializeService threw " +
+                    exception.GetType().Name + ": " + exception.Message + " - audio was replaced by a silent stub. " +
+                    exception.StackTrace);
+            }
+#endif
         }
 
         private static bool IsBootstrapAudioServiceUsable(IAudioService audioService)
@@ -9169,13 +9322,46 @@ namespace Hecton8.Bootstrap
     /// <summary>
     /// Silent audio fallback used when an optional audio bootstrap owner cannot initialize.
     /// </summary>
+    /// <remarks>
+    /// This type must never report readiness. It holds no mixer groups, no voice pool, no acoustic data and no event
+    /// queue, so any consumer that believes it is ready queues audio into a black hole and gets no diagnostic. Both
+    /// readiness properties are hardcoded <c>false</c> on purpose; do not "fix" a consumer that started refusing by
+    /// flipping them back. Boot survival past the audio node is handled separately and explicitly by
+    /// <c>GameBootstrapper._audioBootstrapNodeStubbed</c>, so honesty here costs no session.
+    /// </remarks>
     internal sealed class NoOpAudioService : IAudioService
     {
         // COLD ALLOC: NoOpAudioService[1] - non-critical audio fallback for deterministic bootstrap progress - owner: GameBootstrapper
         internal static readonly NoOpAudioService Shared = new NoOpAudioService();
 
-        /// <inheritdoc />
-        public bool IsInitialized => true;
+        /// <summary>
+        /// Always <c>false</c>. This object holds no mixer groups, no voice pool and no event queue: every
+        /// <c>Queue*</c> method below returns <c>false</c> and every <c>Play*</c> method is empty.
+        /// </summary>
+        /// <remarks>
+        /// This used to be hardcoded <c>true</c>, which made the placeholder answer yes to "is audio ready" and
+        /// let every consumer gate of the form <c>audioService == null || !audioService.IsInitialized</c> pass -
+        /// so callers queued SFX, ambience, music and vocal warnings into methods that dropped them and reported
+        /// nothing. A null object must fail a null check's intent, not satisfy its letter.
+        /// <para>
+        /// Bootstrap progress does NOT depend on this bit any more: the node passes through the recorded
+        /// <see cref="GameBootstrapper"/> stub exemption instead. See
+        /// <c>GameBootstrapper._audioBootstrapNodeStubbed</c>.
+        /// </para>
+        /// </remarks>
+        public bool IsInitialized => false;
+
+        /// <summary>
+        /// Always <c>false</c>, overridden explicitly rather than inherited.
+        /// </summary>
+        /// <remarks>
+        /// <c>IAudioService</c> declares a default interface implementation <c>IsAudioRuntimeReady => IsInitialized</c>
+        /// (<c>Core/GlobalRegistryContracts.cs</c>). Inheriting it would make one placeholder answer the readiness
+        /// question under two different property names, and a future edit to <see cref="IsInitialized"/> would move
+        /// both. The real owner, <c>SpatialAudioManager</c>, overrides the same property with a five-term
+        /// conjunction, so the name means "five invariants hold" there and must not mean "yes, always" here.
+        /// </remarks>
+        public bool IsAudioRuntimeReady => false;
 
         /// <inheritdoc />
         public AudioMixerGroup InterfaceGroup => null;
