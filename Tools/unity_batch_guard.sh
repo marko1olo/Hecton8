@@ -18,9 +18,18 @@
 #
 # USAGE
 #   sh Tools/unity_batch_guard.sh <Namespace.Class.Method> <logfile-name> [extra args...]
+#   H8_GATE_WAIT_SECONDS=600 sh Tools/unity_batch_guard.sh <Method> <log> -quit
 #
 # It refuses to run and exits non-zero when another editor is live, so a caller chaining
 # with && cannot proceed by accident.
+#
+# Pass `-quit` yourself when the target does NOT call EditorApplication.Exit. This script
+# deliberately does not add it: a validator that exits on its own and an authoring tool that
+# must stay alive to finish an import need different handling, and guessing wrong either
+# truncates the work or leaves an editor holding the lock forever.
+#
+# H8_GATE_WAIT_SECONDS makes it wait for a busy slot instead of failing immediately. See the
+# wait-and-acquire block below for why that is not a loosening of the one-owner rule.
 
 set -e
 
@@ -38,8 +47,41 @@ UNITY="/c/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Unity.exe"
 LOG_WIN="C:\\hades\\Hecton8\\Logs\\${LOGNAME}"
 LOG_POSIX="${PROJECT_POSIX}/Logs/${LOGNAME}"
 
+# --- optional wait-and-acquire ----------------------------------------------
+# H8_GATE_WAIT_SECONDS=N makes gates 1 and 2 POLL for up to N seconds instead of failing on
+# the first look. Default 0 keeps the original fail-fast behaviour exactly.
+#
+# WHY. This is a contended host: several orchestrators drive the same editor, and on
+# 2026-07-29 three consecutive legitimate windows were lost to a race, not to a conflict -
+# checked the door, found it open, and another owner launched in the seconds before the
+# guard ran. Hand-polling from the caller is the wrong mechanism: it burns a round trip per
+# attempt and still races. This does NOT weaken the guard. It never runs beside a live
+# editor; it waits for one that has genuinely exited. The one-owner rule is enforced by the
+# same checks, just at the moment of acquisition rather than at the moment of asking.
+WAIT_SECONDS=${H8_GATE_WAIT_SECONDS:-0}
+
+count_editors() { tasklist 2>/dev/null | grep -icE '^Unity\.exe' || true; }
+count_compile_owners() { tasklist 2>/dev/null | grep -icE '^(dotnet|csc|msbuild)\.exe' || true; }
+
+if [ "$WAIT_SECONDS" -gt 0 ] 2>/dev/null; then
+	WAITED=0
+	while [ "$WAITED" -lt "$WAIT_SECONDS" ]; do
+		if [ "$(count_editors)" = "0" ] && [ "$(count_compile_owners)" = "0" ]; then
+			break
+		fi
+		if [ "$WAITED" = "0" ]; then
+			echo "waiting for the editor slot (editors=$(count_editors) compile=$(count_compile_owners)), up to ${WAIT_SECONDS}s"
+		fi
+		sleep 5
+		WAITED=$((WAITED + 5))
+	done
+	if [ "$WAITED" -gt 0 ]; then
+		echo "waited ${WAITED}s for the slot"
+	fi
+fi
+
 # --- gate 1: no other editor -------------------------------------------------
-LIVE=$(tasklist 2>/dev/null | grep -icE '^Unity\.exe' || true)
+LIVE=$(count_editors)
 if [ "$LIVE" != "0" ]; then
 	echo "BUILD_GATE_BLOCKED: ${LIVE} Unity process(es) already running - another owner holds the editor." >&2
 	tasklist 2>/dev/null | grep -iE '^Unity\.exe' >&2 || true
@@ -47,10 +89,23 @@ if [ "$LIVE" != "0" ]; then
 fi
 
 # --- gate 2: no active compile owner ----------------------------------------
-BUSY=$(tasklist 2>/dev/null | grep -icE '^(dotnet|csc|msbuild)\.exe' || true)
-if [ "$BUSY" != "0" ]; then
-	echo "BUILD_GATE_BLOCKED: ${BUSY} dotnet/csc/msbuild process(es) running - a compile owner is active." >&2
-	exit 4
+# Sampled TWICE, for the same reason gate 3 below is sampled twice, and the reason was
+# measured here on 2026-07-29: short-lived `dotnet.exe` probes appear and vanish within
+# seconds on this host (one was already gone by the time it was inspected, PID 19516).
+# A single reading turned those transients into a hard block and cost two legitimate Unity
+# windows in a row while the machine was otherwise idle. A SUSTAINED compile owner - a real
+# build - is still caught, because it is present in both samples. That is the distinction
+# this gate needs to make: it must block a build, not a blink.
+BUSY1=$(count_compile_owners)
+if [ "$BUSY1" != "0" ]; then
+	sleep 2
+	BUSY2=$(count_compile_owners)
+	if [ "$BUSY2" != "0" ]; then
+		echo "BUILD_GATE_BLOCKED: ${BUSY1} then ${BUSY2} dotnet/csc/msbuild process(es) - a compile owner is active in both samples." >&2
+		tasklist 2>/dev/null | grep -iE '^(dotnet|csc|msbuild)\.exe' >&2 || true
+		exit 4
+	fi
+	echo "gate 2: ${BUSY1} compile process(es) in the first sample, 0 in the second - transient, proceeding"
 fi
 
 # --- gate 3: CPU under the 50% ceiling AGENTS.md sets -----------------------
