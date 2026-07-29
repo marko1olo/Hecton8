@@ -1286,14 +1286,30 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // LEAVE THE RENDER LANE AND LATCH FIRST - everything below the first failing assert is
-            // unreachable. The material gap is unrecoverable: runtime material synthesis is forbidden here,
-            // so an authored asset plus an inspector assignment is the only fix.
+            // LEAVE THE RENDER LANE, LATCH, ANNOUNCE, AND RETURN. No assert.
+            //
+            // The comment this replaces claimed "the material gap is unrecoverable". Render disproves that
+            // four hundred lines up: it reads `Material material = reconstructionMaterial;` then
+            // `if (mesh == null || material == null) return;`, so a null material is survivable by
+            // construction - the hologram simply does not draw. The latch above already leaves the render
+            // lane and the log above already names the gap, so the asserts added exactly one thing:
+            // destroying the caller.
+            //
+            // UnityEngine.Assertions.Assert THROWS in this project, and this component is instantiated
+            // during a POOL WARMUP inside another component's OnEnable - PlayerToolManager.OnEnable ->
+            // WarmRuntimePoolsIfNeeded -> WarmAssignedToolPoolsIfNeeded -> EnsurePoolWarmup ->
+            // ObjectPoolManager.Warmup -> InstantiatePooled. The throw aborted PlayerToolManager.OnEnable,
+            // which is precisely why the route probe's Tool row reported slotCount=4 with
+            // IsToolAvailableInSlot false for EVERY slot. An unassigned cosmetic hologram material was
+            // costing the player all four tools.
+            //
+            // Same shape as HectonVoxelEngine.EnsureVoxelBakeGhostMaterial, fixed in 585401145: an assert
+            // guarding optional state, taking an unrelated system's entire initialisation with it. The
+            // authoring gap is real - reconstructionMaterial is unassigned and wants an authored asset with
+            // GPU instancing enabled - and LogMissingReconstructionMaterial says so without unwinding
+            // anyone's OnEnable.
             DisableReconstructionAfterUnrecoverableSetupFailure();
             LogMissingReconstructionMaterial(materialAuthored);
-
-            UnityEngine.Assertions.Assert.IsNotNull(reconstructionMaterial, "Fatal: DataArchaeologyRuntime requires an authored reconstruction material.");
-            UnityEngine.Assertions.Assert.IsTrue(!materialAuthored || instancingAuthored, "Fatal: DataArchaeologyRuntime reconstruction material must enable GPU instancing in the asset.");
         }
 
         /// <summary>
