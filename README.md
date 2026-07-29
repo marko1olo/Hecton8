@@ -1,5 +1,8 @@
 <div align="center">
 
+![HECTON8 Banner](https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/hecton8_banner.jpg)
+
+
 # HECTON-8 — Submerge NASA-Punk Deep Sea Unity 6000 Engine
 
 [![Unity](https://img.shields.io/badge/Engine-Unity%206000.4%20URP-black?style=for-the-badge&logo=unity)][][![Live Website](https://img.shields.io/badge/Website-GitHub%20Pages-00f2fe?style=for-the-badge)](https://marko1olo.github.io/Hecton8/)
