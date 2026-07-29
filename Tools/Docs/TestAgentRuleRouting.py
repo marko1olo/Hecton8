@@ -154,6 +154,19 @@ def path_part(value: str) -> str:
         return ""
     if re.search(r"\.(py|ps1|exe|bat|cmd)\s+", value, re.IGNORECASE):
         return value.split(maxsplit=1)[0]
+    # Strip a trailing line or line-range citation: `file.cs:123` and `file.py:499-500`.
+    #
+    # WHY: file:line is this repository's house citation style - Docs/INIT_ORDER_CHAIN.md alone carries 76
+    # of them and BUILD_PLAYTEST_ISSUES.md 75 - but the existence check received the whole backtick body,
+    # so any scanned doc citing a line inside a Tools/ or Assets/ path failed with
+    # "active local path reference is missing" even when the file was present and long enough.
+    # Observed on 3DMODEL_TEXTURES_MATERIALS.md:43 citing Tools/Blender/h8forge/law.py:499-500, where
+    # law.py exists and has 667 lines.
+    #
+    # This strictly improves precision rather than relaxing the gate: the FILE is still existence-checked,
+    # only the line suffix is removed. Anchored to the end and requires digits after the colon, so a
+    # Windows drive prefix (C:\hades\...) and a namespace-style colon are untouched.
+    value = re.sub(r":\d+(?:-\d+)?$", "", value)
     return value
 
 
