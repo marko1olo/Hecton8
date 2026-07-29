@@ -266,6 +266,10 @@ namespace Hecton8.Core
         private bool _subscribedToDeviceChanges;
         private bool _subscribedToXRActiveChanged;
         private int _lastCapturedFrame = -1;
+        // Dispatcher frame index of the last PreSimulationInputTick, from either caller. -1 means the
+        // per-frame input tick has never run in this session, which is the state a NoOp-latched
+        // SystemDispatcher leaves it in - see PumpPreSimulationInputIfDispatcherSkipped.
+        private int _lastPreSimulationInputFrame = -1;
         private int _nextXRDeviceRescanFrame;
         private int _lastXRLookAtHitFrame = -1;
         private int _bufferWriteIndex;
@@ -616,9 +620,70 @@ namespace Hecton8.Core
         public void LateFrameTick()
         {
             float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
+            PumpPreSimulationInputIfDispatcherSkipped();
             UpdateVisualLookInterpolation();
             DrainToolHaptics(deltaTime);
             FlushPendingHapticOutput();
+        }
+
+        /// <summary>
+        /// Runs the per-frame input tick from a lane THIS component owns when the dispatcher did not run it.
+        ///
+        /// WHY THIS EXISTS, and it is not defensive padding. PreSimulationInputTick is the only per-frame
+        /// caller of CaptureState (:719), and CaptureState is the only place the automation-override lane is
+        /// consumed (ApplyAutomationOverride, :3345). Its single dispatcher-side caller is
+        /// SystemDispatcher.RunDispatcherUpdate:5052-5054:
+        ///     IInputDeterminismService inputDeterminism = _inputDeterminism;
+        ///     if (inputDeterminism != null &amp;&amp; inputDeterminism.IsInitialized)
+        ///         inputDeterminism.PreSimulationInputTick(unscaledDeltaTime);
+        /// That field is written in exactly one place, RefreshInputDeterminismDependency
+        /// (SystemDispatcher.cs:4163-4168), called once from SystemDispatcher.InitializeService
+        /// (SystemDispatcher.cs:2093). The dispatcher is a BootstrapPhase.CoreServices node and this input
+        /// dispatcher is a BootstrapPhase.Player node (GameBootstrapper.cs:5607-5638), so at that moment the
+        /// registry's Input slot is still empty and GlobalRegistry.InputDeterminism resolves through
+        /// GlobalRegistry.Input, which returns the NON-NULL NoOpInputService null object
+        /// (GlobalRegistry.cs:920-936). The refresh accepts it because it only rejects null, and
+        /// NoOpInputService.IsInitialized is a hardcoded false (GlobalRegistry.cs:8430), so the guard above
+        /// is false forever.
+        ///
+        /// The one recovery path, SystemDispatcher's GlobalRegistryServiceSlot.Input rebound case
+        /// (SystemDispatcher.cs:4215-4217), never fires either: GlobalRegistry.Register only queues a rebound
+        /// when the slot ALREADY held a service (GlobalRegistry.cs:7352-7353 -
+        /// `if (previousService != null) QueueServiceRebound(...)`), and TryRegisterInputService (:2943) fills
+        /// an empty slot. First registration notifies nobody.
+        ///
+        /// Measured consequence, Logs/h8_playprobe_route.json moments[3]: "driver published 139 input
+        /// overrides; movementIntent01max=0.000 ... inputServiceRegistered=True inputEnabled=True
+        /// blockMask=0x00000000". Both input gates open, the override lane published all run, and not one
+        /// override was ever consumed because the consumer never ticked. _currentState kept the all-zero
+        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+        /// handed that zero out every frame, and HectonPlayerMovement.ProcessPlayerInputFrame
+        /// (HectonPlayerMovement.cs:8100-8102) wrote zeroes into _inputH/_inputV/_inputVertical, which is
+        /// the sole source of the intent vector published at HectonPlayerMovement.cs:10019. The deterministic
+        /// input ring was equally dead - _standardInputFrame never advanced past 0.
+        ///
+        /// The real repair belongs in SystemDispatcher (re-resolve the cached service when it is not
+        /// initialized, instead of trusting a one-shot cold read). Until that lands, this owner refuses to
+        /// depend on another system's stale cache for its own cadence: the late-frame lane is registered by
+        /// TryRegisterToDispatcher (:2878) through GlobalRegistry.TryRegisterLateFrameTickable and is walked
+        /// every dispatcher frame (SystemDispatcher.cs:5410-5419), so it is a lane this component can prove
+        /// it is on. The frame guard means that once the dispatcher calls PreSimulationInputTick again this
+        /// method costs one int compare and returns - no double substep, no double publish.
+        ///
+        /// Late-frame is after the updatable walk, so in the degraded configuration consumers see the
+        /// override one frame later than they would from pre-simulation. That is a one-frame latency on a
+        /// lane that was previously producing nothing at all.
+        /// </summary>
+        private void PumpPreSimulationInputIfDispatcherSkipped()
+        {
+            if (!_isInitialized)
+                return;
+
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (_lastPreSimulationInputFrame == currentFrame)
+                return;
+
+            PreSimulationInputTick(Hecton8.Core.SystemDispatcher.CurrentFrameUnscaledDeltaTime);
         }
 
         public void SlowTick()
@@ -628,6 +693,10 @@ namespace Hecton8.Core
 
         public void PreSimulationInputTick(float deltaTime)
         {
+            // Stamped for BOTH callers (SystemDispatcher.cs:5054 and the late-frame self-pump), so whichever
+            // one reaches the frame first suppresses the other. Written before any early exit inside the
+            // substep loop so a frame that legitimately produces zero substeps still counts as ticked.
+            _lastPreSimulationInputFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
 #if UNITY_EDITOR
             if (_deterministicVaultBuffersReady)
                 ApplyPendingInputProfileCsv();
@@ -4686,6 +4755,7 @@ namespace Hecton8.Core
         private void ClearFrameState()
         {
             _lastCapturedFrame = -1;
+            _lastPreSimulationInputFrame = -1;
             _bufferWriteIndex = 0;
             _pendingLookDelta = Vector2.zero;
             _latchedActionBits = 0u;

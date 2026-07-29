@@ -7950,15 +7950,36 @@ namespace Hecton8.Gameplay
             SetSprintingState(false);
         }
 
+        /// <summary>
+        /// Re-reads the live registry Input slot on every call instead of trusting a one-shot cold resolve.
+        ///
+        /// The previous version latched on its first success: it returned early as soon as
+        /// _resolvedInputManager was set, and the only writers of _inputServiceRuntime are
+        /// OnDependencyInject (:4214) and the GlobalRegistryServiceSlot.Input hot-swap case (:4295).
+        /// GlobalRegistry.Register only queues that hot-swap callback when the slot ALREADY held a service
+        /// (GlobalRegistry.cs:7352-7353), so a FIRST registration into an empty Input slot notifies nobody.
+        /// Any player that resolved input while the slot was empty got GlobalRegistry.Input's non-null
+        /// NoOpInputService null object (GlobalRegistry.cs:920-936) and kept it for the whole session -
+        /// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+        /// returns default (:8450), which sends ProcessPlayerInputFrame (:8079) down its else branch every
+        /// render tick, zeroing _inputH/_inputV/_inputVertical and therefore the intent vector published at
+        /// :10019. The InputDispatcher's own history says this window is real: its Input slot has already
+        /// been observed emptied by a scene transition (InputDispatcher.cs:2838-2863).
+        ///
+        /// RegisteredInput is the raw slot (GlobalRegistry.cs:949) and never substitutes the null object, so
+        /// binding off it cannot latch onto a service that is disabled by construction; a null slot leaves
+        /// _inputManager null, which every consumer here already null-checks, and the next call rebinds.
+        /// Cost is one static field read plus two ReferenceEquals - this method already ran every render
+        /// tick through PrepareRenderTickDependencies (:4722), it just returned early.
+        /// </summary>
         private void ResolveInputManagerBinding()
         {
-            if (_resolvedInputManager && _inputManager != null && _subscribedInputManager == _inputManager)
-                return;
-
-            IInputService currentManager = _inputServiceRuntime;
-            if (ReferenceEquals(_subscribedInputManager, currentManager) && ReferenceEquals(_inputManager, currentManager))
+            IInputService currentManager = GlobalRegistry.RegisteredInput;
+            _inputServiceRuntime = currentManager;
+            if (_resolvedInputManager &&
+                ReferenceEquals(_inputManager, currentManager) &&
+                ReferenceEquals(_subscribedInputManager, currentManager))
             {
-                _resolvedInputManager = true;
                 return;
             }
 
