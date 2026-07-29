@@ -848,11 +848,65 @@ namespace Hecton8.Editor.Interiors
             return false;
         }
 
+        /// <summary>
+        /// Interior surface tokens. Deliberately the SAME vocabulary <see cref="ClassifyKind"/> switches
+        /// on, so any name that qualifies as an interior socket here is guaranteed to classify into a
+        /// real kind there - one list, not two that can drift apart.
+        /// </summary>
+        private static readonly string[] s_InteriorSurfaceTokens =
+        {
+            "Wall", "Panel", "Ceiling", "Cable", "Floor", "Conduit", "Rivet", "Seam", "Micro"
+        };
+
+        /// <summary>
+        /// True when a child transform name denotes an INTERIOR decorative socket.
+        /// <para>
+        /// THE DEFECT THIS FIXES WAS LIVE AND HAD NOTHING TO DO WITH INTERIORS. The previous body was
+        /// <c>Contains("DecorativeSocket") || StartsWith("Socket_") || Contains("Socket_")</c> - the
+        /// third clause making the second redundant - so it matched ANY child whose name contains
+        /// "Socket_". This project already ships CONSTRUCTION sockets under exactly that spelling:
+        /// PFB_Module_Foundation carries Socket_PosZ / Socket_NegX / Socket_NegZ / Socket_PosX
+        /// (authored by ConstructionBootstrapAuthoring.cs:91-94, plus Socket_Front / Socket_Back at
+        /// :105-106), and DronePrefabFactory emits Socket_Tool / Socket_Sensor / Socket_StatusLight
+        /// (:1007-1021). Those are module-to-module connection and attachment topology, not decoration.
+        /// Under the old predicate the Foundation's four construction sockets read as four interior
+        /// WallPanel anchors - which also made CollectSockets return true, so
+        /// <see cref="FailClosedOnFallbackKit"/> saw an "authored" interior nobody authored and the
+        /// provenance gate passed on a lie. Socket_StatusLight was the worst case: "Light" is in the
+        /// panel list at <see cref="ResolveInstrumentTypeHash"/>, so a drone status light read as a wall
+        /// instrument mount.
+        /// </para>
+        /// <para>
+        /// THE DISCRIMINATOR, NOT THE SYMPTOM. "DecorativeSocket" is unambiguous and its behaviour is
+        /// unchanged. The bare "Socket_" form is ambiguous by construction, so it must now ALSO name an
+        /// interior surface feature. That is the question this predicate was always trying to ask.
+        /// </para>
+        /// <para>
+        /// NO ASSET REGRESSES. Censused 2026-07-29: zero children named DecorativeSocket* or Socket_*
+        /// exist across all six H8_A1712_* module prefabs - their children are COL_*Proxy, VIS_LOD1,
+        /// VIS_LOD2 and InteriorTrigger - and the only Socket_* children anywhere in the project are the
+        /// construction and drone-attachment sockets listed above, every one of which this predicate
+        /// SHOULD reject. The AABB fallback grid builds its DTOs in code and never passes through here.
+        /// </para>
+        /// </summary>
         private static bool IsSocketName(string name)
         {
-            return name.Contains("DecorativeSocket", StringComparison.OrdinalIgnoreCase) ||
-                   name.StartsWith("Socket_", StringComparison.OrdinalIgnoreCase) ||
-                   name.Contains("Socket_", StringComparison.OrdinalIgnoreCase);
+            if (string.IsNullOrEmpty(name))
+                return false;
+
+            if (name.Contains("DecorativeSocket", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (name.IndexOf("Socket_", StringComparison.OrdinalIgnoreCase) < 0)
+                return false;
+
+            for (int i = 0; i < s_InteriorSurfaceTokens.Length; i++)
+            {
+                if (name.IndexOf(s_InteriorSurfaceTokens[i], StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+            }
+
+            return false;
         }
 
         private static InteriorSocketDTO1608 BuildSocket(GameObject root, Transform tr, Matrix4x4 rootInverse, int ordinal)
@@ -880,6 +934,21 @@ namespace Hecton8.Editor.Interiors
             return socket;
         }
 
+        /// <summary>
+        /// Socket kind from the marker name.
+        /// <para>
+        /// ORDERING TRAP - THE MICRO TEST RUNS FIRST AND WINS. "Rivet" / "Seam" / "Micro" are checked
+        /// before every other token, so a name that carries one of them AND a surface token classifies
+        /// as MicroStamp regardless of the surface. A marker named "..._Ceiling_Cable_Micro" is a
+        /// MicroStamp, NOT a CeilingCable. That matters well beyond kind selection:
+        /// <see cref="InteriorSocketParser1608.CollectSockets"/> routes MicroStamp markers into the
+        /// separate <c>microSockets</c> list and returns <c>true</c> only when the NON-micro
+        /// <c>sockets</c> list is non-empty - so a module whose every marker happens to contain "Micro"
+        /// still counts as having zero authored sockets, still gets the AABB fallback grid, and still
+        /// trips <see cref="FailClosedOnFallbackKit"/>. Do not put those three words in a marker name
+        /// unless a micro stamp is what you mean.
+        /// </para>
+        /// </summary>
         private static byte ClassifyKind(string name)
         {
             if (name.Contains("Rivet", StringComparison.OrdinalIgnoreCase) || name.Contains("Seam", StringComparison.OrdinalIgnoreCase) || name.Contains("Micro", StringComparison.OrdinalIgnoreCase))

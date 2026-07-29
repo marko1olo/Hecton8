@@ -452,6 +452,14 @@ namespace Hecton8.Editor.Structures
                 renderer.sharedMaterial = material;
                 ConfigureVisualRenderer(renderer);
                 AddCollisionProxies(root, spec.Extents, spec.SocketMask);
+
+                // Emitted immediately after the proxies it is DERIVED FROM, because the marker set is a
+                // function of those proxy boxes and nothing else. Placed here rather than in a separate
+                // authoring tool so the anchors cannot drift from the geometry - see
+                // EmitInteriorSocketMarkers for the full contract and for why the same method is also
+                // callable on already-fabricated prefabs.
+                EmitInteriorSocketMarkers(root);
+
                 Renderer lod1Renderer = AddLodChildRenderer(root.transform, "VIS_LOD1", lod1Mesh, material, root.layer);
                 Renderer lod2Renderer = AddLodChildRenderer(root.transform, "VIS_LOD2", lod2Mesh, material, root.layer);
                 AttachLodGroup(root, renderer, lod1Renderer, lod2Renderer);
@@ -1341,6 +1349,283 @@ namespace Hecton8.Editor.Structures
                 math.max(0.5f, extents.z * 1.65f));
             collider.isTrigger = true;
             return collider;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  INTERIOR DECORATIVE SOCKET ANCHORS
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Container for the interior anchor markers. Deliberately carries NEITHER "Socket_" NOR
+        /// "DecorativeSocket" in its name: InteriorSocketParser1608.IsSocketName
+        /// (InteriorFinisherStudio1608.cs) matches on those substrings, so a container named
+        /// "DecorativeSockets" would itself be parsed as an interior socket and would contribute one
+        /// phantom anchor at the module origin, inside the geometry.
+        /// Also checked against ColliderOptimizerEngine1716.GeneratedCompoundRootName
+        /// ("COL_CompoundProxy_1716") and GeneratedConvexRootName ("COL_ConvexProxy_1716"): this name
+        /// collides with neither, and the container holds no Collider at all, so
+        /// ValidatePrefabColliderBudget cannot see it.
+        /// </summary>
+        public const string InteriorAnchorRootName = "GEN_InteriorAnchors_1608";
+
+        /// <summary>
+        /// Marker name prefix. THIS IS LOAD-BEARING, NOT COSMETIC - do not shorten it to "Socket_".
+        /// InteriorSocketParser1608.IsSocketName accepts the bare "Socket_" form as well, and that form
+        /// is ALREADY AMBIGUOUS in this project: PFB_Module_Foundation ships four CONSTRUCTION sockets
+        /// named Socket_PosZ / Socket_NegX / Socket_NegZ / Socket_PosX
+        /// (authored by ConstructionBootstrapAuthoring.cs:91-94), and DronePrefabFactory emits
+        /// Socket_Tool / Socket_Sensor / Socket_StatusLight (:1007-1021). Every one of those is
+        /// module-to-module or attachment topology, NOT interior decoration, and the interior parser
+        /// would happily read them as WallPanel anchors. The "DecorativeSocket" prefix is the one form
+        /// that cannot collide with that vocabulary.
+        /// </summary>
+        public const string DecorativeSocketNamePrefix = "DecorativeSocket";
+
+        /// <summary>
+        /// The six surface prefixes AddCollisionProxies writes (:1183-1189), paired with the axis each
+        /// surface is normal to and the sign of the OUTWARD direction. A pierced surface is split by the
+        /// same helper into "_LeftFrame" / "_RightFrame" / "_Lintel" (walls) or
+        /// "_WestFrame" / "_EastFrame" / "_SouthFrame" / "_NorthFrame" (slabs), so prefix matching
+        /// covers every piece of a given surface without enumerating the suffixes.
+        /// </summary>
+        private static readonly string[] s_InteriorAnchorSurfacePrefixes =
+        {
+            "COL_FloorProxy",
+            "COL_CeilingProxy",
+            "COL_EastWallProxy",
+            "COL_WestWallProxy",
+            "COL_NorthWallProxy",
+            "COL_SouthWallProxy"
+        };
+
+        private static readonly int[] s_InteriorAnchorSurfaceAxis = { 1, 1, 0, 0, 2, 2 };
+        private static readonly float[] s_InteriorAnchorOutwardSign = { -1f, 1f, 1f, -1f, 1f, -1f };
+
+        /// <summary>
+        /// The interior-kind token each surface contributes to its marker name. These are the exact
+        /// tokens InteriorSocketParser1608.ClassifyKind switches on, so a marker classifies as the kind
+        /// its surface implies without any second mapping table. NOTE the classifier tests
+        /// Rivet/Seam/Micro FIRST, so none of these tokens may contain those words - "Conduit", "Cable"
+        /// and "Panel" are safe, and a name like "..._Ceiling_Cable_Micro" would silently become a
+        /// MicroStamp instead, which does NOT satisfy the bake's socket requirement.
+        /// None of them contains a density keyword either (NoAuto/Empty/Disabled/Sparse/MediumDensity/
+        /// MidDensity/Dense/Hero/HighDensity), so ResolveDensityHint falls through to the by-kind
+        /// default rather than picking up an accidental override.
+        /// </summary>
+        private static readonly string[] s_InteriorAnchorKindToken =
+        {
+            "_Floor_Conduit_",
+            "_Ceiling_Cable_",
+            "_Wall_Panel_",
+            "_Wall_Panel_",
+            "_Wall_Panel_",
+            "_Wall_Panel_"
+        };
+
+        /// <summary>
+        /// Emits one interior decorative-socket anchor per collision proxy piece, so
+        /// InteriorFinisherPipeline1608 has authored placement instead of substituting its
+        /// axis-aligned bounding-box grid.
+        /// <para>
+        /// PLACEMENT IS DERIVED, NOT INVENTED. Each anchor sits at its proxy piece's own centre,
+        /// projected onto that piece's INNER face along the surface normal, with +Z pointing into the
+        /// room. The proxy pieces are already the solid remainder after AddXWallProxy / AddZWallProxy /
+        /// AddYSlabProxy cut the doorway with
+        /// ModuleHardSurfaceDetail1712.ResolveOpeningHalfMeters - the same helper the visual cut-out
+        /// uses - so an anchor structurally cannot land in an opening, and it cannot land inside a wall
+        /// because the inner face is read off the piece's own half-size rather than from a constant.
+        /// </para>
+        /// <para>
+        /// SEMANTICS THE PARSER IMPOSES (InteriorFinisherStudio1608.cs, InteriorSocketParser1608):
+        /// position is taken root-local; the marker's +Z becomes InteriorSocketDTO1608.LocalNormal and
+        /// must face the open volume; and the marker's largest axis scale multiplies a 0.18 m base
+        /// radius, clamped to [0.05, 0.45]. localScale is therefore left at ONE - the authored default
+        /// radius - because no module datum determines an anchor size and inventing one would invent
+        /// instrument footprints.
+        /// </para>
+        /// <para>
+        /// WHAT THIS DOES NOT FIX. The generated modules have no interior visual surface at all: this
+        /// class calls AddManufacturedFaceForSocket exactly six times, once per OUTWARD face, and the
+        /// interior pipeline emits only instrument bases, cable bundles and handles - never walls. So
+        /// these anchors are correct positions on a surface that is not yet rendered. They are pinned
+        /// to the proxy inner face, which is where any future interior shell must sit, so the pending
+        /// geometry decision cannot invalidate them. Do not read the presence of anchors as evidence
+        /// that a module has an interior; ModuleInteriorSocketMarkerAuthoring
+        /// .VerifyModuleInteriorBakeReadiness measures that separately and stays red until it is true.
+        /// </para>
+        /// Idempotent: an existing container is removed and rebuilt, so running twice yields the same
+        /// hierarchy. Anchors are numbered over a name-sorted proxy list so the names - and therefore
+        /// InteriorSocketDTO1608.StableHash, which folds the transform name - are stable across runs.
+        /// </summary>
+        /// <returns>Number of anchors emitted.</returns>
+        public static int EmitInteriorSocketMarkers(GameObject root)
+        {
+            if (root == null)
+                return 0;
+
+            Transform existing = root.transform.Find(InteriorAnchorRootName);
+            if (existing != null)
+                UnityEngine.Object.DestroyImmediate(existing.gameObject, true);
+
+            // COLD ALLOC: List<BoxCollider>[16] - editor-only proxy piece scan - owner: ModuleArchitect1712
+            List<BoxCollider> proxies = new List<BoxCollider>(16);
+            root.GetComponentsInChildren(true, proxies);
+
+            // COLD ALLOC: List<BoxCollider>[16] - name-sorted proxy pieces for deterministic numbering - owner: ModuleArchitect1712
+            List<BoxCollider> pieces = new List<BoxCollider>(16);
+            for (int i = 0; i < proxies.Count; i++)
+            {
+                BoxCollider candidate = proxies[i];
+                if (candidate == null || candidate.isTrigger)
+                    continue;
+
+                if (ResolveInteriorAnchorSurface(candidate.name) < 0)
+                    continue;
+
+                pieces.Add(candidate);
+            }
+
+            if (pieces.Count == 0)
+                return 0;
+
+            pieces.Sort(CompareColliderByName);
+
+            GameObject anchorRoot = new GameObject(InteriorAnchorRootName);
+            anchorRoot.layer = root.layer;
+            anchorRoot.transform.SetParent(root.transform, false);
+            anchorRoot.transform.localPosition = Vector3.zero;
+            anchorRoot.transform.localRotation = Quaternion.identity;
+            anchorRoot.transform.localScale = Vector3.one;
+
+            int floorOrdinal = 0;
+            int ceilingOrdinal = 0;
+            int wallOrdinal = 0;
+            int emitted = 0;
+
+            for (int i = 0; i < pieces.Count; i++)
+            {
+                BoxCollider piece = pieces[i];
+                int surface = ResolveInteriorAnchorSurface(piece.name);
+                if (surface < 0)
+                    continue;
+
+                if (!TryResolveInteriorAnchorPose(root, piece, surface, out Vector3 localPosition, out Quaternion localRotation))
+                    continue;
+
+                int axis = s_InteriorAnchorSurfaceAxis[surface];
+                int ordinal = axis == 1
+                    ? (s_InteriorAnchorOutwardSign[surface] < 0f ? ++floorOrdinal : ++ceilingOrdinal)
+                    : ++wallOrdinal;
+
+                GameObject anchor = new GameObject(
+                    DecorativeSocketNamePrefix + s_InteriorAnchorKindToken[surface] + ordinal.ToString("D2"));
+                anchor.layer = root.layer;
+                anchor.transform.SetParent(anchorRoot.transform, false);
+                anchor.transform.localPosition = localPosition;
+                anchor.transform.localRotation = localRotation;
+                anchor.transform.localScale = Vector3.one;
+                emitted++;
+            }
+
+            return emitted;
+        }
+
+        private static int CompareColliderByName(BoxCollider lhs, BoxCollider rhs)
+        {
+            string lhsName = lhs != null ? lhs.name : string.Empty;
+            string rhsName = rhs != null ? rhs.name : string.Empty;
+            return string.Compare(lhsName, rhsName, StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// Index into the surface tables for a proxy name, or -1 when the name is not one of the six
+        /// surfaces AddCollisionProxies writes. Longest-prefix order is not needed because the six
+        /// prefixes are mutually exclusive.
+        /// </summary>
+        private static int ResolveInteriorAnchorSurface(string proxyName)
+        {
+            if (string.IsNullOrEmpty(proxyName))
+                return -1;
+
+            for (int i = 0; i < s_InteriorAnchorSurfacePrefixes.Length; i++)
+            {
+                if (proxyName.StartsWith(s_InteriorAnchorSurfacePrefixes[i], StringComparison.Ordinal))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        /// <summary>
+        /// Root-local anchor pose for one proxy piece, or false when the piece does not have the shape
+        /// this derivation assumes. The checks are integrity checks, not defensiveness: each one
+        /// corresponds to a way the proxy could stop meaning what its name says, and in every such case
+        /// declining is correct because the anchor position would otherwise be computed from geometry
+        /// that no longer matches the label.
+        /// </summary>
+        private static bool TryResolveInteriorAnchorPose(
+            GameObject root,
+            BoxCollider piece,
+            int surface,
+            out Vector3 localPosition,
+            out Quaternion localRotation)
+        {
+            localPosition = Vector3.zero;
+            localRotation = Quaternion.identity;
+
+            int axis = s_InteriorAnchorSurfaceAxis[surface];
+            Transform pieceTransform = piece.transform;
+
+            // AddBoxColliderProxy parents every proxy directly to the root with identity rotation and
+            // an untouched unit scale (:1316-1326). A piece that is nested, rotated or scaled is not
+            // this generator's output, and its half-size would no longer be root-local metres.
+            if (pieceTransform.parent != root.transform)
+                return false;
+
+            if (Quaternion.Angle(pieceTransform.localRotation, Quaternion.identity) > 0.01f)
+                return false;
+
+            Vector3 pieceScale = pieceTransform.localScale;
+            if (Mathf.Abs(pieceScale.x - 1f) > 0.001f ||
+                Mathf.Abs(pieceScale.y - 1f) > 0.001f ||
+                Mathf.Abs(pieceScale.z - 1f) > 0.001f)
+            {
+                return false;
+            }
+
+            Vector3 centre = pieceTransform.localPosition + piece.center;
+            Vector3 size = piece.size;
+            if (!IsFinite(centre) || !IsFinite(size))
+                return false;
+
+            float halfOnAxis = size[axis] * 0.5f;
+            if (!(halfOnAxis > 0f))
+                return false;
+
+            // Outward is read off the piece's own centre, not off the name, so a proxy that moved to
+            // the opposite side of the module produces the correct inward normal rather than one
+            // pointing out through the hull. The name only supplies the AXIS; the sign is measured.
+            float centreOnAxis = centre[axis];
+            float outwardSign = centreOnAxis > 0f ? 1f : (centreOnAxis < 0f ? -1f : s_InteriorAnchorOutwardSign[surface]);
+
+            // A named surface whose measured side disagrees with the table means the proxy set has been
+            // rearranged and the label can no longer be trusted to identify the surface.
+            if (!Mathf.Approximately(outwardSign, s_InteriorAnchorOutwardSign[surface]))
+                return false;
+
+            float inwardSign = -outwardSign;
+            localPosition = centre;
+            localPosition[axis] = centreOnAxis + (inwardSign * halfOnAxis);
+
+            Vector3 inwardNormal = Vector3.zero;
+            inwardNormal[axis] = inwardSign;
+
+            // LookRotation needs an up vector that is not parallel to forward. For the floor and the
+            // ceiling the inward normal IS world up/down, so world forward is used instead - the same
+            // choice InteriorSocketParser1608.AppendFallbackSockets makes for its ceiling row.
+            Vector3 up = axis == 1 ? Vector3.forward : Vector3.up;
+            localRotation = Quaternion.LookRotation(inwardNormal, up);
+            return true;
         }
 
         /// <summary>
