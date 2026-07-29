@@ -221,8 +221,28 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-            DrainHudNotificationSignals();
-
+            // The signal lane is drained ONCE per frame, in LateFrameTick, and deliberately not here.
+            //
+            // Both drains used to run: this one through DrainHudNotificationSignals (GetFrameSnapshot, which
+            // does NOT advance SignalBus's _legacyReadCursor) and then DrainHudNotificationSignalLane in
+            // LateFrameTick (TryConsumeFrame, which reads frameSnapshot[_legacyReadCursor++] out of the SAME
+            // buffer). Tick runs first, so every signal was enqueued twice per frame — and the repeat
+            // suppressor could not absorb the duplicate, because the two paths enqueue under DIFFERENT hashes.
+            // This one passed `signal.MessageHash`, the localisation KEY hash; the lane decodes that key through
+            // LocRegistry and re-registers the rendered TEXT, so Enqueue(ReadOnlySpan<char>) derives a hash of
+            // the characters instead. The suppressor at :533 compares `messageHash == _lastEnqueuedMessageHash`,
+            // which therefore never matched. The player saw every notification twice.
+            //
+            // Nobody could observe that, and the reason is worth recording rather than glossing: this component
+            // had ZERO instances anywhere in the project until GameBootstrapper.EnsureHudNotificationRegistered
+            // was added, so both drains ran on nothing at all. Building the surface is what made the duplicate
+            // real, which makes closing it part of that change rather than a follow-up to it.
+            //
+            // The lane drain is the survivor on three counts: it CONSUMES, so the cursor advances and the frame
+            // does not leak into the next reader; it is BUDGETED at MaxHudNotificationSignalsPerLateFrame rather
+            // than iterating an unbounded snapshot; and it resolves display text through LocRegistry instead of
+            // handing a raw key hash to the queue. It carries its own miss reporting through
+            // ReportHudSignalMessageMiss, so no diagnostic coverage is lost by dropping this call.
             if (_tickDormant) return;
             if (_notifRoot == null) return;
 
