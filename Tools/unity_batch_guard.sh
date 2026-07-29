@@ -82,8 +82,17 @@ if [ "$WAIT_SECONDS" -gt 0 ] 2>/dev/null; then
 		W_CO=$(count_compile_owners)
 		W_CPU=$(sample_cpu)
 		W_CPU=${W_CPU:-0}
+		# CPU is sampled TWICE here, matching gate 3 below. Measured 2026-07-29: a single
+		# sample let the wait loop exit on a dip and gate 3 then failed at 84% then 94%,
+		# burning a 130 s wait for nothing. The wait's exit condition must be at least as
+		# strict as the gate it is waiting for, or passing the wait means nothing.
 		if [ "$W_ED" = "0" ] && [ "$W_CO" = "0" ] && [ "$W_CPU" -le 50 ] 2>/dev/null; then
-			break
+			sleep 2
+			W_CPU2=$(sample_cpu)
+			W_CPU2=${W_CPU2:-0}
+			if [ "$W_CPU2" -le 50 ] 2>/dev/null; then
+				break
+			fi
 		fi
 		if [ "$ANNOUNCED" = "0" ]; then
 			echo "waiting for a clear slot (editors=${W_ED} compile=${W_CO} cpu=${W_CPU}%), up to ${WAIT_SECONDS}s"
