@@ -2655,7 +2655,24 @@ namespace Hecton8.Quest
                 }
             }
 
-            private static bool PrerequisitesSatisfied(
+            /// <summary>
+            /// INTERNAL, not private, because the ENCLOSING class calls it: see
+            /// <c>QuestStateManager.NodePrerequisitesSatisfied</c> (:2121-2129), whose own comment states it
+            /// deliberately delegates here rather than duplicating the prerequisite rule.
+            /// <para>
+            /// C# nesting is asymmetric in a way that bites exactly here. A nested type may reach the
+            /// ENCLOSING type's private members, but the enclosing type may NOT reach a NESTED type's private
+            /// members. So <c>private</c> compiled cleanly for as long as nothing outside this struct called
+            /// it, and became a hard CS0122 the moment that deliberate delegation was added.
+            /// </para>
+            /// <para>
+            /// Widened to <c>internal</c> and no further: the caller is in the same assembly, and the sibling
+            /// helpers <c>IsValidQuestWord</c> and <c>MatchesSignal</c> stay private on purpose because they
+            /// have no outside caller. Making all three internal to be consistent would invite callers the
+            /// job never intended.
+            /// </para>
+            /// </summary>
+            internal static bool PrerequisitesSatisfied(
                 QuestNodeDescriptor node,
                 NativeArray<QuestPrerequisiteDescriptor> prerequisites,
                 NativeArray<uint> globalPrerequisites)
