@@ -404,7 +404,64 @@ namespace Hecton8.Editor.Authoring
                 return null;
             }
 
+            if (string.Equals(family, "Flora", StringComparison.Ordinal))
+            {
+                // 4.0 m per tile: `3DMODEL_FLORA_CORAL.md:77` sets hero harvestable flora at
+                // 512 px/m, and these sources are 2048 px, so 2048 / 512 = 4.0 m of surface per
+                // tile. Both organic packages are harvestable and near-camera - coral's alpha is
+                // harvest_yield_mask at cameraDistanceClass "near", CapStem's is harvest_mask at
+                // "near_interaction" - so both take the hero row, not the 256 px/m instanced row.
+                // AuditOneMap prints the real pixel width, so if a source is not 2048 the
+                // derivation is visibly wrong rather than quietly wrong.
+                switch (role)
+                {
+                    // ---- Coral_Branching: no authored pigment exists, so the art drives colour --
+                    case "Tissue":
+                        return GeminiBiomeSet("gemini_biome_20260607_bioluminescent_coral_flesh", 4.0f,
+                            "living colony tissue over stems/forks/shafts; coral's G channel carries a real biolum signal (measured max 0.7305 mean 0.1747)");
+                    case "ExposedTipSkeleton":
+                        return GeminiBiomeSet("gemini_biome_20260607_pale_tube_coral_calcium", 4.0f,
+                            "bare pale axial skeleton at the branch ends - calcium, not flesh");
+                    case "EncrustingBase":
+                        return Batch34Set("b34_3401_photic_limestone_rubble_shelf", 4.0f,
+                            "encrusting foot is calcified crust meeting rock; same source as Geology Primary at a different tile scale");
+
+                    // ---- CapStem: pigment is AUTHORED and load-bearing, so NO albedo is bound ---
+                    // flora_capstem.py:1500-1522 is explicit: "Colour is the deliverable here, not
+                    // decoration... the amber cap against teal water is the whole reason the frame
+                    // reads", with linear base colours chosen against nice_biome.webp and pushed
+                    // toward saturated orange specifically to survive a teal fog volume. Multiplying
+                    // a tiling jelly/coral albedo over that destroys the one thing the generator
+                    // author measured. These sets are bound for NORMAL and MASK only - structure and
+                    // wetness, which do not carry hue - and BindOrganicTextureSet suppresses the
+                    // albedo for these three roles. That asymmetry with coral is deliberate.
+                    case "CapTissue":
+                    case "TornEdge":
+                        return GeminiBiomeSet("gemini_biome_20260607_soft_jelly_membrane", 4.0f,
+                            "membrane folds and pore structure for a thin translucent plate; NORMAL/MASK only, authored amber pigment is preserved");
+                    case "StemHoldfast":
+                        return GeminiBiomeSet("gemini_biome_20260607_living_kelp_frond_surface", 4.0f,
+                            "fibrous anchoring tissue; NORMAL/MASK only, authored cream-ochre pigment is preserved");
+                }
+
+                return null;
+            }
+
             return null;
+        }
+
+        /// <summary>
+        /// True for the roles whose base colour is authored art that a tiling albedo would destroy.
+        /// Only the three CapStem roles qualify: <c>flora_capstem.py:1514-1534</c> carries
+        /// reference-derived linear pigment per role (amber cap 0.855/0.360/0.070, rust-brown torn
+        /// edge 0.330/0.115/0.040, cream-ochre stem 0.640/0.545/0.375). Coral_Branching passed NO
+        /// materials to its manifest at all, so it has no pigment to protect and takes the texture.
+        /// </summary>
+        private static bool OrganicPigmentIsAuthored(string role)
+        {
+            return string.Equals(role, "CapTissue", StringComparison.Ordinal) ||
+                   string.Equals(role, "TornEdge", StringComparison.Ordinal) ||
+                   string.Equals(role, "StemHoldfast", StringComparison.Ordinal);
         }
 
         private static readonly ForgePackage[] Packages =
@@ -454,6 +511,48 @@ namespace Hecton8.Editor.Authoring
         };
 
         // ══════════════════════════════════════════════════════════
+        //  COMPILE PROOF - how to prove this file actually built
+        //
+        //  This file has no Unity proof of its own and cannot get one from the lock-free dotnet
+        //  gate: `CONTRIBUTING.md` records that the gate emits FALSE CS0433/CS0656 against
+        //  Hecton8.Editor.csproj, so for Editor-assembly code only a Unity batchmode/editor build
+        //  counts. The cheap substitute is to probe the built assembly for a symbol this file
+        //  introduces, with controls in both directions:
+        //
+        //    D=Library/ScriptAssemblies/Hecton8.Editor.dll
+        //    grep -ac ForgeGeneratedMaterialAuthoring        $D   # this type            expect >0
+        //    grep -ac ApplyOrganicRole                       $D   # organic branch       expect >0
+        //    grep -ac BindOrganicTextureSet                  $D   # organic branch       expect >0
+        //    grep -ac ModuleHardSurfaceWearMaterialAuthoring  $D   # KNOWN-PRESENT control expect >0
+        //    grep -ac H8FORGEMAT_CONTROL_MUST_BE_ABSENT      $D   # KNOWN-ABSENT control expect 0
+        //
+        //  The known-absent control appears in THIS COMMENT and nowhere else, which does not
+        //  weaken it: C# discards comments in the lexer, so only identifiers, string literals and
+        //  metadata reach the assembly. Same evidence proves it - the identifier
+        //  ApplyForgeMaterialPrefabBinding reached the DLL from this file while none of the prose
+        //  around it did. If this control ever returns non-zero, the probe method is broken and
+        //  every positive result above it is suspect.
+        //
+        //  ENCODING TRAP, measured on this DLL 2026-07-29 and worth more than the result itself.
+        //  `grep -ac H8FORGEMAT` returns 0 while `grep -ac 'H.8.F.O.R.G.E.M.A.T'` returns 2 on the
+        //  same file. Type, method and field names live in the UTF-8 #Strings metadata heap and
+        //  grep directly; STRING LITERALS live in the UTF-16 #US heap, so every ASCII char is
+        //  followed by a NUL and a plain grep misses them. A probe aimed at a `const string`
+        //  therefore reports 0 on an assembly that definitely contains it - a false negative that
+        //  reads exactly like "my code did not compile". Probe IDENTIFIERS, not literals, or use
+        //  the dotted pattern.
+        //
+        //  MEASURED STATE at Hecton8.Editor.dll mtime 2026-07-29 11:08:
+        //    ForgeGeneratedMaterialAuthoring 3, ApplyForgeMaterialPrefabBinding 1  -> the
+        //      pre-organic revision of this file COMPILED CLEAN into the Editor assembly.
+        //    ApplyOrganicRole 0, BindOrganicTextureSet 0, OrganicPigmentIsAuthored 0,
+        //      CoralMeasuredSwayMean 0, CapStemMeasuredSwayMean 0, BiomeHashAssumedMean 0
+        //      -> the ORGANIC BRANCH IS NOT IN ANY BUILD YET. It is static review only.
+        //    Controls behaved: known-present 3, known-absent 0, so the method has no false
+        //      positives on this assembly.
+        // ══════════════════════════════════════════════════════════
+
+        // ══════════════════════════════════════════════════════════
         //  ENTRY POINTS - the Verify / Apply / Verify trio
         // ══════════════════════════════════════════════════════════
 
@@ -477,7 +576,8 @@ namespace Hecton8.Editor.Authoring
                   .Append(" materialsMissing=").Append(audit.MaterialsExpected - audit.MaterialsPresent)
                   .Append(" blockedPackages=").Append(audit.PackagesBlocked)
                   .Append(" texturesBound=").Append(audit.TexturesBound)
-                  .Append(" textureSetsAvailable=6 textureSetsMissing=1(InstrumentGlass)");
+                  .Append(" roles=13 sourceSetsResolved=12 sourceSetsMissing=1(InstrumentGlass)")
+                  .Append(" albedoSuppressedRoles=3(CapStem-authored-pigment)");
             Emit(report, audit.PackagesReady > 0);
         }
 
@@ -506,6 +606,17 @@ namespace Hecton8.Editor.Authoring
 
             OrganicGate organic = EvaluateOrganicGate();
             AppendOrganicGate(report, organic);
+
+            Shader organicShader = organic.Allowed
+                ? ResolveShader(CoralShaderName, CoralShaderPath)
+                : null;
+            if (organic.Allowed && organicShader == null)
+            {
+                report.Append("  ").Append(TokenFail)
+                      .Append(" organic gate ALLOWS but the shader did not resolve by name '")
+                      .Append(CoralShaderName).Append("' nor at ").Append(CoralShaderPath)
+                      .Append("; organic packages are skipped.").AppendLine();
+            }
 
             if (!EnsureFolder(ForgeMaterialRoot))
             {
@@ -547,6 +658,18 @@ namespace Hecton8.Editor.Authoring
                     continue;
                 }
 
+                // Each surface class has its own master. They share no property name, so the shader
+                // is resolved per package and the applier branches on the same fact.
+                Shader master = package.Surface == ForgeSurfaceClass.Organic ? organicShader : hardSurface;
+                if (master == null)
+                {
+                    refused += package.SlotRoles.Length;
+                    report.Append("  ").Append(TokenFail).Append(' ').Append(package.Family)
+                          .Append(" master shader unresolved; nothing written for this package.")
+                          .AppendLine();
+                    continue;
+                }
+
                 for (int slot = 0; slot < package.SlotRoles.Length; slot++)
                 {
                     string materialName = MaterialName(package.Family, package.SlotRoles[slot]);
@@ -558,29 +681,29 @@ namespace Hecton8.Editor.Authoring
 
                     if (existing == null)
                     {
-                        Material fresh = new Material(hardSurface) { name = materialName };
+                        Material fresh = new Material(master) { name = materialName };
                         ApplyRoleProperties(fresh, package.Family, package.SlotRoles[slot]);
                         AssetDatabase.CreateAsset(fresh, materialPath);
                         created++;
                         report.Append("  CREATE   ").Append(materialPath)
-                              .Append(" shader=").Append(hardSurface.name).AppendLine();
+                              .Append(" shader=").Append(master.name).AppendLine();
                         continue;
                     }
 
-                    if (existing.shader != hardSurface)
+                    if (existing.shader != master)
                     {
                         // Assigning material.shader drops every property the new shader does not
                         // declare, so it is done before the property write, never after. Same
                         // ordering constraint ModuleHardSurfaceWearMaterialAuthoring.cs:260-264
                         // documents on the module migrator.
-                        existing.shader = hardSurface;
+                        existing.shader = master;
                     }
 
                     ApplyRoleProperties(existing, package.Family, package.SlotRoles[slot]);
                     EditorUtility.SetDirty(existing);
                     updated++;
                     report.Append("  UPDATE   ").Append(materialPath)
-                          .Append(" shader=").Append(hardSurface.name).AppendLine();
+                          .Append(" shader=").Append(master.name).AppendLine();
                 }
             }
 
@@ -736,8 +859,12 @@ namespace Hecton8.Editor.Authoring
             AppendOrganicGate(report, organic);
 
             Shader hardSurface = ResolveShader(HardSurfaceShaderName, HardSurfaceShaderPath);
-            report.Append("  master hardSurface shader=")
-                  .Append(hardSurface != null ? hardSurface.name : "MISSING").AppendLine();
+            Shader organicMaster = ResolveShader(CoralShaderName, CoralShaderPath);
+            report.Append("  master hardSurface=")
+                  .Append(hardSurface != null ? hardSurface.name : "MISSING")
+                  .Append(" | master organic=")
+                  .Append(organicMaster != null ? organicMaster.name : "MISSING")
+                  .AppendLine();
 
             // COLD ALLOC: HashSet<string>[32] - material-name dedupe across shared families -
             // owner: ForgeGeneratedMaterialAuthoring
@@ -782,7 +909,12 @@ namespace Hecton8.Editor.Authoring
                         continue;
 
                     result.MaterialsExpected++;
-                    bool bindable = package.Surface != ForgeSurfaceClass.Organic;
+                    // Organic becomes bindable the moment the two-part gate clears - the count is
+                    // derived from the gate, never hardcoded, so this line does not need editing
+                    // when the shader fix lands.
+                    bool organicRole = package.Surface == ForgeSurfaceClass.Organic;
+                    bool bindable = !organicRole || organic.Allowed;
+                    string expectedShader = organicRole ? CoralShaderName : HardSurfaceShaderName;
                     if (bindable)
                         result.UniqueMaterialsBindable++;
 
@@ -800,7 +932,7 @@ namespace Hecton8.Editor.Authoring
                     result.MaterialsPresent++;
                     string shaderName = material.shader != null ? material.shader.name : "<null>";
                     bool wrongShader = bindable &&
-                        !string.Equals(shaderName, HardSurfaceShaderName, StringComparison.Ordinal);
+                        !string.Equals(shaderName, expectedShader, StringComparison.Ordinal);
                     if (wrongShader)
                         result.MaterialsOnWrongShader++;
 
@@ -1015,6 +1147,7 @@ namespace Hecton8.Editor.Authoring
         {
             public bool Allowed;
             public bool ShaderPresent;
+            public bool TokenFound;
             public string[] BadReadsFound;
         }
 
@@ -1052,7 +1185,17 @@ namespace Hecton8.Editor.Authoring
             }
 
             gate.BadReadsFound = bad.ToArray();
-            gate.Allowed = source.IndexOf(OrganicContractOptInToken, StringComparison.Ordinal) >= 0;
+            gate.TokenFound = source.IndexOf(OrganicContractOptInToken, StringComparison.Ordinal) >= 0;
+
+            // TWO-PART GATE, and the second half is what makes it evidence instead of assertion.
+            // The token search is a plain substring match, so a COMMENT containing the token would
+            // satisfy it on its own - somebody could write "// TODO H8_ORGANIC_VCOL_CONTRACT_OK"
+            // and unlock six materials by accident. ANDing on "and none of the known-bad reads is
+            // still in the file" costs one comparison and means the claim and the evidence have to
+            // agree. It is still not a parse: a THIRD wrong read nobody has catalogued would pass
+            // both halves. This gate proves the two failures that were measured are gone, not that
+            // the shader is correct.
+            gate.Allowed = gate.TokenFound && bad.Count == 0;
             return gate;
         }
 
@@ -1060,7 +1203,8 @@ namespace Hecton8.Editor.Authoring
         {
             report.Append("  organic gate: shader=").Append(CoralShaderName)
                   .Append(" present=").Append(gate.ShaderPresent ? "YES" : "NO")
-                  .Append(" optInToken=").Append(gate.Allowed ? "FOUND" : "ABSENT")
+                  .Append(" optInToken=").Append(gate.TokenFound ? "FOUND" : "ABSENT")
+                  .Append(" knownBadReadsStillPresent=").Append(gate.BadReadsFound.Length)
                   .Append(" verdict=").Append(gate.Allowed ? "ALLOW" : TokenBlocked)
                   .AppendLine();
 
@@ -1073,11 +1217,10 @@ namespace Hecton8.Editor.Authoring
             if (!gate.Allowed)
             {
                 report.Append("      Organic binding stays refused. 3dmodel.md:132-137 fixes ")
-                      .Append("R=sway G=biolum B=AO A=family; the reads above consume R as tint ")
-                      .Append("and G as moisture. Add the literal token ")
-                      .Append(OrganicContractOptInToken)
-                      .Append(" to the shader when the channel fix lands and this gate clears ")
-                      .Append("itself.").AppendLine();
+                      .Append("R=sway G=biolum B=AO A=family. Both halves must hold: the literal ")
+                      .Append("token ").Append(OrganicContractOptInToken)
+                      .Append(" present AND zero known-bad reads. Token alone is not enough - a ")
+                      .Append("comment would satisfy a substring search.").AppendLine();
             }
         }
 
@@ -1141,6 +1284,15 @@ namespace Hecton8.Editor.Authoring
             // Inherited keywords from a previous shader are dead weight and cause variant churn.
             material.shaderKeywords = Array.Empty<string>();
 
+            if (string.Equals(family, "Flora", StringComparison.Ordinal))
+            {
+                ApplyOrganicRole(material, role);
+                material.SetOverrideTag("RenderType", "Opaque");
+                material.renderQueue = (int)RenderQueue.Geometry;
+                material.enableInstancing = true;
+                return;
+            }
+
             // ---- texture stack -------------------------------------------------------------
             // THE MAP WEIGHTS ARE DERIVED FROM WHAT ACTUALLY LOADED, never asserted. A weight of 1
             // over an unbound slot samples the shader's "white" default and reads as fully smooth
@@ -1188,6 +1340,299 @@ namespace Hecton8.Editor.Authoring
             // Drawer path; MaterialPropertyBlock is banned on this geometry by `AGENTS.md` Runtime
             // Hot-Path Law.
             material.enableInstancing = true;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ORGANIC ROLE AUTHORING  --  Hecton8/Flora/CoralMaster
+        // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Coral's measured sway-channel mean, from the forge manifest's own render-tile statistics
+        /// (<c>MANIFEST_Flora_Coral_Branching_1712.json</c> extra.channelMeasurements,
+        /// <c>chan0_sway_amplitude</c>: min 0.0, max 0.12743773, mean 0.03983368). The max lands on
+        /// 32.5/255, which is <c>law.py:298 SWAY_RIGID_MINERAL_MAX = 32/255</c> - the contract cap
+        /// for mineralised coral. So R on this asset is structurally tiny, and that is what makes the
+        /// tint calibration below necessary rather than cosmetic.
+        /// </summary>
+        private const float CoralMeasuredSwayMean = 0.03983368f;
+
+        /// <summary>
+        /// CapStem's measured sway-channel mean (<c>MANIFEST_Flora_CapStem_1811_00.json</c>
+        /// extra.channelMeasurements <c>sway_amplitude</c>: min 0.0, max 1.0, mean 0.53846). A cap on
+        /// a flexible stalk is NOT mineral-capped - it uses the full flexible-tip band - so its mean
+        /// is 13.5x coral's. This is why one shared tint constant is wrong.
+        /// </summary>
+        private const float CapStemMeasuredSwayMean = 0.53846f;
+
+        /// <summary>
+        /// Mean of <c>biomeHash</c>, the replacement driver. Hecton_CoralMaster.shader:483 computes
+        /// <c>HectonCoreLitHash12(floor(biomeAup.xz * 0.03125))</c> - a hash of the AUP cell index at
+        /// 1/32, i.e. one value per 32-metre cell. ASSUMED uniform on [0,1] with mean 0.5, which is
+        /// the standard contract for a frac-based hash. NOT MEASURED: I have not sampled
+        /// HectonCoreLitHash12's actual distribution, and if it is biased the calibration below
+        /// shifts by exactly that bias.
+        /// </summary>
+        private const float BiomeHashAssumedMean = 0.5f;
+
+        /// <summary>
+        /// Writes the per-role response for <c>Hecton8/Flora/CoralMaster</c>.
+        ///
+        /// ═══ WHY THIS METHOD EXISTS SEPARATELY ═══
+        /// CoralMaster shares NO property with Hecton_ModuleHardSurfaceLit. Its normal slot is
+        /// <c>_NormalMap</c> not <c>_BumpMap</c>, it has no <c>_ParallaxMap</c>, no
+        /// <c>_Module*</c> vectors, and - decisively - it samples every map TRIPLANAR from world
+        /// position through <c>ResolveFloraDominantAxisProjection</c>
+        /// (Hecton_CoralMaster.shader:176-196, <c>uv = positionWS.zy * _TriplanarScale</c>). So
+        /// <c>Material.SetTextureScale</c> is INERT on this shader and the scale knob is
+        /// <c>_TriplanarScale</c> in tiles-per-metre. One upside falls out of that: world-space
+        /// triplanar is size-independent, so the organic pair gets correct texel density from a
+        /// single shared material - which is exactly the problem geology has and cannot solve
+        /// without a shader change.
+        ///
+        /// ═══ THE _MaskMap BINDING IS LOAD-BEARING, NOT DECORATION ═══
+        /// Leaving <c>_MaskMap</c> at its <c>"white"</c> default is not neutral, it is actively
+        /// destructive, and it silently voids the tint calibration this method exists to apply:
+        ///   * <c>:542 accent = lerp(_BaseColor, _AccentColor, saturate(maskSample.r + tintMask*0.48))</c>
+        ///     - with maskSample.r = 1 the saturate pins to 1 for ANY tintMask, so
+        ///     <c>_VertexTintStrength</c> would have LITERALLY NO EFFECT on the render and the
+        ///     surface would sit permanently at full <c>_AccentColor</c>.
+        ///   * <c>:536 wetness = saturate(maskSample.g * (1 + _MoistureBoost) + ...)</c> - with
+        ///     maskSample.g = 1 wetness saturates regardless, and <c>:539
+        ///     roughness = lerp(0.7, 0.2, wetness)</c> pins roughness to 0.2. Every organic surface
+        ///     would read as uniformly soaking-wet gloss. No material knob can scale maskSample.g
+        ///     down, so this is unfixable from a .mat.
+        /// So the mask must be bound.
+        ///
+        /// ═══ DECLARED CHANNEL REMAP, because it is NOT a match ═══
+        /// CoralMaster's mask semantic is its own: R = pigment/tint variation, G = wetness,
+        /// B and A = thickness via <c>_ThicknessStrength</c>, A also feeds the caustic mask. NO
+        /// texture in this project packs that. The project's 138-file standard
+        /// <c>_MaskMap_UnityURP</c> packs R = Metallic, G = Occlusion, A = Smoothness. Bound here it
+        /// reads as:
+        ///   R metallic  -> tint variation. Organic sources are non-metallic, so R is near 0, which
+        ///                  leaves the vertex/biome tint term as the ONLY thing moving base->accent.
+        ///                  That is the reason this packing is chosen over
+        ///                  _ARM_AO_Rough_Metal: ARM's R is AO, which is high over most of the
+        ///                  surface and would re-saturate the lerp and void the calibration again.
+        ///   G occlusion -> wetness. Exposed surfaces wetter, silted crevices matter. Defensible for
+        ///                  a current-swept reef; NOT the authored intent of either channel.
+        ///   A smoothness-> thickness. Weakest of the three. Thin translucent tissue is smoother than
+        ///                  thick calcified mass, so the correlation has the right sign.
+        /// This is a REMAP, not a contract match. The correct fix is an offline bake that packs
+        /// CoralMaster's real semantic - derivable from the mesh plus these maps - which is a
+        /// generator job, not a material job. Logged, not hidden.
+        /// </summary>
+        private static void ApplyOrganicRole(Material material, string role)
+        {
+            BoundMaps maps = BindOrganicTextureSet(material, role);
+
+            // ═══════════════════════════════════════════════════════════════════════════════
+            //  _VertexTintStrength  --  MEASURED, NOT CHOSEN
+            //
+            //  Hecton_CoralMaster.shader:484 previously read the tint driver off the vertex
+            //  stream and now reads it off the biome hash:
+            //      was:  tintMask = saturate(input.color.r) * _VertexTintStrength
+            //      now:  tintMask = saturate(biomeHash * _VertexTintStrength)
+            //  The DRIVER's magnitude changed by an order of magnitude, so keeping the material
+            //  value would silently change the look. Derivation, for coral:
+            //      today's mean tintMask  = swayMean * 0.74      = 0.03983 * 0.74 = 0.02948
+            //      new mean at strength S = biomeHashMean * S    = 0.5 * S
+            //      appearance-neutral S   = 0.02948 / 0.5        = 0.0590
+            //  Cross-check against the downstream term, which carries a further *0.48 at :542:
+            //      before: mean 0.03983*0.74*0.48 = 0.01414,  max 0.12744*0.74*0.48 = 0.04527
+            //      at 0.74 unchanged: mean 0.5*0.74*0.48 = 0.1776  ->  12.6x the old mean, a
+            //      visible warm lift across the whole photic reef.
+            //      at 0.059:          mean 0.5*0.059*0.48 = 0.01416  ->  matches 0.01414.
+            //  So 0.059 is appearance-neutral IN THE MEAN by construction, and it is checkable
+            //  from the manifest without rerunning anything.
+            //
+            //  RESIDUAL RISK, WRITTEN DOWN RATHER THAN CLAIMED AWAY. Appearance-neutral in the
+            //  mean is NOT appearance-neutral:
+            //    1. The DISTRIBUTION is new. The old driver was a smooth per-vertex field rising
+            //       root-to-tip; the new one is a piecewise-constant hash over 32-metre AUP cells
+            //       (:483 floor(xz * 0.03125)). Within one cell every colony now shares one tint
+            //       and neighbouring cells step discontinuously. Variance moved from within-asset
+            //       to between-cell. That is a genuinely new visual behaviour and NOTHING has
+            //       rendered it.
+            //    2. The old spread was 0..0.0453; the new spread is 0..0.0283 at S=0.059
+            //       (max biomeHash 1.0 * 0.059 * 0.48). Peak tint drops ~38 percent even though
+            //       the mean holds, so the brightest tips lose contrast against their own stems.
+            //    3. BiomeHashAssumedMean = 0.5 is an ASSUMPTION about HectonCoreLitHash12, not a
+            //       measurement. A biased hash scales every number above by that bias.
+            //    4. These materials land in a binary production scene that cannot be opened or
+            //       diffed outside Unity, so the first real look at this is a running editor.
+            //  I would rather ship a change whose residual is written down than one that claims
+            //  to be safe.
+            // ═══════════════════════════════════════════════════════════════════════════════
+            float measuredSwayMean = OrganicPigmentIsAuthored(role)
+                ? CapStemMeasuredSwayMean
+                : CoralMeasuredSwayMean;
+
+            // PER-FAMILY, and this is a correction to the single shared constant. 0.059 is
+            // calibrated to coral's mineral-CAPPED R (mean 0.0398, cap 32/255). CapStem is a
+            // flexible-tip organism with measured R mean 0.53846 - 13.5x coral - so applying
+            // coral's 0.059 to it would cut its tint contribution from 0.1912 to 0.0142, a 13.5x
+            // REDUCTION that deletes pigment variation the generator author deliberately authored
+            // against nice_biome.webp. Same formula, different measured input, different answer:
+            //   coral   0.03983 / 0.5 = 0.0797 * 0.74 -> 0.0590
+            //   capstem 0.53846 / 0.5 = 1.0769 * 0.74 -> 0.7969
+            // CapStem's value lands slightly ABOVE the 0.74 default purely because its measured
+            // mean is above biomeHash's 0.5. _VertexTintStrength is Range(0, 2), so both fit.
+            float vertexTintStrength = Mathf.Clamp(measuredSwayMean * 0.74f / BiomeHashAssumedMean, 0f, 2f);
+            SetFloat(material, "_VertexTintStrength", vertexTintStrength);
+
+            // _MoistureBoost is deliberately NOT written. Its 0.14 default shifts wetness about
+            // +0.045 and roughness about -0.023 - roughly two percent - which is inside the noise
+            // of everything else here, and the shader default is the value the shader author chose.
+            // Writing a number equal to the default would only create the illusion that it was
+            // calibrated.
+
+            // Triplanar scale, in TILES PER METRE: 1 / metresPerTile, so a 4.0 m tile is 0.25.
+            // Derived from the bible's texel density, not tuned by eye. Range(0.05, 4).
+            if (maps.Tiling > 0.0001f)
+                SetFloat(material, "_TriplanarScale", Mathf.Clamp(maps.Tiling, 0.05f, 4f));
+
+            switch (role)
+            {
+                // ---- Coral_Branching --------------------------------------------------------
+                // Albedo is bound, and :544 computes albedo = accent * baseTex * moistureTint *
+                // ageTint, so _BaseColor and _AccentColor MULTIPLY the sampled art. They must be
+                // grading tints near white here; the shader's own defaults (0.54/0.32/0.28 and
+                // 0.82/0.58/0.42) are absolute coral colours meant for a textureless material and
+                // would double-darken a real albedo.
+                case "Tissue":
+                    SetColor(material, "_BaseColor", new Color(0.880f, 0.855f, 0.840f, 1f));
+                    SetColor(material, "_AccentColor", new Color(1.000f, 0.960f, 0.910f, 1f));
+                    SetColor(material, "_SubsurfaceColor", new Color(0.94f, 0.62f, 0.48f, 1f));
+                    SetFloat(material, "_SubsurfaceStrength", 0.52f);
+                    SetFloat(material, "_Smoothness", 0.34f);
+                    SetFloat(material, "_CavityStrength", 0.62f);
+                    // G is a REAL signal on this asset - measured max 0.7305, mean 0.1747 - and
+                    // _BiolumStrength ships at 0, so the baked biolum mask renders as nothing
+                    // unless it is raised. That is a second dead channel next to the tint one.
+                    // 1.1 is a deliberately conservative first value: enough for the organ to read
+                    // in a dark photic reef, low enough that a 0.73 peak does not blow out. It is a
+                    // JUDGEMENT, not a measurement, and no render exists for it.
+                    SetFloat(material, "_BiolumStrength", 1.1f);
+                    SetFloat(material, "_BiolumMaskStrength", 1f);
+                    SetColor(material, "_BiolumColor", new Color(0.26f, 0.95f, 0.84f, 1f));
+                    break;
+
+                case "ExposedTipSkeleton":
+                    // Bare calcium: paler, drier, no organ. Skeleton does not glow.
+                    SetColor(material, "_BaseColor", new Color(0.930f, 0.925f, 0.900f, 1f));
+                    SetColor(material, "_AccentColor", new Color(1.000f, 0.995f, 0.975f, 1f));
+                    SetFloat(material, "_SubsurfaceStrength", 0.14f);
+                    SetFloat(material, "_Smoothness", 0.26f);
+                    SetFloat(material, "_CavityStrength", 0.45f);
+                    SetFloat(material, "_BiolumStrength", 0f);
+                    break;
+
+                case "EncrustingBase":
+                    // Calcified crust against rock: darker, matter, silted.
+                    SetColor(material, "_BaseColor", new Color(0.760f, 0.755f, 0.730f, 1f));
+                    SetColor(material, "_AccentColor", new Color(0.880f, 0.865f, 0.820f, 1f));
+                    SetFloat(material, "_SubsurfaceStrength", 0.08f);
+                    SetFloat(material, "_Smoothness", 0.20f);
+                    SetFloat(material, "_CavityStrength", 0.75f);
+                    SetFloat(material, "_BiolumStrength", 0f);
+                    break;
+
+                // ---- CapStem: authored pigment, NO albedo bound -----------------------------
+                // _BaseMap stays unbound, so it samples "white" and albedo = accent * 1. That makes
+                // _BaseColor/_AccentColor ABSOLUTE again, which is the only reason the linear values
+                // from flora_capstem.py can be carried across verbatim. _AccentColor is a lighter,
+                // warmer excursion of the SAME pigment rather than a different hue, so the
+                // per-32-m-cell biomeHash lerp varies within the authored family instead of drifting
+                // toward an unrelated colour.
+                case "CapTissue":
+                    // flora_capstem.py:1515-1521: base_color (0.855, 0.360, 0.070) linear,
+                    // roughness 0.31, subsurface 0.22, subsurface_radius (0.020, 0.009, 0.004),
+                    // ior 1.38. "a saturated warm amber top", pushed toward orange because water
+                    // absorbs long wavelengths first and ochre would go grey-green in metres.
+                    SetColor(material, "_BaseColor", new Color(0.855f, 0.360f, 0.070f, 1f));
+                    SetColor(material, "_AccentColor", new Color(0.940f, 0.470f, 0.120f, 1f));
+                    SetColor(material, "_SubsurfaceColor", new Color(0.960f, 0.520f, 0.180f, 1f));
+                    // Blender roughness 0.31 -> smoothness 0.69. Converted, not re-guessed.
+                    SetFloat(material, "_Smoothness", 0.69f);
+                    SetFloat(material, "_SubsurfaceStrength", 0.62f);
+                    SetFloat(material, "_ThicknessStrength", 0.78f);
+                    SetFloat(material, "_CavityStrength", 0.48f);
+                    // Measured G max 0.0003, mean 0.00002 - CapStem has NO bioluminescent organ.
+                    // Raising this would invent light the generator never baked.
+                    SetFloat(material, "_BiolumStrength", 0f);
+                    break;
+
+                case "TornEdge":
+                    // flora_capstem.py:1523-1529: (0.330, 0.115, 0.040), roughness 0.52
+                    // ("a torn edge is fibrous, not glossy"), subsurface 0.10.
+                    SetColor(material, "_BaseColor", new Color(0.330f, 0.115f, 0.040f, 1f));
+                    SetColor(material, "_AccentColor", new Color(0.420f, 0.170f, 0.065f, 1f));
+                    SetColor(material, "_SubsurfaceColor", new Color(0.560f, 0.230f, 0.090f, 1f));
+                    SetFloat(material, "_Smoothness", 0.48f);
+                    SetFloat(material, "_SubsurfaceStrength", 0.28f);
+                    SetFloat(material, "_CavityStrength", 0.70f);
+                    SetFloat(material, "_BiolumStrength", 0f);
+                    break;
+
+                case "StemHoldfast":
+                    // flora_capstem.py:1531-1537: (0.640, 0.545, 0.375), roughness 0.38,
+                    // subsurface 0.14. The reference stems are markedly LIGHTER than their caps,
+                    // which is what makes the cap read as a separate organ at distance - so this
+                    // must stay pale even though a darker stem would look more "grounded".
+                    SetColor(material, "_BaseColor", new Color(0.640f, 0.545f, 0.375f, 1f));
+                    SetColor(material, "_AccentColor", new Color(0.730f, 0.635f, 0.460f, 1f));
+                    SetColor(material, "_SubsurfaceColor", new Color(0.780f, 0.680f, 0.500f, 1f));
+                    SetFloat(material, "_Smoothness", 0.62f);
+                    SetFloat(material, "_SubsurfaceStrength", 0.38f);
+                    SetFloat(material, "_CavityStrength", 0.55f);
+                    SetFloat(material, "_BiolumStrength", 0f);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Binds the organic map stack. Separate from <see cref="BindTextureSet"/> because
+        /// CoralMaster's slot names differ (<c>_NormalMap</c>, no <c>_ParallaxMap</c>) and because
+        /// the three CapStem roles must receive normal and mask WITHOUT an albedo.
+        /// </summary>
+        private static BoundMaps BindOrganicTextureSet(Material material, string role)
+        {
+            BoundMaps bound = default;
+            bound.SetNote = "none";
+
+            RoleTextureSet set = ResolveTextureSet("Flora", role);
+            if (set == null)
+            {
+                SetTexture(material, "_BaseMap", null, Vector2.one);
+                SetTexture(material, "_NormalMap", null, Vector2.one);
+                SetTexture(material, "_MaskMap", null, Vector2.one);
+                return bound;
+            }
+
+            bool suppressAlbedo = OrganicPigmentIsAuthored(role);
+            Texture baseColor = suppressAlbedo
+                ? null
+                : AssetDatabase.LoadAssetAtPath<Texture>(set.BaseColor);
+            Texture normalGl = AssetDatabase.LoadAssetAtPath<Texture>(set.NormalGL);
+            Texture mask = AssetDatabase.LoadAssetAtPath<Texture>(set.MaskUnityUrp);
+
+            // Scale is passed for completeness but is INERT on this shader - every map is sampled
+            // from world position, not from the mesh UV (shader :176-196). _TriplanarScale is the
+            // real knob and ApplyOrganicRole writes it from bound.Tiling.
+            SetTexture(material, "_BaseMap", baseColor, Vector2.one);
+            SetTexture(material, "_NormalMap", normalGl, Vector2.one);
+            SetTexture(material, "_MaskMap", mask, Vector2.one);
+
+            bound.HasBase = baseColor != null;
+            bound.HasNormal = normalGl != null;
+            bound.HasMask = mask != null;
+            bound.HasHeight = false;
+            bound.Tiling = set.TileMetres > 0.0001f ? 1f / set.TileMetres : 1f;
+            bound.SetNote = suppressAlbedo
+                ? set.SourceNote + " [albedo SUPPRESSED: authored pigment]"
+                : set.SourceNote;
+            return bound;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1706,7 +2151,12 @@ namespace Hecton8.Editor.Authoring
             // managed reference while the overloaded `==` tests the native pointer, so a destroyed
             // texture would slip through `??` (`COMMON_SENSE.md` The Unity Object Fake Null).
             if (HasTexture(material, "_BaseMap")) bound++;
+            // The two masters name the normal slot differently: _BumpMap on
+            // Hecton_ModuleHardSurfaceLit.shader:70, _NormalMap on Hecton_CoralMaster.shader:6.
+            // HasProperty makes the wrong one a no-op, so probing both is what keeps the organic
+            // materials from silently reporting one fewer bound map than they carry.
             if (HasTexture(material, "_BumpMap")) bound++;
+            if (HasTexture(material, "_NormalMap")) bound++;
             if (HasTexture(material, "_MaskMap")) bound++;
             if (HasTexture(material, "_ParallaxMap")) bound++;
             return bound;
