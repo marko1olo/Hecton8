@@ -25,16 +25,16 @@ THREE FILTERS THAT CHANGE THE ANSWER
 1. COMMENTS AND STRING LITERALS ARE NOT CODE. Measured on this tree: 212 textual occurrences of
    SignalBus<X>.Member outside the scan root resolve to 4 real call sites - the other 208 are inside string
    literals in tests that assert on source text. Inside GlobalSignals.LegacyFacade.cs, 93 occurrences are
-   inside [Obsolete("... Use SignalBus<T>.TryConsumeFrame ...")] MESSAGE TEXT. A text-only count sees 186
-   sites in that file where 93 exist. The report prints this phantom count per file so the number is
-   auditable and not a claim you have to take on trust.
+   inside [Obsolete("... Use SignalBus<T>.TryConsumeFrame ...")] MESSAGE TEXT. A text-only count reports 186
+   compile-dead call sites in that file; 93 exist. The report prints the phantom count per file so the
+   number is auditable and not a claim you have to take on trust.
 2. COMPILE-DEAD SITES. A member marked [Obsolete(..., true)] cannot be called at all - a call is CS0619, a
    compile ERROR - so its body is not a reader. Without this filter GlobalSignals.LegacyFacade.cs alone
    donates a fake TryConsumeFrame to dozens of lanes and orphans look healthy. Detected by attribute, not
    by filename, so a second legacy file cannot slip through.
 3. USING-ALIASES. `using CoreCombatDamageSignal = ...Signals.CombatDamageSignal;` means
    SignalBus<CoreCombatDamageSignal> is the CombatDamageSignal lane. Unresolved, one lane splits into two
-   halves and both look half-wired. Seven aliases in this tree do exactly that.
+   halves and both look half-wired. Six alias names in this tree, declared in seven files, do exactly that.
 
 MANDATORY POSITIVE CONTROLS
 ---------------------------
@@ -164,7 +164,12 @@ OBSOLETE_ATTR = re.compile(r"\bObsolete(?:Attribute)?\s*\(")
 TYPE_DECL = re.compile(r"\b(?:class|struct|interface|record)\s+([A-Za-z0-9_]+)")
 MEMBER_HEADER = re.compile(r"([A-Za-z0-9_]+)\s*(?:<[^<>]*>)?\s*\(.*\)\s*(?:where\b[^{]*)?$", re.DOTALL)
 MEMBER_ARROW = re.compile(r"([A-Za-z0-9_]+)\s*(?:<[^<>]*>)?\s*\([^()]*\)\s*=>")
+PROPERTY_ARROW = re.compile(r"([A-Za-z0-9_]+)\s*=>\s*$")
 PROPERTY_HEADER = re.compile(r"([A-Za-z0-9_]+)\s*$")
+NOT_A_MEMBER_HEADER = re.compile(r"\b(?:namespace|enum)\b")
+MODIFIER_OR_TYPE = re.compile(
+    r"\b(?:public|private|protected|internal|static|override|virtual|sealed|abstract|readonly|extern"
+    r"|partial|unsafe|ref|bool|int|uint|float|byte|short|long|ushort|ulong|double|string|void)\b")
 NOT_A_MEMBER = frozenset((
     "if", "for", "foreach", "while", "do", "else", "switch", "case", "catch", "try", "finally", "using",
     "lock", "fixed", "unsafe", "checked", "unchecked", "return", "get", "set", "add", "remove", "new",
@@ -381,13 +386,15 @@ def header_member_name(header):
     stripped = header.strip()
     if not stripped or stripped.endswith(("=", "=>", ",")):
         return None
-    if TYPE_DECL.search(stripped):
+    if TYPE_DECL.search(stripped) or NOT_A_MEMBER_HEADER.search(stripped):
         return None
     match = MEMBER_HEADER.search(stripped)
     if match and match.group(1) not in NOT_A_MEMBER:
         return match.group(1)
     if "(" in stripped or "=" in stripped:
         return None
+    if not MODIFIER_OR_TYPE.search(stripped):
+        return None  # a bare block, a label, an accessor - not a property declaration
     match = PROPERTY_HEADER.search(stripped)
     if match and match.group(1) not in NOT_A_MEMBER:
         return match.group(1)  # property or indexer body
@@ -419,6 +426,10 @@ def attribute_site(code, offset, scopes, boundaries):
             pass
         if arrow and arrow.group(1) not in NOT_A_MEMBER:
             owner_member = arrow.group(1)
+        else:
+            arrow = PROPERTY_ARROW.search(fragment)  # public static int Foo => SignalBus<T>.SnapshotCount;
+            if arrow and arrow.group(1) not in NOT_A_MEMBER:
+                owner_member = arrow.group(1)
     return owner_type, owner_member
 
 
@@ -535,12 +546,67 @@ def scan_tree(root, skip_prefix=None):
     return sites, declared_structs, aliases, parse_failures, phantoms, files
 
 
+def print_unresolved(unresolved):
+    """Name the sites whose lane could not be resolved, so the orphan counts read as UPPER BOUNDS.
+
+    This section exists because its absence produced three wrong verdicts. See classify() for the measured
+    case: a generic publish helper in SaveManager made SaveStatusSignal look consumed-never-published when it
+    has both a producer and a consumer.
+    """
+    if not unresolved:
+        print("UNRESOLVED LANE ARGUMENTS - none. Every SignalBus site resolved to a declared lane.")
+        print()
+        return
+
+    by_arg = {}
+    for site in unresolved:
+        by_arg.setdefault(site.raw_lane, []).append(site)
+
+    print("UNRESOLVED LANE ARGUMENTS - generic dispatch this scan CANNOT follow")
+    print("  %d site(s) across %d distinct type argument(s). Each is a real SignalBus call whose lane is chosen"
+          % (len(unresolved), len(by_arg)))
+    print("  by a caller, so it cannot be attributed textually. EVERY ORPHAN COUNT BELOW IS AN UPPER BOUND.")
+    for arg in sorted(by_arg, key=lambda a: (-len(by_arg[a]), a)):
+        group = by_arg[arg]
+        print("    %-24s %d site(s)" % (arg, len(group)))
+        for site in group[:3]:
+            print("        %s:%d  %s  (%s)" % (site.path, site.line, site.member, site.kind))
+        if len(group) > 3:
+            print("        ... and %d more" % (len(group) - 3))
+    print("  To resolve one, read the helper and find its callers - e.g. SaveManager's")
+    print("  TryPushSignalTrackedBestEffort is called with six different concrete lanes.")
+    print()
+
+
 def classify(sites, declared_structs):
-    """Group sites per lane. A lane exists when its type argument resolves to a struct declared in the tree."""
+    """Group sites per lane. A lane exists when its type argument resolves to a struct declared in the tree.
+
+    Sites whose type argument does NOT resolve are returned separately rather than dropped. That distinction
+    is load-bearing: this function used to `continue` past them with a comment acknowledging they were generic
+    parameters, which made every orphan count a silent under-report.
+
+    MEASURED CONSEQUENCE, 2026-07-29. SaveManager.cs:4433 publishes through
+    `SignalBus<TSignal>.TryPushTracked` inside a generic helper, reached from
+    TryPushSignalTrackedBestEffort at :3446/:3542/:3560/:3593/:3607/:3653. `TSignal` is not a declared lane,
+    so all of those pushes were invisible and three lanes were misclassified:
+      SaveStatusSignal    reported CONSUMED-NEVER-PUBLISHED - it has a real publisher and a real consumer
+                          (ShinobuRespawnReconciliationRuntime.cs:299)
+      SaveLifecycleSignal reported DEAD AT BOTH ENDS - actually published, never consumed
+      SaveCompletedSignal reported DEAD AT BOTH ENDS - actually published, never consumed
+    So 8 CONSUMED-NEVER-PUBLISHED was at most 7, and 17 DEAD AT BOTH ENDS at most 15. A reader who trusted
+    those numbers could have "fixed" a working save-status lane.
+
+    Resolving which concrete lanes flow through a generic helper needs call-graph analysis this tool does not
+    do. So it does the honest thing instead: it counts them, names them, and declares the orphan classes to be
+    UPPER BOUNDS.
+    """
     lanes = {}
+    unresolved = []
     for site in sites:
         if site.lane not in declared_structs:
-            continue  # a generic parameter (T, TSignal) or a type declared outside the scan
+            # A generic type parameter (T, TSignal) or a type declared outside the scan. Recorded, not dropped.
+            unresolved.append(site)
+            continue
         record = lanes.setdefault(site.lane, {"PUBLISH": [], "CONSUME": [], "OTHER": [], "dead": []})
         if site.dead:
             record["dead"].append(site)
@@ -559,7 +625,7 @@ def classify(sites, declared_structs):
             verdicts[lane] = CLASS_CONSUME_ONLY
         else:
             verdicts[lane] = CLASS_DEAD
-    return lanes, verdicts
+    return lanes, verdicts, unresolved
 
 
 def print_controls(lanes):
@@ -765,7 +831,7 @@ def main():
         raise SystemExit(2)
 
     sites, declared_structs, aliases, parse_failures, phantoms, files = scan_tree(SCAN_ROOT)
-    lanes, verdicts = classify(sites, declared_structs)
+    lanes, verdicts, unresolved = classify(sites, declared_structs)
 
     print("SIGNAL LANE WIRING AUDIT - static, because SignalBus consumption is PULL-based and registers no")
     print("subscriber. A lane with no reader drains to nobody every frame and NOTHING LOGS IT.")
@@ -785,6 +851,7 @@ def main():
         raise SystemExit(0 if controls_ok else 1)
 
     print_filters(sites, aliases, declared_structs, parse_failures, phantoms)
+    print_unresolved(unresolved)
     counts = print_summary(lanes, verdicts, sites, files)
     drift = print_drift(counts)
 
