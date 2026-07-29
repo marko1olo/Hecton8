@@ -23,6 +23,31 @@ namespace Hecton8.World
     /// consolidating changed no generated geometry. The final vertical extent of HECTON-8 is the owner's
     /// call and is still open - see the envelope arithmetic on <see cref="DefaultVerticalSpanMeters"/>.
     /// </para>
+    /// <para>
+    /// READ THIS BEFORE POINTING A DIAGNOSTIC AT <see cref="DefaultVerticalSpanMeters"/>. The
+    /// <c>Default*</c> members are C# FIELD INITIALISERS. A MapMagic node that has been serialised into a
+    /// <c>.asset</c> carries its OWN values and the deserialiser overwrites the initialiser, so the number
+    /// that actually generates terrain is the one in the graph asset - never this one. Measured from the
+    /// serialised bits of every graph in the repo (method on <see cref="LiveWorldGraphSpanMeters"/>):
+    /// <list type="bullet">
+    /// <item><description>
+    /// <c>Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset</c>, the live world graph:
+    /// <c>lowWorldY = -10000</c>, <c>highWorldY = +2000</c>, span <b>12000 m</b>.
+    /// </description></item>
+    /// <item><description>
+    /// <c>Data/World/Archive/HECTON_PROCEDURAL_GEOLOGY_GRAPH.asset</c>:
+    /// <c>lowWorldY = -5000</c>, <c>highWorldY = +1000</c>, span <b>6000 m</b>.
+    /// </description></item>
+    /// </list>
+    /// The initialiser pair below (-5000 / +2000, span 7000) therefore matches NEITHER graph - it takes its
+    /// low from one and its high from the other. It is retained byte-identically because it IS what the
+    /// field initialisers say, and changing it would alter any node instance deserialised without those
+    /// fields. But it must not be presented as the world's vertical extent: a diagnostic that interprets a
+    /// heightmap against 7000 m while the graph generated it against 12000 m is wrong by 1.714x. Six
+    /// diagnostics tools hardcode <c>12000f</c> today; they AGREE with the live graph, and consolidating
+    /// them must point at <see cref="LiveWorldGraphSpanMeters"/>, never at
+    /// <see cref="DefaultVerticalSpanMeters"/>.
+    /// </para>
     /// </summary>
     public static class WorldVerticalExtentMath
     {
@@ -110,5 +135,63 @@ namespace Hecton8.World
         /// </para>
         /// </summary>
         public const float SandboxV2AuthoredTerrainHeightMeters = 4000f;
+
+        /// <summary>
+        /// Bottom of the window in the graph the WORLD actually generates from: -10000 m.
+        /// <para>
+        /// Read out of the serialised asset, not out of a comment or a field initialiser. MapMagic stores
+        /// node fields as a parallel <c>fields:</c> / <c>values:</c> pair where each value is the raw
+        /// IEEE-754 bit pattern of the float in a <c>v:</c> integer, so this cannot be read with a text
+        /// search for the number and no tool in this repo could report it until it was decoded. Method,
+        /// reproducible without Unity, without a GPU and without the Editor - which is the point, because
+        /// every instrument that could have reported this number instead ran under conditions that make it
+        /// return zeros:
+        /// </para>
+        /// <para>
+        /// In <c>HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset</c>, locate the entry whose <c>type:</c> is
+        /// <c>HectonSandboxAbyssalShelfMapMagicNode</c>, zip its <c>fields:</c> name list against its
+        /// <c>values:</c> list positionally, then reinterpret the <c>v:</c> integer of each wanted name as a
+        /// little-endian float. <c>highWorldY</c> = <c>1157234688</c> = <c>0x44FA0000</c> = <c>+2000.0</c>;
+        /// <c>lowWorldY</c> = <c>3323740160</c> = <c>0xC61C4000</c> = <c>-10000.0</c>.
+        /// </para>
+        /// </summary>
+        public const float LiveWorldGraphLowWorldY = -10000f;
+
+        /// <summary>
+        /// Top of the window in the graph the WORLD actually generates from: +2000 m. Decoded from
+        /// <c>0x44FA0000</c>; see <see cref="LiveWorldGraphLowWorldY"/> for the method. This one happens to
+        /// equal <see cref="DefaultHighWorldY"/>; the low does not, which is exactly why the pair cannot be
+        /// assumed to match the initialisers.
+        /// </summary>
+        public const float LiveWorldGraphHighWorldY = 2000f;
+
+        /// <summary>
+        /// The span the live world graph normalises against: 12000 m. THIS is the number a diagnostic must
+        /// use when it interprets a heightmap produced by the world graph, and it is the number the six
+        /// height-dump tools already hardcode as a bare <c>12000f</c> literal.
+        /// <para>
+        /// It is a documented measurement of a serialised asset, not an authored decision, so it is NOT the
+        /// value to change when the owner settles the vertical extent - changing the world means editing the
+        /// graph node, and no tool in this repo can WRITE that node today
+        /// (<c>HectonMacroGeologyBaseIntegrator.TryResolveSpanForMapMagicObject</c> only READS it). If this
+        /// const ever disagrees with the asset, the asset is right and this const is stale: re-decode it.
+        /// </para>
+        /// </summary>
+        public const float LiveWorldGraphSpanMeters = LiveWorldGraphHighWorldY - LiveWorldGraphLowWorldY;
+
+        /// <summary>
+        /// The span held by <c>Data/World/Archive/HECTON_PROCEDURAL_GEOLOGY_GRAPH.asset</c>: 6000 m
+        /// (<c>lowWorldY = -5000</c>, <c>highWorldY = +1000</c>).
+        /// <para>
+        /// Recorded because that archived graph is still named by a hardcoded path in LIVE tools -
+        /// <c>CreateSandboxV2.cs</c> and <c>UpdateSandboxSceneTask.cs</c> both load it from
+        /// <c>Data/World/Sandbox/</c>, where it no longer is. So the sandbox scene's
+        /// <see cref="SandboxV2AuthoredTerrainHeightMeters"/> of 4000 m was never a 7000/4000 = 1.75x
+        /// compression against this file's initialisers; if that graph were reachable it would be
+        /// 6000/4000 = 1.5x, and as things actually stand the graph resolves to null and the scene
+        /// generates nothing at all.
+        /// </para>
+        /// </summary>
+        public const float ArchivedProceduralGeologyGraphSpanMeters = 6000f;
     }
 }
