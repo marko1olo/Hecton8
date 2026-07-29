@@ -19,14 +19,12 @@ localization_flags: 0
 
 # Ran Long Claim Transit Ledger
 
-HECTON-8 treats first contact as paperwork under pressure because that is what interstellar rescue becomes when faster-than-light travel does not exist. A Black Keel relay can acknowledge a stranded Marauder within the limits of carrier timing. It cannot make a ship appear. The long claim ledger sits between those facts.
+Interstellar rescue without faster-than-light travel resolves into paperwork under pressure. A Black Keel relay can acknowledge a stranded Marauder inside carrier timing. It cannot produce a ship. The long claim ledger sits between those two facts.
 
-            In-world, the ledger is not a formality. It is the first durable object the survivor owns outside the ocean. It says a human is alive, but it also says how reliable the coordinates are, how much mass must be lifted, whether the ascent package is sealed, whether Deep Reach has a quarantine argument, whether the cargo is personal gear or claim-changing evidence, and who accepts liability if the pickup burns, misses or returns contaminated.
+The ledger is the first durable object a survivor owns outside the ocean. It records that a human is alive, and also how reliable the coordinates are, how much mass must be lifted, whether the ascent package seals, whether Deep Reach has a quarantine argument, whether the cargo is personal gear or claim-changing evidence, and who accepts liability if the pickup burns, misses or returns contaminated.
 
-            That structure lets HECTON-8 keep civilization present without using it as an escape hatch. People hear you. Offices stamp you. Relays preserve your packet. Insurers and route owners attach numbers to your body. The horror is not empty space. The horror is a system that can know exactly where you are and still ask what your recovery is worth.
+That structure keeps civilisation present without making it an exit. Offices stamp the claimant. Relays preserve the packet. Insurers and route owners attach numbers to the body. Receipt 7C states the position plainly: packet accepted as a live claim, not as recovery authorisation.
 
-            The player learns this through action. A broken relay gives only noise. A repaired relay gives one narrow burst. A careless burst buys sympathy and a queue entry. A disciplined burst can move proof, force a custody fight, or make a ship take risk because the payload changes more than one life.
-
-            The long claim ledger is therefore a survival mechanic in lore clothing. It explains why rescue is slow, why evidence matters, why salvage law follows the player into the water, and why the first real enemy beyond hunger and pressure is not silence, but a clean line answered by an institution that measures before it moves.
+The arithmetic underneath is unsentimental. A living person is liability. A living person holding admissible evidence is leverage. A living person attached to irreplaceable route data is cargo the carrier cannot cheaply ignore. Blank fields default to cargo-negative and body-low priority, so the packet a survivor sends is the packet that prices them.
 
 <!-- External Site; generated from P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER/en_US. -->

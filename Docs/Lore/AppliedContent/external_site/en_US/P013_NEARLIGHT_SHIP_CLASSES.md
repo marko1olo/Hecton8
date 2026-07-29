@@ -19,8 +19,10 @@ localization_flags: 0
 
 # Nearlight Ship Classes
 
-A near-light ship in HECTON-8 is not a miracle engine wrapped in a hull. It is the visible end of a route economy. Beam arrays spend power before the vehicle leaves. Pellet lanes feed reaction mass with brutal timing discipline. Fusion-electric throats, shield ice, radiators and cryo systems keep the payload from becoming a bright mistake. Magsails, aerobrake skins and receiver windows decide whether the ship is allowed to stop.
+A near-light ship is the visible end of a route economy. Beam arrays spend power before the vehicle leaves. Pellet lanes feed reaction mass on brutal timing. Fusion-electric throats, shield ice, radiators and cryo systems keep the payload from cooking. Magsails, aerobrake skins and receiver windows decide whether the ship is allowed to stop.
 
-That is why the class table is useful to the player. A needleprobe explains why Aegir was known before it was safe. A seed ship explains why machinery reached HECTON-8 before a stable community did. An Atlas-class carrier explains why the colony arrived already full of debt and maintenance compromises. A system tender explains Black Keel's limits: it can work the Aegir claim, not rewrite interstellar distance. The no-FTL rule is not there to sound serious. It is why a distress call creates paperwork faster than it creates rescue.
+The class table explains the shape of the Aegir claim. A needleprobe explains why the system was catalogued before it was safe. A seed ship explains why machinery reached HECTON-8 before a stable community did. An Atlas-class carrier explains why the colony arrived already carrying debt and maintenance compromise. A system tender explains the limit on Black Keel: it can work the Aegir claim and cannot rewrite the distance to core space.
+
+The absence of an FTL class is the operative fact in every rescue file. A distress packet crosses at light speed and creates paperwork years before it can create mass, which is why braking ownership appears on the manifest before cargo does.
 
 <!-- External Site; generated from P013_NEARLIGHT_SHIP_CLASSES/en_US. -->

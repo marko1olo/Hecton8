@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Photic Mat Baseline
 
-Photic mats are mineral-fed living films on the shallow shelf, thick enough to oxygenate the water around them. Colour reports oxygen exchange, rim hardness reports pressure chemistry, and a clicking seam reports contamination held under the mat. Loose fringe can be harvested; the bright centre is the part doing the work.
+Photic mats are mineral-fed living films on the shallow shelf around 40 m, thick enough to oxygenate the water beside them. Colour reports oxygen exchange, rim hardness reports pressure chemistry, and a clicking seam reports contamination held under the mat. Loose fringe can be harvested; the bright centre is the part doing the work.
 
 ## Scanner
 

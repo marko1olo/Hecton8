@@ -19,7 +19,17 @@ localization_flags: 0
 
 # Shell Clamp Reef
 
-Shell clamp reefs are the first place the shallow shelf stops keeping native life and human wreckage separate. The clamp-shells are not intelligent and not Atlas tissue; they follow mineral seep, warmth, vibration and current pressure. That is enough for them to grip basalt, old cable jackets, capsule plating and pressure-glass seams with frightening patience. For the player, a reef can be a route marker, a harvest source and a structural warning at the same time. Dead outer shells are useful grit for sealant and ceramic filler. The living core may be doing work: holding a cable quiet, stiffening a cracked bracket, or slowing a leak that the scanner has not named yet. Cut the wrong cluster and the reef does not attack. The environment simply loses a brace.
+Reef baseline RC-5, shell clamp cluster at 60 metres, gripping rock and machinery together.
+
+  ADHESION HIGHEST ON: worn cable jackets, warm seam metal, pressure-glass edges with mineral seep
+  CLUSTER STATE: live core, dead outer fringe
+  UNDER THIS CLUSTER: one cable, one hairline weep
+
+The clamp-shells are not intelligent and not Atlas tissue. They follow mineral seep, warmth, vibration and current, which is enough to hold basalt, cable jacket, capsule plating and glass seam with the same grip.
+
+Dead outer shells are good grit for sealant and ceramic filler.
+
+The live core is often doing work: holding a cable quiet, stiffening a cracked bracket, slowing a leak the scanner has not named. Pry the wrong cluster and nothing attacks. The brace is simply gone.
 
 ## Scanner
 

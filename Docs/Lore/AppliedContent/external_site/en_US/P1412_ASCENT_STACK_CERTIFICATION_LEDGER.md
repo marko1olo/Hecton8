@@ -19,12 +19,12 @@ localization_flags: 0
 
 # Ascent Stack Certification Ledger
 
-HECTON-8 makes escape physical before it makes escape hopeful. The ascent stack is the hardware proof that a survivor can move upward without becoming debris. It combines pressure seal rings, an ascent charge, a guidance ping, a thermal shock margin and a receiver tag into one ugly certificate.
+An ascent stack is the hardware that lets a survivor move upward without becoming debris. It combines pressure seal rings, an ascent charge, a guidance ping, a thermal shock margin and a receiver tag into a single certificate.
 
-That certificate matters because the ocean is not a backdrop. A pressure flaw can cut a capsule apart during the first burn. An unmetered charge can throw a body past the window or scatter it below the carrier. A missing ping turns recovery into a search grid nobody wants to fund. A missing receiver tag makes the returned body a custody problem instead of a rescue.
+Each field exists because of a specific failure. A pressure flaw can open a capsule during the first burn. An unmetered charge can throw a body past the window or leave it below the carrier. A missing ping turns recovery into a search grid nobody will fund. A missing receiver tag makes a returned body a custody problem rather than a rescue.
 
-The stack is also good game lore because every part is playable. A seal ring can be found in a ruined hatch. A burn cartridge can come from salvage mass. A guidance cradle can be rebuilt from relay hardware. A shock strip can prove that the sleeve survived cold, brine and pressure cycling. The player is not collecting abstract tokens. They are making a claim-window desk run out of excuses.
+Every part is also recoverable from the colony. Seal rings come out of ruined hatches. Burn cartridges come from salvage charge mass. A guidance cradle can be rebuilt from relay hardware. A shock strip can demonstrate that a sleeve survived cold, brine and pressure cycling.
 
-When the ascent stack is certified, Black Keel still has not become kind. The carrier has simply lost one reason to refuse mass. That is the tone of HECTON-8: the path upward is not granted by sympathy, but by pressure-rated evidence that a hostile system can price.
+Black Keel mass reservation precheck rejects conditional return hardware and holds the claim window at message-only until the certificate is complete. Certificate AS-12, recovered burn-stained with two of five stamps missing, is the common state. Completion buys no goodwill; it removes the last documented reason to refuse the mass.
 
 <!-- External Site; generated from P1412_ASCENT_STACK_CERTIFICATION_LEDGER/en_US. -->

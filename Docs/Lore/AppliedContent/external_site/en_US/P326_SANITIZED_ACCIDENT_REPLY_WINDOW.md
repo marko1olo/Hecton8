@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Sanitized Accident Reply Window
 
-Sanitized Accident Reply Window shows how Deep Reach lies before anyone starts shouting. The lie is procedural, familiar and stale: a public loss line colliding with physical evidence. HECTON-8's corporate horror works best when the official answer arrives too clean for the place that produced it.
+The sanitized accident reply is Deep Reach's 2190 answer to a distress claim: the same public loss line of storm surge, geological collapse and autonomous evacuation failure filed in 2147, pushed through a live channel and colliding with the physical evidence in the rooms.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ They answered the room you were supposed to find, not the room you are standing 
 
 ## Field Note
 
-Place after the first physical contradiction: the player should have wet proof before hearing the stale public script.
+Do not open the channel until you have wet proof in hand. The script still sounds reasonable right up to the room it describes.
 
 <!-- External Site; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/en_US. -->

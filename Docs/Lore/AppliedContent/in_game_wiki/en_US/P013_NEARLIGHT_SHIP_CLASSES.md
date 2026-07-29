@@ -19,11 +19,20 @@ localization_flags: 0
 
 # Nearlight Ship Classes
 
-Nearlight ships built the human sphere by accepting that physics would not be charmed. Needleprobes went first because they were narrow, shielded and cheap enough to lose. Seed ships followed with machines, genomes, route instructions and construction habits that could survive years of cold staging. Atlas-class freight carriers moved the expensive mass: factory cores, sleeper bays, shield ice, radiators, drilling systems and contracts that were already older than some crews when they woke.
+Transit manifest, ship class table, six classes listed and no FTL class present.
 
-The ship class matters because each class has a different way to fail. A needleprobe can die usefully. A seed ship can arrive without witnesses. A sleeper transport can preserve bodies while turning their labor into custody. A system tender can work inside Aegir and still be unable to cross from core space on command. A claim-pool carrier like Black Keel is not freedom with engines; it is a recovery machine that counts mass, quarantine, insurance and evidence in the same ledger.
+  NEEDLEPROBE: expendable, narrow, shielded
+  SEED SHIP: automated, machines and route instructions
+  ATLAS-CLASS FREIGHT: mass-rated, factory cores and shield ice
+  SLEEPER TRANSPORT: biologic custody
+  SYSTEM TENDER: in-domain only
+  CLAIM-POOL CARRIER: lien-bound
 
-No class in the table breaks light. Beam sails, pellet lanes, fusion-electric throats, shield ice, magsails and receiver windows make travel possible, not casual. Arrival is the cruel half. If nobody owns braking, nobody arrives as useful mass.
+The class decides how the thing fails. A needleprobe can die usefully. A seed ship can arrive with no witnesses. A sleeper transport preserves bodies and converts their labour into custody. A system tender works inside Aegir and cannot cross from core space on order.
+
+Beam sails, pellet lanes, fusion-electric throats, shield ice and magsails make the crossing possible, not casual.
+
+Every class in the table requires braking ownership. Where nobody owns the braking allocation, nothing arrives as useful mass.
 
 ## Scanner
 

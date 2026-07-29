@@ -19,14 +19,14 @@ localization_flags: 0
 
 # Start Here: HECTON-8
 
-The first public record of HECTON-8 is not a distress call. It is a contract. Black Keel logs the moon as a recoverable ocean claim. Deep Reach calls the loss a storm-and-collapse event. The old colony appears in the paperwork as damaged assets, sealed compartments, uncertain data and a recovery cost someone else should pay.
+The first public record of HECTON-8 is not a distress call. It is a contract. Black Keel logs the moon as a recoverable ocean claim. Deep Reach files the loss as a storm-and-collapse event. The old colony appears in the paperwork as damaged assets, sealed compartments, uncertain data and a recovery cost somebody else should carry.
 
-That language is the first pressure door. It is not wholly false. The storm happened. The collapse happened. Atlas did try to repair the impossible. But the official wording hides sequence, delay, custody and who profited when rescue became salvage.
+That language is the first pressure door, and it is not wholly false. The storm happened in 2147. The collapse happened. Atlas-6 did attempt repairs beyond its design. What the wording removes is sequence, delay, custody, and who profited when rescue was reclassified as salvage.
 
-The player enters as a Marauder, not a chosen heir. The body going down has a history with Deep Reach, a debt chain, a damaged bathydrop capsule and no clean route back up. The game does not need a secret parent or lost sibling to make the return personal. Professional guilt is enough when the old systems still answer to procedures the protagonist once trusted.
+The operator who goes down is a debt-bound Marauder with a Deep Reach service history, a damaged bathydrop capsule and a lien against the berth. No family hook is required. Professional guilt is sufficient when the surviving systems still answer to procedures the operator once signed off.
 
-The first rule is evidence before myth. A pump board can say more than a monologue. A quarantine door can explain why help arrived late. A worker tag can make a room human. An Atlas growth can be repair, witness and danger at the same time.
+The reading order that works is evidence first. A pump board carries more than a transcript. A quarantine door explains a late arrival. Worker tags return names to rooms. An Atlas repair growth is maintenance, witness and hazard in the same object.
 
-Start here if you want the spoiler-light map. Learn who can legally call this rescue, why help travels slower than paperwork, why the ocean remembers labor better than public reports, and why leaving HECTON-8 will always mean deciding who owns the proof.
+This entry stays spoiler-light: who can legally call the operation a rescue, why paperwork travels faster than mass, and why leaving HECTON-8 always resolves into who owns the proof.
 
 <!-- External Site; generated from P416_SITE_WIKI_START_HERE_CLUSTER/en_US. -->

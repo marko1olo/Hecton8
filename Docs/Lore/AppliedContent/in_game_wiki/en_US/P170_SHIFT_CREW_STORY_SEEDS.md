@@ -19,11 +19,16 @@ localization_flags: 0
 
 # Shift Crew Story Seeds
 
-Shift crew story seeds give HECTON-8 replay texture without turning the setting into a contradiction machine. The same colony can present different worker pairings, different locker object order and different marginal notes, but it cannot decide that Deep Reach became innocent or that the Great Tide happened for a new reason.
+Correction index CX-3, worker traces logged across nine rooms in the B-shift block.
 
-The useful range is local. A route clerk may be linked to a brine diver in one run and to a seal rigger in another. A denial slip may sit inside a locker, under a job board magnet or beside a wet medlock tray. A Marauder correction note may argue with the first reading. These variations change how the player assembles proof, not the proof itself.
+  PAIRINGS FOUND: route clerk with brine diver in four rooms, route clerk with seal rigger in three
+  DENIAL SLIPS: inside a locker, under a job-board magnet, beside a wet medlock tray
 
-The design purpose is emotional without being fake. A replayed room should not feel copy-pasted, but it should still feel authored. The player should think: I have not seen this worker before, but I know the kind of system that killed them.
+The local detail moves between rooms. Which worker was paired with which, where a denial slip ended up, whose note argues with the tag: all of it varies by room and by who reached it first.
+
+What does not move is the structure. Great Tide timing, Deep Reach liability, the Atlas weighting and the evacuation failure read the same in all nine.
+
+Read the pairings for route access, not for blame. No single named worker in this block caused any of it.
 
 ## Scanner
 
@@ -31,7 +36,7 @@ SHIFT SEED // The roster can change. The guilt cannot.
 
 ## Terminal
 
-SHIFT CREW SEEDS // A run may vary roster order, worker pairings, locker contents, denial slips, route chalk, badge fragments and later Marauder correction notes. The seed is allowed to change how the player meets the evidence, not what the evidence proves. Canon events stay fixed; local worker traces make the route feel newly inhabited.
+SHIFT CREW INDEX // Roster order, worker pairings, locker contents, denial slips, route chalk, badge fragments and later Marauder correction notes differ from block to block. Great Tide timing, Deep Reach liability, Atlas weighting and evacuation failure do not. Log the local trace against the fixed record, not in place of it.
 
 ## Audio
 

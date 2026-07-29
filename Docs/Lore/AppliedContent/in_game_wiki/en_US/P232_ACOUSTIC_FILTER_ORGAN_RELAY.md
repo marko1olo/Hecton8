@@ -19,9 +19,18 @@ localization_flags: 0
 
 # Acoustic Filter Organ Relay
 
-Acoustic filter organ relays turn HECTON-8's sonar language into body horror without breaking the science tone. Around old relay pipes, gill-wall tissue grows into baffles, folds and wet chambers. The tissue does not speak. It changes impedance. Broad pump noise dies in it. Narrow pinger pulses pass through it. Return echoes come back shifted in ways that repeat often enough for Atlas to use and for a careful Marauder to learn.
+Relay note AR-9, gill-wall tissue grown around relay pipes in the lower service throat.
 
-This matters because a lie that repeats is not random. A hallway downstream of the organ may appear shorter, wider or blocked until the player learns which frequency survives the living filter. Atlas uses the relay because it preserves signal under pressure better than broken hardware alone. The player uses it as evidence: if the same sonar error appears at the same pulse width, the room is not haunted. It is filtering. That makes the relay useful, disgusting and fair.
+  BROAD PUMP NOISE: absorbed
+  PINGER-CLASS PULSE: passes
+  RETURN ECHO: phase-shifted, repeatable
+  DOWNSTREAM MAPS: conditionally true
+
+The tissue changes impedance. Broad pump noise dies in it, narrow pinger pulses pass, and returns come back shifted in a way that repeats.
+
+Repeating is the useful part. A hallway downstream may scan shorter, wider or blocked until you find the pulse width that survives the filter.
+
+Atlas-6 routes through this relay because a living baffle holds signal under pressure better than the broken hardware beside it. Where the same sonar error appears at the same pulse width, the room is filtering, not haunted.
 
 ## Scanner
 

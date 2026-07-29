@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Riskier Contract Seeds
 
-Riskier Contract Seeds make replayability economic and procedural: the contract changes what the ocean demands, not what the player gets to carry.
+Riskier contract seeds raise lien relief in exchange for a worse orbital window, a deeper first objective, stricter evidence custody and tighter return accounting. Equipment power and inventory reset regardless of the seed.
 
 ## Scanner
 

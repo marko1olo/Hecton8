@@ -19,7 +19,16 @@ localization_flags: 0
 
 # Sanitized Accident Reply Window
 
-Sanitized Accident Reply Window gives Deep Reach a present voice without making the corporation omniscient. Their first live answer is not a threat. It is worse in a quieter way: an old public explanation pushed through a new channel under pressure. The message still says storm surge, geological collapse and failed autonomous evacuation because that script protected Deep Reach once and the system reaches for it again. The player should hear it only after finding physical contradiction: wrong door time, bad pump certificate, names that survived payroll erasure, a room whose damage does not match weather. That timing matters. If the script arrives first, it is exposition. If it arrives after wet evidence, it becomes an insult. Deep Reach is not speaking to the room the player occupies. It is speaking to the dry report it needed the room to become.
+Live reply window, Deep Reach public channel, 2190. The loss line has not changed.
+
+  PUBLIC LOSS LINE: storm surge, geological collapse, autonomous evacuation failure
+  RESTRICTED ADVICE TO CLAIMANT: do not transmit unverified Atlas continuity, body-category disputes or basin-coordinate claims
+
+This is the 2147 public explanation pushed through a 2190 channel, because that script held once.
+
+The contradictions are already in the water: a door time that does not match the weather, a pump certificate signed after the room failed, names that survived payroll erasure, damage that is not storm damage.
+
+Hold the physical proof beside the transmission. Deep Reach is answering the dry report it needed this room to become, not the room.
 
 ## Scanner
 
@@ -35,6 +44,6 @@ They answered the room you were supposed to find, not the room you are standing 
 
 ## Field Note
 
-Place after the first physical contradiction: the player should have wet proof before hearing the stale public script.
+Do not open the channel until you have wet proof in hand. The script still sounds reasonable right up to the room it describes.
 
 <!-- In-Game Wiki; generated from P326_SANITIZED_ACCIDENT_REPLY_WINDOW/en_US. -->

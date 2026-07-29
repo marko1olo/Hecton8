@@ -19,7 +19,20 @@ localization_flags: 0
 
 # Vent Forge Process Steps
 
-Vent Forge Process Steps turn HECTON-8 crafting into an industrial ritual that still feels physical. The player is not carrying a fantasy furnace in a pocket. The forge is a place where ocean, geothermal vent and ruined colony hardware briefly agree. First the blank is purged so old brine does not boil inside it. Then it is clamped before the vent pulse rises, preheated on the pressure climb, sealed during the short lull and quenched in the cold return current. The final acoustic ring is not decoration; it proves the part carries one clean body instead of hidden cracks. This gives crafting a rhythm the world can support through VFX, audio and UI. Heat matters, but timing matters more. A missed window does not produce a mysterious fail state. It produces warped scrap, salt bloom or a pressure-cracked component that tells the player exactly what went wrong.
+Forge step card VF-2, vent bench, six steps and one failure column.
+
+  01 PURGE brine from the blank
+  02 CLAMP before the vent pulse
+  03 PREHEAT on the vent rise
+  04 SEAL during the pressure lull
+  05 QUENCH in the cold return current
+  06 CERTIFY by acoustic ring
+
+The purge comes first so old brine does not boil inside the blank. The clamp goes on before the pulse because the pulse will move an unclamped piece.
+
+Step 04 is the narrow one. The lull between vent pulses is short and the seal has to close inside it.
+
+The ring test is not ceremony. It proves the part rings as a single piece instead of a shell over hidden cracks. A missed lull returns warped scrap, salt bloom or a pressure-cracked component.
 
 ## Scanner
 
@@ -35,6 +48,6 @@ The moon is the furnace. You are only allowed to borrow it.
 
 ## Field Note
 
-Process must read as purge, clamp, preheat, seal, quench, ring-test. The risk is not flame; the risk is missing the pressure lull.
+Purge, clamp, preheat, seal, quench, ring-test. The risk here is not flame. It is missing the pressure lull.
 
 <!-- In-Game Wiki; generated from P174_VENT_FORGE_PROCESS_STEPS/en_US. -->

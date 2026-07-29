@@ -37,7 +37,7 @@ PRESSURE BASE INTERIOR WALL // Ceramic-coated panel with graphite rail, gasket s
 
 ## Terminal
 
-HABITABILITY MAINTENANCE // Do not replace lower trim until leak origin is logged. Amber wear, hand-polished hatch lips and floorline grime indicate room use, not only damage.
+HABITABILITY MAINTENANCE // Hold lower trim replacement until leak origin is logged. Amber wear, hand-polished hatch lips and floorline grime indicate room use, not only damage.
 
 ## Audio
 

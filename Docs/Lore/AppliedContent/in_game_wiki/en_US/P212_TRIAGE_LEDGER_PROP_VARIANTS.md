@@ -19,7 +19,18 @@ localization_flags: 0
 
 # Triage Ledger Prop Variants
 
-Triage Ledger Prop Variants keep harm readable without turning rooms into suffering displays. A triage ledger should show how injury moved through bureaucracy: crush-status shorthand, oxygen debt, route hold crossout, equipment state, Atlas stabilization note, and witness hash gap. The point is not to decorate the colony with pain. The point is to prove that delay had a path, and that the path had owners. Good triage props make the player ask why one worker was counted, another was held, and a third vanished into certification language.
+Triage ledger TL-9, medlock station, five entries carried forward.
+
+  ENTRY 2: crush-status shorthand, no equipment state recorded
+  ENTRY 3: oxygen debt mark, route hold crossed out and re-entered
+  ENTRY 4: Atlas stabilisation note, no counter-signature
+  ENTRY 5: witness hash gap
+
+Each line ties an injury to something procedural: pressure failure, route denial, equipment state, certification delay, or a missing witness chain. Injury alone was not enough to move a body.
+
+Entry 3 is the one to read twice. The route hold was crossed out and re-entered by a different hand, which puts a decision between the two marks.
+
+The hash gap at Entry 5 means the worker was counted and then not carried forward. No transfer record exists for that name.
 
 ## Scanner
 
@@ -27,7 +38,7 @@ Medical evidence should expose delay and routing, not decorate the room with suf
 
 ## Terminal
 
-TRIAGE PROP RULE: every ledger entry must tie injury to pressure, route denial, equipment state, certification delay, or missing witness chain. Pain alone is not enough. The prop must show who could move, who was held, and which system made delay look procedural.
+MEDLOCK LEDGER RULE 4 // Every entry ties injury to a pressure event, route denial, equipment state, certification delay or witness chain. Injury recorded without one of those fields does not authorise transfer. Enter who could move, who was held, and under which hold.
 
 ## Audio
 

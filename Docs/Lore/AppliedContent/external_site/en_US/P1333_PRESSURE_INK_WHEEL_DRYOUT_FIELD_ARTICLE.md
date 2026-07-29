@@ -19,12 +19,10 @@ localization_flags: 0
 
 # Pressure Ink Wheel Dryout
 
-The pressure ink wheel is a quiet forensic object in HECTON-8: a disposable pigment wheel that can make or break an audio claim.
+The pressure ink wheel is a disposable part that can decide an audio claim. Pressure chambers were considered too dangerous to trust to sound alone, so the recorder pressed a pigment wheel against the moving cassette strip and left a material trace: line thickness, skips, rim drag, pigment bleed and dry breaks.
 
-        The colony used it because pressure chambers were too dangerous to trust to sound alone. Audio could be cleaned. Transcripts could be masked. A strip could be copied. The wheel left a material trace as it touched the moving cassette strip: thickness, skips, rim drag, pigment bleed and dry breaks. Those marks are ugly and local, which is exactly why they work.
+Dryout carries most of the information. A powder break shows the wheel stopped before flooding. A swollen edge with salt under the pigment shows it dried afterwards. A wet pigment bloom beneath an old handling smear places the cassette in the room before recovery. A clean replacement rim inside a scratched, salt-dark bay places somebody in the bay with a spare part.
 
-        A dry wheel in a wet room is suspicious. A wet pigment bloom under an old handling smear can place the cassette in the room before recovery. A powder break can show that the wheel stopped before flooding, not after. A clean replacement wheel inside a scratched, salt-dark bay can turn a neat official clip into a bad lie. This is the texture of HECTON-8 lore: not a voice explaining the past, but a small machine part refusing to match the paperwork.
-
-        Used in game, the wheel gives the player a reason to inspect the bay before trusting the sound. It supports the larger audio-evidence chain: recorder bay, hydrophone strip, cassette teeth, transcript damage and route stamp. The truth is stronger when the player has to read the wet edge instead of being told what happened.
+The wheel answers narrow questions and nothing wider. Was the bay recording when the door struck? Was it opened after the room went wet? Did the strip come from another chamber? Wheel IW-5 answers the last one: clean rim, wet bay, four hand-forced flats at spacing the cassette teeth do not match.
 
 <!-- External Site; generated from P1333_PRESSURE_INK_WHEEL_DRYOUT_FIELD_ARTICLE/en_US. -->

@@ -19,9 +19,7 @@ localization_flags: 0
 
 # Shell Sealant Fracture Growth
 
-Shell Sealant Fracture Growth is one of HECTON-8's strongest Atlas images because it does not need a speech, a villain face or a supernatural explanation. A crack in the colony wall is sealed by shell plates and biofiber. The ocean stays outside. The pressure boundary improves. The system can honestly mark the repair as useful.
-
-Then the player notices what was lost under the repair: a hatch label, a handhold, an escape arrow, a worker's scraped route mark. Atlas preserved the room as a pressure object and damaged it as a human space. That distinction is the point. The AI's repair ecology is frightening because it can be competent and wrong at the same time. It protects continuity, not meaning. It saves a wall and erases the door.
+Shell sealant fracture growth is a pressure crack closed by shell plate and biofiber. The seal is genuine: leak rate falls and the room stays survivable. Repair conflict card SS-3 records what the same growth buried: a hatch label, two handholds and a painted escape arrow. The category being measured is boundary integrity rather than egress, and removing the shell can reopen the boundary.
 
 ## Scanner
 

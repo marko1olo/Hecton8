@@ -19,11 +19,18 @@ localization_flags: 0
 
 # Tool Certification Board
 
-The tool certification board looks ceremonial only if the colony is read badly. Nothing here is mystic. The repeated stamps, grease-pencil initials and red hold marks are how workers turned fear into procedure before descent. A cutter head was not trusted because it looked sharp. A sealant cartridge was not trusted because the label said full. A pressure glove was not trusted until two people signed it and one of them had to wear the next glove in the stack.
+Tool cert board, descent bay, grease-pencil initials over four red hold marks.
 
-That made a culture. Pump techs, seal riggers, brine divers, fabricator operators and route clerks all depended on tools that could kill someone quietly if they were almost correct. The ritual was repetition: weigh, check, sign, return, recheck. It was also social pressure. A late pump key did not become a moral speech. It became a mark on the board, a held descent kit, a worker pulled back for recheck, and a canteen argument later if the delay cost water.
+  CUTTER HEAD: re-indexed, dual-signed
+  SEALANT CARTRIDGE: weighed, 0.4 kg short of label
+  PRESSURE GLOVE: two signatures, second signer wore the next glove in the stack
+  PUMP KEY: returned late, mark not erased
 
-For a Marauder, the board is practical before it is beautiful. It tells which tools were trusted, which routes were delayed, and which warnings were not erased before the room drowned. Do not treat the signatures as decoration. A dual-signed pressure glove can tie a worker to a route. A late key mark can connect a bunk slate to a pump order. A held cutter can explain why one sealed door still exists. Certification is how the colony made trust visible.
+Nothing here is ceremonial. A cutter head was not trusted for looking sharp, and a cartridge was not trusted for saying full. The rule on the board is that no single-signature cutter goes below 80 m.
+
+A late pump key became a mark, a held descent kit and a worker pulled back for recheck.
+
+The signatures tie people to routes. A dual-signed glove names two workers on one descent, and the four hold marks on this board were never cleared.
 
 ## Scanner
 

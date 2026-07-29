@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Mass Custody Tonne-Window Ledger
 
-HECTON-8 turns mercy into a load calculation because the world is built without magic rescue. Black Keel can hear a claim, accept a packet and still refuse body recovery until the next lift window can carry the right mass under the right custody.
+Black Keel can hear a claim, accept a packet, and still refuse body recovery until the next lift window carries the right mass under the right custody. The tonne-window ledger is where that refusal is written down.
 
-The cruel part is not that the math is fake. It is that the math is allowed to be the first language. A survivor becomes body mass. Oxygen becomes welfare debt. A sample becomes sealed custody. A black-box packet becomes evidence payload. Quarantine becomes volume. Receiver rights become liability. The carrier does not decide whether these things matter. It decides which of them can be moved together.
+The hard part is not that the arithmetic is dishonest. It is that the arithmetic speaks first. A survivor is entered as body mass. Oxygen becomes welfare debt. A sample becomes sealed custody. A black-box packet becomes evidence payload. Quarantine becomes volume. Receiver rights become liability. The carrier does not judge whether these things matter; it determines which of them can move together.
 
-This keeps the lore playable. Every salvage decision can push against the ledger: preserve proof, throw away contamination, certify hardware, spend oxygen, keep a sample, expose a public hash or protect enough body margin to get out. The player is not looting abstractions. They are fighting over what gets counted as recoverable.
+Every salvage decision pushes back against that ledger. Preserving proof, discarding contamination, certifying hardware, spending oxygen, keeping a sample or publishing a hash each moves a column, and the columns are reconciled against a base lien of 4.8 tonne-window that no single action clears.
 
 <!-- External Site; generated from P1422_MASS_CUSTODY_TONNE_WINDOW_LEDGER/en_US. -->

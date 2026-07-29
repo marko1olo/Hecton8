@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Vent Micronode Nests
 
-Vent micronode nests are clusters of small maintenance nodes at the vent margins, each drawing enough from the thermal gradient to pulse nearby shell sealant, biofilm and tagged metal. They hold no central command. Atlas-6 maintenance persists at those margins because the nodes are local, stubborn and damaged, not because the grid survived.
+Vent micronode nests are clusters of small maintenance nodes at the vent margins, logged at 4,600 m and below, each drawing enough from the thermal gradient to pulse nearby shell sealant, biofilm and tagged metal. They hold no central command. Atlas-6 maintenance persists at those margins because the nodes are local, stubborn and damaged, not because the grid survived.
 
 ## Scanner
 

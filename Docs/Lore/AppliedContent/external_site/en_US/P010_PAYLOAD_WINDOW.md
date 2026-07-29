@@ -19,6 +19,10 @@ localization_flags: 0
 
 # Payload Window
 
-The final problem on HECTON-8 is not a moral menu floating above the ocean. It is a payload window. The ascent package has mass limits, the weather has timing, Aegir has radiation and orbital constraints, and Black Keel has receiver rules before it has mercy. Every ending therefore asks what leaves the moon and who receives it. Coordinates can buy recovery and hand Deep Reach the crime scene. Evidence can reach a public ledger and remove the player’s control over consequence. Samples can pay debt while strengthening the system that buried worker names. Silence can deny the corporation and leave proof under water. The window carries no justice by itself. It is the shape justice has to squeeze through.
+The last problem on HECTON-8 is a payload window. The ascent package has a mass limit, the weather has timing, Aegir supplies radiation and orbital constraint, and Black Keel applies receiver rules before anything else.
+
+So every exit resolves into two questions: what leaves the moon, and who receives it. Coordinates can buy a recovery and hand Deep Reach an intact site. Evidence can reach a public ledger and transfer control of the consequence to that ledger. Samples can clear a lien while funding the account that converted worker names into cargo categories. Silence can deny the company and leave the proof under water.
+
+The window carries no verdict of its own. It is a mass allowance with a receiver field, and the receiver field decides what the mass will mean.
 
 <!-- External Site; generated from P010_PAYLOAD_WINDOW/en_US. -->

@@ -19,7 +19,18 @@ localization_flags: 0
 
 # Recipe Tier Pressure Bands
 
-Recipe Tier Pressure Bands are the grammar behind HECTON-8 crafting. The colony did not separate recipes by convenience; it separated them by what pressure would do to a part after the player left the workbench. Tier 0 keeps the player alive in the shallows with patches, hand seals and salvage that fails honestly. Tier 1 belongs to rated repairs: pump-room parts, old industrial stock and certification marks that prove the object was meant to work under load. Tier 2 moves into pressure hardware, where brine washing, vent curing and acoustic proof decide whether a component is safe or merely shaped like a component. Tier 3 belongs to ascent, Atlas interfaces and abyssal authority: the recipe needs materials, but it also needs receiver state, legal custody and containment proof. This keeps crafting tied to route logic. The question is never just what do you own. It is where has it been, what pressure can it survive, and who will accept the result.
+Recipe band table RB-4 from a pump-room bench, four bands sorted by pressure rating.
+
+  T0 SURVIVAL PATCH: shallow salvage, hand seal, no custody
+  T1 RATED REPAIR: shelf industrial parts, pump-room certification
+  T2 PRESSURE HARDWARE: brine wash, vent cure, acoustic proof
+  T3 ASCENT OR ATLAS WORK: abyssal source, legal receiver, containment receipt
+
+The bands separate parts by what pressure does to them after the bench, not by cost. A T0 patch fails honestly in the shallows. A T1 part carries a certification mark proving it was built for load.
+
+T2 is where washing, vent curing and acoustic proof decide whether a component is safe or only shaped like one.
+
+T3 needs materials and paperwork together. Without a named receiver and a containment receipt the part is finished and still unusable.
 
 ## Scanner
 

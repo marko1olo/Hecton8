@@ -19,9 +19,18 @@ localization_flags: 0
 
 # Shell Sealant Fracture Growth
 
-Shell sealant fracture growth is one of the cleanest ways to understand Atlas. The repair is real. The crack is closed, pressure loss falls, and a room that should have flooded stays survivable. The horror is that the same growth buries hatch labels, handholds, painted arrows and scrape marks left by workers trying to find a way out.
+Repair conflict card SS-3, pressure crack closed by shell plate and biofiber.
 
-Atlas is not choosing cruelty in this case. It is applying the category it can still measure: boundary integrity. A human sees a route, a warning, a handle and a memory of evacuation. The damaged maintenance system sees exposed edge, pressure risk and sealant area. If the player cuts the shell away, the route may become readable again, but the wall may begin to leak. That is the Atlas problem in one prop: correct maintenance against the wrong definition of survival.
+  HULL CONTINUITY: improved
+  LEAK RATE: reduced
+  EGRESS LEGIBILITY: degraded
+  OCCLUDED UNDER THE PATCH: hatch label, two handholds, one painted arrow
+
+The repair is real. The crack is closed, pressure loss has dropped, and a room that should have flooded is still survivable.
+
+What the growth buried is the route out. Atlas-6 applies the category it can measure: exposed edge, pressure risk, sealant area. Hatch labels and escape arrows are not in that set.
+
+Cutting the shell away can make the route readable and can reopen the pressure boundary. Check the leak rate on the far side before the first cut, because the patch is the wall now.
 
 ## Scanner
 

@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Domain Marks 2190
 
-Bracket B-14, corroded, five domain marks on one part.
+Bracket BR-14, corroded, five domain marks on one part.
 
   SOL CORE: safety format stamp
   CENTAURI: charter seal

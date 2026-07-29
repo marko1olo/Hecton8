@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Shell Clamp Reef
 
-Shell Clamp Reef is the visual bridge between HECTON-8's bright ecology and its later machine horror. The point is not that the ocean hates human hardware. The point is worse and more useful: the ocean has learned to grow around it. Clamp-shells settle where current, mineral seep and vibration make a hard edge profitable, so a cable jacket, a capsule seam and a basalt lip can become the same kind of habitat. This makes the shallow shelf tactile instead of decorative. A player should see bolts wearing life, cable runs turning into reef ribs, pressure-glass seams crusted with white clamps, and understand that not every growth is contamination. Some growth is load-bearing. That idea pays forward into Atlas repair logic without needing magic. Atlas later abuses a habit the reef already proved: native organisms can treat human machinery as structure. Good placement should make harvesting feel like a decision, not a button press. The dead fringe gives shell grit, sealing paste texture and early material confidence. The living heart of the reef may be clamping a route marker in place or holding a leak closed. Remove it blindly and the ocean does not punish the player with a sermon; a cable starts moving, a seam starts weeping, a grazer school clears out, and the route has changed.
+Shell clamp reefs are native clamp-shell clusters on the shelf near 60 m that bind rock, cable jackets, capsule plating and pressure-glass seams into one substrate. They settle where current, mineral seep and vibration make a hard edge profitable. Dead outer shells yield grit for sealant and ceramic filler; a live core may be holding a cable still or slowing a hairline leak.
 
 ## Scanner
 

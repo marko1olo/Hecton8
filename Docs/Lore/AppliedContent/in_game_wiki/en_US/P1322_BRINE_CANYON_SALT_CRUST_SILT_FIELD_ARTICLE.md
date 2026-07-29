@@ -19,11 +19,17 @@ localization_flags: 0
 
 # Brine Canyon Salt-Crust Silt
 
-Brine canyon salt-crust silt forms where dense, cold brine leaks over clay and then slows long enough to leave a pale mineral skin. It looks almost clean in lamp light: white veins, blue-gray mud, soft flakes, a floor that seems too bright for the depth. That brightness is the warning.
+Floor card BC-4, brine canyon bench at 2,640 metres, white salt skin over gray-blue clay.
 
-The crust is not solid ground. It is a chemical lid over heavier water and pressure-flattened silt. A light probe may skate across it. A loaded suit, crawler foot or salvage sled can break through, releasing gray clay, corrosive brine and the kind of fine sediment that erases a route faster than panic can draw one. Old cable scrapes and tool scars matter because they show where other crews crossed without sinking.
+  PROBE: skates on the crust, breaks under load
+  CRUST VEINS: milky, following weak flow paths
+  SCRAPE MARKS: two cable scars continuing under the white return
 
-The same material preserves evidence. Tags, boot gouges, broken clamps and evac pings can sit under the salt skin for years, protected from ordinary current but not from the first careless cut. A Marauder reads the edge before the center: green-black staining in cracks, milky crust veins, dull places where the lid has already flexed, and scrape marks that continue under the white return.
+The crust is a chemical lid over heavier brine and pressure-flattened silt, not stone. A loaded suit, crawler foot or sled breaks through and releases gray clay, corrosive brine and sediment fine enough to erase a route.
+
+Tags, boot gouges, broken clamps and evac pings sit under the lid, protected from current until the first cut.
+
+Read the edge before the centre. The two cable scars are where a crew crossed without sinking; a bright plate with no scars is where nobody did.
 
 ## Scanner
 

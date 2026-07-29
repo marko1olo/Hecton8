@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Recipe Tier Pressure Bands
 
-Recipe Tier Pressure Bands define how HECTON-8 avoids generic survival crafting. Materials are not abstract costs. They are pressure-rated evidence with route history, certification and legal consequences. The same structure can drive recipes, scanner warnings, UI tier labels and lore articles without splitting the world into separate gameplay and fiction languages.
+Colony recipe bands sorted parts by pressure rating rather than cost: T0 survival patches with no custody, T1 rated repairs carrying pump-room certification, T2 pressure hardware requiring brine wash, vent cure and acoustic proof, and T3 ascent or Atlas work requiring an abyssal source, a named receiver and a containment receipt.
 
 ## Scanner
 

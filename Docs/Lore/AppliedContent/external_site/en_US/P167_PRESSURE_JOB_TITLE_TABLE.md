@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Pressure Job Title Table
 
-Pressure job titles in the colony recorded access rather than status. Pump technicians, seal riggers, route clerks, brine divers, fabricator operators, medlock aides, relay custodians, vent-kiln hands, Atlas safety readers and shift supervisors each carried a badge permission, a tool set, and a failure category that could be assigned to them after the Great Tide.
+Pressure job titles in the colony recorded access rather than status. Shift board plate SB-3 lists ten: pump technician, seal rigger, route clerk, brine diver, fabricator operator, medlock aide, relay custodian, vent-kiln hand, Atlas safety reader and shift supervisor. Each carried a badge permission, a tool set, and a failure category that could be assigned to them after the Great Tide.
 
 ## Scanner
 

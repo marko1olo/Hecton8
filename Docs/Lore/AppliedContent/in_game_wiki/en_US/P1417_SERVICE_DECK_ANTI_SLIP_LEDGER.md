@@ -19,11 +19,18 @@ localization_flags: 0
 
 # Wet Service Deck Anti-Slip Ledger
 
-A HECTON-8 service deck is not generic floor texture. It is the colony's last handwriting. The raised anti-slip pattern kept boots from skating during normal work, then became a recorder when normal work stopped. Salt catches on ridge tops, oil settles in troughs, yellow safety paint wears into crescents where people turned with tools or cylinders, and rust stays where traffic stopped touching the seam.
+Deck read card SD-6, wet service deck, raised anti-slip plate, traffic line bending toward the airlock.
 
-The player can read a wet deck before entering a room. A bright line across dark plate means repeated passage after flooding. A clean semicircle beside a hatch means someone turned there often enough to polish the paint. Oily streaks running downhill from a service cart show a leak path, not random dirt. Rust crossing the full seam means nobody has opened that boundary in a long time; rust broken by scuffs means late movement, salvage, or return.
+  RIDGE TOPS: bright wear, salt scuffs
+  TROUGHS: oily wet streaks running downhill from a cart position
+  YELLOW PAINT: worn into crescents at two hatch corners
+  SEAM RUST: broken by scuffs on the airlock side
 
-This makes deck material useful without turning it into a signpost. It can reveal the safer route through a corridor, show where cargo was dragged, warn that a platform is slick, or prove that a supposedly sealed airlock cycled after the evacuation story ended. A good deck does not explain itself. It gives the player enough physical evidence to be clever.
+A bright line across dark plate is repeated passage after flooding. A clean semicircle beside a hatch is somebody turning there often enough to polish the paint.
+
+Rust crossing a full seam means the boundary has stayed shut a long time. Rust broken by scuffs means late movement, salvage or a return.
+
+The rust on this seam is broken on the airlock side, which puts a cycle on that lock after the evacuation record closes. The glossy troughs beside it will not hold a boot.
 
 ## Scanner
 

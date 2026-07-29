@@ -19,13 +19,17 @@ localization_flags: 0
 
 # Pressure Ink Wheel Dryout
 
-The pressure ink wheel is a small part of a recorder bay, easy to overlook until it ruins a clean story.
+Ink wheel card IW-5, pigment wheel from a pressure room recorder bay.
 
-        In older pressure rooms, the recorder did not only listen. It pressed a mineral pigment wheel against the moving strip so pressure changes left a physical line. The wheel was deliberately primitive: ceramic hub, salt-resistant pigment, spring arm, and a rim soft enough to deform under load. It made bad art and good evidence. When the room flexed, the line thickened. When a lock struck, the rim jumped. When water reached the bay, the pigment bled in a way no later transcript could imitate.
+  RIM: clean, no swelling
+  BAY AROUND IT: wet, salt-dark, scratched
+  FLAT SPOTS: four, spacing does not match the cassette teeth
 
-        Dryout is where the wheel becomes useful. A wheel dried before flooding leaves a powdery break, like chalk pulled across glass. A wheel that dried after flooding leaves a swollen edge with salt under the pigment. A swapped wheel is worse: its rim can look clean while the bay around it is wet, old and scratched. A wheel forced by hand leaves flat spots at intervals that do not match the cassette teeth. To a careless reader these are maintenance defects. To a player, they are a clock made of moisture.
+The wheel pressed mineral pigment against the moving strip so pressure changes left a physical line. Ceramic hub, salt-resistant pigment, spring arm, soft rim. When the room flexed the line thickened; when a lock struck, the rim jumped.
 
-        The wheel should never feel like forensic magic. It answers narrow questions. Was this bay recording when the door hit? Did someone open it after the room went wet? Did the cassette carry an audio strip from another chamber? Did the official clip come from a live room or from a cleaned archive pull? The wheel does not solve the colony. It shows whether one line of ink had a body behind it when the report said there was only data.
+Dryout dates it. A wheel dried before flooding breaks powdery, like chalk on glass. A wheel dried afterwards swells at the edge with salt under the pigment.
+
+IW-5 has neither. A clean rim in a wet bay is a swapped wheel, and the four hand-forced flats mean somebody turned it by hand before the strip was pulled.
 
 ## Scanner
 

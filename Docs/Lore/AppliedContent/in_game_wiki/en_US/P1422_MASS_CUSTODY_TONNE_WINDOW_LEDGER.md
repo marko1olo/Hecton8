@@ -19,11 +19,17 @@ localization_flags: 0
 
 # Mass Custody Tonne-Window Ledger
 
-A tonne-window is not currency dressed in metric clothing. It is the unit Black Keel uses when a body, a sample, a battery, a pressure sleeve and a packet of evidence all want the same upward burn. Money can be argued later. Mass has to be carried now.
+Mass custody strip, Keelmark laminate, oil behind the clearcoat. Six columns, human row fourth.
 
-This is why the carrier feels cruel even when its math is honest. The ocean gives you things that matter: sealed substrate, a worker badge, a black-box spool, a spare oxygen flask, a cracked pressure-glass plate. Keelmark turns each into a custody class. Black Keel turns those classes into mass, volume, quarantine risk, heat, ballast and receiver liability. The ledger then asks the dirty question: which of these is allowed to occupy the next lift window?
+  BASE LIEN: 4.8 tonne-window, active
+  COLUMNS: body mass, welfare oxygen, sealed sample, evidence packet, quarantine hold, receiver liability
+  ASCENT CERTIFICATE: accepted as hardware proof only
 
-The player can change the answer, but not by shouting at the radio. A certified ascent stack removes one objection. A quarantine handshake removes another. A public evidence hash can make a packet harder to bury. Dumping a contaminated sample may buy body margin. Keeping it may buy truth and debt relief while making rescue harder. Tonne-window pressure is not a menu tax. It is the story rule that makes salvage choices physical.
+A tonne-window is the unit used when a body, a sample, a battery, a pressure sleeve and an evidence packet all want the same upward burn. Money can be argued later; mass has to be carried now.
+
+Keelmark converts each recovered object into a custody class, and the carrier converts the classes into mass, volume, quarantine risk, heat, ballast and receiver liability.
+
+Recovery mass stays unreserved until all six columns reconcile. A certified ascent stack removes one objection; a quarantine handshake removes another. Nothing removes the base lien.
 
 ## Scanner
 

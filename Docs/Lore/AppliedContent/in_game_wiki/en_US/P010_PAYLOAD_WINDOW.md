@@ -19,7 +19,18 @@ localization_flags: 0
 
 # Payload Window
 
-The Payload Window is where final choices become physical. The player can move only limited mass through pressure, storm cover, Aegir radiation timing, and Black Keel recovery geometry. Money, proof, worker names, coordinates, living samples, Atlas signal, or silence cannot all leave together.
+Payload slot record PW-3, improvised ascent package, one window.
+
+  PAYLOAD SLOT: limited
+  WINDOW: open
+  ROUTE: contested
+  RECEIVER: unconfirmed
+
+The slot is mass, not intent. Coordinates, proof, worker names, living samples, an Atlas signal and silence cannot all ride the same package, and the window closes on weather, dose timing and Black Keel geometry rather than on readiness.
+
+Coordinates buy recovery and hand Deep Reach the site. Evidence reaches a public ledger and leaves the outcome with the ledger. Samples clear debt and strengthen the account that buried the names.
+
+The receiver field is still blank. Nothing in this package is protected until it is filled.
 
 ## Scanner
 

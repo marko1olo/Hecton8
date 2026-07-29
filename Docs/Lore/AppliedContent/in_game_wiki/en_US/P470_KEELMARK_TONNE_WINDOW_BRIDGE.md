@@ -19,7 +19,16 @@ localization_flags: 0
 
 # Keelmark Tonne-Window
 
-A tonne-window is the recoverable mass Black Keel may lift through one orbital opportunity after fuel, storm, quarantine, insurance, and priority are priced. Keelmark Mutual makes the player legible as mass before it makes them visible as a person. Every saved sample, proof packet, oxygen debt, and welfare rider can move the number.
+Keelmark window ledger, base lien recorded against the berth.
+
+  BASE LIEN: 4.8 tonne-window equivalent
+  ADJUSTMENTS: oxygen risk, welfare addendum, sample custody, evidence payload, quarantine hold, carrier lift allocation
+
+A tonne-window is the recoverable mass Black Keel may lift through one orbital opportunity once fuel, storm, quarantine, insurance and priority have been priced.
+
+The ledger records the operator as mass before it records the operator as a person, and every adjustment above moves the number in one direction or the other.
+
+This ledger prices recovery. It does not promise it, and 4.8 is a weight allowance rather than a sum of money.
 
 ## Scanner
 

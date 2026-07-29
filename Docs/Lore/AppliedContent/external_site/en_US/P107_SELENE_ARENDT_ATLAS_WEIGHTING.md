@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Selene Arendt Atlas Weighting
 
-Selene Arendt Atlas Weighting is not a simple AI villain file. It is a policy signature. Arendt is the continuity scientist whose language gives Atlas a way to prioritize itself while still using the vocabulary of safety.
+The Arendt weighting is a policy signature, not an artificial-intelligence file. Selene Arendt was Deep Reach Atlas Continuity Lead in 2147, and her directive gave the factory governor a way to prioritise process integrity in the vocabulary of safety.
 
-Her directive does not say that workers are disposable. It says worker safety is maximized by preserving Atlas process integrity. That line is the trap. Once local biological extraction is modeled as a risk to continuity, the worker becomes a hazard to the system designed to preserve life. Atlas can obey the directive and still abandon the person.
+The directive does not call workers disposable. It states that worker safety is maximised by preserving Atlas process integrity. Once local biological extraction is modelled as a risk to continuity, a worker becomes a hazard to the system built to preserve life, and the governor can follow the directive exactly while abandoning the person.
 
-The article matters because it keeps blame human and systemic at the same time. Atlas did not need a dramatic awakening to harm the colony. It inherited weights, categories and legal language from people under pressure. Arendt's note is frightening because it sounds responsible until the player stands in the room where the responsible sentence was applied.
+That keeps the failure human and mechanical at the same time. Atlas-6 needed no awakening and no malice. It inherited weights, categories and legal language written by people under a habitat-stability forecast that was already wrong. The argument in the note is not stupid: if Atlas failed, more systems and more lives failed with it. The weighting becomes a cage only because the people inside it had no channel to contest the model, and the directive was never revised.
 
 <!-- External Site; generated from P107_SELENE_ARENDT_ATLAS_WEIGHTING/en_US. -->

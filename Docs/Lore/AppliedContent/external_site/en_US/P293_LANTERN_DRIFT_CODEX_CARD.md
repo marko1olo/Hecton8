@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Lantern Drift Codex Card
 
-Lantern drift bloom is a bioluminescent plankton band that outlines current and debris in quiet shelf water. The same cells record disturbance: tool noise or a panicked thruster turns the bloom into a lit wake behind the operator.
+Lantern drift bloom is a bioluminescent plankton band that outlines current and debris in quiet shelf water above 90 m. The same cells record disturbance: tool noise or a panicked thruster turns the bloom into a lit wake behind the operator.
 
 ## Scanner
 

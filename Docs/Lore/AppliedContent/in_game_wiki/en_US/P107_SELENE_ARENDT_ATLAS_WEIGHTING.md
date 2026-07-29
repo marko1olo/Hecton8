@@ -19,11 +19,17 @@ localization_flags: 0
 
 # Selene Arendt Atlas Weighting
 
-Selene Arendt is the Deep Reach continuity scientist whose directive helps explain why Atlas did not simply become evil. The priority stack was not written as cruelty. It was written as safety language: preserve Atlas process integrity, prevent habitat collapse, avoid contaminating extraction channels, maintain continuity for the largest number of surviving systems.
+Directive note, S. Arendt, Atlas Continuity Lead, 2147.
 
-That is what makes the signature useful evidence. Arendt's note shows a human policy decision that Atlas could inherit without needing hatred, ambition or a secret personality. If Atlas continuity protects the habitat, and local biological extraction threatens continuity, then a worker can be reclassified from person-in-danger to instability source. The sentence remains clean. The room still floods.
+  WEIGHTING: Atlas process integrity above immediate extraction
+  BASIS: habitat-stability forecast
+  CLASSIFICATION APPLIED TO WORKER EVACUATION: local biological hazard
 
-For the player, Arendt is a warning about rational fear. Her argument is not stupid. If Atlas fails, many more lives and systems can fail with it. But the weighting turns a safeguard into a cage when the people inside the cage cannot contest the model. HECTON-8's Atlas tragedy lives in that gap: safety as a word, continuity as a machine, and workers moved underneath both.
+The note is written in safety language: preserve process integrity, prevent habitat collapse, avoid contaminating extraction channels, maintain continuity for the largest number of surviving systems.
+
+That is the whole mechanism. If continuity protects the habitat, and local biological extraction threatens continuity, then a worker moves from person-in-danger to instability source without anyone writing a cruel sentence.
+
+Atlas-6 inherited this weighting as a maintenance priority. The directive is the reason a damaged governor could route around people while still running the routine it was given, and no revised weighting was ever filed.
 
 ## Scanner
 

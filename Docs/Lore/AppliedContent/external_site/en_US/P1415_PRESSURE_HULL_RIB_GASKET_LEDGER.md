@@ -19,12 +19,10 @@ localization_flags: 0
 
 # Pressure Hull Rib And Gasket Ledger
 
-Pressure hulls on HECTON-8 are ugly because they are honest. Their job was not to look like spacecraft. Their job was to keep a working room from becoming ocean. That means every strip of material has a job: the plate spreads load, the rib carries it, the gasket stops water migration, the latch side tells you where a human expected to open the thing under stress.
+A pressure hull was built to keep a working room from becoming ocean, so every strip of material has one job. The plate spreads load. The rib carries it. The gasket stops water migration. The latch side marks where a human expected to open the module under stress.
 
-The best hull reading begins with stains. Salt grows under low seams. Black-green biofilm follows slow leaks. Rust at a bolt row is less important than whether the row stayed straight. A straight row means the module suffered as a unit; a staggered row means the frame tore. Gasket material squeezed out of a channel means compression happened before flooding. Missing gasket with clean metal means later salvage or deliberate opening.
+Hull reading begins with stains. Salt grows under low seams. Black-green biofilm follows slow leaks. Rust at a bolt row matters less than whether the row stayed straight: a straight row means the module suffered as a unit, a staggered row means the frame tore. Gasket stock squeezed out of a channel means compression happened before flooding. A missing gasket over clean metal means later salvage or a deliberate opening.
 
-This is where the lore earns its space in the game. A player can look at a base exterior and make decisions: enter through the latch side, avoid a rib that still carries load, cut a plate that is already isolated, or preserve a gasket trace because it proves a door was opened after the public timeline says nobody returned. The same material can be loot, shelter, hazard and evidence. HECTON-8 is strongest when those meanings sit on the same object.
-
-The ocean has not made the colony mysterious by adding symbols. It has made the colony legible by removing comfort. Paint goes. Logos go. Excuses go. Ribs, salt, gaskets and bent bolts remain.
+Deep Reach issued clean module diagrams. The exterior carries the revisions: which ribs were overburdened, which repairs used the wrong gasket stock, which hatches were opened after the 2147 evacuation window, and which rooms were patched by workers who expected to come back. On card HR-2 the third-bay rib is bent inward and the bolt row is still aligned, which means the module took the pressure without peeling open.
 
 <!-- External Site; generated from P1415_PRESSURE_HULL_RIB_GASKET_LEDGER/en_US. -->

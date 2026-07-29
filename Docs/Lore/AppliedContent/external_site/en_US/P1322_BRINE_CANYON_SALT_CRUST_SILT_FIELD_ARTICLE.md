@@ -19,12 +19,12 @@ localization_flags: 0
 
 # Brine Canyon Salt-Crust Silt
 
-Brine canyon salt-crust silt is the floor that teaches distrust of clean white surfaces. HECTON-8 has plenty of pale stone, shell grit and safe mineral crusts in shallower water. This is not one of them. In the canyon, dense brine creeps across clay basins and fractured shelves, then leaves a brittle skin where chemistry, temperature and slow current agree. The result photographs like a floor and behaves like a trap.
+Brine canyon salt-crust silt is the floor that punishes trust in clean white surfaces. In the canyon, dense brine creeps across clay basins and fractured shelves and leaves a brittle skin wherever chemistry, temperature and slow current agree. It photographs like a floor and behaves like a lid.
 
-The material is useful because it is legible. The salt does not sit randomly. It gathers in veins along weak flow paths, thickens at density-layer margins, and breaks into soft flakes where the silt below has breathed. Blue-gray clay shows through wherever a foot, cable, crawler or falling panel has bruised the surface. Green-black stains in cracks mean old brine, low oxygen or mineral bacteria. A bright unmarked plate should make a player nervous, not relaxed.
+The material is legible if it is read at the edge. Salt gathers in veins along weak flow paths, thickens at density-layer margins, and breaks into soft flakes where the silt below has flexed. Blue-gray clay shows wherever a foot, cable, crawler or falling panel has bruised the surface. Green-black staining in cracks means old brine and low oxygen. An unmarked bright plate is the least trustworthy part of the bench.
 
-Deep Reach liked calling these areas stable return shelves because stable sounded cheaper than alive enough to move. Their survey boards were full of polite language: reduced footing confidence, density lag, moderate corrosion. The workers used shorter language. White skin. Bad mud. Cable eater. A tool cord dragged across the wrong patch could cut a neat groove, sink under the crust, and come back with its jacket softened by salt chemistry.
+Deep Reach survey boards recorded these areas as stable return shelves, with the qualifiers written carefully: reduced footing confidence, density lag, moderate corrosion. Crew notes recovered from the same benches use shorter words. White skin. Bad mud. Cable eater. Maintenance note B3, dated 2146, records two tool cords lost to the crust, one recovered with its jacket softened by salt chemistry.
 
-For gameplay, the salt-crust silt is a substrate and a memory surface. It can hide salvage, preserve tags, hold the last scrape of an evac sled and mark where a brine curtain has shifted since the map was printed. It can also punish a heavy load, a bad anchor or a cutter used like a shovel. The correct interaction is not a lecture. The player sees the pale lid, reads the scars, tests the edge and learns that HECTON-8 does not need monsters to make a floor dangerous.
+The crust also holds evidence. Salvage, tags and the last scrape of an evac sled sit under it, protected from ordinary current. It is a floor that keeps a record and will not carry a load.
 
 <!-- External Site; generated from P1322_BRINE_CANYON_SALT_CRUST_SILT_FIELD_ARTICLE/en_US. -->

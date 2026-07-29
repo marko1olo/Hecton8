@@ -19,7 +19,19 @@ localization_flags: 0
 
 # Riskier Contract Seeds
 
-Riskier contracts are how the dossier tempts an experienced Marauder without breaking survival. The board can offer better lien relief for a worse window, an early descent below comfort depth, a sample that must stay sealed, or evidence custody strict enough to make every shortcut expensive. The player chooses pressure, not inherited strength.
+Contract seed sheet KS-4, board terms, lien relief against worse conditions.
+
+  WINDOW: worse orbital timing
+  FIRST TARGET: deeper than comfort depth
+  CUSTODY: harsher evidence handling
+  SAMPLE: rarer, sealed on delivery
+  RETURN ACCOUNTING: tighter
+
+The board raises lien relief in exchange for conditions, never for equipment. Power and inventory reset on every contract; what changes is what the water demands first.
+
+A sealed-sample clause makes every shortcut expensive, because breaking the seal voids the relief instead of reducing it.
+
+The terms are printed before signature. Read the window and the first target together: a bad window with a deep first objective is the pairing that strands crews.
 
 ## Scanner
 

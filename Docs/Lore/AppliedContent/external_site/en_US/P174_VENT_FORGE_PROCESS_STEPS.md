@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Vent Forge Process Steps
 
-Vent Forge Process Steps describe the hard-sci-fi fantasy behind HECTON-8 fabrication. The planet supplies heat and pressure, the colony supplies broken clamps and process memory, and the player supplies judgment. The system can support future crafting beats, environmental storytelling and audio feedback with one readable chain.
+Vent forging borrows vent heat and pressure on a fixed sequence, recorded on forge step card VF-2: purge, clamp, preheat, seal during the pressure lull, quench in the cold return current, certify by acoustic ring. Missing the lull returns warped scrap, salt bloom or a pressure-cracked part.
 
 ## Scanner
 
@@ -35,6 +35,6 @@ The moon is the furnace. You are only allowed to borrow it.
 
 ## Field Note
 
-Process must read as purge, clamp, preheat, seal, quench, ring-test. The risk is not flame; the risk is missing the pressure lull.
+Purge, clamp, preheat, seal, quench, ring-test. The risk here is not flame. It is missing the pressure lull.
 
 <!-- External Site; generated from P174_VENT_FORGE_PROCESS_STEPS/en_US. -->

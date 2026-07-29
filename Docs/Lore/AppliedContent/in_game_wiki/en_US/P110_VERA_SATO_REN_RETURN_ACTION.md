@@ -19,11 +19,19 @@ localization_flags: 0
 
 # Vera Sato-Ren Return Action
 
-Vera Sato-Ren is the 2190 Recovery Compliance Office signature that gives present-day Deep Reach a face without making them physically omnipresent. She acts through packets, custody windows, carrier clauses and delayed instructions. The pressure is procedural: recover coordinates, prove XO chain, report Atlas access state, keep contractor silence if the payload can still be controlled.
+Return-action packet, V. Sato-Ren, Recovery Compliance Office, 2190.
 
-Her return-action language is dangerous because it can sound like help. Rescue remains possible, but only after payload custody. Assistance can be offered, but only while evidence exposure stays manageable. A Marauder reading the packet is not being shouted at by a villain. They are being measured against a window that closes whether they answer or not.
+  PRIORITY 1: coordinates
+  PRIORITY 2: XO proof chain
+  PRIORITY 3: Atlas access state
+  PRIORITY 4: contractor silence if recoverable within window
+  RESCUE ASSISTANCE: conditional on payload custody and evidence exposure risk
 
-For the player, Sato-Ren turns Deep Reach from historical blame into present leverage. The old colony is not only a grave. It is an active claim site. Every recovered record can become proof, ransom, silence clause or bargaining weight depending on who receives it first. That is the modern Deep Reach threat: not a clean enemy fleet, but a legal pressure cell trying to own the return before truth leaves the water.
+Deep Reach in 2190 acts through packets, custody windows and carrier clauses rather than through people in the water. Sato-Ren owns all present-day pressure on this claim.
+
+The packet can read as help. Rescue remains possible after payload custody. Assistance can be offered while evidence exposure stays manageable.
+
+The window closes whether the packet is answered or not. Answer nothing and the custody default in Priority 4 applies to the contractor as well as the payload.
 
 ## Scanner
 

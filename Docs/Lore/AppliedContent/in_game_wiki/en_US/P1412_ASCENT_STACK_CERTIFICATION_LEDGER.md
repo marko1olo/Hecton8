@@ -19,13 +19,19 @@ localization_flags: 0
 
 # Ascent Stack Certification Ledger
 
-The ascent stack is the first piece of escape that feels like engineering instead of pleading. It is not a magic rescue pod and not a heroic rocket. It is a stack of ugly promises: the body will stay sealed, the charge will not split the hull, the guidance ping will be heard, the temperature jump will not crack the sleeve, and somebody above has agreed to receive the result.
+Ascent stack certificate AS-12, burn-stained sleeve, half paper and half ceramic tag. Two stamps missing.
 
-HECTON-8 punishes bad upward motion. A shallow launch can drown in its own wake. A deep launch can turn a seal flaw into a knife line before the carrier ever sees it. The pressure does not care that the channel is open. The ocean only asks whether the clamp rings were seated, whether the ascent burn was measured, and whether the guidance cradle survived enough corrosion to say where the capsule is going.
+  SEAL RING PAIR: provenance incomplete
+  ASCENT CHARGE: cartridge unmetered
+  GUIDANCE PING: cradle lacks carrier handshake
+  SHOCK MARGIN: below rescue-class threshold
+  RECEIVER TAG: absent
 
-Certification is why salvage becomes progress. A Marauder can bolt together a ring pair from colony hardware, pack a burn cartridge from found charge mass, and wake an old pinger with a scavenged coil. None of that is enough until the stack proves provenance: where the seal came from, what pressure scar it survived, who measured the charge, what relay hears the ping, and whether the receiver tag matches the quarantine handshake. Black Keel does not need the stack to be beautiful. It needs the stack to be insurable.
+Five fields decide whether a body counts as recoverable mass. A deep launch turns a seal flaw into a cut line before the carrier sees anything.
 
-The ledger turns a vague hope into a route checklist. Seal. Charge. Ping. Shock margin. Receiver. Each word points to a place the player can search, repair, steal or prove. When the certificate completes, the claim window changes shape. It is still not kindness. It is a machine admitting that a living body has become a valid mass reservation.
+Each field points at a physical part: a ring pair out of a ruined hatch, charge mass from salvage, a guidance cradle rebuilt from relay hardware, a shock strip proving the sleeve survived brine cycling.
+
+Until the certificate completes, the claim window stays message-only. Black Keel requires the stack to be insurable, not sound.
 
 ## Scanner
 

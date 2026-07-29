@@ -19,11 +19,19 @@ localization_flags: 0
 
 # Pressure Hull Rib And Gasket Ledger
 
-A HECTON-8 pressure hull is readable from the outside if the player stops treating it like generic metal. The off-white plates are only the skin. The dark ribs show where pressure load was meant to travel. The gasket channels tell where modules kissed and where water was supposed to stop. Salt streaks reveal the low points of long leaks. Orange safety paint usually sits near a service action, not at random.
+Hull read card HR-2, exterior of a pressure module, rib spacing 600 mm.
 
-That grammar changes salvage. A straight bolt row means a module shifted as one body; the room behind it may be crushed but still coherent. A torn gasket with pale salt bloom means water entered slowly and may have preserved tags, tools and paper in pockets. A rib bent inward means pressure won from outside. A rib bent outward means something inside vented or exploded. Cutting the wrong rib can turn a stable wreck into moving scrap.
+  PLATES: off-white skin, load spread only
+  RIBS: graphite, one bent inward at the third bay
+  GASKET CHANNEL: intact, compressed black stock
+  BOLT ROW: still aligned
+  ORANGE PAINT: rib corner, service access
 
-Deep Reach liked clean module diagrams. The sea writes better revisions. It shows which ribs were overburdened, which repairs used wrong gasket stock, which hatches were opened after the official evacuation window, and which rooms were patched by workers who expected to come back. For a Marauder, hull reading is not flavor. It is the difference between a safe entry, a dead pocket and a claimable proof object.
+Read the rib before the plate. An aligned bolt row means the module shifted as one unit, so the room behind it may be crushed and still coherent. An intact gasket channel means a dry pocket is possible.
+
+A rib bent inward means pressure won from outside. A rib bent outward means something inside vented.
+
+Do not cut through a rib before checking the latch side. Cutting a loaded rib turns a stable wreck into moving scrap.
 
 ## Scanner
 

@@ -19,9 +19,7 @@ localization_flags: 0
 
 # Acoustic Filter Organ Relay
 
-Acoustic Filter Organ Relay is the bridge between sonar gameplay and Atlas biomechanical horror. HECTON-8's abandoned systems do not need a talking monster in the walls. They need damaged infrastructure that has recruited living acoustic filters because meat, pipe and pressure sometimes solve a routing problem better than dead electronics.
-
-The relay organ grows around pipes like a wet gill wall. It muffles pump roar, passes narrow pinger pulses and bends echoes in consistent ways. This gives level design a strong rule: sound can lie, but it should lie with a pattern. A player can learn which returns are folded, which corridors are only hidden by phase shift, and which maintenance routes Atlas has kept alive by accepting biology as hardware. The horror is not that the room has a voice. The horror is that it can listen, route and repair without ever understanding what a person needed the room for.
+An acoustic filter organ is gill-wall tissue grown around old relay pipes. Relay note AR-9 records the behaviour: broad pump noise absorbed, narrow pinger pulses passed, return echoes phase-shifted in a repeatable pattern, downstream sonar maps conditionally true. Atlas-6 routes through the organ because it holds signal under pressure better than the failed hardware beside it.
 
 ## Scanner
 

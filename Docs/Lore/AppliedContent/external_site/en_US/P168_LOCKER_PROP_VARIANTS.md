@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Locker Evidence Variants
 
-Worker lockers in the drowned modules hold pressure tape, worn gasket fragments, tool-crib tokens, meal-credit strips, route chalk, shift stickers, medlock denial slips and later Marauder correction notes. The arrangement carries more than the contents: a denial slip dated after the last shift board entry records somebody kept on shift while already sick.
+Worker lockers in the drowned modules hold pressure tape, worn gasket fragments, tool-crib tokens, meal-credit strips, route chalk, shift stickers, medlock denial slips and later Marauder correction notes. The arrangement carries more than the contents: in locker set LK-6 a denial slip dated after the last shift board entry records somebody kept on shift while already sick.
 
 ## Scanner
 

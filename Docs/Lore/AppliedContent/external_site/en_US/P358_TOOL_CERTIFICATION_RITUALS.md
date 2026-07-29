@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Tool Certification Board
 
-The Tool Certification Board records a culture that trusted marks more than speeches. Cutter head indexed. Sealant cartridge weighed. Pressure glove dual-signed. Pump key late. Descent kit held. Each line is blunt because blunt procedure kept people alive where a nearly correct tool could kill quietly.
+The tool certification board records a culture that trusted marks over speeches. Cutter head indexed. Sealant cartridge weighed. Pressure glove dual-signed. Pump key late. Descent kit held. Each line is blunt because a nearly correct tool kills quietly at pressure.
 
-The board looks ritualistic because dangerous labor repeats the same movements until fear has somewhere to go. Weigh, check, sign, return, recheck. The second signature was not decoration; it made trust accountable. If a glove failed below pressure, the mark on the board said who saw it, who rushed it, and who tried to send it down anyway.
+The procedure repeated because repetition is where fear goes in dangerous labour: weigh, check, sign, return, recheck. The second signature was the load-bearing part. If a glove failed below pressure, the board named who inspected it, who rushed it and who tried to send it down anyway, and the standing rule kept single-signature cutters above 80 m.
 
-This is worker faith without mysticism. The colony did not pray over cutters. It made another tired person look at the edge, the seal, the weight and the key return. Survival became communal because every tool carried somebody else's name before it touched the route.
+The boards are also the cheapest identity evidence in the colony. A dual-signed glove ties two workers to one descent. A late key mark connects a bunk slate to a pump order. A held cutter explains why a particular door is still sealed. The boards recovered so far carry uncleared hold marks, which means the last rechecks were never performed.
 
 <!-- External Site; generated from P358_TOOL_CERTIFICATION_RITUALS/en_US. -->

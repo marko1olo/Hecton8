@@ -19,13 +19,18 @@ localization_flags: 0
 
 # Compressor Handoff Backfill
 
-A compressor handoff row is supposed to sit between mechanical air movement and the room ledger. The compressor moves pressure. The relay clicks when the feed changes state. The pump counter marks cycles. The check valve keeps one side of the system from dragging brine back into the other. When those four marks agree, the handoff row is boring. It means the room passed a load to the next account.
+Handoff QA card CH-7, compressor bay, four marks compared against one desk row.
 
-The backfill problem starts when the row stays smooth after the machinery becomes jagged. A drowned compressor does not fail like a clerk writes. It stalls, coughs through relay gaps, leaves salt on one side of the check valve and stops counting clean cycles. A later desk row can still look complete. That row may say transfer accepted, compressor handoff pending or support load carried forward. None of those words move air through a stopped pump.
+  PUMP COUNTER: stopped 6 cycles before the row
+  RELAY TICK: gap, then nothing
+  CHECK VALVE: salt ring on the room side only
+  DESK ROW: support load carried forward, transfer accepted
 
-Read this record after the oxygen ledger cutoff, suit reserve delta and scrubber serial mismatch. The ledger shows the room limit. The suit shows what stayed with the body. The scrubber plate shows which cartridge sat in the air train. The compressor handoff shows whether the room ever pushed that load onward. If the pump counter died first and the handoff row arrived later, the chain has left mechanics and entered custody language.
+When counter, relay tick, check valve and row agree, a handoff is boring: the room passed a load to the next account. Here the machinery is jagged and the row is smooth.
 
-Field work should keep the compressor ugly. Photograph the counter face before cleaning it. Record the relay tick position, salt ring on the check valve, brine stain inside the drain cup and the exact handoff row that claims transfer. Do not accept a smooth row without matching marks on the machine. The row can explain who carried responsibility forward. It cannot make the room breathe again.
+A drowned compressor stalls, coughs through relay gaps, salts one side of the valve and stops counting clean cycles. A desk row written after that still reads complete.
+
+Photograph the counter face before cleaning it. Wiped digits leave the row as the only surviving version, and it says air moved through a pump that had already stopped.
 
 ## Scanner
 

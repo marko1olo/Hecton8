@@ -19,15 +19,17 @@ localization_flags: 0
 
 # Ran Long Claim Transit Ledger
 
-A Ran long claim ledger is what a distress call becomes after civilization hears it and refuses to pretend physics has changed. The packet can cross the route fast enough to feel like an answer. The answer cannot bring a hull. It records a claimant, a position, a payload, a custody chain and a reason for somebody off-world to spend mass.
+Long claim receipt 7C, Black Keel / Ran ledger, packet accepted as a live claim.
 
-            The ledger is old frontier law folded around hard transit. Ran's relays can accept light-speed witness packets. Luyten offices can hash the receipt. Black Keel can move a clean burst through mirrors and carrier windows. None of those systems owns a free rescue ship. A tender still needs a lane, a braking allocation, a receiving slot, quarantine clearance and a payer who will survive audit.
+  LUYTEN WITNESS BRAID: intact
+  CARRIER WINDOWS AVAILABLE: 1
+  FIELDS REQUIRED: alive-state, coordinate confidence, ascent mass, custody grade, payload value
 
-            That is why the first carrier window hurts. A Marauder wants to shout alive. The ledger already has a box for alive. The better packet says where, how sure, what can be lifted, who touched it, what Deep Reach damaged, whether the ascent package can seal, and what proof will be lost if no one comes. The body matters. The body alone is cheap in the wrong column.
+The relays accept a witness packet at light speed, Luyten hashes the receipt, and the carrier can move a clean burst. None of that produces a hull: a tender still needs a lane, a braking allocation, a receiving slot, quarantine clearance and a payer who survives audit.
 
-            Black Keel's cruelty is mostly arithmetic with a human voice removed. A living person is liability. A living person holding admissible evidence is leverage. A living person strapped to irreplaceable route data is cargo with teeth. The long claim ledger turns fear into fields because fields can be priced, witnessed and fought over after the signal has already left HECTON-8.
+Alive is already a checkbox on the form. The fields that move priority are position, custody grade and payload value.
 
-            For the player, the ledger is the first lesson in being heard without being saved. Repairing a relay is not enough. The signal must be clean, the claim must be admissible, and the chosen payload must make silence more expensive than approach.
+Blank fields are not neutral. An empty ascent-mass field files the receipt at body-low priority.
 
 ## Scanner
 

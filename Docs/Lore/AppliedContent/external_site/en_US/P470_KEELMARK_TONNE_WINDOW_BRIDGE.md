@@ -21,14 +21,14 @@ localization_flags: 0
 
 ## What The Record Proves
 
-Keelmark starts the operator as a mass problem: 4.8 tonne-window equivalent before oxygen, welfare, sample custody, and evidence payload adjustments.
+Keelmark Mutual records the operator as a mass problem first: a base lien of 4.8 tonne-window equivalent, before oxygen risk, welfare addendum, sample custody and evidence payload adjustments.
 
-A tonne-window is the recoverable mass Black Keel may lift through one orbital opportunity after fuel, storm, quarantine, insurance, and priority are priced. Keelmark Mutual makes the player legible as mass before it makes them visible as a person. Every saved sample, proof packet, oxygen debt, and welfare rider can move the number.
+A tonne-window is the recoverable mass Black Keel may lift through one orbital opportunity once fuel, storm, quarantine, insurance and priority have been priced. Every saved sample, proof packet, oxygen debt and welfare rider moves that number.
 
 KEELMARK MUTUAL WINDOW LEDGER // Base lien: 4.8 tonne-window equivalent. Adjustments may include oxygen risk, welfare addendum, sample custody, evidence payload, quarantine hold, and carrier lift allocation. This ledger prices recovery; it does not promise rescue.
 
-## How The Player Reads It
+## How The Figure Is Used
 
-Do not read 4.8 as money alone. It is the weight of your next chance. Use it as a rule for evidence handling, not as a promise that help is already moving.
+4.8 is a weight allowance, not a sum of money. It governs evidence handling: mass spent on a sample is mass unavailable for a body, and the ledger records that trade rather than arbitrating it.
 
 <!-- External Site; generated from P470_KEELMARK_TONNE_WINDOW_BRIDGE/en_US. -->
