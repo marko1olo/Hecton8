@@ -58,13 +58,19 @@ namespace Hecton8.EditorTools.Authoring
     /// WHY IT REFUSES ON DIRTY SCENES, TWICE. OpenScene(Single) silently discards unsaved in-memory
     /// work, and H8_PlacementOwnerEnabledAudit deliberately leaves exactly that kind of change behind,
     /// so a dirty scene at entry is a refusal. The second check is the one that matters more and that
-    /// the sibling repairs do not make: 02_HECTON_WORLD is dirtied on open by injectors such as
-    /// Assets/_Project/Editor/H8_ScreenshotTaker_PlayMode.cs:20-21, which creates a serializable
-    /// H8_PlayModeScreenshotter root with no existence check - nine of those have already been cemented
-    /// into the scene by unconditional saves (H8_DuplicateSceneRootAudit.cs:17-39). So if the scene is
-    /// dirty immediately AFTER opening and before this tool touches anything, saving would cement
-    /// somebody else's injection along with the one-byte fix, and the write is refused unless
-    /// -h8AllowDirtyScatterOwnerScene is passed deliberately.
+    /// the sibling repairs do not make: 02_HECTON_WORLD is dirtied on open by editor code that injects
+    /// serializable roots into it. Nine H8_PlayModeScreenshotter roots are already cemented into the
+    /// scene by unconditional saves (H8_DuplicateSceneRootAudit.cs:17-39, quoting
+    /// Logs/omega_rootaudit3.log:996-1092 and :1116). Do NOT read that citation as still naming a live
+    /// injector: re-read on 2026-07-29, Assets/_Project/Editor/H8_ScreenshotTaker_PlayMode.cs now
+    /// guards its injection with a FindObjectsByType existence check at :62-70 and reuses the existing
+    /// root, so the ":20-21, no existence check" claim that H8_DuplicateSceneRootAudit.cs:24 makes is
+    /// stale - the GameObject/AddComponent pair moved to :75-76 and is now conditional. The unconditional
+    /// EditorSceneManager.SaveScene callers that cemented the nine (H8_SceneCleaner.cs:47,
+    /// HectonVisualsConfigurator.cs:107, Rescue02_Final.cs:140-141, Hecton020Fixer.cs:63-66) have not
+    /// been repaired, so the refusal stays: if the scene is dirty immediately AFTER opening and before
+    /// this tool touches anything, saving would cement somebody else's injection along with the one-byte
+    /// fix, and the write is refused unless -h8AllowDirtyScatterOwnerScene is passed deliberately.
     ///
     /// SERIALIZATION FORMAT IS REPORTED, NOT ASSUMED. 02_HECTON_WORLD.unity is currently a BINARY
     /// serialized file while ProjectSettings/EditorSettings.asset carries m_SerializationMode: 2
@@ -137,17 +143,23 @@ namespace Hecton8.EditorTools.Authoring
         /// Reports and changes nothing. Always run this first - the scene may still be binary, in which
         /// case there is no diff to inspect after a write.
         /// </summary>
-        // 175/176 are free in this submenu. 180/181 are taken by
-        // WorldProceduralScatterPreviewBuilder.cs:15,37 - the editor-side generator this repair is a
+        // Priority sweep of all 55 [MenuItem("Hecton8/Authoring/...")] entries under Assets/,
+        // 2026-07-29: the submenu's claimed range starts at 168, and inside 168..177 the only free
+        // slots are 169, 171, 173 and 174, so this pair takes the adjacent 173/174. Unity inserts a
+        // separator whenever consecutive priorities differ by more than 10, so staying inside the
+        // claimed band is what keeps this pair in the same visual group as the rest of the world
+        // authoring tools. 175 and 176 are NOT free - WorldProceduralFloraTextureAuthoring.cs:51 holds 175 and
+        // WorldProceduralFloraMaterialAuthoring.cs:39 holds 176. 180/181 are taken by
+        // WorldProceduralScatterPreviewBuilder.cs:17,37 - the editor-side generator this repair is a
         // prerequisite for - and colliding with it would shuffle the two into an arbitrary order.
-        [MenuItem(ReportMenuPath, priority = 175)]
+        [MenuItem(ReportMenuPath, priority = 173)]
         public static void ReportOnly() => Execute(DefaultScenePath, false, false);
 
         /// <summary>
         /// Enables the owner and saves the scene. A separate menu entry from the report on purpose: a
         /// production scene write must not be one misclick away from a diagnostic.
         /// </summary>
-        [MenuItem(ApplyMenuPath, priority = 176)]
+        [MenuItem(ApplyMenuPath, priority = 174)]
         public static void ApplyAndSave() => Execute(DefaultScenePath, true, false);
 
         /// <summary>
