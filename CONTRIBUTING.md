@@ -129,6 +129,33 @@ Roughly 35 seconds for `Hecton8.Core`. Output goes to `Temp/CodexBuild/`.
 > of them. So the rule is vendor/package/Unity DLLs on the broad wildcard, first-party filtered to exactly
 > what the asmdef declares, and both sets derived from the asmdef rather than typed.
 >
+> ### Before citing a gate as proof, ask whether it compiled the file you changed
+>
+> A gate reporting `0 errors` proves nothing about your edit unless that edit is inside the assembly it
+> built. This is not a theoretical caution — commit `60a7ed08d` cited
+> `PlayerConfigCompileGate --assembly Hecton8.Core --also-editor -> EDITOR 0, PLAYER 0` as proof for two
+> files under `Assets\_Project\Scripts\QA\Headless\`, and `Hecton8.Core.csproj:118-119` **removes** that
+> whole directory. The `0/0` was real and irrelevant. It had to be retracted in `3484e3a4d`.
+>
+> The csprojs use glob includes with a long tail of `<Compile Remove>` exclusions, so eyeballing them is
+> unreliable — `Assets\_Project\Scripts\World\` is included while six of its own subdirectories are not.
+> Ask MSBuild instead. It costs seconds, it does not build, and it answers the question exactly:
+>
+> ```bash
+> "C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/DotNetSdk/dotnet.exe" \
+>   msbuild Hecton8.Core.csproj -getItem:Compile -nologo | rg 'YourChangedFile\.cs'
+> ```
+>
+> A hit means the gate's verdict covers your file and you may cite it. No hit means the gate is silent
+> about your change no matter what it printed, and you must say `UNCOMPILED` and name the reason — as with
+> the `Hecton8.QA.Headless*` assemblies, which have no csproj at all and are only reachable through Unity
+> batchmode. Verified working 2026-07-29 on `EcosystemDirector.cs` against `Hecton8.Core.csproj`.
+>
+> Same discipline, different axis, already recorded in `.claude\rules\hecton8-runtime-source.md`: after a
+> `.cs` edit, confirm from the batchmode log that Bee actually **recompiled** the target assembly rather
+> than serving a cache hit. "Is my file in this assembly" and "did this assembly rebuild" are two separate
+> questions and a citation needs both.
+>
 > Result on `Hecton8.Plugins`, 2026-07-29: `Ошибок: 0`, one pre-existing `CS0649` —
 > `MapMagicRuntimeBridge.distantTerrainShadowMaskOverride` (`MapMagicRuntimeBridge.cs:149`) is never
 > assigned, so it is always `null`; that is a real finding this gate surfaced on its first run. Dependencies
