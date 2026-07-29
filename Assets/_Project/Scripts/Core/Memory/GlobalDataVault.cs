@@ -539,6 +539,14 @@ namespace Hecton8.Core.Memory
         private int _blockMutationGate;
         private int _mutationGuardMaskLow;
         private int _mutationGuardMaskHigh;
+        // Mutation-guard-keyed shadow of the same locks _activeLocks summarises. _activeLocks stays a
+        // 32-lane residue summary because ActiveBurstLockMask, HasActiveBurstLocks and FrostTickDefrag are
+        // built on it; this pair is keyed the way a guard MASK is keyed instead, so the guard conflict test
+        // stops folding 64 bits onto 32 lanes. Split into two ints rather than one long to match the proven
+        // _mutationGuardMaskLow/_mutationGuardMaskHigh pattern and keep every update a 32-bit Interlocked
+        // op on ARM64 as well as x64. Maintained only under the block mutation gate.
+        private int _activeGuardLockMaskLow;
+        private int _activeGuardLockMaskHigh;
         private bool _memMoveBlockedByStress;
         private byte _memoryStarvationWarnings;
         private long _allocatedBytes;
@@ -847,6 +855,8 @@ namespace Hecton8.Core.Memory
                 _blockMutationGate = 0;
                 _mutationGuardMaskLow = 0;
                 _mutationGuardMaskHigh = 0;
+                _activeGuardLockMaskLow = 0;
+                _activeGuardLockMaskHigh = 0;
                 _memoryStarvationWarnings = 0;
                 _allocatedBytes = 0L;
                 _macroDatabasePayloadBytes = 0L;
@@ -1964,6 +1974,7 @@ namespace Hecton8.Core.Memory
                     }
                     releaseThreadWriterSlot = true;
 
+                    SetActiveGuardLockBits(key);
                     SetActiveLockBit(activeLockBit);
                     Thread.MemoryBarrier();
                     meta.ActiveWriterSystemID = (int)systemID;
@@ -2763,6 +2774,7 @@ namespace Hecton8.Core.Memory
                     return false;
                 }
 
+                SetActiveGuardLockBits(key);
                 SetActiveLockBit(activeLockBit);
                 Thread.MemoryBarrier();
                 block.Reserved1++;
@@ -2929,7 +2941,6 @@ namespace Hecton8.Core.Memory
             {
                 int lowMask = unchecked((int)(uint)writeMask);
                 int highMask = unchecked((int)(uint)(writeMask >> 32));
-                int activeConflictMask = lowMask | highMask;
                 int observedLow = Volatile.Read(ref _mutationGuardMaskLow);
                 int observedHigh = Volatile.Read(ref _mutationGuardMaskHigh);
                 if ((observedLow & lowMask) != 0 || (observedHigh & highMask) != 0)
@@ -2938,9 +2949,11 @@ namespace Hecton8.Core.Memory
                     return false;
                 }
 
-                if (HasActiveLockConflictForMutationMask(activeConflictMask))
+                if (HasActiveLockConflictForMutationMask(writeMask))
                 {
-                    RecordMutationGuardContentionFault(writeMask);
+                    // Names the buffer, not the residue. Runs under the block mutation gate, so the block
+                    // scan behind it reads stable state.
+                    RecordMutationGuardLockConflictFault(writeMask);
                     return false;
                 }
 
@@ -2972,7 +2985,7 @@ namespace Hecton8.Core.Memory
 
                 Thread.MemoryBarrier();
                 if (Volatile.Read(ref _compactionFence) == 0 &&
-                    !HasActiveLockConflictForMutationMask(activeConflictMask))
+                    !HasActiveLockConflictForMutationMask(writeMask))
                 {
                     return true;
                 }
@@ -3009,6 +3022,32 @@ namespace Hecton8.Core.Memory
         {
             int bitIndex = unchecked((int)((uint)(int)bufferId & 31u));
             return 1 << bitIndex;
+        }
+
+        // Every guard bit a buffer id can occupy in a TryAcquireMutationGuard mask.
+        //
+        // The mask a caller passes in is a LOSSY hash of buffer ids and this tree uses TWO conventions for
+        // it: 1UL << (id & 63) - InputDispatcher.MutationGuardBit - and 1UL << (id & 31), which is the
+        // 208-call-site majority and is asserted verbatim by Audio/Editor/AdvancedAcousticsSmokeTester.cs
+        // as "mutation guard uses DataVault active-lock lanes". The vault cannot recover ids from a mask, so
+        // the tightest question it can answer is "could this mask name this buffer under either
+        // convention". Returning both candidates makes the answer correct for both, and when
+        // (id & 63) < 32 the two coincide and this is a single bit.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong ResolveGuardLockBits(int bufferKey)
+        {
+            uint id = unchecked((uint)bufferKey);
+            return (1UL << unchecked((int)(id & 63u))) | (1UL << unchecked((int)(id & 31u)));
+        }
+
+        // Both candidates above are congruent mod 32, so one 32-lane active-lock bit 1 << r owns exactly
+        // two of the 64 guard bits - r and r + 32 - and no others. That containment is what lets the
+        // release path rescope one residue class of the guard shadow without disturbing the other 31.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong ResolveGuardLockClassMask(int activeLockBit)
+        {
+            uint classBits = unchecked((uint)activeLockBit);
+            return classBits | ((ulong)classBits << 32);
         }
 
         private static long ResolveAllocationLockToken(uint shiftFrameId)
@@ -3198,7 +3237,14 @@ namespace Hecton8.Core.Memory
 
         private void ClearActiveLockBitIfUnusedLocked(int bit)
         {
-            if (HasLockedBlockForBit(bit))
+            // One scan answers both questions. _activeLocks keeps its original all-or-nothing rule - the
+            // lane stays set while ANY block in the residue class is still locked - but the guard shadow is
+            // rescoped to exactly the guard bits the scan proved are still claimed, so a released lock
+            // frees its guard bit immediately instead of waiting for the whole class to empty. Without that
+            // republish the shadow would degenerate back into the residue fold under steady lock traffic.
+            bool anyLockedInClass = ScanLockedGuardBitsForClass(bit, out ulong claimedGuardBits);
+            RepublishGuardLockClassLocked(bit, claimedGuardBits);
+            if (anyLockedInClass)
                 return;
 
             int observed;
@@ -3215,9 +3261,21 @@ namespace Hecton8.Core.Memory
 
         private bool HasLockedBlockForBit(int bit)
         {
-            if (!_blocks.IsCreated)
+            return ScanLockedGuardBitsForClass(bit, out _);
+        }
+
+        // Returns whether any block in the 32-lane residue class is still locked or pinned, and which of
+        // the two guard bits that class owns are still claimed. Bails as soon as both class guard bits are
+        // claimed, because no later block can change either answer - that keeps the worst case equal to the
+        // single-answer scan this replaced.
+        private bool ScanLockedGuardBitsForClass(int activeLockBit, out ulong claimedGuardBits)
+        {
+            claimedGuardBits = 0UL;
+            if (!_blocks.IsCreated || activeLockBit == 0)
                 return false;
 
+            ulong classMask = ResolveGuardLockClassMask(activeLockBit);
+            bool anyLocked = false;
             for (int i = 0; i < _blocks.Length; i++)
             {
                 VaultArenaBlock block = _blocks[i];
@@ -3227,11 +3285,44 @@ namespace Hecton8.Core.Memory
                     continue;
                 }
 
-                if (ResolveActiveLockBit((BufferID)block.BufferKey) == bit)
+                if (ResolveActiveLockBit((BufferID)block.BufferKey) != activeLockBit)
+                    continue;
+
+                anyLocked = true;
+                claimedGuardBits |= ResolveGuardLockBits(block.BufferKey) & classMask;
+                if (claimedGuardBits == classMask)
                     return true;
             }
 
-            return false;
+            return anyLocked;
+        }
+
+        // Replaces - not decrements - the two guard bits this residue class owns with the set the scan
+        // proved still claimed. A recompute from block ground truth cannot drift the way a refcount can.
+        // The caller holds the block mutation gate, and TryAcquireMutationGuard holds that same gate while
+        // it reads the shadow, so the conflict test can never observe this half-applied.
+        private void RepublishGuardLockClassLocked(int activeLockBit, ulong claimedGuardBits)
+        {
+            if (activeLockBit == 0)
+                return;
+
+            ulong classMask = ResolveGuardLockClassMask(activeLockBit);
+            ulong keepBits = claimedGuardBits & classMask;
+            ReplaceAtomicBits(
+                ref _activeGuardLockMaskLow,
+                unchecked((int)(uint)classMask),
+                unchecked((int)(uint)keepBits));
+            ReplaceAtomicBits(
+                ref _activeGuardLockMaskHigh,
+                unchecked((int)(uint)(classMask >> 32)),
+                unchecked((int)(uint)(keepBits >> 32)));
+        }
+
+        private void SetActiveGuardLockBits(int bufferKey)
+        {
+            ulong guardBits = ResolveGuardLockBits(bufferKey);
+            SetAtomicBits(ref _activeGuardLockMaskLow, unchecked((int)(uint)guardBits));
+            SetAtomicBits(ref _activeGuardLockMaskHigh, unchecked((int)(uint)(guardBits >> 32)));
         }
 
         private bool HasActiveBurstLocks(uint externalLockMask)
@@ -3250,10 +3341,37 @@ namespace Hecton8.Core.Memory
                 (guardMask & activeLockBit) != 0;
         }
 
-        private bool HasActiveLockConflictForMutationMask(int lowMask)
+        // Refuses a mutation guard while a lock the mask can actually name is outstanding.
+        //
+        // WAS: (_activeLocks & (lowMask | highMask)) != 0 - the caller's 64-bit mask folded onto the 32
+        // active-lock lanes. That over-approximated by construction. InputDispatcher's 14 buffer ids hash to
+        // guard bits {0,1,2,3,5,56..63}, which fold to lanes 0xFF00002F - THIRTEEN of the 32 lanes - so any
+        // of the project's other buffers whose (id & 31) landed in that set refused an input publish while
+        // write-locked or pinned, with nothing to do with input. Comparing against a shadow keyed the way
+        // the mask itself is keyed removes that class of refusal.
+        //
+        // NEVER WEAKER than the fold, for both conventions in the tree:
+        //   - a (id & 31) caller's mask bits are all < 32, and a locked buffer always claims its own
+        //     (id & 31) bit, so its refusal set is bit-for-bit what the fold produced;
+        //   - a (id & 63) caller loses only refusals whose sole overlap was a mask bit >= 32 in a different
+        //     mod-64 class than the locked buffer. A mask bit >= 32 can only come from the (id & 63)
+        //     convention, and under that convention it names buffers congruent to it mod 64 - which
+        //     excludes that buffer. No convention could have meant it.
+        // Genuine conflicts still refuse: a locked buffer X claims bit (X & 63) AND bit (X & 31), and any
+        // mask that names X contains one of those two by the definition of MutationGuardBit. Fail-closed.
+        //
+        // Residual imprecision is inherent to the guard API, not to this test: bit 56 is claimed by both
+        // ShinobuInputCurrentDto(70520) and ShinobuPredictedInputRing(75000), and no reader of the mask can
+        // separate them. Only a caller-side change that carries buffer ids instead of a folded mask can.
+        private bool HasActiveLockConflictForMutationMask(ulong guardMask)
         {
-            return lowMask != 0 &&
-                (Volatile.Read(ref _activeLocks) & lowMask) != 0;
+            if (guardMask == 0UL)
+                return false;
+
+            int lowMask = unchecked((int)(uint)guardMask);
+            int highMask = unchecked((int)(uint)(guardMask >> 32));
+            return (Volatile.Read(ref _activeGuardLockMaskLow) & lowMask) != 0 ||
+                (Volatile.Read(ref _activeGuardLockMaskHigh) & highMask) != 0;
         }
 
         private bool HasPinnedExternalViews()
@@ -3272,6 +3390,42 @@ namespace Hecton8.Core.Memory
             }
 
             return false;
+        }
+
+        private static void SetAtomicBits(ref int target, int bits)
+        {
+            if (bits == 0)
+                return;
+
+            int observed;
+            int updated;
+            do
+            {
+                observed = Volatile.Read(ref target);
+                updated = observed | bits;
+                if (updated == observed)
+                    return;
+            }
+            while (Interlocked.CompareExchange(ref target, updated, observed) != observed);
+        }
+
+        // Clears classBits and re-sets keepBits in one CAS so a residue class is never briefly empty - a
+        // gap there would be a window where a guard could be granted over a still-locked buffer.
+        private static void ReplaceAtomicBits(ref int target, int classBits, int keepBits)
+        {
+            if (classBits == 0)
+                return;
+
+            int observed;
+            int updated;
+            do
+            {
+                observed = Volatile.Read(ref target);
+                updated = (observed & ~classBits) | keepBits;
+                if (updated == observed)
+                    return;
+            }
+            while (Interlocked.CompareExchange(ref target, updated, observed) != observed);
         }
 
         private static void ClearAtomicBits(ref int target, int bits)
@@ -4010,6 +4164,8 @@ namespace Hecton8.Core.Memory
             _blockMutationGate = 0;
             _mutationGuardMaskLow = 0;
             _mutationGuardMaskHigh = 0;
+            _activeGuardLockMaskLow = 0;
+            _activeGuardLockMaskHigh = 0;
             _memoryStarvationWarnings = 0;
             _defragBlackBoxCursor = 0;
             _defragBlackBoxRecordedCount = 0;
@@ -5458,6 +5614,57 @@ namespace Hecton8.Core.Memory
             if (key == 0 && writeMask != 0UL)
                 key = int.MaxValue;
             RecordLockContentionFault(key);
+        }
+
+        // Records a guard refusal as the BUFFER that blocked it instead of the folded mask.
+        //
+        // WHY. RecordMutationGuardContentionFault stamps fold32(writeMask), which is a per-owner CONSTANT:
+        // every InputDispatcher guard refusal in Logs/h8_probe7.log stamped 2130706479 == 0x7F00002F ==
+        // fold(InputOwnerMutationGuardMask) & 0x7fffffff. That identifies the owner and says nothing about
+        // what blocked it, and 1240 refusals in that run all carry the same value. This vault CANNOT log -
+        // Hecton8.Core.Memory.asmdef does not reference Hecton8.Core, so H8Debug is out of assembly - so the
+        // buffer id goes into the one channel the probe route already prints:
+        // MemoryDefragTelemetryDetailEntry.LastFaultBufferID, surfaced by SaveManager as
+        // "vaultLastFaultBufferId=" on the SAVEVAULT_REFUSAL line and by the editor VaultXRayWindow.
+        //
+        // The folded-mask fallback is deliberately kept for the no-match case, so the stamped value stays
+        // self-describing: a plausible BufferID means a real lock conflict and names the culprit, while
+        // 0x7F00002F-shaped values mean the refusal came from one of the other branches - compaction fence,
+        // contended block mutation gate, guard bits already held, or a lost CAS.
+        private void RecordMutationGuardLockConflictFault(ulong writeMask)
+        {
+            int conflictBufferKey = FindGuardConflictBufferKey(writeMask);
+            if (conflictBufferKey != 0)
+            {
+                RecordLockContentionFault(conflictBufferKey);
+                return;
+            }
+
+            RecordMutationGuardContentionFault(writeMask);
+        }
+
+        // Refusal path only, and the only way to get from a guard bit back to a buffer id, because the mask
+        // does not carry ids. Cold by construction: it runs after a guard has already been refused. Callers
+        // must hold the block mutation gate so the block read is stable.
+        private int FindGuardConflictBufferKey(ulong writeMask)
+        {
+            if (writeMask == 0UL || !_blocks.IsCreated)
+                return 0;
+
+            for (int i = 0; i < _blocks.Length; i++)
+            {
+                VaultArenaBlock block = _blocks[i];
+                if (block.State != BlockStateOccupied ||
+                    ((block.Reserved0 & BlockFlagLocked) == 0 && block.Reserved1 == 0))
+                {
+                    continue;
+                }
+
+                if ((ResolveGuardLockBits(block.BufferKey) & writeMask) != 0UL)
+                    return block.BufferKey;
+            }
+
+            return 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
