@@ -424,7 +424,6 @@ namespace Hecton8.Editor
             // in the ACTIVE scene, so a valid active scene is still a precondition for the create paths
             // (Fabrication_Trial has parentName=null and is authored as a scene root by design). Do not
             // "simplify" this guard away because the searches no longer take a Scene.
-            int h8GateNegativeControl = ThisSymbolDoesNotExist_H8GateProbe;
             Scene activeScene = SceneManager.GetActiveScene();
             if (!activeScene.IsValid())
                 return;
