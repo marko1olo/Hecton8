@@ -1299,9 +1299,36 @@ namespace Hecton8.Core
             CrashTelemetryBuffer.ReportNativeTransientLeak(allocationHash, 0, record.Bytes);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Volatile.Read(ref _diagnosticSceneLeakLogSuppressions) <= 0)
-                Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+                Debug.LogError(DescribeSceneLifetimeLeak(record));
 #endif
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Builds the editor-only leak line. The record already carries readable Owner and Label strings, the
+        /// byte count, the allocating frame and the allocator; emitting only the bare constant threw all of
+        /// that away and left a critical error that names nothing. A production run logged ten of these and
+        /// the log could not say which ten allocations they were.
+        /// </summary>
+        private static string DescribeSceneLifetimeLeak(in NativeAllocationRecord record)
+        {
+            // COLD ALLOC: StringBuilder[192] - editor-only scene-unload leak report - owner: NativeMemorySentinel
+            // Cold by construction: raised from HandleSceneUnloaded, never from a tick, and the Debug.LogError
+            // it feeds allocates far more than this does.
+            System.Text.StringBuilder builder = new System.Text.StringBuilder(192);
+            builder.Append(CriticalMemoryViolationSceneLeakMessage);
+            builder.Append(" owner=").Append(record.Owner.IsEmpty ? "<unnamed>" : record.Owner.ToString());
+            builder.Append(" label=").Append(record.Label.IsEmpty ? "<unlabelled>" : record.Label.ToString());
+            builder.Append(" bytes=").Append(record.Bytes);
+            builder.Append(" allocator=").Append(record.Allocator);
+            builder.Append(" allocFrame=").Append(record.AllocationFrame);
+            builder.Append(" id=").Append(record.Id);
+            builder.Append(" sceneBuildIndex=").Append(record.SceneBuildIndex);
+            builder.Append(" ownerHash=0x").Append(record.OwnerHash.ToString("X8"));
+            builder.Append(" labelHash=0x").Append(record.LabelHash.ToString("X8"));
+            return builder.ToString();
+        }
+#endif
 
         /// <summary>
         /// Fails closed when scene lifetime native allocations survive a scene unload.
@@ -1514,7 +1541,7 @@ namespace Hecton8.Core
                         _records[i] = record;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                         if (Volatile.Read(ref _diagnosticSceneLeakLogSuppressions) <= 0)
-                            Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+                            Debug.LogError(DescribeSceneLifetimeLeak(record));
 #endif
                         continue;
                     }
