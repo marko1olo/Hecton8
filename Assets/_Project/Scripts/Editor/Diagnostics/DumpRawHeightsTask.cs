@@ -107,7 +107,19 @@ namespace MapMagic.Editor.Diagnostics
             TileData data = new TileData();
             data.area = area;
             data.globals = new Globals();
-            data.globals.height = 12000f;
+            // Was a bare 12000f. Same value, now named and caveated: this is the LIVE GRAPH's authored span,
+            // decoded from the serialised bits of HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset
+            // (lowWorldY -10000, highWorldY +2000). Do NOT swap this for DefaultVerticalSpanMeters: that is
+            // the C# field initialiser at 7000 m, which matches no graph in the repo, and reading a heightmap
+            // against it would make every metre value here wrong by 12000/7000 = 1.714x.
+            //
+            // REMAINING HAZARD, not fixed by naming the constant: this interprets the dump against the span the
+            // GRAPH authored, while the terrain was generated against the span the SCENE's MapMagicObject
+            // actually had. HectonMacroGeologyBaseIntegrator.cs:126-130 warns that tiles already baked at the
+            // vendor default of 250 m stay 250 m until a regenerate. If that is the case for the tiles being
+            // dumped, every height below is out by 12000/250 = 48x and this constant cannot detect it. The real
+            // fix is to read globals.height off the MapMagicObject being dumped and refuse when it disagrees.
+            data.globals.height = Hecton8.World.WorldVerticalExtentMath.LiveWorldGraphSpanMeters;
             data.random = new Den.Tools.Noise(12345);
             data.ClearProducts();
 
