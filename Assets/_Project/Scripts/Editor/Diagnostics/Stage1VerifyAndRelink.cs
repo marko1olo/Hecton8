@@ -20,23 +20,47 @@ namespace MapMagic.Editor.Diagnostics
         [MenuItem("Hecton8/Diagnostics/Stage 1 Verify And Relink")]
         public static void Run()
         {
+            // Generates MapMagic matrices AND relinks the graph, so a null graphics device means it makes
+            // authoring decisions from fabricated zeros. C:\hades\.claude\rules\hecton8-shaders-compute.md
+            // :36-37 bans -nographics for this class of test.
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                Debug.LogError(
+                    "[Stage1VerifyAndRelink] REFUSED: no GPU context (graphicsDeviceType == Null). Compute " +
+                    "output is all zeros here, and this task RELINKS the graph based on what it measures - " +
+                    "so it would rewire the authored world from fabricated data. Remove -nographics from " +
+                    "the batch invocation and run again.");
+                EditorApplication.Exit(3);
+                return;
+            }
+
             try
             {
                 DoRun();
             }
             catch (Exception ex)
             {
-                File.WriteAllText(@"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0\stage1_error.txt", ex.ToString());
+                // This tool RELINKS the graph, so a mid-run exception leaves the asset in an unverified
+                // state. It used to write the exception to stage1_error.txt under another agent's private
+                // brain directory - the same filename Stage1Check wrote - and then exit 0 from a finally
+                // block, reporting success for a half-applied rewire.
+                Debug.LogError(
+                    "[Stage1VerifyAndRelink] FAILED mid-run; the graph may be partially relinked and is " +
+                    "unverified: " + ex);
+                EditorApplication.Exit(2);
+                return;
             }
-            finally
-            {
-                EditorApplication.Exit(0);
-            }
+
+            EditorApplication.Exit(0);
         }
 
         private static void DoRun()
         {
-            string outDir = @"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0";
+            // Was another agent's private brain directory - outside the repo and unversioned. The per-tool
+            // subfolder prevents the collision documented in Stage1Check: both tools wrote the same three
+            // filenames and the same report header, so each run destroyed the other's evidence.
+            string outDir = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "stage1_verify_relink");
+            Directory.CreateDirectory(outDir);
             var sb = new StringBuilder();
             sb.AppendLine("STAGE 1 VERIFICATION REPORT");
 

@@ -20,23 +20,46 @@ namespace MapMagic.Editor.Diagnostics
         [MenuItem("Hecton8/Diagnostics/Stage 1 Check")]
         public static void Run()
         {
+            // Generates MapMagic matrices, so a null graphics device turns every number it verifies into a
+            // zero: C:\hades\.claude\rules\hecton8-shaders-compute.md:36-37 bans -nographics for this class
+            // of test precisely because compute shaders and Graphics.Blit return zeros with no GPU context.
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                Debug.LogError(
+                    "[Stage1Check] REFUSED: no GPU context (graphicsDeviceType == Null). This verification " +
+                    "would pass or fail on fabricated zeros. Remove -nographics from the batch invocation " +
+                    "and run again.");
+                EditorApplication.Exit(3);
+                return;
+            }
+
             try
             {
                 DoRun();
             }
             catch (Exception ex)
             {
-                File.WriteAllText(@"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0\stage1_error.txt", ex.ToString());
+                // The exception used to go to stage1_error.txt under another agent's private brain
+                // directory - the SAME filename Stage1VerifyAndRelink wrote, so the two tools clobbered
+                // each other's error file - and the finally block exited 0 regardless.
+                Debug.LogError("[Stage1Check] FAILED, no verification report was produced: " + ex);
+                EditorApplication.Exit(2);
+                return;
             }
-            finally
-            {
-                EditorApplication.Exit(0);
-            }
+
+            EditorApplication.Exit(0);
         }
 
         private static void DoRun()
         {
-            string outDir = @"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0";
+            // Was another agent's private brain directory - outside the repo and unversioned. The
+            // per-tool subfolder is not cosmetic: Stage1Check and Stage1VerifyAndRelink wrote the SAME
+            // three filenames (stage1_error.txt, stage1_report.txt, hillshade_splat_preview.png) into the
+            // same directory, and both emit a report whose first line is "STAGE 1 VERIFICATION REPORT".
+            // Running either destroyed the other's evidence with no way to tell from the file which tool
+            // produced it.
+            string outDir = Path.Combine(Directory.GetCurrentDirectory(), "Logs", "stage1_check");
+            Directory.CreateDirectory(outDir);
             var sb = new StringBuilder();
             sb.AppendLine("STAGE 1 VERIFICATION REPORT");
 
