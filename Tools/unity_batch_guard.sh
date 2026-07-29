@@ -23,10 +23,41 @@
 # It refuses to run and exits non-zero when another editor is live, so a caller chaining
 # with && cannot proceed by accident.
 #
-# Pass `-quit` yourself when the target does NOT call EditorApplication.Exit. This script
-# deliberately does not add it: a validator that exits on its own and an authoring tool that
-# must stay alive to finish an import need different handling, and guessing wrong either
-# truncates the work or leaves an editor holding the lock forever.
+# Pass `-quit` yourself. This script deliberately does not add it, but the earlier wording here
+# framed the choice as symmetric - "guessing wrong either truncates the work or leaves an editor
+# holding the lock forever" - and MEASUREMENT ON 2026-07-29 SAYS IT IS NOT SYMMETRIC. Default to
+# passing `-quit`, and justify LEAVING IT OFF rather than putting it on.
+#
+# WHY. Unity honours whichever exit fires first, so `-quit` on a method that calls
+# EditorApplication.Exit itself is a no-op - the method's own code still wins. `-quit` only takes
+# effect on the paths where the method RETURNS WITHOUT EXITING, which is exactly the path that
+# otherwise holds the project lock forever. So the two errors are not a matched pair:
+#   omitting it   -> permanent lock, window lost, another owner blocked until someone kills the pid
+#   adding it     -> no effect at all, UNLESS the method deliberately stays alive for deferred
+#                    async work (an import completing on a later editor tick). A method that ends
+#                    in a synchronous AssetDatabase.SaveAssets() has no such path.
+#
+# Surveyed the chain this guard actually drives, and the exit is missing far more often than not:
+#   WorldProceduralFloraBakedStarterGenerator.Generate      no Exit anywhere      -> needs -quit
+#   ForgeGeneratedMaterialAuthoring, all four methods       no Exit anywhere      -> needs -quit
+#   ModuleTemplateSocketBoundsFaceGate.Apply                no Exit anywhere      -> needs -quit
+#   ConstructionFinalPrefabModuleCoverageGate.Apply         no Exit anywhere      -> needs -quit
+#   StarterModuleDamageStateAuthoring.Apply                 no Exit anywhere      -> needs -quit
+#   ConstructionFinalPrefabModuleCoverageGate.Verify        Exit at the end, all branches -> safe
+#
+# AND THE ONE THAT MATTERS MOST, because it inverts the intuition that a passing run is the safe
+# one: StarterModuleDamageStateAuthoring.VerifyStarterModuleDamageState calls Exit(1) at :407, but
+# that line lives INSIDE THE FAILURE BRANCH - the pass branch returns at :400 before reaching it.
+# So VERIFY HANGS ON SUCCESS AND EXITS CLEANLY ON FAILURE. Grepping a file for
+# `EditorApplication.Exit` and finding a hit proves nothing; the hit must be reached on the path
+# the run will actually take. Check the BRANCH, not the file.
+#
+# Corollary for reading results: never let `-quit` make you trust the exit code. With `-quit` a
+# method whose every decline path is a bare Debug.LogError returns 0 whether it did the work or
+# refused all of it. Read the log for the verdict. And when a tool builds one giant report and
+# appends its RESULT line LAST with StringBuilder.Append, a clipped message drops the verdict
+# first, so absence of "RESULT: FAIL" is NOT a pass - confirm the report's header and its SUMMARY
+# line are both present before believing any verdict grep.
 #
 # H8_GATE_WAIT_SECONDS makes it wait for a busy slot instead of failing immediately. See the
 # wait-and-acquire block below for why that is not a loosening of the one-owner rule.
