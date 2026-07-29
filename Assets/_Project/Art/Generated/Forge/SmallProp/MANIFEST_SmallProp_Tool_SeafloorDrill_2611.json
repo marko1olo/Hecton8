@@ -1,0 +1,727 @@
+{
+ "colliderSummary": {
+  "allWithinBudget": true,
+  "count": 1,
+  "triangleBudget": 200,
+  "types": [
+   "convex"
+  ]
+ },
+ "colliders": [
+  {
+   "kind": "convex",
+   "name": "COL_SmallProp_Tool_SeafloorDrill_2611",
+   "reason": "",
+   "triangleBudget": 200,
+   "triangles": 120,
+   "withinBudget": true
+  }
+ ],
+ "export": {
+  "fbx": "Assets/_Project/Art/Generated/Forge/SmallProp/MESH_SmallProp_Tool_SeafloorDrill_2611.fbx",
+  "hasCustomNormals": true,
+  "hasTangents": true,
+  "hasVertexColors": true,
+  "objectNames": [
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2",
+   "COL_SmallProp_Tool_SeafloorDrill_2611"
+  ],
+  "roundtripVerified": true,
+  "settings": {
+   "apply_scale_options": "FBX_SCALE_NONE",
+   "apply_unit_scale": true,
+   "axis_forward": "-Z",
+   "axis_up": "Y",
+   "bake_anim": false,
+   "bake_space_transform": true,
+   "blenderToFbxAxes": "(x, y, z) -> (x, z, -y)",
+   "blenderToUnityAxes": "(x, y, z) -> (x, z, y)",
+   "colors_type": "LINEAR",
+   "embed_textures": false,
+   "fbxHeaderUnitScaleFactor": 1.0,
+   "fbxUnitsPerMetre": 100.0,
+   "global_scale": 1.0,
+   "mesh_smooth_type": "EDGE",
+   "object_types": [
+    "MESH"
+   ],
+   "path_mode": "STRIP",
+   "prioritize_active_color": true,
+   "use_custom_props": false,
+   "use_mesh_edges": false,
+   "use_mesh_modifiers": true,
+   "use_metadata": true,
+   "use_selection": true,
+   "use_space_transform": true,
+   "use_subsurf": false,
+   "use_triangles": true,
+   "use_tspace": true,
+   "use_visible": false
+  },
+  "unitScaleFbxUnitsPerMetre": 100.00000223517424,
+  "uvLayerNames": [
+   "UVMap"
+  ]
+ },
+ "exporterVersion": "1.0.0",
+ "extra": {
+  "bevelBands": {
+   "casing": {
+    "clampedByShortestEdgeRule": true,
+    "degeneratePurgedAfterBevel": 0,
+    "edgesBeveled": 36,
+    "edgesConsidered": 84,
+    "segments": 6,
+    "widthM": 0.002886
+   },
+   "fine": {
+    "clampedByShortestEdgeRule": true,
+    "degeneratePurgedAfterBevel": 18665,
+    "edgesBeveled": 1158,
+    "edgesConsidered": 2428,
+    "segments": 4,
+    "widthM": 8.6e-05
+   },
+   "nose": {
+    "clampedByShortestEdgeRule": true,
+    "degeneratePurgedAfterBevel": 1056,
+    "edgesBeveled": 208,
+    "edgesConsidered": 886,
+    "segments": 6,
+    "widthM": 0.000143
+   },
+   "submeshCensus": {
+    "0": 2464,
+    "1": 3821,
+    "2": 1680,
+    "3": 98
+   }
+  },
+  "parts": [
+   "Casing",
+   "BoreCollar",
+   "Chuck",
+   "FlutedBit",
+   "Grip",
+   "TriggerLug",
+   "SeamClampBand",
+   "CoolingRib0",
+   "CoolingRib1",
+   "CoolingRib2",
+   "CoolingRib3",
+   "CoolingRib4",
+   "InstrumentBezel",
+   "InstrumentGlass",
+   "BezelBolt0",
+   "BezelBolt1",
+   "BezelBolt2",
+   "BezelBolt3",
+   "BezelBolt4",
+   "BezelBolt5",
+   "BezelBolt6",
+   "BezelBolt7",
+   "GuardRailR",
+   "GuardRailL",
+   "CableGland",
+   "CableLead",
+   "SeamBolt0R",
+   "SeamBolt0L",
+   "SeamBolt1R",
+   "SeamBolt1L",
+   "SeamBolt2R",
+   "SeamBolt2L",
+   "SeamBolt3R",
+   "SeamBolt3L",
+   "SeamBolt4R",
+   "SeamBolt4L",
+   "SeamBolt5R",
+   "SeamBolt5L"
+  ],
+  "routeBlocker": "Tool_SeafloorDrill_Held.prefab carries the Unity built-in Cube (fileID 10202) in all three MeshFilters, and the binder declines the drill by name at ProductFacePrefabBinderAuthoring.cs:729-734. This package is the geometry that replaces it.",
+  "toolClass": "Drill (ResourceNodeTemplate.cs:36 maps 2 -> Drill)",
+  "topology": {
+   "LOD0": {
+    "boundaryEdges": 3107,
+    "components": 295,
+    "explain": "",
+    "irreducibleFloor": 2733,
+    "nonmanifoldEdges": 0,
+    "triangles": 5413
+   },
+   "LOD1": {
+    "boundaryEdges": 2058,
+    "components": 300,
+    "explain": "",
+    "irreducibleFloor": 2229,
+    "nonmanifoldEdges": 0,
+    "triangles": 1920
+   },
+   "LOD2": {
+    "boundaryEdges": 412,
+    "components": 73,
+    "explain": "",
+    "irreducibleFloor": 498,
+    "nonmanifoldEdges": 0,
+    "triangles": 336
+   }
+  },
+  "unityPrefabAssembly": "NOT PERFORMED. .prefab/.mat/.asset creation is Unity-only per AGENTS.md Evidence Law; this generator emits mesh plus manifest for a Unity-side assembler."
+ },
+ "forgeVersion": "1.0.0",
+ "identity": {
+  "cameraDistanceClass": "near",
+  "family": "SmallProp",
+  "forgeVersion": "1.0.0",
+  "generator": "prop_handtool",
+  "generatorVersion": "1.0.0",
+  "platformLane": "windows_copper_wire",
+  "qualityWeight": 1.0,
+  "scaleMeters": 0.255,
+  "seed": 2611,
+  "sourceReferences": [
+   "3DMODEL_EQUIPMENT_PROPS.md",
+   "3dmodel.md",
+   "tools.md",
+   "PROCEDURAL_ASSET_PIPELINE.md"
+  ]
+ },
+ "lod": {
+  "budgets": {
+   "impostorMax": 80,
+   "impostorMin": 2,
+   "lod0": 6000,
+   "lod1": 2000,
+   "lod2": 350
+  },
+  "exempt": false,
+  "levels": [
+   0,
+   1,
+   2
+  ],
+  "monotonic": true,
+  "triangleCountsPerLod": {
+   "LOD0": 5413,
+   "LOD1": 1920,
+   "LOD2": 336
+  }
+ },
+ "manifestGaps": [
+  "materials (MAT_<Family>_<SurfaceRole>, 3dmodel.md section 6 slot 0 is mandatory)",
+  "textures (TX_<Family>_<Set>_<Role>; 3DMODEL_TEXTURES_MATERIALS.md section 2: 'Missing texture is fatal unless the generator is explicitly producing a placeholder diagnostic asset')"
+ ],
+ "materialSlotContract": {
+  "maxSlots": 4,
+  "slot0": "primary structural/tissue",
+  "slot1": "exposed cut, bevel, edge, scar, fracture",
+  "slot2": "secondary trim, gasket, barnacle, mineral vein, growth plate",
+  "slot3": "emissive/bioluminescent/details"
+ },
+ "materials": [],
+ "meshes": [
+  {
+   "boundsMax": [
+    0.03020588308572769,
+    0.19840000569820404,
+    0.060274675488471985
+   ],
+   "boundsMin": [
+    -0.03020588308572769,
+    -0.19375798106193542,
+    -0.12590068578720093
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "22e231226ce5ea1f71e83da9f588f331",
+   "hasTangentBasis": true,
+   "lod": 0,
+   "name": "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0",
+   "submeshes": 4,
+   "triangles": 5413,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [],
+    "passed": true,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 2709 of 5413 triangles below the sliver floor 2.303e-06 m2 (0.1x mean triangle area 2.303e-05 m2); the area-weighted population test still covered all of them",
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "organic_sway_anchor_missing: not enforced: sway band law applies to organic surfaces only, this is HardSurface"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 4406
+  },
+  {
+   "boundsMax": [
+    0.030138561502099037,
+    0.19840000569820404,
+    0.06047964096069336
+   ],
+   "boundsMin": [
+    -0.030138561502099037,
+    -0.19375602900981903,
+    -0.1259424090385437
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "4daec7b82b8405e8f6cd8526a4ec5a0b",
+   "hasTangentBasis": true,
+   "lod": 1,
+   "name": "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1",
+   "submeshes": 4,
+   "triangles": 1920,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [],
+    "passed": true,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 936 of 1920 triangles below the sliver floor 6.441e-06 m2 (0.1x mean triangle area 6.441e-05 m2); the area-weighted population test still covered all of them",
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "organic_sway_anchor_missing: not enforced: sway band law applies to organic surfaces only, this is HardSurface"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 2167
+  },
+  {
+   "boundsMax": [
+    0.029826907441020012,
+    0.19840000569820404,
+    0.059855151921510696
+   ],
+   "boundsMin": [
+    -0.029826907441020012,
+    -0.19322086870670319,
+    -0.1263684630393982
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "8160346edae87f22f7b1541aa5408423",
+   "hasTangentBasis": true,
+   "lod": 2,
+   "name": "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2",
+   "submeshes": 4,
+   "triangles": 336,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [],
+    "passed": true,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 93 of 336 triangles below the sliver floor 3.363e-05 m2 (0.1x mean triangle area 3.363e-04 m2); the area-weighted population test still covered all of them",
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "organic_sway_anchor_missing: not enforced: sway band law applies to organic surfaces only, this is HardSurface"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 382
+  },
+  {
+   "boundsMax": [
+    0.03020588308572769,
+    0.19840000569820404,
+    0.060274675488471985
+   ],
+   "boundsMin": [
+    -0.03020588308572769,
+    -0.19375798106193542,
+    -0.12590068578720093
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "22e231226ce5ea1f71e83da9f588f331",
+   "hasTangentBasis": true,
+   "lod": 0,
+   "name": "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0",
+   "submeshes": 4,
+   "triangles": 5413,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [],
+    "passed": true,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 2709 of 5413 triangles below the sliver floor 2.303e-06 m2 (0.1x mean triangle area 2.303e-05 m2); the area-weighted population test still covered all of them",
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "organic_sway_anchor_missing: not enforced: sway band law applies to organic surfaces only, this is HardSurface"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 4406
+  },
+  {
+   "boundsMax": [
+    0.030138561502099037,
+    0.19840000569820404,
+    0.06047964096069336
+   ],
+   "boundsMin": [
+    -0.030138561502099037,
+    -0.19375602900981903,
+    -0.1259424090385437
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "4daec7b82b8405e8f6cd8526a4ec5a0b",
+   "hasTangentBasis": true,
+   "lod": 1,
+   "name": "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1",
+   "submeshes": 4,
+   "triangles": 1920,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [],
+    "passed": true,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 936 of 1920 triangles below the sliver floor 6.441e-06 m2 (0.1x mean triangle area 6.441e-05 m2); the area-weighted population test still covered all of them",
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "organic_sway_anchor_missing: not enforced: sway band law applies to organic surfaces only, this is HardSurface"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 2167
+  },
+  {
+   "boundsMax": [
+    0.029826907441020012,
+    0.19840000569820404,
+    0.059855151921510696
+   ],
+   "boundsMin": [
+    -0.029826907441020012,
+    -0.19322086870670319,
+    -0.1263684630393982
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "8160346edae87f22f7b1541aa5408423",
+   "hasTangentBasis": true,
+   "lod": 2,
+   "name": "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2",
+   "submeshes": 4,
+   "triangles": 336,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [],
+    "passed": true,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 93 of 336 triangles below the sliver floor 3.363e-05 m2 (0.1x mean triangle area 3.363e-04 m2); the area-weighted population test still covered all of them",
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "organic_sway_anchor_missing: not enforced: sway band law applies to organic surfaces only, this is HardSurface"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 382
+  }
+ ],
+ "naming": {
+  "collider": "COL_{family}_{name}",
+  "manifest": "MANIFEST_{family}_{name}",
+  "material": "MAT_{family}_{role}",
+  "mesh": "MESH_{family}_{name}_LOD{lod}",
+  "namingNote": "Templates come from law.py, which follows AGENTS.md 'Project Shape' (generated prefabs GEN_*, textures TX_*). PROCEDURAL_ASSET_PIPELINE.md 'Required Output Package' spells the same two artefacts PF_<Family>_<Name>.prefab and TEX_<Family>_<AtlasOrUnique>_<Role>.png; root AGENTS.md outranks it per the authority spine, so GEN_ and TX_ are used. Flagged for the lead rather than resolved here.",
+  "prefab": "GEN_{family}_{name}",
+  "texture": "TX_{family}_{set}_{role}"
+ },
+ "productionReady": false,
+ "proof": {
+  "paths": [
+   "Docs/AgentLogs/ForgePreviews/Tool_SeafloorDrill_2611_SHEET_studio.png",
+   "Docs/AgentLogs/ForgePreviews/Tool_SeafloorDrill_2611_SHEET_flat.png",
+   "Docs/AgentLogs/ForgePreviews/Tool_SeafloorDrill_2611_SHEET_CHANNELS.png"
+  ],
+  "roundtripNotes": [
+   "wrote MESH_SmallProp_Tool_SeafloorDrill_2611.fbx (901308 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "COL_SmallProp_Tool_SeafloorDrill_2611: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "COL_SmallProp_Tool_SeafloorDrill_2611: no material slot. 3dmodel.md section 6 declares slot 0 as the primary structural/tissue material; Unity will assign its default material to submesh 0.",
+   "objects round-tripped: ['COL_SmallProp_Tool_SeafloorDrill_2611', 'MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0', 'MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1', 'MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2']",
+   "COL_SmallProp_Tool_SeafloorDrill_2611: verts 62->62 loops 360->360 tris 120->120",
+   "COL_SmallProp_Tool_SeafloorDrill_2611: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "COL_SmallProp_Tool_SeafloorDrill_2611: colour max delta 0.0000000 (tol 0.002)",
+   "COL_SmallProp_Tool_SeafloorDrill_2611: world position max delta 0.0000000 m (tol 0.0001)",
+   "COL_SmallProp_Tool_SeafloorDrill_2611: world corner-normal max delta 0.0002507 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "COL_SmallProp_Tool_SeafloorDrill_2611: uv0 max delta 0.00000000 (tol 1e-05)",
+   "COL_SmallProp_Tool_SeafloorDrill_2611: landmark (-0.0041, -0.19322, -0.00079) -> (-0.0041, -0.19322, -0.00079), delta 0.0000000 m, margin 0.00041 m",
+   "COL_SmallProp_Tool_SeafloorDrill_2611: landmark margin below 0.001 m: this mesh is near-symmetric at its extreme vertex, so the landmark test is not decisive",
+   "COL_SmallProp_Tool_SeafloorDrill_2611: signed volume +0.0019317 -> +0.0019317 (ratio +1.000000)",
+   "COL_SmallProp_Tool_SeafloorDrill_2611: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0: verts 4406->4406 loops 16239->16239 tris 5413->5413",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0: colour max delta 0.0000000 (tol 0.002)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0: world position max delta 0.0000000 m (tol 0.0001)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0: world corner-normal max delta 0.0004870 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0: uv0 max delta 0.00000000 (tol 1e-05)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0: landmark (0.00207, -0.19376, -0.00028) -> (0.00207, -0.19376, -0.00028), delta 0.0000000 m, margin 0.00000 m",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0: landmark margin below 0.001 m: this mesh is near-symmetric at its extreme vertex, so the landmark test is not decisive",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0: signed volume +0.0011763 -> +0.0011763 (ratio +1.000000)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1: verts 2167->2167 loops 5760->5760 tris 1920->1920",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1: colour max delta 0.0000000 (tol 0.002)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1: world position max delta 0.0000000 m (tol 0.0001)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1: world corner-normal max delta 0.0005163 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1: landmark (0.00207, -0.19376, -0.00028) -> (0.00207, -0.19376, -0.00028), delta 0.0000000 m, margin 0.00000 m",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1: landmark margin below 0.001 m: this mesh is near-symmetric at its extreme vertex, so the landmark test is not decisive",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1: signed volume +0.0011327 -> +0.0011327 (ratio +1.000000)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2: verts 382->382 loops 1008->1008 tris 336->336",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2: colour max delta 0.0000000 (tol 0.002)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2: world position max delta 0.0000000 m (tol 0.0001)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2: world corner-normal max delta 0.0003855 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2: uv0 max delta 0.00000000 (tol 1e-05)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2: landmark (-0.0041, -0.19322, -0.00079) -> (-0.0041, -0.19322, -0.00079), delta 0.0000000 m, margin 0.00041 m",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2: landmark margin below 0.001 m: this mesh is near-symmetric at its extreme vertex, so the landmark test is not decisive",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2: signed volume +0.0010039 -> +0.0010039 (ratio +1.000000)",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "COL_SmallProp_Tool_SeafloorDrill_2611 [fbx-space]: skipped: near-symmetric extreme vertex",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0 [fbx-space]: skipped: near-symmetric extreme vertex",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1 [fbx-space]: skipped: near-symmetric extreme vertex",
+   "MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2 [fbx-space]: skipped: near-symmetric extreme vertex",
+   "axis map not asserted: every object was near-symmetric at its extreme vertex",
+   "roundtrip VERIFIED: axis map confirmed=False, chirality preserved=True",
+   "LOD0 MESH_SmallProp_Tool_SeafloorDrill_2611_LOD0: 5413 tris vs law budget 6000 -> within",
+   "LOD1 MESH_SmallProp_Tool_SeafloorDrill_2611_LOD1: 1920 tris vs law budget 2000 -> within",
+   "LOD2 MESH_SmallProp_Tool_SeafloorDrill_2611_LOD2: 336 tris vs law budget 350 -> within",
+   "collider COL_SmallProp_Tool_SeafloorDrill_2611: 120 tris vs law.COLLIDER_CONVEX_TRI_MAX 200 -> within",
+   "Unity side must bind COL_SmallProp_Tool_SeafloorDrill_2611 to a MeshCollider with convex=true on a collider child, never to an LOD mesh (3dmodel.md section 9)",
+   "Unity LODGroup: create it explicitly from the _LOD suffixed children rather than relying on importer auto-detection, then set screenRelativeTransitionHeight per level with a hysteresis band and fadeMode=CrossFade with animateCrossFading=false (dithered). 3dmodel.md section 7 bans alpha-blended cross-fade for dense flora/coral on the compact lane; dither is not alpha blend."
+  ],
+  "status": "PENDING UNITY/PROFILER VERIFICATION",
+  "statusNote": "Static and Blender-side evidence only. No Unity import log, Console output, Frame Debugger capture, profiler capture or in-engine screenshot exists for this package."
+ },
+ "schema": "h8forge.manifest/1",
+ "surfaceClass": "HardSurface",
+ "textures": [],
+ "unityImport": {
+  "collider": {
+   "convexTriangleMax": 200,
+   "defaultCollision": "convex proxy or primitive compound",
+   "interactionAnchorNote": "PROCEDURAL_ASSET_PIPELINE.md 'Collision And Interaction Package': anchors must be serialised, never discovered by runtime scene search.",
+   "interactionAnchors": [
+    "ANCHOR_Scan",
+    "ANCHOR_Cut",
+    "ANCHOR_Weld",
+    "ANCHOR_Loot",
+    "ANCHOR_Pry",
+    "ANCHOR_Open",
+    "ANCHOR_Repair"
+   ],
+   "meshColliderConvex": true,
+   "meshColliderOnLod0": false,
+   "physicsLayer": "World_Static",
+   "physicsLayerNote": "Layer name read from ProjectSettings/TagManager.asset. AGENTS.md forbids changing Tags/Layers without explicit instruction, so the authoring script must resolve it by name and fail loudly if absent -- it must not create one. COMMON_SENSE.md rule 2 additionally requires every raycast against these colliders to pass an explicit LayerMask.GetMask(...) plus QueryTriggerInteraction.Ignore.",
+   "proxyNamePrefix": "COL_",
+   "visualNamePrefixes": [
+    "VIS_",
+    "LOD_"
+   ]
+  },
+  "exportSettingsUsed": {
+   "apply_scale_options": "FBX_SCALE_NONE",
+   "apply_unit_scale": true,
+   "axis_forward": "-Z",
+   "axis_up": "Y",
+   "bake_anim": false,
+   "bake_space_transform": true,
+   "blenderToFbxAxes": "(x, y, z) -> (x, z, -y)",
+   "blenderToUnityAxes": "(x, y, z) -> (x, z, y)",
+   "colors_type": "LINEAR",
+   "embed_textures": false,
+   "fbxHeaderUnitScaleFactor": 1.0,
+   "fbxUnitsPerMetre": 100.0,
+   "global_scale": 1.0,
+   "mesh_smooth_type": "EDGE",
+   "object_types": [
+    "MESH"
+   ],
+   "path_mode": "STRIP",
+   "prioritize_active_color": true,
+   "use_custom_props": false,
+   "use_mesh_edges": false,
+   "use_mesh_modifiers": true,
+   "use_metadata": true,
+   "use_selection": true,
+   "use_space_transform": true,
+   "use_subsurf": false,
+   "use_triangles": true,
+   "use_tspace": true,
+   "use_visible": false
+  },
+  "family": "SmallProp",
+  "knownProjectConflicts": [
+   "RESOLVED: the importNormals=Calculate clobber no longer applies to forge packages. HectonFBXPostprocessor.cs:401-429 sets importNormals=Import when the sibling manifest declares h8forge.manifest/1 with unityImport.modelImporter.importNormals == 'Import'. Requires the manifest to sit in the SAME directory named MANIFEST_<stem>.json and the mesh file to start with upper-case 'MESH_' (TryResolveForgeManifestPath, :702-736). Both hold by construction from law.NAME_MESH and law.NAME_MANIFEST.",
+   "STILL TRUE, and it does not apply to Assets/ScifiFacility, which TryResolveForgeManifestPath excludes at :715 so a manifest cannot weaken third-party quarantine policy.",
+   "The postprocessor forces materialLocation=ModelImporterMaterialLocation.InPrefab, which conflicts with materialImportMode=None and the shared MAT_* policy.",
+   "HectonBakeryUvAudit.RunAudit() enables generateSecondaryUV and reimports, which overwrites authored UV1. Now sharper than when it was written: Hecton_KelpMaster reads its height and width masks from UV1 as of 2026-07-29, so this audit does not merely overwrite a lightmap set, it would overwrite the sway parameterisation.",
+   "HectonFBXPostprocessor.OnPostprocessModel builds a fallback LODGroup with its own decimation above 2000 triangles when no LODGroup is present. Mitigated for forge packages by the :181-196 branch, which logs the manifest path instead - but only when the manifest parses."
+  ],
+  "lodGroup": {
+   "animateCrossFading": false,
+   "budgets": {
+    "impostorMax": 80,
+    "impostorMin": 2,
+    "lod0": 6000,
+    "lod1": 2000,
+    "lod2": 350
+   },
+   "childSuffixPattern": "_LOD<n>",
+   "createLodGroupExplicitly": true,
+   "fadeMode": "CrossFade",
+   "nameTemplate": "MESH_{family}_{name}_LOD{lod}",
+   "requiredLevels": [
+    0,
+    1,
+    2
+   ],
+   "why": "3dmodel.md section 7 requires a complete LOD0/LOD1/LOD2 chain and 'LOD switching must use hysteresis and dithered cross-fade where the renderer supports it. Alpha-blended cross-fade is forbidden for dense flora/coral on MX350 because it creates overdraw.' CrossFade with animateCrossFading=false is the dithered path, not alpha blend. AGENTS.md requires a 3-5 m or 2-3 s hysteresis band on any LOD switch. Build the LODGroup explicitly: relying on importer auto-detection risks HectonFBXPostprocessor generating its own __AUTO_LOD1/__AUTO_LOD2 above 2000 triangles."
+  },
+  "modelImporter": {
+   "addCollider": false,
+   "animationType": "None",
+   "bakeAxisConversion": false,
+   "generateSecondaryUV": false,
+   "globalScale": 1.0,
+   "importAnimation": false,
+   "importBlendShapeNormals": "None",
+   "importBlendShapes": false,
+   "importCameras": false,
+   "importColors": true,
+   "importConstraints": false,
+   "importLights": false,
+   "importNormals": "Import",
+   "importTangents": "CalculateMikk",
+   "importVisibility": false,
+   "indexFormat": "Auto",
+   "isReadable": false,
+   "keepQuads": false,
+   "materialImportMode": "None",
+   "meshCompression": "Off",
+   "meshOptimizationFlags": "Everything",
+   "normalSmoothingAngle": 32.0,
+   "optimizeMeshPolygons": true,
+   "optimizeMeshVertices": true,
+   "preserveHierarchy": true,
+   "sortHierarchyByName": false,
+   "useFileScale": true,
+   "weldVertices": true
+  },
+  "proofStatus": "PENDING UNITY/PROFILER VERIFICATION",
+  "proofStatusNote": "Every value above is derived from the bibles and from measured FBX content. None of it has been applied in Unity by this module: no Unity import log, no Console output and no visual capture exists for it.",
+  "surfaceClass": "HardSurface",
+  "textureImport": {
+   "albedo": {
+    "compression": "BC7",
+    "mips": true,
+    "sRGB": true
+   },
+   "mrao": {
+    "channels": "R=Metallic G=Roughness-or-Smoothness B=AO A=Emission",
+    "compression": "BC7",
+    "mips": true,
+    "sRGB": false
+   },
+   "namePrefix": "TX_{family}_{set}_{role}",
+   "normal": {
+    "compression": "BC5",
+    "mips": true,
+    "sRGB": false,
+    "textureType": "NormalMap"
+   },
+   "why": "AGENTS.md Visual And Asset Discipline: 'Textures default to BC7 for albedo/roughness/AO and BC5 for normals where applicable.' 3DMODEL_TEXTURES_MATERIALS.md section 3 and section 8: albedo sRGB true, normal NormalMap type with sRGB false, masks sRGB false, mips enabled for world textures, and the manifest must state whether G is roughness or smoothness rather than guessing."
+  },
+  "vertexColorContract": [
+   "edge_wear",
+   "oxidation",
+   "baked_ao",
+   "emission_mask"
+  ],
+  "why": {
+   "addCollider": "3dmodel.md section 9: 'LOD0 visual meshes must never be assigned directly to production MeshCollider components.' Generate Colliders does exactly that. Collision comes from the COL_ proxy in the same FBX.",
+   "animationType": "Static geometry. An Animator on a generated prop would also breach the Zero-GC Scatter protocol.",
+   "bakeAxisConversion": "bake_space_transform=True already baked the axis conversion into the vertex data on the Blender side, so the FBX node transform is identity and Unity has nothing left to bake. Enabling it too would apply a second conversion.",
+   "generateSecondaryUV": "MUST stay off. Unity's secondary-UV generator OVERWRITES UV1, and 3dmodel.md section 3 makes TexCoord1 an authored stream: 'Lightmap, detail, atlas remap, or packed baked masks when required.' Note HectonBakeryUvAudit.RunAudit() sets generateSecondaryUV=true and reimports for models under its managed roots -- a generated package placed there loses its authored UV1.",
+   "globalScale": "The FBX already carries real-world size. law.py expresses every dimension in metres (BEVEL_RANGES, MIN_BOUNDS_EXTENT_M); any scale factor other than 1.0 would silently rescale those budgets.",
+   "importAnimation": "Exported with bake_anim=False; there is no animation data.",
+   "importBlendShapeNormals": "There are no blend shapes: the exporter runs with bake_anim=False and object_types={'MESH'}.",
+   "importBlendShapes": "None present; matches the existing project importer policy.",
+   "importCameras": "preview.py builds a camera into the same scene. object_types={'MESH'} already excludes it, and this is the second gate.",
+   "importColors": "The colour stream is data, not decoration: law.VCOL_CONTRACT for HardSurface is ['edge_wear', 'oxidation', 'baked_ao', 'emission_mask'] (3dmodel.md sections 4 and 5). Section 8: 'Missing tangents, colors, UVs, or masks are validation failures when the material reads them.' Exported with colors_type='LINEAR' so the numbers arrive unwarped by an sRGB transfer curve.",
+   "importConstraints": "No rigging in a generated static package.",
+   "importLights": "Same reason as cameras: preview.py builds lights.",
+   "importNormals": "3dmodel.md section 3: 'RecalculateNormals, RecalculateTangents, and RecalculateBounds are allowed only as editor fallback after a documented failure, never as the default strategy. A generator owns normals, tangents, UVs, and bounds because it owns the geometry.' mesh_ops.apply_shading_basis bakes the section 4 weighted-normal formula into custom split normals; Calculate throws that away and re-derives from an angle, which is the bevel shading work lost.",
+   "importTangents": "3dmodel.md section 3 requires 'Tangent | Float32 x4 ... MikkTSpace-compatible. w is handedness.' Under MikkTSpace the tangent is fully determined by position, normal and UV0, and all three are measured to survive this export exactly, so CalculateMikk reproduces the same basis expressed in Unity's own left-handed frame. The FBX does carry tangent and binormal layers (use_tspace=True, verified present in the file), so 'Import' is available -- but Blender's importer discards tangents, so no round trip inside Blender can prove the w sign survives Unity's handedness flip. Switching to 'Import' needs a Unity-side normal-map A/B capture first. Matches the existing project policy in HectonFBXPostprocessor.ApplyImporterPolicy.",
+   "importVisibility": "Blender visibility flags are authoring state, not runtime truth; matches the existing project importer policy.",
+   "indexFormat": "Auto picks 16-bit under 65k vertices. law.LOD_BUDGETS tops out at a 35 000 triangle fauna body, so most assets stay 16-bit.",
+   "isReadable": "AGENTS.md Runtime Hot-Path Law forbids mesh.vertices, mesh.normals and mesh.triangles in hot paths, and 3dmodel.md section 0A forbids runtime mutation of vertex buffers, so nothing needs the CPU copy. Read/Write on doubles mesh memory against the compact-lane 1800 MB VRAM ceiling. Colliders do not need it: PhysX cooks at import, and runtime collider cooking is rejected anyway.",
+   "keepQuads": "The FBX is already triangulated (use_triangles=True), so this is moot; leaving it off keeps the imported topology identical to the measured one.",
+   "materialImportMode": "3dmodel.md section 0 requires 'Static material references named MAT_*, never runtime material clones', and PROCEDURAL_ASSET_PIPELINE.md requires shared MAT_<Family>_<SurfaceRole> assets. Letting Unity build materials from the FBX creates per-model materials and breaks the SRP Batcher and atlas policy. The exporter ships nothing to import: path_mode='STRIP' and embed_textures=False. Note the existing project policy forces materialLocation=InPrefab for its managed roots.",
+   "meshCompression": "Compression quantises positions, normals, tangents and UVs. 3dmodel.md section 10 gates 'Normals normalized within 0.995 to 1.005 length' and section 3 fixes a stable Float32 layout; quantised normals fail the first and quantised vertex colours corrupt the AO and sway masks. Note the existing project policy sets Medium for Assets/ScifiFacility third-party models only.",
+   "meshOptimizationFlags": "Everything: both vertex and polygon order may be optimised.",
+   "normalSmoothingAngle": "law.SMOOTH_ANGLE_DEG, the same value mesh_ops used for shade_auto_smooth. Inert while importNormals=Import, but it means a forced fallback to Calculate reproduces the authored split instead of a different one.",
+   "optimizeMeshPolygons": "Triangle-order optimisation touches no per-vertex identity, so it is safe even on VAT families.",
+   "optimizeMeshVertices": "On: reordering for GPU cache locality is free performance and nothing in this family indexes the mesh by vertex id.",
+   "preserveHierarchy": "The _LOD0/_LOD1/_LOD2 and COL_ nodes must stay separate children for the LODGroup and the collider binding to work.",
+   "sortHierarchyByName": "Off: the authored node order already reflects LOD order, and resorting would make the imported hierarchy depend on naming rather than on the manifest.",
+   "useFileScale": "Measured: the exporter writes geometry in centimetres and leaves the header UnitScaleFactor at 1, so Convert Units is what turns 175.0 back into 1.75 m. Off by mistake and the asset arrives 100x too large.",
+   "weldVertices": "On: welding only merges vertices whose position, normal and UV all match, so the deliberate splits from the section 4 smoothing groups survive it."
+  }
+ },
+ "uvSummary": {
+  "areaFractionAllowedOverLimit": 0.1,
+  "perTriangleLimit": 0.15,
+  "stretchMean": 0.0115,
+  "stretchP95Area": 0.058,
+  "stretchTriangles": 5413,
+  "stretchWorst": 0.1584,
+  "uvLayer": "UVMap",
+  "uvRoute": "smart_project conformal, angle_limit=32deg, margin=0.008"
+ },
+ "validation": {
+  "meshGateFailures": 0,
+  "note": "Mesh, LOD-chain and collider gates are owned by validate.py and must have run before this manifest was written (PROCEDURAL_ASSET_PIPELINE.md 'Validation Before Save'). This block reports their result; it does not re-run them.",
+  "passed": true,
+  "validatorVersion": "1.0.0"
+ },
+ "validationHash": "e4b469ff5d506f80ff075a49e159cb29",
+ "validationHashAlgorithm": "blake2b-128 over the canonical JSON of every other field, sorted keys",
+ "vertexColorContract": {
+  "alphaMeaning": "emission_decal_mask",
+  "channels": [
+   "edge_wear",
+   "oxidation",
+   "baked_ao",
+   "emission_mask"
+  ],
+  "exportedColorSpace": "LINEAR",
+  "note": "Exported with colors_type='LINEAR'. Measured in the written file: an authored linear 0.25 is stored as 0.25016 with LINEAR and as 0.53725 with SRGB. Unity copies the raw FBX float into Mesh.colors32 without a colour conversion, so SRGB would gamma warp every mask channel."
+ }
+}

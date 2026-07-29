@@ -70,7 +70,7 @@ import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 from mathutils import Matrix, Vector  # noqa: E402
 
-from h8forge import law, mesh_ops, preview, validate, vertexcolor  # noqa: E402
+from h8forge import export_unity, law, mesh_ops, preview, validate, vertexcolor  # noqa: E402
 from h8forge.blackbox import BlackBox, GenerationAborted  # noqa: E402
 
 
@@ -271,6 +271,8 @@ class HandToolResult:
     collider_failures: list = field(default_factory=list)
     preview_paths: tuple = ()
     channel_stats: tuple = ()
+    fbx_path: str = ""
+    manifest_path: str = ""
     orientation: dict = field(default_factory=dict)
 
 
@@ -1447,7 +1449,8 @@ def author_channels(obj: bpy.types.Object, spec: HandToolSpec,
 
 def generate(spec: HandToolSpec, *, name: Optional[str] = None,
              render_preview: bool = True, preview_dir: str = "",
-             preview_resolution: int = 640) -> HandToolResult:
+             preview_resolution: int = 640,
+             export_package: bool = True) -> HandToolResult:
     """Full package: geometry, UVs, bakes, channels, LODs, collider, validation, proof."""
     asset_name = name or "Tool_SeafloorDrill_{s:04d}".format(s=spec.seed % 10000)
     blackbox = BlackBox("PropHandTool", "s{s}q{q:02d}".format(
@@ -1607,6 +1610,93 @@ def generate(spec: HandToolSpec, *, name: Optional[str] = None,
             result.channel_stats = tuple(
                 preview.measure_channel_png(path) for path in channels.tile_paths)
 
+        # STAGE: package. This generator had NO export call at all - only a comment
+        # mentioning export_unity - so the one hero prop the first-20 route actually
+        # blocks on produced contact sheets and no mesh, and died with the Blender
+        # process. Coral had the identical defect and this is the same fix.
+        #
+        # It matters more here than for a decorative asset:
+        # ResourceNodeTemplate_CopperVein.asset:20 demands requiredToolClass 2,
+        # ResourceNodeTemplate.cs:36 makes that Drill, and of the 13 held tool prefabs
+        # Tool_SeafloorDrill_Held is the ONLY one whose MeshFilters are the Unity
+        # built-in Cube - three times, one instance named Detail_RibbedTrimBand.
+        # Geometry that never leaves Blender cannot replace it.
+        #
+        # PACKAGE = FBX plus a SIBLING manifest, inside Assets, and nothing else. The
+        # sibling requirement is not stylistic:
+        # HectonFBXPostprocessor.TryResolveForgeManifestPath (:702-736) derives the
+        # manifest path from the mesh path, and without it the carve-out at :401-429
+        # never fires, so Unity re-derives normals from a single angle and discards the
+        # weighted split basis three separate bevel bands were authored to produce.
+        # PROOF = the render sheets, which stay in preview_dir. They must NOT land in
+        # the package directory: rock sent 27 PNGs into the asset tree that way and
+        # Unity would import every one as a texture with its own meta and GUID.
+        if export_package:
+            for level in lods:
+                result.mesh_reports.append(validate.validate_mesh(
+                    level.obj.data, family=law.Family.SMALL_PROP,
+                    lod_index=level.index,
+                    surface_class=law.SurfaceClass.HARD_SURFACE,
+                    blackbox=blackbox, hero=(level.index == 0)))
+
+            identity = law.GeneratorIdentity(
+                generator="prop_handtool", generator_version=GENERATOR_VERSION,
+                seed=spec.seed, quality_weight=spec.quality,
+                family=law.Family.SMALL_PROP,
+                scale_meters=spec.body_length_m,
+                camera_distance_class="near",
+                platform_lane="windows_copper_wire",
+                source_references=("3DMODEL_EQUIPMENT_PROPS.md", "3dmodel.md",
+                                   "tools.md", "PROCEDURAL_ASSET_PIPELINE.md"))
+
+            package_dir = os.path.join(
+                law.project_root(),
+                *law.forge_package_dir(law.Family.SMALL_PROP).split("/"))
+            os.makedirs(package_dir, exist_ok=True)
+            fbx_path = os.path.join(package_dir, "MESH_{f}_{n}.fbx".format(
+                f=law.Family.SMALL_PROP.value, n=asset_name))
+
+            # None, not the ColliderResult, when there is no collider object:
+            # export_lod_group handles a missing collider correctly but _as_object
+            # RAISES on a ColliderResult whose .obj is None instead of reading it as
+            # absent.
+            collider_arg = (collider
+                            if getattr(collider, "obj", None) is not None else None)
+            export_result = export_unity.export_lod_group(
+                lods, collider_arg, fbx_path, identity=identity,
+                blackbox=blackbox)
+            result.fbx_path = getattr(export_result, "path", fbx_path)
+
+            result.manifest_path = export_unity.write_manifest(
+                os.path.join(package_dir, export_unity.manifest_filename(
+                    law.Family.SMALL_PROP, asset_name)),
+                identity, result.mesh_reports,
+                # No MAT_* or TX_* is authored here: the wear lives in the four
+                # vertex-colour channels and the base tint in the material, so naming
+                # texture files that do not exist would be a false reference.
+                [], [],
+                [collider] if getattr(collider, "obj", None) is not None else [],
+                list(result.preview_paths), export_result=export_result,
+                uv_summary=result.uv_report,
+                alpha_meaning="emission_decal_mask",
+                extra={
+                    "toolClass": "Drill (ResourceNodeTemplate.cs:36 maps 2 -> Drill)",
+                    "routeBlocker":
+                        "Tool_SeafloorDrill_Held.prefab carries the Unity built-in "
+                        "Cube (fileID 10202) in all three MeshFilters, and the binder "
+                        "declines the drill by name at "
+                        "ProductFacePrefabBinderAuthoring.cs:729-734. This package is "
+                        "the geometry that replaces it.",
+                    "parts": [getattr(record, "name", str(record))
+                              for record in result.parts],
+                    "bevelBands": result.bevel_reports,
+                    "topology": result.topology,
+                    "unityPrefabAssembly":
+                        "NOT PERFORMED. .prefab/.mat/.asset creation is Unity-only "
+                        "per AGENTS.md Evidence Law; this generator emits mesh plus "
+                        "manifest for a Unity-side assembler.",
+                })
+
         # Report BEFORE the gate, then gate.
         #
         # 3dmodel.md section 10 says validation failure aborts the SAVE. It does not say
@@ -1642,7 +1732,12 @@ def _parse_args(argv: list) -> argparse.Namespace:
     parser.add_argument("--out", type=str, default="")
     parser.add_argument("--preview-resolution", type=int, default=640)
     parser.add_argument("--no-preview", dest="preview", action="store_false")
-    parser.set_defaults(preview=True)
+    # Export is ON by default. A prop generator whose default run produces no
+    # asset is the defect this stage was added to fix, so the default must not be
+    # the cheap path. The flag exists only to keep a silhouette loop fast.
+    parser.add_argument("--no-export", dest="export", action="store_false",
+                        help="skip FBX + manifest; fast iteration only")
+    parser.set_defaults(preview=True, export=True)
     return parser.parse_args(argv)
 
 
@@ -1792,9 +1887,12 @@ def main() -> None:
         name = args.name or None
         if name and args.variants > 1:
             name = "{n}_{v}".format(n=name, v=variant)
-        generate(spec, name=name, render_preview=args.preview,
-                 preview_dir=args.out,
-                 preview_resolution=args.preview_resolution)
+        result = generate(spec, name=name, render_preview=args.preview,
+                          preview_dir=args.out,
+                          preview_resolution=args.preview_resolution,
+                          export_package=args.export)
+        print("  FBX      " + (result.fbx_path or "NONE - no mesh artifact written"))
+        print("  MANIFEST " + (result.manifest_path or "NONE"))
     print("HANDTOOL_GENERATOR_DONE")
 
 
