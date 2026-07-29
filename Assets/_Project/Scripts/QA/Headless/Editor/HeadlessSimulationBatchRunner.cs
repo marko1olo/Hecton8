@@ -143,13 +143,53 @@ namespace Hecton8.QA.Headless.Editor
             PollRunState();
         }
 
+        /// <summary>
+        /// One 0.25 s poll of the run. Branch order is load-bearing; do not reorder without reading the
+        /// remarks.
+        /// </summary>
+        /// <remarks>
+        /// The exit branch used to sit THIRD, below an unconditional `return` in the result-file branch, and
+        /// that made it dead code for every run that got as far as writing a verdict - which is every run
+        /// that reaches any RequestStop call site, because all four of them are preceded by a result file
+        /// existing on disk (the runtime runner's own, or WriteFallbackResult's). Two consequences, one
+        /// observed and one latent:
+        ///
+        /// 1. Stop was re-requested on every poll for as long as the result file existed. The real status
+        ///    file recorded `runtime_fault` TWICE for the 2026-07-29 run, at 04:48:14 and again at 04:55:56,
+        ///    and the 2026-07-16 run did the same 1.3 s apart. Each repeat re-appended a status line,
+        ///    re-deleted the flag file and re-wrote SessionState. What finally ended both runs was
+        ///    RequestStop falling through to CompleteAfterPlayStopped once play mode was down - never the
+        ///    branch written for that job.
+        ///
+        ///    Honest scope note, because the duplicate looks more expensive than it was: the 7m42s between
+        ///    those two lines was NOT burned by the duplicate. `exit_nonzero` follows the second
+        ///    `runtime_fault` by 3.4 ms, and the gap is Unity recompiling assemblies for a concurrent editor
+        ///    session (`headless_run_unity.log:21336`, `:21375` "Reloading assemblies after forced synchronous
+        ///    recompile", `:21578`, `:25738`) while Tick correctly bailed on isCompiling/isUpdating (:137).
+        ///    The duplicate is the fingerprint of the missing latch, not the cost of it.
+        ///
+        /// 2. The latent one is worse. TryResolveExitCode returns false on IOException and
+        ///    UnauthorizedAccessException, and the old branch returned anyway - so while a result file existed
+        ///    but could not be read, HasTimedOut() was never evaluated. That is the ONLY watchdog able to
+        ///    survive the runtime runner dying (see the constant block above), and a persistently locked
+        ///    result file removed it entirely: infinite 0.25 s polling, no timeout, Unity slot held. The
+        ///    unreadable case therefore falls THROUGH to the watchdog now instead of returning.
+        /// </remarks>
         private static void PollRunState()
         {
-            string resultPath = ResolveProjectPath(ResultRelativePath);
-            if (File.Exists(resultPath))
+            // First, not third. Once the stop is latched the only remaining job is to reach the terminal
+            // path, and nothing below may pre-empt it or re-decide the exit code.
+            if (SessionState.GetBool(ExitRequestedKey, false))
             {
-                if (TryResolveExitCode(resultPath, out int exitCode))
-                    RequestStop(exitCode, exitCode == 0 ? "completed" : "runtime_fault");
+                CompleteAfterPlayStopped(SessionState.GetInt(ExitCodeKey, 1));
+                return;
+            }
+
+            string resultPath = ResolveProjectPath(ResultRelativePath);
+            bool resultExists = File.Exists(resultPath);
+            if (resultExists && TryResolveExitCode(resultPath, out int exitCode))
+            {
+                RequestStop(exitCode, exitCode == 0 ? "completed" : "runtime_fault");
                 return;
             }
 
@@ -160,11 +200,11 @@ namespace Hecton8.QA.Headless.Editor
                 return;
             }
 
-            if (SessionState.GetBool(ExitRequestedKey, false))
-            {
-                CompleteAfterPlayStopped(SessionState.GetInt(ExitCodeKey, 1));
+            // Reached only when the result file exists and is unreadable. Falling through this far kept the
+            // watchdog alive; falling further would re-enter play mode on top of a run that has already
+            // produced a verdict, so this is where that case stops.
+            if (resultExists)
                 return;
-            }
 
             if (!EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
             {
@@ -237,8 +277,24 @@ namespace Hecton8.QA.Headless.Editor
             return days * daySeconds;
         }
 
+        /// <summary>
+        /// Latches the run's verdict and asks play mode to stop. Idempotent: the first call owns the exit
+        /// code and the status line, every later call is routed straight to the terminal path.
+        /// </summary>
+        /// <remarks>
+        /// The latch lives here as well as in PollRunState's branch order so the "requested once" property is
+        /// a local invariant rather than a property of one call site's ordering. Run() clears
+        /// ExitRequestedKey (:87) before its own failure paths can call this, so a stale latch from a previous
+        /// editor session cannot swallow a fresh run's stop.
+        /// </remarks>
         private static void RequestStop(int exitCode, string status)
         {
+            if (SessionState.GetBool(ExitRequestedKey, false))
+            {
+                CompleteAfterPlayStopped(SessionState.GetInt(ExitCodeKey, exitCode));
+                return;
+            }
+
             WriteRunnerStatus(status);
             TryDeleteFile(ResolveProjectPath(FlagRelativePath));
             SessionState.SetInt(ExitCodeKey, exitCode);
@@ -256,7 +312,16 @@ namespace Hecton8.QA.Headless.Editor
         private static void CompleteAfterPlayStopped(int exitCode)
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                // Re-assert the stop, but WITHOUT re-entering RequestStop. Play mode does not come down on
+                // the frame it is asked to, so this branch runs several times per stop; the old code reached
+                // the same re-assertion through RequestStop and paid for it with a duplicate status line, a
+                // duplicate flag delete and a re-written exit code every 0.25 s. Keeping the assignment here
+                // preserves the one useful thing that duplicate did - it also cancels a play-mode ENTRY that
+                // is still in flight, which the old `return` let proceed.
+                EditorApplication.isPlaying = false;
                 return;
+            }
 
             SessionState.SetBool(ActiveKey, false);
             SessionState.SetBool(ExitRequestedKey, false);

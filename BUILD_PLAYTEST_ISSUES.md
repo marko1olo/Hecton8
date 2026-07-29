@@ -162,9 +162,12 @@ What this proves, and what it does not:
    verdict line**: `FailAndQuit` writes the result JSON at `:939` and logs at `:940`, the JSON is on disk,
    and `[HEADLESS] fail` appears **zero times** in all 27,107 log lines. Native engine output kept flowing
    the whole time, which is the tell — managed-only silence, exactly as a managed-only filter predicts.
-   The `logSpamSuppressed: 18` field is also misnamed: `:1174-1178` counts `LogType.Log` messages
-   *delivered*, not suppressed, and 18 reconciles exactly with the 19 `Debug:Log` frames in the play-mode
-   window minus the one that fired before the hook was installed.
+   The `logSpamSuppressed: 18` field in the JSON above was also misnamed — it counts `LogType.Log`
+   messages *delivered*, not suppressed, and 18 reconciles exactly with the 19 `Debug:Log` frames in the
+   play-mode window minus the one that fired before the hook was installed. **Renamed to
+   `debugLogMessagesDelivered`.** The JSON quoted above keeps the old key because that is verbatim what the
+   run wrote; anything newer will carry the new one. Note the reading is inverted from what the old name
+   suggested: a LOW number here means the filter was already active, not that little was suppressed.
 
    **The ecosystem was alive and registered.** `_simulatedSeconds` only accrues while `_ecologyReady`
    (`HeadlessSimulationRunner.cs:213-217`), and `_ecologyReady` is `ecosystem != null &&

@@ -35,6 +35,39 @@ namespace Hecton8.QA.Headless
         private const int BlackboxEntrySizeBytes = 64;
         private const int MemoryWindowDays = 10;
         private const int MaxConsecutiveMemoryWindowFailures = 3;
+        // Same shape and same number as the memory window above, for the same reason: the answer can be
+        // "not right now" rather than "never". IEcosystemDirectorService.TryGetGlobalBiomassAudit returns
+        // false for six distinct conditions (EcosystemDirector.cs:3406-3417 and the IsFinite tail at :3451)
+        // and one of them is a transient job fence: HasPendingSimulationJob() (:3407) is true from the frame
+        // the ecology schedules work until the frame's LateFrameTick completes it, because a Burst job owns
+        // the biomass buffers and reading them would be the job-safety violation that guard exists to avoid.
+        //
+        // That fence is not rare, and the dispatcher makes it deterministic rather than unlucky. Inside ONE
+        // SystemDispatcher.RunDispatcherUpdate (SystemDispatcher.cs:5106) RunSlowTick (:5265) runs BEFORE
+        // RunFrostTick (:5267); the ecology's SlowTick calls ScheduleSectorSolve (EcosystemDirector.cs:2729),
+        // which sets _solveScheduled = true; _solveScheduled is cleared only in CompleteScheduledSolve,
+        // reached from the ecology's LateFrameTick (:2792), which the dispatcher runs in a LATER player-loop
+        // phase (RunDispatcherLateFrame, SystemDispatcher.cs:5453). So on any frame where a slow tick
+        // scheduled the solve, every FrostTick that follows it in that same frame - including this runner's,
+        // which is where the day boundary is evaluated - is guaranteed to be told "unavailable".
+        //
+        // The two _solveScheduled sites are named rather than numbered on purpose: they moved 53 lines during
+        // the writing of this comment (5405 -> 5458 for the set, 5731 -> 5784 for the clear) because
+        // EcosystemDirector.cs is under concurrent edit. Search the symbol, not the line.
+        //
+        // Treating that identically to a dead ecology meant one day boundary landing inside a job fence
+        // aborted the whole run and blamed the ecology. Tolerance is bounded, never unbounded: three
+        // CONSECUTIVE unsampled days still fail, and FinishRunIfTargetReached refuses to report SUCCESS for a
+        // run that never sampled once.
+        private const int MaxConsecutiveEcologySampleFailures = 3;
+        // CSV Flags bit for "this day produced no biomass sample at all". Deliberately NOT bit 0: bit 0 is
+        // the only bit EcosystemBiomassAuditSample.Flags can ever carry (EcosystemDirector.cs:3422 seeds
+        // flags = 0u, :3433 is the single `flags |= 1u`), and it means "a sampled cell was non-finite or
+        // negative". The old code wrote 1u for the unsampled row too, which was harmless only while an
+        // unsampled day killed the run immediately and could therefore only ever be the last row. Now that
+        // unsampled days are tolerated and interleave with good ones, a reader has to be able to tell
+        // "no sample" from "sampled, one bad cell" - so the marker gets its own bit.
+        private const uint CsvFlagEcologySampleUnavailable = 1u << 8;
         private const int MaxSignalsDrainedPerFrame = 128;
         private const int MaxDailyAuditsPerFrostTick = 4;
         private const int DefaultTargetDays = 100;
@@ -48,6 +81,10 @@ namespace Hecton8.QA.Headless
         private const uint SuccessHash = 0x48385130u;
         private const uint LeakHash = 0x48384C45u;
         private const uint EcologyCollapseHash = 0x48384543u;
+        // 'H','8','N','S' - never sampled. Distinct from EcologyCollapseHash on purpose: the blackbox ring
+        // stores only the reason hash, so a run that reached its target day count without ever obtaining a
+        // biomass sample must not be indistinguishable from one whose predators actually died out.
+        private const uint EcologyNeverSampledHash = 0x48384E53u;
         private const uint GasInvalidHash = 0x48384741u;
         private const uint NaNHash = 0x48384E41u;
         private const uint TimeoutHash = 0x4838544Fu;
@@ -86,11 +123,14 @@ namespace Hecton8.QA.Headless
         private int _memoryWindowCursor;
         private int _memoryWindowCount;
         private int _memoryWindowFailureStreak;
+        private int _ecologySampleFailureStreak;
+        private int _ecologySampledDayCount;
+        private int _ecologyUnsampledDayCount;
         private int _blackboxCursor;
         private int _progressionSignalCount;
         private int _crashSignalCount;
         private int _gasInvalidRoomId = -1;
-        private int _logSpamCount;
+        private int _debugLogDeliveredCount;
         private int _previousTargetFrameRate;
         private int _previousVSyncCount;
         private int _previousCaptureFramerate;
@@ -587,13 +627,33 @@ namespace Hecton8.QA.Headless
             IEcosystemDirectorService ecosystem = GlobalRegistry.EcosystemDirector;
             if (ecosystem == null || !ecosystem.TryGetGlobalBiomassAudit(out EcosystemBiomassAuditSample biomass))
             {
-                if (!TryWriteDailyCsv(default, nativeBytes, h8Bytes, nativeAllocations, h8Allocations, flags: 1u))
+                // The CSV row goes out FIRST and unconditionally, for every unsampled day, tolerated or not.
+                // The day counter has already advanced (:594) so a skipped row would leave a hole in the
+                // series and a reader could not tell a tolerated fence from a missing measurement.
+                _ecologyUnsampledDayCount++;
+                if (!TryWriteDailyCsv(default, nativeBytes, h8Bytes, nativeAllocations, h8Allocations, CsvFlagEcologySampleUnavailable))
                     return;
 
-                FailAndQuit(1, EcologyCollapseHash, "[ECOLOGY_UNAVAILABLE]");
+                _ecologySampleFailureStreak++;
+                if (_ecologySampleFailureStreak >= MaxConsecutiveEcologySampleFailures)
+                {
+                    // Bounded, so the tolerance cannot hide the defect this harness currently exists to
+                    // surface: with -h8headless there is no player, so _activeBiomassCellCount stays 0 and
+                    // EVERY day is unsampled - that run still dies here, on day 3, with the same verdict.
+                    FailAndQuit(1, EcologyCollapseHash, "[ECOLOGY_UNAVAILABLE]");
+                    return;
+                }
+
+                // Must still run on this path. The day loop in FrostTick stops once _completedDays reaches
+                // _targetDays, so a tolerated unsampled FINAL day would otherwise never reach any terminal
+                // state: no completion, no failure, and the batch runner's watchdog left to notice hours
+                // later. This is the only exit for that case.
+                FinishRunIfTargetReached();
                 return;
             }
 
+            _ecologySampleFailureStreak = 0;
+            _ecologySampledDayCount++;
             _lastPreyBiomass = biomass.PreyBiomassSum;
             _lastPredatorBiomass = biomass.PredatorBiomassSum;
             if (!TryWriteDailyCsv(biomass, nativeBytes, h8Bytes, nativeAllocations, h8Allocations, biomass.Flags))
@@ -605,8 +665,34 @@ namespace Hecton8.QA.Headless
                 return;
             }
 
-            if (_completedDays >= _targetDays)
-                CompleteAndQuit();
+            FinishRunIfTargetReached();
+        }
+
+        /// <summary>
+        /// The only path to SUCCESS in this runner. A run that reached its target day count without ever
+        /// obtaining a single biomass sample fails instead.
+        /// </summary>
+        /// <remarks>
+        /// Tolerating transient job fences is only safe while this asymmetry holds. Without it, the tolerance
+        /// added for MaxConsecutiveEcologySampleFailures would turn the 2026-07-29 failure into a green run:
+        /// with -h8headlessDays 1 the single day is unsampled, the streak is 1 of 3 and therefore tolerated,
+        /// and the target day count is already met - so the previous "if (_completedDays >= _targetDays)
+        /// CompleteAndQuit()" would have written status SUCCESS for a run that never once measured the
+        /// ecology. A harness that can report success without evidence is worse than one that over-reports
+        /// failure, so the sample count gates the verdict, not the day count alone.
+        /// </remarks>
+        private void FinishRunIfTargetReached()
+        {
+            if (_completedDays < _targetDays)
+                return;
+
+            if (_ecologySampledDayCount <= 0)
+            {
+                FailAndQuit(1, EcologyNeverSampledHash, "[ECOLOGY_NEVER_SAMPLED]");
+                return;
+            }
+
+            CompleteAndQuit();
         }
 
         private bool AuditGasPressureFinite()
@@ -957,12 +1043,12 @@ namespace Hecton8.QA.Headless
         private static void LogRunnerLifecycle(string message)
         {
             // LogWarning, not Log, and that is the whole point of this method existing.
-            // ForceHeadlessRuntimePolicy sets Debug.unityLogger.filterLogType = LogType.Warning (:483) so
-            // first-party Debug.Log spam cannot drown a 100-day batchmode log, and it is installed at :337
+            // ForceHeadlessRuntimePolicy sets Debug.unityLogger.filterLogType = LogType.Warning (:523) so
+            // first-party Debug.Log spam cannot drown a 100-day batchmode log, and it is installed at :377
             // the instant the dispatcher wait succeeds. Unity drops LogType.Log at the managed Logger
             // BEFORE it reaches either the log file or Application.logMessageReceived - so that filter was
             // also eating this method's own verdict line. In the 2026-07-29 run, FailAndQuit wrote
-            // [ECOLOGY_UNAVAILABLE] to the result JSON at :939 and logged it at :940; the JSON is on disk
+            // [ECOLOGY_UNAVAILABLE] to the result JSON at :1025 and logged it at :1026; the JSON is on disk
             // and the string "[HEADLESS] fail" appears zero times in all 27,107 log lines. Two separate
             // investigations then read the resulting managed-log silence as a bootstrap deadlock and
             // diagnosed the wrong subsystem entirely, because the last surviving managed line happened to
@@ -1145,8 +1231,26 @@ namespace Hecton8.QA.Headless
                 WriteInvariant(writer, _lastH8MemoryBytes);
                 writer.Write(",\"gasInvalidRoomId\":");
                 WriteInvariant(writer, _gasInvalidRoomId);
-                writer.Write(",\"logSpamSuppressed\":");
-                WriteInvariant(writer, _logSpamCount);
+                // Days that produced a real biomass sample versus days that produced none. Reported because
+                // the run can now COMPLETE with unsampled days in it: without these two numbers a reader
+                // seeing status SUCCESS cannot tell a clean 100-day run from one where three day boundaries
+                // landed inside a job fence, and the CSV would be the only place that fact survived.
+                writer.Write(",\"ecologySampledDays\":");
+                WriteInvariant(writer, _ecologySampledDayCount);
+                writer.Write(",\"ecologyUnsampledDays\":");
+                WriteInvariant(writer, _ecologyUnsampledDayCount);
+                // Renamed from "logSpamSuppressed", which was a lie with consequences. HandleLogMessage
+                // increments on LogType.Log messages it RECEIVES, so this has always been a DELIVERED count;
+                // nothing in it is suppressed. In the 2026-07-29 run the value 18 was read as "18 messages
+                // were hidden from you", which pointed the diagnosis at log volume when the actual problem
+                // was the opposite: ForceHeadlessRuntimePolicy sets filterLogType = LogType.Warning (:523)
+                // and Unity drops LogType.Log at the managed Logger BEFORE Application.logMessageReceived,
+                // so after that line installs this counter stops counting almost entirely. The honest reading
+                // of a low number here is "the filter was already active", not "little spam happened".
+                // Verified before renaming: no parser depends on the old key - the only other occurrence in
+                // the repo is prose in BUILD_PLAYTEST_ISSUES.md quoting a historical artifact.
+                writer.Write(",\"debugLogMessagesDelivered\":");
+                WriteInvariant(writer, _debugLogDeliveredCount);
                 writer.Write(",\"evidenceFailureFlags\":");
                 WriteInvariant(writer, _evidenceFailureFlags);
                 writer.Write('}');
@@ -1187,10 +1291,14 @@ namespace Hecton8.QA.Headless
             }
         }
 
+        /// <summary>
+        /// Counts <see cref="LogType.Log"/> messages DELIVERED to this handler. Not a suppression count -
+        /// see the field note in <see cref="WriteResult"/>.
+        /// </summary>
         private void HandleLogMessage(string condition, string stackTrace, LogType type)
         {
             if (type == LogType.Log)
-                _logSpamCount++;
+                _debugLogDeliveredCount++;
         }
 
         private static void TryDumpH8MemoryTable()
