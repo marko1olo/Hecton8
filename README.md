@@ -8,12 +8,10 @@
 [![C#](https://img.shields.io/badge/C%23-Burst%20Compiled-purple?style=for-the-badge&logo=csharp)]()
 [![FPS](https://img.shields.io/badge/Target-60%20FPS%20%7C%200B%2Fframe%20GC-00ff88?style=for-the-badge)]()
 [![License](https://img.shields.io/badge/License-Commercial%20Anti--Theft-red?style=for-the-badge)](LICENSE.md)
-[![Status](https://img.shields.io/badge/Status-V0%20Vertical%20Slice-orange?style=for-the-badge)]()
-[![Stars](https://img.shields.io/github/stars/marko1olo/Hecton8?style=for-the-badge&color=gold)]()
 
 > **AA Deep Sea Noir / NASA-Punk 3D survival on Unity 6000.4 URP — 60 FPS, 0 B/frame GC, scalable from 2GB VRAM handhelds to Ultra PCVR.**
 
-[🌊 Wishlist](#) &nbsp;·&nbsp; [📖 Devlog](#) &nbsp;·&nbsp; [🐛 Issues](../../issues) &nbsp;·&nbsp; [📧 Contact](#)
+[🌊 Wishlist](#) &nbsp;·&nbsp; [📖 Devlog](#) &nbsp;·&nbsp; [🐛 Issues](../../issues)
 
 </div>
 
