@@ -1,22 +1,27 @@
 <div align="center">
 
-![Banner](https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/hecton8_banner.jpg)
+<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/hecton8_banner.jpg" width="100%" alt="HECTON-8 Banner"/>
 
 # HECTON-8 — Deep Sea Noir / NASA-Punk 3D Survival Game
 
 [![Unity](https://img.shields.io/badge/Unity-6000.4%20URP-black?style=for-the-badge&logo=unity)](https://unity.com)
-[![Language](https://img.shields.io/badge/C%23-Burst%20Compiled-purple?style=for-the-badge&logo=csharp)]()
+[![C#](https://img.shields.io/badge/C%23-Burst%20Compiled-purple?style=for-the-badge&logo=csharp)]()
 [![FPS](https://img.shields.io/badge/Target-60%20FPS%20%7C%200B%2Fframe%20GC-00ff88?style=for-the-badge)]()
 [![License](https://img.shields.io/badge/License-Commercial%20Anti--Theft-red?style=for-the-badge)](LICENSE.md)
 [![Status](https://img.shields.io/badge/Status-V0%20Vertical%20Slice-orange?style=for-the-badge)]()
+[![Stars](https://img.shields.io/github/stars/marko1olo/Hecton8?style=for-the-badge&color=gold)]()
 
-> **AA Deep Sea Noir / NASA-Punk survival on Unity 6000.4 URP — 60 FPS, 0B/frame GC, scalable from 2GB VRAM handhelds to Ultra PCVR.**
+> **AA Deep Sea Noir / NASA-Punk 3D survival on Unity 6000.4 URP — 60 FPS, 0 B/frame GC, scalable from 2GB VRAM handhelds to Ultra PCVR.**
 
-[🌊 Wishlist](#) · [📖 Devlog](#) · [🐛 Issues](../../issues)
+[🌊 Wishlist](#) &nbsp;·&nbsp; [📖 Devlog](#) &nbsp;·&nbsp; [🐛 Issues](../../issues) &nbsp;·&nbsp; [📧 Contact](#)
 
 </div>
 
 ---
+
+# 🌊 HECTON-8 — Deep Sea Noir & NASA-Punk 3D Game Engine
+
+![Hecton8 Banner](https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/hecton8_banner.jpg)
 
 > **AA Deep Sea Noir / NASA-Punk 3D game built on Unity 6000.4 URP with extreme memory optimizations (60 FPS / GC 0 B/frame target).**
 
@@ -33,13 +38,3 @@
 
 ### 📜 License / Лицензия
 Protected under **HECTON-8 Commercial Anti-Theft & Source-Available License (Copyright (c) 2026 Adolf Petushkov)**. Maintainers and AI research welcome!
-
-
----
-
-<details>
-<summary>🇷🇺 Русская Версия</summary>
-
-**HECTON-8** — AA игра выживания в жанре Deep Sea Noir / NASA-Punk на Unity 6000.4 URP. Цели: 60 FPS, ноль GC-аллокаций в горячих путях, масштабирование от 2GB VRAM до Ultra PCVR. Текущий этап: вертикальный срез (первые 20 минут).
-
-</details>
