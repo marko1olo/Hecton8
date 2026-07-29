@@ -42,6 +42,27 @@ namespace Hecton8.EditorTools.Diagnostics
     /// <c>coverage</c> field states in the artifact exactly which four buffers the hash does and does not
     /// cover - read it before quoting a match as proof that two worlds agreed.
     ///
+    /// WHEN THERE IS NO HASH, the block says WHICH of three things was wrong, because they have three
+    /// different owners and one measured run reported all three identically. <c>OwnerAbsentNoBuffer</c> means
+    /// no <c>LockstepStateValidator</c> exists at all - a lifetime defect. <c>OwnerPresentBufferUnopened</c>
+    /// means one exists and its vault buffer open failed silently - a vault-timing defect.
+    /// <c>NeverSampled</c> means the buffer is open and the run simply ended before a hash frame - a budget
+    /// matter. Alongside them the <c>DETERMINISM OWNER TRACE</c> lines sample the owner's existence at the
+    /// boot warmup, at the first gameplay tick and at end of run, which brackets the window an owner
+    /// disappeared in WITHOUT a second editor run; before that trace existed, separating "never created"
+    /// from "created then destroyed by a scene load" cost one full run per hypothesis.
+    ///
+    /// The slow-tick discard is reported as a first-class COMPARABILITY caveat
+    /// (<c>DETERMINISM SLOWTICK DISCARD</c>, artifact <c>runComparable</c> / <c>comparabilityCaveat</c>), not
+    /// as one number among a dozen. Two runs of one seed that discarded different amounts of owed simulation
+    /// time did not simulate the same world, so a hash difference between them proves nothing. The clamp that
+    /// discards the time is CORRECT and stays - it is the anti-death-spiral guard.
+    ///
+    /// <c>-h8ReviveDeterminismOwner</c> is OPT-IN and off by default: it creates a validator in memory when
+    /// the session has none, to answer whether the hash path can produce a number at all. It is deliberately
+    /// not the default, because the owner's absence is the only evidence this harness has about it and a
+    /// silently manufactured owner would hide that defect behind a hash. See TryReviveDeterminismOwner.
+    ///
     /// Save-leg arguments: -h8SaveSeconds (default 60, clamped so the leg cannot push the run past
     /// -h8TimeoutSeconds), -h8SaveSlot (0..2), -h8SkipSaveLeg to disable it. The leg only runs after
     /// a game was actually started and the world scene settled.
@@ -362,9 +383,34 @@ namespace Hecton8.EditorTools.Diagnostics
             NotRead = 0,
             NoPlaySession = 1,
             NoDataVault = 2,
-            NoHashBuffer = 3,
-            NeverSampled = 4,
-            Sampled = 5,
+
+            /// <summary>
+            /// NO <c>LockstepStateValidator</c> instance exists anywhere in the running session and
+            /// <c>BufferID.LockstepMasterStateHash</c> is unallocated. The owner is ABSENT, so the defect is
+            /// in the owner's LIFETIME and no amount of hashing work can be at fault.
+            ///
+            /// Split out of the former single <c>NoHashBuffer</c> state, which reported this case, the case
+            /// below and a zero hash over a live buffer identically. Distinguishing them by hand cost a
+            /// whole editor run per hypothesis, because the three have three different owners.
+            /// </summary>
+            OwnerAbsentNoBuffer = 3,
+
+            /// <summary>
+            /// A validator instance EXISTS and <c>BufferID.LockstepMasterStateHash</c> is still unallocated,
+            /// so the owner is present and its buffer open failed or never ran. The fix is in why
+            /// <c>LockstepStateValidator.OpenOrAcquireVaultBuffer</c> refused - a null
+            /// <c>ResolveDataVault()</c>, <c>IsAllocationLocked</c> or <c>IsCompactionFenceActive</c> - not
+            /// in the component's lifetime.
+            /// </summary>
+            OwnerPresentBufferUnopened = 4,
+
+            /// <summary>
+            /// The buffer IS allocated and the hash is still zero: the owner opened its buffers and the run
+            /// ended before a hash frame. Nothing is broken in the wiring; the run was too short or the
+            /// cadence too long.
+            /// </summary>
+            NeverSampled = 5,
+            Sampled = 6,
         }
 
         private struct DeterminismCategorySample
@@ -384,6 +430,53 @@ namespace Hecton8.EditorTools.Diagnostics
         private const uint DeterminismArrayFlagMissing = 1u << 0;
         private const uint DeterminismArrayFlagTruncated = 1u << 1;
         private const uint DeterminismArrayFlagNonFinite = 1u << 2;
+
+        /// <summary>
+        /// One observation of the determinism owner's existence, taken at a NAMED moment in the run.
+        ///
+        /// WHY A TRACE AND NOT A SINGLE READING. The end-of-run read reported
+        /// <c>instances=0 enabled=0</c> with the hash buffer unallocated, and that single number cannot tell
+        /// "the RuntimeInitializeOnLoadMethod never created the owner" from "the owner was created, lived,
+        /// and was destroyed by a scene transition". Those are different defects in different places, and
+        /// the only way to separate them was to run the editor again with a different guess - about 6
+        /// minutes of wall clock per hypothesis on this harness. Sampling at the boot warmup, at the first
+        /// gameplay tick and at end of run brackets the death window inside ONE run.
+        /// </summary>
+        private struct DeterminismOwnerSample
+        {
+            /// <summary>False means this observation point was never reached, which is itself information -
+            /// an absent sample must never read as "zero instances".</summary>
+            public bool Taken;
+
+            public int Instances;
+            public int Enabled;
+            public bool VaultPresent;
+            public bool HashBufferPresent;
+            public string ActiveScene;
+        }
+
+        private static DeterminismOwnerSample _determinismOwnerAtBootWarmup;
+        private static DeterminismOwnerSample _determinismOwnerAtGameplayStart;
+
+        /// <summary>
+        /// Why the master-hash buffer read failed, in the vault's own terms. Empty when the buffer was
+        /// present. <c>TryReadDeterminismBuffer</c> collapses four distinct refusals into one <c>false</c>,
+        /// and "not allocated", "generation 0", "handle for a different BufferID" and "buffer shorter than
+        /// one element" do not have the same cause.
+        /// </summary>
+        private static string _determinismHashBufferDiagnosis = string.Empty;
+
+        // Both are read from IDataVault at capture time. They are the two states that make
+        // LockstepStateValidator.OpenOrAcquireVaultBuffer refuse a cold allocation outright
+        // (LockstepStateValidator.cs:1751), so an owner that is present with no buffer is explained by
+        // these before anything else.
+        private static bool _determinismVaultAllocationLocked;
+        private static bool _determinismVaultCompactionFenceActive;
+
+        private static bool _determinismReviveRequested;
+        private static bool _determinismReviveAttempted;
+        private static bool _determinismReviveCreated;
+        private static string _determinismReviveNote = string.Empty;
 
         private static DeterminismCapture _determinismState;
         private static ulong _determinismMasterHash;
@@ -455,6 +548,12 @@ namespace Hecton8.EditorTools.Diagnostics
             _saveSlotIndex = (byte)Math.Clamp(
                 ReadIntArg("-h8SaveSlot", 0), 0, Hecton8.SaveSystem.SaveEvents.ManualSlotCount - 1);
             _saveLegEnabled = ReadStringArg("-h8SkipSaveLeg", null) == null;
+
+            // OFF by default, and see TryReviveDeterminismOwner for why the default must stay off: the
+            // absence of the determinism owner is this harness's only finding about it, and a probe that
+            // manufactured one silently would hide the product defect behind a hash. Opt in to answer the
+            // separate question "can the hash path produce a non-zero number once an owner exists".
+            _determinismReviveRequested = ReadStringArg("-h8ReviveDeterminismOwner", null) != null;
 
             // The world driver is the only producer for the Swim/Resource/Tool/Craft rows in a headless
             // run. It is on by default because without it those four rows can only ever say
@@ -592,6 +691,14 @@ namespace Hecton8.EditorTools.Diagnostics
 
                     if (++_frames >= _warmupFrames)
                     {
+                        // The FIRST determinism-owner observation, and the only one taken while
+                        // 00_BOOTSTRAP is still the active scene. LockstepStateValidator is created by a
+                        // RuntimeInitializeOnLoadMethod(AfterSceneLoad) that runs once per play session
+                        // (LockstepStateValidator.cs:359-368), so if the owner is ever going to exist it
+                        // exists by now - the warmup is 240 editor ticks deep into play mode. An absent
+                        // owner HERE and an absent owner at end of run are different findings, and before
+                        // this sample existed the report could not tell them apart.
+                        SampleDeterminismOwner(ref _determinismOwnerAtBootWarmup, "BootWarmup");
                         _phaseStartedAt = EditorApplication.timeSinceStartup;
                         SetPhase(_startNewGame ? Phase.LoadingMenu : Phase.Reporting);
                     }
@@ -651,6 +758,21 @@ namespace Hecton8.EditorTools.Diagnostics
                     {
                         _placementOwnersRepaired = true;
                         EnableDisabledPlacementOwnersInMemory();
+                    }
+
+                    // SECOND determinism-owner observation: the world scene has arrived, so every
+                    // LoadSceneMode.Single of the boot route has already happened. Comparing this against
+                    // the BootWarmup sample brackets the window in which the owner disappeared, in ONE run.
+                    // Latched by the sample's own Taken flag; the cold FindObjectsByType inside runs once.
+                    if (!_determinismOwnerAtGameplayStart.Taken)
+                    {
+                        SampleDeterminismOwner(ref _determinismOwnerAtGameplayStart, "FirstGameplayTick");
+
+                        // Order matters and is not cosmetic: the sample above is the EVIDENCE, and a revive
+                        // that ran first would overwrite the one observation that proves the owner is
+                        // missing in the shipped route.
+                        if (_determinismReviveRequested)
+                            TryReviveDeterminismOwner();
                     }
 
                     // The world driver rides THIS tick. It gets no Update, no coroutine and no timer of
@@ -2718,6 +2840,138 @@ namespace Hecton8.EditorTools.Diagnostics
         }
 
         /// <summary>
+        /// Takes one observation of the determinism owner's existence at a named moment.
+        ///
+        /// COLD AND ONE-SHOT PER MOMENT. Both in-run call sites are latched by the sample's own
+        /// <see cref="DeterminismOwnerSample.Taken"/> flag, so the <c>FindObjectsByType</c> here executes
+        /// once per observation point and never becomes a cadence path - the same discipline
+        /// <see cref="EnableDisabledPlacementOwnersInMemory"/> is latched under.
+        ///
+        /// The buffer probe is deliberately included in the sample: "owner alive, buffer already open" at
+        /// the boot warmup versus "owner alive, buffer still unopened" separates a lifetime defect from a
+        /// vault-timing defect without a second editor run.
+        /// </summary>
+        private static void SampleDeterminismOwner(ref DeterminismOwnerSample sample, string moment)
+        {
+            if (sample.Taken || !EditorApplication.isPlaying)
+                return;
+
+            // No FindObjectsSortMode overload - deprecated in 6000.5 (CS0618) and this only enumerates.
+            // FindObjectsInactive.Include is required, not defensive: the owner's GameObject is created at
+            // runtime with HideFlags.HideInHierarchy, so a scene-root walk cannot see it at all.
+            Hecton8.Core.Determinism.LockstepStateValidator[] validators =
+                UnityEngine.Object.FindObjectsByType<Hecton8.Core.Determinism.LockstepStateValidator>(
+                    FindObjectsInactive.Include);
+
+            int enabled = 0;
+            for (int i = 0; i < validators.Length; i++)
+            {
+                Hecton8.Core.Determinism.LockstepStateValidator validator = validators[i];
+                if (validator != null && validator.isActiveAndEnabled)
+                    enabled++;
+            }
+
+            Hecton8.Core.Memory.IDataVault vault = GlobalRegistry.DataVault;
+            bool hashBufferPresent = false;
+            if (vault != null)
+            {
+                hashBufferPresent = TryReadDeterminismBuffer<ulong>(
+                    vault,
+                    Hecton8.Core.Memory.BufferID.LockstepMasterStateHash,
+                    1,
+                    out Unity.Collections.NativeArray<ulong>.ReadOnly probeView);
+
+                // The view is intentionally not indexed. This sample answers "is the buffer allocated",
+                // and reading the value belongs to the single end-of-run capture that owns the number.
+                _ = probeView;
+            }
+
+            sample.Taken = true;
+            sample.Instances = validators.Length;
+            sample.Enabled = enabled;
+            sample.VaultPresent = vault != null;
+            sample.HashBufferPresent = hashBufferPresent;
+            sample.ActiveScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+
+            Debug.Log(
+                $"{Marker} DETERMINISM OWNER TRACE {moment} activeScene='{sample.ActiveScene}' " +
+                $"validatorInstances={sample.Instances} enabled={sample.Enabled} " +
+                $"dataVault={(sample.VaultPresent ? "present" : "null")} " +
+                $"masterHashBuffer={(sample.HashBufferPresent ? "allocated" : "unallocated")}");
+        }
+
+        /// <summary>
+        /// OPT-IN, off by default: creates a <c>LockstepStateValidator</c> in memory when the running session
+        /// has none, so a run can answer "does the hash pipeline produce anything once an owner exists".
+        ///
+        /// WHY IT IS OFF BY DEFAULT, unlike <see cref="EnableDisabledPlacementOwnersInMemory"/>. The scatter
+        /// director is authored into the shipped scene and merely unchecked, so enabling it in memory
+        /// restores authored intent. The determinism owner is different: its ABSENCE is the only evidence
+        /// this harness has ever produced about it, and a probe that silently manufactured one would make
+        /// every future run report a hash while the product still ships without an owner past the first
+        /// scene load. That is the exact class of thing an instrument must never hide, so the default run
+        /// keeps reporting the absence and this path has to be asked for by name.
+        ///
+        /// WHAT IT IS NOT. It is not the fix, and the number it produces is NOT a product hash: a validator
+        /// created at the first gameplay tick starts its own <c>_postSimulationFrame</c> at zero, so its
+        /// sampled frame and therefore its master hash cannot be compared against a session where the owner
+        /// lived from boot. It answers a pipeline question, not a determinism question, and the log says so.
+        ///
+        /// Play-mode only and in-memory only, per AGENTS.md:126: no asset is written, no scene is marked
+        /// dirty, no Undo entry is recorded. <c>DontDestroyOnLoad</c> is applied because the product's own
+        /// creation path does not, which is the suspected defect - so a revived owner deliberately does NOT
+        /// reproduce the product's lifetime.
+        /// </summary>
+        private static void TryReviveDeterminismOwner()
+        {
+            if (_determinismReviveAttempted)
+                return;
+
+            _determinismReviveAttempted = true;
+
+            if (!EditorApplication.isPlaying)
+            {
+                _determinismReviveNote = "refused - not in play mode";
+                return;
+            }
+
+            if (_determinismOwnerAtGameplayStart.Taken && _determinismOwnerAtGameplayStart.Instances > 0)
+            {
+                _determinismReviveNote =
+                    "not needed - a validator instance was already live at the first gameplay tick";
+                Debug.Log($"{Marker} DETERMINISM REVIVE {_determinismReviveNote}");
+                return;
+            }
+
+            try
+            {
+                // COLD ALLOC: GameObject[1] - probe-owned determinism owner host, one per run, play-mode
+                // only - owner: H8_HeadlessPlayModeProbe
+                GameObject host = new GameObject("H8_PROBE_REVIVED Lockstep State Validator");
+                UnityEngine.Object.DontDestroyOnLoad(host);
+                host.AddComponent<Hecton8.Core.Determinism.LockstepStateValidator>();
+                _determinismReviveCreated = true;
+                _determinismReviveNote =
+                    "created in memory at the first gameplay tick with DontDestroyOnLoad";
+
+                Debug.Log(
+                    $"{Marker} DETERMINISM REVIVE DIVERGENCE this run does NOT match a player session. The " +
+                    "session had NO LockstepStateValidator and -h8ReviveDeterminismOwner created one, so " +
+                    "any hash reported below exists only because the probe built its own owner. The owner's " +
+                    "post-simulation frame counter starts at 0 here, so the hash is NOT comparable with a " +
+                    "run whose owner lived from boot - it only proves whether the hash path can produce a " +
+                    "non-zero number at all.");
+            }
+            catch (Exception ex)
+            {
+                _determinismReviveNote = ex.GetType().Name + ": " + ex.Message;
+                Debug.Log(
+                    $"{Marker} DETERMINISM REVIVE FAILED {_determinismReviveNote} - the run continues and " +
+                    "reports the owner as absent, which is the honest reading.");
+            }
+        }
+
+        /// <summary>
         /// Reads the determinism numbers this run produced and stores them for the console report and the
         /// artifact.
         ///
@@ -2802,6 +3056,13 @@ namespace Hecton8.EditorTools.Diagnostics
                 return;
             }
 
+            // These two are the only states that make the owner's OpenOrAcquireVaultBuffer refuse a cold
+            // allocation outright (LockstepStateValidator.cs:1751), and it refuses SILENTLY - it returns
+            // false and the caller, EnsureNativeState, ignores the result. So an owner that is present with
+            // no buffer is explained by these before any other hypothesis is worth spending a run on.
+            _determinismVaultAllocationLocked = vault.IsAllocationLocked;
+            _determinismVaultCompactionFenceActive = vault.IsCompactionFenceActive;
+
             // Type arguments are written out at every call site on purpose: NativeArray<T>.ReadOnly is a
             // nested type of a generic, and relying on the compiler to infer T through one is not worth the
             // risk in a file whose owner cannot hold the Unity lock to compile it.
@@ -2832,7 +3093,14 @@ namespace Hecton8.EditorTools.Diagnostics
 
             if (!hashBufferPresent)
             {
-                _determinismState = DeterminismCapture.NoHashBuffer;
+                // The unallocated-buffer case used to be ONE state. It is two findings with two owners:
+                // no validator at all is a lifetime defect, and a live validator over an unallocated buffer
+                // is a vault-timing defect. Reporting both as "NoHashBuffer" cost an editor run per
+                // hypothesis, which is why the split is here and not in a comment.
+                _determinismHashBufferDiagnosis = DiagnoseDeterminismHashBuffer(vault);
+                _determinismState = _determinismValidatorInstances > 0
+                    ? DeterminismCapture.OwnerPresentBufferUnopened
+                    : DeterminismCapture.OwnerAbsentNoBuffer;
                 return;
             }
 
@@ -2939,6 +3207,59 @@ namespace Hecton8.EditorTools.Diagnostics
         }
 
         /// <summary>
+        /// Why <see cref="TryReadDeterminismBuffer{T}"/> refused the master-hash buffer, in the vault's own
+        /// terms. Called at most once per run, only on the failure branch.
+        ///
+        /// The guards below MIRROR that method's guards instead of sharing them, and that is a real cost:
+        /// change one and this drifts. The alternative was an out-parameter reason on a generic method with
+        /// four call sites, in a file whose owner cannot hold the Unity lock to compile it. The four
+        /// refusals are not interchangeable - "never requested" indicts the owner, "generation 0" indicts
+        /// the allocation, "crossed BufferID" and "view refused" indict the vault - and collapsing them into
+        /// one <c>false</c> is what made this state unreadable in the first place.
+        /// </summary>
+        private static string DiagnoseDeterminismHashBuffer(Hecton8.Core.Memory.IDataVault vault)
+        {
+            if (vault == null)
+                return "GlobalRegistry.DataVault is null, so nothing could be read";
+
+            if (!vault.TryGetGenerationHandle<ulong>(
+                    Hecton8.Core.Memory.BufferID.LockstepMasterStateHash,
+                    out Hecton8.Core.Memory.VaultGenerationHandle<ulong> handle))
+            {
+                return "the vault publishes NO generation handle for BufferID.LockstepMasterStateHash, so " +
+                    "the buffer was never requested from it - LockstepStateValidator.EnsureNativeState " +
+                    "either never ran or its OpenOrAcquireVaultBuffer call returned before " +
+                    "EnsureGenerationHandle";
+            }
+
+            if (handle.Generation == 0u)
+            {
+                return "a generation handle exists with Generation=0, the vault's 'never allocated' value: " +
+                    "the BufferID is known but no arena block was ever committed to it";
+            }
+
+            if (handle.BufferID != unchecked((uint)(int)Hecton8.Core.Memory.BufferID.LockstepMasterStateHash))
+            {
+                return "the published handle carries a DIFFERENT BufferID than the one requested, so this " +
+                    "vault slot's metadata is crossed - a vault defect, not a determinism one";
+            }
+
+            if (!vault.TryReadOnlyHandle(
+                    in handle, out Unity.Collections.NativeArray<ulong>.ReadOnly buffer) ||
+                !buffer.IsCreated)
+            {
+                return "a valid generation handle exists but TryReadOnlyHandle refused the view, which is " +
+                    "what an evicted block or an active compaction fence looks like from outside the vault";
+            }
+
+            if (buffer.Length < 1)
+                return "the buffer is allocated with length 0, so it has no element to hold a hash";
+
+            return "the read SUCCEEDED on this second attempt after failing on the first, so the buffer " +
+                "state is changing under the reader and no reading in this block is trustworthy";
+        }
+
+        /// <summary>
         /// Prints the three numbers a second run of the same seed is compared on, and the coverage limits
         /// that decide whether the comparison means anything.
         ///
@@ -2961,7 +3282,14 @@ namespace Hecton8.EditorTools.Diagnostics
                 $"lastCleanStateHash=0x{_determinismLastCleanHash.ToString("X16", CultureInfo.InvariantCulture)} " +
                 $"lastCleanPostSimFrame={_determinismLastCleanFrame} " +
                 $"gameFrames={gameFrames} dispatcherFrameId={_determinismDispatcherFrameId} " +
-                $"slowTickDiscardedSeconds={_determinismSlowTickDiscardedSeconds:F3} " +
+                // InvariantCulture is load-bearing on this line, not tidiness. This machine runs a
+                // comma-decimal locale, and the bare "{value:F3}" that used to be here printed
+                // "slowTickDiscardedSeconds=23,543" into Logs/h8_worldsim_probe5.log:18716. A reader - human
+                // or script - has no way to know whether that is 23.543 seconds or 23543, and the number is
+                // the run-comparability caveat, so an ambiguous rendering of it is worse than none. The
+                // artifact was never affected: FormatNumber already pins InvariantCulture.
+                $"slowTickDiscardedSeconds=" +
+                $"{_determinismSlowTickDiscardedSeconds.ToString("F3", CultureInfo.InvariantCulture)} " +
                 $"slowTickDiscardEvents={_determinismSlowTickDiscardEvents}");
 
             Debug.Log(
@@ -3014,12 +3342,26 @@ namespace Hecton8.EditorTools.Diagnostics
                     "ResolveHashCadenceFrames() samples every 60-1200 post-simulation ticks, so a headless " +
                     "run that advances a handful of frames can end before the first sample.");
             }
-            else if (_determinismState == DeterminismCapture.NoHashBuffer)
+            else if (_determinismState == DeterminismCapture.OwnerAbsentNoBuffer)
             {
                 Debug.Log(
-                    $"{Marker} DETERMINISM   BufferID.LockstepMasterStateHash is not allocated in the vault " +
-                    "- the determinism owner never opened its buffers, so nothing was hashed at any point " +
-                    "in this run.");
+                    $"{Marker} DETERMINISM   OWNER ABSENT - NO LockstepStateValidator instance exists " +
+                    "anywhere in the running session, DontDestroyOnLoad and HideInHierarchy objects " +
+                    "included, and BufferID.LockstepMasterStateHash is unallocated. Nothing was hashed " +
+                    "because there was nothing to hash with: this is a LIFETIME defect in the owner, not a " +
+                    "hashing or coverage defect, and no change to the hash path can fix it. Vault refusal: " +
+                    _determinismHashBufferDiagnosis);
+            }
+            else if (_determinismState == DeterminismCapture.OwnerPresentBufferUnopened)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   OWNER PRESENT, BUFFER UNOPENED - " +
+                    $"{_determinismValidatorInstances} LockstepStateValidator instance(s) exist of which " +
+                    $"{_determinismValidatorEnabled} are active and enabled, yet " +
+                    "BufferID.LockstepMasterStateHash is unallocated. The owner is alive and its buffer open " +
+                    "FAILED SILENTLY - EnsureNativeState discards OpenOrAcquireVaultBuffer's return value " +
+                    "(LockstepStateValidator.cs:1883-1892), so the failure produces no log line of its own. " +
+                    "Vault refusal: " + _determinismHashBufferDiagnosis);
             }
             else if (_determinismState == DeterminismCapture.NoDataVault)
             {
@@ -3034,8 +3376,138 @@ namespace Hecton8.EditorTools.Diagnostics
                     "above carry no evidence.");
             }
 
+            ReportDeterminismOwnerLifetime();
+            ReportDeterminismDiscardCaveat();
+
             Debug.Log(
                 $"{Marker} DETERMINISM   COVERAGE: {DescribeDeterminismCoverage()}");
+        }
+
+        /// <summary>
+        /// Prints the owner-lifetime trace and, where the three samples permit it, names the WINDOW in which
+        /// the determinism owner disappeared.
+        ///
+        /// This is the part that stops costing an editor run per hypothesis. "instances=0 at end of run" is
+        /// consistent with three different defects; "one instance in 00_BOOTSTRAP, zero once the world scene
+        /// is active" is consistent with exactly one, and it names the scene transition that did it.
+        /// </summary>
+        private static void ReportDeterminismOwnerLifetime()
+        {
+            Debug.Log(
+                $"{Marker} DETERMINISM   OWNER LIFETIME " +
+                $"bootWarmup={DescribeOwnerSample(in _determinismOwnerAtBootWarmup)} " +
+                $"firstGameplayTick={DescribeOwnerSample(in _determinismOwnerAtGameplayStart)} " +
+                $"endOfRun=instances:{_determinismValidatorInstances}/enabled:{_determinismValidatorEnabled}" +
+                $" vaultAllocationLocked={_determinismVaultAllocationLocked} " +
+                $"vaultCompactionFenceActive={_determinismVaultCompactionFenceActive}");
+
+            if (_determinismReviveRequested)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   OWNER REVIVE requested=true created={_determinismReviveCreated} " +
+                    $"note='{_determinismReviveNote}'. A revived owner's hash is NOT comparable with a run " +
+                    "whose owner lived from boot: its post-simulation frame counter starts at 0 and " +
+                    "BuildMasterHash folds the frame in.");
+            }
+
+            bool haveBoot = _determinismOwnerAtBootWarmup.Taken;
+            bool haveGameplay = _determinismOwnerAtGameplayStart.Taken;
+
+            // Every reading below is stated as what the samples SHOW, never as a cause. The probe can see
+            // existence at three instants; it cannot see who destroyed an object.
+            if (haveBoot && _determinismOwnerAtBootWarmup.Instances == 0)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   LIFETIME READING the owner was ALREADY ABSENT during the boot " +
+                    $"warmup, with '{_determinismOwnerAtBootWarmup.ActiveScene}' active. It is created by " +
+                    "RuntimeInitializeOnLoadMethod(AfterSceneLoad), which has certainly run by then, so the " +
+                    "absence is NOT a scene transition destroying it later - either the hook did not run or " +
+                    "the instance died within the boot scene. Look at the creation hook, not at the route.");
+            }
+            else if (haveBoot && haveGameplay &&
+                _determinismOwnerAtBootWarmup.Instances > 0 &&
+                _determinismOwnerAtGameplayStart.Instances == 0)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   LIFETIME READING the owner EXISTED during the boot warmup in " +
+                    $"'{_determinismOwnerAtBootWarmup.ActiveScene}' and was GONE by the first gameplay tick " +
+                    $"in '{_determinismOwnerAtGameplayStart.ActiveScene}'. The window that consumed it is " +
+                    "the boot route's scene loads, and its creation hook fires once per play session, so " +
+                    "nothing recreates it. This is an owner-lifetime defect and it applies to a PLAYER " +
+                    "session identically - the probe changes no part of that sequence.");
+            }
+            else if (haveBoot && haveGameplay &&
+                _determinismOwnerAtBootWarmup.Instances > 0 &&
+                !_determinismOwnerAtBootWarmup.HashBufferPresent &&
+                _determinismOwnerAtGameplayStart.HashBufferPresent)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   LIFETIME READING the owner existed at the boot warmup with its " +
+                    "master-hash buffer still UNALLOCATED and the buffer was allocated by the first gameplay " +
+                    "tick, so the buffer open is late rather than absent. A run that ends before that point " +
+                    "reports no hash for a timing reason and not a wiring one.");
+            }
+            else if (!haveBoot)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   LIFETIME READING no boot-warmup sample was taken, so the " +
+                    "end-of-run instance count cannot be attributed to a window. This run stopped before the " +
+                    "warmup completed.");
+            }
+        }
+
+        /// <summary>
+        /// One <see cref="DeterminismOwnerSample"/> as a compact field, with "not sampled" distinguishable
+        /// from "sampled, zero instances". Cold string building for the end-of-run report only.
+        /// </summary>
+        private static string DescribeOwnerSample(in DeterminismOwnerSample sample)
+        {
+            if (!sample.Taken)
+                return "NOT_SAMPLED";
+
+            return "instances:" + sample.Instances.ToString(CultureInfo.InvariantCulture) +
+                "/enabled:" + sample.Enabled.ToString(CultureInfo.InvariantCulture) +
+                "/vault:" + (sample.VaultPresent ? "present" : "null") +
+                "/hashBuffer:" + (sample.HashBufferPresent ? "allocated" : "unallocated") +
+                "/scene:" + (sample.ActiveScene ?? "unknown");
+        }
+
+        /// <summary>
+        /// States the slow-tick discard as a FIRST-CLASS determinism caveat rather than one number among
+        /// twelve on the headline line.
+        ///
+        /// WHY IT DESERVES ITS OWN LINE. The measured run discarded 23.543 simulation seconds over 4 events
+        /// across 2490 game frames (Logs/h8_worldsim_probe5.log:18716). The clamp that discards it is
+        /// CORRECT - it is the anti-death-spiral guard, and removing it would let a stalled headless frame
+        /// queue an unbounded slow-tick backlog and then spend minutes draining it - so this is not a bug
+        /// report. It is a comparability statement: two runs of the same seed that discarded different
+        /// amounts of owed simulation time did not simulate the same world, and their hashes may differ for
+        /// that reason alone. A hash difference between such runs proves nothing about determinism, and
+        /// before this line existed the discard was reported as a bare number that no reader treated as a
+        /// precondition for the comparison.
+        /// </summary>
+        private static void ReportDeterminismDiscardCaveat()
+        {
+            if (_determinismSlowTickDiscardEvents <= 0 && _determinismSlowTickDiscardedSeconds <= 0.0)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   SLOWTICK DISCARD none - the slow-tick lane received every " +
+                    "second it was owed, so no simulation time was dropped and this run's frame count " +
+                    "describes the simulation it actually ran.");
+                return;
+            }
+
+            Debug.Log(
+                $"{Marker} DETERMINISM   SLOWTICK DISCARD CAVEAT " +
+                $"{_determinismSlowTickDiscardedSeconds.ToString("F3", CultureInfo.InvariantCulture)}s of " +
+                $"owed simulation time was DISCARDED over {_determinismSlowTickDiscardEvents} clamp " +
+                "event(s). The clamp is correct and stays - it is the anti-death-spiral guard, and without " +
+                "it a stalled headless frame would queue an unbounded slow-tick backlog. The consequence is " +
+                "about COMPARISON, not correctness: this run did not simulate what its frame count implies, " +
+                "and it is NOT comparable with a run that discarded a different amount, even with an " +
+                "identical seed and an identical hash. Compare slowTickDiscardedSeconds BEFORE comparing " +
+                "hashes; if the two differ, a hash mismatch is explained and proves nothing about " +
+                "determinism.");
         }
 
         private static uint SumDeterminismHashedElements()
@@ -3067,6 +3539,45 @@ namespace Hecton8.EditorTools.Diagnostics
                 "mismatch. slowTickDiscardedSeconds is the simulation time the slow-tick lane was owed and " +
                 "never received; a run with a large value did not simulate what its frame count implies " +
                 "and is not comparable to a run with a small one.";
+        }
+
+        /// <summary>
+        /// Whether this run may be compared with another one at all, and why not when it may not.
+        ///
+        /// The slow-tick discard is a PRECONDITION for comparing hashes, not a footnote to them, and it was
+        /// previously reported only as two loose numbers on a line with eleven others. Pure string building
+        /// over captured statics so it stays callable from <see cref="WriteRouteArtifact"/> on a terminal
+        /// path where <see cref="CaptureDeterminismState"/> never ran.
+        /// </summary>
+        private static string DescribeDeterminismComparability()
+        {
+            bool discarded =
+                _determinismSlowTickDiscardEvents > 0 || _determinismSlowTickDiscardedSeconds > 0.0;
+            string discard =
+                _determinismSlowTickDiscardedSeconds.ToString("F3", CultureInfo.InvariantCulture) +
+                "s over " + _determinismSlowTickDiscardEvents.ToString(CultureInfo.InvariantCulture) +
+                " clamp event(s)";
+
+            if (_determinismState != DeterminismCapture.Sampled)
+            {
+                return "NOT COMPARABLE - no state hash was sampled (state=" + _determinismState.ToString() +
+                    "), so this run carries no number another run can be diffed against. Slow-tick discard " +
+                    "this run: " + discard + ".";
+            }
+
+            if (discarded)
+            {
+                return "NOT COMPARABLE UNLESS THE DISCARD MATCHES - " + discard + " of owed simulation time " +
+                    "was dropped by the anti-death-spiral clamp, so this run did not simulate what its frame " +
+                    "count implies. The clamp is correct and stays. The consequence is procedural: a second " +
+                    "run must report the SAME slowTickDiscardedSeconds before its hash may be diffed against " +
+                    "this one, and a mismatch between two runs that discarded different amounts proves " +
+                    "nothing about determinism.";
+            }
+
+            return "COMPARABLE on the four covered buffers - a hash was sampled and no owed simulation time " +
+                "was discarded. Still bounded by the coverage field, and lastCleanPostSimFrame must match " +
+                "before a hash difference means anything.";
         }
 
         /// <summary>
@@ -3188,6 +3699,22 @@ namespace Hecton8.EditorTools.Diagnostics
             _determinismDispatcherFrameId = 0u;
             _determinismSlowTickDiscardedSeconds = 0.0;
             _determinismSlowTickDiscardEvents = 0;
+
+            // The lifetime trace is cleared for a sharper version of the same reason: a second run in one
+            // editor session that inherited a first run's "the owner existed at boot warmup" sample would
+            // report a lifetime window it never observed. _determinismReviveRequested is safe to clear here
+            // because Run() calls ResetRunState() FIRST and parses -h8ReviveDeterminismOwner afterwards -
+            // reversing that order would make this line eat the argument.
+            _determinismReviveRequested = false;
+            _determinismOwnerAtBootWarmup = default;
+            _determinismOwnerAtGameplayStart = default;
+            _determinismHashBufferDiagnosis = string.Empty;
+            _determinismVaultAllocationLocked = false;
+            _determinismVaultCompactionFenceActive = false;
+            _determinismReviveAttempted = false;
+            _determinismReviveCreated = false;
+            _determinismReviveNote = string.Empty;
+
             for (int i = 0; i < _determinismCategories.Length; i++)
                 _determinismCategories[i] = default;
 
@@ -3399,6 +3926,49 @@ namespace Hecton8.EditorTools.Diagnostics
             AppendJsonNumber(
                 builder, "slowTickDiscardedSeconds", _determinismSlowTickDiscardedSeconds, "    ");
             AppendJsonNumber(builder, "slowTickDiscardEvents", _determinismSlowTickDiscardEvents, "    ");
+
+            // The discard is promoted to a FIRST-CLASS caveat here, not left as two loose numbers. A reader
+            // diffing two artifacts has to decide "are these two runs comparable at all" before deciding
+            // "do their hashes match", and the second question is meaningless when the answer to the first
+            // is no. runComparable is that gate in one field, and it is false for either reason: no hash was
+            // sampled, or owed simulation time was dropped. The clamp itself is correct and stays.
+            AppendJsonBool(
+                builder,
+                "slowTickDiscardObserved",
+                _determinismSlowTickDiscardEvents > 0 || _determinismSlowTickDiscardedSeconds > 0.0,
+                "    ");
+            AppendJsonBool(
+                builder,
+                "runComparable",
+                _determinismState == DeterminismCapture.Sampled &&
+                    _determinismSlowTickDiscardEvents <= 0 &&
+                    _determinismSlowTickDiscardedSeconds <= 0.0,
+                "    ");
+            AppendJsonField(builder, "comparabilityCaveat", DescribeDeterminismComparability(), "    ");
+
+            // Owner identity, lifetime trace and the vault's refusal reason. These are what make the state
+            // field actionable: "OwnerAbsentNoBuffer" says the owner is missing, and the trace says in which
+            // window it went missing, which is the difference between one editor run and three.
+            AppendJsonField(builder, "owner", "LockstepStateValidator", "    ");
+            AppendJsonField(
+                builder, "hashBufferDiagnosis", _determinismHashBufferDiagnosis ?? string.Empty, "    ");
+            AppendJsonBool(
+                builder, "vaultAllocationLocked", _determinismVaultAllocationLocked, "    ");
+            AppendJsonBool(
+                builder, "vaultCompactionFenceActive", _determinismVaultCompactionFenceActive, "    ");
+            AppendJsonBool(builder, "ownerReviveRequested", _determinismReviveRequested, "    ");
+            AppendJsonBool(builder, "ownerReviveCreated", _determinismReviveCreated, "    ");
+            AppendJsonField(builder, "ownerReviveNote", _determinismReviveNote ?? string.Empty, "    ");
+            AppendJsonField(
+                builder,
+                "ownerAtBootWarmup",
+                DescribeOwnerSample(in _determinismOwnerAtBootWarmup),
+                "    ");
+            AppendJsonField(
+                builder,
+                "ownerAtFirstGameplayTick",
+                DescribeOwnerSample(in _determinismOwnerAtGameplayStart),
+                "    ");
 
             builder.Append("    \"categories\": [\n");
             for (int i = 0; i < _determinismCategories.Length; i++)
