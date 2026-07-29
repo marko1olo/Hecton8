@@ -168,6 +168,27 @@ your change, read their log instead of launching a second editor:
 > it returns zero hits even for symbols that are definitely present. Use `grep -ac <symbol> <dll>`,
 > and always run a control symbol you know exists, so a broken probe cannot masquerade as a negative
 > result.
+>
+> **Member names are ASCII; string literals are UTF-16LE.** Metadata names live in the `#Strings` heap
+> as UTF-8, so `grep -ac MyMethodName` finds them. String *literals* live in the `#US` user-string heap
+> as UTF-16, so `grep -ac "my_folder_name"` returns **0 for a literal that is present** — a false
+> negative that reads exactly like "my change did not compile". Measured 2026-07-29 on
+> `Hecton8.Editor.dll`: six `Logs/` subfolder literals returned ascii=0 / utf-16le=1 each, while three
+> new method and field names returned ascii=1. Probe literals with the UTF-16 encoding:
+>
+> ```python
+> d = open('Library/ScriptAssemblies/Hecton8.Editor.dll','rb').read()
+> print(d.count(b'my_folder_name'), d.count('my_folder_name'.encode('utf-16-le')))
+> ```
+>
+> **This is how to get an honest gate on `Hecton8.Editor` without launching Unity.** The lock-free
+> `dotnet build` emits phantom `CS0433`/`CS0656`/`CS0103` on that assembly and therefore cannot verify
+> it, so Editor-assembly changes have historically shipped with no compile proof at all. But Csc emits
+> no assembly on error, so if *any* session has an editor open, `Library/ScriptAssemblies/<Asm>.dll`
+> with an mtime later than your edit, containing a symbol your edit introduced, is genuine
+> compiler-grade proof that your file compiled. Check the mtime, probe a new symbol in the right
+> encoding, and probe a control. That is cheaper than a batchmode run and does not fight anyone for the
+> lock — but it only proves compilation, never behaviour.
 
 ### Never launch a second Unity editor on this project
 
