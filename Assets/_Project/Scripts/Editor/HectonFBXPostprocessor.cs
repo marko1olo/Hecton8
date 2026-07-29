@@ -351,9 +351,28 @@ namespace Hecton8.Editor
                 changed = true;
             }
 
-            if (importer.isReadable)
+            // isReadable was forced false UNCONDITIONALLY here, with no comment stating why. A readable mesh
+            // keeps a CPU-side copy resident, so false is the right default across 2740+ FBX and that default
+            // is preserved exactly: for every asset that is not a declared VAT source this evaluates to
+            // `if (importer.isReadable) importer.isReadable = false;`, which is what the line did before.
+            //
+            // The carve-out exists because a VAT source is the one case where the CPU copy is the POINT.
+            // FaunaHeadlessBake1610 reads Mesh.vertices to build the position/normal pages, and a mesh whose
+            // vertex array reads back empty would produce a full-size VAT page of zeros that looks like a
+            // successful bake on disk (AbyssalAnatomyStudio1610.VerifyMeshIsReadable refuses exactly that).
+            //
+            // FAIL CLOSED: `hasForgeContract` is false when no sibling manifest exists, when it cannot be
+            // parsed, or when it is under ScifiFacilityRoot (TryResolveForgeManifestPath:715). IsVatSource is
+            // granted only by a tier-1 `h8forge.manifest/1` manifest carrying a vatReadiness block with a
+            // positive vertexCountLOD0. Any doubt anywhere in that chain lands on today's behaviour.
+            //
+            // ImporterMatchesScifiFacilityPolicy asserts !isReadable, but that assertion is scoped to
+            // ScifiFacilityRoot (:559-561) and the forge carve-out can never apply under that root, so the two
+            // sets are disjoint by construction and the vendor policy cannot be weakened from here.
+            bool vatSourceNeedsReadableGeometry = hasForgeContract && forgeContract.IsVatSource;
+            if (importer.isReadable != vatSourceNeedsReadableGeometry)
             {
-                importer.isReadable = false;
+                importer.isReadable = vatSourceNeedsReadableGeometry;
                 changed = true;
             }
 
@@ -485,10 +504,46 @@ namespace Hecton8.Editor
                 }
             }
 
+            // Scoped to the vendor tree ON PURPOSE, and left that way after review. Position quantisation on a
+            // VAT source would perturb the very positions the bake samples, but forge assets never reach this
+            // line: the guard is isScifiFacilityModel, and MESH_Fauna_Fish_2207_00.fbx.meta:41 carries
+            // meshCompression: 0 (Off) on disk, matching its own manifest's declared "meshCompression": "Off".
+            // A report that Medium is applied to forge assets is incorrect - there is nothing to carve out.
             if (isScifiFacilityModel && importer.meshCompression != ModelImporterMeshCompression.Medium)
             {
                 importer.meshCompression = ModelImporterMeshCompression.Medium;
                 changed = true;
+            }
+
+            // VAT DURABILITY CONTRACT. Both fields below are declared by every h8forge manifest and, until
+            // now, applied by nothing - the manifest's own note says "the importer block disables vertex
+            // optimisation and welding", while Unity's defaults (weldVertices true, meshOptimizationFlags
+            // Everything) did the opposite. A declared parameter that nothing enforces is the same defect
+            // class as a gate that cannot fire.
+            //
+            // Both change per-vertex IDENTITY, and a baked VAT is indexed by vertexID
+            // (BoidFishInstanced.shader:493), so applying either AFTER a VAT exists desynchronises the texture
+            // from the mesh and the swarm animates as noise while every null check passes. That is why this is
+            // safe to land now and expensive to land later: no VAT has ever been baked in this project.
+            //
+            // Deliberately NOT inside the isScifiFacilityModel branch above: that root can never hold a forge
+            // contract, and ImporterMatchesScifiFacilityPolicy requires weldVertices TRUE for it (:571). The
+            // two policies are opposites and must stay on disjoint asset sets.
+            if (hasForgeContract && forgeContract.IsVatSource)
+            {
+                if (importer.weldVertices)
+                {
+                    importer.weldVertices = false;
+                    changed = true;
+                }
+
+                // PolygonOrder reorders triangles only, which touches no per-vertex identity. The default
+                // Everything additionally reorders VERTICES, which is the one thing a VAT cannot survive.
+                if (importer.meshOptimizationFlags != MeshOptimizationFlags.PolygonOrder)
+                {
+                    importer.meshOptimizationFlags = MeshOptimizationFlags.PolygonOrder;
+                    changed = true;
+                }
             }
 
             if (hasForgeContract)
@@ -593,6 +648,14 @@ namespace Hecton8.Editor
             internal readonly bool SuppressSecondaryUv;
             internal readonly bool SuppressMaterialImport;
             internal readonly int AuthoredLodLevelCount;
+            /// <summary>
+            /// True only when a tier-1 manifest declares a <c>vatReadiness</c> block with a positive
+            /// <c>vertexCountLOD0</c>. Gates BOTH the isReadable carve-out and the vertex-identity settings,
+            /// because those are the two things a Vertex Animation Texture source needs and nothing else does.
+            /// Tier 2 always passes false: a generator-local manifest declares no importer contract at all, so
+            /// granting a relaxation from it would be an assumption rather than a reading.
+            /// </summary>
+            internal readonly bool IsVatSource;
 
             internal ForgeImportContract(
                 string manifestPath,
@@ -601,7 +664,8 @@ namespace Hecton8.Editor
                 float normalSmoothingAngle,
                 bool suppressSecondaryUv,
                 bool suppressMaterialImport,
-                int authoredLodLevelCount)
+                int authoredLodLevelCount,
+                bool isVatSource)
             {
                 ManifestPath = manifestPath;
                 DeclaredImportContract = declaredImportContract;
@@ -610,6 +674,7 @@ namespace Hecton8.Editor
                 SuppressSecondaryUv = suppressSecondaryUv;
                 SuppressMaterialImport = suppressMaterialImport;
                 AuthoredLodLevelCount = authoredLodLevelCount;
+                IsVatSource = isVatSource;
             }
         }
 
@@ -693,6 +758,26 @@ namespace Hecton8.Editor
             public ForgeManifestLodEntry[] lods;
             public ForgeManifestMaterialSlotEntry[] materialSlots;
             public ForgeManifestValidationBlock validation;
+            public ForgeManifestVatReadinessBlock vatReadiness;
+        }
+
+        /// <summary>
+        /// Top-level <c>vatReadiness</c> block. Its PRESENCE is what identifies a Vertex Animation Texture
+        /// source; it is written only by generators whose family animates through a baked VAT.
+        /// </summary>
+        /// <remarks>
+        /// The carve-out is deliberately NOT keyed on
+        /// <c>unityImport.modelImporter.isReadable</c>: the fish manifest declares that field <c>false</c>,
+        /// because the forge is describing the shipped runtime state of the asset rather than what an offline
+        /// bake needs from it. Honouring that field literally would keep the mesh unreadable and leave the
+        /// chain exactly as blocked as before, so the signal has to be "this is a VAT source" rather than
+        /// "this asset asked to be readable". Only <c>vertexCountLOD0</c> is deserialised; the block's other
+        /// keys are informational and JsonUtility drops what it has no field for.
+        /// </remarks>
+        [Serializable]
+        private sealed class ForgeManifestVatReadinessBlock
+        {
+            public int vertexCountLOD0;
         }
 
         /// <summary>
@@ -799,7 +884,11 @@ namespace Hecton8.Editor
                     SanitizeNormalSmoothingAngle(declared.normalSmoothingAngle),
                     !declared.generateSecondaryUV,
                     string.Equals(declared.materialImportMode, ForgeMaterialImportModeNoneToken, StringComparison.Ordinal),
-                    manifest.lod != null && manifest.lod.levels != null ? manifest.lod.levels.Length : 0);
+                    manifest.lod != null && manifest.lod.levels != null ? manifest.lod.levels.Length : 0,
+                    // A positive authored LOD0 vertex count is the presence test. The block exists only on
+                    // packages whose family renders through a baked VAT, and requiring a real count rather than
+                    // mere non-nullness keeps an empty or default-constructed block from granting anything.
+                    manifest.vatReadiness != null && manifest.vatReadiness.vertexCountLOD0 > 0);
                 return true;
             }
 
@@ -871,7 +960,10 @@ namespace Hecton8.Editor
                 ForgeMinNormalSmoothingAngle,
                 false,
                 ownsSharedMaterials,
-                authoredLods);
+                authoredLods,
+                // Never a VAT source on this tier. See ForgeImportContract.IsVatSource: tier 2 proves
+                // provenance only, so a readability or vertex-identity relaxation from it would be assumed.
+                false);
             return true;
         }
 
@@ -959,6 +1051,12 @@ namespace Hecton8.Editor
                 "; generateSecondaryUV forced off: " + contract.SuppressSecondaryUv +
                 "; materialImportMode=None: " + contract.SuppressMaterialImport +
                 "; authored LOD levels: " + contract.AuthoredLodLevelCount +
+                (contract.IsVatSource
+                    ? "; VAT SOURCE: isReadable=true, weldVertices=false, meshOptimizationFlags=PolygonOrder. " +
+                      "These three keep per-vertex identity stable so a baked VAT stays synchronised with the " +
+                      "mesh it indexes. Changing any of them later invalidates every VAT baked from this asset " +
+                      "and requires a re-bake."
+                    : "; not a VAT source: isReadable stays false and vertex identity is left at Unity defaults") +
                 ". Every FBX without a matching sibling forge manifest keeps the unchanged project policy.");
         }
 
