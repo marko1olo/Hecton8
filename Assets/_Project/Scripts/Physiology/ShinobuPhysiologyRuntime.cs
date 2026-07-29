@@ -34,6 +34,13 @@ namespace Hecton8.Physiology
         private const double DefaultSeaLevelAupY = 14.02d;
         private const float ToxicityExposureFallbackDeltaScalePerSecond = 0.08f;
         private const float AuthoritativeUpdateIntervalSeconds = 0.1f;
+        // Oxygen-critical bridge. Re-publish only after a meaningful further drop so the 32-slot
+        // OxygenCriticalSignal lane and the VocalWarningSystem OxygenLow queue are not spammed at tick rate.
+        private const float OxygenCriticalRepublishEpsilon = 0.01f;
+        // Below this drain rate a time-to-zero projection is meaningless; report the unknown ceiling instead
+        // of dividing by ~0 and handing consumers a fake countdown.
+        private const float OxygenCriticalMinDrainPerSecond = 0.0001f;
+        private const float OxygenCriticalUnknownSecondsRemaining = 3600f;
 #if UNITY_EDITOR
         private const string CsvRelativePath = "buhlmann_3tissue_profiles.csv";
         private const string GasCsvRelativePath = "physiological_gas_profiles.csv";
@@ -208,6 +215,8 @@ namespace Hecton8.Physiology
         private float _previousDepthMeters;
         private uint _playerToxicityTargetHash;
         private BreathingGasFractionsDTO _breathingGasOverride;
+        private bool _oxygenCriticalLatched;
+        private float _lastPublishedOxygenCritical01 = -1f;
 
         public static bool TryGetActive(out ShinobuPhysiologyRuntime runtime)
         {
@@ -1690,6 +1699,7 @@ namespace Hecton8.Physiology
                 {
                     PatchLatestTelemetryExecutionTime(vault, elapsedMicroseconds);
                     PublishSurvivalVitals(vault);
+                    PublishOxygenCriticalBridge(vault);
                     PublishVisualSyncScalars(vault);
                     TryDumpAutopsyIfFatal(vault);
                 }
@@ -1776,6 +1786,93 @@ namespace Hecton8.Physiology
             signal.DeathCause = (byte)(((export.StatusMask & (ShinobuPhysiologyFlags.FatalOxygen | ShinobuPhysiologyFlags.FatalGasToxicity)) != 0u) ? 1 : 0);
             if (!SurvivalSignalRoute.TryQueueVitals(in signal))
                 ReportSurvivalVitalsSignalDrop();
+        }
+
+        /// <summary>
+        /// Bridges this runtime's oxygen truth onto the one lane the suit-tank survival clock actually reads.
+        ///
+        /// WHY THIS EXISTS. OxygenConsumptionJob already drains PhysiologyDTO.BloodOxygen every tick, and
+        /// PublishSurvivalVitals already reports it - but SurvivalVitalsChangedSignal is consumed only by
+        /// VocalWarningSystem, AdaptiveStemAudioMixer and the death recorder in SignalBridgeState, and
+        /// HypoxiaSignal has no gameplay consumer at all. Neither lane touches HectonSurvivalSystem's suit
+        /// tank (Standard_Suit_V1.asset maxOxygen 139.24). The ONLY lane that does is OxygenCriticalSignal,
+        /// min-folded in HectonSurvivalSystem.ConsumeOxygenCriticalSignals - and before this method the only
+        /// producer in the project was a predator biting a bio-cable (BioCableIK). So falling blood oxygen
+        /// reached the audio mixer and never reached the survival clock.
+        ///
+        /// WHY THE MIN-FOLD IS THE RIGHT TARGET. ConsumeOxygenCriticalSignals runs immediately AFTER
+        /// UpdateOxygen in the same SlowTick, and folds with math.min then clamps with math.max(0f, ...).
+        /// That ordering is what makes this survive the recorded surface-refill defect: when a stale movement
+        /// handle pins depth at 0, UpdateOxygen takes the "not underwater" branch and refills at 15/s, but a
+        /// later min-fold cannot be outrun by an earlier refill. Draining through any earlier branch could be.
+        ///
+        /// Edge-gated on purpose: pushed only while a critical/hypoxic/fatal oxygen bit is set, and then only
+        /// when oxygen has fallen a further OxygenCriticalRepublishEpsilon, so neither the 32-slot lane nor
+        /// the OxygenLow voice queue is spammed at tick rate.
+        ///
+        /// SourceId is this runtime's own hash, which also keeps FluidPipeGraphRuntime out of it - that
+        /// consumer early-continues on any SourceId that is not SourceBioCablePredatorBite, so the
+        /// life-support-cutoff branch there cannot be tripped by physiology.
+        /// </summary>
+        private void PublishOxygenCriticalBridge(IDataVault vault)
+        {
+            _ = vault;
+
+            NativeArray<VitalsExportDTO> exports = OpenPhysiologyVaultArray(ref _exportHandle, BufferID.ShinobuVitalsExport, entityCapacity);
+            if (!exports.IsCreated || exports.Length <= 0)
+                return;
+
+            VitalsExportDTO export = exports[0];
+            uint statusMask = export.StatusMask;
+            bool oxygenCritical = (statusMask & (ShinobuPhysiologyFlags.OxygenCritical |
+                                                 ShinobuPhysiologyFlags.Hypoxia |
+                                                 ShinobuPhysiologyFlags.FatalOxygen)) != 0u;
+            if (!oxygenCritical)
+            {
+                // Recovered (or never critical): drop the latch so the next descent re-publishes from scratch.
+                _oxygenCriticalLatched = false;
+                _lastPublishedOxygenCritical01 = -1f;
+                return;
+            }
+
+            float oxygen01 = math.saturate(ShinobuPhysiologyJobMath.SanitizeUnit(export.BloodOxygen));
+            if (_oxygenCriticalLatched && oxygen01 >= _lastPublishedOxygenCritical01 - OxygenCriticalRepublishEpsilon)
+                return;
+
+            // Real countdown, not a placeholder. OxygenDrainPerSecond is the rate OxygenConsumptionJob already
+            // resolved this tick from heart rate, adrenaline, trauma, toxemia, shiver, ambient pressure and
+            // stamina drain, in the same 0-1 units as BloodOxygen - so the quotient is seconds.
+            NativeArray<PhysiologyScalarsDTO> scalars = OpenPhysiologyVaultArray(ref _scalarHandle, BufferID.ShinobuPhysiologyScalars, entityCapacity);
+            float drainPerSecond = scalars.IsCreated && scalars.Length > 0
+                ? math.max(0f, ShinobuPhysiologyJobMath.SanitizeFinite(scalars[0].OxygenDrainPerSecond, 0f))
+                : 0f;
+            float secondsRemaining = drainPerSecond > OxygenCriticalMinDrainPerSecond
+                ? math.min(oxygen01 * math.rcp(drainPerSecond), OxygenCriticalUnknownSecondsRemaining)
+                : OxygenCriticalUnknownSecondsRemaining;
+
+            OxygenCriticalSignal signal = default;
+            signal.Oxygen01 = oxygen01;
+            signal.SecondsRemaining = secondsRemaining;
+            signal.SourceId = ShinobuPhysiologyConstants.SourceHash;
+            signal.Frame = _simulationFrameCounter;
+            // 0-255 scale, matching this file's existing HypoxiaSignal push. VocalWarningSystem folds
+            // Severity/255 against (1 - Oxygen01) with math.max, so the scale choice cannot lose information.
+            signal.Severity = (byte)math.round(math.saturate(1f - oxygen01) * 255f);
+            signal.Flags = (byte)(((statusMask & ShinobuPhysiologyFlags.FatalOxygen) != 0u)
+                ? OxygenCriticalSignal.FlagLifeSupportCutoff
+                : 0);
+
+            if (!SignalBus<OxygenCriticalSignal>.TryPushTracked(in signal, ref s_x001ShinobuPhysiologyRuntimeSignalPushDropCount))
+            {
+                // TryPushTracked already counted the drop - calling ReportSurvivalVitalsSignalDrop here would
+                // double-count it (that helper exists for SurvivalSignalRoute, which does not take the counter).
+                // Returning without touching the latch is what makes a drop recoverable: _lastPublishedOxygenCritical01
+                // stays stale, so the next completed tick re-evaluates and re-publishes the same edge.
+                return;
+            }
+
+            _oxygenCriticalLatched = true;
+            _lastPublishedOxygenCritical01 = oxygen01;
         }
 
         private static void ReportSurvivalVitalsSignalDrop()
@@ -2740,6 +2837,10 @@ namespace Hecton8.Physiology
             _insideHabitat = false;
             _activeHabitatRoomId = -1;
             _decompressionTelemetryCursor = 0;
+            // A vault hot-swap or teardown invalidates the oxygen-critical edge history; keeping the latch
+            // would suppress the first re-publish after the rebind and silently re-open the gap this bridge closes.
+            _oxygenCriticalLatched = false;
+            _lastPublishedOxygenCritical01 = -1f;
         }
 
 #if UNITY_EDITOR
