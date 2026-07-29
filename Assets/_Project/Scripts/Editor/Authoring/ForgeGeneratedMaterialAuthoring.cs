@@ -101,10 +101,25 @@ namespace Hecton8.Editor.Authoring
         private const string HardSurfaceShaderPath =
             "Assets/_Project/Art/Shaders/Hecton_ModuleHardSurfaceLit.shader";
 
-        /// <summary>Organic master shader considered for the two Flora packages.</summary>
+        // ══════════════════════════════════════════════════════════
+        //  ORGANIC MASTERS - PER PACKAGE, NOT ONE CONSTANT
+        //
+        //  This was a single hardcoded CoralMaster resolve, and that was a STRUCTURAL defect rather
+        //  than a missing table row: with one constant, Hecton_KelpMaster.shader was UNREACHABLE no
+        //  matter what roles or texture sets were added, because every organic package - coral AND
+        //  CapStem - resolved to CoralMaster. Kelp was absent from the original brief for the same
+        //  reason; its geometry and vertex channels were ready and the RESOLVER was not. Each
+        //  package now names its own master, and the contract gate is evaluated against that
+        //  shader's own source instead of against CoralMaster's on kelp's behalf.
+        // ══════════════════════════════════════════════════════════
+
         private const string CoralShaderName = "Hecton8/Flora/CoralMaster";
         private const string CoralShaderPath =
             "Assets/_Project/Art/Shaders/Hecton_CoralMaster.shader";
+
+        private const string KelpShaderName = "Hecton8/Flora/KelpMaster";
+        private const string KelpShaderPath =
+            "Assets/_Project/Art/Shaders/Hecton_KelpMaster.shader";
 
         /// <summary>
         /// FAIL-CLOSED OPT-IN MARKER, and the direction of the failure is the whole point.
@@ -126,13 +141,33 @@ namespace Hecton8.Editor.Authoring
         private const string OrganicContractOptInToken = "H8_ORGANIC_VCOL_CONTRACT_OK";
 
         /// <summary>
-        /// The two non-compliant reads, quoted so the report is actionable rather than merely
-        /// negative. Informational only - the opt-in token above is the gate.
+        /// CoralMaster's two historical non-compliant reads, quoted so the report is actionable
+        /// rather than merely negative. Informational plus the AND-half of the gate.
         /// </summary>
-        private static readonly string[] OrganicKnownBadReads =
+        private static readonly string[] CoralKnownBadReads =
         {
             "saturate(input.color.r) * _VertexTintStrength",
             "moisture = saturate(input.color.g)"
+        };
+
+        /// <summary>
+        /// KelpMaster's equivalents. These are DIFFERENT STRINGS because the two shaders were never
+        /// the same source, and reusing CoralMaster's list for kelp would have produced a
+        /// vacuously-passing negative probe - a check that can never fire, which this project treats
+        /// as the same defect as no check.
+        ///
+        /// Measured 2026-07-29: BOTH are already absent from Hecton_KelpMaster.shader. Its tint now
+        /// reads the biome hash (`:643 tintMask = saturate(biomeHash * _VertexTintStrength)`) and its
+        /// wetness the authored mask (`:614 maskSample.g * (1 + _MoistureBoost)`), while
+        /// <c>vertexColor.r</c> survives at `:261` only as <c>swayMask</c> - which is R consumed for
+        /// exactly what the contract assigns it, sway amplitude, and is therefore CORRECT and must
+        /// NOT appear in this list. G goes to <c>bakedBiolumMask</c> at `:525` and B to
+        /// <c>bakedVertexAo</c> at `:526`.
+        /// </summary>
+        private static readonly string[] KelpKnownBadReads =
+        {
+            "saturate(vertexColor.r) * _VertexTintStrength",
+            "moisture = saturate(vertexColor.g)"
         };
 
         // ══════════════════════════════════════════════════════════
@@ -202,6 +237,14 @@ namespace Hecton8.Editor.Authoring
             /// across a shared material is a printed number rather than a surprise.
             /// </summary>
             public float AssetScaleMetres;
+            /// <summary>
+            /// The organic master this package binds to, or null for a hard-surface package. THE
+            /// POINT OF THIS FIELD: it is what makes KelpMaster reachable at all. While the resolver
+            /// was one hardcoded CoralMaster constant, no role table, texture set or gate change
+            /// could route a package anywhere else.
+            /// </summary>
+            public string OrganicMasterName;
+            public string OrganicMasterPath;
 
             public ForgePackage(
                 string manifestFileName,
@@ -211,7 +254,9 @@ namespace Hecton8.Editor.Authoring
                 string[] slotRoles,
                 string slotRoleSource,
                 bool hasColliderProxy,
-                float assetScaleMetres)
+                float assetScaleMetres,
+                string organicMasterName = null,
+                string organicMasterPath = null)
             {
                 AssetScaleMetres = assetScaleMetres;
                 ManifestFileName = manifestFileName;
@@ -221,6 +266,8 @@ namespace Hecton8.Editor.Authoring
                 SlotRoles = slotRoles;
                 SlotRoleSource = slotRoleSource;
                 HasColliderProxy = hasColliderProxy;
+                OrganicMasterName = organicMasterName;
+                OrganicMasterPath = organicMasterPath;
             }
         }
 
@@ -231,6 +278,65 @@ namespace Hecton8.Editor.Authoring
         };
         private static readonly string[] CapStemSlotRoles = { "CapTissue", "TornEdge", "StemHoldfast" };
         private static readonly string[] CoralSlotRoles = { "Tissue", "ExposedTipSkeleton", "EncrustingBase" };
+
+        // ══════════════════════════════════════════════════════════
+        //  ROLE-TOKEN CONVENTION - SETTLED HERE, AND IT AVERTS A DESTRUCTIVE COLLISION
+        //
+        //  Kelp's manifest emits its roles in lower_snake_case:
+        //      MANIFEST_Flora_Kelp_s4021_q100.json materialSlots ->
+        //          slot 0 "tissue"             material "MAT_Flora_tissue"
+        //          slot 1 "basal_collar_scar"   material "MAT_Flora_basal_collar_scar"
+        //          slot 2 "holdfast"            material "MAT_Flora_holdfast"
+        //  while rock.py, prop_handtool.py, flora_capstem.py and coral_branching all emit PascalCase.
+        //  Adding a lowercase entry beside the PascalCase ones would not just be untidy - it is
+        //  actively unsafe, and the reason is the filesystem, not the switch:
+        //
+        //      coral slot 0 role "Tissue"  ->  MAT_Flora_Tissue.mat
+        //      kelp  slot 0 role "tissue"  ->  MAT_Flora_tissue.mat
+        //
+        //  Both land in the SAME folder, and NTFS is case-insensitive, so those are ONE FILE. Two
+        //  materials that must carry DIFFERENT master shaders - CoralMaster and KelpMaster, which
+        //  share almost no property name - would silently overwrite each other, and whichever ran
+        //  last would win with the other family's property block half-applied. Nothing would throw.
+        //  A case-sensitive C# switch would additionally miss `tissue` while matching `Tissue`,
+        //  which is the failure the lead flagged, but it is the milder of the two.
+        //
+        //  SETTLED: role tokens are PascalCase everywhere, and where the bare role is ambiguous
+        //  ACROSS the Flora family the organism prefixes it. That is not a new invention - CapStem
+        //  already does exactly this (`CapTissue`, `StemHoldfast` rather than `Tissue`, `Holdfast`),
+        //  so kelp follows the established sibling rather than introducing a third style. law.py's
+        //  `NAME_MATERIAL = "MAT_{family}_{role}"` template is preserved unchanged; only the {role}
+        //  token is normalised.
+        //
+        //  RESIDUAL RISK, FOR THE LEAD, NOT FIXED HERE: `MAT_{family}_{role}` is NOT a unique key.
+        //  Three different organisms share family "Flora", so the template can only stay unique as
+        //  long as no two of them choose the same role word. Coral's bare `Tissue` and
+        //  `EncrustingBase` are the exposed ones - the next Flora generator that emits `tissue` in
+        //  any casing collides with coral on a case-insensitive filesystem. The durable fix is a
+        //  three-token template or a per-organism subfolder in law.py, which is generator territory.
+        //  Nothing is renamed here: no forge Flora material exists on disk yet (the only
+        //  MAT_Flora_* asset in the project is MAT_Flora_ImpostorAtlas.mat), so the convention is
+        //  being set before anything can be orphaned by it.
+        // ══════════════════════════════════════════════════════════
+
+        private static readonly string[] KelpSlotRoles =
+        {
+            "KelpTissue", "KelpBasalCollarScar", "KelpHoldfast"
+        };
+
+        /// <summary>
+        /// Manifest role token -> the PascalCase token this binder uses, for the one generator whose
+        /// casing differs. Exists so the mapping is EXPLICIT and greppable rather than implied by a
+        /// hardcoded array somebody later compares against a manifest and finds mismatched.
+        /// Kept as a flat pair list rather than a Dictionary: three entries, editor-cold, and the
+        /// pairing is easier to read beside the manifest it mirrors.
+        /// </summary>
+        private static readonly string[] KelpManifestRoleToBinderRole =
+        {
+            "tissue", "KelpTissue",
+            "basal_collar_scar", "KelpBasalCollarScar",
+            "holdfast", "KelpHoldfast"
+        };
 
         // ══════════════════════════════════════════════════════════
         //  TEXTURE SETS - existing project art, reused, not generated
@@ -442,6 +548,26 @@ namespace Hecton8.Editor.Authoring
                     case "StemHoldfast":
                         return GeminiBiomeSet("gemini_biome_20260607_living_kelp_frond_surface", 4.0f,
                             "fibrous anchoring tissue; NORMAL/MASK only, authored cream-ochre pigment is preserved");
+
+                    // ---- Kelp: no authored pigment, so the art drives colour (as with coral) ----
+                    // kelp.py passes only material NAMES to its manifest, no colour spec, unlike
+                    // flora_capstem.py which carries reference-derived linear pigment per role. So
+                    // kelp is in the "texture drives colour" camp and its _BaseColor/_TipColor become
+                    // grading tints - see ApplyOrganicRole.
+                    case "KelpTissue":
+                        return GeminiBiomeSet("gemini_biome_20260607_living_kelp_frond_surface", 4.0f,
+                            "living blade surface; the one source authored for exactly this organism");
+                    case "KelpBasalCollarScar":
+                        // HONEST REUSE: no scar/abscission source exists in the project. The collar
+                        // scar IS kelp tissue, just abraded, so the frond set is the least wrong
+                        // option and the role is separated by its property block rather than by a
+                        // distinct map. Named here so the reuse is visible instead of looking like a
+                        // dedicated set.
+                        return GeminiBiomeSet("gemini_biome_20260607_living_kelp_frond_surface", 4.0f,
+                            "REUSED frond set - no scar/abscission source exists; role differs by property block only");
+                    case "KelpHoldfast":
+                        return Batch34Set("b34_3402_shallow_seagrass_root_mat_substrate", 4.0f,
+                            "root-mat substrate: a holdfast is an anchoring root mass, which is what this set depicts");
                 }
 
                 return null;
@@ -462,6 +588,22 @@ namespace Hecton8.Editor.Authoring
             return string.Equals(role, "CapTissue", StringComparison.Ordinal) ||
                    string.Equals(role, "TornEdge", StringComparison.Ordinal) ||
                    string.Equals(role, "StemHoldfast", StringComparison.Ordinal);
+        }
+
+        /// <summary>
+        /// True for the three kelp roles. Kept as an explicit predicate rather than a
+        /// <c>StartsWith("Kelp")</c> test: a prefix test would silently capture any future role that
+        /// merely begins with those letters, and this file's whole failure mode is silent capture.
+        /// </summary>
+        private static bool RoleIsKelp(string role)
+        {
+            for (int i = 0; i < KelpSlotRoles.Length; i++)
+            {
+                if (string.Equals(role, KelpSlotRoles[i], StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
         }
 
         private static readonly ForgePackage[] Packages =
@@ -501,13 +643,41 @@ namespace Hecton8.Editor.Authoring
                 ForgePackageRoot + "/Flora/MESH_Flora_CapStem_1811_00.fbx",
                 "Flora", ForgeSurfaceClass.Organic, CapStemSlotRoles,
                 "Tools/Blender/generators/flora_capstem.py:283 MATERIAL_ROLES",
-                false, 0.50172f),
+                false, 0.50172f, CoralShaderName, CoralShaderPath),
             new ForgePackage(
                 "MANIFEST_Flora_Coral_Branching_1712.json",
                 ForgePackageRoot + "/Flora/MESH_Flora_Coral_Branching_1712.fbx",
                 "Flora", ForgeSurfaceClass.Organic, CoralSlotRoles,
                 "manifest uvSummary.materialSlots + materialSlotRoles",
-                false, 0.55f)
+                false, 0.55f, CoralShaderName, CoralShaderPath),
+
+            // ---- KELP, previously unreachable ------------------------------------------------
+            // Three seeds of one organism sharing one material set, exactly like the three geology
+            // rocks. These manifests are the TIER-2 generator-local shape (no `schema`, no
+            // `productionReady`, `files.fbx` + `validation.allPassed` instead), which is why they
+            // never appeared in the productionReady gap table - but this binder does not read
+            // manifests, it reads the imported FBX and asserts the submesh count against the table,
+            // so the manifest tier is irrelevant to whether kelp can bind.
+            // No COL_ proxy: kelp is Flora, and 3DMODEL_FLORA_CORAL.md section 7 makes default flora
+            // collision none (the manifest states `collision.kind: "none"` for the same reason).
+            new ForgePackage(
+                "MANIFEST_Flora_Kelp_s4021_q100.json",
+                ForgePackageRoot + "/Flora/MESH_Flora_Kelp_s4021_q100.fbx",
+                "Flora", ForgeSurfaceClass.Organic, KelpSlotRoles,
+                "manifest materialSlots (lower_snake_case), normalised by KelpManifestRoleToBinderRole",
+                false, 9.25863f, KelpShaderName, KelpShaderPath),
+            new ForgePackage(
+                "MANIFEST_Flora_Kelp_s4023_q100.json",
+                ForgePackageRoot + "/Flora/MESH_Flora_Kelp_s4023_q100.fbx",
+                "Flora", ForgeSurfaceClass.Organic, KelpSlotRoles,
+                "manifest materialSlots (lower_snake_case), normalised by KelpManifestRoleToBinderRole",
+                false, 9.25863f, KelpShaderName, KelpShaderPath),
+            new ForgePackage(
+                "MANIFEST_Flora_Kelp_s4025_q100.json",
+                ForgePackageRoot + "/Flora/MESH_Flora_Kelp_s4025_q100.fbx",
+                "Flora", ForgeSurfaceClass.Organic, KelpSlotRoles,
+                "manifest materialSlots (lower_snake_case), normalised by KelpManifestRoleToBinderRole",
+                false, 9.25863f, KelpShaderName, KelpShaderPath)
         };
 
         // ══════════════════════════════════════════════════════════
@@ -604,19 +774,8 @@ namespace Hecton8.Editor.Authoring
                 return;
             }
 
-            OrganicGate organic = EvaluateOrganicGate();
-            AppendOrganicGate(report, organic);
-
-            Shader organicShader = organic.Allowed
-                ? ResolveShader(CoralShaderName, CoralShaderPath)
-                : null;
-            if (organic.Allowed && organicShader == null)
-            {
-                report.Append("  ").Append(TokenFail)
-                      .Append(" organic gate ALLOWS but the shader did not resolve by name '")
-                      .Append(CoralShaderName).Append("' nor at ").Append(CoralShaderPath)
-                      .Append("; organic packages are skipped.").AppendLine();
-            }
+            OrganicGateSet organic = EvaluateOrganicGates();
+            AppendOrganicGates(report, organic);
 
             if (!EnsureFolder(ForgeMaterialRoot))
             {
@@ -639,12 +798,16 @@ namespace Hecton8.Editor.Authoring
             {
                 ForgePackage package = Packages[i];
 
-                if (package.Surface == ForgeSurfaceClass.Organic && !organic.Allowed)
+                bool organicPackage = package.Surface == ForgeSurfaceClass.Organic;
+                OrganicGate gate = SelectGate(organic, package);
+
+                if (organicPackage && !gate.Allowed)
                 {
                     refused += package.SlotRoles.Length;
                     report.Append("  ").Append(TokenBlocked).Append(' ').Append(package.Family)
                           .Append(' ').Append(System.IO.Path.GetFileName(package.FbxAssetPath))
                           .Append(" slots=").Append(package.SlotRoles.Length)
+                          .Append(" master=").Append(gate.ShaderName)
                           .Append(" reason=ORGANIC_SHADER_CHANNEL_CONTRACT_UNPROVEN")
                           .AppendLine();
                     continue;
@@ -658,14 +821,18 @@ namespace Hecton8.Editor.Authoring
                     continue;
                 }
 
-                // Each surface class has its own master. They share no property name, so the shader
-                // is resolved per package and the applier branches on the same fact.
-                Shader master = package.Surface == ForgeSurfaceClass.Organic ? organicShader : hardSurface;
+                // PER-PACKAGE master resolve. This line is the fix: it used to be one unconditional
+                // CoralMaster, which made KelpMaster unreachable regardless of any other table.
+                Shader master = organicPackage
+                    ? ResolveShader(package.OrganicMasterName, package.OrganicMasterPath)
+                    : hardSurface;
                 if (master == null)
                 {
                     refused += package.SlotRoles.Length;
                     report.Append("  ").Append(TokenFail).Append(' ').Append(package.Family)
-                          .Append(" master shader unresolved; nothing written for this package.")
+                          .Append(" master shader '")
+                          .Append(organicPackage ? package.OrganicMasterName : HardSurfaceShaderName)
+                          .Append("' unresolved; nothing written for this package.")
                           .AppendLine();
                     continue;
                 }
@@ -735,8 +902,8 @@ namespace Hecton8.Editor.Authoring
         public static void ApplyForgeMaterialPrefabBinding()
         {
             StringBuilder report = NewReport("APPLY-PREFABS");
-            OrganicGate organic = EvaluateOrganicGate();
-            AppendOrganicGate(report, organic);
+            OrganicGateSet organic = EvaluateOrganicGates();
+            AppendOrganicGates(report, organic);
 
             int written = 0;
             int skipped = 0;
@@ -744,11 +911,13 @@ namespace Hecton8.Editor.Authoring
             for (int i = 0; i < Packages.Length; i++)
             {
                 ForgePackage package = Packages[i];
-                if (package.Surface == ForgeSurfaceClass.Organic && !organic.Allowed)
+                OrganicGate gate = SelectGate(organic, package);
+                if (package.Surface == ForgeSurfaceClass.Organic && !gate.Allowed)
                 {
                     skipped++;
                     report.Append("  ").Append(TokenBlocked).Append(' ')
                           .Append(System.IO.Path.GetFileName(package.FbxAssetPath))
+                          .Append(" master=").Append(gate.ShaderName)
                           .Append(" reason=ORGANIC_SHADER_CHANNEL_CONTRACT_UNPROVEN").AppendLine();
                     continue;
                 }
@@ -814,7 +983,8 @@ namespace Hecton8.Editor.Authoring
                         audit.MaterialsOnWrongShader == 0 &&
                         audit.SubmeshMismatches == 0 &&
                         audit.PrefabSlotFailures == 0 &&
-                        audit.TextureSetResolveFailures == 0;
+                        audit.TextureSetResolveFailures == 0 &&
+                        audit.KelpUv1Failures == 0;
 
             AppendTextureTruth(report);
 
@@ -828,6 +998,7 @@ namespace Hecton8.Editor.Authoring
                   .Append(" prefabSlotFailures=").Append(audit.PrefabSlotFailures)
                   .Append(" organicBlocked=").Append(audit.PackagesBlocked)
                   .Append(" textureSetResolveFailures=").Append(audit.TextureSetResolveFailures)
+                  .Append(" kelpUv1Failures=").Append(audit.KelpUv1Failures)
                   .Append(" texturesBound=").Append(audit.TexturesBound)
                   .Append(" productionReadyFlippable=NO-OWNED-BY-BLENDER-EXPORTER");
             Emit(report, pass);
@@ -850,20 +1021,24 @@ namespace Hecton8.Editor.Authoring
             public int PrefabSlotFailures;
             public int TexturesBound;
             public int TextureSetResolveFailures;
+            public int KelpUv1Failures;
         }
 
         private static AuditResult Audit(StringBuilder report)
         {
             AuditResult result = default;
-            OrganicGate organic = EvaluateOrganicGate();
-            AppendOrganicGate(report, organic);
+            OrganicGateSet organic = EvaluateOrganicGates();
+            AppendOrganicGates(report, organic);
 
             Shader hardSurface = ResolveShader(HardSurfaceShaderName, HardSurfaceShaderPath);
-            Shader organicMaster = ResolveShader(CoralShaderName, CoralShaderPath);
+            Shader coralMaster = ResolveShader(CoralShaderName, CoralShaderPath);
+            Shader kelpMaster = ResolveShader(KelpShaderName, KelpShaderPath);
             report.Append("  master hardSurface=")
                   .Append(hardSurface != null ? hardSurface.name : "MISSING")
-                  .Append(" | master organic=")
-                  .Append(organicMaster != null ? organicMaster.name : "MISSING")
+                  .Append(" | organic coral=")
+                  .Append(coralMaster != null ? coralMaster.name : "MISSING")
+                  .Append(" | organic kelp=")
+                  .Append(kelpMaster != null ? kelpMaster.name : "MISSING")
                   .AppendLine();
 
             // COLD ALLOC: HashSet<string>[32] - material-name dedupe across shared families -
@@ -899,7 +1074,8 @@ namespace Hecton8.Editor.Authoring
                     AuditExistingPrefab(package, report, ref result);
                 }
 
-                if (package.Surface == ForgeSurfaceClass.Organic && !organic.Allowed)
+                OrganicGate packageGate = SelectGate(organic, package);
+                if (package.Surface == ForgeSurfaceClass.Organic && !packageGate.Allowed)
                     result.PackagesBlocked++;
 
                 for (int slot = 0; slot < package.SlotRoles.Length; slot++)
@@ -909,12 +1085,15 @@ namespace Hecton8.Editor.Authoring
                         continue;
 
                     result.MaterialsExpected++;
-                    // Organic becomes bindable the moment the two-part gate clears - the count is
-                    // derived from the gate, never hardcoded, so this line does not need editing
-                    // when the shader fix lands.
+                    // Organic becomes bindable the moment ITS OWN master's two-part gate clears. Both
+                    // the bindable flag and the expected shader now come from the package rather than
+                    // from a CoralMaster constant, so kelp is judged against KelpMaster and neither
+                    // this line nor the table needs editing when a token lands.
                     bool organicRole = package.Surface == ForgeSurfaceClass.Organic;
-                    bool bindable = !organicRole || organic.Allowed;
-                    string expectedShader = organicRole ? CoralShaderName : HardSurfaceShaderName;
+                    bool bindable = !organicRole || packageGate.Allowed;
+                    string expectedShader = organicRole
+                        ? package.OrganicMasterName
+                        : HardSurfaceShaderName;
                     if (bindable)
                         result.UniqueMaterialsBindable++;
 
@@ -1067,12 +1246,32 @@ namespace Hecton8.Editor.Authoring
                 if (submeshMismatch)
                     result.SubmeshMismatches++;
 
+                // KELP-ONLY STRUCTURAL PRECONDITION, and it is not cosmetic.
+                // Hecton_KelpMaster.shader:326 declares `float2 uvMask : TEXCOORD1` and :545-546
+                // derive heightMask/widthMask from it - the root-to-tip and blade-margin
+                // parameterisation that drives sway, the midrib, the edge band and the
+                // _BaseColor->_TipColor gradient. On a mesh without TEXCOORD1 every one of those
+                // reads 0: sway collapses to the root value, midribMask goes to 0, edgeMask
+                // saturates to 1 so the whole surface reads as blade EDGE, and the tip lightening
+                // disappears. Nothing errors. The shader's own comment at :537-543 records 472
+                // existing kelp meshes with TexCoord1 dimension 0 for exactly this reason, so this
+                // is a measured failure mode and not a hypothetical.
+                bool kelpPackage = string.Equals(
+                    package.OrganicMasterName, KelpShaderName, StringComparison.Ordinal);
+                bool missingUv1 = kelpPackage &&
+                                  !mesh.HasVertexAttribute(VertexAttribute.TexCoord1);
+                if (missingUv1)
+                    result.KelpUv1Failures++;
+
                 report.Append("      MESH ").Append(name)
                       .Append(" submeshes=").Append(mesh.subMeshCount)
                       .Append('/').Append(package.SlotRoles.Length)
                       .Append(submeshMismatch ? " " + TokenFail + "-SUBMESH-SLOT-MISMATCH" : string.Empty)
                       .Append(" tris=").Append(TriangleCount(mesh))
                       .Append(" uvChannels=").Append(CountUvChannels(mesh))
+                      .Append(missingUv1
+                          ? " " + TokenFail + "-KELP-NEEDS-TEXCOORD1(UVMask); every mask reads 0"
+                          : string.Empty)
                       .Append(' ').Append(DescribeVertexColours(mesh))
                       .AppendLine();
             }
@@ -1149,14 +1348,33 @@ namespace Hecton8.Editor.Authoring
             public bool ShaderPresent;
             public bool TokenFound;
             public string[] BadReadsFound;
+            /// <summary>Which shader this verdict is about. Never assume, always print.</summary>
+            public string ShaderName;
+            public string ShaderPath;
         }
 
-        private static OrganicGate EvaluateOrganicGate()
+        /// <summary>
+        /// Evaluates the channel-contract gate against the shader it is ACTUALLY ABOUT.
+        ///
+        /// This used to read <c>CoralShaderPath</c> unconditionally, which made it global-to-organic
+        /// and keyed entirely on CoralMaster's source. The consequence was worse than an incomplete
+        /// check: it would have reported a verdict about CoralMaster while binding kelp, and adding
+        /// the opt-in token to Hecton_KelpMaster.shader would have done NOTHING because the gate
+        /// never opened that file - falsely implying kelp was gated when it was merely unreachable.
+        /// A sibling correctly declined to add the token for exactly that reason. The gate now takes
+        /// its subject as a parameter and carries the subject's identity in the result.
+        /// </summary>
+        private static OrganicGate EvaluateOrganicGate(
+            string shaderName,
+            string shaderPath,
+            string[] knownBadReads)
         {
             OrganicGate gate = default;
             gate.BadReadsFound = Array.Empty<string>();
+            gate.ShaderName = shaderName;
+            gate.ShaderPath = shaderPath;
 
-            string absolute = ResolveProjectAbsolutePath(CoralShaderPath);
+            string absolute = ResolveProjectAbsolutePath(shaderPath);
             if (!System.IO.File.Exists(absolute))
                 return gate;
 
@@ -1178,10 +1396,10 @@ namespace Hecton8.Editor.Authoring
             // COLD ALLOC: List<string>[2] - one entry per known non-compliant read -
             // owner: ForgeGeneratedMaterialAuthoring
             List<string> bad = new List<string>(2);
-            for (int i = 0; i < OrganicKnownBadReads.Length; i++)
+            for (int i = 0; i < knownBadReads.Length; i++)
             {
-                if (source.IndexOf(OrganicKnownBadReads[i], StringComparison.Ordinal) >= 0)
-                    bad.Add(OrganicKnownBadReads[i]);
+                if (source.IndexOf(knownBadReads[i], StringComparison.Ordinal) >= 0)
+                    bad.Add(knownBadReads[i]);
             }
 
             gate.BadReadsFound = bad.ToArray();
@@ -1201,7 +1419,7 @@ namespace Hecton8.Editor.Authoring
 
         private static void AppendOrganicGate(StringBuilder report, in OrganicGate gate)
         {
-            report.Append("  organic gate: shader=").Append(CoralShaderName)
+            report.Append("  organic gate: shader=").Append(gate.ShaderName)
                   .Append(" present=").Append(gate.ShaderPresent ? "YES" : "NO")
                   .Append(" optInToken=").Append(gate.TokenFound ? "FOUND" : "ABSENT")
                   .Append(" knownBadReadsStillPresent=").Append(gate.BadReadsFound.Length)
@@ -1210,7 +1428,7 @@ namespace Hecton8.Editor.Authoring
 
             for (int i = 0; i < gate.BadReadsFound.Length; i++)
             {
-                report.Append("      non-compliant read still present in ").Append(CoralShaderPath)
+                report.Append("      non-compliant read still present in ").Append(gate.ShaderPath)
                       .Append(": ").Append(gate.BadReadsFound[i]).AppendLine();
             }
 
@@ -1222,6 +1440,50 @@ namespace Hecton8.Editor.Authoring
                       .Append(" present AND zero known-bad reads. Token alone is not enough - a ")
                       .Append("comment would satisfy a substring search.").AppendLine();
             }
+        }
+
+        /// <summary>
+        /// One verdict per organic master. Held together so a run reports the state of BOTH shaders
+        /// even when only one family is being bound - a per-family gate that only printed the family
+        /// in hand would hide the other's status, which is how kelp stayed invisible before.
+        /// </summary>
+        private struct OrganicGateSet
+        {
+            public OrganicGate Coral;
+            public OrganicGate Kelp;
+        }
+
+        private static OrganicGateSet EvaluateOrganicGates()
+        {
+            OrganicGateSet set = default;
+            set.Coral = EvaluateOrganicGate(CoralShaderName, CoralShaderPath, CoralKnownBadReads);
+            set.Kelp = EvaluateOrganicGate(KelpShaderName, KelpShaderPath, KelpKnownBadReads);
+            return set;
+        }
+
+        private static void AppendOrganicGates(StringBuilder report, in OrganicGateSet set)
+        {
+            AppendOrganicGate(report, set.Coral);
+            AppendOrganicGate(report, set.Kelp);
+        }
+
+        /// <summary>
+        /// Selects the verdict for one package by the master it declares. Hard-surface packages have
+        /// no organic master and get a permanently-disallowed default, which is correct: they never
+        /// consult this gate.
+        /// </summary>
+        private static OrganicGate SelectGate(in OrganicGateSet set, ForgePackage package)
+        {
+            if (string.Equals(package.OrganicMasterName, KelpShaderName, StringComparison.Ordinal))
+                return set.Kelp;
+            if (string.Equals(package.OrganicMasterName, CoralShaderName, StringComparison.Ordinal))
+                return set.Coral;
+
+            OrganicGate none = default;
+            none.BadReadsFound = Array.Empty<string>();
+            none.ShaderName = "<none>";
+            none.ShaderPath = "<none>";
+            return none;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1365,6 +1627,35 @@ namespace Hecton8.Editor.Authoring
         private const float CapStemMeasuredSwayMean = 0.53846f;
 
         /// <summary>
+        /// Kelp's measured sway-channel mean, read directly from the generator's own attribute dump:
+        /// <c>MANIFEST_Flora_Kelp_s4021_q100.json</c>
+        /// <c>vertexColour.directAttributeRead.sway_amplitude</c> = min 0.0, max 1.0, mean 0.45855
+        /// over 17418 CORNER elements, with <c>swayUniform: false</c> and
+        /// <c>swayStiffnessExponent: 1.25</c> (law.py's FLEXIBLE_BLADE exponent).
+        ///
+        /// Kelp uses the FULL 0..1 band. It is not rigid-capped the way coral is - coral is confined
+        /// to 0..0.1274 by <c>law.py:298 SWAY_RIGID_MINERAL_MAX = 32/255</c> - so coral's arithmetic
+        /// cannot transfer, and this is the third independently-derived value from one formula:
+        ///     coral   0.03983 -> 0.0590      (mineral-capped, 12.6x correction)
+        ///     capstem 0.53846 -> 0.7969
+        ///     kelp    0.45855 -> 0.7337
+        /// Kelp's correction is the mildest of the three, and worth noticing WHY rather than treating
+        /// it as luck: kelp's measured mean 0.4586 happens to sit close to biomeHash's 0.5, so kelp's
+        /// migration off the vertex stream was nearly appearance-neutral ALREADY. Coral's was 12.6x
+        /// off for the same reason in reverse. The formula is what makes both visible.
+        /// </summary>
+        private const float KelpMeasuredSwayMean = 0.45855f;
+
+        /// <summary>
+        /// <c>_VertexTintStrength</c> as each master shader SHIPS it. These are not the same number,
+        /// and using one for both would silently mis-derive the other family: CoralMaster.shader:31
+        /// declares 0.74, KelpMaster.shader:28 declares 0.8. The old value is half the derivation, so
+        /// it has to come from the shader the material will actually carry.
+        /// </summary>
+        private const float CoralShaderDefaultTintStrength = 0.74f;
+        private const float KelpShaderDefaultTintStrength = 0.8f;
+
+        /// <summary>
         /// Mean of <c>biomeHash</c>, the replacement driver. Hecton_CoralMaster.shader:483 computes
         /// <c>HectonCoreLitHash12(floor(biomeAup.xz * 0.03125))</c> - a hash of the AUP cell index at
         /// 1/32, i.e. one value per 32-metre cell. ASSUMED uniform on [0,1] with mean 0.5, which is
@@ -1464,9 +1755,20 @@ namespace Hecton8.Editor.Authoring
             //  I would rather ship a change whose residual is written down than one that claims
             //  to be safe.
             // ═══════════════════════════════════════════════════════════════════════════════
-            float measuredSwayMean = OrganicPigmentIsAuthored(role)
-                ? CapStemMeasuredSwayMean
-                : CoralMeasuredSwayMean;
+            bool isKelp = RoleIsKelp(role);
+            float measuredSwayMean = isKelp
+                ? KelpMeasuredSwayMean
+                : OrganicPigmentIsAuthored(role)
+                    ? CapStemMeasuredSwayMean
+                    : CoralMeasuredSwayMean;
+
+            // The OLD multiplier must also come from the shader the material will carry:
+            // CoralMaster ships _VertexTintStrength at 0.74, KelpMaster at 0.8. Using one for both
+            // mis-derives the other by 8 percent - small, but it is exactly the kind of silent
+            // arithmetic slip this whole derivation exists to prevent.
+            float shaderDefaultTintStrength = isKelp
+                ? KelpShaderDefaultTintStrength
+                : CoralShaderDefaultTintStrength;
 
             // PER-FAMILY, and this is a correction to the single shared constant. 0.059 is
             // calibrated to coral's mineral-CAPPED R (mean 0.0398, cap 32/255). CapStem is a
@@ -1474,18 +1776,28 @@ namespace Hecton8.Editor.Authoring
             // coral's 0.059 to it would cut its tint contribution from 0.1912 to 0.0142, a 13.5x
             // REDUCTION that deletes pigment variation the generator author deliberately authored
             // against nice_biome.webp. Same formula, different measured input, different answer:
-            //   coral   0.03983 / 0.5 = 0.0797 * 0.74 -> 0.0590
-            //   capstem 0.53846 / 0.5 = 1.0769 * 0.74 -> 0.7969
-            // CapStem's value lands slightly ABOVE the 0.74 default purely because its measured
-            // mean is above biomeHash's 0.5. _VertexTintStrength is Range(0, 2), so both fit.
-            float vertexTintStrength = Mathf.Clamp(measuredSwayMean * 0.74f / BiomeHashAssumedMean, 0f, 2f);
+            //   coral   0.03983 * 0.74 / 0.5 -> 0.0590
+            //   capstem 0.53846 * 0.74 / 0.5 -> 0.7969
+            //   kelp    0.45855 * 0.80 / 0.5 -> 0.7337   (KelpMaster.shader:643 tintMask, :28 default)
+            // CapStem's and kelp's values land near or above their shader defaults purely because
+            // their measured means sit near biomeHash's 0.5. _VertexTintStrength is Range(0, 2) on
+            // both shaders, so all three fit.
+            //
+            // KELP-SPECIFIC NOTE ON WHY THIS ONE IS ALREADY LIVE. Coral's tint feeds
+            // `saturate(maskSample.r + tintMask * 0.48)` (CoralMaster:542), so an unbound white mask
+            // pins that term to 1 and voids the calibration entirely - which is why coral MUST have
+            // its mask bound. Kelp's feeds `tintMask + maskSample.b * 0.08` (KelpMaster:644), an ADD
+            // whose mask contribution caps at 0.08, so kelp's _VertexTintStrength is live even with
+            // an unbound mask, and there is no *0.48 attenuation either. Same formula, different
+            // downstream sensitivity; kelp's mask is still bound below for the wetness term.
+            float vertexTintStrength = Mathf.Clamp(
+                measuredSwayMean * shaderDefaultTintStrength / BiomeHashAssumedMean, 0f, 2f);
             SetFloat(material, "_VertexTintStrength", vertexTintStrength);
 
-            // _MoistureBoost is deliberately NOT written. Its 0.14 default shifts wetness about
-            // +0.045 and roughness about -0.023 - roughly two percent - which is inside the noise
-            // of everything else here, and the shader default is the value the shader author chose.
-            // Writing a number equal to the default would only create the illusion that it was
-            // calibrated.
+            // _MoistureBoost is deliberately NOT written on either master. CoralMaster ships 0.14 and
+            // KelpMaster 0.22; both shift wetness by a few percent and both are the value the shader
+            // author chose. Writing a number equal to the default would only create the illusion that
+            // it was calibrated.
 
             // Triplanar scale, in TILES PER METRE: 1 / metresPerTile, so a 4.0 m tile is 0.25.
             // Derived from the bible's texel density, not tuned by eye. Range(0.05, 4).
@@ -1572,6 +1884,66 @@ namespace Hecton8.Editor.Authoring
                     SetFloat(material, "_Smoothness", 0.48f);
                     SetFloat(material, "_SubsurfaceStrength", 0.28f);
                     SetFloat(material, "_CavityStrength", 0.70f);
+                    SetFloat(material, "_BiolumStrength", 0f);
+                    break;
+
+                // ---- Kelp: Hecton8/Flora/KelpMaster, a DIFFERENT property set ----------------
+                // The accent slot is _TipColor, not _AccentColor, and KelpMaster:636 composes
+                // `gradient = lerp(_BaseColor, _TipColor, heightMask)` then :642
+                // `albedo = gradient * baseTex * moistureTint * ageTint * detailMask`. So both
+                // colours MULTIPLY the sampled art and must be near-white grading tints, exactly as
+                // on coral - the shader's own defaults (0.16/0.46/0.24 and 0.34/0.74/0.42) are
+                // absolute greens meant for a textureless material.
+                //
+                // heightMask is `input.uvMask.y`, i.e. TEXCOORD1 - the root-to-tip parameterisation.
+                // On the forge kelp FBX that channel exists (manifest maskUv.layer "UVMask",
+                // texcoordIndex 1). On a mesh without it, heightMask reads 0, the gradient collapses
+                // to _BaseColor everywhere and the tip lightening silently vanishes. The audit
+                // asserts TEXCOORD1 presence for exactly this reason.
+                //
+                // _BiolumStrength STAYS 0 for every kelp role - not an oversight, and deliberately
+                // not copied from coral tissue's 1.1. Kelp's G channel is measured min 0.0 / max 0.0
+                // / mean 0.0 with manifest biolumPolicy "authored 0 everywhere; photic-zone kelp has
+                // no emissive organ (3DMODEL_FLORA_CORAL.md section 2)". Raising it would scale a
+                // genuinely empty channel and could only invent light the generator never baked.
+                case "KelpTissue":
+                    SetColor(material, "_BaseColor", new Color(0.820f, 0.855f, 0.800f, 1f));
+                    SetColor(material, "_TipColor", new Color(0.960f, 0.985f, 0.930f, 1f));
+                    SetColor(material, "_TransmissionColor", new Color(0.26f, 0.68f, 0.34f, 1f));
+                    SetColor(material, "_SSSColor", new Color(0.45f, 0.82f, 0.38f, 1f));
+                    // A blade is a thin translucent sheet, so transmission and SSS carry it; both are
+                    // lifted above the shader default because the forge blade is genuinely thin.
+                    SetFloat(material, "_TransmissionStrength", 0.78f);
+                    SetFloat(material, "_SSSStrength", 1.6f);
+                    SetFloat(material, "_ThicknessStrength", 0.55f);
+                    SetFloat(material, "_Smoothness", 0.90f);
+                    SetFloat(material, "_MidribDarkening", 0.22f);
+                    SetFloat(material, "_BiolumStrength", 0f);
+                    break;
+
+                case "KelpBasalCollarScar":
+                    // Abraded, thickened, non-translucent: an old wound, not living blade. Darker and
+                    // matter than the tissue, with transmission close to off.
+                    SetColor(material, "_BaseColor", new Color(0.620f, 0.605f, 0.545f, 1f));
+                    SetColor(material, "_TipColor", new Color(0.720f, 0.700f, 0.630f, 1f));
+                    SetFloat(material, "_TransmissionStrength", 0.14f);
+                    SetFloat(material, "_SSSStrength", 0.35f);
+                    SetFloat(material, "_ThicknessStrength", 1.10f);
+                    SetFloat(material, "_Smoothness", 0.62f);
+                    SetFloat(material, "_EdgeWearDarkening", 0.30f);
+                    SetFloat(material, "_BiolumStrength", 0f);
+                    break;
+
+                case "KelpHoldfast":
+                    // Root mass gripping rock: opaque, rough, silted, no transmission at all.
+                    SetColor(material, "_BaseColor", new Color(0.560f, 0.545f, 0.500f, 1f));
+                    SetColor(material, "_TipColor", new Color(0.640f, 0.620f, 0.565f, 1f));
+                    SetFloat(material, "_TransmissionStrength", 0.05f);
+                    SetFloat(material, "_SSSStrength", 0.18f);
+                    SetFloat(material, "_ThicknessStrength", 1.30f);
+                    SetFloat(material, "_Smoothness", 0.48f);
+                    SetFloat(material, "_EdgeWearDarkening", 0.22f);
+                    SetFloat(material, "_AgeDarkening", 0.34f);
                     SetFloat(material, "_BiolumStrength", 0f);
                     break;
 
