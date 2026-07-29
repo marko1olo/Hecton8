@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Hecton8.Core;
 using Hecton8.Crafting;
@@ -49,24 +50,39 @@ namespace Hecton8.EditorTools.Diagnostics
     /// the operation that created this state in the first place.
     ///
     /// WHY A PREFAB RATHER THAN SCENE SURGERY. Four scenes in this project are binary. A prefab asset is
-    /// text YAML: reviewable, diffable, and re-instantiable into any scene. So the write half of this
-    /// tool produces a prefab, and putting an instance into a scene is a separate, human-only step whose
-    /// placement is an authoring decision this tool will not guess. The prefab also gives the lane a
-    /// durable artifact that does not live only inside an unreadable binary blob.
+    /// text YAML: reviewable, diffable, and re-instantiable into any scene. So the authoring half of this
+    /// tool produces a prefab first, and getting an instance into a scene is a separate operation behind a
+    /// separate flag. The prefab also gives the lane a durable artifact that does not live only inside an
+    /// unreadable binary blob.
     ///
-    /// WHY THE PREFAB WRITE IS SAFE UNDER AGENTS.md:126. The Sandbox Firewall forbids an automated runner
-    /// from calling PrefabUtility.SaveAsPrefabAsset or EditorUtility.SetDirty on production assets. This
-    /// tool saves only when the target path holds no asset at all; if anything is already there it
-    /// reports and returns without touching it, so it can never overwrite authored work. It never calls
-    /// EditorSceneManager.SaveScene. The scene-instantiate entry point marks the scene dirty and leaves
-    /// saving to the human, which is the convention FabricationBootstrapAuthoring.cs:240 already set.
+    /// THREE WRITE PATHS, THREE RISK LEVELS, THREE SWITCHES. They are not interchangeable:
+    ///   1. <see cref="AuthorFabricatorPrefab"/> - creates the prefab, and only at an EMPTY path, so it can
+    ///      never overwrite authored work. Flag -h8ApplyFabricator.
+    ///   2. <see cref="InstantiateFabricatorIntoOpenScene"/> - instantiates into whatever scene is open and
+    ///      MARKS IT DIRTY WITHOUT SAVING, the convention FabricationBootstrapAuthoring.cs:240 set. Human
+    ///      MenuItem only. Useless from -batchmode, where nobody presses Ctrl+S and the editor exits
+    ///      discarding the instance - which is precisely why (3) had to exist.
+    ///   3. <see cref="InstantiateFabricatorSceneInstanceFromCommandLine"/> - opens a NAMED scene,
+    ///      instantiates an ACTIVE root, and SAVES. Flag -h8ApplyFabricatorSceneInstance. This is the only
+    ///      path that calls EditorSceneManager.SaveScene, it refuses on a dirty scene, and on
+    ///      02_HECTON_WORLD.unity it rewrites a 6.27 MB binary scene as YAML. Read its own header before
+    ///      running it.
+    ///
+    /// WHY THE WRITES ARE PERMITTED UNDER AGENTS.md:126. The Sandbox Firewall forbids automated TEST
+    /// RUNNERS from calling PrefabUtility.SaveAsPrefabAsset, EditorUtility.SetDirty or
+    /// EditorSceneManager.SaveScene on production assets, so that a test pass cannot wipe authored work.
+    /// None of this is a test runner and none of it runs on its own: every write needs its own flag spelled
+    /// out on the command line or a human MenuItem click, a bare -executeMethod reports and changes
+    /// nothing, and the scene path additionally registers Undo and refuses on a dirty scene. Precedents for
+    /// the same split on this same scene: H8_ScatterPlacementOwnerEnableAuthoring.cs:49-56 and :307-308,
+    /// H8_WorldRootGraveyardRepair.cs:222-236, H8_DuplicateSceneRootAudit.cs:303-316.
     ///
     /// BATCHMODE CONTRACT, matching H8_HazardPrefabAuthoring.cs:243-281 and H8_AirlockSceneAuthoring.cs.
-    /// Every entry point is a public static void with no arguments, so -executeMethod can reach it. A
-    /// bare -executeMethod REPORTS AND WRITES NOTHING; the prefab write needs the explicit opt-in flag
-    /// -h8ApplyFabricator or a human MenuItem click. No EditorUtility.DisplayDialog, no Selection, no
-    /// EditorApplication.Exit (it would kill the host job), no [InitializeOnLoadMethod]. Every entry
-    /// point is idempotent and logs one line per action naming what and where.
+    /// Every entry point is a public static void with no arguments, so -executeMethod can reach it - which
+    /// is exactly why the default has to be report-only, including for an invocation aimed at something
+    /// else that merely happens to name one of these methods. No EditorUtility.DisplayDialog, no
+    /// Selection, no EditorApplication.Exit (it would kill the host job), no [InitializeOnLoadMethod].
+    /// Every entry point is idempotent and logs one line per action naming what and where.
     ///
     /// WHAT THIS MEASURES: the loaded scene graph INCLUDING inactive GameObjects, plus the prefab asset
     /// on disk. It is serialisation-format agnostic, so a binary scene does not blind it. WHAT IT DOES
@@ -92,6 +108,66 @@ namespace Hecton8.EditorTools.Diagnostics
         /// more than a tidier one: the flag pattern should be learned once, not per tool.
         /// </summary>
         private const string ApplyFlag = "-h8ApplyFabricator";
+
+        /// <summary>
+        /// Opt-in flag for the SCENE half, deliberately distinct from <see cref="ApplyFlag"/>. Authoring a
+        /// prefab into an empty path overwrites nobody; writing 02_HECTON_WORLD.unity rewrites a 6.27 MB
+        /// production scene. Those are not the same risk and must not share one switch, which is the same
+        /// split -h8ApplyScatterOwnerEnable / -h8AllowDirtyScatterOwnerScene draws
+        /// (H8_ScatterPlacementOwnerEnableAuthoring.cs:122-124). Naming follows the existing three
+        /// (-h8ApplyScatterOwnerEnable, -h8ApplyHazardComponents, -h8ApplyFabricator): -h8Apply&lt;Noun&gt;.
+        /// </summary>
+        private const string SceneApplyFlag = "-h8ApplyFabricatorSceneInstance";
+
+        /// <summary>Scene path override. Same shape as -h8ScatterOwnerScene.</summary>
+        private const string SceneFlag = "-h8FabricatorScene";
+
+        /// <summary>
+        /// Escape hatch for the dirty-on-open refusal, same shape and same reason as
+        /// -h8AllowDirtyScatterOwnerScene. Not a convenience: passing it means accepting that whatever
+        /// injected content into the scene during load gets cemented alongside the fabricator.
+        /// </summary>
+        private const string AllowDirtySceneFlag = "-h8AllowDirtyFabricatorScene";
+
+        /// <summary>
+        /// MEASURED, not assumed. H8_HeadlessWorldDriver's craft phase runs in Play Mode after
+        /// GameBootstrapper has walked 00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD, and every one of
+        /// those loads is LoadSceneMode.Single (GameBootstrapper.cs:3230, :3259, :3331). Single UNLOADS the
+        /// previous scene, so an instance placed in 00_BOOTSTRAP or 01_MAIN_MENU is destroyed before
+        /// TickCraft ever runs and would be a silently wasted write. Logs/h8_probe7.log:11974 and :22964
+        /// both report activeScene='02_HECTON_WORLD' from FirstGameplayTick onward, so this is the only
+        /// scene loaded when the driver's lookup fires. It is also the expensive one to write - see
+        /// <see cref="DescribeSceneFileFormat"/>.
+        /// </summary>
+        private const string DefaultScenePath = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
+
+        private const string SceneInstanceMenuPath =
+            "Hecton8/Diagnostics/Fabricator Scene Instance - INSTANTIATE AND SAVE";
+
+        private const string UndoLabel = "Instantiate fabricator into scene";
+
+        /// <summary>Bytes of the YAML preamble Unity writes at the head of a text scene.</summary>
+        private static readonly byte[] TextSceneSignature = { 0x25, 0x59, 0x41, 0x4D, 0x4C };
+
+        /// <summary>
+        /// Where the persisted instance lands, and why it is not the origin.
+        ///
+        /// Logs/h8_probe7.log:12408-12412 measures the spawn: Position (0, 16, 0), water level 14.0, ground
+        /// height under the player -2.8, water depth 16.8 m. So world origin sits 16 m directly BELOW the
+        /// spawn point and 2.8 m above the seabed - which is the exact column the driver's SwimDive phase
+        /// descends through, and that phase is currently under measurement by another lane (probe7's
+        /// schedule burned its whole 7.000 s SwimDive grant over 25865 ticks). Dropping a 1.6 x 1.2 x 0.9 m
+        /// NON-TRIGGER collider into that column could perturb somebody else's numbers, so the instance is
+        /// offset 16.97 m laterally (sqrt(12^2 + 12^2)) and out of the dive column entirely.
+        ///
+        /// y = 0 keeps it submerged, 14 m under the water line, which is right for a seabed station. NOT
+        /// MEASURED: the seabed height at column (12, 12) - -2.8 was sampled under the spawn point only, so
+        /// this instance may float above or clip into the floor there. That is cosmetic for this lane. The
+        /// driver calls StartCraft directly and never walks to the station, and maxUseDistance
+        /// (Fabricator.cs:106) gates only human interaction, so no measurement here depends on the pose.
+        /// A human placing a real fabrication outpost should move it and re-save.
+        /// </summary>
+        private static readonly Vector3 DiagnosticInstancePosition = new Vector3(12f, 0f, 12f);
 
         /// <summary>
         /// Sits with its PFB_Module_* siblings in the folder the Construction prefabs already occupy
@@ -200,8 +276,10 @@ namespace Hecton8.EditorTools.Diagnostics
                     Marker + " REPORT-ONLY no " + ApplyFlag + " argument was passed, so nothing will be " +
                     "written. AGENTS.md:126 forbids an automated pass from writing production assets. " +
                     "Re-run with " + ApplyFlag + " to author the prefab, or use the menu item '" +
-                    AuthorMenuPath + "'. Putting an instance into a scene is human-only and is NOT " +
-                    "reachable from batchmode at all. The reachability report follows.");
+                    AuthorMenuPath + "'. Putting an instance into a SCENE is a separate operation with a " +
+                    "separate flag - " + nameof(InstantiateFabricatorSceneInstanceFromCommandLine) +
+                    " plus " + SceneApplyFlag + " - because a scene write is a different order of risk " +
+                    "from creating a file at an empty path. The reachability report follows.");
                 ReportFabricatorReachability();
                 return;
             }
@@ -212,6 +290,481 @@ namespace Hecton8.EditorTools.Diagnostics
                 "this path and EditorSceneManager.SaveScene is never called.");
             ReportFabricatorReachability();
             AuthorFabricatorPrefab();
+        }
+
+        // ------------------------------------------------------------------
+        //  BATCHMODE SCENE INSTANCE - opens, instantiates ACTIVE, persists
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// Opens the target scene, puts one ACTIVE fabricator instance in it as a root, and SAVES.
+        ///
+        /// WHY THIS EXISTS AT ALL, given that this file previously argued the opposite. The earlier position
+        /// was that a scene write is human-only. That was correct about the risk and wrong about the
+        /// consequence: <see cref="InstantiateFabricatorIntoOpenScene"/> marks dirty and stops, and in
+        /// -batchmode nobody presses Ctrl+S, so the editor exits and discards the instance. A tool that can
+        /// only be finished by a human is not a batchmode path. This is the persisting half; the MenuItem
+        /// half still exists and still refuses to save, and neither replaces the other. That is exactly the
+        /// split H8_ScatterPlacementOwnerEnableAuthoring.cs:40-47 draws against
+        /// H8_PlacementOwnerEnabledAudit.
+        ///
+        /// WHY WRITING IS PERMITTED. AGENTS.md `Sandbox Firewall Rule` bans automated TEST RUNNERS from
+        /// calling EditorSceneManager.SaveScene on production assets so a test pass cannot wipe authored
+        /// work. This is not a test runner and does not run on its own: the write needs
+        /// <see cref="SceneApplyFlag"/> spelled out on the command line or a human MenuItem click, a bare
+        /// -executeMethod reports and changes nothing, the creation is registered with Undo, and the tool
+        /// refuses outright on a dirty scene. Working precedents for saving this same production scene
+        /// under this same split: H8_ScatterPlacementOwnerEnableAuthoring.cs:307-308,
+        /// H8_WorldRootGraveyardRepair.cs:222-236, H8_DuplicateSceneRootAudit.cs:303-316.
+        ///
+        /// WHAT THE WRITE COSTS, stated up front because it is large. 02_HECTON_WORLD.unity is currently a
+        /// BINARY 6.27 MB file while ProjectSettings/EditorSettings.asset carries m_SerializationMode: 2
+        /// (ForceText), so the first save through the asset pipeline rewrites the whole scene as YAML. The
+        /// diff will be the entire scene, not one object. That is a wanted consequence - a GUID grep returns
+        /// zero against the binary form whether a component is there or not, which is how the existing
+        /// fabricators were once reported absent - but it must not arrive as a surprise, so the on-disk
+        /// format is read from the file's first bytes before and after and printed both times rather than
+        /// predicted.
+        ///
+        /// Note System.Environment spelled in full: Hecton8.Environment shadows System.Environment inside a
+        /// Hecton8.* namespace.
+        ///
+        /// USAGE (reports by default, writes nothing without the flag):
+        ///   Unity.exe -batchmode -quit -projectPath . -logFile Logs/fabricatorscene.log \
+        ///     -executeMethod Hecton8.EditorTools.Diagnostics.H8_FabricatorSceneAuthoring.InstantiateFabricatorSceneInstanceFromCommandLine \
+        ///     [-h8FabricatorScene Assets/_Project/Scenes/02_HECTON_WORLD.unity] \
+        ///     [-h8ApplyFabricatorSceneInstance] [-h8AllowDirtyFabricatorScene]
+        /// </summary>
+        public static void InstantiateFabricatorSceneInstanceFromCommandLine()
+        {
+            string scenePath = DefaultScenePath;
+            bool apply = false;
+            bool allowDirtyOpen = false;
+
+            string[] args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (string.Equals(args[i], SceneApplyFlag, StringComparison.Ordinal))
+                {
+                    apply = true;
+                    continue;
+                }
+
+                if (string.Equals(args[i], AllowDirtySceneFlag, StringComparison.Ordinal))
+                {
+                    allowDirtyOpen = true;
+                    continue;
+                }
+
+                if (!string.Equals(args[i], SceneFlag, StringComparison.Ordinal))
+                    continue;
+
+                if (i + 1 >= args.Length)
+                {
+                    Debug.LogError(
+                        Marker + " REFUSED " + SceneFlag + " was passed with no scene path after it. " +
+                        "Nothing was opened and nothing was written.");
+                    return;
+                }
+
+                scenePath = args[i + 1];
+                i++;
+            }
+
+            ExecuteSceneInstance(scenePath, apply, allowDirtyOpen);
+        }
+
+        /// <summary>
+        /// Human entry point for the same operation. A separate menu item from the dirty-marking one on
+        /// purpose: a 6.27 MB production scene write must not be one misclick away from a diagnostic.
+        /// </summary>
+        [MenuItem(SceneInstanceMenuPath)]
+        public static void InstantiateFabricatorSceneInstanceAndSave()
+        {
+            ExecuteSceneInstance(DefaultScenePath, true, false);
+        }
+
+        private static void ExecuteSceneInstance(string scenePath, bool apply, bool allowDirtyOpen)
+        {
+            if (string.IsNullOrEmpty(scenePath))
+            {
+                Debug.LogError(Marker + " REFUSED empty scene path. Nothing was opened.");
+                return;
+            }
+
+            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            if (prefabAsset == null)
+            {
+                Debug.LogError(
+                    Marker + " REFUSED " + PrefabPath + " does not exist, so there is nothing to " +
+                    "instantiate and no reason to open a scene. Author it first with " + ApplyFlag +
+                    " or the menu item '" + AuthorMenuPath + "'. Nothing was written.");
+                return;
+            }
+
+            if (!prefabAsset.TryGetComponent(out Fabricator prefabFabricator))
+            {
+                Debug.LogError(
+                    Marker + " REFUSED " + PrefabPath + " carries no " + nameof(Fabricator) +
+                    " component, so instantiating it could not clear the CraftRepairBuild row. Nothing " +
+                    "was written.");
+                return;
+            }
+
+            // DIRTY PREFLIGHT, BEFORE ANYTHING ELSE. EditorSceneManager.OpenScene(Single) silently
+            // discards unsaved in-memory work. Neighbours in this project deliberately leave exactly that
+            // kind of change behind - InstantiateFabricatorIntoOpenScene right in this file marks dirty and
+            // stops, and H8_PlacementOwnerEnabledAudit.cs repairs in memory only - so a dirty scene at
+            // entry is a refusal, not a gamble. This runs in report mode too: the report opens the scene as
+            // well, so the destructive step is identical on both paths.
+            for (int i = 0; i < EditorSceneManager.sceneCount; i++)
+            {
+                Scene loaded = EditorSceneManager.GetSceneAt(i);
+                if (!loaded.isDirty)
+                    continue;
+
+                Debug.LogError(
+                    Marker + " REFUSED scene '" + loaded.name + "' has UNSAVED changes. Opening '" +
+                    scenePath + "' with OpenSceneMode.Single would discard them silently, and something " +
+                    "in this project may have put a real in-memory repair there on purpose. Save or " +
+                    "discard it deliberately, then re-run. Nothing was opened and nothing was written.");
+                return;
+            }
+
+            string formatBeforeOpen = DescribeSceneFileFormat(scenePath);
+
+            Debug.Log(
+                Marker + " OPENING '" + scenePath + "' with OpenSceneMode.Single. This REPLACES whatever " +
+                "scene is currently open, on the report path as well as the write path, because the " +
+                "idempotence check has to look inside the target scene to be worth anything. " +
+                "onDiskFormat=" + formatBeforeOpen + " editorSerializationMode=" +
+                EditorSettings.serializationMode);
+
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                Debug.LogError(
+                    Marker + " REFUSED could not open '" + scenePath + "'. Nothing was written.");
+                return;
+            }
+
+            bool dirtyOnOpen = scene.isDirty;
+            Debug.Log(
+                Marker + " OPENED scene='" + scene.name + "' rootCount=" +
+                scene.GetRootGameObjects().Length + " dirtyImmediatelyAfterOpen=" + dirtyOnOpen);
+
+            // Idempotence has to see inactive objects. That is the whole lesson of this lane: GameObject.Find
+            // and FindObjectsInactive.Exclude both went blind the moment an ancestor was disabled, and an
+            // idempotence check inheriting that blindness would cheerfully stack a second fabricator next to
+            // the buried one on every run.
+            List<FabricatorSighting> sightings = CollectSightings();
+            int liveInTargetScene = 0;
+            int buriedInTargetScene = 0;
+            for (int i = 0; i < sightings.Count; i++)
+            {
+                FabricatorSighting s = sightings[i];
+                if (!string.Equals(s.ScenePath, scene.path, StringComparison.Ordinal))
+                    continue;
+
+                if (s.GameObjectActiveInHierarchy)
+                    liveInTargetScene++;
+                else
+                    buriedInTargetScene++;
+            }
+
+            Debug.Log(
+                Marker + " PREEXISTING in '" + scene.name + "': live=" + liveInTargetScene +
+                " buried=" + buriedInTargetScene +
+                " (inactive-inclusive scan; the driver's Exclude query can only ever see the live ones)");
+
+            if (liveInTargetScene > 0)
+            {
+                Debug.Log(
+                    Marker + " ALREADY LIVE " + liveInTargetScene + " active " + nameof(Fabricator) +
+                    " instance(s) already exist in '" + scene.name +
+                    "', so FindFirstObjectByType<Fabricator>(FindObjectsInactive.Exclude) already resolves " +
+                    "and adding another would only duplicate a crafting station. NOTHING was instantiated " +
+                    "and NOTHING was written. Run '" + AuditMenuPath + "' for the per-instance detail.");
+                ReportCraftGateReadiness(prefabFabricator);
+                return;
+            }
+
+            if (buriedInTargetScene > 0)
+            {
+                Debug.LogWarning(
+                    Marker + " BURIED ONLY " + buriedInTargetScene + " " + nameof(Fabricator) +
+                    " instance(s) exist in '" + scene.name + "' and every one of them is inactive in " +
+                    "hierarchy, so the driver's Exclude query sees none of them. This tool does NOT " +
+                    "re-activate them - re-enabling content an author or H8_SceneCleaner switched off is a " +
+                    "decision it cannot make - it adds a ROOT instance instead, which has no ancestor that " +
+                    "can be disabled out from under it.");
+            }
+
+            if (!apply)
+            {
+                Debug.Log(
+                    Marker + " REPORT ONLY no " + SceneApplyFlag + " argument, so nothing was written. " +
+                    "WOULD instantiate " + PrefabRootName + " from " + PrefabPath + " as a ROOT of '" +
+                    scene.name + "' at " + DiagnosticInstancePosition + ", SetActive(true), then call " +
+                    "EditorSceneManager.SaveScene - which rewrites " + scenePath + " from " +
+                    formatBeforeOpen + " as " + EditorSettings.serializationMode +
+                    ". When those two differ the diff is the ENTIRE file, not one object. Re-run with " +
+                    SceneApplyFlag + " to write, or use the menu item '" + SceneInstanceMenuPath + "'.");
+                ReportCraftGateReadiness(prefabFabricator);
+                return;
+            }
+
+            if (dirtyOnOpen && !allowDirtyOpen)
+            {
+                Debug.LogError(
+                    Marker + " REFUSED '" + scene.name + "' was ALREADY DIRTY immediately after opening, " +
+                    "before this tool touched anything, so editor code injected content into it during " +
+                    "load. Saving now would cement that injection alongside the fabricator, which is how " +
+                    "nine H8_PlayModeScreenshotter roots got into this scene in the first place " +
+                    "(H8_DuplicateSceneRootAudit.cs:17-39). Identify the injector first, then re-run with " +
+                    AllowDirtySceneFlag + " if the extra content is genuinely wanted on disk. Nothing was " +
+                    "written.");
+                return;
+            }
+
+            GameObject instance = PrefabUtility.InstantiatePrefab(prefabAsset, scene) as GameObject;
+            if (instance == null)
+            {
+                Debug.LogError(
+                    Marker + " REFUSED PrefabUtility.InstantiatePrefab returned null for " + PrefabPath +
+                    ". Nothing was written.");
+                return;
+            }
+
+            Undo.RegisterCreatedObjectUndo(instance, UndoLabel);
+
+            instance.name = PrefabRootName;
+            instance.transform.SetParent(null, true);
+            instance.transform.position = DiagnosticInstancePosition;
+            instance.transform.rotation = Quaternion.identity;
+            instance.SetActive(true);
+
+            if (!instance.activeInHierarchy)
+            {
+                Debug.LogError(
+                    Marker + " REFUSED " + PrefabRootName + " is still not activeInHierarchy after " +
+                    "SetActive(true) as a scene root, which should be impossible. The driver's Exclude " +
+                    "query would not see it, so saving would write a useless object into a production " +
+                    "scene. NOTHING was saved. The instance IS in memory and the scene is now dirty, so " +
+                    "discard it before re-running - this tool's own dirty preflight will refuse until you " +
+                    "do, which is the intended behaviour and not a second bug.");
+                return;
+            }
+
+            // Reproduce the driver's exact predicate before committing to a 6.27 MB write. If this does not
+            // resolve, the write buys nothing and must not happen. This is the one check that turns "an
+            // object was added" into "the query that latched the row now answers".
+            Fabricator driverWouldFind = UnityEngine.Object.FindFirstObjectByType<Fabricator>(
+                FindObjectsInactive.Exclude);
+            if (driverWouldFind == null)
+            {
+                Debug.LogError(
+                    Marker + " REFUSED FindFirstObjectByType<Fabricator>(FindObjectsInactive.Exclude) " +
+                    "STILL resolves to NULL with an active root instance in the scene. That contradicts " +
+                    "the whole model of this lane, so the write is refused rather than guessed at. " +
+                    "NOTHING was saved. The instance IS in memory and the scene is now dirty; discard it " +
+                    "before re-running.");
+                return;
+            }
+
+            Debug.Log(
+                Marker + " DRIVER PREDICATE NOW RESOLVES to '" + driverWouldFind.gameObject.name +
+                "'. This is byte-for-byte the lookup at H8_HeadlessWorldDriver.cs:3260-3261 " +
+                "(TickCraft, FindObjectsInactive.Exclude) that latched CraftRepairBuild Blocked with " +
+                "\"no live Fabricator component found in 8 scene searches\" in " +
+                "Logs/h8_worldsim_probe5.log:19076.");
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            bool saved = EditorSceneManager.SaveScene(scene);
+            string formatAfterSave = DescribeSceneFileFormat(scenePath);
+
+            if (!saved)
+            {
+                Debug.LogError(
+                    Marker + " SaveScene returned FALSE for '" + scenePath + "'. The instance is in " +
+                    "memory ONLY. Do not assume it is on disk; a batchmode -quit from here discards it.");
+                return;
+            }
+
+            Debug.Log(
+                Marker + " INSTANTIATED AND SAVED " + PrefabRootName + " as a ROOT of '" + scene.name +
+                "' at " + instance.transform.position + " activeInHierarchy=" + instance.activeInHierarchy +
+                " layer=" + instance.layer + ". Parented to nothing on purpose: every pre-existing " +
+                "fabricator in this scene is unreachable because an ANCESTOR is disabled, and a root has " +
+                "no ancestor to be disabled by. onDiskFormat " + formatBeforeOpen + " -> " +
+                formatAfterSave + ".");
+
+            // Report the INSTANCE's component, not the prefab's. They should be identical, and if a prefab
+            // override ever makes them differ, the number that matters is the one the driver will read.
+            ReportCraftGateReadiness(
+                instance.TryGetComponent(out Fabricator instanceFabricator)
+                    ? instanceFabricator
+                    : prefabFabricator);
+
+            Debug.LogWarning(
+                Marker + " STATIC CHANGE ONLY the instance is on disk and the driver's lookup resolves in " +
+                "THIS editor session. That is not proof a craft runs. Fabricator does every registration " +
+                "in OnEnable (Fabricator.cs:605-628: RegisterActiveFabricator, " +
+                "InteractableRegistry.RegisterTree, BaseLogisticsNetwork.RegisterFabricator, TryRegister " +
+                "for SlowTick) and OnEnable only fires in Play Mode or a headless run. Nothing here " +
+                "started a craft and no CraftingStartedSignal or ItemAcquiredSignal was observed. Re-run " +
+                "the headless world driver before claiming the row changed verdict.");
+        }
+
+        /// <summary>
+        /// The gate audit the lane brief demanded: an instance that cannot craft must not be reported as a
+        /// fix, because it only moves the blocked row to a different message. Fabricator.CanCraft
+        /// (Fabricator.cs:737-757) is a chain of eight refusals and this walks all of them, saying plainly
+        /// which are satisfied by prefab data, which are runtime state, and which nothing in this file can
+        /// reach.
+        ///
+        /// Everything here is read from serialised asset data. Nothing is executed, so nothing below is
+        /// runtime proof.
+        /// </summary>
+        private static void ReportCraftGateReadiness(Fabricator fabricator)
+        {
+            if (fabricator == null)
+                return;
+
+            IReadOnlyList<RecipeData> recipes = fabricator.AvailableRecipes;
+            int recipeCount = recipes == null ? 0 : recipes.Count;
+
+            int ingredientsOk = 0;
+            int resultOk = 0;
+            int scanGated = 0;
+            int biomeLocked = 0;
+            int nullEntries = 0;
+
+            for (int i = 0; i < recipeCount; i++)
+            {
+                RecipeData recipe = recipes[i];
+                if (recipe == null)
+                {
+                    nullEntries++;
+                    continue;
+                }
+
+                // Mirrors Fabricator.cs:744 exactly - CanCraft only asks whether the list is non-empty at
+                // that point; per-ingredient availability is a runtime inventory question, checked later by
+                // HasIngredientsFastFailOrLegacy, and is deliberately NOT second-guessed here.
+                if (recipe.ingredients != null && recipe.ingredients.Count > 0)
+                    ingredientsOk++;
+
+                // Mirrors Fabricator.cs:745.
+                if (recipe.resultItem != null && recipe.resultQuantity > 0)
+                    resultOk++;
+
+                if (recipe.RequiresScanUnlock)
+                    scanGated++;
+
+                if (recipe.RequiresAnchoredBiomeLock)
+                    biomeLocked++;
+            }
+
+            // Read, not assumed. PassesBiomeLock needs this reference and it is a private [SerializeField]
+            // (Fabricator.cs:193), so SerializedObject is the only sanctioned way to see it. Asserting
+            // "the prefab leaves it null" would go stale the moment somebody wires a host module.
+            string thermalHost = "<unreadable>";
+            SerializedProperty thermalHostProp = new SerializedObject(fabricator).FindProperty("thermalHostModule");
+            if (thermalHostProp != null && thermalHostProp.propertyType == SerializedPropertyType.ObjectReference)
+            {
+                thermalHost = thermalHostProp.objectReferenceValue == null
+                    ? "null"
+                    : thermalHostProp.objectReferenceValue.name;
+            }
+
+            Debug.Log(
+                Marker + " CRAFT GATES recipes=" + recipeCount + " nullEntries=" + nullEntries +
+                " withIngredients=" + ingredientsOk + " withValidResult=" + resultOk +
+                " scanUnlockGated=" + scanGated + " anchoredBiomeLocked=" + biomeLocked +
+                " thermalHostModule=" + thermalHost +
+                " (recipe cache ceiling is " + Fabricator.MaxRecipeCacheEntries +
+                " entries, so this list does not overflow it)");
+
+            // THE DECISIVE ONE. Every other gate can pass and CanCraft still returns false here.
+            Debug.LogError(
+                Marker + " CANNOT CRAFT YET, AND NOT FOR A REASON THIS FILE CAN FIX. " +
+                "Fabricator.CanCraft returns false at Fabricator.cs:743 while _playerInventory is null. " +
+                "That field (Fabricator.cs:204) is assigned in EXACTLY ONE place in the whole type - " +
+                "interactor.TryGetComponent(out _playerInventory) inside IInteractable.Interact, " +
+                "Fabricator.cs:682-683. It is not serialised, has no public setter, and has no registry " +
+                "fallback. H8_HeadlessWorldDriver.TickCraft calls CanCraft and StartCraft DIRECTLY " +
+                "(:3311, :3338) and never calls Interact anywhere in the file, so on the next headless run " +
+                "this instance reports live-with-recipes and CanCraft false for all " + recipeCount +
+                " of them. The row moves from \"no live Fabricator component found in 8 scene searches\" " +
+                "to \"Fabricator is live with visibleRecipes=N ... but CanCraft is false for all of them\" " +
+                "(H8_HeadlessWorldDriver.cs:3325-3330). Closing that needs an owner-side change OUTSIDE " +
+                "this file: either the driver interacts before sweeping, or Fabricator gains a non-" +
+                "interaction inventory route.");
+
+            Debug.Log(
+                Marker + " CRAFT GATES, the rest of the chain, so the next reader does not re-derive it. " +
+                "POWER IS NOT A BLOCKER: _hasPower initialises to TRUE (Fabricator.cs:297) and only " +
+                "OnPowerStatusChanged (:527) ever changes it, so a standalone instance on no power grid is " +
+                "never told it lacks power - a grid-connected one could actually be worse off. " +
+                "UNLOCK MASK: IsRecipeUnlocked (:3964-3976) is fail-closed and reads the vault buffer " +
+                "BufferID.ShinobuFabricatorUnlockedRecipes, which EnsureRecipeUnlockMask (:3810-3856) " +
+                "clears and rebuilds, setting a bit only when RecipeData.IsUnlocked returns true - and that " +
+                "is true whenever the recipe needs no scan entry (RecipeData.cs:196-202), so the " +
+                (recipeCount - scanGated) + " un-scan-gated recipes above self-unlock and the " + scanGated +
+                " scan-gated ones need scan-log progression. BIOME LOCK: PassesBiomeLock (:1425-1451) " +
+                "returns true unless the recipe demands an anchored biome, and when it does it needs a " +
+                "non-null moored thermalHostModule, measured as '" + thermalHost + "' above, so the " +
+                biomeLocked + " biome-locked recipes fail whenever that reads null. None of this matters " +
+                "until _playerInventory is non-null, which is the gate above.");
+        }
+
+        /// <summary>
+        /// Reads the first bytes of the scene file and reports the on-disk serialisation format instead of
+        /// predicting it. Paths are resolved from Application.dataPath, never hardcoded - AGENTS.md
+        /// `Relative Path Requirement`.
+        /// </summary>
+        private static string DescribeSceneFileFormat(string assetPath)
+        {
+            if (string.IsNullOrEmpty(assetPath))
+                return "unknown(no path)";
+
+            try
+            {
+                DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
+                if (projectRoot == null)
+                    return "unknown(no project root)";
+
+                string absolute = Path.Combine(projectRoot.FullName, assetPath);
+                if (!File.Exists(absolute))
+                    return "absent";
+
+                var header = new byte[TextSceneSignature.Length];
+                int read;
+                long length;
+                using (FileStream stream = File.OpenRead(absolute))
+                {
+                    length = stream.Length;
+                    read = stream.Read(header, 0, header.Length);
+                }
+
+                bool isText = read == TextSceneSignature.Length;
+                for (int i = 0; isText && i < TextSceneSignature.Length; i++)
+                {
+                    if (header[i] != TextSceneSignature[i])
+                        isText = false;
+                }
+
+                return (isText ? "text-yaml" : "binary") + "(" + length + " bytes)";
+            }
+            catch (IOException error)
+            {
+                return "unreadable(" + error.Message + ")";
+            }
+            catch (UnauthorizedAccessException error)
+            {
+                return "unreadable(" + error.Message + ")";
+            }
         }
 
         // ------------------------------------------------------------------
@@ -561,8 +1114,11 @@ namespace Hecton8.EditorTools.Diagnostics
                     Marker + " NOT YET A FIX this prefab is an ASSET on disk. " +
                     "FindFirstObjectByType<Fabricator>(FindObjectsInactive.Exclude) at " +
                     "H8_HeadlessWorldDriver.cs:3260 scans LOADED SCENES only, so the prefab alone does " +
-                    "not clear the CraftRepairBuild row. An instance has to be in the open scene AND " +
-                    "active in hierarchy. Use '" + InstantiateMenuPath + "'.");
+                    "not clear the CraftRepairBuild row. An instance has to be in the scene the driver " +
+                    "actually has loaded AND active in hierarchy. From a human editor session use '" +
+                    InstantiateMenuPath + "' then save; from batchmode use " +
+                    nameof(InstantiateFabricatorSceneInstanceFromCommandLine) + " with " +
+                    SceneApplyFlag + ", which opens " + DefaultScenePath + " and persists.");
 
                 Debug.LogWarning(
                     Marker + " VISUAL PLACEHOLDER the station body uses the built-in cube mesh and the " +
@@ -793,14 +1349,16 @@ namespace Hecton8.EditorTools.Diagnostics
         // ------------------------------------------------------------------
 
         /// <summary>
-        /// Puts one prefab instance into the active scene and marks the scene dirty. Deliberately NOT
-        /// reachable from <see cref="AuthorFabricatorFromCommandLine"/>: a scene write is the operation
-        /// AGENTS.md:126 is strictest about, three of the four scenes here are binary, and an automated
-        /// scene save is precisely what buried the existing fabricators in the first place.
+        /// Puts one prefab instance into the ALREADY-OPEN scene and marks it dirty WITHOUT saving, which is
+        /// the convention FabricationBootstrapAuthoring.cs:240 set - the human decides whether the scene is
+        /// saved. Deliberately not reachable from any command line: it opens nothing, so it would act on
+        /// whatever scene a batchmode session happened to have loaded, and it saves nothing, so a -quit
+        /// would discard the result anyway.
         ///
-        /// It marks dirty and stops rather than calling EditorSceneManager.SaveScene, which is the
-        /// convention FabricationBootstrapAuthoring.cs:240 already set - the human decides whether the
-        /// scene is saved.
+        /// For a batchmode run use <see cref="InstantiateFabricatorSceneInstanceFromCommandLine"/> instead.
+        /// That one names its target scene, refuses on a dirty scene, and persists. This one stays because
+        /// marking dirty and stopping is the right behaviour for a human already working in a scene, and
+        /// because it is the only path that does not risk a 6.27 MB binary-to-YAML rewrite.
         /// </summary>
         [MenuItem(InstantiateMenuPath)]
         public static void InstantiateFabricatorIntoOpenScene()
