@@ -68,8 +68,9 @@ Not proven by that log:
 | RT/VRAM retained owner set | `[!]` | Memory Profiler / Frame Debugger owner isolation |
 | ~~Tool durability does not persist~~ WITHDRAWN — the codec persists it | `[?]` | none; the premise was wrong, see the correction below |
 | ~~The content vacuum, measured: 4 items, 3 creatures, 0 quests~~ WITHDRAWN — wrong artifact measured | `[?]` | none; the blob has no runtime item reader, see `The content is not missing — the wiring is` |
-| Crafting is unreachable: `Fabricator`'s guid is in zero scenes and its only construction site is an Editor `[MenuItem]` | `[!]` | a build in which the fabrication station exists in the loaded scene |
-| Nine authoring buttons were never pressed; the wiring boundary is `GameBootstrapper`'s 38 `AddComponent` calls | `[!]` | per-lane: the built object present in a loaded scene, or runtime construction |
+| ~~Crafting is unreachable~~ RETRACTED — `Fabricator` IS in the binary world scene; my grep was text-only | `[?]` | none; see the retraction note |
+| ~~Nine authoring buttons were never pressed~~ RETRACTED — the world scene is binary and was saved | `[?]` | none; see the retraction note |
+| Four scenes are BINARY, so every text GUID search in this repo silently under-reports | `[!]` | a validator that header-tests `%YAML` before any GUID reachability claim |
 | No creature carries `FaunaBrain` — its guid occurs in exactly one file, its own `.cs.meta` | `[!]` | a creature that moves under its own brain in a build |
 | World-content sockets are Editor-authored only, and `WorldShippingContentFilter` drops 10 of the 14 | `[~]` | settle whether `Tool_TrialRange` ships, then port or press |
 | A failed save is invisible in the GAMEPLAY HUD (the main menu shows a real modal) | `[!]` | force a save write failure in a build and watch the gameplay HUD |
@@ -221,6 +222,53 @@ player session. The zero-caller claims rest on tree-wide symbol searches, which 
 a string-keyed dispatch table; I saw no such data layer but did not audit for one. The item verdict is scoped
 to `Items` — I did not trace `Creatures`, `Biomes` or `LootCdf` readers, so those sections may well be
 load-bearing and must not inherit this conclusion.
+
+### RETRACTED 2026-07-29 — the world scene is BINARY and every GUID grep below was blind to it
+
+> **The entry that follows is substantially WRONG and I am leaving it in place rather than deleting it, because
+> the method error is more instructive than the conclusion was.**
+>
+> `Assets/_Project/Scenes/02_HECTON_WORLD.unity` is **6,270,260 bytes of BINARY serialization**. It does not
+> begin with `%YAML`, and it contains the string `m_Script` **zero** times. Four scenes in this project are
+> binary: `02_HECTON_WORLD.unity`, `010_TEST.unity`, `020_RENDER_SANDBOX.unity` (60 MB) and
+> `020_RENDER_SANDBOX_V2.unity`. The other 995 scenes/prefabs are text.
+>
+> Every reachability claim below rests on `rg` for a hex GUID against `*.unity`/`*.prefab`. In a binary scene a
+> script reference is stored as raw bytes in **nibble-swapped** order, so a text search for the hex string
+> cannot match it. My searches were therefore blind to the one scene the player actually loads.
+>
+> **Re-tested with a binary-aware search (nibble-swap plus raw bytes, on the file bytes rather than as text):**
+>
+> | Type | filed as | actually in `02_HECTON_WORLD.unity` |
+> |---|---|---|
+> | `Fabricator` | zero scenes | **PRESENT** (also `010_TEST.unity`) |
+> | `BiomeMatrixDirector` | zero scenes | **PRESENT** |
+> | `WorldContentSocket` | zero scenes | **PRESENT** |
+> | `WorldContentDirector` | zero scenes | **PRESENT** |
+> | `ScavengePopulator` | zero scenes | **PRESENT** |
+> | `WorldCaveDirector` | zero scenes | **PRESENT** |
+> | `FaunaBrain` | zero files but its own `.cs.meta` | **still zero — that finding HOLDS** |
+> | `HUDNotification` | zero instances | **still zero — that finding HOLDS** |
+>
+> Independent corroboration, because a byte match alone deserves a second source: the binary type tree embeds
+> assembly-qualified type names, and the scene contains `Fabricator` 3 times and `BiomeMatrixDirector` 6 times
+> as literal type-name strings. A 16-byte GUID sequence matching by chance in 6 MB is impossible, and the type
+> names agree with the GUIDs.
+>
+> **So the authoring buttons WERE pressed and the scene WAS saved.** "Nine buttons never pressed" and "crafting
+> is unreachable" are both retracted. What remains true is narrower and still worth having: `FaunaBrain` really
+> is attached to nothing, `HUDNotification` really had no instances (now fixed), and the socket lane really is
+> filtered down to 4 live kinds out of 11 by `WorldShippingContentFilter`.
+>
+> **A second blind spot in the same searches, for the record.** The four text hits my re-test found for those
+> GUIDs are all in `Assets/_Recovery/` — recovery copies, gitignored, which is why `rg` skipped them by default
+> too. So the original search missed live content one way and dead content the other.
+>
+> **The method rule this establishes, and it belongs in the rules rather than only here:** header-test every
+> scene and prefab for `%YAML` BEFORE searching it, and validate the search against a control GUID known to be
+> present. I had that exact method earlier in this session, in a script that header-tested and nibble-swapped —
+> and then dropped it for a one-line `rg` when the question felt simple. The scene did not get less binary
+> because the question got easier.
 
 ### The wiring boundary is a 38-entry list in one file, and nine authoring buttons were never pressed
 
