@@ -726,6 +726,99 @@ def _gate_normals(data: MeshData, sink: _Sink) -> None:
                               law.NORMAL_LENGTH_MIN, law.NORMAL_LENGTH_MAX))
 
 
+def _tangent_zero_cause(data: MeshData, loop: int) -> str:
+    """WHY a tangent underflowed, not just WHERE.
+
+    Measured on a geology LOD0 on 2026-07-29: ``tangent[17547] length=0.000000``
+    sent a competent investigation hunting a degenerate UV triangle **that does not
+    exist** -- zero-UV-area loop triangles on that mesh were 0 in both UV layers, in
+    both the failing and the passing build. A UV-area test finds nothing.
+
+    The real mechanism needs BOTH ingredients, and reporting either alone names the
+    wrong owner:
+
+    * a UV **needle** -- non-zero area but extreme aspect. Measured 1.191e-07 UV area
+      against a healthy 1.125e-04 m2 of 3D area, roughly 121:1.
+    * a corner normal **87.99 degrees off its own face normal**.
+
+    Mikktspace orthogonalises the UV tangent against the split normal, so a tangent
+    that is near-parallel to a corner normal that far off its face has its in-plane
+    component underflow to exactly 0. A UV needle alone is survivable; an 88-degree
+    corner normal alone is survivable; together they zero the tangent.
+
+    So the instrument is (UV aspect, corner-vs-face angle) and NOT UV area, and the
+    two numbers name different owners: a needle belongs to the unwrap or the geometry
+    that produced it, an 88-degree corner normal belongs to the shading basis.
+
+    Follows the ``WindingDiagnosis`` precedent in this file -- a gate that reports a
+    cause rather than a coordinate. Reads only fields ``MeshData`` already snapshots,
+    so it adds no Blender API calls and cannot fail on a mesh the gate could inspect.
+    """
+    tri = -1
+    for t in range(0, len(data.tri_loops), 3):
+        if loop in (data.tri_loops[t], data.tri_loops[t + 1], data.tri_loops[t + 2]):
+            tri = t
+            break
+    if tri < 0:
+        return "CAUSE: unavailable (loop {0} is in no triangle)".format(loop)
+
+    loops = (data.tri_loops[tri], data.tri_loops[tri + 1], data.tri_loops[tri + 2])
+    verts = (data.tri_vertices[tri], data.tri_vertices[tri + 1],
+             data.tri_vertices[tri + 2])
+
+    def _p(v):
+        return (data.positions[3 * v], data.positions[3 * v + 1],
+                data.positions[3 * v + 2])
+
+    a, b, c = _p(verts[0]), _p(verts[1]), _p(verts[2])
+    e1 = (b[0] - a[0], b[1] - a[1], b[2] - a[2])
+    e2 = (c[0] - a[0], c[1] - a[1], c[2] - a[2])
+    nx = e1[1] * e2[2] - e1[2] * e2[1]
+    ny = e1[2] * e2[0] - e1[0] * e2[2]
+    nz = e1[0] * e2[1] - e1[1] * e2[0]
+    face_len = _length3(nx, ny, nz)
+    area3d = 0.5 * face_len
+
+    uv_bit = "uv=none"
+    if data.uv_layers:
+        _name, values = data.uv_layers[0]
+        u = [(values[2 * l], values[2 * l + 1]) for l in loops]
+        du1 = (u[1][0] - u[0][0], u[1][1] - u[0][1])
+        du2 = (u[2][0] - u[0][0], u[2][1] - u[0][1])
+        uv_area = 0.5 * abs(du1[0] * du2[1] - du1[1] * du2[0])
+        sides = []
+        for p, q in ((0, 1), (1, 2), (2, 0)):
+            sides.append(_length3(u[q][0] - u[p][0], u[q][1] - u[p][1], 0.0))
+        longest = max(sides)
+        # Triangle height against its own longest side: area = 0.5 * base * height.
+        height = (2.0 * uv_area / longest) if longest > 0.0 else 0.0
+        aspect = (longest / height) if height > 0.0 else float("inf")
+        uv_bit = "UV0 area={0:.6e} aspect={1:.1f}:1".format(uv_area, aspect)
+
+    # Reported as |dot| rather than as degrees, for two reasons. This module has no
+    # ``math`` import by convention -- it uses ``** 0.5`` rather than ``math.sqrt``
+    # throughout -- and more importantly |dot| IS the quantity mikktspace degenerates
+    # on. Near 0 means the corner normal is near-perpendicular to its own face, which
+    # is the condition that lets the orthogonalised tangent underflow. Degrees would
+    # be a human-friendly transform of the mechanism rather than the mechanism.
+    angle_bit = "cornerNormal=unavailable"
+    if data.corner_normals and face_len > 0.0:
+        cn = (data.corner_normals[3 * loop], data.corner_normals[3 * loop + 1],
+              data.corner_normals[3 * loop + 2])
+        cn_len = _length3(cn[0], cn[1], cn[2])
+        if cn_len > 0.0:
+            dot = (nx * cn[0] + ny * cn[1] + nz * cn[2]) / (face_len * cn_len)
+            dot = max(-1.0, min(1.0, dot))
+            angle_bit = ("|dot(cornerNormal, faceNormal)|={0:.4f}"
+                         " (near 0 = near-perpendicular, the degenerate case)"
+                         ).format(abs(dot))
+
+    return ("CAUSE: {0}, 3D area={1:.6e}, {2}. A zero tangent needs BOTH a UV needle "
+            "AND a corner normal far off its face -- mikktspace orthogonalises the UV "
+            "tangent against the split normal. UV area alone is NOT the instrument."
+            ).format(uv_bit, area3d, angle_bit)
+
+
 def _gate_tangents(data: MeshData, sink: _Sink) -> None:
     """Finite unit tangents with strictly +1 or -1 handedness.
 
@@ -747,9 +840,10 @@ def _gate_tangents(data: MeshData, sink: _Sink) -> None:
         length = _length3(x, y, z)
         if length < law.TANGENT_LENGTH_MIN or length > law.TANGENT_LENGTH_MAX:
             sink.fail(GATE_TANGENT_LENGTH_OUT_OF_RANGE,
-                      "tangent[{0}] length={1:.6f} outside {2}..{3}".format(
+                      "tangent[{0}] length={1:.6f} outside {2}..{3}. {4}".format(
                           i // 3, length, law.TANGENT_LENGTH_MIN,
-                          law.TANGENT_LENGTH_MAX))
+                          law.TANGENT_LENGTH_MAX,
+                          _tangent_zero_cause(data, i // 3)))
     for i in range(len(data.tangent_signs)):
         sign = data.tangent_signs[i]
         if not _finite(sign):
