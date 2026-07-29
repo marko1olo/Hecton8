@@ -1131,8 +1131,32 @@ def case_unity_import_notes():
                 and importer["useFileScale"] is True,
                 family.value + ": scale contract must be globalScale=1 with "
                 "useFileScale=True")
-        H.check(abs(importer["normalSmoothingAngle"] - law.SMOOTH_ANGLE_DEG) < 1e-9,
-                family.value + ": normalSmoothingAngle must be law.SMOOTH_ANGLE_DEG")
+        # Was `- law.SMOOTH_ANGLE_DEG`, i.e. the flat 32.0, and that assertion was ENFORCING
+        # the defect: apply_shading_basis only defaults to 32.0 and every generator overrides
+        # it with law.smooth_angle_for(SURFACE), so organic assets are authored at 68.0 and
+        # geology at 46.0. A test that pins the manifest to a value no generator uses locks in
+        # a fallback angle that cannot reproduce the authored split.
+        H.check(abs(importer["normalSmoothingAngle"]
+                    - law.smooth_angle_for(law.FAMILY_SURFACE_CLASS[family])) < 1e-9,
+                family.value + ": normalSmoothingAngle must be "
+                "law.smooth_angle_for(FAMILY_SURFACE_CLASS[family]), the angle the "
+                "generator actually authored with")
+        # The check above is derived from the same law.py call the exporter uses, so on its
+        # own it is a tautology: it would still pass if SMOOTH_ANGLE_BY_SURFACE were
+        # flattened back to one value, which is the exact regression being guarded against.
+        # These LITERALS are the real assertion. They come from the bibles, not from law.py.
+        _EXPECTED_SMOOTH_ANGLE = {
+            law.SurfaceClass.HARD_SURFACE: 32.0,
+            law.SurfaceClass.ORGANIC: 68.0,
+            law.SurfaceClass.GEOLOGIC: 46.0,
+        }
+        _surface = law.FAMILY_SURFACE_CLASS[family]
+        H.check(abs(importer["normalSmoothingAngle"]
+                    - _EXPECTED_SMOOTH_ANGLE[_surface]) < 1e-9,
+                "{0}: {1} must declare normalSmoothingAngle {2:g}, got {3:g} -- a flat "
+                "angle across surface classes cannot reproduce the authored split".format(
+                    family.value, _surface.name, _EXPECTED_SMOOTH_ANGLE[_surface],
+                    importer["normalSmoothingAngle"]))
         H.check(notes["vertexColorContract"]
                 == list(law.VCOL_CONTRACT[law.FAMILY_SURFACE_CLASS[family]]),
                 family.value + ": vertex colour contract must come from law.py")

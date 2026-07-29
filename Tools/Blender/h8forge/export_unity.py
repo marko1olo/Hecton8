@@ -1460,7 +1460,7 @@ def unity_import_notes(family) -> dict:
         "useFileScale": True,
         "bakeAxisConversion": False,
         "importNormals": "Import",
-        "normalSmoothingAngle": law.SMOOTH_ANGLE_DEG,
+        "normalSmoothingAngle": law.smooth_angle_for(surface),
         "importBlendShapeNormals": "None",
         "importTangents": "CalculateMikk",
         "importColors": True,
@@ -1510,10 +1510,19 @@ def unity_import_notes(family) -> dict:
             "formula into custom split normals; Calculate throws that away and "
             "re-derives from an angle, which is the bevel shading work lost.",
         "normalSmoothingAngle":
-            "law.SMOOTH_ANGLE_DEG, the same value mesh_ops used for "
-            "shade_auto_smooth. Inert while importNormals=Import, but it means a "
-            "forced fallback to Calculate reproduces the authored split instead "
-            "of a different one.",
+            "law.smooth_angle_for(surface) -- the PER-SURFACE angle, not the flat "
+            "law.SMOOTH_ANGLE_DEG this used to declare. Inert while "
+            "importNormals=Import, but the whole point of writing it is that a "
+            "forced fallback to Calculate reproduces the AUTHORED split rather "
+            "than a different one, and the flat value did not. Measured "
+            "2026-07-29: mesh_ops.apply_shading_basis only DEFAULTS to "
+            "SMOOTH_ANGLE_DEG (32.0); every generator overrides it with "
+            "law.smooth_angle_for(SURFACE) -- coral_branching.py:1268 and "
+            "flora_capstem.py:1805/:2111 pass ORGANIC, which is 68.0. So organic "
+            "assets were authored at 68 degrees while this manifest declared 32, "
+            "and geology was authored at 46 while declaring 32. The old `why` "
+            "string asserted these were 'the same value'; they were not, by 36 "
+            "and 14 degrees respectively.",
         "importBlendShapeNormals":
             "There are no blend shapes: the exporter runs with bake_anim=False "
             "and object_types={'MESH'}.",
