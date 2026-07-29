@@ -18,6 +18,9 @@ namespace Hecton8.Core
         private static int s_x001CoreDeterminismSignalsSignalPushDropCount;
         private static InputSignal _latestInputSignal;
         private static InputSignal _latestInputOverrideSignal;
+        // Latch for the one-shot input-override clock-skew report. int rather than bool so
+        // Interlocked.Exchange can be used - the consume path can be reached from more than one caller.
+        private static int _inputOverrideClockSkewReported;
         private static SyncFenceSignal _latestSyncFenceSignal;
         private static KccVelocitySignal _latestKccVelocitySignal;
 
@@ -178,7 +181,18 @@ namespace Hecton8.Core
                 return false;
 
             if (frame < signal.Frame)
+            {
+                // Deliberately does NOT clear: a producer legitimately one frame ahead should be picked up on
+                // the next poll rather than dropped. But that makes this branch a silent latch if the consumer
+                // is reading a DIFFERENT clock than the producer stamps with - it then fires forever and no
+                // override is ever applied. That is exactly what happened: producers publish
+                // SystemDispatcher.CurrentFrameId (TimeSliceScheduler's boot-long counter) while
+                // InputDispatcher consumed with CurrentFrameIndex (the dispatcher instance's own sequence,
+                // reset to 0 on init), so 124 published overrides produced zero movement and the failure was
+                // invisible. Per AGENTS.md, a system that can collapse silently must fail loudly instead.
+                ReportInputOverrideClockSkewOnce(frame, signal.Frame);
                 return false;
+            }
 
             uint age = frame - signal.Frame;
             if (age > maxFrameAge)
@@ -189,6 +203,26 @@ namespace Hecton8.Core
 
             _latestInputOverrideSignal = default;
             return true;
+        }
+
+        /// <summary>
+        /// One-shot diagnostic for producer/consumer frame-clock divergence on the input-override lane.
+        /// Latched so a per-poll condition cannot spam the log or allocate per frame.
+        /// </summary>
+        private static void ReportInputOverrideClockSkewOnce(uint consumerFrame, uint producerFrame)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (System.Threading.Interlocked.Exchange(ref _inputOverrideClockSkewReported, 1) != 0)
+                return;
+
+            // COLD ALLOC: one-shot string - input-override clock skew report - owner: CoreDeterminismSignals
+            UnityEngine.Debug.LogError(
+                "[CoreDeterminismSignals] input-override clock skew: consumerFrame=" + consumerFrame +
+                " < producerFrame=" + producerFrame +
+                ". The consumer is reading a different frame counter than the producer stamps with, so no " +
+                "synthetic input will ever be applied. Producers must publish SystemDispatcher.CurrentFrameId " +
+                "and consumers must compare against SystemDispatcher.CurrentFrameId, not CurrentFrameIndex.");
+#endif
         }
 
         public static bool TryGetLatestSyncFence(out SyncFenceSignal signal)

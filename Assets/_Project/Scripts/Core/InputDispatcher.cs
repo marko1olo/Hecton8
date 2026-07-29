@@ -3052,7 +3052,16 @@ namespace Hecton8.Core
             }
 
             state.ActionsBitmask = actionBits;
-            bool automationOverrideApplied = ApplyAutomationOverride(ref state, (uint)currentFrame);
+            // Freshness must be judged on the SAME clock the producers stamp with. Every synthetic-input
+            // producer in the project publishes signal.Frame = SystemDispatcher.CurrentFrameId, which is
+            // TimeSliceScheduler.CurrentFrameId - a counter running since boot. `currentFrame` here is
+            // SystemDispatcher.CurrentFrameIndex, which resolves to the dispatcher instance's own
+            // _dispatcherFrameSequence (SystemDispatcher.cs:2697-2703), reset to 0 on init at :2060. The two
+            // counters are independent, so the dispatcher value is far SMALLER, and
+            // TryConsumeLatestInputOverride's `if (frame < signal.Frame) return false` guard fired on every
+            // poll - never consuming, never clearing. Measured effect in Logs/omega_route28.log: 124 overrides
+            // published, movementIntent01max=0.000, Swim row FAIL with the input path fully open.
+            bool automationOverrideApplied = ApplyAutomationOverride(ref state, Hecton8.Core.SystemDispatcher.CurrentFrameId);
             _lastAutomationOverrideApplied = automationOverrideApplied;
             if (automationOverrideApplied)
                 _lastDeliveredLookDelta = state.LookDelta;
