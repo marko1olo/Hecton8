@@ -156,6 +156,15 @@ CHIP_WIDTH_FRACTION_MAX = 0.026
 # mesh on the cliff chunk, all of which the LOD0 decimation to budget absorbs.
 CAP_RING_FACTORS = (0.72, 0.48, 0.28, 0.12)
 
+# Deepest bed recession as a fraction of that bed's OWN thickness, for the bed carrying the
+# widest relief in the column; every other bed scales below it. Thickness-relative because
+# differential erosion is a property of the bed, not of the boulder it sits in -- and because
+# a radius-relative amplitude saturated the anti-fold clamp on the cliff chunk and turned the
+# stratigraphy into one uniform step. At 0.22 the deepest step on a 0.36 m cliff-chunk bed is
+# 79 mm, about 1 percent of the 7.6 m extent and ~8 px in a 768 px silhouette render, so it
+# reads in outline while staying under the clamp that stops a quad folding through itself.
+BEDDING_RELIEF_OF_THICKNESS = 0.22
+
 # Absolute-size scale witnesses (metres). These do NOT scale with the rock: that is
 # the entire point. ``3dmodel.md`` section 12 lists "scale witnesses" as a required
 # property, and a feature whose size tracks the asset tells the player nothing. Bed
@@ -539,6 +548,13 @@ class Bed:
     radius_scale: float
     overhangs_below: bool
     plan_phase: float = 0.0
+    # Recession in METRES along the local surface normal, positive into the rock. This is
+    # what `erode_bedding_planes` applies and it replaces `radius_scale` as the way bed
+    # relief reaches the mesh. `radius_scale` is retained ONLY as the column's own
+    # bookkeeping -- the tuned geology that decides which bed is soft, which stands proud
+    # and which one is the route landmark is sound and is preserved verbatim; what was
+    # wrong was applying it as a radius, which made every bed an axisymmetric contour.
+    recession_m: float = 0.0
 
     @property
     def thickness(self) -> float:
@@ -627,13 +643,26 @@ class Stratigraphy:
         on a 1.45 m outcrop, about 1.5 px in a 768 px silhouette render, so it roughens the
         surface without curving the outline.
         """
-        bed = self.bed_at(h)
-        bed_phase = bed.plan_phase if bed is not None else 0.0
-        twisted = theta + self.plan_twist_rad * (h / max(1e-6, self.height_m)) + bed_phase
+        # THE PLAN OUTLINE IS BED-INDEPENDENT, and that is the point.
+        #
+        # This used to add the containing bed's `plan_phase` to the azimuth and look up that
+        # bed's own per-face inset row. Both are step functions of the BED INDEX, i.e. step
+        # functions of height, so the section changed discontinuously at every bed contact
+        # and the mass became a stack of discs each rotated and inset differently. Rendered,
+        # that is a lathe-turned part: horizontal ribbon bands at near-constant spacing whose
+        # trace follows the silhouette contour like a topographic map, which is a height-field
+        # band function and NOT bedding. Real beds are planes with a dip and a strike; they cut
+        # THROUGH the mass and their surface trace varies with the local slope.
+        #
+        # `plan_twist_rad * (h / height)` stays: a CONTINUOUS twist is a sheared mass, not a
+        # stack. Bed relief now arrives once, from `erode_bedding_planes`, along the surface
+        # normal. The arris jog that `face_inset` existed to create still happens -- a joint
+        # face is bedding-perpendicular, so it takes full recession and steps in and out per
+        # bed -- but now as a consequence of the erosion rather than as a second mechanism.
+        twisted = theta + self.plan_twist_rad * (h / max(1e-6, self.height_m))
 
         if self.joints is not None:
-            scales = self.face_scales_for_bed(bed.index if bed is not None else 0)
-            value = self.joints.radius(theta, scales)
+            value = self.joints.radius(theta, None)
         else:
             value = 1.0
         residual = 0.0
@@ -786,6 +815,29 @@ def build_stratigraphy(rng: np.random.Generator, size: SizeClass,
         if abs(difference) > max_step:
             beds[index].radius_scale = (beds[index - 1].radius_scale
                                         + math.copysign(max_step, difference))
+
+    # Convert the column's radial bookkeeping into an absolute recession along the surface
+    # normal, which is the only form `erode_bedding_planes` uses. Everything above -- the
+    # hardness alternation, the proud competent bed over a soft one, the landmark shelf, the
+    # "only some interfaces are true shelves" draw, the tread-vs-riser clamp -- is untouched.
+    # A radius_scale under 1 is a bed that weathers back; over 1 is a bed that stands proud,
+    # and a negative recession is exactly that.
+    # Scaled by the BED'S OWN THICKNESS, not by the rock's radius, and that is the difference
+    # between a measurement and a saturated clamp. Measured on the cliff chunk when this was
+    # `(1 - radius_scale) * size.radius_m`: the deepest recession came out 0.1450 m, which was
+    # EXACTLY `local_edge * 0.85`, i.e. the safety clamp -- so the clamp and not the
+    # stratigraphy was choosing the step, 6127 of 6152 vertices moved by an identical
+    # saturated amount, and the result was a fresh uniform band plus enough folding to fail
+    # the LOD0 round trip at corner-normal delta 0.002118.
+    #
+    # Thickness is also the geologically correct scale: a thick competent bed weathers into a
+    # prominent shelf and a 2 cm parting into a hairline, independent of how big the rock is.
+    # Normalising by the widest relief in the column keeps the SHAPE of the tuned profile
+    # (which bed is soft, which stands proud, which is the landmark) and only sets its depth.
+    widest = max((abs(1.0 - bed.radius_scale) for bed in beds), default=0.0)
+    for bed in beds:
+        relief = (1.0 - bed.radius_scale) / widest if widest > 1e-9 else 0.0
+        bed.recession_m = relief * bed.thickness * BEDDING_RELIEF_OF_THICKNESS
 
     orders = np.array(sorted(rng.choice(np.arange(3, 11), size=4, replace=False)))
     # Amplitude cut ~10x: this term used to define the outline and now only roughens the
@@ -1006,21 +1058,28 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
     # and ledge annuli than as extra rings inside a parallel-sided slab.
     per_bed = max(1, min(3, body_budget // max(1, len(beds))))
 
+    # EVERY RING SHARES ONE RADIUS FACTOR. The ring HEIGHTS still cluster at bed contacts,
+    # because that is where `erode_bedding_planes` needs resolution to put a crisp step, but
+    # the radius no longer depends on which bed the ring sits in. That single change is what
+    # stops the lattice from being a stack of discs -- a ring pair straddling a contact is now
+    # two rings of the SAME radius, so the contact carries no built-in axisymmetric lip, and
+    # the step appears only where the erosion says the bed is actually exposed.
+    UNIFORM = 1.0
     ring_specs = []
     for i, bed in enumerate(beds):
         if i == 0:
-            ring_specs.append((bed.base_h, bed.radius_scale))
+            ring_specs.append((bed.base_h, UNIFORM))
         else:
             # Taller rise than the first attempt: a 25 mm annulus is below what quadric
             # collapse and the weighted-normal pass will preserve, so the ledge has to be
             # a feature the rest of the pipeline can see.
             ledge_rise = min(0.055, max(0.020, bed.thickness * 0.16))
-            ring_specs.append((bed.base_h, beds[i - 1].radius_scale))
-            ring_specs.append((bed.base_h + ledge_rise, bed.radius_scale))
+            ring_specs.append((bed.base_h, UNIFORM))
+            ring_specs.append((bed.base_h + ledge_rise, UNIFORM))
         for k in range(1, per_bed):
             ring_specs.append((bed.base_h + (k / float(per_bed)) * bed.thickness,
-                               bed.radius_scale))
-    ring_specs.append((beds[-1].top_h, beds[-1].radius_scale))
+                               UNIFORM))
+    ring_specs.append((beds[-1].top_h, UNIFORM))
 
     # Strictly increasing height, or the bridge loop builds inverted/zero-area quads.
     cleaned = []
@@ -1126,8 +1185,15 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
     # Scaling a star-shaped polygon about its centre cannot self-intersect, which is why
     # this is analytic and not `inset_region`: the plan outline carries 44 percent landmark
     # notches, and an even inset of 0.8 m into a 1.4 m notch collapses it.
-    def _cap_ring(h: float, radius_scale: float, factor: float, lift: float) -> list:
-        """One concentric cap ring: the body's own plan outline at ``factor`` of radius."""
+    def _cap_ring(h: float, radius_scale: float, factor: float, lift: float,
+                  count: int) -> list:
+        """One concentric cap ring: the body's own plan outline at ``factor`` of radius.
+
+        ``count`` may be below ``segments`` -- the cap rings thin as they close in. The
+        azimuths are still SAMPLED FROM ``angle_list`` by stride rather than spread evenly,
+        so an inner ring keeps the joint polygon's corner directions and the cap does not
+        slowly rotate away from the plan outline it is closing.
+        """
         drift_u, drift_v = strata.drift(h)
         t = (h - base_h) / max(1e-6, size.height_m)
         taper = 1.0
@@ -1135,8 +1201,8 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
             local = (t - 0.92) / 0.08
             taper = 1.0 - 0.14 * (local * local * (3.0 - 2.0 * local))
         row = []
-        for s in range(segments):
-            theta = float(angle_list[s])
+        for s in range(count):
+            theta = float(angle_list[int(s * segments / count) % segments])
             shape = strata.plan_shape(theta, h)
             notch = strata.landmark_sector_weight(theta, h)
             radius = (size.radius_m * shape * radius_scale * taper
@@ -1157,18 +1223,43 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
     # pucker in the low and underside views of all three sizes. A ground-standing rock rests
     # on its rim, so dishing upward both removes the cone from the low silhouette and puts
     # the whole underside into self-shadow where the AO bake wants it.
+    # EACH CAP RING ALSO HALVES ITS SEGMENT COUNT -- a polar reduction, not just concentric
+    # rings. Concentric rings alone fixed the long spokes but left every ring carrying the
+    # full 115 segments, so the innermost ring was a 115-gon of 17 mm edges around a 0.37 m
+    # radius and the closing poke put 115 slivers back at the centre. A pole fan's aspect
+    # ratio is `circumference / segments`, which is scale-INVARIANT, so shrinking the fan
+    # without thinning it just makes a smaller pinch: measured as the umbrella pucker still
+    # visible on the underside of all three sizes after the first cap fix. Halving the count
+    # each band keeps every quad near 1:1 and leaves a 6-8 gon to close, whose poke triangles
+    # are as wide as they are long.
+    ring_counts = []
+    running = segments
+    for _ in CAP_RING_FACTORS:
+        running = max(6, running // 2)
+        ring_counts.append(running)
+
     for end_ring, sign, amount in ((0, 1.0, 0.022), (rings - 1, 1.0, 0.012)):
         cap_h, cap_scale = ring_specs[end_ring]
         previous = verts[end_ring * segments:(end_ring + 1) * segments]
-        for factor in CAP_RING_FACTORS:
+        for factor, count in zip(CAP_RING_FACTORS, ring_counts):
             # Parabolic in the radial factor: zero at the rim so the band meets the flank
             # flush, full ``amount`` at the centre so the apex lands where the single poke
             # used to put it.
             lift = sign * size.height_m * amount * (1.0 - factor * factor)
-            row = _cap_ring(cap_h, cap_scale, factor, lift)
-            for s in range(segments):
-                s_next = (s + 1) % segments
-                bm.faces.new((previous[s], previous[s_next], row[s_next], row[s]))
+            row = _cap_ring(cap_h, cap_scale, factor, lift, count)
+            outer = len(previous)
+            # Fan the outer ring onto the inner one by nearest-index mapping. Where two
+            # adjacent outer vertices map to the same inner vertex the face is a TRIANGLE;
+            # where they straddle an inner step it is a quad. That is what absorbs the
+            # halving without leaving a hole or a T-junction.
+            for s in range(outer):
+                s_next = (s + 1) % outer
+                j = int(s * count / outer) % count
+                j_next = int(s_next * count / outer) % count
+                if j == j_next:
+                    bm.faces.new((previous[s], previous[s_next], row[j]))
+                else:
+                    bm.faces.new((previous[s], previous[s_next], row[j_next], row[j]))
             previous = row
         centre = bm.faces.new(tuple(previous))
         poked = bmesh.ops.poke(bm, faces=[centre], offset=0.0,
@@ -1717,6 +1808,172 @@ class SeamPlane:
     kind: str
 
 
+def _bedding_recession_at(strata: Stratigraphy, d: float) -> float:
+    """Recession in metres for bedding coordinate ``d``, smoothed across each contact.
+
+    A hard switch at the contact would put two rings of very different offset on adjacent
+    lattice rows and shear the quad between them into a wafer. The window is a small
+    fraction of the THINNER of the two beds, so a thick competent bed still presents an
+    almost-square shoulder while a 2 cm parting cannot produce a discontinuity wider
+    than itself.
+    """
+    beds = strata.beds
+    if not beds:
+        return 0.0
+    if d <= beds[0].base_h:
+        return beds[0].recession_m
+    if d >= beds[-1].top_h:
+        return beds[-1].recession_m
+    for bed in beds:
+        if not (bed.base_h <= d <= bed.top_h):
+            continue
+        if bed.index == 0:
+            return bed.recession_m
+        previous = beds[bed.index - 1]
+        window = max(1e-6, min(bed.thickness, previous.thickness) * 0.22)
+        local = (d - bed.base_h) / window
+        if local >= 1.0:
+            return bed.recession_m
+        t = local * local * (3.0 - 2.0 * local)
+        return previous.recession_m + (bed.recession_m - previous.recession_m) * t
+    return beds[-1].recession_m
+
+
+def erode_bedding_planes(bm: bmesh.types.BMesh, frame: BeddingFrame,
+                         strata: Stratigraphy, size: SizeClass, quality: float,
+                         blackbox: BlackBox) -> dict:
+    """Differential erosion between hard and soft beds. THE bedding mechanism.
+
+    ``3DMODEL_GEOLOGY_ROCKS.md`` section 1 requires a shape that "contains readable
+    geological process ... sediment bands ... erosion shelves", and section 9 rejects an
+    asset where "no geological process is visible in silhouette". This is where that
+    process now happens, and it replaces three earlier mechanisms rather than joining them:
+    the per-bed ring radius, the per-bed plan phase and the per-bed joint-face inset.
+
+    WHY THE OLD ROUTE COULD NOT BE TUNED INTO CORRECTNESS. Bed relief used to be a radius
+    as a function of bedding height. The body is a lat-long lattice about the bedding
+    normal, so ANY function of height is axisymmetric by construction: every bed became a
+    closed ribbon wrapping the silhouette at constant height, which is a contour line on a
+    topographic map, not a bed. That is a grammar error and this file's own history is four
+    rounds of trying to tune out of it -- "pancake plates", "poker chips", "stack of slate
+    tiles", "peeled sheet metal" -- each one changing an amplitude, a gate or a clamp.
+    ``AGENTS.md`` ``[RULE] Universal route invalidation`` and ``[RULE] Same-failure
+    escalation`` both say to replace the route instead, so the route is replaced.
+
+    THE TWO PROPERTIES THAT MAKE THIS BEDDING RATHER THAN BANDING:
+
+    1.  Membership is the PLANAR coordinate ``d = p . n`` and nothing else, so a bed is a
+        slab of space with a dip and a strike that cuts THROUGH the mass. Its trace on the
+        surface is the intersection curve of a plane with an irregular surface, which
+        wanders with the surface and cannot be a silhouette contour.
+    2.  Displacement is along the vertex's OWN surface normal, gated by
+        ``exposure = 1 - |n_surface . n_bedding|``. This is the term that carries the
+        physics and the one the old route had no equivalent of. A bed only weathers back
+        where its CUT EDGE is exposed: on a bedding-perpendicular face, exposure is 1 and
+        the bed recedes fully; on a bedding-parallel surface -- a bench tread, the top of a
+        competent bed -- exposure is 0 and nothing moves, because there you are looking at
+        the bed's own face, not at its edge. So the bands are strong on steep faces, widen
+        and fade on shallow ones, and vanish on benches. A function of height alone can
+        never do that, which is precisely why the old output read as contour lines.
+
+    Consequence worth naming: the arris jog that the per-bed ``face_inset`` was invented to
+    produce still appears, because a joint face is bedding-perpendicular and therefore takes
+    full recession that differs bed by bed. One mechanism, two features, and the jog is now
+    a consequence of the geology instead of a second decorative pass.
+    """
+    q = law.saturate(quality)
+    normal = frame.normal
+    bm.normal_update()
+
+    # Offsets are computed from the ORIGINAL normals for every vertex before any vertex
+    # moves. Applying in-place would make each vertex's recession depend on how many of its
+    # neighbours had already moved, i.e. on iteration order, which is both wrong and a
+    # determinism hazard.
+    plan = []
+    for vert in bm.verts:
+        surface = vert.normal
+        if surface.length <= 1e-9:
+            continue
+        surface = surface.normalized()
+
+        # THE EXPOSURE GATE READS A SMOOTHED NORMAL; THE DISPLACEMENT USES THE REAL ONE.
+        #
+        # Exposure asks a LOW-FREQUENCY question -- "is this part of the rock a steep face or a
+        # bench?" -- so feeding it the raw per-vertex normal made the answer jump from facet to
+        # facet across the fracture facets and chip chamfers. Adjacent vertices then took very
+        # different recessions and every facet border became a crease. Measured on the cliff
+        # chunk: LOD0 round trip failed at corner-normal delta 0.001013 against a 0.001
+        # tolerance, while the identical build with the relief turned down to 0.02 sat at
+        # 0.000535 -- the pipeline's own noise floor. So the amplitude was never the defect,
+        # the per-facet jitter in the gate was, and turning the relief down would have traded
+        # away the feature to hide the cause.
+        #
+        # Averaging with the one-ring neighbours answers the same question about the same
+        # neighbourhood without the jitter, and the recession still travels along the vertex's
+        # OWN true normal, so a facet keeps its orientation and no geometry is smoothed away.
+        smoothed = surface.copy()
+        for edge in vert.link_edges:
+            other = edge.other_vert(vert).normal
+            if other.length > 1e-9:
+                smoothed += other.normalized()
+        smoothed = smoothed.normalized() if smoothed.length > 1e-9 else surface
+
+        exposure = 1.0 - abs(smoothed.dot(normal))
+        if exposure <= 1e-4:
+            continue
+        recession = _bedding_recession_at(strata, vert.co.dot(normal))
+        if abs(recession) <= 1e-6:
+            continue
+        # Exposure is squared so a bench tread stays genuinely flat instead of taking a
+        # weak smeared version of the band, which is what re-introduces the wrapped read.
+        plan.append((vert, surface, recession * exposure * exposure))
+
+    # One shared ceiling, as a fraction of the LOCAL edge length, for the same reason the
+    # grain displacement has one: a recession deeper than the spacing between the rings that
+    # carry it folds the quad through itself and the weld then deletes the bed entirely.
+    # That is the "the grammar was producing them all along and the cleanup was removing
+    # them" failure recorded in `build_stratigraphy`.
+    moved = 0
+    deepest = 0.0
+    proudest = 0.0
+    for vert, surface, offset in plan:
+        linked = vert.link_edges
+        if not linked:
+            continue
+        local_edge = sum(e.calc_length() for e in linked) / len(linked)
+        # 0.70, the same ceiling the grain displacement uses, and for the same reason. It is a
+        # SAFETY NET: if it is ever the operative value the amplitude above is wrong, so the
+        # report records the deepest achieved offset for exactly that check.
+        limit = local_edge * 0.70
+        amount = max(-limit, min(limit, offset))
+        vert.co -= surface * amount
+        moved += 1
+        deepest = max(deepest, amount)
+        proudest = min(proudest, amount)
+
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    bm.normal_update()
+    report = {
+        "mechanism": "planar bedding slabs, recession along the surface normal, gated by "
+                     "exposure = (1 - |n_surface . n_bedding|)^2",
+        "bedCount": len(strata.beds),
+        "verticesMoved": moved,
+        "verticesConsidered": len(bm.verts),
+        "deepestRecessionM": round(float(deepest), 5),
+        "proudestReliefM": round(float(-proudest), 5),
+        "recessionRangeM": [round(float(min(b.recession_m for b in strata.beds)), 5),
+                            round(float(max(b.recession_m for b in strata.beds)), 5)],
+        "dipDeg": round(frame.dip_deg, 3),
+        "dipAzimuthDeg": round(frame.dip_azimuth_deg, 3),
+    }
+    blackbox.record("erode_bedding_planes", vertex_count=len(bm.verts),
+                    triangle_count=len(bm.faces),
+                    warning="moved {m} of {t} verts, deepest {d:.4f} m, proudest "
+                            "{p:.4f} m".format(m=moved, t=len(bm.verts), d=deepest,
+                                               p=-proudest))
+    return report
+
+
 def carve_partings(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigraphy,
                    size: SizeClass, rng: np.random.Generator, quality: float,
                    blackbox: BlackBox) -> list:
@@ -1742,7 +1999,13 @@ def carve_partings(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigra
         # parallel walls running the length of the mass in three of four views. A parting is a
         # groove, not a channel; the AO channel is what is supposed to make it read dark, not
         # the depth.
-        depth = size.longest_extent_m * (0.004 + 0.006 * q)
+        # Halved once `erode_bedding_planes` landed, because the two passes now target the
+        # SAME soft beds and their offsets ADD along the same surface normal. Measured on the
+        # cliff chunk: erosion 0.145 m plus parting 0.076 m at the same vertices is a 0.22 m
+        # gouge on a 0.17 m lattice spacing, which folds. The recession is the erosion's job
+        # now; this pass exists only for the narrow occluded crack section 4 wants for the AO
+        # channel, so it is a crack on top of a shelf rather than a second shelf.
+        depth = size.longest_extent_m * (0.002 + 0.003 * q)
         centre = (bed.base_h + bed.top_h) * 0.5
 
         # A CONSTANT-depth, constant-width groove cut all the way round a body whose faces
@@ -1776,6 +2039,10 @@ def carve_partings(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigra
 
         moved = 0
         exposed_arc = 0
+        bm.normal_update()
+        # Same two-phase shape as `erode_bedding_planes`, and for the same reason: read every
+        # normal before moving anything.
+        groove = []
         for vert in bm.verts:
             h = vert.co.dot(frame.normal)
             radial = vert.co - frame.normal * h
@@ -1794,7 +2061,27 @@ def carve_partings(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigra
                 continue
             falloff = 1.0 - (offset / local_width)
             falloff = falloff * falloff * (3.0 - 2.0 * falloff)
-            vert.co -= radial.normalized() * (depth * gate * falloff)
+            # ALONG THE SURFACE NORMAL, NOT RADIALLY OUT FROM THE BEDDING AXIS.
+            #
+            # The membership test above is already planar -- `|h - centre| < width` is a slab
+            # with the bedding dip -- so this function had the right idea and the wrong
+            # delivery: `radial.normalized()` is a CYLINDRICAL push, so the groove wrapped the
+            # form at constant height exactly like the bed ribbons did, and on an overhang it
+            # cut sideways through the rock instead of into the exposed face. The surface
+            # normal plus the same bedding-exposure gate the erosion pass uses makes the
+            # groove follow the outcrop: deep on a face that presents the parting's edge,
+            # absent on a bench where the parting is not exposed at all.
+            surface = vert.normal
+            if surface.length <= 1e-9:
+                continue
+            surface = surface.normalized()
+            bedding_exposure = 1.0 - abs(surface.dot(frame.normal))
+            if bedding_exposure <= 1e-4:
+                continue
+            groove.append((vert, surface,
+                           depth * gate * falloff * bedding_exposure * bedding_exposure))
+        for vert, surface, amount in groove:
+            vert.co -= surface * amount
             moved += 1
         if moved:
             seams.append(SeamPlane(centre, normal, half_width, "bedding_parting_groove"))
@@ -2945,6 +3232,7 @@ class VariantResult:
     # file kept, so keeping only the strings made the shared producer look unusable.
     mesh_reports: list = field(default_factory=list)
     export_result: object = None
+    bedding_erosion: dict = field(default_factory=dict)
 
 
 def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str,
@@ -3012,6 +3300,12 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # until they were invisible; with it, a cut face carries the bed contacts as steps and
     # the two features stop competing.
     imprint_bedding_on_cuts(bm, frame, strata, size, blackbox)
+    # Bedding relief arrives HERE, after the cuts, and that ordering is deliberate. Running it
+    # on the raw lattice would let the summit and shear planes slice the relief back off;
+    # running it after means a fracture facet -- which is bedding-perpendicular wherever the
+    # cut is steep -- receives the bed steps for free, which is the effect
+    # `imprint_bedding_on_cuts` was hand-rolling for the cut faces alone.
+    result.bedding_erosion = erode_bedding_planes(bm, frame, strata, size, q, blackbox)
     # The separate facet-roughening pass that used to run here is DELETED, not disabled:
     # `_plane_clamp` applies the conchoidal ripple during the projection itself, so a second
     # pass would double the amplitude and start eating the flatness that is the entire point of
@@ -3299,6 +3593,35 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
             # breach the budget that was just met.
             remove_duplicate_faces(level.obj, blackbox,
                                    "lod{i}".format(i=level.index))
+            # TRIANGULATE THE FAR LODS TOO. This is triangle-count-NEUTRAL, so the budget
+            # reason the LOD0 block gives for excluding LOD1/LOD2 does not actually apply to
+            # triangulation: `mesh_ops.triangle_count` is `len(mesh.loop_triangles)`, which
+            # already counts an n-gon as its n-2 triangles. That comment's real subject is
+            # `weld_and_clean`'s boundary FILL, which does add geometry.
+            #
+            # Leaving them untriangulated is a live round-trip hazard rather than a cosmetic
+            # one, because the exporter writes triangles (`use_triangles=True`) while the
+            # source keeps the n-gon, so the verifier compares 20158 source corners against
+            # 20160 reimported ones and ABORTS -- which deletes the package. Measured exactly
+            # that on the cliff chunk after the bedding change shifted the decimation:
+            # "LOD1: colour element count 80632 -> 80640; corner normal count 20158 -> 20160",
+            # i.e. one surviving quad out of 6718 triangles. The previous build passed only
+            # because the collapse happened to leave no n-gon behind, so this was always
+            # luck, not correctness.
+            level_bm = bmesh.new()
+            level_bm.from_mesh(level.obj.data)
+            ngons = [f for f in level_bm.faces if len(f.verts) > 3]
+            if ngons:
+                bmesh.ops.triangulate(level_bm, faces=ngons)
+                level_bm.to_mesh(level.obj.data)
+                level.obj.data.update()
+                blackbox.record("triangulate_lod{i}".format(i=level.index),
+                                vertex_count=len(level.obj.data.vertices),
+                                triangle_count=mesh_ops.triangle_count(level.obj.data),
+                                warning="{n} n-gon(s) split so the authored topology "
+                                        "matches the exported triangles".format(
+                                            n=len(ngons)))
+            level_bm.free()
         # Every LOD passes through weld_and_clean/_split_uv_seams, each of which calls
         # recalc_face_normals, so each level needs its own winding check.
         ensure_outward_winding(level.obj, blackbox,
@@ -4126,6 +4449,10 @@ def write_manifest(result: VariantResult, size: SizeClass, frame: BeddingFrame,
             "uniformVertexSkipping": False,
         },
         "shadingBasisPerLod": result.stale_smooth_edges,
+        # The bedding mechanism, named in the manifest so a reviewer can tell WHICH grammar
+        # produced the strata without reading the generator. Section 10 requires the "SDF,
+        # voxel, fracture, erosion, or profile parameters used to generate the mesh".
+        "beddingErosion": result.bedding_erosion,
         "collider": {
             "kind": result.collider_kind,
             "triangles": result.collider_triangles,
@@ -4450,6 +4777,8 @@ def main(argv: list) -> int:
             print("[rock] collider: {t} tris / {m} ceiling ({k})".format(
                 t=result.collider_triangles, m=law.COLLIDER_CONVEX_TRI_MAX,
                 k=result.collider_kind))
+            if result.bedding_erosion:
+                print("[rock] bedding erosion: " + json.dumps(result.bedding_erosion))
             print("[rock] post-fracture census: " + json.dumps(result.post_fracture_topology))
             print("[rock] topology: " + json.dumps(result.topology))
             if result.shading is not None:

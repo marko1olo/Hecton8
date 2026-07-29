@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 59fb29fd68917764c9a5a0532f0c94b2
+guid: 224a96c3415c11c49b406bc6516e014f
 ModelImporter:
   serializedVersion: 24501
   internalIDToNameTable: []
@@ -77,7 +77,7 @@ ModelImporter:
     useFileScale: 1
     strictVertexDataChecks: 0
   tangentSpace:
-    normalSmoothAngle: 32
+    normalSmoothAngle: 46
     normalImportMode: 0
     tangentImportMode: 3
     normalCalculationMode: 4
