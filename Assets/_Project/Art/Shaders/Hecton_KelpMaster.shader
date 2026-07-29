@@ -534,13 +534,38 @@ Shader "Hecton8/Flora/KelpMaster"
                 // rather than a root-to-tip parameter. 3dmodel.md section 3 assigns TexCoord1 to
                 // "atlas remap, or packed baked masks"; section 6 states that triplanar assignment
                 // "still requires UV0 or object-space coordinates for decals and masks".
-                // MEASURED 2026-07-29 and UNRESOLVED: all 472 kelp mesh assets currently under
-                // Assets/_Project/Prefabs/Nature/Flora/Baked/family_kelp_*,
-                // Assets/_Project/Prefabs/GeneratedEcosystem and
-                // Art/Generated/Flora/BioForge/Shallows/Kelp serialize TexCoord1 with dimension 0.
-                // They carry no UVMask, so every mask below reads 0 on them. The forge FBX that
-                // does carry UVMask is not imported under Assets/. Do not bind this material to
-                // those meshes until the writer emits TexCoord1 or the forge asset is imported.
+                // SOURCE STATUS 2026-07-29. This supersedes an earlier note claiming "the forge FBX
+                // that does carry UVMask is not imported under Assets/". THAT IS NO LONGER TRUE, and
+                // it was the sentence telling people not to bind this shader at all. Re-measured:
+                // four kelp packages ARE imported under Assets/_Project/Art/Generated/Forge/Flora/ --
+                // MESH_Flora_Kelp_s4021_q050, s4021_q100, s4023_q100 and s4025_q100 -- each with its
+                // .meta, so each has a stable asset GUID and can be referenced.
+                // MANIFEST_Flora_Kelp_s4021_q100.json declares maskUv.layer "UVMask" at
+                // maskUv.texcoordIndex 1, with acrossAttributeSurvived and geodesicAttributeSurvived
+                // both true. That is exactly the U-across-the-blade / V-geodesic parameterisation
+                // this pass wants, on the TEXCOORD1 that the Attributes struct above binds. The same
+                // package's vertex colour is real as well: swayMin 0.0, swayMax 1.0, swayUniform
+                // false, biolumWritten true, aoWritten true, alphaMeaning "harvest_mask".
+                //
+                // STILL VALID, DO NOT DELETE: the BAKED mesh assets are a different source and are
+                // still stale. 472 kelp-named .asset meshes exist across
+                // Assets/_Project/Prefabs/Nature/Flora/Baked (165 of them),
+                // Assets/_Project/Prefabs/GeneratedEcosystem (7) and
+                // Art/Generated/Flora/BioForge/Shallows/Kelp (300). Those were measured serializing
+                // TexCoord1 with dimension 0, so every mask below reads 0 on them. The in-Unity
+                // writer that produces them has since been fixed and its output proven in the sway
+                // gate, but an already-baked asset does not change until a re-bake runs. So the
+                // current condition is: binding this shader to a FORGE FBX is supported; binding it
+                // to a pre-re-bake .asset is not, and the two cannot be told apart by looking at the
+                // shader.
+                //
+                // RE-CHECK rather than trusting this comment, because it will go stale again: for a
+                // forge mesh read maskUv.texcoordIndex in its package manifest; for a baked .asset
+                // confirm TexCoord1 dimension is 2 and not 0. A mask below reading uniformly 0 across
+                // an entire mesh means the channel is ABSENT, not flat. Note that absent UV1 does not
+                // degrade gracefully: heightMask 0 also zeroes the sway wave itself, because
+                // ResolveKelpSineParabolaWave multiplies by tipParabola = heightMask^2, so it presents
+                // as a completely motionless plant rather than an under-animated one.
                 half heightMask = saturate(input.uvMask.y);
                 half widthMask = saturate(input.uvMask.x);
                 half centerDistance = abs(widthMask - 0.5h) * 2.0h;
