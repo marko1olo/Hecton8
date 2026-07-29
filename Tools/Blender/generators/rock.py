@@ -223,6 +223,22 @@ GRAIN_LACUNARITY = 1.6
 GRAIN_SLOPE_MIN = 0.10
 GRAIN_SLOPE_MAX = 0.155
 
+# The SAME slope discipline, applied to the joint-face jog in `Stratigraphy.face_scales_at`.
+# A jog amplitude is a fraction of RADIUS spread over a wavelength in HEIGHT, so the same
+# amplitude fraction produces a different surface slope on every size class -- radius/height is
+# 0.69 on the boulder and 0.41 on the cliff chunk. Measured at the old flat 0.024-0.080 band:
+# slope 0.441 boulder, 0.453 outcrop, 0.261 cliff chunk. The cliff chunk was verified good and
+# the boulder ABORTED its round trip at corner-normal delta 0.001428 -- so the cliff chunk had
+# passed on the luck of its proportions, not on the amplitude being right. Discriminating probe
+# that established this rather than assuming it: zeroing the jog amplitude alone made the
+# boulder export VERIFIED.
+#
+# Bounding the slope instead of the fraction makes the feature scale-correct: every class now
+# gets the steepest jog its own geometry can carry, and the cliff chunk's ceiling (0.0766) is
+# within a hair of the 0.080 it was already using, so the size that was visually approved keeps
+# what it had.
+JOG_MAX_SLOPE = 0.25
+
 # Beds are capped so a tall chunk cannot demand more rings than its triangle budget
 # can carry. Recorded in the manifest when it binds.
 MAX_BEDS = 42
@@ -609,18 +625,57 @@ class Stratigraphy:
     landmark_arc_rad: float
     bed_thickness_capped: bool
     joints: Optional[JointSet] = None
-    # Per-bed, per-joint-face inset. Shape (bedCount, faceCount). This is what stops the
-    # joint polygon from reading as an extruded prism: each bed weathers its own faces back
-    # by a different amount, so the vertical arris JOGS at every bed contact. The corner
-    # AZIMUTH is untouched, so the arris stays geometrically sharp while ceasing to be
-    # perfectly straight -- which is what the reference cliff photograph actually shows.
-    face_inset: Optional[np.ndarray] = None
+    # PER-JOINT-FACE WEATHERING RECESSION AS A CONTINUOUS FUNCTION OF THE BEDDING COORDINATE.
+    #
+    # This owns the outline angularity, and it is the replacement for the per-bed `face_inset`
+    # array that used to. The REQUIREMENT that array served is legitimate and is what
+    # `3DMODEL_GEOLOGY_ROCKS.md` section 9 rejects a rock for lacking: the joint polygon must
+    # not read as an extruded prism, so each face has to weather back by a varying amount and
+    # the vertical arris has to JOG. Reference `CLIFFS AND WATER PREVIOUSLY IN DEVELOPMENT.jpg`
+    # shows exactly that -- arrises running the full height with the faces stepping across
+    # them. What was wrong was indexing it by BED, which made it a step function of height and
+    # therefore part of the same contour-band grammar as the old bedding: discs, each inset
+    # differently. Removing it cost the outline its jog and the turn-concentration metric
+    # measured that honestly (corners 9.25 -> 3.75, convexity 0.947 -> 0.967).
+    #
+    # So it is now a sum of three harmonics of the bedding coordinate, per face, with its own
+    # amplitude per face. Position, not bed index. The corner AZIMUTHS are still untouched, so
+    # the arris stays a real dihedral edge on an exact lattice column; only its RADIUS breathes
+    # as it climbs, which is what makes a straight arris wander without rounding it off.
+    #
+    # Band-limited on purpose, to the same discipline as the grain: the shortest harmonic is
+    # `wavelength / 3` and that has to clear `GEOMETRIC_GRAIN_NYQUIST_FACTOR x ring spacing`,
+    # or this pass would reintroduce exactly the lattice-frequency aliasing that JOB 1 removed.
+    face_jog_amp: Optional[np.ndarray] = None      # (faceCount,)
+    face_jog_weight: Optional[np.ndarray] = None   # (faceCount, 3)
+    face_jog_phase: Optional[np.ndarray] = None    # (faceCount, 3)
+    face_jog_wavelength_m: float = 0.0
+    _jog_cache_h: float = 1e30
+    _jog_cache: Optional[np.ndarray] = None
 
-    def face_scales_for_bed(self, bed_index: int) -> Optional[np.ndarray]:
-        if self.face_inset is None:
+    def face_scales_at(self, h: float) -> Optional[np.ndarray]:
+        """Per-face radius scale at bedding height ``h``, in [1 - amp, 1].
+
+        Cached on ``h`` because ``plan_shape`` is called once per lattice VERTEX and the
+        lattice walks a whole ring at constant ``h`` -- 115 consecutive calls on the cliff
+        chunk share one answer, so recomputing the harmonics per vertex would be 115x the
+        trigonometry for an identical result.
+        """
+        if self.face_jog_amp is None:
             return None
-        index = min(max(0, bed_index), self.face_inset.shape[0] - 1)
-        return self.face_inset[index]
+        if h == self._jog_cache_h and self._jog_cache is not None:
+            return self._jog_cache
+        phase = 2.0 * math.pi * h / max(1e-6, self.face_jog_wavelength_m)
+        orders = (1.0, 2.0, 3.0)
+        total = np.zeros(self.face_jog_amp.shape[0])
+        for index, order in enumerate(orders):
+            total += self.face_jog_weight[:, index] * np.sin(
+                order * phase + self.face_jog_phase[:, index])
+        # Weights sum to 1 per face, so `total` is in [-1, 1]; map to [0, 1] and recess.
+        scales = 1.0 - self.face_jog_amp * (0.5 + 0.5 * total)
+        object.__setattr__(self, "_jog_cache_h", h)
+        object.__setattr__(self, "_jog_cache", scales)
+        return scales
 
     def radius_scale_at(self, h: float) -> float:
         """Piecewise bed profile with a sharp step at every interface.
@@ -692,7 +747,7 @@ class Stratigraphy:
         twisted = theta + self.plan_twist_rad * (h / max(1e-6, self.height_m))
 
         if self.joints is not None:
-            value = self.joints.radius(theta, None)
+            value = self.joints.radius(theta, self.face_scales_at(h))
         else:
             value = 1.0
         residual = 0.0
@@ -878,20 +933,34 @@ def build_stratigraphy(rng: np.random.Generator, size: SizeClass,
     drift_phase = rng.uniform(0.0, 2.0 * math.pi, size=(3, 2))
 
     joints = JointSet.from_rng(rng, process)
-    # Per-bed weathering of each joint face. Competent beds hold their face near the joint
-    # plane; soft beds recede further. Derived from the bed's own hardness so the inset and
-    # the strata story cannot disagree.
-    face_inset = np.empty((len(beds), joints.face_count))
-    for bed in beds:
-        for k in range(joints.face_count):
-            soft = 1.0 - bed.hardness
-            # The random component is deliberately smaller than the hardness-driven one so
-            # the inset reads as a COHERENT per-bed recession rather than as a random fringe.
-            # At +-1.6 percent the silhouette grew a sawtooth rim of unrelated few-centimetre
-            # nicks, which is the "many small nicks" failure the metric is built to reject.
-            face_inset[bed.index, k] = (1.0
-                                        - soft * float(rng.uniform(0.024, 0.080))
-                                        + float(rng.uniform(-0.009, 0.009)))
+    # Weathering of each joint face as a CONTINUOUS function of height rather than a per-bed
+    # step. See `Stratigraphy.face_scales_at` for why the bed index was the wrong argument.
+    #
+    # Wavelength is height/2, so the fundamental puts about two swells up the mass and the
+    # third harmonic about six -- joint-segment scale, which is what the reference cliffs show,
+    # rather than a per-bed sawtooth. The "many small nicks" failure the old comment here warns
+    # about came from a +-1.6 percent RANDOM term per bed; a band-limited field cannot produce
+    # it, because its shortest feature is height/6 by construction.
+    #
+    # NYQUIST, checked here and not assumed: the shortest harmonic is wavelength/3 = height/6,
+    # which is 0.097 / 0.342 / 1.267 m against a 2.4x ring-spacing floor of 0.087 / 0.205 /
+    # 0.406 m on boulder / outcrop / cliff chunk. Representable on all three, with the boulder
+    # the tight one at 1.1x margin.
+    face_jog_wavelength = size.height_m * 0.5
+    face_count = joints.face_count
+    # Amplitude per FACE, not per bed: one face of a jointed mass can be weathered back hard
+    # while its neighbour stands proud, and that contrast is what makes the arris between them
+    # read. Same 0.024-0.080 band the per-bed version used, so the outline step is the size it
+    # always was and only its ARGUMENT has changed.
+    # Slope-bounded, not fraction-bounded: see JOG_MAX_SLOPE. A quarter wavelength is the run
+    # over which the jog completes one rise, so slope = (amp * radius) / (wavelength / 4).
+    jog_amp_ceiling = (JOG_MAX_SLOPE * face_jog_wavelength * 0.25
+                       / max(1e-6, size.radius_m))
+    face_jog_amp = np.minimum(rng.uniform(0.024, 0.080, size=face_count),
+                              jog_amp_ceiling)
+    face_jog_weight = rng.uniform(0.35, 1.0, size=(face_count, 3))
+    face_jog_weight /= face_jog_weight.sum(axis=1, keepdims=True)
+    face_jog_phase = rng.uniform(0.0, 2.0 * math.pi, size=(face_count, 3))
 
     return Stratigraphy(
         beds=beds,
@@ -908,7 +977,10 @@ def build_stratigraphy(rng: np.random.Generator, size: SizeClass,
         landmark_arc_rad=float(rng.uniform(1.15, 2.10)),
         bed_thickness_capped=capped,
         joints=joints,
-        face_inset=face_inset,
+        face_jog_amp=face_jog_amp,
+        face_jog_weight=face_jog_weight,
+        face_jog_phase=face_jog_phase,
+        face_jog_wavelength_m=face_jog_wavelength,
     )
 
 

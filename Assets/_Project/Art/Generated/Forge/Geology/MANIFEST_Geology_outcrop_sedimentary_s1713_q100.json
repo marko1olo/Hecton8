@@ -73,7 +73,7 @@
    "engine": "CYCLES",
    "hasContrast": true,
    "max": 1.0,
-   "mean": 0.865652,
+   "mean": 0.866712,
    "min": 0.0,
    "samples": 128,
    "target": "VERTEX_COLORS"
@@ -81,7 +81,7 @@
   "assetFamily": "Geology",
   "beddingErosion": {
    "bedCount": 6,
-   "deepestRecessionM": 0.12045,
+   "deepestRecessionM": 0.12422,
    "dipAzimuthDeg": 186.53,
    "dipDeg": 15.957,
    "mechanism": "planar bedding slabs, recession along the surface normal, gated by exposure = (1 - |n_surface . n_bedding|)^2",
@@ -91,16 +91,16 @@
     0.12536
    ],
    "verticesConsidered": 2228,
-   "verticesMoved": 1947
+   "verticesMoved": 1946
   },
   "biomeDepthRoute": "photic shallows to medium depth; surface/coastline capable",
   "channelMeasurements": [
    {
     "channel": "R",
-    "coverageFraction": 0.12512,
+    "coverageFraction": 0.18722,
     "hasGradient": true,
     "max": 1.0,
-    "mean": 0.35097,
+    "mean": 0.26467,
     "meaning": "edge_wear",
     "min": 0.0,
     "subjectVisible": true,
@@ -108,10 +108,10 @@
    },
    {
     "channel": "G",
-    "coverageFraction": 0.12512,
+    "coverageFraction": 0.18722,
     "hasGradient": true,
     "max": 1.0,
-    "mean": 0.35319,
+    "mean": 0.36757,
     "meaning": "oxidation",
     "min": 0.1912,
     "subjectVisible": true,
@@ -119,21 +119,21 @@
    },
    {
     "channel": "B",
-    "coverageFraction": 0.12512,
+    "coverageFraction": 0.18722,
     "hasGradient": true,
     "max": 1.0,
-    "mean": 0.9274,
+    "mean": 0.90498,
     "meaning": "baked_ao",
-    "min": 0.00605,
+    "min": 0.0003,
     "subjectVisible": true,
     "tile": "Docs/AgentLogs/ForgeGeology/outcrop_sedimentary_s1713_q100_chan_chan2_baked_ao.png"
    },
    {
     "channel": "A",
-    "coverageFraction": 0.12512,
+    "coverageFraction": 0.18722,
     "hasGradient": true,
     "max": 1.0,
-    "mean": 0.22252,
+    "mean": 0.12843,
     "meaning": "emission_mask",
     "min": 0.0,
     "subjectVisible": true,
@@ -202,22 +202,22 @@
     1
    ],
    "chipBucketSizes": [
-    298,
-    596,
-    460
+    176,
+    353,
+    273
    ],
    "chipWidthsM": [
-    0.01037,
-    0.0057,
-    0.00259
+    0.00923,
+    0.00508,
+    0.00231
    ],
-   "edgesChipped": 661,
+   "edgesChipped": 395,
    "fractureKinds": [
     "conjugate_shear",
     "summit_truncation"
    ],
    "fracturePlanes": 4,
-   "hardEdgesFound": 1354,
+   "hardEdgesFound": 802,
    "jointSet": {
     "conjugateSets": 2,
     "cornerAzimuthsDeg": [
@@ -248,7 +248,7 @@
     "note": "plan outline is the support function of this convex polygon; ring vertices land exactly on the corner azimuths so the arris is constructed, not sampled"
    },
    "landmarkBed": 4,
-   "macroVugs": 14,
+   "macroVugs": 12,
    "mineralVeins": 4,
    "summitTruncated": true
   },
@@ -256,71 +256,71 @@
   "fbxRoundTrip": {
    "meaning": "re-imported the written FBX and compared counts, uv layer order, vertex colour values, world positions, corner normals, landmark vertex, signed volume and raw FBX axis space against the scene. A failure DELETES the fbx and aborts the variant, so a manifest that exists always describes a file that passed.",
    "measurements": [
-    "wrote MESH_Geology_outcrop_sedimentary_s1713_q100.fbx (2143196 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+    "wrote MESH_Geology_outcrop_sedimentary_s1713_q100.fbx (2011532 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
     "COL_Geology_outcrop_sedimentary_s1713_q100: no material slot. 3dmodel.md section 6 declares slot 0 as the primary structural/tissue material; Unity will assign its default material to submesh 0.",
     "objects round-tripped: ['COL_Geology_outcrop_sedimentary_s1713_q100', 'MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0', 'MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1', 'MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2']",
     "COL_Geology_outcrop_sedimentary_s1713_q100: verts 94->94 loops 552->552 tris 184->184",
     "COL_Geology_outcrop_sedimentary_s1713_q100: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
     "COL_Geology_outcrop_sedimentary_s1713_q100: colour max delta 0.0000000 (tol 0.002)",
     "COL_Geology_outcrop_sedimentary_s1713_q100: world position max delta 0.0000002 m (tol 0.0001)",
-    "COL_Geology_outcrop_sedimentary_s1713_q100: world corner-normal max delta 0.0000092 (tol 0.001), source has_custom_normals=True, reimport=True",
+    "COL_Geology_outcrop_sedimentary_s1713_q100: world corner-normal max delta 0.0000085 (tol 0.001), source has_custom_normals=True, reimport=True",
     "COL_Geology_outcrop_sedimentary_s1713_q100: uv0 max delta 0.00000000 (tol 1e-05)",
-    "COL_Geology_outcrop_sedimentary_s1713_q100: landmark (0.74772, 1.69832, 0.6263) -> (0.74772, 1.69832, 0.6263), delta 0.0000002 m, margin 0.02617 m",
-    "COL_Geology_outcrop_sedimentary_s1713_q100: signed volume +10.9260439 -> +10.9260428 (ratio +1.000000)",
+    "COL_Geology_outcrop_sedimentary_s1713_q100: landmark (1.03034, -1.22317, 1.6524) -> (1.03034, -1.22317, 1.6524), delta 0.0000002 m, margin 0.03501 m",
+    "COL_Geology_outcrop_sedimentary_s1713_q100: signed volume +10.3308254 -> +10.3308250 (ratio +1.000000)",
     "COL_Geology_outcrop_sedimentary_s1713_q100: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: verts 4017->4017 loops 24090->24090 tris 8030->8030",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: verts 3995->3995 loops 23958->23958 tris 7986->7986",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: colour max delta 0.0000000 (tol 0.002)",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: world position max delta 0.0000002 m (tol 0.0001)",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: world corner-normal max delta 0.0003579 (tol 0.001), source has_custom_normals=True, reimport=True",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: world corner-normal max delta 0.0004739 (tol 0.001), source has_custom_normals=True, reimport=True",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: uv0 max delta 0.00000000 (tol 1e-05)",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: landmark (0.73944, 1.70355, 0.63021) -> (0.73944, 1.70355, 0.63021), delta 0.0000002 m, margin 0.00058 m",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: landmark (0.72615, 1.64101, 0.50986) -> (0.72615, 1.64101, 0.50986), delta 0.0000002 m, margin 0.00017 m",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: landmark margin below 0.001 m: this mesh is near-symmetric at its extreme vertex, so the landmark test is not decisive",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: signed volume +9.1271593 -> +9.1271576 (ratio +1.000000)",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: signed volume +8.6932387 -> +8.6932397 (ratio +1.000000)",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: verts 1427->1427 loops 8550->8550 tris 2850->2850",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: colour max delta 0.0000000 (tol 0.002)",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: world position max delta 0.0000002 m (tol 0.0001)",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: world corner-normal max delta 0.0003646 (tol 0.001), source has_custom_normals=True, reimport=True",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: world corner-normal max delta 0.0003088 (tol 0.001), source has_custom_normals=True, reimport=True",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: landmark (0.74752, 1.69979, 0.62682) -> (0.74752, 1.69979, 0.62682), delta 0.0000001 m, margin 0.01834 m",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: signed volume +9.1253659 -> +9.1253652 (ratio +1.000000)",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: landmark (0.72346, 1.64358, 0.50795) -> (0.72346, 1.64358, 0.50795), delta 0.0000002 m, margin 0.00777 m",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: signed volume +8.6914568 -> +8.6914562 (ratio +1.000000)",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: verts 287->287 loops 1710->1710 tris 570->570",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: colour max delta 0.0000000 (tol 0.002)",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: world position max delta 0.0000002 m (tol 0.0001)",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: world corner-normal max delta 0.0003059 (tol 0.001), source has_custom_normals=True, reimport=True",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: world corner-normal max delta 0.0000747 (tol 0.001), source has_custom_normals=True, reimport=True",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: uv0 max delta 0.00000000 (tol 1e-05)",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: landmark (0.72571, 1.71966, 0.64572) -> (0.72571, 1.71966, 0.64572), delta 0.0000001 m, margin 0.05527 m",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: signed volume +9.0995533 -> +9.0995524 (ratio +1.000000)",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: landmark (0.74371, 1.6355, 0.51316) -> (0.74371, 1.6355, 0.51316), delta 0.0000002 m, margin 0.07321 m",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: signed volume +8.6928683 -> +8.6928678 (ratio +1.000000)",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-    "COL_Geology_outcrop_sedimentary_s1713_q100 [fbx-space]: landmark direction expected (0.47395, -0.32621, -0.8179) measured (0.47395, -0.32621, -0.8179) delta 0.000000",
-    "COL_Geology_outcrop_sedimentary_s1713_q100 [fbx-space]: Unity-space landmark offset will be (1.01084, -0.69574, 1.74439) (Blender (1.01084, 1.74439, -0.69574)); handedness flip is Unity's, winding is flipped to match",
+    "COL_Geology_outcrop_sedimentary_s1713_q100 [fbx-space]: landmark direction expected (0.62951, 0.20249, 0.75015) measured (0.62951, 0.20249, 0.75015) delta 0.000000",
+    "COL_Geology_outcrop_sedimentary_s1713_q100 [fbx-space]: Unity-space landmark offset will be (1.19165, 0.3833, -1.42001) (Blender (1.19165, -1.42001, 0.3833)); handedness flip is Unity's, winding is flipped to match",
     "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0 [fbx-space]: skipped: near-symmetric extreme vertex",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1 [fbx-space]: landmark direction expected (0.43129, -0.34691, -0.83285) measured (0.43129, -0.34691, -0.83285) delta 0.000000",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1 [fbx-space]: Unity-space landmark offset will be (0.86364, -0.69466, 1.66773) (Blender (0.86364, 1.66773, -0.69466)); handedness flip is Unity's, winding is flipped to match",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2 [fbx-space]: landmark direction expected (0.45603, -0.31656, -0.83176) measured (0.45603, -0.31656, -0.83176) delta 0.000000",
-    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2 [fbx-space]: Unity-space landmark offset will be (0.90412, -0.62762, 1.64906) (Blender (0.90412, 1.64906, -0.62762)); handedness flip is Unity's, winding is flipped to match",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1 [fbx-space]: landmark direction expected (0.40739, -0.371, -0.8345) measured (0.40739, -0.371, -0.8345) delta 0.000000",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1 [fbx-space]: Unity-space landmark offset will be (0.78937, -0.71886, 1.61696) (Blender (0.78937, 1.61696, -0.71886)); handedness flip is Unity's, winding is flipped to match",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2 [fbx-space]: landmark direction expected (0.45473, -0.35845, -0.81531) measured (0.45473, -0.35845, -0.81531) delta 0.000000",
+    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2 [fbx-space]: Unity-space landmark offset will be (0.87684, -0.69119, 1.57215) (Blender (0.87684, 1.57215, -0.69119)); handedness flip is Unity's, winding is flipped to match",
     "roundtrip VERIFIED: axis map confirmed=True, chirality preserved=True",
-    "LOD0 MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: 8030 tris vs law budget 18000 -> within",
+    "LOD0 MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: 7986 tris vs law budget 18000 -> within",
     "LOD1 MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: 2850 tris vs law budget 7000 -> within",
     "LOD2 MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: 570 tris vs law budget 1200 -> within",
     "collider COL_Geology_outcrop_sedimentary_s1713_q100: 184 tris vs law.COLLIDER_CONVEX_TRI_MAX 200 -> within",
     "Unity side must bind COL_Geology_outcrop_sedimentary_s1713_q100 to a MeshCollider with convex=true on a collider child, never to an LOD mesh (3dmodel.md section 9)",
     "Unity LODGroup: create it explicitly from the _LOD suffixed children rather than relying on importer auto-detection, then set screenRelativeTransitionHeight per level with a hysteresis band and fadeMode=CrossFade with animateCrossFading=false (dithered). 3dmodel.md section 7 bans alpha-blended cross-fade for dense flora/coral on the compact lane; dither is not alpha blend."
    ],
-   "summary": "MESH_Geology_outcrop_sedimentary_s1713_q100.fbx: 4 object(s) tris=11634 vcol=True customNormals=True tangents=True uv=['UVMap', 'UV1_Strata'] unitScale=100 roundtrip=VERIFIED",
+   "summary": "MESH_Geology_outcrop_sedimentary_s1713_q100.fbx: 4 object(s) tris=11590 vcol=True customNormals=True tangents=True uv=['UVMap', 'UV1_Strata'] unitScale=100 roundtrip=VERIFIED",
    "verified": true
   },
   "gates": [
-   "PASS LOD0 8030 tris vs budget 9000",
+   "PASS LOD0 7986 tris vs budget 9000",
    "PASS LOD1 2850 tris vs budget 3000",
    "PASS LOD2 570 tris vs budget 600",
    "PASS LOD chain strictly decreasing",
    "PASS collider 184 tris vs the 200 ceiling",
-   "PASS AO contrast 1.0000 (min=0.0000 max=1.0000 mean=0.8657)",
+   "PASS AO contrast 1.0000 (min=0.0000 max=1.0000 mean=0.8667)",
    "PASS zero degenerate faces",
    "PASS single connected island (got 1)",
    "PASS zero non-manifold edges (got 0)",
@@ -331,23 +331,38 @@
    "PASS fracture planes present (4)",
    "PASS mineral seams present (4)",
    "PASS strata beds >= 3 (got 6)",
-   "PASS hard edges chipped (661)",
-   "PASS chip widths vary (not a uniform chamfer): [0.01037, 0.0057, 0.00259]",
-   "PASS widest chip 0.01037 m is a real chamfer vs nominal 0.01037 m",
-   "PASS chamfer reached 49 percent of the 1354 hard edges",
+   "PASS hard edges chipped (395)",
+   "PASS chip widths vary (not a uniform chamfer): [0.00923, 0.00508, 0.00231]",
+   "PASS widest chip 0.00923 m is a real chamfer vs nominal 0.00923 m",
+   "PASS chamfer reached 49 percent of the 802 hard edges",
    "PASS UV0 fallback unwrap present alongside triplanar route",
-   "PASS outward winding, signed volume 9.127159 m3",
+   "PASS outward winding, signed volume 8.693239 m3",
    "PASS every stored channel varies; flat channels: none",
-   "PASS silhouette turn concentration 0.3062 (potato control 0.137, polytope control 0.789, floor 0.2); mean 5.2 arrises per view",
-   "PASS at least 3 outline arrises per view on average (5.2)",
-   "PASS LOD0 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 179.53 deg, 1554 sharp)",
-   "PASS LOD1 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 179.27 deg, 917 sharp)",
-   "PASS LOD2 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 174.97 deg, 219 sharp)",
-   "PASS 8030 polygons marked smooth (not flat-shaded)",
-   "PASS 1554 edges split sharp above 32.0 deg (fracture planes stay crisp)",
+   "PASS silhouette turn concentration 0.3283 (potato control 0.137, polytope control 0.789, floor 0.2); mean 4.2 arrises per view",
+   "PASS at least 3 outline arrises per view on average (4.2)",
+   "PASS LOD0 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 179.03 deg, 1032 sharp)",
+   "PASS LOD1 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 178.59 deg, 526 sharp)",
+   "PASS LOD2 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 178.57 deg, 183 sharp)",
+   "PASS 7986 polygons marked smooth (not flat-shaded)",
+   "PASS 1032 edges split sharp above 32.0 deg (fracture planes stay crisp)",
    "PASS weighted normals applied (FACE_AREA_WITH_ANGLE)"
   ],
   "geologicalProcessTag": "sedimentary",
+  "grainBand": {
+   "amplitudeM": 0.05084,
+   "amplitudeOverWavelength": 0.155,
+   "baseWavelengthM": 0.328,
+   "coarsestLatticeSpacingM": 0.08542,
+   "finestOctaveSamplesPerWavelength": 2.4,
+   "finestOctaveWavelengthM": 0.205,
+   "foldLimitSlope": 0.1592,
+   "pitInMesh": false,
+   "pitRoute": "OMITTED from the mesh: under-sampled at this lattice spacing, so it would arrive as per-vertex noise rather than as pits. Mesh-scale cavities still come from punch_vugs; the 0.052 m witness is a material/normal-map scale on this size class.",
+   "pitSamplesPerWavelength": 0.609,
+   "pitWitnessWavelengthM": 0.052,
+   "subLatticeGrainRoute": "Detail below 0.205 m cannot be sampled by this lattice and is NOT in the mesh. 3DMODEL_GEOLOGY_ROCKS.md section 2 routes it to baked normal/depth support; the witness 0.075 m is a MATERIAL-space scale on this size class.",
+   "witnessWavelengthM": 0.075
+  },
   "h8forgeValidatorFailures": [],
   "h8forgeValidatorImported": true,
   "lods": [
@@ -363,11 +378,11 @@
     "object": "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0",
     "shadingBasis": {
      "edgesAboveThresholdStillSmooth": 0,
-     "sharpEdges": 1554,
+     "sharpEdges": 1032,
      "thresholdDeg": 46.0,
-     "widestDihedralDeg": 179.53
+     "widestDihedralDeg": 179.03
     },
-    "triangles": 8030
+    "triangles": 7986
    },
    {
     "boundaryEdges": 0,
@@ -381,9 +396,9 @@
     "object": "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1",
     "shadingBasis": {
      "edgesAboveThresholdStillSmooth": 0,
-     "sharpEdges": 917,
+     "sharpEdges": 526,
      "thresholdDeg": 46.0,
-     "widestDihedralDeg": 179.27
+     "widestDihedralDeg": 178.59
     },
     "triangles": 2850
    },
@@ -399,9 +414,9 @@
     "object": "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2",
     "shadingBasis": {
      "edgesAboveThresholdStillSmooth": 0,
-     "sharpEdges": 219,
+     "sharpEdges": 183,
      "thresholdDeg": 46.0,
-     "widestDihedralDeg": 174.97
+     "widestDihedralDeg": 178.57
     },
     "triangles": 570
    }
@@ -420,12 +435,12 @@
   "postFractureCensus": {
    "boundaryEdges": 0,
    "components": 1,
-   "explainAgainstLod0Budget": "10306 tris vs 9000 budget; 1 disconnected components, 0 boundary edges, 1 non-manifold edges -> estimated irreducible floor ~4 tris",
+   "explainAgainstLod0Budget": "",
    "irreducibleFloor": 4,
-   "largestComponent": 10306,
-   "nonManifoldEdges": 1,
-   "smallestComponent": 10306,
-   "triangles": 10306
+   "largestComponent": 7986,
+   "nonManifoldEdges": 0,
+   "smallestComponent": 7986,
+   "triangles": 7986
   },
   "profileParameters": {
    "achievedRingSpacingM": 0.08542,
@@ -443,7 +458,7 @@
    "beddingDipDeg": 15.9569,
    "densityBoundByBudget": false,
    "idealRingSpacingM": 0.08478,
-   "landmarkArcRad": 1.2206,
+   "landmarkArcRad": 1.2129,
    "landmarkBed": 4,
    "latticeRings": 25,
    "latticeSegments": 107,
@@ -454,8 +469,8 @@
     8,
     10
    ],
-   "planTwistRad": 0.1589,
-   "sculptTrianglesBeforeReduction": 10306
+   "planTwistRad": 0.3563,
+   "sculptTrianglesBeforeReduction": 7986
   },
   "proofArtifacts": {
    "channels": "Docs/AgentLogs/ForgeGeology/outcrop_sedimentary_s1713_q100_chan_SHEET_CHANNELS.png",
@@ -478,110 +493,110 @@
   },
   "shadingBasis": {
    "bibleRequirement": "3DMODEL_GEOLOGY_ROCKS.md s4: split normals above 45 deg; law.SMOOTH_ANGLE_DEG=32 is stricter, so all fracture edges split",
-   "sharpEdges": 1554,
+   "sharpEdges": 1032,
    "smoothAngleDeg": 32.0,
-   "smoothPolygons": 8030,
+   "smoothPolygons": 7986,
    "weightedNormalsApplied": true
   },
   "shadingBasisPerLod": {
    "LOD0": {
     "edgesAboveThresholdStillSmooth": 0,
-    "sharpEdges": 1554,
+    "sharpEdges": 1032,
     "thresholdDeg": 46.0,
-    "widestDihedralDeg": 179.53
+    "widestDihedralDeg": 179.03
    },
    "LOD1": {
     "edgesAboveThresholdStillSmooth": 0,
-    "sharpEdges": 917,
+    "sharpEdges": 526,
     "thresholdDeg": 46.0,
-    "widestDihedralDeg": 179.27
+    "widestDihedralDeg": 178.59
    },
    "LOD2": {
     "edgesAboveThresholdStillSmooth": 0,
-    "sharpEdges": 219,
+    "sharpEdges": 183,
     "thresholdDeg": 46.0,
-    "widestDihedralDeg": 174.97
+    "widestDihedralDeg": 178.57
    }
   },
   "silhouetteMetrics": [
    {
-    "complexity": 1.2996,
-    "convexity": 0.942,
-    "cornerCount": 7,
-    "coverageFraction": 0.14204,
-    "fuzzFraction": 0.1756,
-    "hullGapRms": 0.0296,
-    "perimeterPx": 969.94,
-    "pixels": 58179,
+    "complexity": 1.1694,
+    "convexity": 0.9692,
+    "cornerCount": 4,
+    "coverageFraction": 0.16407,
+    "fuzzFraction": 0.2641,
+    "hullGapRms": 0.02042,
+    "perimeterPx": 989.32,
+    "pixels": 67203,
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\outcrop_sedimentary_s1713_q100_SIL_front.png",
-    "turnTop10Fraction": 0.3055,
-    "turnTotalDeg": 1014.7,
+    "turnTop10Fraction": 0.2914,
+    "turnTotalDeg": 745.6,
     "view": "front"
    },
    {
-    "complexity": 1.2088,
-    "convexity": 0.9902,
-    "cornerCount": 1,
-    "coverageFraction": 0.12736,
-    "fuzzFraction": 0.2313,
-    "hullGapRms": 0.00398,
-    "perimeterPx": 885.77,
-    "pixels": 52166,
+    "complexity": 1.1846,
+    "convexity": 0.9807,
+    "cornerCount": 2,
+    "coverageFraction": 0.14746,
+    "fuzzFraction": 0.3005,
+    "hullGapRms": 0.00821,
+    "perimeterPx": 943.83,
+    "pixels": 60401,
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\outcrop_sedimentary_s1713_q100_SIL_side.png",
-    "turnTop10Fraction": 0.2214,
-    "turnTotalDeg": 806.6,
+    "turnTop10Fraction": 0.3082,
+    "turnTotalDeg": 747.2,
     "view": "side"
    },
    {
-    "complexity": 1.3117,
-    "convexity": 0.9586,
-    "cornerCount": 8,
-    "coverageFraction": 0.12512,
-    "fuzzFraction": 0.1826,
-    "hullGapRms": 0.02633,
-    "perimeterPx": 914.61,
-    "pixels": 51251,
+    "complexity": 1.1791,
+    "convexity": 0.9612,
+    "cornerCount": 4,
+    "coverageFraction": 0.18722,
+    "fuzzFraction": 0.2197,
+    "hullGapRms": 0.02669,
+    "perimeterPx": 1061.59,
+    "pixels": 76686,
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\outcrop_sedimentary_s1713_q100_SIL_three_quarter.png",
-    "turnTop10Fraction": 0.4021,
-    "turnTotalDeg": 1037.6,
+    "turnTop10Fraction": 0.3015,
+    "turnTotalDeg": 869.7,
     "view": "three_quarter"
    },
    {
-    "complexity": 1.2517,
-    "convexity": 0.95,
-    "cornerCount": 5,
-    "coverageFraction": 0.14346,
-    "fuzzFraction": 0.1627,
-    "hullGapRms": 0.0308,
-    "perimeterPx": 956.84,
-    "pixels": 58760,
+    "complexity": 1.2891,
+    "convexity": 0.9344,
+    "cornerCount": 7,
+    "coverageFraction": 0.14958,
+    "fuzzFraction": 0.2406,
+    "hullGapRms": 0.03881,
+    "perimeterPx": 991.68,
+    "pixels": 61266,
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\outcrop_sedimentary_s1713_q100_SIL_low.png",
-    "turnTop10Fraction": 0.2959,
-    "turnTotalDeg": 973.5,
+    "turnTop10Fraction": 0.4121,
+    "turnTotalDeg": 812.3,
     "view": "low"
    }
   ],
   "silhouettePerFarLod": {
    "LOD1": {
-    "meanConvexity": 0.9603,
+    "meanConvexity": 0.9618,
     "meanCornerCount": 5.0,
-    "meanTurnTop10Fraction": 0.3109,
-    "retainedFractionOfLod0": 1.0151
+    "meanTurnTop10Fraction": 0.331,
+    "retainedFractionOfLod0": 1.0084
    },
    "LOD2": {
-    "meanConvexity": 0.9659,
+    "meanConvexity": 0.9637,
     "meanCornerCount": 4.5,
-    "meanTurnTop10Fraction": 0.3987,
-    "retainedFractionOfLod0": 1.3019
+    "meanTurnTop10Fraction": 0.387,
+    "retainedFractionOfLod0": 1.1787
    }
   },
   "silhouetteSummary": {
    "controlPolytopeTop10": 0.789,
    "controlPotatoTop10": 0.137,
    "controlSphereTop10": 0.094,
-   "meanConvexity": 0.9602,
-   "meanCornerCount": 5.25,
-   "meanTurnTop10Fraction": 0.3062,
+   "meanConvexity": 0.9614,
+   "meanCornerCount": 4.25,
+   "meanTurnTop10Fraction": 0.3283,
    "potatoFloor": 0.2,
    "targetFloor": 0.3
   },
@@ -602,7 +617,7 @@
    "manifoldClosedSolid": true,
    "nonManifoldEdges": 0,
    "outwardWinding": true,
-   "signedVolumeM3": 9.127159
+   "signedVolumeM3": 8.693239
   },
   "unityPrefabAssembly": "NOT PERFORMED. .prefab/.mat/.asset creation is Unity-only per AGENTS.md Evidence Law; this generator emits mesh + manifest for a Unity-side assembler.",
   "uvAndTriplanarReport": {
@@ -631,10 +646,10 @@
   },
   "vertexColorAreaWeighted": {
    "areaWeightedMean": [
-    0.30396,
-    0.4077,
-    0.92092,
-    0.13645
+    0.25888,
+    0.45197,
+    0.9324,
+    0.13279
    ],
    "attribute": "Col",
    "comparableWithRender": "min and max are weighting-independent; compare those. areaWeightedMean approximates a pixel average but is not identical to it, because a render also weights by visibility and projected foreshortening.",
@@ -677,17 +692,17 @@
    "rangeA": [
     0.0,
     1.0,
-    0.13625
+    0.13034
    ],
    "rangeG": [
     0.19357,
     1.0,
-    0.38831
+    0.40887
    ],
    "rangeR": [
     0.0,
     1.0,
-    0.27492
+    0.2523
    ]
   }
  },
@@ -724,7 +739,7 @@
   ],
   "monotonic": true,
   "triangleCountsPerLod": {
-   "LOD0": 8030,
+   "LOD0": 7986,
    "LOD1": 2850,
    "LOD2": 570
   }
@@ -744,24 +759,24 @@
  "meshes": [
   {
    "boundsMax": [
-    1.588490605354309,
-    1.752484679222107,
-    2.4375853538513184
+    1.5803625583648682,
+    1.686445713043213,
+    2.367630958557129
    ],
    "boundsMin": [
-    -1.6662416458129883,
-    -1.5804975032806396,
+    -1.430317759513855,
+    -1.402509093284607,
     0.0
    ],
    "colorLayers": [
     "Col"
    ],
-   "digest": "f75a1e956c36ed7b05c166beac3c6d61",
+   "digest": "433c9a5987d04a7b925b2349bdff7c52",
    "hasTangentBasis": true,
    "lod": 0,
    "name": "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0",
    "submeshes": 3,
-   "triangles": 8030,
+   "triangles": 7986,
    "uvLayers": [
     "UVMap",
     "UV1_Strata"
@@ -778,23 +793,23 @@
     ]
    },
    "validatorVersion": "1.0.0",
-   "vertices": 4017
+   "vertices": 3995
   },
   {
    "boundsMax": [
-    1.5965828895568848,
-    1.7528427839279175,
-    2.4375853538513184
+    1.5843302011489868,
+    1.6884713172912598,
+    2.367776393890381
    ],
    "boundsMin": [
-    -1.6662120819091797,
-    -1.579126238822937,
-    -0.0004272416699677706
+    -1.4298747777938843,
+    -1.4029455184936523,
+    0.0002335367607884109
    ],
    "colorLayers": [
     "Col"
    ],
-   "digest": "a5f293f74337fe829e83f73bb02457a8",
+   "digest": "1aab5ef1177d3c91522cccd37b9d3017",
    "hasTangentBasis": true,
    "lod": 1,
    "name": "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1",
@@ -820,19 +835,19 @@
   },
   {
    "boundsMax": [
-    1.5903515815734863,
-    1.737052083015442,
-    2.4099619388580322
+    1.562620997428894,
+    1.6866766214370728,
+    2.3722615242004395
    ],
    "boundsMin": [
-    -1.6440999507904053,
-    -1.5622215270996094,
-    0.027024224400520325
+    -1.4125185012817383,
+    -1.4014458656311035,
+    -0.004599429201334715
    ],
    "colorLayers": [
     "Col"
    ],
-   "digest": "10e95744627e7acb95229950aa42d6f6",
+   "digest": "23cbe137d34a2ea562aab0bf1a77c58b",
    "hasTangentBasis": true,
    "lod": 2,
    "name": "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2",
@@ -878,55 +893,55 @@
    "Docs/AgentLogs/ForgeGeology/outcrop_sedimentary_s1713_q100_studio_SHEET_studio.png"
   ],
   "roundtripNotes": [
-   "wrote MESH_Geology_outcrop_sedimentary_s1713_q100.fbx (2143196 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "wrote MESH_Geology_outcrop_sedimentary_s1713_q100.fbx (2011532 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
    "COL_Geology_outcrop_sedimentary_s1713_q100: no material slot. 3dmodel.md section 6 declares slot 0 as the primary structural/tissue material; Unity will assign its default material to submesh 0.",
    "objects round-tripped: ['COL_Geology_outcrop_sedimentary_s1713_q100', 'MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0', 'MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1', 'MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2']",
    "COL_Geology_outcrop_sedimentary_s1713_q100: verts 94->94 loops 552->552 tris 184->184",
    "COL_Geology_outcrop_sedimentary_s1713_q100: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "COL_Geology_outcrop_sedimentary_s1713_q100: colour max delta 0.0000000 (tol 0.002)",
    "COL_Geology_outcrop_sedimentary_s1713_q100: world position max delta 0.0000002 m (tol 0.0001)",
-   "COL_Geology_outcrop_sedimentary_s1713_q100: world corner-normal max delta 0.0000092 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "COL_Geology_outcrop_sedimentary_s1713_q100: world corner-normal max delta 0.0000085 (tol 0.001), source has_custom_normals=True, reimport=True",
    "COL_Geology_outcrop_sedimentary_s1713_q100: uv0 max delta 0.00000000 (tol 1e-05)",
-   "COL_Geology_outcrop_sedimentary_s1713_q100: landmark (0.74772, 1.69832, 0.6263) -> (0.74772, 1.69832, 0.6263), delta 0.0000002 m, margin 0.02617 m",
-   "COL_Geology_outcrop_sedimentary_s1713_q100: signed volume +10.9260439 -> +10.9260428 (ratio +1.000000)",
+   "COL_Geology_outcrop_sedimentary_s1713_q100: landmark (1.03034, -1.22317, 1.6524) -> (1.03034, -1.22317, 1.6524), delta 0.0000002 m, margin 0.03501 m",
+   "COL_Geology_outcrop_sedimentary_s1713_q100: signed volume +10.3308254 -> +10.3308250 (ratio +1.000000)",
    "COL_Geology_outcrop_sedimentary_s1713_q100: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: verts 4017->4017 loops 24090->24090 tris 8030->8030",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: verts 3995->3995 loops 23958->23958 tris 7986->7986",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: colour max delta 0.0000000 (tol 0.002)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: world position max delta 0.0000002 m (tol 0.0001)",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: world corner-normal max delta 0.0003579 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: world corner-normal max delta 0.0004739 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: uv0 max delta 0.00000000 (tol 1e-05)",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: landmark (0.73944, 1.70355, 0.63021) -> (0.73944, 1.70355, 0.63021), delta 0.0000002 m, margin 0.00058 m",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: landmark (0.72615, 1.64101, 0.50986) -> (0.72615, 1.64101, 0.50986), delta 0.0000002 m, margin 0.00017 m",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: landmark margin below 0.001 m: this mesh is near-symmetric at its extreme vertex, so the landmark test is not decisive",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: signed volume +9.1271593 -> +9.1271576 (ratio +1.000000)",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: signed volume +8.6932387 -> +8.6932397 (ratio +1.000000)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: verts 1427->1427 loops 8550->8550 tris 2850->2850",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: colour max delta 0.0000000 (tol 0.002)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: world position max delta 0.0000002 m (tol 0.0001)",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: world corner-normal max delta 0.0003646 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: world corner-normal max delta 0.0003088 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: landmark (0.74752, 1.69979, 0.62682) -> (0.74752, 1.69979, 0.62682), delta 0.0000001 m, margin 0.01834 m",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: signed volume +9.1253659 -> +9.1253652 (ratio +1.000000)",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: landmark (0.72346, 1.64358, 0.50795) -> (0.72346, 1.64358, 0.50795), delta 0.0000002 m, margin 0.00777 m",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: signed volume +8.6914568 -> +8.6914562 (ratio +1.000000)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: verts 287->287 loops 1710->1710 tris 570->570",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: colour max delta 0.0000000 (tol 0.002)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: world position max delta 0.0000002 m (tol 0.0001)",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: world corner-normal max delta 0.0003059 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: world corner-normal max delta 0.0000747 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: uv0 max delta 0.00000000 (tol 1e-05)",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: landmark (0.72571, 1.71966, 0.64572) -> (0.72571, 1.71966, 0.64572), delta 0.0000001 m, margin 0.05527 m",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: signed volume +9.0995533 -> +9.0995524 (ratio +1.000000)",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: landmark (0.74371, 1.6355, 0.51316) -> (0.74371, 1.6355, 0.51316), delta 0.0000002 m, margin 0.07321 m",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: signed volume +8.6928683 -> +8.6928678 (ratio +1.000000)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-   "COL_Geology_outcrop_sedimentary_s1713_q100 [fbx-space]: landmark direction expected (0.47395, -0.32621, -0.8179) measured (0.47395, -0.32621, -0.8179) delta 0.000000",
-   "COL_Geology_outcrop_sedimentary_s1713_q100 [fbx-space]: Unity-space landmark offset will be (1.01084, -0.69574, 1.74439) (Blender (1.01084, 1.74439, -0.69574)); handedness flip is Unity's, winding is flipped to match",
+   "COL_Geology_outcrop_sedimentary_s1713_q100 [fbx-space]: landmark direction expected (0.62951, 0.20249, 0.75015) measured (0.62951, 0.20249, 0.75015) delta 0.000000",
+   "COL_Geology_outcrop_sedimentary_s1713_q100 [fbx-space]: Unity-space landmark offset will be (1.19165, 0.3833, -1.42001) (Blender (1.19165, -1.42001, 0.3833)); handedness flip is Unity's, winding is flipped to match",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0 [fbx-space]: skipped: near-symmetric extreme vertex",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1 [fbx-space]: landmark direction expected (0.43129, -0.34691, -0.83285) measured (0.43129, -0.34691, -0.83285) delta 0.000000",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1 [fbx-space]: Unity-space landmark offset will be (0.86364, -0.69466, 1.66773) (Blender (0.86364, 1.66773, -0.69466)); handedness flip is Unity's, winding is flipped to match",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2 [fbx-space]: landmark direction expected (0.45603, -0.31656, -0.83176) measured (0.45603, -0.31656, -0.83176) delta 0.000000",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2 [fbx-space]: Unity-space landmark offset will be (0.90412, -0.62762, 1.64906) (Blender (0.90412, 1.64906, -0.62762)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1 [fbx-space]: landmark direction expected (0.40739, -0.371, -0.8345) measured (0.40739, -0.371, -0.8345) delta 0.000000",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1 [fbx-space]: Unity-space landmark offset will be (0.78937, -0.71886, 1.61696) (Blender (0.78937, 1.61696, -0.71886)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2 [fbx-space]: landmark direction expected (0.45473, -0.35845, -0.81531) measured (0.45473, -0.35845, -0.81531) delta 0.000000",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2 [fbx-space]: Unity-space landmark offset will be (0.87684, -0.69119, 1.57215) (Blender (0.87684, 1.57215, -0.69119)); handedness flip is Unity's, winding is flipped to match",
    "roundtrip VERIFIED: axis map confirmed=True, chirality preserved=True",
-   "LOD0 MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: 8030 tris vs law budget 18000 -> within",
+   "LOD0 MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0: 7986 tris vs law budget 18000 -> within",
    "LOD1 MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: 2850 tris vs law budget 7000 -> within",
    "LOD2 MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: 570 tris vs law budget 1200 -> within",
    "collider COL_Geology_outcrop_sedimentary_s1713_q100: 184 tris vs law.COLLIDER_CONVEX_TRI_MAX 200 -> within",
@@ -1143,7 +1158,7 @@
   "passed": true,
   "validatorVersion": "1.0.0"
  },
- "validationHash": "93e8530eee5cba6599c0b17e8eb145f1",
+ "validationHash": "19248d4937dd5010b79c245ad31b6d9d",
  "validationHashAlgorithm": "blake2b-128 over the canonical JSON of every other field, sorted keys",
  "vertexColorContract": {
   "alphaMeaning": "material blend / ore-emission mask (3DMODEL_GEOLOGY_ROCKS.md section 4 vertex colour contract)",
