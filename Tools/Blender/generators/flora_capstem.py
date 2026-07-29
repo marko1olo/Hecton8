@@ -2117,10 +2117,41 @@ def main(argv: Sequence[str]) -> int:
         export_result = None
         manifest_path = ""
         if args.export:
-            fbx_path = os.path.join(out_dir, "{0}_{1}.fbx".format(FAMILY.value,
-                                                                  variant.name))
+            # TWO defects fixed here, and the second is the quiet one.
+            #
+            # 1. The package went to out_dir, which defaults to
+            #    Docs/AgentLogs/ForgePreviews. .gitignore:201 ignores that tree
+            #    wholesale and it is outside Assets, so every cap-stem package was
+            #    invisible to Unity and to git and one `git clean` from gone. Packages
+            #    now go to law.forge_package_dir; renders stay in out_dir.
+            #
+            # 2. The file was named "{family}_{name}.fbx" - NO "MESH_" prefix. Even in
+            #    the right directory that fails the import gate:
+            #    HectonFBXPostprocessor.TryResolveForgeManifestPath (:702-736) requires
+            #    the name to start with upper-case "MESH_", ORDINAL and case-sensitive,
+            #    before it will look for the sibling manifest at all. Without that
+            #    lookup the carve-out at :401-429 never fires and Unity re-derives
+            #    normals from a single angle, discarding the authored weighted split
+            #    basis. A wrong directory is visible; a wrong prefix would have looked
+            #    like a working export forever.
+            package_dir = os.path.join(
+                law.project_root(),
+                *law.forge_package_dir(FAMILY).split("/"))
+            os.makedirs(package_dir, exist_ok=True)
+            fbx_path = os.path.join(package_dir, "MESH_{0}_{1}.fbx".format(
+                FAMILY.value, variant.name))
+            # None, not the ColliderResult, when flora declined a collider.
+            # export_lod_group handles a missing collider correctly, but handed a
+            # ColliderResult whose .obj is None it fails inside the export with
+            # "AttributeError: 'NoneType' object has no attribute 'select_get'"
+            # instead of reading it as "no collider" - and flora's DEFAULT is no
+            # collider, so the common path was the crashing one. Coral hit the same
+            # thing from the same cause.
+            collider_arg = (variant.collider
+                            if getattr(variant.collider, "obj", None) is not None
+                            else None)
             export_result = export_unity.export_lod_group(
-                variant.lods, variant.collider, fbx_path, blackbox=blackbox)
+                variant.lods, collider_arg, fbx_path, blackbox=blackbox)
 
             identity = law.GeneratorIdentity(
                 generator=GENERATOR_NAME, generator_version=GENERATOR_VERSION,
@@ -2134,8 +2165,11 @@ def main(argv: Sequence[str]) -> int:
             if proof is not None:
                 proof_paths = list(proof["sheets"].values()) + [proof["channelSheet"]]
 
+            # Sibling of the FBX, in the package directory, never in out_dir: the
+            # postprocessor derives the manifest path FROM the mesh path, so a manifest
+            # anywhere else is a manifest that will never be read.
             manifest_path = export_unity.write_manifest(
-                os.path.join(out_dir,
+                os.path.join(package_dir,
                              export_unity.manifest_filename(FAMILY, variant.name)),
                 identity, variant.reports,
                 [law.NAME_MATERIAL.format(family=FAMILY.value, role=role)

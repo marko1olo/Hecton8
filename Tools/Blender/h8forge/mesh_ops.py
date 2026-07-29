@@ -44,9 +44,23 @@ def _make_sole_active(obj: bpy.types.Object) -> None:
     is how a decimation loop "runs" six times and leaves the triangle count untouched.
     """
     view_layer = bpy.context.view_layer
+    # `view_layer.objects` can yield None on a stale depsgraph - typically after a
+    # multi-variant run removed objects between variants without the layer catching
+    # up. Measured: cap-stem died on its first variant with "AttributeError: 'NoneType'
+    # object has no attribute 'select_get'" from this exact loop, inside the decimate
+    # step, taking the whole generator down. A loop whose only job is to clear a
+    # selection must not be able to kill a bake, so the entry is skipped rather than
+    # dereferenced.
     for other in view_layer.objects:
-        if other.select_get():
-            other.select_set(False)
+        if other is None:
+            continue
+        try:
+            if other.select_get():
+                other.select_set(False)
+        except (ReferenceError, RuntimeError):
+            # A freed datablock still listed by the layer. Same class of problem, and
+            # equally not worth aborting a bake over.
+            continue
     obj.select_set(True)
     view_layer.objects.active = obj
 
