@@ -558,6 +558,10 @@ namespace Hecton8.World
         private int _activeGpuiFloraPlacements;
         private ScatterReconcileRuntimeState _reconcileRuntimeState;
         private ScatterLifecycleRuntimeState _lifecycleRuntimeState;
+        // Bounds the retry that drains ScatterWorkingMemory.Dispose's rethrow-on-first-failure cascade
+        // during teardown. Cold path, once per component lifetime; passes after the first are near-free
+        // because every already-released entry self-skips.
+        private const int ScatterWorkingMemoryReleaseAttempts = 3;
         private ScatterWorkingMemory _memory;
         private ScatterInstancingService _instancingService;
         private bool _pendingScatterVisualSync;
@@ -805,11 +809,19 @@ namespace Hecton8.World
             UnsubscribeFromBootstrap();
             UnregisterOriginShiftListener();
             UnregisterProceduralStateRegistryCallbacks();
-            CompleteSamplingJobForTeardown();
+            // Job completion stays ahead of the backend/sargassum teardown: the sampling job reads the
+            // working set's ScatterBackend* arrays, so those owners must not be torn down under a job
+            // that is still in flight.
+            CompleteSamplingJobForTeardownProtected();
             DisposeMigratorySargassumLane();
             DisposeScatterBackendFacade();
-            DisposeCellSamplingArrays();
+            // Order is load-bearing and must match OnDestroy/PrepareForEditorReload: clear GPUI
+            // visibility while the working set is still alive, then release it. The previous order
+            // released first and then re-allocated the whole 1.19 MB native set inside
+            // ClearFloraGpuiVisibility, with no further release in this method - a guaranteed
+            // Scene-lifetime leak on every disable that is not immediately followed by a destroy.
             ClearFloraGpuiVisibility();
+            ReleaseScatterWorkingMemory();
 
             if (_lifecycleRuntimeState.RegisteredToTickManager != 0)
             {
@@ -831,10 +843,14 @@ namespace Hecton8.World
             ClearActiveRuntimeInstance();
             TryUnregisterRuntimeDirector();
             UnregisterOriginShiftListener();
-            CompleteSamplingJobForTeardown();
+            CompleteSamplingJobForTeardownProtected();
             DisposeMigratorySargassumLane();
             DisposeScatterBackendFacade();
             ClearFloraGpuiVisibility();
+            // Released here rather than at the end of the method: OnDestroy never runs twice, so
+            // leaving the only native release behind the tick-manager unregister block meant any
+            // throw from that block stranded 1.19 MB of Scene-lifetime memory permanently.
+            ReleaseScatterWorkingMemory();
 
             if (_lifecycleRuntimeState.RegisteredToTickManager != 0)
             {
@@ -843,8 +859,6 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _lifecycleRuntimeState.RegisteredToTickManager = 0;
             }
-
-            DisposeCellSamplingArrays();
 #if UNITY_EDITOR
             ReleaseAssemblyReloadHook();
 #endif
@@ -983,11 +997,11 @@ namespace Hecton8.World
             _runtimeScatterCallbacksActive = false;
             UnsubscribeFromBootstrap();
             UnregisterProceduralStateRegistryCallbacks();
-            CompleteSamplingJobForTeardown();
+            CompleteSamplingJobForTeardownProtected();
             DisposeMigratorySargassumLane();
             DisposeScatterBackendFacade();
             ClearFloraGpuiVisibility();
-            DisposeCellSamplingArrays();
+            ReleaseScatterWorkingMemory();
             if (_lifecycleRuntimeState.RegisteredToTickManager != 0)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -1054,13 +1068,68 @@ namespace Hecton8.World
             return completed;
         }
 
-        private void DisposeCellSamplingArrays()
+        /// <summary>
+        /// Completes the scatter sampling job on a teardown path without letting a dispatcher failure
+        /// abort the caller's remaining teardown. Idempotent: the underlying call early-returns once
+        /// the sampling job is no longer flagged as running.
+        /// </summary>
+        private void CompleteSamplingJobForTeardownProtected()
         {
-            if (_memory == null)
+            try
+            {
+                CompleteSamplingJobForTeardown();
+            }
+            catch (Exception samplingTeardownException)
+            {
+                H8Debug.LogException(samplingTeardownException, this);
+            }
+        }
+
+        /// <summary>
+        /// Releases the entire scatter native working set, not only the cell sampling arrays.
+        /// ScatterWorkingMemory.Dispose covers 20 native collections and 15 FastCandidateMaps; 8 of
+        /// those are registered with NativeMemorySentinel under NativeAllocationLifetime.Scene, so
+        /// failing to reach this call strands roughly 1.19 MB of Scene-lifetime native memory past
+        /// scene unload. The five same-frame NativeArrays (CandidateAcceptanceResult and the four
+        /// accent scratch arrays) are owned through H8Memory under a different owner id, so a
+        /// sentinel leak report never names them even though they leak on the same path.
+        /// </summary>
+        private void ReleaseScatterWorkingMemory()
+        {
+            // Deferred disposal first: a scatter sampling job may still reference this native set, so
+            // it is driven to a completed state through the dispatcher's named post-simulation swap
+            // window (TryCompleteScatterSamplingJobForTeardown), never a bare JobHandle.Complete
+            // added just to dispose. A throw out of the dispatcher must not be able to strand the
+            // buffers, so it is isolated here instead of aborting the release below. Idempotent, so it
+            // is a no-op when the caller already completed the job ahead of the backend teardown.
+            CompleteSamplingJobForTeardownProtected();
+
+            ScatterWorkingMemory memory = _memory;
+            if (memory == null)
                 return;
 
-            _memory.Dispose();
+            // Detach before disposing so this is idempotent and re-entrant. Unity raises OnDisable and
+            // OnDestroy back to back on destroy, and the headless probe toggles `enabled` at runtime,
+            // so enable -> disable -> enable must re-allocate a fresh instance through
+            // EnsureWorkingMemory rather than double-free or reuse a half-disposed one.
             _memory = null;
+
+            // ScatterWorkingMemory.DisposeNativeCollections rethrows its first failure, which skips
+            // every release queued behind it. Each of its helpers zeroes the sentinel id and defaults
+            // the handle inside a finally, so an entry that already failed is skipped next pass and
+            // every attempt makes forward progress. A bounded retry drains that cascade.
+            for (int attempt = 0; attempt < ScatterWorkingMemoryReleaseAttempts; attempt++)
+            {
+                try
+                {
+                    memory.Dispose();
+                    break;
+                }
+                catch (Exception releaseException)
+                {
+                    H8Debug.LogException(releaseException, this);
+                }
+            }
         }
 
         public void SlowTick()
@@ -12140,7 +12209,17 @@ namespace Hecton8.World
 
         private void ClearFloraGpuiVisibility()
         {
-            EnsureWorkingMemory();
+            // MUST NOT call EnsureWorkingMemory here. Three of the four callers are teardown paths
+            // (OnDisable, OnDestroy, PrepareForEditorReload), so resurrecting the working set on the
+            // way out allocated a fresh 1.19 MB Scene-lifetime native block plus a 4096-entry
+            // placement pool that the already-passed release call could never free. The only
+            // non-teardown caller (ClearScatterPreview) calls EnsureWorkingMemory itself first, so
+            // bailing out here is a no-op for it. Nothing to clear when the working set is gone.
+            // _instancingService is checked too: the flora prototype collections below resolve through
+            // _memory, and EnsureWorkingMemory is the only thing that pairs the two.
+            if (_memory == null || _instancingService == null)
+                return;
+
             _instancingService.ClearVisibility(
                 floraGpuiManager,
                 _floraGpuiKnownPrototypes,
