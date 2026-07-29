@@ -44,6 +44,10 @@ namespace Hecton8.UI
         private const int MaxHudDynamicTextBufferChars = 4096;
         private static readonly char[] s_sharedOversizedHudTextBuffer = new char[MaxHudDynamicTextBufferChars]; // COLD ALLOC: char[4096] - editor/no-GC fallback for oversized HUD text staging - owner: SuitHUDV4CanvasOverlay
         private static bool s_stencilRenderGraphRuntimeActive;
+        // One save-failure bridge for the whole process, NOT one per overlay: this component is deliberately
+        // multi-instance (s_activeOverlay0..3) and one bridge each would raise one notification per active HUD
+        // canvas for a single failed write.
+        private static HUDSaveNotificationLink s_saveFailureNotificationBridge;
         private const int ThreatChevronRollRight = 0;
         private const int ThreatChevronRollUp = 1;
         private const int ThreatChevronRollLeft = 2;
@@ -611,6 +615,7 @@ namespace Hecton8.UI
             s_memorySubsystemBreachCode = 0u;
             s_memorySubsystemBreachVersion = 0;
             s_stencilRenderGraphRuntimeActive = false;
+            s_saveFailureNotificationBridge = null;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -1256,7 +1261,11 @@ namespace Hecton8.UI
             GameBootstrapper.Register(this);
             PlayerSignalEvents.Register(this);
             if (Application.isPlaying)
+            {
                 SaveEvents.Register(this);
+                EnsureSaveFailureNotificationBridgeCold();
+            }
+
             _layoutBuilt = false;
             InvalidateVisualCaches();
             RebuildLocalizationCache();
@@ -1731,8 +1740,14 @@ namespace Hecton8.UI
 
         public void OnGameBootstrapperEvent(in GameBootstrapperEventPayload payload)
         {
-            if ((GameBootstrapperEventType)payload.EventType == GameBootstrapperEventType.GameReady)
-                HandleGameBootstrapperReady();
+            if ((GameBootstrapperEventType)payload.EventType != GameBootstrapperEventType.GameReady)
+                return;
+
+            // Ahead of HandleGameBootstrapperReady, whose isActiveAndEnabled/stencil-suppression early returns
+            // must not decide whether a failed write can reach the player. GameBootstrapper.Register does not
+            // replay GameReady, so this is the only pass that covers an overlay enabled before the bootstrapper.
+            EnsureSaveFailureNotificationBridgeCold();
+            HandleGameBootstrapperReady();
         }
 
         public void OnSaveEvent(in SaveEventPayload payload)
@@ -1746,6 +1761,69 @@ namespace Hecton8.UI
 
             if (eventType == SaveEventType.SaveCompleted || eventType == SaveEventType.SaveFailed)
                 RequestSavingProgressHide();
+        }
+
+        /// <summary>
+        /// Mounts the authored save-failure notification bridge onto the live notification surface, so a failed
+        /// write becomes visible in the gameplay HUD instead of reading as a completed one.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <see cref="OnSaveEvent"/> above retires the "saving" pulse for <see cref="SaveEventType.SaveFailed"/>
+        /// on exactly the same branch as <see cref="SaveEventType.SaveCompleted"/>, which is correct for the pulse
+        /// — the write is over either way — and is the entire gameplay response. Rendered alone it reports a lost
+        /// write as a saved one.
+        /// </para>
+        /// <para>
+        /// <see cref="HUDSaveNotificationLink"/> is the only component in the tree that renders a save failure to
+        /// the HUD, and its script guid <c>473b7a7cc5029354e85995ce5c763e8f</c> occurred in exactly one file in
+        /// the whole tree — its own <c>.cs.meta</c>. Not a scene, not a prefab, not a runtime construction:
+        /// authored complete, then never instantiated. The runtime <see cref="ISaveEventListener"/> registrations
+        /// were <c>MainMenuController</c> (menu scene), <c>PauseMenuController</c> (only while paused),
+        /// <c>HarvestableOutcrop</c> and <c>ModLoader</c> (neither a surface), so with no listener holding a HUD,
+        /// <c>SaveEvents.FlushPending</c> took its <c>_listeners.Count &lt;= 0</c> branch and discarded the
+        /// failure through <c>DrainWithoutDispatch</c>. Its presentation is already authored, so activating it
+        /// invents nothing and adds no second notification system.
+        /// </para>
+        /// <para>
+        /// The bridge is mounted on the notification's OWN GameObject, and that placement is load-bearing rather
+        /// than convenient: <see cref="HUDSaveNotificationLink"/> resolves its surface with a same-object
+        /// <c>TryGetComponent</c>, so hosting it anywhere else leaves that field null and the component
+        /// early-returns out of every event it receives — the same silent nothing it is being activated to fix.
+        /// </para>
+        /// <para>
+        /// Resolution uses <see cref="HUDNotification.TryGetActive"/> with the same
+        /// <c>GameBootstrapper.EnsureHudNotificationRegistered</c> fallback <c>PlayerRuntimeContextService</c>
+        /// already uses, and that surface is a persisted <c>ScreenSpaceOverlay</c> canvas of its own. Being
+        /// independent of this overlay's <c>renderPath</c> is the requirement: wiring the message into the visor
+        /// projection-source canvas instead would make it visible only in projected mode.
+        /// </para>
+        /// <para>
+        /// Gated on <see cref="GameBootstrapper.HasActiveInstance"/> so no notification surface is constructed for
+        /// the main menu, which raises no gameplay notification and owns its own save-failure modal.
+        /// </para>
+        /// </remarks>
+        private static void EnsureSaveFailureNotificationBridgeCold()
+        {
+            // Destroyed components compare equal to null, so a stale bridge from a previous scene re-mounts.
+            if (!Application.isPlaying || s_saveFailureNotificationBridge != null)
+                return;
+
+            if (!GameBootstrapper.HasActiveInstance)
+                return;
+
+            if (!HUDNotification.TryGetActive(out HUDNotification notification))
+                notification = GameBootstrapper.EnsureHudNotificationRegistered();
+
+            if (notification == null)
+                return;
+
+            GameObject notificationHost = notification.gameObject;
+            if (!notificationHost.TryGetComponent(out HUDSaveNotificationLink bridge))
+                // COLD ALLOC: HUDSaveNotificationLink[1] - save-failure HUD bridge, mounted on the notification surface so its same-object surface lookup binds - owner: SuitHUDV4CanvasOverlay
+                bridge = notificationHost.AddComponent<HUDSaveNotificationLink>();
+
+            s_saveFailureNotificationBridge = bridge;
         }
 
         public void SetScannerInterferenceActive(bool active)
