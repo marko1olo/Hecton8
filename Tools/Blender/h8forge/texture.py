@@ -491,6 +491,13 @@ def periodic_joint_traces(
             "azimuthDeg": round(math.degrees(azimuth) % 180.0, 3),
             "lengthM": round(length, 4),
             "conjugateSide": int(side),
+            # Geometry is published, not just described, because the SPALL SCARS clip their
+            # lateral edges to these actual lines. A scar that terminates at a real joint is
+            # the difference between an angular flake and an oval blob.
+            "startRow": float(start[0]),
+            "startCol": float(start[1]),
+            "dirRow": float(direction[0]),
+            "dirCol": float(direction[1]),
         })
 
     mask = 1.0 - _smooth_step(0.0, width_m, best)
@@ -602,12 +609,46 @@ PARTING_WIDTH_PIXEL_FLOOR = 2.5
 # discontinuity in lamina index at the rim is the point, not an artefact -- that offset is
 # exactly what a real spall scar shows. Patch layout is a coarse Worley so the scars are
 # discrete and periodic.
-SPALL_PATCH_WAVELENGTH_M = 0.34
-SPALL_OCCUPANCY = 0.46
-SPALL_OFFSET_MIN_FRACTION = 0.35
-SPALL_OFFSET_MAX_FRACTION = 0.85
-SPALL_STEP_FRACTION = 0.30
-SPALL_RIM_M = 0.0025
+# REBUILT AS ANGULAR, PARTING-BOUNDED, JOINT-CLIPPED PACKAGES. The Worley version read as
+# rounded oval blobs -- water stains or sanded patches, with the cell shape showing through --
+# because a Worley cell is a smooth convex region with no relationship to any structure in
+# the rock. A real flake detaches ALONG A BEDDING PLANE and TERMINATES AT A JOINT, so its
+# outline is made of straight segments that follow structures the field already contains:
+#   * top and bottom edges are lamina boundaries, snapped exactly to the parting positions;
+#   * one lateral edge is an ACTUAL joint line, reusing that trace's own position and azimuth;
+#   * the opposite lateral edge is parallel to it, at a drawn distance.
+# The result is a parallelogram whose every edge is a structure, which is what makes it read
+# as rock that broke rather than as a stain.
+# Reduced from 78 once the truncation blocks took over run-breaking. Scars no longer have to
+# carry that job, so they can go back to being a moderate weathering texture instead of
+# covering 40 percent of the face.
+# 18, not 40. At 40 the scars stopped being events and became a MOSAIC: every one is a
+# parallelogram sharing the same two orientations, packed densely enough to read as crazy
+# paving or parquet -- assembled stone panels rather than one weathered face. Angular was
+# the right instruction; angular AND dense AND identically oriented is masonry.
+# TUNED AT THE SHIPPED 2048 LANE, and it has to be. The structural-extent statistics are
+# RESOLUTION-DEPENDENT because periodic_fbm and periodic_worley consume resolution-sized
+# draws from the shared rng, so the scar layout for one seed differs between lanes: count 22
+# measured erosional coverage 0.195 at 512 and 0.141 at 2048, passing the family requirement
+# at one lane and failing it at the other. Tuning at 512 and trusting 2048 is therefore
+# invalid. The clean fix is a per-generator rng stream seeded from a hash rather than one
+# shared stream -- generators/rock.py has the same property -- and that is outstanding debt,
+# not something to change under a texture task.
+SPALL_SCAR_COUNT = 36
+SPALL_PACKAGE_LAMINAE_MIN = 1
+SPALL_PACKAGE_LAMINAE_MAX = 4
+# NARROW AND DENSE beats wide and sparse. At 0.08-0.30 width the scars met the run
+# budget only by covering 49.6 percent of the tile -- half the face became scar and the
+# bedding it was meant to interrupt had little left to interrupt. Narrow scars act as
+# TRUNCATIONS rather than removals, which is the geometry that breaks a run.
+SPALL_WIDTH_MIN_FRACTION = 0.05
+SPALL_WIDTH_MAX_FRACTION = 0.16
+SPALL_OFFSET_MIN_FRACTION = 0.60
+SPALL_OFFSET_MAX_FRACTION = 2.20
+# A flake is SHALLOW -- one package thick -- but can be wide. Depth is kept modest on purpose
+# so widening the scars to break lamina continuity cannot push spall above parting in the RMS
+# hierarchy, which is the requirement this family already declares.
+SPALL_STEP_FRACTION = 0.24
 
 # Competence band. Hardness of exactly 0 is a lamina with no resistance at all, which
 # drives the differential-relief term to its full depth in one lamina and produces a
@@ -627,6 +668,7 @@ class LaminaStack:
     organic: np.ndarray        # dark organic/clay fraction; hosts pyrite
     porosity: np.ndarray       # where dissolution can open a vug at all
     spall: np.ndarray          # 0..1 inside a flake scar, sharp at the rim
+    gouge: np.ndarray          # 0..1 on a truncation-block wall
     contact: np.ndarray        # 1.0 exactly on a lamina contact, falling off
     count: int
     thicknesses_m: np.ndarray
@@ -636,8 +678,281 @@ class LaminaStack:
         return 1.0 - self.hardness
 
 
+# TRUNCATION BLOCKS: differential erosion cutting ACROSS bed packages.
+#
+# Scars alone could not meet the run budget, and the measurement showed why rather than
+# suggesting it. A spall scar interrupts only the rows inside its own bed package, so with
+# 78 scars stratified over 52 laminae each lamina still got about 1.5 of them and a row with
+# one 10-percent-wide scar retained a 90-percent run. Pushing the count higher raised
+# coverage to 40 percent without fixing p95 -- the wrong mechanism applied harder.
+#
+# A truncation is a LINE ACROSS THE WHOLE TILE, so it splits every row it crosses. Three of
+# them break the bedding into domains at a coverage cost of almost nothing, which is the
+# efficiency a patch-based mechanism cannot reach. Geologically these are small
+# faults/unconformities: beds on one side do not line up with beds on the other, which is
+# ``3DMODEL_GEOLOGY_ROCKS.md`` section 1's "sheared planes" and "collapsed fracture faces".
+TRUNCATION_COUNT = 4
+TRUNCATION_WIDTH_MIN_FRACTION = 0.30
+TRUNCATION_WIDTH_MAX_FRACTION = 0.62
+TRUNCATION_OFFSET_MIN_FRACTION = 2.0
+TRUNCATION_OFFSET_MAX_FRACTION = 6.5
+TRUNCATION_GOUGE_M = 0.0030
+# 0.16, not 0.34. A bright continuous highlight along every wall is what turned the
+# fault traces into scribed lines under raking light; the offset across the wall is the
+# feature that matters, not the notch at it.
+TRUNCATION_GOUGE_DEPTH_FRACTION = 0.16
+
+
+def _build_truncation_blocks(spec: GeologyTextureSpec, rng: np.random.Generator,
+                             thicknesses: np.ndarray,
+                             joint_traces: Optional[list]) -> tuple:
+    """Fault/unconformity blocks that offset the bedding wholesale. ``(offset_m, gouge)``.
+
+    Each block is a wide slab whose orientation is taken from the joint set, so the
+    truncation is parallel to a real structure rather than an arbitrary cut. Inside the slab
+    the bedding coordinate is displaced by SEVERAL lamina thicknesses -- enough that no bed
+    can be traced across the boundary, which is the whole point. The boundary itself carries
+    a thin gouge recess so it is visible and so the extent metric can count it.
+    """
+    resolution = spec.resolved_resolution()
+    axis = (np.arange(resolution) + 0.5) / resolution * spec.tile_m
+    py, px = np.meshgrid(axis, axis, indexing="ij")
+    mean_thickness = float(thicknesses.mean())
+
+    steep = [t for t in (joint_traces or ()) if abs(float(t.get("dirRow", 0.0))) > 0.35]
+    wall_jitter = periodic_warp(rng, resolution, spec.tile_m,
+                                wavelength_m=0.16, amplitude=0.012)
+    offset = np.zeros((resolution, resolution), dtype=np.float64)
+    gouge = np.zeros((resolution, resolution), dtype=np.float64)
+
+    for index in range(max(1, TRUNCATION_COUNT)):
+        if steep:
+            trace = steep[index % len(steep)]
+            direction = np.array([trace["dirRow"], trace["dirCol"]])
+        else:
+            angle = math.radians(JOINT_STRESS_AZIMUTH_DEG + JOINT_CONJUGATE_DEG)
+            direction = np.array([math.sin(angle), math.cos(angle)])
+        norm = float(np.hypot(direction[0], direction[1]))
+        if norm < 1e-9:
+            continue
+        direction = direction / norm
+        normal = np.array([direction[1], -direction[0]])
+
+        origin = rng.random(2) * spec.tile_m
+        offset_row = py - origin[0]
+        offset_col = px - origin[1]
+        offset_row = offset_row - spec.tile_m * np.rint(offset_row / spec.tile_m)
+        offset_col = offset_col - spec.tile_m * np.rint(offset_col / spec.tile_m)
+        lateral = offset_row * normal[0] + offset_col * normal[1]
+        # IRREGULAR WALLS. A truncation block spans the whole tile, so each of its two walls is
+        # a full-length line -- and at four blocks that is eight straight lines crossing the
+        # face. Under grazing light they read as a SCRIBED GRID rather than as fault traces: the
+        # mechanism was right and the geometry was too clean. A real fault trace wanders. Same
+        # shared-fabric jitter the spall walls use, at a longer wavelength because a fault
+        # surface is smoother than a flake edge.
+        lateral = lateral + wall_jitter
+
+        width = float(rng.uniform(TRUNCATION_WIDTH_MIN_FRACTION,
+                                  TRUNCATION_WIDTH_MAX_FRACTION)) * spec.tile_m
+        inside = (lateral >= 0.0) & (lateral < width)
+        throw = mean_thickness * float(rng.uniform(TRUNCATION_OFFSET_MIN_FRACTION,
+                                                   TRUNCATION_OFFSET_MAX_FRACTION))
+        offset = offset + np.where(inside, throw, 0.0)
+
+        # Gouge on both walls of the block.
+        near_wall = np.minimum(np.abs(lateral), np.abs(lateral - width))
+        gouge = np.maximum(gouge, 1.0 - _smooth_step(0.0, TRUNCATION_GOUGE_M, near_wall))
+
+    return offset, gouge
+
+
+def _longest_wrapped_run(row: np.ndarray) -> int:
+    """Longest run of True in a row, treating the row as a CIRCLE.
+
+    Wrapping matters because the tile wraps: a bed that is interrupted at pixel 3 and at
+    pixel 2045 still runs almost the full width once tiled, and a non-wrapped scan would
+    report two short runs and call it broken.
+    """
+    if not row.any():
+        return 0
+    if row.all():
+        return int(row.size)
+    rotated = np.roll(row, -int(np.argmin(row)))
+    padded = np.concatenate(([0], rotated.astype(np.int8), [0]))
+    edges = np.flatnonzero(np.diff(padded))
+    starts, ends = edges[::2], edges[1::2]
+    return int((ends - starts).max()) if starts.size else 0
+
+
+def measure_structural_extent(lamina: LaminaStack, joint: np.ndarray,
+                              tile_m: float) -> dict:
+    """How far the bedding RUNS before something erosional interrupts it.
+
+    THIS IS THE OTHER HALF OF THE HIERARCHY CONSTRAINT. Declaring a depth for every relief
+    term fixed the ordering; it said nothing about extent, and a bed crossing the entire tile
+    at constant thickness makes the same kind of unstated claim a rank-one vug did. Sawn
+    timber and weathered rock can share a relief hierarchy and differ only in run length.
+
+    Interruption means a spall scar or a joint trace -- the two erosional structures in the
+    field. Grain and vugs are not interruptions: they roughen a bed without truncating it.
+
+    Reported against ``law.GEOLOGY_LAMINA_MAX_RUN_FRACTION`` and
+    ``law.GEOLOGY_MIN_EROSIONAL_COVERAGE``. Declared as a FAMILY STRUCTURAL METRIC and kept
+    out of the section 9 gate list: the playbook names eleven gates and inventing a twelfth
+    inside that table would misrepresent the authority. It is reported beside them instead.
+    """
+    interrupted = ((lamina.spall > 0.5) | (joint > 0.5) | (lamina.gouge > 0.5))
+    intact = ~interrupted
+    runs = np.array([_longest_wrapped_run(intact[row]) for row in range(intact.shape[0])],
+                    dtype=np.float64)
+    width = float(intact.shape[1])
+    fractions = runs / width
+    erosional = float(interrupted.mean())
+    p95 = float(np.percentile(fractions, 95))
+    return {
+        "note": "family structural metric, NOT one of the eleven section 9 gates",
+        "longestIntactRunFraction": {
+            "p50": round(float(np.percentile(fractions, 50)), 5),
+            "p95": round(p95, 5),
+            "max": round(float(fractions.max()), 5),
+        },
+        "longestIntactRunM": round(p95 * tile_m, 4),
+        "runBudgetFraction": law.GEOLOGY_LAMINA_MAX_RUN_FRACTION,
+        "runBudgetMet": bool(p95 <= law.GEOLOGY_LAMINA_MAX_RUN_FRACTION),
+        "erosionalCoverage": round(erosional, 5),
+        "erosionalCoverageMin": law.GEOLOGY_MIN_EROSIONAL_COVERAGE,
+        "erosionalCoverageMet": bool(erosional >= law.GEOLOGY_MIN_EROSIONAL_COVERAGE),
+        "interruptedBy": "spall scars, joint traces and truncation-block walls; grain "
+                         "and vugs roughen a bed without truncating it",
+    }
+
+
+def _build_spall_scars(spec: GeologyTextureSpec, rng: np.random.Generator,
+                       base_coordinate: np.ndarray, boundaries: np.ndarray,
+                       thicknesses: np.ndarray,
+                       joint_traces: Optional[list]) -> tuple:
+    """Angular flake scars bounded by partings and clipped to real joint lines.
+
+    Each scar is the intersection of
+
+      * a BED PACKAGE: the bedding coordinate lying between two lamina boundaries taken
+        straight out of ``boundaries``, so the top and bottom edges sit exactly on partings
+        rather than near them;
+      * a SLAB bounded by an ACTUAL joint line and a parallel line at a drawn distance, so
+        one lateral edge terminates on a fracture that exists elsewhere in the tile.
+
+    Every edge is therefore a structure already present in the rock, which is what makes the
+    outline angular. The previous Worley construction could not be angular at all: a Voronoi
+    cell is a smooth convex region unrelated to bedding or jointing, and it rendered as an
+    oval stain.
+
+    Periodicity comes from minimum-imaging the offset from the joint's own start point,
+    the same device the joint traces use. It can select a wrong image only for samples far
+    from the line, and those fall outside the slab in every image, so the mask is zero there
+    regardless.
+
+    Returns ``(mask, offset_m)``. The OFFSET is what actually interrupts the laminae: inside
+    a scar the bedding coordinate is displaced by more than one lamina thickness, so the beds
+    exposed in the scar floor do not line up with the beds outside it. That discontinuity at
+    the rim is the feature, not an artefact.
+    """
+    resolution = spec.resolved_resolution()
+    axis = (np.arange(resolution) + 0.5) / resolution * spec.tile_m
+    py, px = np.meshgrid(axis, axis, indexing="ij")
+
+    lamina_count = len(thicknesses)
+    mean_thickness = float(thicknesses.mean())
+
+    # Prefer joints that actually cut ACROSS bedding. A trace running nearly parallel to the
+    # bedding plane would give a lateral edge indistinguishable from the parting edges, and
+    # the scar would degenerate back into a plain horizontal band.
+    usable = []
+    for trace in (joint_traces or ()):
+        if abs(float(trace.get("dirRow", 0.0))) > 0.35:
+            usable.append(trace)
+    if not usable:
+        usable = list(joint_traces or ())
+
+    mask = np.zeros((resolution, resolution), dtype=np.float64)
+    offset = np.zeros((resolution, resolution), dtype=np.float64)
+    # One SHARED edge-jitter field, so every scar's walls are roughened by the same rock
+    # fabric rather than by independent noise per scar.
+    edge_jitter = periodic_warp(rng, resolution, spec.tile_m,
+                                wavelength_m=0.055, amplitude=0.007)
+
+    # SCAR PLACEMENT IS STRATIFIED ACROSS THE COLUMN, not uniformly random, and the
+    # difference is measurable rather than cosmetic. With random starts the first measurement
+    # of ``longestIntactRunFraction`` came back at p95 = 1.00 -- some bed packages were never
+    # crossed by any scar, so those rows ran the full tile width and the surface still read as
+    # sawn timber even with 22 percent erosional coverage. Stratifying guarantees every part of
+    # the stack is attacked; the jitter keeps the scars from landing on a visible ladder.
+    total = max(1, SPALL_SCAR_COUNT)
+    for _index in range(total):
+        # --- bed package: two real parting positions -----------------------------
+        stratum = (_index + rng.random()) / float(total)
+        start_lamina = int(min(lamina_count - 1, stratum * lamina_count))
+        package = int(rng.integers(SPALL_PACKAGE_LAMINAE_MIN,
+                                   SPALL_PACKAGE_LAMINAE_MAX + 1))
+        lo = float(boundaries[start_lamina])
+        hi = float(boundaries[min(start_lamina + package, lamina_count)])
+        if hi <= lo:
+            continue
+        # Wrapped band test: the package may straddle the tile's bedding wrap.
+        if hi <= spec.tile_m:
+            in_package = (base_coordinate >= lo) & (base_coordinate < hi)
+        else:
+            in_package = ((base_coordinate >= lo)
+                          | (base_coordinate < (hi - spec.tile_m)))
+
+        # --- lateral slab: one edge on a real joint line -------------------------
+        if usable:
+            trace = usable[int(rng.integers(0, len(usable)))]
+            origin = np.array([trace["startRow"], trace["startCol"]])
+            direction = np.array([trace["dirRow"], trace["dirCol"]])
+        else:
+            angle = math.radians(JOINT_STRESS_AZIMUTH_DEG + JOINT_CONJUGATE_DEG)
+            origin = rng.random(2) * spec.tile_m
+            direction = np.array([math.sin(angle), math.cos(angle)])
+        norm = float(np.hypot(direction[0], direction[1]))
+        if norm < 1e-9:
+            continue
+        direction = direction / norm
+        # Perpendicular, so a positive value is "this far to one side of the joint".
+        normal = np.array([direction[1], -direction[0]])
+
+        offset_row = py - origin[0]
+        offset_col = px - origin[1]
+        offset_row = offset_row - spec.tile_m * np.rint(offset_row / spec.tile_m)
+        offset_col = offset_col - spec.tile_m * np.rint(offset_col / spec.tile_m)
+        lateral = offset_row * normal[0] + offset_col * normal[1]
+        # RAGGED, not ruled. A flake's lateral edge follows the joint it terminated against,
+        # but rock does not break along a drafting line -- and perfectly straight edges are
+        # what made the dense version read as cut masonry. Perturbing the lateral coordinate
+        # roughens both walls at the centimetre scale while leaving the edge's overall
+        # orientation on the joint.
+        lateral = lateral + edge_jitter
+
+        width = float(rng.uniform(SPALL_WIDTH_MIN_FRACTION,
+                                  SPALL_WIDTH_MAX_FRACTION)) * spec.tile_m
+        side = 1.0 if rng.random() < 0.5 else -1.0
+        in_slab = (lateral * side >= 0.0) & (lateral * side < width)
+
+        scar = in_package & in_slab
+        if not scar.any():
+            continue
+        scar_offset = mean_thickness * float(rng.uniform(SPALL_OFFSET_MIN_FRACTION,
+                                                         SPALL_OFFSET_MAX_FRACTION))
+        # Later scars overwrite earlier ones where they overlap, which is how a real face
+        # accumulates: a younger flake removes part of an older scar.
+        offset = np.where(scar, scar_offset, offset)
+        mask = np.where(scar, 1.0, mask)
+
+    return mask, offset
+
+
 def build_lamina_stack(spec: GeologyTextureSpec,
-                       rng: np.random.Generator) -> LaminaStack:
+                       rng: np.random.Generator,
+                       joint_traces: Optional[list] = None) -> LaminaStack:
     """Build the sedimentary column and sample it per pixel.
 
     Exactly periodic in V by construction: an integer lamina count whose thicknesses are
@@ -693,23 +1008,16 @@ def build_lamina_stack(spec: GeologyTextureSpec,
                             wavelength_m=0.18, amplitude=0.004)
             + periodic_warp(rng, resolution, spec.tile_m,
                             wavelength_m=0.030, amplitude=0.0015))
-    # Spall scars: discrete flaked patches that offset the bedding coordinate.
-    spall_cells = max(2, int(round(spec.tile_m / SPALL_PATCH_WAVELENGTH_M)))
-    spall_f1, _sf2, spall_id = periodic_worley(rng, resolution, spall_cells, jitter=1.0)
-    spall_slots = spall_cells * spall_cells + 1
-    spalled = (rng.random(spall_slots) < SPALL_OCCUPANCY)[spall_id]
-    spall_extent = (0.45 + 0.55 * rng.random(spall_slots))[spall_id]
-    spall = (1.0 - _smooth_step(0.0, 1.0, spall_f1 / np.maximum(spall_extent, 1e-6)))
-    spall = spall * spalled
-    # Binarise with a soft rim: a flake scar has an EDGE. A smooth falloff would reintroduce
-    # the gradual blending this fix exists to remove.
-    spall = _smooth_step(0.35, 0.55, spall)
-    mean_thickness_actual = float(thicknesses.mean())
-    spall_offset = ((SPALL_OFFSET_MIN_FRACTION
-                     + (SPALL_OFFSET_MAX_FRACTION - SPALL_OFFSET_MIN_FRACTION)
-                     * rng.random(spall_slots))[spall_id]) * mean_thickness_actual
+    # The BASE bedding coordinate, before any scar offset. Scars are decided from this so a
+    # scar's own displacement cannot feed back into where scars are.
+    truncation_offset, gouge = _build_truncation_blocks(
+        spec, rng, thicknesses, joint_traces)
+    base_coordinate = np.mod(depth_m + warp + truncation_offset, spec.tile_m)
 
-    coordinate = np.mod(depth_m + warp + spall_offset * spall, spec.tile_m)
+    spall, spall_offset = _build_spall_scars(
+        spec, rng, base_coordinate, boundaries, thicknesses, joint_traces)
+
+    coordinate = np.mod(base_coordinate + spall_offset * spall, spec.tile_m)
 
     index = np.clip(np.searchsorted(boundaries, coordinate, side="right") - 1,
                     0, count - 1)
@@ -772,6 +1080,7 @@ def build_lamina_stack(spec: GeologyTextureSpec,
         organic=organic_field,
         porosity=porosity_field,
         spall=spall,
+        gouge=gouge,
         contact=contact,
         count=count,
         thicknesses_m=thicknesses,
@@ -949,7 +1258,22 @@ def build_height_field(spec: GeologyTextureSpec,
     """
     resolution = spec.resolved_resolution()
     mpp = spec.metres_per_pixel
-    lamina = build_lamina_stack(spec, rng)
+
+    # JOINTS ARE BUILT FIRST because the spall scars clip their lateral edges to real joint
+    # lines. That dependency is the whole reason the scars can be angular, so the ordering is
+    # load-bearing rather than incidental.
+    joint_trace, joint_traces = periodic_joint_traces(
+        rng, resolution, spec.tile_m,
+        count=JOINT_TRACE_COUNT,
+        stress_azimuth_deg=JOINT_STRESS_AZIMUTH_DEG,
+        conjugate_deg=JOINT_CONJUGATE_DEG,
+        jitter_deg=JOINT_AZIMUTH_JITTER_DEG,
+        length_min_fraction=JOINT_TRACE_LENGTH_MIN_FRACTION,
+        length_max_fraction=JOINT_TRACE_LENGTH_MAX_FRACTION,
+        width_m=JOINT_WIDTH_M,
+        waviness_m=JOINT_WAVINESS_M)
+
+    lamina = build_lamina_stack(spec, rng, joint_traces=joint_traces)
 
     # --- deposition + differential weathering -----------------------------------
     # A soft lamina is deepest in its middle and rises back toward its contacts, because
@@ -962,6 +1286,9 @@ def build_height_field(spec: GeologyTextureSpec,
 
     # --- spall scars: a flaked package sits below the intact face ----------------
     spall_relief = -BEDDING_RECESS_M * SPALL_STEP_FRACTION * lamina.spall
+
+    # --- truncation gouge: the wall of a sheared block ---------------------------
+    gouge_relief = -BEDDING_RECESS_M * TRUNCATION_GOUGE_DEPTH_FRACTION * lamina.gouge
 
     # --- grain: band-limited anisotropic fBm ------------------------------------
     finest_m = FBM_FINEST_PIXELS * mpp
@@ -1056,17 +1383,7 @@ def build_height_field(spec: GeologyTextureSpec,
     pit_relief = -np.maximum(shape_a * depth_a, shape_b * depth_b)
     pit = np.maximum(shape_a, shape_b)
 
-    # --- joints: a sparse conjugate trace set ------------------------------------
-    joint_trace, joint_traces = periodic_joint_traces(
-        rng, resolution, spec.tile_m,
-        count=JOINT_TRACE_COUNT,
-        stress_azimuth_deg=JOINT_STRESS_AZIMUTH_DEG,
-        conjugate_deg=JOINT_CONJUGATE_DEG,
-        jitter_deg=JOINT_AZIMUTH_JITTER_DEG,
-        length_min_fraction=JOINT_TRACE_LENGTH_MIN_FRACTION,
-        length_max_fraction=JOINT_TRACE_LENGTH_MAX_FRACTION,
-        width_m=JOINT_WIDTH_M,
-        waviness_m=JOINT_WAVINESS_M)
+    # --- joints: bed confinement applied to the set built at the top -------------
     # BED-CONFINED JOINTING: a fracture propagates through brittle cemented laminae and
     # dies out in soft clay. Real, and it also breaks each trace into segments so it reads
     # as rock failing rather than as a line drawn on rock.
@@ -1098,8 +1415,8 @@ def build_height_field(spec: GeologyTextureSpec,
     shell = shell * _smooth_step(0.42, 0.82, shell_band)
     shell_relief = SHELL_RELIEF_M * shell
 
-    height = (recess + parting + spall_relief + grain + pit_relief + joint_relief
-              + shell_relief)
+    height = (recess + parting + spall_relief + gouge_relief + grain + pit_relief
+              + joint_relief + shell_relief)
     height = height - float(height.mean())
 
     report = {
@@ -1163,8 +1480,13 @@ def build_height_field(spec: GeologyTextureSpec,
             "joints": round(float(joint_relief.max() - joint_relief.min()), 6),
             "bioclasts": round(float(shell_relief.max() - shell_relief.min()), 6),
             "spallScars": round(float(spall_relief.max() - spall_relief.min()), 6),
+            "truncationGouge": round(float(gouge_relief.max() - gouge_relief.min()), 6),
         },
         "spallCoverage": round(float((lamina.spall > 0.5).mean()), 5),
+        "spallScarCount": SPALL_SCAR_COUNT,
+        "truncationCount": TRUNCATION_COUNT,
+        "spallGeometry": "angular: top/bottom edges snapped to real parting positions, one lateral edge clipped to an actual joint line, opposite edge parallel",
+        "structuralExtent": measure_structural_extent(lamina, joint, spec.tile_m),
         # THE HIERARCHY IS PUBLISHED AS A RANKING so an inversion is visible in the manifest
         # instead of only in a render. The family was rejected once for shipping
         # vugs 11.0 / grain 8.2 / recess 7.3 / joints 4.5 / parting 3.5 / bioclasts 2.2 mm --
@@ -1196,7 +1518,8 @@ def build_height_field(spec: GeologyTextureSpec,
                                             ("dissolutionVugs", pit_relief),
                                             ("joints", joint_relief),
                                             ("bioclasts", shell_relief),
-                                            ("spallScars", spall_relief))},
+                                            ("spallScars", spall_relief),
+                                            ("truncationGouge", gouge_relief))},
             "rankedByRms": [
                 name for name, _v in sorted(
                     (("beddingRecess", float(np.sqrt((recess ** 2).mean()))),
@@ -1205,7 +1528,9 @@ def build_height_field(spec: GeologyTextureSpec,
                      ("dissolutionVugs", float(np.sqrt((pit_relief ** 2).mean()))),
                      ("joints", float(np.sqrt((joint_relief ** 2).mean()))),
                      ("bioclasts", float(np.sqrt((shell_relief ** 2).mean()))),
-                     ("spallScars", float(np.sqrt((spall_relief ** 2).mean())))),
+                     ("spallScars", float(np.sqrt((spall_relief ** 2).mean()))),
+                     ("truncationGouge",
+                      float(np.sqrt((gouge_relief ** 2).mean())))),
                     key=lambda kv: -kv[1])
             ],
             "rankedByPeakToPeak": [
@@ -2396,6 +2721,16 @@ def build_manifest(spec: GeologyTextureSpec, height: HeightField,
                    destination: str) -> dict:
     """Everything section 2 and section 11 require a texture family to record."""
     failed = [g.name for g in gates if not g.passed]
+    # The extent budget is a FAMILY requirement, not one of the eleven section 9 gates, but
+    # it still blocks publication: a tile whose bedding runs edge to edge reads as sawn
+    # timber however many section 9 gates pass. Kept in a separate list so the two are never
+    # conflated and the section 9 count stays honest at twelve.
+    extent = height.report.get("structuralExtent", {})
+    extent_failures = []
+    if extent and not extent.get("runBudgetMet", True):
+        extent_failures.append("lamina run budget")
+    if extent and not extent.get("erosionalCoverageMet", True):
+        extent_failures.append("erosional coverage minimum")
     return {
         "schema": MANIFEST_SCHEMA,
         "identity": {
@@ -2467,8 +2802,10 @@ def build_manifest(spec: GeologyTextureSpec, height: HeightField,
         ],
         "gatesPassed": sum(1 for g in gates if g.passed),
         "gatesTotal": len(gates),
-        "productionReady": not failed,
+        "structuralExtent": extent,
+        "productionReady": not failed and not extent_failures,
         "failedGates": failed,
+        "failedFamilyRequirements": extent_failures,
         "destination": destination,
         "destinationRule":
             "playbook section 9: a family that fails any gate must not enter the "
@@ -2563,6 +2900,20 @@ def write_family(spec: GeologyTextureSpec, *, output_dir: Optional[str] = None,
             sys.stdout.write("{tag} | {n}\n      measured: {m}\n      want:     {t}\n".format(
                 tag="PASS" if gate.passed else "FAIL", n=gate.name,
                 m=gate.measured, t=gate.threshold))
+        extent = manifest.get("structuralExtent", {})
+        if extent:
+            runs = extent.get("longestIntactRunFraction", {})
+            sys.stdout.write(
+                "\n--- family structural extent (NOT a section 9 gate) ---\n"
+                "{tag} longest intact bedding run p50 {a:.3f} p95 {b:.3f} max {c:.3f} "
+                "of tile (budget {d})\n"
+                "{tag2} erosional coverage {e:.4f} (minimum {f})\n".format(
+                    tag="PASS" if extent.get("runBudgetMet") else "FAIL",
+                    a=runs.get("p50", 0.0), b=runs.get("p95", 0.0),
+                    c=runs.get("max", 0.0), d=extent.get("runBudgetFraction"),
+                    tag2="PASS" if extent.get("erosionalCoverageMet") else "FAIL",
+                    e=extent.get("erosionalCoverage", 0.0),
+                    f=extent.get("erosionalCoverageMin")))
         sys.stdout.write("\n{p}/{t} gates pass. productionReady={r}\n".format(
             p=manifest["gatesPassed"], t=manifest["gatesTotal"],
             r=manifest["productionReady"]))

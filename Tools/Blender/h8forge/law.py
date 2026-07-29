@@ -670,6 +670,39 @@ GEOLOGY_TEXTURE_BAND_CEILING_M = 0.087
 
 
 # ---------------------------------------------------------------------------
+# Structural EXTENT budget  --  how far a feature runs, not how deep it is
+# ---------------------------------------------------------------------------
+# A DEPTH BUDGET ALONE IS HALF A CONSTRAINT, and the missing half was found by looking at
+# a render rather than at a number.
+#
+# The geology texture family was rejected once for an inverted relief hierarchy: vugs
+# deeper than bedding. Fixing that gave every term a declared depth as a fraction of the
+# bedding relief, and the ordering became structural. The tile was then rejected AGAIN,
+# for laminae that ran uninterrupted from edge to edge of the 1.25 m tile and read as sawn
+# timber or veneered board. Same class of defect one axis over: every term had a stated
+# depth and NONE had a stated extent, so a bed traversing the whole tile at constant
+# thickness was making exactly the kind of unstated claim that a rank-one vug had made.
+#
+# Real weathered marine bedding is interrupted. Differential erosion cuts across bed
+# packages, flakes detach along partings and terminate at joints, and a bed pinches out or
+# is truncated rather than crossing an entire face. So a family that tiles must declare
+# how far its dominant structure is allowed to run, and must MEASURE it -- an uninterrupted
+# run is also the thing that makes tiling visible, because the eye tracks a continuous line
+# across the repeat boundary far more readily than it tracks a broken one.
+#
+# Expressed as a fraction of the tile so it is resolution- and scale-independent.
+# ``3DMODEL_GEOLOGY_ROCKS.md`` section 1 is the authority being served: the surface must
+# "contain readable geological process: sediment bands, chipped edges, sheared planes ...
+# collapsed fracture faces", and a bed with no truncation shows deposition without any of
+# the erosion that followed it.
+GEOLOGY_LAMINA_MAX_RUN_FRACTION = 0.55
+
+# Minimum share of the surface that must be interrupted by erosional structure -- spall
+# scars and joints -- or the face reads as deposited-and-never-weathered.
+GEOLOGY_MIN_EROSIONAL_COVERAGE = 0.18
+
+
+# ---------------------------------------------------------------------------
 # Texture acceptance gate thresholds
 # ---------------------------------------------------------------------------
 # ``3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`` section 9 lists eleven gates in prose with
