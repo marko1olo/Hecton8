@@ -66,7 +66,7 @@ Not proven by that log:
 | First 20 Minutes Copper Wire route | `[~]` | full route clip plus profiler/GC/memory capture |
 | Data Monolith runtime boot | `[~]` | Unity import/player boot/checksum proof for `static_data.h8bin` |
 | RT/VRAM retained owner set | `[!]` | Memory Profiler / Frame Debugger owner isolation |
-| Tool durability does not persist | `[!]` | load a save after breaking a tool and read its durability back |
+| ~~Tool durability does not persist~~ WITHDRAWN — the codec persists it | `[?]` | none; the premise was wrong, see the correction below |
 | The content vacuum, measured: 4 items, 3 creatures, 0 quests | `[!]` | run the authoring generators, re-bake, and re-read this census |
 
 ### The Data Monolith content census — measured from the shipped blob, 2026-07-29
@@ -541,6 +541,49 @@ stripped: zero `Camera.main`, `FindObjectOfType`/`FindObjectsOfType`, `GameObjec
 and `renderer.materials`. The four `OnGUI` hits are all inside `#if UNITY_EDITOR`, so they are not
 violations. `DontDestroyOnLoad` appears 7 times and `Time.deltaTime` 3 times outside Dev tooling — both
 need an owner-route ruling rather than a blanket verdict, and neither is claimed as a defect here.
+
+#### WITHDRAWN 2026-07-29 — tool durability does persist, and "fixing" it would have broken a working path
+
+The style violation is real; the functional consequence claimed from it is not. The reasoning above went
+"`AGENTS.md` bans `Dictionary` in save roots" + "Unity serializes no `Dictionary` field" -> "therefore
+durability is silently dropped". The second premise does not apply here: **this save system does not use
+Unity serialization at all.** It has its own binary codec, and that codec handles every one of the fields.
+
+`Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs`, write side:
+
+- `:583` `WriteStringFloatDictionary(ref writer, data.toolDurabilityMap, SaveData.MaxToolDurabilityRecords)`
+- `:584` `WriteStringBoolDictionary(ref writer, data.toolBrokenMap, SaveData.MaxToolDurabilityRecords)`
+- `:586` `WriteDiscoveredBiomeBitWords(ref writer, data.discoveredBiomeBitWords)`
+- `:654` `WriteStringStringDictionary(ref writer, data.CustomModData, SaveData.MaxCustomModDataEntries)`
+
+Read side, each with a `nameof()` diagnostic: `:757` `toolDurabilityMap`, `:762` `toolBrokenMap`,
+`:770` `discoveredBiomeBitWords`, `:876` `CustomModData`. Null-safe defaults at `:899-901`.
+
+Round-trip coverage exists and is not a text assertion:
+`Tests/Editor/SaveSystem/HazardZoneRuntimeSaveEditTests.cs:7653-7654` assert on
+`restored.toolDurabilityMap` and `restored.toolBrokenMap`, and `:7850-7853` assert the key-trimming
+contract survives the round trip.
+
+**A fourth banned-looking field, and why it is the counter-example rather than a fifth defect.**
+`SaveData.cs:159` `public HashSet<int> discoveredBiomeIds` is not in the list above, and it is the one
+that shows the design is deliberate: the persisted form is the parallel flat array
+`discoveredBiomeBitWords`, packed by `BiomeDiscoveryBitMask.Pack` from
+`HectonDiscoveryManager.cs:211`. That is exactly the "parallel flat lists" shape `AGENTS.md` prescribes,
+already implemented. Better still, `SaveBinaryPayloadCodec.cs:906-907` carries a compatibility bridge —
+if the bit words are empty but the set has entries, it re-packs — so a save written before the bitmask
+existed still restores. Someone converting these maps to flat lists "per the ban" would have deleted a
+working, tested, migration-aware path.
+
+**What is actually left, and it is smaller.** The `Dictionary` fields in the root type are a genuine
+`AGENTS.md` style violation with a real cost — allocation and GC churn during save staging, which the ban
+exists to prevent — but they are not a data-loss defect and they are not a player-facing blocker. Moving
+them to flat lists is optimization work behind a GC measurement, not a save-integrity fix, and it must
+keep the `:906-907` bridge and the round-trip tests green. `SaveDataMigration.cs:232,254` `HashSet<string>`
+falls in the same class.
+
+Evidence class: STATIC_SOURCE, verified by reading the codec and the tests. No Unity run, no save/load
+artifact — so the positive claim here is "the write and read paths exist and are covered by an EditMode
+round-trip test", not "durability provably survives a real player save".
 
 ## Entry Template
 

@@ -5978,6 +5978,81 @@ namespace Hecton8.Bootstrap
             EnforceProjectPersistentRoot();
         }
 
+        /// <summary>
+        /// Draw order for the notification canvas. Below <c>HardwareErrorCanvas</c>'s overlay, which is a
+        /// terminal BIOS-style failure screen and must never be covered by a transient warning.
+        /// </summary>
+        private const int HudNotificationSortingOrder = 4000;
+
+        /// <summary>
+        /// Constructs the player-facing notification surface if nothing has placed one.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <see cref="HUDNotification"/> is the single surface runtime warnings reach the player through, and
+        /// the project contained ZERO instances of it: its script guid
+        /// <c>ff6d72424ae97784796abc35905d32bc</c> occurred in exactly one file in the whole tree — its own
+        /// <c>.cs.meta</c>. Not a scene, not a prefab, not a runtime construction. Every consumer resolves it
+        /// lazily and correctly via <see cref="HUDNotification.TryGetActive"/>, so every consumer was silently
+        /// getting nothing: <c>EnvironmentalAnalyzerTool</c> at three sites,
+        /// <c>PlayerRuntimeContextService.SyncRuntimeContextAndPublish</c>, and through that the
+        /// <c>HudNotification</c> property of <c>PlayerRuntimeContext</c> and <c>PlayerSensoryManager</c>.
+        /// The consumers were never the defect. Nothing built the object.
+        /// </para>
+        /// <para>
+        /// The shape is a canvas ROOT with the notification on a CHILD, and every part of that is load-bearing
+        /// rather than stylistic:
+        /// </para>
+        /// <list type="number">
+        /// <item><description>
+        /// <c>HUDNotification.EnsureBuilt</c> opens with <c>transform as RectTransform; if (self == null)
+        /// return;</c> — a SILENT early return. Put it on a plain <c>new GameObject(...)</c>, which carries a
+        /// plain <c>Transform</c>, and it publishes itself through <c>TryGetActive</c>, reports as present to
+        /// every consumer, and builds no UI at all. That is worse than the absence it replaces, because an
+        /// absent surface at least reads as absent.
+        /// </description></item>
+        /// <item><description>
+        /// It builds its own <c>CanvasGroup</c>, <c>Image</c> and child <c>TextMeshProUGUI</c>, but never a
+        /// <see cref="Canvas"/>. UGUI draws nothing without a Canvas ancestor, so one has to be supplied.
+        /// </description></item>
+        /// <item><description>
+        /// It cannot share the GameObject with the Canvas, even though that would hand it a RectTransform for
+        /// free: <c>EnsureBuilt</c> anchors itself top-centre at 420x36, which is an ELEMENT's geometry.
+        /// Applying that to a canvas root fights the canvas system, which drives that RectTransform itself.
+        /// </description></item>
+        /// <item><description>
+        /// <see cref="PersistRuntimeService"/> reparents its argument under the bootstrapper transform. Hand it
+        /// the notification and the notification leaves the canvas and stops rendering — the same invisible
+        /// failure by a different route. So the CANVAS is persisted and the notification rides along as its
+        /// child. <c>ScreenSpaceOverlay</c> renders wherever the canvas is parented, which is why
+        /// <c>HardwareErrorCanvas</c> persists itself the same way.
+        /// </description></item>
+        /// </list>
+        /// <para>
+        /// Idempotent through the same active-instance check every sibling Ensure method uses, so a scene that
+        /// legitimately authors a notification surface later wins and no duplicate is built.
+        /// </para>
+        /// </remarks>
+        internal static HUDNotification EnsureHudNotificationRegistered()
+        {
+            if (HUDNotification.TryGetActive(out HUDNotification registeredNotification))
+                return registeredNotification;
+
+            GameObject canvasRoot = new GameObject("[HUDNotificationCanvas]"); // COLD ALLOC: GameObject[1] - bootstrap-owned notification canvas root - owner: GameBootstrapper
+            Canvas canvas = canvasRoot.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = HudNotificationSortingOrder;
+            canvasRoot.AddComponent<CanvasScaler>();
+
+            GameObject notificationRoot = new GameObject("Notification"); // COLD ALLOC: GameObject[1] - notification element node under the bootstrap notification canvas - owner: GameBootstrapper
+            notificationRoot.transform.SetParent(canvasRoot.transform, false);
+            notificationRoot.AddComponent<RectTransform>();
+
+            HUDNotification notification = notificationRoot.AddComponent<HUDNotification>();
+            PersistRuntimeService(canvas);
+            return notification;
+        }
+
         private static GameTickManager EnsureGameTickManagerRegistered()
         {
             GameTickManager tickManager = GlobalRegistry.TickManager;
@@ -8689,6 +8764,17 @@ namespace Hecton8.Bootstrap
                 GlobalRegistry.RegisterQuestRuntime(questManager);
         }
 
+        /// <remarks>
+        /// This is the only one of the six helpers that does NOT call GlobalRegistry.RegisterX itself, and
+        /// deliberately so. TryResolveFloraInteractionManager returns FloraInteractionManager
+        /// .ActiveRuntimeInstance, i.e. the same object that already publishes itself from its own OnEnable,
+        /// so a direct RegisterProceduralSwayDirector call here was a second registration door onto one slot.
+        /// The owner tracks whether the registry currently holds it, and that flag drives its OnDisable and
+        /// OnDestroy release; a slot filled behind its back leaves the flag false and strands a destroyed
+        /// MonoBehaviour in the registry. Publishing through the owner's own door keeps register and
+        /// unregister on one code path. Coverage semantics are unchanged: the owner's method is idempotent
+        /// and re-publishes when the slot is empty, which is the only state this helper is reached in.
+        /// </remarks>
         private static void TryEnsureProceduralSwayRegistryCoverage()
         {
             if (GlobalRegistry.ProceduralSwayDirector != null)
@@ -8697,7 +8783,7 @@ namespace Hecton8.Bootstrap
             FloraInteractionManager manager = null;
             WorldRuntimeReferenceUtility.TryResolveFloraInteractionManager(ref manager);
             if (manager != null)
-                GlobalRegistry.RegisterProceduralSwayDirector(manager);
+                manager.TryRegisterProceduralSwayDirectorService();
         }
 
         private static void EnsureBootstrapAudioListener(Scene bootstrapScene)

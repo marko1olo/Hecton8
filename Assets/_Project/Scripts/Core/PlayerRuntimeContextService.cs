@@ -1,4 +1,5 @@
 using Hecton8.Audio;
+using Hecton8.Bootstrap;
 using Hecton8.Building;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -1028,7 +1029,23 @@ namespace Hecton8.Core
                 WorldRuntimeReferenceUtility.TryResolveHectonUnderwaterVisuals(ref _underwaterVisuals);
 
             if (_hudNotification == null || !_hudNotification.isActiveAndEnabled)
-                HUDNotification.TryGetActive(out _hudNotification);
+            {
+                // This lazy resolve was always correct and always returned nothing: the project contained no
+                // HUDNotification instance at all — its script guid occurred in exactly one file in the whole
+                // tree, its own .cs.meta. So every warning aimed at the player resolved to null and went
+                // nowhere: this context, PlayerSensoryManager through it, and EnvironmentalAnalyzerTool at
+                // three separate call sites.
+                //
+                // Constructing on first need here, rather than from a bootstrap phase, follows the idiom the
+                // bootstrapper already uses for canvas overlays: HardwareErrorCanvas is built lazily from its
+                // own Show(), not from a phase list. It keeps the surface out of the main menu, where no
+                // gameplay notification is ever raised, and puts the trigger at the one site that has been
+                // asking for it since it was written. Construction stays owned by GameBootstrapper, which is
+                // where the knowledge lives that this component needs both a Canvas ancestor and a
+                // RectTransform or it silently builds no UI whatsoever.
+                if (!HUDNotification.TryGetActive(out _hudNotification))
+                    _hudNotification = GameBootstrapper.EnsureHudNotificationRegistered();
+            }
 
             _runtimeContext.SyncReferences(
                 _playerObject,
