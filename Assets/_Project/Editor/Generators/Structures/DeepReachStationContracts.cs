@@ -1739,6 +1739,32 @@ namespace Hecton8.Editor.Structures
         public float GlobalQualityWeight;
         public float3 StationHalfExtents;
 
+        /// <summary>
+        /// Neutral value for vertex colour A on this route: no soot authored.
+        ///
+        /// There is no soot data in this route, stated plainly rather than substituted. This job
+        /// carries Position, unitNormal, a crush-derived damage01 and the quality weight. damage01 is
+        /// impact deformation, not combustion, and it already drives rust, algae and wearBlocker;
+        /// reusing it a fourth time would smear one mechanical field across all four channels and
+        /// call the result soot. The real signal would have to come from a burn/thermal event the
+        /// station bake does not model, or from the texture route the shader already consults via
+        /// bakedCarbonization.
+        ///
+        /// 0 matches the compliant hard-surface writer -- h8forge/vertexcolor.py
+        /// write_hard_surface_channels passes <c>get_a = channel(emission_mask, 0.0)</c>. Note that
+        /// hard-surface A defaults to 0.0 whereas the ORGANIC contract's A defaults to 1.0; the two
+        /// are not interchangeable, and 3dmodel.md section 4 makes this channel an OPTIONAL
+        /// emission / warning paint / decal eligibility mask, so absent is a legal state.
+        ///
+        /// NOT A CONTRACT ROTATION, deliberately: R still carries rust and B still carries
+        /// wearBlocker, which section 4 assigns to edge wear and baked ambient occlusion. That
+        /// mismatch is a five-signals-into-four-channels problem -- the wreck route wants rust,
+        /// algae, grime, soot and vertex AO, while section 4 collapses the first three into G alone,
+        /// and unlike a redundant authored phase none of the five is synthesizable. It is an owner
+        /// decision, not a repack, and this change fixes only the absent-data default.
+        /// </summary>
+        private const byte NoSootMask = 0;
+
         public void Execute()
         {
             if (!Counters.IsCreated || Counters.Length == 0 || !Vertices.IsCreated)
@@ -1819,7 +1845,24 @@ namespace Hecton8.Editor.Structures
                 byte rust = (byte)math.clamp((int)math.round(math.saturate(0.22f + damage01 * 0.78f) * 255f), 0, 255);
                 byte algae = (byte)math.clamp((int)math.round(math.saturate((0.5f - unitNormal.y * 0.35f) + damage01 * 0.35f) * 255f), 0, 255);
                 byte wearBlocker = (byte)math.clamp((int)math.round(math.saturate(0.28f - damage01 * 0.28f) * 255f), 0, 255);
-                vertex.ColorRgba = DeepReachStationMath.EncodeColor(rust, algae, wearBlocker, 255);
+                // Channel A is read by Hecton_WreckIndirectLit.shader :249 as the soot mask
+                // (vertexSoot = saturate(COLOR.a * _WreckSootStrength)), so A is an AMOUNT of soot
+                // and 255 was not "no soot data" -- it was MAXIMUM soot. Same absent-data defect
+                // class as a baked-AO channel written as 0, where 0 is not absent occlusion but
+                // maximal occlusion: a default parked at the maximum of its range rather than the
+                // neutral end, which reads as fully-authored data and never errors.
+                //
+                // Measured consequence of the old 255 at the shader's _WreckSootStrength default of
+                // 0.92: vertexSoot = 0.92, and :250 folds it in with max(), so sootResponse >= 0.92
+                // on every vertex regardless of the texture -- driving albedo 92% toward
+                // _WreckSootTint (:272), ambient occlusion to 0.52x (:273) and smoothness to 0.36x
+                // (:274) across the entire station.
+                //
+                // 0 is VERIFIED neutral, not assumed: sootResponse appears only as a lerp t at
+                // :272-274 where t = 0 returns each value unmodified, it is never used inverted as
+                // (1 - sootResponse), and the max() at :250 means A = 0 hands the result entirely to
+                // bakedCarbonization -- "no vertex soot authored, defer to the texture".
+                vertex.ColorRgba = DeepReachStationMath.EncodeColor(rust, algae, wearBlocker, NoSootMask);
                 Vertices[i] = vertex;
             }
 
