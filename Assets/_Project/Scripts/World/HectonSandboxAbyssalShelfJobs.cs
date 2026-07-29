@@ -178,7 +178,15 @@ namespace Hecton8.World
         {
             float highWorldY = ResolveSlopeLockedHighWorldY(in parameters);
             WorldMacroGeologyParams macroParams = WorldMacroGeologyParams.CreateDefault(parameters.Seed);
-            macroParams.WaterSurfaceY = 0f;
+            // The AUTHORED ocean datum, not 0. Geology computes height as WaterSurfaceY - depth
+            // (WorldMacroGeologyFields.cs:1370), so a datum of 0 made every depth this generator produces
+            // 14.02 m shallower than the depth the running game measures against the calibrated ocean.
+            //
+            // WorldWaterLevelCalibrationMath.DefaultWaterLevelY is 14.02f
+            // (World/Contracts/WorldWaterLevelCalibrationContracts.cs:166), and
+            // Tests/Editor/WaterlineFallbackRuntimeEditTests.cs already polices that exact constant name in
+            // other files - this path evaded the rule rather than being exempt from it.
+            macroParams.WaterSurfaceY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
             macroParams.DetailProbeMeters = (float)math.max(1.0, parameters.AupCellSizeMeters);
             macroParams.RidgeHeightMeters = parameters.RidgeHeightMeters;
             macroParams.RidgeWidthMeters = parameters.RidgeWidthMeters;
@@ -711,7 +719,15 @@ namespace Hecton8.World
             if (Parameters.MacroGeologyArtifactVersion == WorldMacroGeologyFields.ArtifactVersion)
             {
                 WorldMacroGeologyParams macroParams = WorldMacroGeologyParams.CreateDefault(Parameters.Seed);
-                macroParams.WaterSurfaceY = 0f;
+                // The AUTHORED ocean datum, not 0. Geology computes height as WaterSurfaceY - depth
+            // (WorldMacroGeologyFields.cs:1370), so a datum of 0 made every depth this generator produces
+            // 14.02 m shallower than the depth the running game measures against the calibrated ocean.
+            //
+            // WorldWaterLevelCalibrationMath.DefaultWaterLevelY is 14.02f
+            // (World/Contracts/WorldWaterLevelCalibrationContracts.cs:166), and
+            // Tests/Editor/WaterlineFallbackRuntimeEditTests.cs already polices that exact constant name in
+            // other files - this path evaded the rule rather than being exempt from it.
+            macroParams.WaterSurfaceY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
                 macroParams.DetailProbeMeters = (float)math.max(1.0, CellSizeMeters);
 
                 WorldMacroGeologyFields.MacroMasks masks;
@@ -781,7 +797,15 @@ namespace Hecton8.World
             if (Parameters.MacroGeologyArtifactVersion == WorldMacroGeologyFields.ArtifactVersion)
             {
                 WorldMacroGeologyParams macroParams = WorldMacroGeologyParams.CreateDefault(Parameters.Seed);
-                macroParams.WaterSurfaceY = 0f;
+                // The AUTHORED ocean datum, not 0. Geology computes height as WaterSurfaceY - depth
+            // (WorldMacroGeologyFields.cs:1370), so a datum of 0 made every depth this generator produces
+            // 14.02 m shallower than the depth the running game measures against the calibrated ocean.
+            //
+            // WorldWaterLevelCalibrationMath.DefaultWaterLevelY is 14.02f
+            // (World/Contracts/WorldWaterLevelCalibrationContracts.cs:166), and
+            // Tests/Editor/WaterlineFallbackRuntimeEditTests.cs already polices that exact constant name in
+            // other files - this path evaded the rule rather than being exempt from it.
+            macroParams.WaterSurfaceY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
                 macroParams.DetailProbeMeters = (float)math.max(1.0, CellSizeMeters);
 
                 float west = PresampledNodes[westIndex].HeightMeters;

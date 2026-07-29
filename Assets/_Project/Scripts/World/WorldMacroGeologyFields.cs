@@ -750,7 +750,18 @@ namespace Hecton8.World
             float abyssPlainMask = math.saturate((1f - shelfMask) * (1f - plateEdgeMask * 0.85f) * (0.42f + plateInterior * 0.58f));
             float shelfToe = math.saturate(math.smoothstep(0.16f, 0.72f, shelfBreakMask) * (1f - shelfMask * 0.25f));
 
-            float depth = math.lerp(parameters.AbyssDepthMeters, 120f, shelfMask);
+            // ShelfDepthMeters, not a hardcoded 120. The parameter existed and was ACCEPTED but never reached
+            // this evaluator: ShelfDepthMeters (default 90f at :49) was read only at :257-258, inside
+            // Sanitize, purely as a floor for AbyssDepthMeters. That is the "parameter accepted then ignored"
+            // silent-degeneracy class this project's own rules name, and it meant the shallowest shelf the
+            // generator could emit was 120 m no matter what anyone authored.
+            //
+            // 90 is the intended figure and this same file already says so: :369 computes its reef band as
+            // abs(WaterSurfaceY - heightMeters - 90f). The height evaluator and the reef band disagreed by 30 m.
+            //
+            // Cannot invert: Sanitize at :258 guarantees AbyssDepthMeters >= ShelfDepthMeters + 500, so the
+            // lerp endpoints stay ordered for any authored value.
+            float depth = math.lerp(parameters.AbyssDepthMeters, parameters.ShelfDepthMeters, shelfMask);
             depth += abyssPlainMask * parameters.BasinDepthMeters * 0.35f;
 
             // R41: Add subtle organic micro-terrain noise to Stage 1 shelf so base shelf is not a smooth plastic lens
