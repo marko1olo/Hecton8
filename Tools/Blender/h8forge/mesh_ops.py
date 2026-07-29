@@ -678,6 +678,22 @@ def _weld_coincident(obj: bpy.types.Object, distance: float = 1e-6) -> dict:
     if doomed:
         bmesh.ops.delete(bm, geom=doomed, context="FACES_ONLY")
 
+    # DELIBERATELY NO recalc_face_normals HERE, and it was tried and measured.
+    #
+    # Nothing recalculates winding after decimation - recalc runs inside
+    # weld_and_clean before the LOD chain and never again - so adding it here looked
+    # obviously right for the `inconsistent_winding` gate. Measured: coral went 54 ->
+    # 53 failures, and that single one was the duplicate face this function had
+    # already removed. It fixed NOTHING. And on rock it actively broke the export:
+    # recalculating face normals puts them out of agreement with the authored
+    # weighted/split basis, so the round trip started failing with "corner normals
+    # changed by 0.001859; the authored weighted/split normal basis did not survive"
+    # - trading lost geometry for lost shading.
+    #
+    # So inconsistent_winding is NOT an orientation problem. 53 pairs of triangles
+    # share a directed edge in the same direction while nonManifoldEdges reads 0,
+    # which is a topology question this function is the wrong place to answer.
+
     boundary = sum(1 for e in bm.edges if len(e.link_faces) == 1)
     nonmanifold = sum(1 for e in bm.edges if len(e.link_faces) > 2)
     after_verts = len(bm.verts)
