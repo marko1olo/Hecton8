@@ -1395,8 +1395,23 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
             for edge in level_bm.edges:
                 if len(edge.link_faces) <= 2:
                     continue
-                # Keep the two largest, drop the rest: the extras are interior sheets
-                # buried where two branches merge, invisible from outside.
+                # DELIBERATELY area-only here, unlike mesh_ops.weld_and_clean, and the
+                # asymmetry is the finding rather than an oversight.
+                #
+                # The direction-aware keep is the correct rule and it belongs in
+                # weld_and_clean, which runs at :1306/:1321 BEFORE apply_shading_basis
+                # at :1324 - so the authored weighted/split normals are computed on the
+                # already-repaired mesh and nothing drifts. THIS repair runs inside the
+                # LOD loop, AFTER the shading basis exists. Changing which faces survive
+                # here invalidates normals that were already authored, and the FBX round
+                # trip catches it immediately: measured, the direction-aware rule here
+                # produced "LOD2: corner normals changed by 0.962271" - 74 degrees on a
+                # unit normal - and the exporter refused to certify the package at all.
+                #
+                # So orientability is fixed upstream where it is free, and this pass
+                # stays a minimal manifoldness guard for whatever Decimate/COLLAPSE
+                # freshly creates. Trading a shippable package for a cleaner validator
+                # line would be the wrong way round.
                 ordered = sorted(edge.link_faces, key=lambda f: f.calc_area(),
                                  reverse=True)
                 doomed.extend(ordered[2:])

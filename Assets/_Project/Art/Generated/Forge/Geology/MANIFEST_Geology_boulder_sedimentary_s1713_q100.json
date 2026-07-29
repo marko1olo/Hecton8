@@ -181,7 +181,7 @@
   "explainAgainstLod0Budget": "4368 tris vs 4000 budget; 1 disconnected components, 0 boundary edges, 0 non-manifold edges -> estimated irreducible floor ~4 tris"
  },
  "shadingBasis": {
-  "smoothPolygons": 3570,
+  "smoothPolygons": 3572,
   "sharpEdges": 811,
   "weightedNormalsApplied": true,
   "smoothAngleDeg": 32.0,
@@ -231,7 +231,7 @@
   "areaWeightedMean": [
    0.31443,
    0.54001,
-   0.89604,
+   0.89623,
    0.12601
   ],
   "min": [
@@ -255,7 +255,7 @@
   "baked": true,
   "min": 0.0,
   "max": 1.0,
-  "mean": 0.821246,
+  "mean": 0.8214,
   "hasContrast": true
  },
  "uvAndTriplanarReport": {
@@ -313,7 +313,7 @@
     "thresholdDeg": 46.0,
     "edgesAboveThresholdStillSmooth": 0,
     "sharpEdges": 404,
-    "widestDihedralDeg": 174.77
+    "widestDihedralDeg": 174.79
    },
    "lawFamilyBudget": 7000,
    "geologySizeRowBudget": 1200,
@@ -360,7 +360,7 @@
    "thresholdDeg": 46.0,
    "edgesAboveThresholdStillSmooth": 0,
    "sharpEdges": 404,
-   "widestDihedralDeg": 174.77
+   "widestDihedralDeg": 174.79
   },
   "LOD2": {
    "thresholdDeg": 46.0,
@@ -383,7 +383,7 @@
   "PASS LOD2 236 tris vs budget 250",
   "PASS LOD chain strictly decreasing",
   "PASS collider 184 tris vs the 200 ceiling",
-  "PASS AO contrast 1.0000 (min=0.0000 max=1.0000 mean=0.8212)",
+  "PASS AO contrast 1.0000 (min=0.0000 max=1.0000 mean=0.8214)",
   "PASS zero degenerate faces",
   "PASS single connected island (got 1)",
   "PASS zero non-manifold edges (got 0)",
@@ -404,9 +404,9 @@
   "PASS silhouette turn concentration 0.3132 (potato control 0.137, polytope control 0.789, floor 0.2); mean 10.0 arrises per view",
   "PASS at least 3 outline arrises per view on average (10.0)",
   "PASS LOD0 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 179.47 deg, 811 sharp)",
-  "PASS LOD1 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 174.77 deg, 404 sharp)",
+  "PASS LOD1 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 174.79 deg, 404 sharp)",
   "PASS LOD2 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 145.81 deg, 109 sharp)",
-  "PASS 3570 polygons marked smooth (not flat-shaded)",
+  "PASS 3572 polygons marked smooth (not flat-shaded)",
   "PASS 811 edges split sharp above 32.0 deg (fracture planes stay crisp)",
   "PASS weighted normals applied (FACE_AREA_WITH_ANGLE)"
  ],
@@ -450,7 +450,7 @@
    "tile": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\boulder_sedimentary_s1713_q100_chan_chan2_baked_ao.png",
    "min": 0.0,
    "max": 1.0,
-   "mean": 0.90365,
+   "mean": 0.90344,
    "coverageFraction": 0.17017,
    "subjectVisible": true,
    "hasGradient": true
@@ -537,10 +537,10 @@
  },
  "silhouettePerFarLod": {
   "LOD1": {
-   "meanTurnTop10Fraction": 0.3317,
+   "meanTurnTop10Fraction": 0.3319,
    "meanCornerCount": 9.75,
    "meanConvexity": 0.9285,
-   "retainedFractionOfLod0": 1.059
+   "retainedFractionOfLod0": 1.0595
   },
   "LOD2": {
    "meanTurnTop10Fraction": 0.3772,
@@ -554,7 +554,7 @@
   "verified": true,
   "summary": "MESH_Geology_boulder_sedimentary_s1713_q100.fbx: 4 object(s) tris=5132 vcol=True customNormals=True tangents=True uv=['UVMap', 'UV1_Strata'] unitScale=100 roundtrip=VERIFIED",
   "measurements": [
-   "wrote MESH_Geology_boulder_sedimentary_s1713_q100.fbx (926876 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "wrote MESH_Geology_boulder_sedimentary_s1713_q100.fbx (927948 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
    "COL_Geology_boulder_sedimentary_s1713_q100: no material slot. 3dmodel.md section 6 declares slot 0 as the primary structural/tissue material; Unity will assign its default material to submesh 0.",
    "objects round-tripped: ['COL_Geology_boulder_sedimentary_s1713_q100', 'MESH_Geology_boulder_sedimentary_s1713_q100_LOD0', 'MESH_Geology_boulder_sedimentary_s1713_q100_LOD1', 'MESH_Geology_boulder_sedimentary_s1713_q100_LOD2']",
    "COL_Geology_boulder_sedimentary_s1713_q100: verts 94->94 loops 552->552 tris 184->184",
@@ -583,7 +583,7 @@
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1: world corner-normal max delta 0.0004058 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1: landmark (0.47486, -0.31162, 0.19269) -> (0.47486, -0.31162, 0.19269), delta 0.0000000 m, margin 0.00264 m",
-   "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1: signed volume +0.1958768 -> +0.1958768 (ratio +1.000000)",
+   "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1: signed volume +0.1958722 -> +0.1958722 (ratio +1.000000)",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD2: verts 120->120 loops 708->708 tris 236->236",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
@@ -597,8 +597,8 @@
    "COL_Geology_boulder_sedimentary_s1713_q100 [fbx-space]: landmark direction expected (0.75293, -0.23961, 0.61293) measured (0.75293, -0.23961, 0.61293) delta 0.000000",
    "COL_Geology_boulder_sedimentary_s1713_q100 [fbx-space]: Unity-space landmark offset will be (0.42999, -0.13684, -0.35004) (Blender (0.42999, -0.35004, -0.13684)); handedness flip is Unity's, winding is flipped to match",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD0 [fbx-space]: skipped: near-symmetric extreme vertex",
-   "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1 [fbx-space]: landmark direction expected (0.76171, -0.28268, 0.583) measured (0.76171, -0.28268, 0.583) delta 0.000000",
-   "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1 [fbx-space]: Unity-space landmark offset will be (0.43029, -0.15969, -0.32933) (Blender (0.43029, -0.32933, -0.15969)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1 [fbx-space]: landmark direction expected (0.7617, -0.28269, 0.583) measured (0.7617, -0.28269, 0.583) delta 0.000000",
+   "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1 [fbx-space]: Unity-space landmark offset will be (0.43029, -0.15969, -0.32934) (Blender (0.43029, -0.32934, -0.15969)); handedness flip is Unity's, winding is flipped to match",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD2 [fbx-space]: landmark direction expected (0.72656, -0.32077, 0.60763) measured (0.72656, -0.32077, 0.60763) delta 0.000000",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD2 [fbx-space]: Unity-space landmark offset will be (0.42192, -0.18627, -0.35285) (Blender (0.42192, -0.35285, -0.18627)); handedness flip is Unity's, winding is flipped to match",
    "roundtrip VERIFIED: axis map confirmed=True, chirality preserved=True",

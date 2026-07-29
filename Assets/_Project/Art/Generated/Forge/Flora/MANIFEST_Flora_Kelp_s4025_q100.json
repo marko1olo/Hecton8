@@ -3,10 +3,10 @@
   "generator": "kelp.py",
   "generatorVersion": "1.0.0",
   "forgeVersion": "1.0.0",
-  "seed": 4021,
+  "seed": 4025,
   "qualityWeight": 1.0,
   "family": "Flora",
-  "scaleMeters": 8.53819,
+  "scaleMeters": 7.42435,
   "cameraDistanceClass": "near_interactive",
   "platformLane": "compact_to_ultra_continuous",
   "sourceReferences": [
@@ -15,7 +15,7 @@
    "PROCEDURAL_ASSET_PIPELINE.md#generation-order"
   ]
  },
- "assetName": "Kelp_s4021_q100",
+ "assetName": "Kelp_s4025_q100",
  "family": "Flora",
  "surfaceClass": "Organic",
  "biomeDepthRoute": "photic shallows / kelp bed, seafloor-anchored",
@@ -23,20 +23,20 @@
  "materialFamily": "kelp",
  "structures": {
   "holdfastFingers": 7,
-  "holdfastBossHeightM": 0.1572,
+  "holdfastBossHeightM": 0.1974,
   "stipeRings": 20,
   "stipeRadialSegments": 10,
-  "stipeRadiusBaseM": 0.03552,
-  "stipeRadiusTopM": 0.01419,
-  "stipeRibCount": 6,
+  "stipeRadiusBaseM": 0.03694,
+  "stipeRadiusTopM": 0.01443,
+  "stipeRibCount": 7,
   "stipeTaperOnly": true,
-  "bladderLengthM": 0.0584,
+  "bladderLengthM": 0.0508,
   "bladeCount": 23,
   "bladeCanopy": 3,
-  "bladeLengthNominalM": 2.7964,
-  "bladeHalfWidthNominalM": 0.11096,
-  "bladeHalfThicknessNominalM": 0.000742,
-  "bladeSheetAspectNominal": 149.5,
+  "bladeLengthNominalM": 2.5718,
+  "bladeHalfWidthNominalM": 0.11208,
+  "bladeHalfThicknessNominalM": 0.000949,
+  "bladeSheetAspectNominal": 118.1,
   "pneumatocystsPerPlant": 23,
   "bladeShell": "closed thin shell, edge rim is the narrow end of the lens cross-section (no zero-thickness sheet)",
   "bladeDetail": {
@@ -52,288 +52,288 @@
   "blades": [
    {
     "index": 0,
-    "heightT": 0.08736,
+    "heightT": 0.07098,
     "canopy": false,
-    "lengthM": 4.13903,
-    "widthM": 0.28089,
-    "thicknessM": 0.001476,
-    "sheetAspect": 190.2,
-    "tipDropFractionOfLength": 0.7371,
-    "radialReachFractionOfLength": 0.1952,
-    "rollRad": 0.046
+    "lengthM": 2.71784,
+    "widthM": 0.23301,
+    "thicknessM": 0.002048,
+    "sheetAspect": 113.8,
+    "tipDropFractionOfLength": 0.8442,
+    "radialReachFractionOfLength": 0.1741,
+    "rollRad": 0.2441
    },
    {
     "index": 1,
-    "heightT": 0.13516,
+    "heightT": 0.12431,
     "canopy": false,
-    "lengthM": 2.75637,
-    "widthM": 0.21427,
-    "thicknessM": 0.001553,
-    "sheetAspect": 138.0,
-    "tipDropFractionOfLength": 0.9359,
-    "radialReachFractionOfLength": 0.1944,
-    "rollRad": 0.0164
+    "lengthM": 2.69898,
+    "widthM": 0.26067,
+    "thicknessM": 0.002065,
+    "sheetAspect": 126.2,
+    "tipDropFractionOfLength": 0.7952,
+    "radialReachFractionOfLength": 0.1843,
+    "rollRad": 0.2992
    },
    {
     "index": 2,
-    "heightT": 0.1694,
+    "heightT": 0.15494,
     "canopy": false,
-    "lengthM": 2.61709,
-    "widthM": 0.25024,
-    "thicknessM": 0.001517,
-    "sheetAspect": 165.0,
-    "tipDropFractionOfLength": 0.8851,
-    "radialReachFractionOfLength": 0.1637,
-    "rollRad": 0.0849
+    "lengthM": 2.13629,
+    "widthM": 0.19648,
+    "thicknessM": 0.001695,
+    "sheetAspect": 115.9,
+    "tipDropFractionOfLength": 0.8336,
+    "radialReachFractionOfLength": 0.2168,
+    "rollRad": -0.002
    },
    {
     "index": 3,
-    "heightT": 0.22915,
+    "heightT": 0.20116,
     "canopy": false,
-    "lengthM": 3.04117,
-    "widthM": 0.22211,
-    "thicknessM": 0.001672,
-    "sheetAspect": 132.8,
-    "tipDropFractionOfLength": 0.8199,
-    "radialReachFractionOfLength": 0.1598,
-    "rollRad": 0.1419
+    "lengthM": 3.25036,
+    "widthM": 0.25419,
+    "thicknessM": 0.001824,
+    "sheetAspect": 139.4,
+    "tipDropFractionOfLength": 0.7482,
+    "radialReachFractionOfLength": 0.2246,
+    "rollRad": -0.2711
    },
    {
     "index": 4,
-    "heightT": 0.26356,
+    "heightT": 0.26358,
     "canopy": false,
-    "lengthM": 2.38687,
-    "widthM": 0.19836,
-    "thicknessM": 0.00153,
-    "sheetAspect": 129.6,
-    "tipDropFractionOfLength": 0.7976,
-    "radialReachFractionOfLength": 0.1345,
-    "rollRad": 0.2414
+    "lengthM": 2.72513,
+    "widthM": 0.22,
+    "thicknessM": 0.002162,
+    "sheetAspect": 101.8,
+    "tipDropFractionOfLength": 0.7593,
+    "radialReachFractionOfLength": 0.1575,
+    "rollRad": -0.1375
    },
    {
     "index": 5,
-    "heightT": 0.31993,
+    "heightT": 0.31985,
     "canopy": false,
-    "lengthM": 3.61914,
-    "widthM": 0.22405,
-    "thicknessM": 0.001472,
-    "sheetAspect": 152.2,
-    "tipDropFractionOfLength": 0.8307,
-    "radialReachFractionOfLength": 0.1245,
-    "rollRad": -0.1918
+    "lengthM": 2.47746,
+    "widthM": 0.23212,
+    "thicknessM": 0.001713,
+    "sheetAspect": 135.5,
+    "tipDropFractionOfLength": 0.8365,
+    "radialReachFractionOfLength": 0.1741,
+    "rollRad": -0.1437
    },
    {
     "index": 6,
-    "heightT": 0.35028,
+    "heightT": 0.33823,
     "canopy": false,
-    "lengthM": 2.50695,
-    "widthM": 0.18886,
-    "thicknessM": 0.00144,
-    "sheetAspect": 131.1,
-    "tipDropFractionOfLength": 0.9345,
-    "radialReachFractionOfLength": 0.1455,
-    "rollRad": 0.0418
+    "lengthM": 3.02636,
+    "widthM": 0.25243,
+    "thicknessM": 0.00167,
+    "sheetAspect": 151.1,
+    "tipDropFractionOfLength": 0.7208,
+    "radialReachFractionOfLength": 0.2103,
+    "rollRad": -0.2518
    },
    {
     "index": 7,
-    "heightT": 0.40447,
+    "heightT": 0.39757,
     "canopy": false,
-    "lengthM": 3.31673,
-    "widthM": 0.24773,
-    "thicknessM": 0.001669,
-    "sheetAspect": 148.5,
-    "tipDropFractionOfLength": 0.8241,
-    "radialReachFractionOfLength": 0.1538,
-    "rollRad": 0.2273
+    "lengthM": 2.09174,
+    "widthM": 0.19816,
+    "thicknessM": 0.002147,
+    "sheetAspect": 92.3,
+    "tipDropFractionOfLength": 0.7541,
+    "radialReachFractionOfLength": 0.2044,
+    "rollRad": 0.1112
    },
    {
     "index": 8,
-    "heightT": 0.46247,
+    "heightT": 0.43869,
     "canopy": false,
-    "lengthM": 2.7297,
-    "widthM": 0.22279,
-    "thicknessM": 0.001422,
-    "sheetAspect": 156.7,
-    "tipDropFractionOfLength": 0.8975,
-    "radialReachFractionOfLength": 0.1263,
-    "rollRad": -0.1829
+    "lengthM": 2.02099,
+    "widthM": 0.19696,
+    "thicknessM": 0.00185,
+    "sheetAspect": 106.5,
+    "tipDropFractionOfLength": 0.7427,
+    "radialReachFractionOfLength": 0.1383,
+    "rollRad": 0.2769
    },
    {
     "index": 9,
-    "heightT": 0.48026,
+    "heightT": 0.49023,
     "canopy": false,
-    "lengthM": 2.47676,
-    "widthM": 0.18699,
-    "thicknessM": 0.001312,
-    "sheetAspect": 142.5,
-    "tipDropFractionOfLength": 0.7398,
-    "radialReachFractionOfLength": 0.2103,
-    "rollRad": 0.0582
+    "lengthM": 2.89511,
+    "widthM": 0.20511,
+    "thicknessM": 0.002093,
+    "sheetAspect": 98.0,
+    "tipDropFractionOfLength": 0.911,
+    "radialReachFractionOfLength": 0.1431,
+    "rollRad": -0.2133
    },
    {
     "index": 10,
-    "heightT": 0.55264,
+    "heightT": 0.55389,
     "canopy": false,
-    "lengthM": 3.1538,
-    "widthM": 0.20506,
-    "thicknessM": 0.001564,
-    "sheetAspect": 131.1,
-    "tipDropFractionOfLength": 0.8561,
-    "radialReachFractionOfLength": 0.1822,
-    "rollRad": -0.13
+    "lengthM": 1.65091,
+    "widthM": 0.17222,
+    "thicknessM": 0.002096,
+    "sheetAspect": 82.2,
+    "tipDropFractionOfLength": 0.8076,
+    "radialReachFractionOfLength": 0.1257,
+    "rollRad": -0.1078
    },
    {
     "index": 11,
-    "heightT": 0.56942,
+    "heightT": 0.59086,
     "canopy": false,
-    "lengthM": 2.5234,
-    "widthM": 0.18308,
-    "thicknessM": 0.001487,
-    "sheetAspect": 123.1,
-    "tipDropFractionOfLength": 0.887,
-    "radialReachFractionOfLength": 0.1837,
-    "rollRad": -0.132
+    "lengthM": 2.73318,
+    "widthM": 0.21599,
+    "thicknessM": 0.001895,
+    "sheetAspect": 114.0,
+    "tipDropFractionOfLength": 0.7638,
+    "radialReachFractionOfLength": 0.1474,
+    "rollRad": 0.2401
    },
    {
     "index": 12,
-    "heightT": 0.62168,
+    "heightT": 0.63508,
     "canopy": false,
-    "lengthM": 2.42134,
-    "widthM": 0.19392,
-    "thicknessM": 0.001618,
-    "sheetAspect": 119.8,
-    "tipDropFractionOfLength": 0.904,
-    "radialReachFractionOfLength": 0.2188,
-    "rollRad": -0.1278
+    "lengthM": 2.41827,
+    "widthM": 0.21355,
+    "thicknessM": 0.001768,
+    "sheetAspect": 120.8,
+    "tipDropFractionOfLength": 0.8343,
+    "radialReachFractionOfLength": 0.1746,
+    "rollRad": 0.1384
    },
    {
     "index": 13,
-    "heightT": 0.68461,
+    "heightT": 0.65995,
     "canopy": false,
-    "lengthM": 2.75252,
-    "widthM": 0.19671,
-    "thicknessM": 0.001413,
-    "sheetAspect": 139.3,
-    "tipDropFractionOfLength": 0.9265,
-    "radialReachFractionOfLength": 0.1964,
-    "rollRad": -0.1757
+    "lengthM": 2.01169,
+    "widthM": 0.18065,
+    "thicknessM": 0.001791,
+    "sheetAspect": 100.9,
+    "tipDropFractionOfLength": 0.735,
+    "radialReachFractionOfLength": 0.1524,
+    "rollRad": -0.2874
    },
    {
     "index": 14,
-    "heightT": 0.70907,
+    "heightT": 0.73405,
     "canopy": false,
-    "lengthM": 1.75979,
-    "widthM": 0.18275,
-    "thicknessM": 0.001572,
-    "sheetAspect": 116.2,
-    "tipDropFractionOfLength": 0.7847,
-    "radialReachFractionOfLength": 0.2175,
-    "rollRad": 0.195
+    "lengthM": 2.8832,
+    "widthM": 0.19894,
+    "thicknessM": 0.001904,
+    "sheetAspect": 104.5,
+    "tipDropFractionOfLength": 0.9387,
+    "radialReachFractionOfLength": 0.2145,
+    "rollRad": 0.0191
    },
    {
     "index": 15,
-    "heightT": 0.75829,
+    "heightT": 0.76281,
     "canopy": false,
-    "lengthM": 2.73714,
-    "widthM": 0.18871,
-    "thicknessM": 0.001482,
-    "sheetAspect": 127.3,
-    "tipDropFractionOfLength": 0.7738,
-    "radialReachFractionOfLength": 0.2168,
-    "rollRad": -0.0034
+    "lengthM": 1.77398,
+    "widthM": 0.17836,
+    "thicknessM": 0.002154,
+    "sheetAspect": 82.8,
+    "tipDropFractionOfLength": 0.7886,
+    "radialReachFractionOfLength": 0.1846,
+    "rollRad": -0.015
    },
    {
     "index": 16,
-    "heightT": 0.83122,
+    "heightT": 0.81657,
     "canopy": false,
-    "lengthM": 2.12305,
-    "widthM": 0.20912,
-    "thicknessM": 0.001612,
-    "sheetAspect": 129.7,
-    "tipDropFractionOfLength": 0.9063,
-    "radialReachFractionOfLength": 0.1735,
-    "rollRad": -0.2592
+    "lengthM": 2.17901,
+    "widthM": 0.20361,
+    "thicknessM": 0.002097,
+    "sheetAspect": 97.1,
+    "tipDropFractionOfLength": 0.7456,
+    "radialReachFractionOfLength": 0.2152,
+    "rollRad": 0.208
    },
    {
     "index": 17,
-    "heightT": 0.85566,
+    "heightT": 0.84563,
     "canopy": false,
-    "lengthM": 2.07845,
-    "widthM": 0.15978,
-    "thicknessM": 0.001569,
-    "sheetAspect": 101.9,
-    "tipDropFractionOfLength": 0.8996,
-    "radialReachFractionOfLength": 0.1365,
-    "rollRad": 0.051
+    "lengthM": 1.89074,
+    "widthM": 0.20248,
+    "thicknessM": 0.002044,
+    "sheetAspect": 99.1,
+    "tipDropFractionOfLength": 0.9285,
+    "radialReachFractionOfLength": 0.1764,
+    "rollRad": -0.24
    },
    {
     "index": 18,
-    "heightT": 0.89405,
+    "heightT": 0.92001,
     "canopy": false,
-    "lengthM": 2.69777,
-    "widthM": 0.19149,
-    "thicknessM": 0.001601,
-    "sheetAspect": 119.6,
-    "tipDropFractionOfLength": 0.9308,
-    "radialReachFractionOfLength": 0.1996,
-    "rollRad": -0.0862
+    "lengthM": 1.47366,
+    "widthM": 0.14657,
+    "thicknessM": 0.001702,
+    "sheetAspect": 86.1,
+    "tipDropFractionOfLength": 0.9028,
+    "radialReachFractionOfLength": 0.1646,
+    "rollRad": 0.0554
    },
    {
     "index": 19,
-    "heightT": 0.94387,
+    "heightT": 0.96284,
     "canopy": false,
-    "lengthM": 1.71483,
-    "widthM": 0.1469,
-    "thicknessM": 0.001439,
-    "sheetAspect": 102.1,
-    "tipDropFractionOfLength": 0.8176,
-    "radialReachFractionOfLength": 0.1442,
-    "rollRad": 0.1927
+    "lengthM": 1.96122,
+    "widthM": 0.18877,
+    "thicknessM": 0.001763,
+    "sheetAspect": 107.1,
+    "tipDropFractionOfLength": 0.8856,
+    "radialReachFractionOfLength": 0.1865,
+    "rollRad": -0.0222
    },
    {
     "index": 20,
-    "heightT": 0.90474,
+    "heightT": 0.89777,
     "canopy": true,
-    "lengthM": 1.95141,
-    "widthM": 0.17963,
-    "thicknessM": 0.001584,
-    "sheetAspect": 113.4,
-    "tipDropFractionOfLength": 0.1926,
-    "radialReachFractionOfLength": 0.6542,
-    "rollRad": -0.1926
+    "lengthM": 1.89537,
+    "widthM": 0.178,
+    "thicknessM": 0.001914,
+    "sheetAspect": 93.0,
+    "tipDropFractionOfLength": 0.1669,
+    "radialReachFractionOfLength": 0.6285,
+    "rollRad": -0.2709
    },
    {
     "index": 21,
-    "heightT": 0.94032,
+    "heightT": 0.92711,
     "canopy": true,
-    "lengthM": 1.87568,
-    "widthM": 0.20905,
-    "thicknessM": 0.001314,
-    "sheetAspect": 159.0,
-    "tipDropFractionOfLength": 0.2162,
-    "radialReachFractionOfLength": 0.6739,
-    "rollRad": 0.1203
+    "lengthM": 1.52703,
+    "widthM": 0.19596,
+    "thicknessM": 0.002038,
+    "sheetAspect": 96.2,
+    "tipDropFractionOfLength": 0.1154,
+    "radialReachFractionOfLength": 0.523,
+    "rollRad": 0.1994
    },
    {
     "index": 22,
-    "heightT": 0.97337,
+    "heightT": 0.95847,
     "canopy": true,
-    "lengthM": 1.45231,
-    "widthM": 0.14481,
-    "thicknessM": 0.001674,
-    "sheetAspect": 86.5,
-    "tipDropFractionOfLength": 0.1982,
-    "radialReachFractionOfLength": 0.465,
-    "rollRad": 0.0947
+    "lengthM": 2.15198,
+    "widthM": 0.21328,
+    "thicknessM": 0.002159,
+    "sheetAspect": 98.8,
+    "tipDropFractionOfLength": 0.1948,
+    "radialReachFractionOfLength": 0.6728,
+    "rollRad": 0.0628
    }
   ],
   "anchorSocket": "object origin at holdfast base (0,0,0); sway measured from it",
   "flowFacingAsymmetry": {
    "currentDirXY": [
-    0.8324,
-    -0.5541
+    -0.2872,
+    0.9579
    ],
-   "currentStrength": 0.5606,
+   "currentStrength": 0.7056,
    "effects": "stipe bend, per-blade downstream sweep, lee-side blades longer/wider, holdfast splayed wider upstream"
   }
  },
@@ -341,7 +341,7 @@
   "rawFacesBeforeWeld": 2766,
   "rawVertsBeforeWeld": 2890,
   "weld": {
-   "verts_removed": 1,
+   "verts_removed": 2,
    "faces_removed": 0,
    "degenerate_faces_deleted": 0,
    "loose_verts_deleted": 0,
@@ -353,7 +353,7 @@
   },
   "uvSeamEdgesMarked": 728,
   "stipeSeam": {
-   "seamColumn": 9,
+   "seamColumn": 3,
    "seamEdges": 39,
    "rings": 20,
    "segments": 10
@@ -362,9 +362,9 @@
   "trianglesAfterBudgetReduce": 5376,
   "postDecimationClean": {
    "facesBefore": 2766,
-   "faces": 5259,
-   "sliverEdgesCollapsed": 70,
-   "collapsesSkippedIllegal": 12,
+   "faces": 5283,
+   "sliverEdgesCollapsed": 51,
+   "collapsesSkippedIllegal": 6,
    "zeroAreaDeleted": 0,
    "looseDeleted": 0
   },
@@ -381,18 +381,18 @@
   "atlasFamily": "kelp",
   "paddingPx": 24,
   "islands": 73,
-  "texelDensityPxPerMetreMin": 480.55,
-  "texelDensityPxPerMetreMax": 480.55,
-  "texelDensityPxPerMetreMean": 480.55,
-  "texelDensityMismatchFraction": 1e-05,
+  "texelDensityPxPerMetreMin": 548.16,
+  "texelDensityPxPerMetreMax": 548.17,
+  "texelDensityPxPerMetreMean": 548.16,
+  "texelDensityMismatchFraction": 2e-05,
   "texelDensityMismatchLimit": 0.2,
-  "aspectDistortionMax": 1.26356,
-  "aspectDistortionP50": 0.00421,
-  "aspectDistortionP95": 0.10458,
-  "aspectDistortionP99": 0.22115,
-  "trianglesOverHeroLimit": 131,
-  "trianglesOverDistantLimit": 48,
-  "trianglesMeasured": 5259,
+  "aspectDistortionMax": 1.15122,
+  "aspectDistortionP50": 0.00501,
+  "aspectDistortionP95": 0.09036,
+  "aspectDistortionP99": 0.21061,
+  "trianglesOverHeroLimit": 86,
+  "trianglesOverDistantLimit": 38,
+  "trianglesMeasured": 5283,
   "zeroAreaUvTriangles": 0,
   "zeroAreaUvBelowEpsilon": 0,
   "degenerate3dTriangles": 0,
@@ -400,73 +400,73 @@
   "areaOverLimitBySlot": {
    "0": {
     "role": "tissue",
-    "areaShareOfMesh": 0.948,
-    "overLimitFractionOfOwnArea": 0.0005,
-    "overLimitShareOfMesh": 0.0005,
-    "worst": 1.264
+    "areaShareOfMesh": 0.9426,
+    "overLimitFractionOfOwnArea": 0.0003,
+    "overLimitShareOfMesh": 0.0003,
+    "worst": 1.151
    },
    "1": {
     "role": "basal_collar_scar",
-    "areaShareOfMesh": 0.0191,
+    "areaShareOfMesh": 0.0194,
     "overLimitFractionOfOwnArea": 0.0,
     "overLimitShareOfMesh": 0.0,
-    "worst": 0.023
+    "worst": 0.028
    },
    "2": {
     "role": "holdfast",
-    "areaShareOfMesh": 0.0329,
-    "overLimitFractionOfOwnArea": 0.0055,
-    "overLimitShareOfMesh": 0.0002,
-    "worst": 0.63
+    "areaShareOfMesh": 0.0379,
+    "overLimitFractionOfOwnArea": 0.0,
+    "overLimitShareOfMesh": 0.0,
+    "worst": 0.523
    }
   },
   "worstTriangle": {
-   "tri": 3969,
+   "tri": 1437,
    "slot": 0,
-   "worldArea2": "4.861e-04",
-   "uvArea2": "8.778e-06",
+   "worldArea2": "7.701e-04",
+   "uvArea2": "2.080e-05",
    "worldEdges": [
-    0.013082,
-    0.043978,
-    0.052162
+    0.056683,
+    0.057999,
+    0.013589
    ],
    "uvEdges": [
-    0.002637,
-    0.005382,
-    0.007631
+    0.008401,
+    0.010348,
+    0.002974
    ],
    "z": [
-    4.0248,
-    4.0129,
-    3.9763
+    3.4178,
+    3.3712,
+    3.4102
    ]
   },
   "gateIslands": 73,
   "gateIslandsBelowMinPixels": 0,
   "smallestGateIslandsPx": [
    [
-    12.17,
-    8.824
+    13.06,
+    10.074
    ],
    [
-    12.219,
-    9.423
+    16.913,
+    13.047
    ],
    [
-    12.472,
-    9.618
+    13.192,
+    17.101
    ],
    [
-    14.405,
-    11.109
+    14.301,
+    13.213
    ],
    [
-    14.872,
-    11.468
+    13.871,
+    17.982
    ],
    [
-    16.034,
-    12.365
+    13.948,
+    18.082
    ]
   ],
   "heroLimit": 0.15,
@@ -479,15 +479,15 @@
   },
   "solver": "ANGLE_BASED",
   "islandsOriented": 55,
-  "seamEdges": 723,
+  "seamEdges": 724,
   "islandsExpected": 73
  },
  "texelDensityTargets": {
   "heroHarvestable": 512,
   "commonInstanced": 256,
-  "achievedMean": 480.55,
-  "achievedMin": 480.55,
-  "meetsHero": false,
+  "achievedMean": 548.16,
+  "achievedMin": 548.16,
+  "meetsHero": true,
   "meetsCommon": true
  },
  "uvRoutes": {
@@ -551,46 +551,46 @@
    "sway_amplitude": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.38266,
-    "elements": 15777,
+    "mean": 0.38873,
+    "elements": 15849,
     "domain": "CORNER"
    },
    "biolum_phase": {
     "min": 0.0,
     "max": 0.0,
     "mean": 0.0,
-    "elements": 15777,
+    "elements": 15849,
     "domain": "CORNER"
    },
    "baked_ao": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.69431,
-    "elements": 15777,
+    "mean": 0.6852,
+    "elements": 15849,
     "domain": "CORNER"
    },
    "family_specific": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.81438,
-    "elements": 15777,
+    "mean": 0.81524,
+    "elements": 15849,
     "domain": "CORNER"
    }
   },
   "geodesicAttributeSurvived": true,
   "classAttributeSurvived": true,
-  "maxFlexibleLengthM": 10.73836,
+  "maxFlexibleLengthM": 9.3435,
   "swayRelativeSpread": 1.0,
   "swayTipMax255": 255,
-  "swayRootMax255": 5,
+  "swayRootMax255": 6,
   "swayAnchorMin255": 0,
   "aoBaked": true,
   "aoHasContrast": true,
   "aoMin": 0.0,
   "aoMax": 1.0,
-  "aoMean": 0.68054,
+  "aoMean": 0.67187,
   "aoSamples": 64,
-  "aoDistanceM": 0.5532080906331778,
+  "aoDistanceM": 0.5082674937643998,
   "aoReason": "",
   "biolumPolicy": "authored 0 everywhere; photic-zone kelp has no emissive organ (3DMODEL_FLORA_CORAL.md section 2)"
  },
@@ -603,29 +603,29 @@
  "lods": [
   {
    "lod": 0,
-   "mesh": "MESH_Flora_Kelp_s4021_q100_LOD0",
-   "triangles": 5259,
+   "mesh": "MESH_Flora_Kelp_s4025_q100_LOD0",
+   "triangles": 5283,
    "budget": 6500,
    "withinBudget": true,
-   "vertices": 2819,
+   "vertices": 2837,
    "simplification": "authored analytic surface"
   },
   {
    "lod": 1,
-   "mesh": "MESH_Flora_Kelp_s4021_q100_LOD1",
-   "triangles": 1607,
+   "mesh": "MESH_Flora_Kelp_s4025_q100_LOD1",
+   "triangles": 1647,
    "budget": 1800,
    "withinBudget": true,
-   "vertices": 1393,
+   "vertices": 1412,
    "simplification": "quadric edge collapse with seam/material border preservation"
   },
   {
    "lod": 2,
-   "mesh": "MESH_Flora_Kelp_s4021_q100_LOD2",
-   "triangles": 283,
+   "mesh": "MESH_Flora_Kelp_s4025_q100_LOD2",
+   "triangles": 277,
    "budget": 300,
    "withinBudget": true,
-   "vertices": 388,
+   "vertices": 384,
    "simplification": "quadric edge collapse with seam/material border preservation"
   }
  ],
@@ -635,18 +635,18 @@
    "atlasFamily": "kelp",
    "paddingPx": 24,
    "islands": 73,
-   "texelDensityPxPerMetreMin": 480.55,
-   "texelDensityPxPerMetreMax": 480.55,
-   "texelDensityPxPerMetreMean": 480.55,
-   "texelDensityMismatchFraction": 1e-05,
+   "texelDensityPxPerMetreMin": 548.16,
+   "texelDensityPxPerMetreMax": 548.17,
+   "texelDensityPxPerMetreMean": 548.16,
+   "texelDensityMismatchFraction": 2e-05,
    "texelDensityMismatchLimit": 0.2,
-   "aspectDistortionMax": 1.26356,
-   "aspectDistortionP50": 0.00421,
-   "aspectDistortionP95": 0.10458,
-   "aspectDistortionP99": 0.22115,
-   "trianglesOverHeroLimit": 131,
-   "trianglesOverDistantLimit": 48,
-   "trianglesMeasured": 5259,
+   "aspectDistortionMax": 1.15122,
+   "aspectDistortionP50": 0.00501,
+   "aspectDistortionP95": 0.09036,
+   "aspectDistortionP99": 0.21061,
+   "trianglesOverHeroLimit": 86,
+   "trianglesOverDistantLimit": 38,
+   "trianglesMeasured": 5283,
    "zeroAreaUvTriangles": 0,
    "zeroAreaUvBelowEpsilon": 0,
    "degenerate3dTriangles": 0,
@@ -654,73 +654,73 @@
    "areaOverLimitBySlot": {
     "0": {
      "role": "tissue",
-     "areaShareOfMesh": 0.948,
-     "overLimitFractionOfOwnArea": 0.0005,
-     "overLimitShareOfMesh": 0.0005,
-     "worst": 1.264
+     "areaShareOfMesh": 0.9426,
+     "overLimitFractionOfOwnArea": 0.0003,
+     "overLimitShareOfMesh": 0.0003,
+     "worst": 1.151
     },
     "1": {
      "role": "basal_collar_scar",
-     "areaShareOfMesh": 0.0191,
+     "areaShareOfMesh": 0.0194,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
-     "worst": 0.023
+     "worst": 0.028
     },
     "2": {
      "role": "holdfast",
-     "areaShareOfMesh": 0.0329,
-     "overLimitFractionOfOwnArea": 0.0055,
-     "overLimitShareOfMesh": 0.0002,
-     "worst": 0.63
+     "areaShareOfMesh": 0.0379,
+     "overLimitFractionOfOwnArea": 0.0,
+     "overLimitShareOfMesh": 0.0,
+     "worst": 0.523
     }
    },
    "worstTriangle": {
-    "tri": 3969,
+    "tri": 1437,
     "slot": 0,
-    "worldArea2": "4.861e-04",
-    "uvArea2": "8.778e-06",
+    "worldArea2": "7.701e-04",
+    "uvArea2": "2.080e-05",
     "worldEdges": [
-     0.013082,
-     0.043978,
-     0.052162
+     0.056683,
+     0.057999,
+     0.013589
     ],
     "uvEdges": [
-     0.002637,
-     0.005382,
-     0.007631
+     0.008401,
+     0.010348,
+     0.002974
     ],
     "z": [
-     4.0248,
-     4.0129,
-     3.9763
+     3.4178,
+     3.3712,
+     3.4102
     ]
    },
    "gateIslands": 73,
    "gateIslandsBelowMinPixels": 0,
    "smallestGateIslandsPx": [
     [
-     12.17,
-     8.824
+     13.06,
+     10.074
     ],
     [
-     12.219,
-     9.423
+     16.913,
+     13.047
     ],
     [
-     12.472,
-     9.618
+     13.192,
+     17.101
     ],
     [
-     14.405,
-     11.109
+     14.301,
+     13.213
     ],
     [
-     14.872,
-     11.468
+     13.871,
+     17.982
     ],
     [
-     16.034,
-     12.365
+     13.948,
+     18.082
     ]
    ],
    "heroLimit": 0.15,
@@ -733,153 +733,33 @@
    },
    "solver": "ANGLE_BASED",
    "islandsOriented": 55,
-   "seamEdges": 723,
+   "seamEdges": 724,
    "islandsExpected": 73,
    "slotsRepaired": {},
    "stretchStats": {
-    "worst": 0.37917586127397995,
-    "p95": 0.015445200182369945,
-    "mean": 0.003420571478432152,
-    "triangles": 5259
+    "worst": 0.47650000634024536,
+    "p95": 0.010249526908514994,
+    "mean": 0.0026011022586231716,
+    "triangles": 5283
    }
   },
   "1": {
    "atlasSize": 4096,
    "atlasFamily": "kelp",
    "paddingPx": 24,
-   "islands": 88,
-   "texelDensityPxPerMetreMin": 567.55,
-   "texelDensityPxPerMetreMax": 617.96,
-   "texelDensityPxPerMetreMean": 568.13,
-   "texelDensityMismatchFraction": 0.08157,
-   "texelDensityMismatchLimit": 0.2,
-   "aspectDistortionMax": 2.75197,
-   "aspectDistortionP50": 0.00154,
-   "aspectDistortionP95": 0.11636,
-   "aspectDistortionP99": 0.35623,
-   "trianglesOverHeroLimit": 54,
-   "trianglesOverDistantLimit": 31,
-   "trianglesMeasured": 1607,
-   "zeroAreaUvTriangles": 0,
-   "zeroAreaUvBelowEpsilon": 0,
-   "degenerate3dTriangles": 0,
-   "smallestOffenders": [],
-   "areaOverLimitBySlot": {
-    "0": {
-     "role": "tissue",
-     "areaShareOfMesh": 0.9491,
-     "overLimitFractionOfOwnArea": 0.005,
-     "overLimitShareOfMesh": 0.0048,
-     "worst": 2.752
-    },
-    "1": {
-     "role": "basal_collar_scar",
-     "areaShareOfMesh": 0.0173,
-     "overLimitFractionOfOwnArea": 0.0,
-     "overLimitShareOfMesh": 0.0,
-     "worst": 0.333
-    },
-    "2": {
-     "role": "holdfast",
-     "areaShareOfMesh": 0.0336,
-     "overLimitFractionOfOwnArea": 0.0058,
-     "overLimitShareOfMesh": 0.0002,
-     "worst": 0.576
-    }
-   },
-   "worstTriangle": {
-    "tri": 996,
-    "slot": 0,
-    "worldArea2": "2.791e-03",
-    "uvArea2": "4.261e-05",
-    "worldEdges": [
-     0.972945,
-     0.2893,
-     0.683665
-    ],
-    "uvEdges": [
-     0.106899,
-     0.032283,
-     0.074619
-    ],
-    "z": [
-     5.5868,
-     6.535,
-     6.2536
-    ]
-   },
-   "gateIslands": 88,
-   "gateIslandsBelowMinPixels": 0,
-   "smallestGateIslandsPx": [
-    [
-     25.747,
-     4.08
-    ],
-    [
-     15.404,
-     6.016
-    ],
-    [
-     14.373,
-     10.422
-    ],
-    [
-     14.668,
-     10.71
-    ],
-    [
-     14.972,
-     10.932
-    ],
-    [
-     29.06,
-     12.973
-    ]
-   ],
-   "heroLimit": 0.15,
-   "distantLimit": 0.25,
-   "uvOutliersCollapsed": 0,
-   "islandGrowth": {
-    "islandsGrown": 1,
-    "maxScale": 1.1855,
-    "floorPx": 4
-   },
-   "solver": "ANGLE_BASED",
-   "islandsOriented": 70,
-   "seamEdges": 1140,
-   "healed": {
-    "facesBefore": 1727,
-    "faces": 1607,
-    "sliverEdgesCollapsed": 78,
-    "collapsesSkippedIllegal": 77,
-    "zeroAreaDeleted": 0,
-    "looseDeleted": 8
-   },
-   "slotsRepaired": {},
-   "stretchStats": {
-    "worst": 0.19255627877930537,
-    "p95": 0.01601091131466581,
-    "mean": 0.0041475512426199165,
-    "triangles": 1607
-   }
-  },
-  "2": {
-   "atlasSize": 4096,
-   "atlasFamily": "kelp",
-   "paddingPx": 24,
-   "islands": 55,
-   "texelDensityPxPerMetreMin": 653.47,
-   "texelDensityPxPerMetreMax": 653.48,
-   "texelDensityPxPerMetreMean": 653.47,
+   "islands": 87,
+   "texelDensityPxPerMetreMin": 641.32,
+   "texelDensityPxPerMetreMax": 641.32,
+   "texelDensityPxPerMetreMean": 641.32,
    "texelDensityMismatchFraction": 1e-05,
    "texelDensityMismatchLimit": 0.2,
-   "aspectDistortionMax": 2e-05,
-   "aspectDistortionP50": 0.0,
-   "aspectDistortionP95": 1e-05,
-   "aspectDistortionP99": 1e-05,
-   "trianglesOverHeroLimit": 0,
-   "trianglesOverDistantLimit": 0,
-   "trianglesMeasured": 283,
+   "aspectDistortionMax": 1.93321,
+   "aspectDistortionP50": 0.00257,
+   "aspectDistortionP95": 0.12284,
+   "aspectDistortionP99": 0.29718,
+   "trianglesOverHeroLimit": 52,
+   "trianglesOverDistantLimit": 24,
+   "trianglesMeasured": 1647,
    "zeroAreaUvTriangles": 0,
    "zeroAreaUvBelowEpsilon": 0,
    "degenerate3dTriangles": 0,
@@ -887,73 +767,73 @@
    "areaOverLimitBySlot": {
     "0": {
      "role": "tissue",
-     "areaShareOfMesh": 0.9829,
-     "overLimitFractionOfOwnArea": 0.0,
-     "overLimitShareOfMesh": 0.0,
-     "worst": 0.0
+     "areaShareOfMesh": 0.9479,
+     "overLimitFractionOfOwnArea": 0.0045,
+     "overLimitShareOfMesh": 0.0042,
+     "worst": 1.933
     },
     "1": {
      "role": "basal_collar_scar",
-     "areaShareOfMesh": 0.0034,
+     "areaShareOfMesh": 0.0134,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
-     "worst": 0.0
+     "worst": 0.265
     },
     "2": {
      "role": "holdfast",
-     "areaShareOfMesh": 0.0137,
+     "areaShareOfMesh": 0.0387,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
-     "worst": 0.0
+     "worst": 0.533
     }
    },
    "worstTriangle": {
-    "tri": 109,
+    "tri": 237,
     "slot": 0,
-    "worldArea2": "3.980e-03",
-    "uvArea2": "1.013e-04",
+    "worldArea2": "3.326e-02",
+    "uvArea2": "7.254e-04",
     "worldEdges": [
-     0.131905,
-     0.122817,
-     0.032797
+     0.356718,
+     0.606503,
+     0.960548
     ],
     "uvEdges": [
-     0.021044,
-     0.019594,
-     0.005233
+     0.055683,
+     0.079159,
+     0.134396
     ],
     "z": [
-     7.2873,
-     7.2345,
-     7.3029
+     3.2649,
+     3.6188,
+     4.2218
     ]
    },
-   "gateIslands": 55,
+   "gateIslands": 87,
    "gateIslandsBelowMinPixels": 0,
    "smallestGateIslandsPx": [
     [
-     40.945,
-     48.953
+     11.762,
+     7.107
     ],
     [
-     47.527,
-     1153.998
+     11.555,
+     15.572
     ],
     [
-     56.825,
-     267.295
+     14.058,
+     14.479
     ],
     [
-     114.815,
-     130.715
+     15.264,
+     19.788
     ],
     [
-     311.662,
-     122.7
+     15.434,
+     20.008
     ],
     [
-     122.886,
-     639.296
+     15.458,
+     16.73
     ]
    ],
    "heroLimit": 0.15,
@@ -965,59 +845,174 @@
     "floorPx": 4
    },
    "solver": "ANGLE_BASED",
-   "islandsOriented": 53,
-   "seamEdges": 336,
+   "islandsOriented": 70,
+   "seamEdges": 1163,
    "healed": {
-    "facesBefore": 288,
-    "faces": 283,
-    "sliverEdgesCollapsed": 4,
-    "collapsesSkippedIllegal": 2,
+    "facesBefore": 1728,
+    "faces": 1647,
+    "sliverEdgesCollapsed": 50,
+    "collapsesSkippedIllegal": 37,
     "zeroAreaDeleted": 0,
-    "looseDeleted": 95
+    "looseDeleted": 5
    },
    "slotsRepaired": {},
    "stretchStats": {
-    "worst": 1.3242240629152136e-05,
-    "p95": 2.5382214188240937e-06,
-    "mean": 7.977462386552739e-07,
-    "triangles": 283
+    "worst": 0.2897795765396354,
+    "p95": 0.01640298362620829,
+    "mean": 0.004102444279733496,
+    "triangles": 1647
+   }
+  },
+  "2": {
+   "atlasSize": 4096,
+   "atlasFamily": "kelp",
+   "paddingPx": 24,
+   "islands": 55,
+   "texelDensityPxPerMetreMin": 703.37,
+   "texelDensityPxPerMetreMax": 703.38,
+   "texelDensityPxPerMetreMean": 703.37,
+   "texelDensityMismatchFraction": 1e-05,
+   "texelDensityMismatchLimit": 0.2,
+   "aspectDistortionMax": 0.00023,
+   "aspectDistortionP50": 0.0,
+   "aspectDistortionP95": 1e-05,
+   "aspectDistortionP99": 1e-05,
+   "trianglesOverHeroLimit": 0,
+   "trianglesOverDistantLimit": 0,
+   "trianglesMeasured": 277,
+   "zeroAreaUvTriangles": 0,
+   "zeroAreaUvBelowEpsilon": 0,
+   "degenerate3dTriangles": 0,
+   "smallestOffenders": [],
+   "areaOverLimitBySlot": {
+    "0": {
+     "role": "tissue",
+     "areaShareOfMesh": 0.9861,
+     "overLimitFractionOfOwnArea": 0.0,
+     "overLimitShareOfMesh": 0.0,
+     "worst": 0.0
+    },
+    "2": {
+     "role": "holdfast",
+     "areaShareOfMesh": 0.0139,
+     "overLimitFractionOfOwnArea": 0.0,
+     "overLimitShareOfMesh": 0.0,
+     "worst": 0.0
+    }
+   },
+   "worstTriangle": {
+    "tri": 9,
+    "slot": 0,
+    "worldArea2": "1.408e-02",
+    "uvArea2": "4.152e-04",
+    "worldEdges": [
+     0.998782,
+     1.207139,
+     0.208751
+    ],
+    "uvEdges": [
+     0.171511,
+     0.20729,
+     0.035846
+    ],
+    "z": [
+     5.9454,
+     6.8535,
+     5.7599
+    ]
+   },
+   "gateIslands": 55,
+   "gateIslandsBelowMinPixels": 0,
+   "smallestGateIslandsPx": [
+    [
+     24.525,
+     56.695
+    ],
+    [
+     25.178,
+     137.323
+    ],
+    [
+     50.341,
+     25.445
+    ],
+    [
+     104.517,
+     968.795
+    ],
+    [
+     105.985,
+     969.71
+    ],
+    [
+     117.11,
+     136.83
+    ]
+   ],
+   "heroLimit": 0.15,
+   "distantLimit": 0.25,
+   "uvOutliersCollapsed": 0,
+   "islandGrowth": {
+    "islandsGrown": 0,
+    "maxScale": 1.0,
+    "floorPx": 4
+   },
+   "solver": "ANGLE_BASED",
+   "islandsOriented": 52,
+   "seamEdges": 337,
+   "healed": {
+    "facesBefore": 288,
+    "faces": 277,
+    "sliverEdgesCollapsed": 8,
+    "collapsesSkippedIllegal": 5,
+    "zeroAreaDeleted": 0,
+    "looseDeleted": 113
+   },
+   "slotsRepaired": {
+    "1": 0.09864
+   },
+   "stretchStats": {
+    "worst": 1.5327283511057388e-05,
+    "p95": 2.5113990675951214e-06,
+    "mean": 8.526451630588051e-07,
+    "triangles": 277
    }
   }
  },
  "lodTopology": {
   "0": {
-   "triangles": 5259,
-   "faces": 5259,
+   "triangles": 5283,
+   "faces": 5283,
    "components": 32,
-   "boundaryEdges": 345,
+   "boundaryEdges": 359,
    "nonmanifoldEdges": 0,
    "smallestComponent": 112,
-   "largestComponent": 324,
-   "irreducibleFloor": 300,
+   "largestComponent": 344,
+   "irreducibleFloor": 307,
    "budget": 6500,
    "explain": ""
   },
   "1": {
-   "triangles": 1607,
-   "faces": 1607,
-   "components": 67,
-   "boundaryEdges": 1261,
+   "triangles": 1647,
+   "faces": 1647,
+   "components": 62,
+   "boundaryEdges": 1257,
    "nonmanifoldEdges": 0,
    "smallestComponent": 1,
-   "largestComponent": 78,
-   "irreducibleFloor": 898,
+   "largestComponent": 75,
+   "irreducibleFloor": 876,
    "budget": 1800,
    "explain": ""
   },
   "2": {
-   "triangles": 283,
-   "faces": 283,
+   "triangles": 277,
+   "faces": 277,
    "components": 55,
-   "boundaryEdges": 393,
+   "boundaryEdges": 387,
    "nonmanifoldEdges": 0,
    "smallestComponent": 1,
-   "largestComponent": 11,
-   "irreducibleFloor": 416,
+   "largestComponent": 8,
+   "irreducibleFloor": 413,
    "budget": 300,
    "explain": ""
   }
@@ -1035,7 +1030,7 @@
    "position": [
     0.0,
     0.0,
-    1.00811
+    0.91016
    ]
   },
   {
@@ -1043,7 +1038,7 @@
    "position": [
     0.0,
     0.0,
-    0.54729
+    0.50937
    ]
   },
   {
@@ -1051,62 +1046,62 @@
    "position": [
     0.0,
     0.0,
-    1.6784
+    1.49312
    ]
   }
  ],
  "bounds": {
   "min": [
-   -0.40925,
-   -1.47748,
-   -0.0719
+   -1.2889,
+   -0.43179,
+   -0.02685
   ],
   "max": [
-   2.11221,
-   0.51389,
-   8.46628
+   0.51763,
+   2.60623,
+   7.39751
   ]
  },
  "validation": {
   "validatorVersion": "1.0.0",
   "meshes": [
    {
-    "mesh": "MESH_Flora_Kelp_s4021_q100_LOD0",
+    "mesh": "MESH_Flora_Kelp_s4025_q100_LOD0",
     "lod": 0,
     "passed": true,
-    "triangles": 5259,
-    "vertices": 2819,
+    "triangles": 5283,
+    "vertices": 2837,
     "submeshes": 3,
-    "digest": "dc8576802322e9b86397ba39af74b1fe",
+    "digest": "c6ba8ee500aaf5addd957da37f5f27dc",
     "failures": [],
     "notEnforced": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 690 of 5259 triangles below the sliver floor 3.813e-04 m2 (0.1x mean triangle area 3.813e-03 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 577 of 5283 triangles below the sliver floor 3.339e-04 m2 (0.1x mean triangle area 3.339e-03 m2); the area-weighted population test still covered all of them"
     ]
    },
    {
-    "mesh": "MESH_Flora_Kelp_s4021_q100_LOD1",
+    "mesh": "MESH_Flora_Kelp_s4025_q100_LOD1",
     "lod": 1,
     "passed": true,
-    "triangles": 1607,
-    "vertices": 1393,
+    "triangles": 1647,
+    "vertices": 1412,
     "submeshes": 3,
-    "digest": "fbe047cfbaf2f8f21744cd6b43b5a0fd",
+    "digest": "3ffeb2b4904bdc9b2c8aff5ea4f5caf7",
     "failures": [],
     "notEnforced": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 215 of 1607 triangles below the sliver floor 1.204e-03 m2 (0.1x mean triangle area 1.204e-02 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 206 of 1647 triangles below the sliver floor 1.041e-03 m2 (0.1x mean triangle area 1.041e-02 m2); the area-weighted population test still covered all of them"
     ]
    },
    {
-    "mesh": "MESH_Flora_Kelp_s4021_q100_LOD2",
+    "mesh": "MESH_Flora_Kelp_s4025_q100_LOD2",
     "lod": 2,
     "passed": true,
-    "triangles": 283,
-    "vertices": 388,
+    "triangles": 277,
+    "vertices": 384,
     "submeshes": 3,
-    "digest": "e1d40d04fbd53462835d4c6ca8b7c5c6",
+    "digest": "d9a74947a5fa9d35ac47657017ae2aa3",
     "failures": [],
     "notEnforced": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 12 of 283 triangles below the sliver floor 6.250e-03 m2 (0.1x mean triangle area 6.250e-02 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 9 of 277 triangles below the sliver floor 5.577e-03 m2 (0.1x mean triangle area 5.577e-02 m2); the area-weighted population test still covered all of them"
     ]
    }
   ],
@@ -1115,8 +1110,8 @@
   "colliderFailures": []
  },
  "files": {
-  "fbx": "MESH_Flora_Kelp_s4021_q100.fbx",
-  "blend": "SRC_Flora_Kelp_s4021_q100.blend"
+  "fbx": "MESH_Flora_Kelp_s4025_q100.fbx",
+  "blend": "SRC_Flora_Kelp_s4025_q100.blend"
  },
  "proof": {
   "storedChannelStats": {
@@ -1124,10 +1119,10 @@
    "attribute": "Col",
    "domain": "CORNER",
    "areaWeightedMean": [
-    0.44059,
+    0.45344,
     0.0,
-    0.80467,
-    0.95762
+    0.80796,
+    0.95245
    ],
    "min": [
     0.0,
@@ -1143,41 +1138,41 @@
    ],
    "comparableWithRender": "min and max are weighting-independent; compare those. areaWeightedMean approximates a pixel average but is not identical to it, because a render also weights by visibility and projected foreshortening."
   },
-  "flatSheet": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_flat_SHEET_flat.png",
-  "studioSheet": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_studio_SHEET_studio.png",
-  "materialSheet": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_material_SHEET_material.png",
-  "channelSheet": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_chan_SHEET_CHANNELS.png",
+  "flatSheet": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4025_q100_s4025_q100_flat_SHEET_flat.png",
+  "studioSheet": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4025_q100_s4025_q100_studio_SHEET_studio.png",
+  "materialSheet": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4025_q100_s4025_q100_material_SHEET_material.png",
+  "channelSheet": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4025_q100_s4025_q100_chan_SHEET_CHANNELS.png",
   "channelTiles": [
-   "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_chan_chan0_sway_amplitude.png",
-   "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_chan_chan1_biolum_phase.png",
-   "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_chan_chan2_baked_ao.png",
-   "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_chan_chan3_family_specific.png"
+   "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4025_q100_s4025_q100_chan_chan0_sway_amplitude.png",
+   "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4025_q100_s4025_q100_chan_chan1_biolum_phase.png",
+   "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4025_q100_s4025_q100_chan_chan2_baked_ao.png",
+   "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4025_q100_s4025_q100_chan_chan3_family_specific.png"
   ],
   "channelMeasurements": [
    {
     "channel": "sway_amplitude",
-    "tile": "Kelp_s4021_q100_s4021_q100_chan_chan0_sway_amplitude.png",
-    "min": 0.0,
+    "tile": "Kelp_s4025_q100_s4025_q100_chan_chan0_sway_amplitude.png",
+    "min": 0.0003,
     "max": 1.0,
-    "mean": 0.47254,
+    "mean": 0.45307,
     "hasGradient": true,
     "subjectVisible": true,
-    "coverage": 0.03537,
+    "coverage": 0.03221,
     "storedMin": 0.0,
     "storedMax": 1.0,
-    "storedAreaWeightedMean": 0.44059,
-    "minDelta": 0.0,
+    "storedAreaWeightedMean": 0.45344,
+    "minDelta": 0.0003,
     "maxDelta": 0.0
    },
    {
     "channel": "biolum_phase",
-    "tile": "Kelp_s4021_q100_s4021_q100_chan_chan1_biolum_phase.png",
+    "tile": "Kelp_s4025_q100_s4025_q100_chan_chan1_biolum_phase.png",
     "min": 0.0,
     "max": 0.0003,
     "mean": 2e-05,
     "hasGradient": true,
     "subjectVisible": true,
-    "coverage": 0.03537,
+    "coverage": 0.03221,
     "storedMin": 0.0,
     "storedMax": 0.0,
     "storedAreaWeightedMean": 0.0,
@@ -1186,31 +1181,31 @@
    },
    {
     "channel": "baked_ao",
-    "tile": "Kelp_s4021_q100_s4021_q100_chan_chan2_baked_ao.png",
-    "min": 0.13843,
+    "tile": "Kelp_s4025_q100_s4025_q100_chan_chan2_baked_ao.png",
+    "min": 0.12744,
     "max": 1.0,
-    "mean": 0.87214,
+    "mean": 0.86975,
     "hasGradient": true,
     "subjectVisible": true,
-    "coverage": 0.03537,
+    "coverage": 0.03221,
     "storedMin": 0.0,
     "storedMax": 1.0,
-    "storedAreaWeightedMean": 0.80467,
-    "minDelta": 0.13843,
+    "storedAreaWeightedMean": 0.80796,
+    "minDelta": 0.12744,
     "maxDelta": 0.0
    },
    {
     "channel": "family_specific",
-    "tile": "Kelp_s4021_q100_s4021_q100_chan_chan3_family_specific.png",
+    "tile": "Kelp_s4025_q100_s4025_q100_chan_chan3_family_specific.png",
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.98206,
+    "mean": 0.97468,
     "hasGradient": true,
     "subjectVisible": true,
-    "coverage": 0.03537,
+    "coverage": 0.03221,
     "storedMin": 0.0,
     "storedMax": 1.0,
-    "storedAreaWeightedMean": 0.95762,
+    "storedAreaWeightedMean": 0.95245,
     "minDelta": 0.0,
     "maxDelta": 0.0
    }
@@ -1222,5 +1217,5 @@
   "firstInvalidStage": null
  },
  "prefabBoundary": "PF_/GEN_ prefab, LODGroup and Unity import are NOT produced here: only Unity may author .prefab assets (AGENTS.md Evidence Law). This package is the FBX + manifest the Unity-side assembler consumes.",
- "generationSeconds": 52.89
+ "generationSeconds": 6.85
 }

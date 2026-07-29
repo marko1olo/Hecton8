@@ -193,7 +193,7 @@
   "explainAgainstLod0Budget": "10228 tris vs 9000 budget; 1 disconnected components, 0 boundary edges, 8 non-manifold edges -> estimated irreducible floor ~4 tris"
  },
  "shadingBasis": {
-  "smoothPolygons": 8005,
+  "smoothPolygons": 8008,
   "sharpEdges": 1907,
   "weightedNormalsApplied": true,
   "smoothAngleDeg": 32.0,
@@ -243,7 +243,7 @@
   "areaWeightedMean": [
    0.28266,
    0.43934,
-   0.86298,
+   0.86318,
    0.11388
   ],
   "min": [
@@ -267,7 +267,7 @@
   "baked": true,
   "min": 0.0,
   "max": 1.0,
-  "mean": 0.810771,
+  "mean": 0.810821,
   "hasContrast": true
  },
  "uvAndTriplanarReport": {
@@ -418,12 +418,12 @@
   "PASS LOD0 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 179.96 deg, 1907 sharp)",
   "PASS LOD1 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 179.41 deg, 1094 sharp)",
   "PASS LOD2 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 177.31 deg, 317 sharp)",
-  "PASS 8005 polygons marked smooth (not flat-shaded)",
+  "PASS 8008 polygons marked smooth (not flat-shaded)",
   "PASS 1907 edges split sharp above 32.0 deg (fracture planes stay crisp)",
   "PASS weighted normals applied (FACE_AREA_WITH_ANGLE)"
  ],
  "h8forgeValidatorFailures": [
-  "LOD1 inconsistent_winding: directed edge (501 -> 1424) used by triangle[735] and triangle[738]; winding is not consistent. CAUSE: 2 edge(s) carry 3 or more triangles (worst 3), which FORCES a repeated directed edge that no winding choice can avoid; that is a non-manifold defect, first at vertex pair (501, 1424)."
+  "LOD1 inconsistent_winding: directed edge (501 -> 1425) used by triangle[735] and triangle[738]; winding is not consistent. CAUSE: 2 edge(s) carry 3 or more triangles (worst 3), which FORCES a repeated directed edge that no winding choice can avoid; that is a non-manifold defect, first at vertex pair (501, 1425)."
  ],
  "h8forgeValidatorImported": true,
  "proofArtifacts": {
@@ -462,9 +462,9 @@
    "channel": "B",
    "meaning": "baked_ao",
    "tile": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\outcrop_sedimentary_s1713_q100_chan_chan2_baked_ao.png",
-   "min": 0.00802,
+   "min": 0.00402,
    "max": 1.0,
-   "mean": 0.8899,
+   "mean": 0.89021,
    "coverageFraction": 0.12653,
    "subjectVisible": true,
    "hasGradient": true
@@ -551,10 +551,10 @@
  },
  "silhouettePerFarLod": {
   "LOD1": {
-   "meanTurnTop10Fraction": 0.3515,
+   "meanTurnTop10Fraction": 0.3516,
    "meanCornerCount": 7.75,
    "meanConvexity": 0.9488,
-   "retainedFractionOfLod0": 0.9718
+   "retainedFractionOfLod0": 0.9721
   },
   "LOD2": {
    "meanTurnTop10Fraction": 0.4051,
@@ -568,7 +568,7 @@
   "verified": true,
   "summary": "MESH_Geology_outcrop_sedimentary_s1713_q100.fbx: 4 object(s) tris=11610 vcol=True customNormals=True tangents=True uv=['UVMap', 'UV1_Strata'] unitScale=100 roundtrip=VERIFIED",
   "measurements": [
-   "wrote MESH_Geology_outcrop_sedimentary_s1713_q100.fbx (2164476 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "wrote MESH_Geology_outcrop_sedimentary_s1713_q100.fbx (2168028 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
    "COL_Geology_outcrop_sedimentary_s1713_q100: no material slot. 3dmodel.md section 6 declares slot 0 as the primary structural/tissue material; Unity will assign its default material to submesh 0.",
    "objects round-tripped: ['COL_Geology_outcrop_sedimentary_s1713_q100', 'MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0', 'MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1', 'MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2']",
    "COL_Geology_outcrop_sedimentary_s1713_q100: verts 94->94 loops 552->552 tris 184->184",
@@ -594,10 +594,10 @@
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: colour max delta 0.0000000 (tol 0.002)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: world position max delta 0.0000002 m (tol 0.0001)",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: world corner-normal max delta 0.0003313 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: world corner-normal max delta 0.0003303 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: landmark (0.68014, 1.74404, 0.62127) -> (0.68014, 1.74404, 0.62127), delta 0.0000002 m, margin 0.02110 m",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: signed volume +7.3444804 -> +7.3444795 (ratio +1.000000)",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: signed volume +7.3444708 -> +7.3444699 (ratio +1.000000)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: verts 287->287 loops 1710->1710 tris 570->570",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
@@ -611,8 +611,8 @@
    "COL_Geology_outcrop_sedimentary_s1713_q100 [fbx-space]: landmark direction expected (0.41066, -0.27657, -0.86883) measured (0.41066, -0.27657, -0.86883) delta 0.000000",
    "COL_Geology_outcrop_sedimentary_s1713_q100 [fbx-space]: Unity-space landmark offset will be (0.87169, -0.58706, 1.84422) (Blender (0.87169, 1.84422, -0.58706)); handedness flip is Unity's, winding is flipped to match",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD0 [fbx-space]: skipped: near-symmetric extreme vertex",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1 [fbx-space]: landmark direction expected (0.39253, -0.30151, -0.86892) measured (0.39253, -0.30151, -0.86892) delta 0.000000",
-   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1 [fbx-space]: Unity-space landmark offset will be (0.78575, -0.60355, 1.73936) (Blender (0.78575, 1.73936, -0.60355)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1 [fbx-space]: landmark direction expected (0.39254, -0.3015, -0.86891) measured (0.39254, -0.3015, -0.86891) delta 0.000000",
+   "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD1 [fbx-space]: Unity-space landmark offset will be (0.78578, -0.60355, 1.73937) (Blender (0.78578, 1.73937, -0.60355)); handedness flip is Unity's, winding is flipped to match",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2 [fbx-space]: landmark direction expected (0.4148, -0.27479, -0.86743) measured (0.4148, -0.27479, -0.86743) delta 0.000000",
    "MESH_Geology_outcrop_sedimentary_s1713_q100_LOD2 [fbx-space]: Unity-space landmark offset will be (0.79835, -0.52888, 1.6695) (Blender (0.79835, 1.6695, -0.52888)); handedness flip is Unity's, winding is flipped to match",
    "roundtrip VERIFIED: axis map confirmed=True, chirality preserved=True",

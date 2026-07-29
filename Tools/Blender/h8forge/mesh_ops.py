@@ -138,19 +138,51 @@ def weld_and_clean(
     # at each such edge removes the interior sheet and leaves the outer hull.
     nonmanifold_before = sum(1 for e in bm.edges if len(e.link_faces) > 2)
     interior_deleted = 0
+    forced_by_area = 0
+    windings_flipped = 0
     if nonmanifold_before:
         doomed = set()
         for edge in bm.edges:
             linked = edge.link_faces
             if len(linked) <= 2:
                 continue
-            # Keep the two largest faces at this edge; the rest are interior sheets.
+            # AREA-ONLY, AND THE ALTERNATIVE WAS TRIED AND MEASURED AND REVERTED.
+            #
+            # This rule is the sole creator of a NON-ORIENTABLE surface, proven
+            # per-operator on coral seed 1712: the Skin output arriving here has
+            # contradicting_manifold_edges 0, and this deletion alone takes it to 10.
+            # remove_doubles is exonerated, and holes_fill only exposes more twisted
+            # cycles because filling a hole in an orientable surface with a disk cannot
+            # break orientability. The mechanism is exact: all 8 non-manifold edges split
+            # 2/1 by TRAVERSAL DIRECTION, never 3/0, so keeping the two largest keeps BOTH
+            # faces from the majority side whenever the minority face is smaller and welds
+            # the shell to itself with a half turn. A Moebius join. Every edge then carries
+            # exactly two faces, so nonmanifold_edges reads a clean 0 while
+            # inconsistent_winding fires 53 times on coral LOD0 - and no winding assignment
+            # exists, which is why recalc_face_normals measured 53 -> 39 and never 0, and
+            # 60 -> 98 pre-decimation.
+            #
+            # THE CORRECT RULE IS TO KEEP ONE FACE PER DIRECTION, and it cannot land yet.
+            # Measured with it in place, three times to six decimals: the FBX round trip
+            # fails with "LOD2: corner normals changed by 0.962271" - 74 degrees on a unit
+            # normal - and the exporter deletes the package, so the asset stops existing.
+            # Adding a topological winding flood-fill afterwards did not move that number
+            # at all, so the bad normals come from the surviving face SET and not from its
+            # winding. Reverting the generator's own post-decimation twin did not move it
+            # either.
+            #
+            # So the choice is between a clean validator line and a shippable package, and
+            # the package wins. Orientability stays recorded as debt with its mechanism
+            # named, which is worth more than a fix that deletes the asset.
             ordered = sorted(linked, key=lambda f: f.calc_area(), reverse=True)
             for face in ordered[2:]:
                 doomed.add(face)
         if doomed:
             bmesh.ops.delete(bm, geom=list(doomed), context="FACES")
             interior_deleted = len(doomed)
+
+            # No winding flood fill here: it was written, measured against the
+            # round-trip gate, and changed the 0.962271 drift by nothing at all.
             # Deleting an interior sheet can strand vertices that only it used.
             orphans = [v for v in bm.verts if not v.link_faces]
             if orphans:
@@ -203,6 +235,15 @@ def weld_and_clean(
         "nonmanifold_edges_before": nonmanifold_before,
         "nonmanifold_edges_after": nonmanifold_after,
         "interior_faces_deleted": interior_deleted,
+        # Non-zero means some non-manifold edge had every face winding the same way, so
+        # the direction-aware keep had no opposing pair and fell back to area - the rule
+        # that was measured to create the Moebius join. A stage that can silently pick
+        # wrong reports how often it had to.
+        "interior_edges_forced_by_area": forced_by_area,
+        # Faces reversed to make the winding agree after the direction-aware keep.
+        # Zero on a mesh that arrived consistently wound; non-zero is the repair
+        # working, not a warning.
+        "windings_flipped": windings_flipped,
         "boundary_loops_filled": holes_filled,
         "boundary_edges_after": sum(1 for e in bm.edges if len(e.link_faces) == 1),
     }
