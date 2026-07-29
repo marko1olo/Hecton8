@@ -1457,6 +1457,7 @@ namespace Hecton8.World
         private bool _isRegistered;
         private bool _isSlowTickRegistered;
         private bool _isLateFrameRegistered;
+        private bool _proceduralSwayDirectorRegistered;
         private int _lastPublishedInteractionCount;
         private int _pendingVisualInteractionCount;
         private int _externalInteractionCount;
@@ -1869,7 +1870,7 @@ namespace Hecton8.World
                 Shader.SetGlobalBuffer(_InteractionBufferId, _activeInteractionBuffer);
 
             HectonFloatingOrigin.RegisterListener(this);
-            GlobalRegistry.RegisterWakeDisplacementService(this);
+            TryRegisterProceduralSwayDirectorService();
             CacheEnvironmentRuntimeServicesCold();
             RefreshPlayerReferenceCacheCold();
             ResolveProceduralWakeVaultBuffer(clearExisting: false);
@@ -1898,7 +1899,7 @@ namespace Hecton8.World
 
             DroneFleetManager.ClearFloraInteractionManager(this);
             HectonFloatingOrigin.UnregisterListener(this);
-            GlobalRegistry.UnregisterWakeDisplacementService(this);
+            TryUnregisterProceduralSwayDirectorService();
             TryUnregisterCullingHotSwapListener();
             CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
             CompleteFloraSwayFieldJobForTeardown(uploadAfterComplete: true);
@@ -1930,7 +1931,7 @@ namespace Hecton8.World
 
             DroneFleetManager.ClearFloraInteractionManager(this);
             HectonFloatingOrigin.UnregisterListener(this);
-            GlobalRegistry.UnregisterWakeDisplacementService(this);
+            TryUnregisterProceduralSwayDirectorService();
             TryUnregisterCullingHotSwapListener();
             CompleteWakeDecayJob(forceComplete: true, dispatcherSwapWindow: false);
             CompleteFloraSwayFieldJobForTeardown(uploadAfterComplete: true);
@@ -11046,6 +11047,62 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _isLateFrameRegistered = false;
             }
+        }
+
+        /// <summary>
+        /// Publishes this instance into the single IProceduralSwayDirector registry slot.
+        /// This is the ONLY registration door for that slot; GameBootstrapper's extended-coverage pass calls
+        /// this method instead of GlobalRegistry.RegisterProceduralSwayDirector so the slot has one owner.
+        /// </summary>
+        /// <remarks>
+        /// Before this existed the slot had two registration doors - OnEnable via
+        /// GlobalRegistry.RegisterWakeDisplacementService (which only forwards to
+        /// RegisterProceduralSwayDirector) and GameBootstrapper.TryEnsureProceduralSwayRegistryCoverage
+        /// calling the slot method directly - against an unconditional unregister in BOTH OnDisable and
+        /// OnDestroy. Unity runs OnDisable before OnDestroy, so the first call emptied the slot and the
+        /// second always logged "[GlobalRegistry] Unregister mismatch for IProceduralSwayDirector." and
+        /// returned before ReapMemoryForUnregisteredService. The warning was correct; the asymmetry was the
+        /// defect.
+        ///
+        /// The registered flag mirrors actual registry state rather than intent, which is what the sibling
+        /// owners on this same coverage pass do (QuestManager._serviceRegistered,
+        /// ConstructionManager._logisticsServiceRegistered,
+        /// AbyssalThermalManager._registeredThermodynamicsRuntime). A plain "I called Register" bool would
+        /// go stale two ways: a rejected or hijacked publication would leave it true and teardown would
+        /// unregister a slot owned by someone else, and a slot filled through any other route would leave it
+        /// false and teardown would strand a destroyed MonoBehaviour in the registry.
+        ///
+        /// The already-owner early return also keeps a re-enable from reaching GuardServicePublication at
+        /// all. That guard throws CriticalBootException on a tokenless publication once the registry is
+        /// ready-locked, and the scene-runtime publication gate is only open during
+        /// SceneRuntimeService.LoadSceneAsync and GameBootstrapper's own gated blocks.
+        /// </remarks>
+        internal void TryRegisterProceduralSwayDirectorService()
+        {
+            if (ReferenceEquals(GlobalRegistry.ProceduralSwayDirector, this))
+            {
+                _proceduralSwayDirectorRegistered = true;
+                return;
+            }
+
+            GlobalRegistry.RegisterProceduralSwayDirector(this);
+            _proceduralSwayDirectorRegistered = ReferenceEquals(GlobalRegistry.ProceduralSwayDirector, this);
+        }
+
+        /// <summary>
+        /// Releases the IProceduralSwayDirector registry slot when this instance actually owns it.
+        /// Idempotent: OnDisable clears the slot, and the OnDestroy call that mirrors it is then a no-op that
+        /// cannot log an unregister mismatch. OnDestroy keeps its call because a component destroyed while
+        /// disabled never receives OnDisable.
+        /// </summary>
+        private void TryUnregisterProceduralSwayDirectorService()
+        {
+            if (!_proceduralSwayDirectorRegistered)
+                return;
+
+            _proceduralSwayDirectorRegistered = false;
+            if (ReferenceEquals(GlobalRegistry.ProceduralSwayDirector, this))
+                GlobalRegistry.UnregisterProceduralSwayDirector(this);
         }
 
         private static long EstimateGraphicsBufferBytes(GraphicsBuffer buffer)
