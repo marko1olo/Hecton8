@@ -787,6 +787,14 @@ def skeleton_to_object(nodes: List[SkeletonNode], spec: CoralSpec,
     return obj
 
 
+# Anatomical region of a skeleton node, which becomes the material slot of every
+# surface polygon nearest to it. See `assign_material_slots` for why there are three
+# and not four.
+REGION_TISSUE = law.MATERIAL_SLOT_PRIMARY
+REGION_TIP = law.MATERIAL_SLOT_CUT_EDGE
+REGION_BASE = law.MATERIAL_SLOT_TRIM
+
+
 @dataclass
 class SkeletonSampler:
     """Nearest-skeleton-node lookup: local branch radius and geodesic distance per point.
@@ -806,6 +814,7 @@ class SkeletonSampler:
     tree: object
     radii: list
     distances: list
+    regions: list
 
     @classmethod
     def build(cls, nodes: List[SkeletonNode]) -> "SkeletonSampler":
@@ -819,6 +828,11 @@ class SkeletonSampler:
             tree=tree,
             radii=[node.radius for node in nodes],
             distances=[node.distance_from_anchor for node in nodes],
+            # is_base wins over is_tip: no node is both, but the precedence is stated
+            # rather than left to field order in case the grammar ever sets both.
+            regions=[REGION_BASE if node.is_base else
+                     (REGION_TIP if node.is_tip else REGION_TISSUE)
+                     for node in nodes],
         )
 
     def sample(self, point: Vector) -> tuple:
@@ -827,6 +841,13 @@ class SkeletonSampler:
         if index is None:
             return (0.01, 0.0)
         return (self.radii[index], self.distances[index])
+
+    def sample_region(self, point: Vector) -> int:
+        """Material slot of the nearest skeleton node's anatomical region."""
+        _co, index, _dist = self.tree.find(point)
+        if index is None:
+            return REGION_TISSUE
+        return self.regions[index]
 
 
 def refine_surface(obj: bpy.types.Object, spec: CoralSpec,
@@ -916,9 +937,19 @@ def _value_noise(point: Vector, seed_offset: float) -> float:
 # Stage 5: UVs and material slots
 # ---------------------------------------------------------------------------
 
-def unwrap_and_assign_materials(obj: bpy.types.Object, spec: CoralSpec,
-                                blackbox: BlackBox) -> dict:
-    """Angle-preserving unwrap plus the bible's material slot roles.
+# Smart UV Project settings, named once because the LOD0 solve and the per-LOD
+# re-solve must not drift apart. ``angle_limit`` is the island-SPLIT angle: face groups
+# whose normals turn by less stay in one island, and the solver cuts above it. On a
+# branching tube that is what decides whether a limb is UNROLLED into a strip or forced
+# to WRAP around itself, which is the whole difference between a usable parameterisation
+# and the 407.07 outlier below.
+UV_ANGLE_LIMIT_DEG = 66.0
+UV_ISLAND_MARGIN = 0.012
+
+
+def solve_uv(obj: bpy.types.Object, *,
+             island_margin: float = UV_ISLAND_MARGIN) -> dict:
+    """Angle-preserving unwrap of one object, measured rather than assumed.
 
     ``3dmodel.md`` section 6 permits "Conformal unwrap using LSCM/ABF-style angle
     preservation for unique surfaces" -- Blender's Smart UV Project is that class of
@@ -928,40 +959,231 @@ def unwrap_and_assign_materials(obj: bpy.types.Object, spec: CoralSpec,
     but is explicit that "branch tubes still need coherent UVs for detail normal and
     phase masks". A branching colony is tubes, so it gets real UVs.
 
-    Slots follow section 6: 0 primary tissue, 1 exposed cut/scar, 2 growth plate /
-    barnacle trim, 3 emissive polyps.
+    WHY THIS IS A FUNCTION AND NOT INLINE. It is called once per LOD. Smart UV Project
+    picks its own island cuts from the mesh it is given, so solving it once on LOD0 and
+    letting Decimate carry the result down is not a UV route at all -- see the
+    ``_reunwrap`` hook in :func:`generate`.
+
+    The operator's return value is checked AND the result is measured. A bare
+    ``{'CANCELLED'}`` check is not enough here: ``smart_project`` can finish and still
+    leave a layer nothing can sample, so the triangle count that
+    ``mesh_ops.uv_stretch_stats`` actually managed to measure is the real proof.
     """
-    for role, name in (
-        (law.MATERIAL_SLOT_PRIMARY, "Tissue"),
-        (law.MATERIAL_SLOT_CUT_EDGE, "BrokenTip"),
-        (law.MATERIAL_SLOT_TRIM, "GrowthPlate"),
-        (law.MATERIAL_SLOT_EMISSIVE, "Polyp"),
-    ):
-        material_name = law.NAME_MATERIAL.format(family=law.Family.FLORA.value, role=name)
+    mesh = obj.data
+    mesh_ops._make_sole_active(obj)
+    bpy.ops.object.mode_set(mode="EDIT")
+    try:
+        bpy.ops.mesh.select_all(action="SELECT")
+        result = bpy.ops.uv.smart_project(
+            angle_limit=math.radians(UV_ANGLE_LIMIT_DEG),
+            island_margin=island_margin,
+            correct_aspect=True,
+            scale_to_bounds=False)
+    finally:
+        bpy.ops.object.mode_set(mode="OBJECT")
+    if "FINISHED" not in result:
+        raise RuntimeError("uv.smart_project returned " + str(result))
+    uv_layer = mesh.uv_layers.active
+    if uv_layer is None:
+        raise RuntimeError("no active UV layer after smart_project")
+    stats = mesh_ops.uv_stretch_stats(obj)
+    if stats["triangles"] <= 0:
+        raise RuntimeError(
+            "smart_project reported FINISHED but no triangle carries a measurable UV "
+            "footprint on layer '{n}'".format(n=uv_layer.name))
+    return {
+        "uvRoute": "smart_project (LSCM-class conformal), angle_limit={a}deg, "
+                   "island_margin={m}".format(a=UV_ANGLE_LIMIT_DEG, m=island_margin),
+        "uvLayer": uv_layer.name,
+        "texelDensityTarget": law.TEXEL_DENSITY_COMMON_FLORA,
+        "stretchWorst": round(stats["worst"], 4),
+        "stretchP95": round(stats["p95"], 4),
+        "stretchMean": round(stats["mean"], 4),
+        "stretchTriangles": stats["triangles"],
+    }
+
+
+# THREE SLOTS, NOT FOUR, and the fourth was not "spare" -- it was a validation failure.
+#
+# What was here before appended four materials and then never wrote a single
+# ``polygon.material_index``, so every triangle stayed on slot 0 and slots 1, 2 and 3
+# were declared and empty. ``validate._gate_materials`` fails once per empty slot
+# (``submesh_empty_declared_slot x3``), at every LOD, which is exactly what it did.
+# ``3dmodel.md`` section 10 states the gate: "Submesh count matches material slot
+# declaration." A declared slot with no triangle is not a slot reserved for later; it is
+# a declaration the mesh contradicts.
+#
+# WHAT THE GRAMMAR ACTUALLY BUILDS, which is what the declaration has to match:
+#   slot 0  primary tissue      -- the colony: stems, forks, branch shafts
+#   slot 1  exposed tip skeleton-- the blunt digit clusters ``_add_tip_digits`` authors as
+#                                  their own nodes. On a real Acropora the axial corallite
+#                                  at each branch end is bare, unpigmented skeleton, which
+#                                  reads pale against the coloured shaft; section 6's slot
+#                                  1 role is "exposed cut, bevel, edge, scar, or fracture"
+#                                  and an exposed growing tip is that surface.
+#   slot 2  encrusting base     -- the root, the per-stem launch lobes and the crust
+#                                  tongues, i.e. ``is_base`` nodes. Section 6's slot 2 role
+#                                  names "growth plate" explicitly.
+#
+# SLOT 3 IS DROPPED, and the reason is not that coral has no biolum organ -- it has one.
+# Section 6 makes slot 3 "emissive/bioluminescent/details only when needed", and it is not
+# needed here because the organ is already expressed as DATA on the primary material:
+# ``3DMODEL_FLORA_CORAL.md`` section 2 puts the "bioluminescence mask or phase" in vertex
+# colour G, ``author_channels`` writes it, and measured on this asset G reaches 0.730 with
+# an area-weighted mean of 0.150. A fourth material would drive the same emission through a
+# second submesh instead, which costs a per-instance draw on a densely instanced flora
+# asset against ``AGENTS.md``'s SetPass 600 / batches 1800 guardrails, and ``3dmodel.md``
+# section 8 prefers "shared material slots ... over material-per-variant proliferation".
+#
+# Read directly from the mandatory reference folder before deciding, not inferred:
+# ``beauty.webp`` shows three small branching colonies (salmon on sand, ochre at the right
+# foreground, magenta on the rock) each carrying ONE pigment along the fingers with
+# slightly paler blunt ends, and no separate glowing tip material; ``shallows.webp`` shows
+# every upright organism sitting in a distinctly coloured rust-orange encrusting mat, which
+# is the slot 2 region above and the one material split the reference set insists on.
+MATERIAL_ROLES = ("Tissue", "ExposedTipSkeleton", "EncrustingBase")
+
+
+def assign_material_slots(obj: bpy.types.Object, spec: CoralSpec,
+                          sampler: "SkeletonSampler",
+                          blackbox: BlackBox) -> dict:
+    """Append the three shared materials and tag every polygon with its region.
+
+    Region comes from the NEAREST SKELETON NODE, not from a height threshold. The
+    colony's launch lobes are staggered in height and its tips sit at every height from
+    30% upward, so any plane-based rule would cut through the middle of a branch. The
+    skeleton already carries the anatomy (``is_base``, ``is_tip``) and the sampler
+    already indexes it for the displacement and sway passes.
+    """
+    mesh = obj.data
+    for name in MATERIAL_ROLES:
+        material_name = law.NAME_MATERIAL.format(family=law.Family.FLORA.value,
+                                                 role=name)
         material = bpy.data.materials.get(material_name)
         if material is None:
             material = bpy.data.materials.new(material_name)
             material.use_nodes = True
-        obj.data.materials.append(material)
+        mesh.materials.append(material)
 
-    mesh_ops._make_sole_active(obj)
-    bpy.ops.object.mode_set(mode="EDIT")
-    bpy.ops.mesh.select_all(action="SELECT")
-    bpy.ops.uv.smart_project(angle_limit=math.radians(66.0),
-                             island_margin=0.012,
-                             correct_aspect=True,
-                             scale_to_bounds=False)
-    bpy.ops.object.mode_set(mode="OBJECT")
+    census = {index: 0 for index in range(len(MATERIAL_ROLES))}
+    for polygon in mesh.polygons:
+        slot = sampler.sample_region(polygon.center)
+        polygon.material_index = slot
+        census[slot] = census.get(slot, 0) + 1
+    mesh.update()
 
-    uv_layer = obj.data.uv_layers.active
-    report = {
-        "uvRoute": "smart_project (LSCM-class conformal), island_margin=0.012",
-        "uvLayer": uv_layer.name if uv_layer else None,
+    empty = [index for index, count in census.items() if count == 0]
+    if empty:
+        # Loud, because this is the exact failure the slot count was reduced to fix and
+        # a silent recurrence would ship as `submesh_empty_declared_slot` again.
+        blackbox.note_invalid("material_slots", "MATERIAL_SLOT_EMPTY",
+                              "declared slots {e} carry no polygon at LOD0".format(
+                                  e=empty))
+        raise GenerationAborted(
+            "material slots {e} were declared but the skeleton produced no polygon in "
+            "those regions".format(e=empty))
+
+    blackbox.record("material_slots", vertex_count=len(mesh.vertices),
+                    triangle_count=mesh_ops.triangle_count(mesh),
+                    warning="polygons per slot {c}".format(c=census))
+    return {
         "materialSlots": [slot.material.name for slot in obj.material_slots],
-        "texelDensityTarget": law.TEXEL_DENSITY_COMMON_FLORA,
+        "materialSlotRoles": [
+            {"slot": REGION_TISSUE, "role": MATERIAL_ROLES[0],
+             "surface": "colony tissue: stems, forks and branch shafts",
+             "polygonsLod0": census[REGION_TISSUE]},
+            {"slot": REGION_TIP, "role": MATERIAL_ROLES[1],
+             "surface": "blunt digit clusters; bare pale axial skeleton at each "
+                        "branch end",
+             "polygonsLod0": census[REGION_TIP]},
+            {"slot": REGION_BASE, "role": MATERIAL_ROLES[2],
+             "surface": "encrusting foot: root, per-stem launch lobes, crust tongues",
+             "polygonsLod0": census[REGION_BASE]},
+        ],
+        "materialSlot3Omitted":
+            "3dmodel.md section 6 makes slot 3 emissive 'only when needed'. Coral's "
+            "biolum organ is carried by vertex colour G per 3DMODEL_FLORA_CORAL.md "
+            "section 2, so a fourth submesh would duplicate the mechanism and add a "
+            "per-instance draw call on a densely instanced asset.",
     }
+
+
+def _material_slot_anchors(obj: bpy.types.Object) -> dict:
+    """Per-slot polygon centroid at LOD0, so an emptied slot can be re-tagged in place."""
+    sums = {}
+    for polygon in obj.data.polygons:
+        entry = sums.setdefault(polygon.material_index,
+                               [Vector((0.0, 0.0, 0.0)), 0])
+        entry[0] += polygon.center
+        entry[1] += 1
+    return {slot: (total / float(count))
+            for slot, (total, count) in sums.items() if count}
+
+
+def _preserve_material_slots(obj: bpy.types.Object, anchors: dict) -> dict:
+    """Re-tag the nearest surviving polygon to any slot decimation emptied.
+
+    Quadric Edge Collapse has no notion of a submesh contract. The digit tips are the
+    smallest features on the colony and LOD2 keeps ~285 triangles for the whole
+    organism, so slot 1 losing its last polygon there is expected, not exceptional --
+    the kelp author measured the same class of loss at 288 triangles.
+    ``3DMODEL_FLORA_CORAL.md`` section 6 requires LOD2 to keep the shader semantics it
+    still reads, and ``3dmodel.md`` section 10 requires the submesh count to match the
+    declaration, so the honest repair is to keep the role alive at its own location
+    rather than let a material silently disappear partway down the chain.
+
+    One polygon per emptied slot, chosen by distance to that slot's LOD0 centroid, and
+    never taken from a slot that is itself down to its last polygon.
+    """
+    mesh = obj.data
+    used = set(polygon.material_index for polygon in mesh.polygons)
+    counts = {}
+    for polygon in mesh.polygons:
+        counts[polygon.material_index] = counts.get(polygon.material_index, 0) + 1
+    repaired = {}
+    for slot in range(len(mesh.materials)):
+        if slot in used:
+            continue
+        anchor = anchors.get(slot)
+        if anchor is None or not mesh.polygons:
+            continue
+        best = None
+        best_distance = None
+        for polygon in mesh.polygons:
+            if counts.get(polygon.material_index, 0) <= 1:
+                continue
+            distance = (polygon.center - anchor).length
+            if best_distance is None or distance < best_distance:
+                best_distance = distance
+                best = polygon
+        if best is not None:
+            counts[best.material_index] -= 1
+            best.material_index = slot
+            counts[slot] = counts.get(slot, 0) + 1
+            repaired[slot] = round(best_distance, 5)
+    if repaired:
+        mesh.update()
+    return repaired
+
+
+def unwrap_and_assign_materials(obj: bpy.types.Object, spec: CoralSpec,
+                                sampler: "SkeletonSampler",
+                                blackbox: BlackBox) -> dict:
+    """Material slots for the LOD0 mesh, then the UV solve on top of them.
+
+    Slot assignment runs FIRST because a material border is a decimation constraint:
+    ``mesh_ops._split_uv_seams`` converts slot borders into mesh boundaries so
+    Quadric Edge Collapse cannot drag one material's geometry into another's island,
+    which is ``3dmodel.md`` section 7's "Decimation must preserve ... material
+    borders" expressed as topology.
+    """
+    material_report = assign_material_slots(obj, spec, sampler, blackbox)
+    report = solve_uv(obj)
+    report.update(material_report)
     blackbox.record("unwrap", vertex_count=len(obj.data.vertices),
-                    warning="" if uv_layer else "no active UV layer after unwrap")
+                    warning="uv worst {w:.3f} p95 {p:.3f} over {t} triangles".format(
+                        w=report["stretchWorst"], p=report["stretchP95"],
+                        t=report["stretchTriangles"]))
     return report
 
 
@@ -1055,7 +1277,13 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
              render_preview: bool = True,
              preview_dir: str = "",
              export_package: bool = True) -> CoralResult:
-    """Full package: geometry, UVs, bakes, channels, LODs, collider, proof renders."""
+    """Full package: geometry, UVs, bakes, channels, LODs, collider, proof renders.
+
+    ``preview_dir`` overrides the PROOF directory only. The package -- the FBX and its
+    sibling manifest -- always lands in ``law.forge_package_dir``, because Unity's forge
+    carve-out resolves the manifest from the mesh path and requires the two side by side.
+    Kept under its historical name because ``_probe_winding.py`` drives ``main()``.
+    """
     asset_name = name or "Coral_Branching_{s:04d}".format(s=spec.seed % 10000)
     blackbox = BlackBox("CoralBranching", "s{s}q{q:02d}".format(
         s=spec.seed, q=int(round(law.saturate(spec.quality) * 100))))
@@ -1109,12 +1337,40 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
         mesh_ops.reduce_to_budget(obj, family=law.Family.FLORA, lod_index=0,
                                   blackbox=blackbox)
         topo_after_reduce = mesh_ops.topology_report(obj)
-        uv_report = unwrap_and_assign_materials(obj, spec, blackbox)
+        uv_report = unwrap_and_assign_materials(obj, spec, sampler, blackbox)
         channel_report, ao_result = author_channels(obj, spec, sampler, blackbox)
+
+        # RE-SOLVE UVs PER LOD, and this is not belt-and-braces over the seam split.
+        #
+        # Decimate/COLLAPSE carries no UV term in its collapse cost and exposes no flag
+        # to add one, so LOD0's parameterisation is not something LOD1 and LOD2 inherit
+        # -- it is something they are handed after it has been dragged across island
+        # borders. MEASURED on this asset before the hook: LOD0 passed the stretch gate,
+        # LOD1 came out with 36.1% of its surface AREA over the 0.55 organic limit and a
+        # worst triangle at 407.07 against a 3.3 outlier ceiling, LOD2 with 77.8% and
+        # 79.57. Smart UV Project picks its own island cuts from the mesh it is given, so
+        # the fix is to give it the mesh that actually ships.
+        #
+        # ORDER MATTERS AND ``build_lod_chain`` ALREADY HAS IT RIGHT: the hook fires
+        # after ``_weld_coincident`` has merged the duplicates ``_split_uv_seams``
+        # created for the decimation. Solving before that weld would parameterise a
+        # shattered shell and the weld would then merge vertices across island borders
+        # underneath the solution.
+        lod_uv = {0: dict(uv_report)}
+        slot_anchors = _material_slot_anchors(obj)
+
+        def _reunwrap(level_obj, lod_index):
+            solved = solve_uv(level_obj)
+            solved["slotsRepaired"] = _preserve_material_slots(level_obj, slot_anchors)
+            lod_uv[lod_index] = solved
 
         lods = mesh_ops.build_lod_chain(
             obj, family=law.Family.FLORA, name=asset_name,
-            quality_weight=spec.quality, blackbox=blackbox)
+            quality_weight=spec.quality, blackbox=blackbox, reunwrap=_reunwrap)
+        # LOD0 is the source object and never enters the reunwrap path, so its slot
+        # census is verified here instead. It cannot be empty -- assign_material_slots
+        # aborts on that -- but the number belongs in the same report as the others.
+        lod_uv[0]["slotsRepaired"] = _preserve_material_slots(obj, slot_anchors)
 
         # POST-DECIMATION non-manifold repair, and it is not redundant with the one inside
         # weld_and_clean. That runs before the LOD chain; Blender's Decimate/COLLAPSE then
@@ -1170,6 +1426,31 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
                 level.obj.data.update()
             level_bm.free()
 
+        # The submesh contract is verified LAST, after the non-manifold repair above has
+        # deleted its faces. Deleting a face can empty a slot, and the validator runs
+        # after this point, so a repair upstream of a face deletion proves nothing. The
+        # numbers recorded here are the ones the exported mesh actually carries.
+        for level in lods:
+            entry = lod_uv.setdefault(level.index, {})
+            repaired = _preserve_material_slots(level.obj, slot_anchors)
+            if repaired:
+                entry["slotsRepaired"] = dict(entry.get("slotsRepaired", {}),
+                                              **repaired)
+            entry["stretchStats"] = mesh_ops.uv_stretch_stats(level.obj)
+            census = {}
+            for polygon in level.obj.data.polygons:
+                census[polygon.material_index] = census.get(
+                    polygon.material_index, 0) + 1
+            entry["polygonsPerSlot"] = {str(k): census[k] for k in sorted(census)}
+            missing = [s for s in range(len(level.obj.data.materials))
+                       if s not in census]
+            if missing:
+                blackbox.note_invalid(
+                    "lod{i}_material_slots".format(i=level.index),
+                    "MATERIAL_SLOT_EMPTY",
+                    "slots {m} carry no polygon at LOD{i} and could not be "
+                    "re-tagged".format(m=missing, i=level.index))
+
         # topology_report is what turns a missed budget into a CAUSE. It had no callers
         # in the whole forge, which is why "coral LOD2 is stuck at 584" survived two
         # commits with a fabricated explanation attached (~76 disconnected shells; the
@@ -1206,6 +1487,7 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
             topology=topology,
         )
         result.sway_report["uv"] = uv_report
+        result.sway_report["lodUv"] = {str(k): v for k, v in sorted(lod_uv.items())}
         result.sway_report["weld"] = weld_stats
         result.sway_report["weldPost"] = weld_post
         result.sway_report["reduceTopology"] = (topo_before_reduce, topo_after_reduce)
@@ -1215,21 +1497,35 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
             "weightedApplied": shading.weighted_applied,
         }
 
+        # PACKAGE AND PROOF GO TO DIFFERENT DIRECTORIES, and mixing them is measured
+        # damage rather than untidiness. A package is the FBX plus its SIBLING manifest,
+        # under ``Assets`` where Unity must import it. A contact sheet is evidence for a
+        # human; dropped beside the FBX, Unity imports every PNG as a texture with its own
+        # ``.meta``, GUID and VRAM cost -- ``law.forge_proof_dir`` records that rock.py did
+        # exactly that and left 27 stray files in the asset tree.
+        #
+        # ``--out`` therefore steers the PROOF directory only. The package location is not
+        # negotiable per family, and ``--no-export`` is the switch for an iteration loop
+        # that must not touch ``Assets`` at all.
+        proof_dir = preview_dir or os.path.join(
+            law.project_root(), *law.forge_proof_dir(law.Family.FLORA).split("/"))
+        os.makedirs(proof_dir, exist_ok=True)
+
         if render_preview:
             spec_studio = preview.PreviewSpec(
-                name=asset_name, output_dir=preview_dir, resolution=512, samples=12,
+                name=asset_name, output_dir=proof_dir, resolution=512, samples=12,
                 surface_class=law.SurfaceClass.ORGANIC, mode="studio",
                 views=("front", "three_quarter", "side", "low"))
             studio = preview.render_contact_sheet(lods[0].obj, spec_studio)
 
             spec_flat = preview.PreviewSpec(
-                name=asset_name, output_dir=preview_dir, resolution=512, samples=8,
+                name=asset_name, output_dir=proof_dir, resolution=512, samples=8,
                 surface_class=law.SurfaceClass.ORGANIC, mode="flat",
                 views=("front", "three_quarter", "side", "low"))
             flat = preview.render_contact_sheet(lods[0].obj, spec_flat)
 
             spec_chan = preview.PreviewSpec(
-                name=asset_name, output_dir=preview_dir, resolution=512, samples=8,
+                name=asset_name, output_dir=proof_dir, resolution=512, samples=8,
                 surface_class=law.SurfaceClass.ORGANIC)
             channels = preview.render_channel_sheet(lods[0].obj, spec_chan)
 
@@ -1276,12 +1572,15 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
             # the REPOSITORY ROOT. An empty --out is the default, so the common path was the
             # broken one.
             #
-            # The package now defaults INSIDE Assets. law.forge_package_dir carries the
-            # source proof; the short version is that Docs/AgentLogs is gitignored and
-            # outside Assets, so every FBX this pipeline has ever made was invisible to
-            # both Unity and git. --out still overrides, which is what a silhouette
-            # iteration loop should use so it does not trigger an import per run.
-            out_dir = preview_dir or law.forge_package_dir(law.Family.FLORA)
+            # The package goes INSIDE Assets. law.forge_package_dir carries the source
+            # proof; the short version is that Docs/AgentLogs is gitignored and outside
+            # Assets, so every FBX this pipeline has ever made was invisible to both Unity
+            # and git. ``--out`` no longer redirects it: that flag now steers the PROOF
+            # directory, and an iteration loop that must not touch Assets uses
+            # ``--no-export``.
+            out_dir = os.path.join(
+                law.project_root(),
+                *law.forge_package_dir(law.Family.FLORA).split("/"))
             os.makedirs(out_dir, exist_ok=True)
             fbx_path = os.path.join(out_dir, "MESH_{f}_{n}.fbx".format(
                 f=law.Family.FLORA.value, n=asset_name))
@@ -1294,8 +1593,19 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
                 lods, collider_arg, fbx_path, identity=identity, blackbox=blackbox)
             result.fbx_path = getattr(export_result, "path", fbx_path)
 
+            # MANIFEST IS A SIBLING OF THE FBX, not a proof artefact, and this line used
+            # to join it onto `preview_dir`. With the default empty `--out` that is a bare
+            # relative name, so the manifest landed in the REPOSITORY ROOT while the FBX
+            # went into Assets. Nothing errored, and the consequence is silent and
+            # permanent: `HectonFBXPostprocessor.TryResolveForgeManifestPath`
+            # (Assets/_Project/Scripts/Editor/HectonFBXPostprocessor.cs:702-736) derives
+            # the manifest path from the MESH path and requires it in the SAME directory.
+            # With no sibling manifest the forge carve-out at :401-429 never fires, Unity
+            # falls back to `importNormals = Calculate`, and the weighted split-normal
+            # basis `mesh_ops.apply_shading_basis` bakes is re-derived from one angle and
+            # thrown away.
             result.manifest_path = export_unity.write_manifest(
-                os.path.join(preview_dir, export_unity.manifest_filename(
+                os.path.join(out_dir, export_unity.manifest_filename(
                     law.Family.FLORA, asset_name)),
                 identity, result.mesh_reports,
                 # No MAT_* asset and no TX_* set is authored here. Coral pigment lives in
@@ -1319,6 +1629,13 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
                         "stem:tip ratio so it is an invariant rather than the emergent "
                         "product of several multipliers.",
                     "biomeRoute": "photic shallows; references beauty.webp, shallows.webp",
+                    # 3DMODEL_FLORA_CORAL.md section 10 requires a "material slot report"
+                    # and "LOD triangle counts, simplification method ... and shader
+                    # semantic preservation". lodUv carries the per-level UV solve and the
+                    # per-level slot census, which is where both live.
+                    "materialSlotReport": uv_report.get("materialSlotRoles"),
+                    "materialSlot3Omitted": uv_report.get("materialSlot3Omitted"),
+                    "lodUv": result.sway_report.get("lodUv"),
                     "silhouette": result.silhouette,
                     "topology": [{"lod": index, "report": census.as_dict()}
                                  if hasattr(census, "as_dict") else
@@ -1361,7 +1678,13 @@ def _parse_args(argv: list) -> argparse.Namespace:
                         help="dichotomous fork generations per primary stem")
     parser.add_argument("--blocking", action="store_true",
                         help="colony is large enough to block a path; emits a convex collider")
-    parser.add_argument("--out", type=str, default="")
+    # PROOF directory only. The package (FBX + sibling manifest) always lands in
+    # law.forge_package_dir so Unity's forge carve-out can find the manifest beside the
+    # mesh; use --no-export for an iteration loop that must not touch Assets.
+    parser.add_argument("--out", type=str, default="",
+                        help="proof directory for contact sheets and channel tiles; "
+                             "defaults to law.forge_proof_dir(Flora). It does NOT move "
+                             "the FBX or the manifest")
     parser.add_argument("--no-preview", dest="preview", action="store_false")
     # Export is ON by default, and the flag only exists to make the silhouette loop fast.
     # An asset generator whose default run produces no asset is the defect this stage was
@@ -1468,12 +1791,27 @@ def main() -> None:
                       c=stats.channel, lo=stats.min_value, hi=stats.max_value,
                       m=stats.mean_value, cv=stats.coverage_fraction,
                       g=stats.has_gradient, v=stats.subject_visible))
+        # UV is measured per LOD because the decimator has no UV term in its collapse
+        # cost. Printing only LOD0 was how "36.1% of surface area over the limit at LOD1"
+        # stayed invisible until the validator said so.
+        for key in sorted(result.sway_report.get("lodUv", {}), key=int):
+            entry = result.sway_report["lodUv"][key]
+            stats = entry.get("stretchStats", {})
+            print("  UV   LOD{i} worst={w:.4f} p95={p:.4f} mean={m:.4f} tris={t} "
+                  "slots={s} repaired={r}".format(
+                      i=key, w=stats.get("worst", -1.0), p=stats.get("p95", -1.0),
+                      m=stats.get("mean", -1.0), t=stats.get("triangles", -1),
+                      s=entry.get("polygonsPerSlot", {}),
+                      r=entry.get("slotsRepaired", {})))
         for path in result.preview_paths:
             print("  PREVIEW " + path)
         for report in result.mesh_reports:
             failures = list(getattr(report, "failures", ()) or ())
+            # MeshReport names the field `lod_index`; reading `lod` always fell through to
+            # the -1 default, so every line printed "VALIDATE LOD-1" and the three levels
+            # were indistinguishable in the evidence.
             print("  VALIDATE LOD{i} tris={t} gates={g}{f}".format(
-                i=getattr(report, "lod", -1),
+                i=getattr(report, "lod_index", -1),
                 t=getattr(report, "triangle_count",
                           getattr(report, "triangles", -1)),
                 g="PASS" if not failures else "FAIL",

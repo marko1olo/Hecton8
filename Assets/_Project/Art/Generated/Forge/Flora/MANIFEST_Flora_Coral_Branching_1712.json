@@ -59,7 +59,7 @@
   "channelMeasurements": [
    "ChannelStats(channel='Coral_Branching_1712_chan0_sway_amplitude.png', min_value=0.0, max_value=0.12743772566318512, mean_value=0.0398336760699749, covered_pixels=21940, coverage_fraction=0.0836944580078125)",
    "ChannelStats(channel='Coral_Branching_1712_chan1_biolum_phase.png', min_value=0.0, max_value=0.7304610013961792, mean_value=0.17473316192626953, covered_pixels=21940, coverage_fraction=0.0836944580078125)",
-   "ChannelStats(channel='Coral_Branching_1712_chan2_baked_ao.png', min_value=0.0, max_value=1.0, mean_value=0.7766168117523193, covered_pixels=21940, coverage_fraction=0.0836944580078125)",
+   "ChannelStats(channel='Coral_Branching_1712_chan2_baked_ao.png', min_value=0.0, max_value=1.0, mean_value=0.776617705821991, covered_pixels=21940, coverage_fraction=0.0836944580078125)",
    "ChannelStats(channel='Coral_Branching_1712_chan3_family_specific.png', min_value=0.14995981752872467, max_value=0.9911022186279297, mean_value=0.5170729756355286, covered_pixels=21940, coverage_fraction=0.0836944580078125)"
   ],
   "consumerDefectOpen": "Hecton_CoralMaster.shader reads input.color.a as ambient occlusion and this mesh writes AO to B per the 2026-07-29 ruling. The mesh is correct; the consumer is not fixed yet, so in-engine this asset's ray-traced AO will be consumed as the harvest mask and vice versa.",
@@ -101,10 +101,10 @@
     "stretchMean": 0.0885,
     "stretchP95": 0.2825,
     "stretchStats": {
-     "mean": 0.08853848614046664,
-     "p95": 0.28248849882079874,
+     "mean": 0.08853840048078689,
+     "p95": 0.2825014105495882,
      "triangles": 5864,
-     "worst": 0.6435160631175458
+     "worst": 0.6435292965008619
     },
     "stretchTriangles": 5865,
     "stretchWorst": 0.6435,
@@ -122,10 +122,10 @@
     "stretchMean": 0.0833,
     "stretchP95": 0.2827,
     "stretchStats": {
-     "mean": 0.08334128201103388,
-     "p95": 0.28274571290142614,
+     "mean": 0.08334133496155575,
+     "p95": 0.28274404597954383,
      "triangles": 1727,
-     "worst": 0.6009113822410508
+     "worst": 0.6009320139988941
     },
     "stretchTriangles": 1728,
     "stretchWorst": 0.6009,
@@ -143,7 +143,7 @@
     "stretchMean": 0.0922,
     "stretchP95": 0.3508,
     "stretchStats": {
-     "mean": 0.09221366143124443,
+     "mean": 0.0922136601573303,
      "p95": 0.35084085293567546,
      "triangles": 287,
      "worst": 1.096842991417199
@@ -286,7 +286,7 @@
    "colorLayers": [
     "Col"
    ],
-   "digest": "259b09d67ab76349384b1e922c5f3d04",
+   "digest": "97b753256dd30cbaf8afde2c8510595a",
    "hasTangentBasis": true,
    "lod": 0,
    "name": "MESH_Flora_Coral_Branching_1712_LOD0",
@@ -297,7 +297,7 @@
    ],
    "validation": {
     "failures": [
-     "inconsistent_winding x53: directed edge (2223 -> 2254) used by triangle[300] and triangle[301]; winding is not consistent"
+     "inconsistent_winding x53: directed edge (2223 -> 2254) used by triangle[300] and triangle[301]; winding is not consistent. CAUSE: the surface is NON-ORIENTABLE -- 1 of 2 connected face region(s) admit no consistent orientation under ANY assignment of per-triangle winding. recalc_face_normals cannot repair that and can raise the occurrence count; the defect is the topology that welded a sheet onto itself, not the face normals. The orientation fill could not satisfy 87 edge(s), first near vertex pair (75, 772) -- that set is where to look, but it depends on traversal order, so compare region counts and not edge counts."
     ],
     "passed": false,
     "warnings": [
@@ -323,7 +323,7 @@
    "colorLayers": [
     "Col"
    ],
-   "digest": "92df658ec955e6a33f7637970558b54b",
+   "digest": "525ed0c650310f884f24cd65d0880f48",
    "hasTangentBasis": true,
    "lod": 1,
    "name": "MESH_Flora_Coral_Branching_1712_LOD1",
@@ -334,7 +334,7 @@
    ],
    "validation": {
     "failures": [
-     "inconsistent_winding x21: directed edge (154 -> 695) used by triangle[71] and triangle[72]; winding is not consistent"
+     "inconsistent_winding x21: directed edge (155 -> 696) used by triangle[71] and triangle[72]; winding is not consistent. CAUSE: the surface is NON-ORIENTABLE -- 2 of 17 connected face region(s) admit no consistent orientation under ANY assignment of per-triangle winding. recalc_face_normals cannot repair that and can raise the occurrence count; the defect is the topology that welded a sheet onto itself, not the face normals. The orientation fill could not satisfy 21 edge(s), first near vertex pair (134, 137) -- that set is where to look, but it depends on traversal order, so compare region counts and not edge counts."
     ],
     "passed": false,
     "warnings": [
@@ -360,7 +360,7 @@
    "colorLayers": [
     "Col"
    ],
-   "digest": "d78094cb434b0915de1c299dca9f62e9",
+   "digest": "a2fcf21a0b70475d2b2066fcbb1ccbaa",
    "hasTangentBasis": true,
    "lod": 2,
    "name": "MESH_Flora_Coral_Branching_1712_LOD2",
@@ -371,7 +371,7 @@
    ],
    "validation": {
     "failures": [
-     "inconsistent_winding x15: directed edge (33 -> 118) used by triangle[23] and triangle[65]; winding is not consistent"
+     "inconsistent_winding x15: directed edge (35 -> 119) used by triangle[17] and triangle[47]; winding is not consistent. CAUSE: the surface is NON-ORIENTABLE -- 2 of 7 connected face region(s) admit no consistent orientation under ANY assignment of per-triangle winding. recalc_face_normals cannot repair that and can raise the occurrence count; the defect is the topology that welded a sheet onto itself, not the face normals. The orientation fill could not satisfy 8 edge(s), first near vertex pair (31, 35) -- that set is where to look, but it depends on traversal order, so compare region counts and not edge counts."
     ],
     "passed": false,
     "warnings": [
@@ -401,7 +401,7 @@
    "Docs/AgentLogs/ForgeFlora/Coral_Branching_1712_SHEET_CHANNELS.png"
   ],
   "roundtripNotes": [
-   "wrote MESH_Flora_Coral_Branching_1712.fbx (920284 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "wrote MESH_Flora_Coral_Branching_1712.fbx (919964 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
    "MESH_Flora_Coral_Branching_1712_LOD0: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
    "MESH_Flora_Coral_Branching_1712_LOD1: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
    "MESH_Flora_Coral_Branching_1712_LOD2: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
@@ -432,7 +432,7 @@
    "MESH_Flora_Coral_Branching_1712_LOD2: world corner-normal max delta 0.0001119 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Flora_Coral_Branching_1712_LOD2: uv0 max delta 0.00000000 (tol 1e-05)",
    "MESH_Flora_Coral_Branching_1712_LOD2: landmark (-0.02241, 0.05062, -0.03134) -> (-0.02241, 0.05062, -0.03134), delta 0.0000000 m, margin 0.00600 m",
-   "MESH_Flora_Coral_Branching_1712_LOD2: signed volume +0.0023298 -> +0.0023298 (ratio +1.000000)",
+   "MESH_Flora_Coral_Branching_1712_LOD2: signed volume +0.0023298 -> +0.0023298 (ratio +0.999999)",
    "MESH_Flora_Coral_Branching_1712_LOD2: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
    "MESH_Flora_Coral_Branching_1712_LOD0 [fbx-space]: skipped: near-symmetric extreme vertex",
    "MESH_Flora_Coral_Branching_1712_LOD1 [fbx-space]: landmark direction expected (0.20198, -0.95081, 0.23486) measured (0.20198, -0.95081, 0.23486) delta 0.000000",
@@ -667,7 +667,7 @@
   "passed": false,
   "validatorVersion": "1.0.0"
  },
- "validationHash": "592d4894761dd098334969e3c2402b85",
+ "validationHash": "1db44fb0e0e62f2ebec6ebda494d36fa",
  "validationHashAlgorithm": "blake2b-128 over the canonical JSON of every other field, sorted keys",
  "vertexColorContract": {
   "alphaMeaning": "harvest_yield_mask",

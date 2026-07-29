@@ -761,6 +761,202 @@ def _gate_tangents(data: MeshData, sink: _Sink) -> None:
                       "or +1".format(i, sign))
 
 
+@dataclass
+class WindingDiagnosis:
+    """WHY a winding failure happened, because that decides who repairs it.
+
+    Three defects reach ``GATE_INCONSISTENT_WINDING`` and they have three
+    different owners. The bare symptom -- "these two triangles share a directed
+    edge" -- does not separate them, and the cost of that was measured on coral:
+    ``bmesh.ops.recalc_face_normals`` was added specifically to fix this gate,
+    and it moved LOD0 from 53 occurrences to 39 and never to 0. It was then
+    removed because it also broke the authored normal basis on rock. That whole
+    round trip was spent on a repair the mesh could not accept, and nothing in
+    the failure text said so.
+
+    ``twisted_regions`` of ``regions``
+        The INVARIANT, and the field to quote. A connected face region is twisted
+        when no assignment of per-triangle winding orients it consistently, i.e.
+        it is NON-ORIENTABLE -- a Moebius-style join has welded one sheet onto
+        itself with a half turn. ``recalc_face_normals`` orients each flood-filled
+        region and then dumps the whole twist onto whichever edges close the odd
+        cycles, so on such a region it cannot reach zero, and MEASURED it can make
+        the occurrence count worse: 60 to 98 on the coral mesh before decimation,
+        and 53 to 39 rather than to 0 on coral LOD0. Every edge still carries
+        exactly two faces throughout, which is why a non-manifold census reads a
+        clean 0 next to this failure and the pair reads as a contradiction.
+    ``conflict_edges``
+        The edges the flood fill could not satisfy. Reported because they are
+        where to look, NOT as a canonical measure: which edges end up carrying the
+        twist depends on the order the fill happened to visit faces in, so two
+        correct implementations legitimately report different counts on the same
+        mesh. Only its emptiness is invariant. If a number is being compared
+        across tools, compare ``twisted_regions``.
+    ``over_shared_edges``
+        Edges carrying three or more triangles. Among three faces on one edge,
+        two must traverse it the same way, so a repeated directed edge is forced
+        by the topology and no winding choice avoids it. That is a non-manifold
+        defect wearing a winding gate's name.
+    ``backwards_triangles``
+        Triangles wound against their neighbours when the surface IS orientable,
+        counted as the smaller side of each connected region. This is the only
+        one of the four that ``recalc_face_normals`` actually repairs.
+    """
+
+    conflict_edges: tuple = ()
+    over_shared_edges: tuple = ()
+    backwards_triangles: int = 0
+    regions: int = 0
+    twisted_regions: int = 0
+
+    @property
+    def orientable(self) -> bool:
+        return self.twisted_regions == 0
+
+    def explain(self) -> str:
+        """One sentence naming the cause and the repair that can work."""
+        parts = []
+        if self.over_shared_edges:
+            worst = max(count for _key, count in self.over_shared_edges)
+            parts.append(
+                "{0} edge(s) carry 3 or more triangles (worst {1}), which FORCES "
+                "a repeated directed edge that no winding choice can avoid; that "
+                "is a non-manifold defect, first at vertex pair {2}".format(
+                    len(self.over_shared_edges), worst,
+                    min(key for key, _count in self.over_shared_edges)))
+        if self.twisted_regions:
+            parts.append(
+                "the surface is NON-ORIENTABLE -- {0} of {1} connected face "
+                "region(s) admit no consistent orientation under ANY assignment "
+                "of per-triangle winding. recalc_face_normals cannot repair that "
+                "and can raise the occurrence count; the defect is the topology "
+                "that welded a sheet onto itself, not the face normals. The "
+                "orientation fill could not satisfy {2} edge(s), first near "
+                "vertex pair {3} -- that set is where to look, but it depends on "
+                "traversal order, so compare region counts and not edge "
+                "counts".format(
+                    self.twisted_regions, self.regions,
+                    len(self.conflict_edges), min(self.conflict_edges)))
+        elif self.backwards_triangles:
+            parts.append(
+                "the surface IS orientable: {0} triangle(s) are simply wound "
+                "against their neighbours, so recalc_face_normals or flipping "
+                "exactly those repairs it".format(self.backwards_triangles))
+        if not parts:
+            return ("cause undetermined: no non-manifold edge, no orientation "
+                    "conflict and no backwards triangle, so the repeat comes "
+                    "from coincident faces on the same vertex triple")
+        return "CAUSE: " + "; ".join(parts) + "."
+
+
+def _triangle_adjacency(data: MeshData) -> dict:
+    """Undirected shared edge -> ``[(triangle, directed start vertex), ...]``.
+
+    The key is the sorted vertex pair, which is the edge a topology census sees.
+    The value keeps the directed start vertex per triangle, which is the edge the
+    winding gate sees. Deriving both readings from ``tri_vertices`` in one place
+    is deliberate: the two cannot then disagree about what an edge is, which is
+    the first thing anyone suspects when a winding gate fires next to a clean
+    manifold report.
+    """
+    incident = {}
+    for t in range(data.triangle_count):
+        i0 = data.tri_vertices[t * 3]
+        i1 = data.tri_vertices[t * 3 + 1]
+        i2 = data.tri_vertices[t * 3 + 2]
+        for a, b in ((i0, i1), (i1, i2), (i2, i0)):
+            if a == b:
+                # A degenerate triangle already failed its own gate; a self-edge
+                # would only add noise to the orientation graph.
+                continue
+            key = (a, b) if a < b else (b, a)
+            found = incident.get(key)
+            if found is None:
+                incident[key] = [(t, a)]
+            else:
+                found.append((t, a))
+    return incident
+
+
+def orientation_analysis(data: MeshData) -> WindingDiagnosis:
+    """Can ANY choice of per-triangle winding make every shared edge agree?
+
+    Flood-fills one orientation across edges shared by exactly two triangles --
+    the same connectivity ``bmesh.ops.recalc_face_normals`` uses -- and records
+    the edges that contradict it. That makes the answer a measurement instead of
+    a hypothesis: a non-empty ``conflict_edges`` is a proof of non-orientability,
+    because an orientable surface admits the flood-filled assignment by
+    definition.
+
+    Public on purpose. ``mesh_ops.topology_report`` exists so a missed triangle
+    budget reports a CAUSE rather than a number; this is the same service for the
+    winding gate, and a generator or a probe can call it between stages to find
+    the pass that introduced the twist instead of bisecting by hand.
+    """
+    incident = _triangle_adjacency(data)
+    neighbours = {}
+    over_shared = []
+    for key in incident:
+        users = incident[key]
+        if len(users) > 2:
+            over_shared.append((key, len(users)))
+            continue
+        if len(users) != 2:
+            continue
+        first, second = users[0], users[1]
+        if first[0] == second[0]:
+            # One triangle using the same edge twice cannot constrain another.
+            continue
+        # Equal start vertices mean both traverse the edge the same way, so one
+        # of the two has to be flipped relative to the other.
+        same_direction = first[1] == second[1]
+        neighbours.setdefault(first[0], []).append((second[0], same_direction,
+                                                    key))
+        neighbours.setdefault(second[0], []).append((first[0], same_direction,
+                                                     key))
+
+    flipped = {}
+    conflicts = set()
+    backwards = 0
+    regions = 0
+    twisted = 0
+    for seed in range(data.triangle_count):
+        if seed in flipped:
+            continue
+        regions += 1
+        flipped[seed] = False
+        region = [seed]
+        stack = [seed]
+        region_twisted = False
+        while stack:
+            current = stack.pop()
+            for other, same_direction, key in neighbours.get(current, ()):
+                wanted = flipped[current] != same_direction
+                if other not in flipped:
+                    flipped[other] = wanted
+                    region.append(other)
+                    stack.append(other)
+                elif flipped[other] != wanted:
+                    conflicts.add(key)
+                    region_twisted = True
+        if region_twisted:
+            twisted += 1
+            # A twisted region has no "right way round", so counting triangles to
+            # flip in it would be a number with no repair attached to it.
+            continue
+        turned = 0
+        for index in region:
+            if flipped[index]:
+                turned += 1
+        # Either side of an orientable region may be declared the front, so the
+        # repair cost is the smaller side.
+        backwards += turned if turned <= len(region) - turned \
+            else len(region) - turned
+    return WindingDiagnosis(tuple(sorted(conflicts)),
+                            tuple(sorted(over_shared)), backwards,
+                            regions, twisted)
+
+
 def _gate_triangles(data: MeshData, sink: _Sink, *, double_sided: bool) -> None:
     """Degenerate triangles and winding consistency.
 
@@ -768,6 +964,10 @@ def _gate_triangles(data: MeshData, sink: _Sink, *, double_sided: bool) -> None:
     area > 0.0000001". PROCEDURAL_ASSET_PIPELINE.md, Validation Before Save:
     "no inverted or broken winding except deliberate double-sided shells
     documented by family bible".
+
+    The winding half reports a DIAGNOSIS, not only the symptom. See
+    :class:`WindingDiagnosis` for the three defects that reach this one gate and
+    why naming them apart is worth the extra pass.
     """
     tri_count = data.triangle_count
     for t in range(tri_count):
@@ -795,7 +995,16 @@ def _gate_triangles(data: MeshData, sink: _Sink, *, double_sided: bool) -> None:
     # A closed or open manifold surface traverses every shared edge once in each
     # direction. The same directed edge appearing twice means two faces wind the
     # same way across it, which is the inverted/duplicated face case.
+    #
+    # Collected first, reported second. _Sink.fail keeps the detail of the FIRST
+    # occurrence and only counts the rest, so the diagnosis has to be computed
+    # before anything is emitted or it could never reach the message a reader
+    # actually sees. Occurrence counting is byte-for-byte the previous behaviour:
+    # `seen` is not updated on a repeat, so an edge with three triangles still
+    # reports two occurrences and a mesh's number does not shift under this
+    # change.
     seen = {}
+    repeats = []
     for t in range(tri_count):
         i0 = data.tri_vertices[t * 3]
         i1 = data.tri_vertices[t * 3 + 1]
@@ -806,10 +1015,25 @@ def _gate_triangles(data: MeshData, sink: _Sink, *, double_sided: bool) -> None:
             if previous is None:
                 seen[key] = t
             else:
-                sink.fail(GATE_INCONSISTENT_WINDING,
-                          "directed edge ({0} -> {1}) used by triangle[{2}] and "
-                          "triangle[{3}]; winding is not consistent".format(
-                              a, b, previous, t))
+                repeats.append((a, b, previous, t))
+    if not repeats:
+        return
+    # Paid only on failure. Clean geometry never walks the orientation graph.
+    diagnosis = orientation_analysis(data)
+    first = repeats[0]
+    sink.fail(GATE_INCONSISTENT_WINDING,
+              "directed edge ({0} -> {1}) used by triangle[{2}] and "
+              "triangle[{3}]; winding is not consistent. {4}".format(
+                  first[0], first[1], first[2], first[3], diagnosis.explain()))
+    for extra in repeats[1:]:
+        # _Sink.fail aggregates repeats of one gate into a count and keeps the
+        # first detail, so these only raise the occurrence number. The real
+        # detail is passed anyway rather than a placeholder: if the sink ever
+        # keeps every detail, this stays correct instead of emitting blanks.
+        sink.fail(GATE_INCONSISTENT_WINDING,
+                  "directed edge ({0} -> {1}) used by triangle[{2}] and "
+                  "triangle[{3}]".format(extra[0], extra[1], extra[2],
+                                         extra[3]))
 
 
 def _gate_uv(data: MeshData, sink: _Sink, *, hero: bool, triplanar: bool,
