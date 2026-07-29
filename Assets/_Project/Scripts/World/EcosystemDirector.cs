@@ -4964,12 +4964,65 @@ namespace Hecton8.World
             }
         }
 
+        /// <summary>
+        /// Resolves the position the ecology seeds its first sector and biomass cells around: the player
+        /// when one exists, and otherwise - ONCE, and only while nothing has been seeded at all - the
+        /// current floating origin.
+        /// </summary>
+        /// <remarks>
+        /// WHY THE FALLBACK EXISTS. The ecology's real dependency is an observer POSITION, and this code
+        /// conflated it with a PLAYER. GameBootstrapper skips BootstrapPhase.Player outright under
+        /// -h8headless (GameBootstrapper.cs:2417-2418) and parks the boot in 00_BOOTSTRAP rather than
+        /// handing off to a gameplay scene (:3120-3124), so TryResolvePlayerAup can never succeed in a
+        /// headless run. With no observer, EnsurePlayerSectorRegistered returned before seeding anything,
+        /// _activeBiomassCellCount stayed 0, and TryGetGlobalBiomassAudit failed its count &lt;= 0 gate
+        /// (:3415-3417) - which HeadlessSimulationRunner turns into a fatal [ECOLOGY_UNAVAILABLE]
+        /// (HeadlessSimulationRunner.cs:588-594). That is exactly what the first real headless run of this
+        /// project reported on 2026-07-29, after simulating 62.65 s against a fully initialised, fully
+        /// registered director. The ecology was never broken; nothing had ever told it where to look.
+        ///
+        /// WHY IT IS GATED ON _activeBiomassCellCount == 0 RATHER THAN APPLIED EVERY TICK. Sector slots are
+        /// NEVER FREED - the comment at :5010-5013 is explicit that the only decrement of _activeSectorCount
+        /// is a failed-upsert rollback, and MigrationNeighborSectorReserve exists precisely to keep ring
+        /// expansion from consuming the last slots the player needs when walking into virgin sectors. This
+        /// method runs from SlowTick at 0.1 Hz, so an ungated fallback that followed a roaming observer
+        /// would claim a new sector every ten seconds - about 2160 of them in a six-hour run, far past
+        /// capacity - and would eat the very reserve that keeps the player's own sector resolvable. Gating
+        /// on "nothing seeded yet" bounds the whole cost to one sector and five biomass cells, once, for
+        /// the lifetime of the director.
+        ///
+        /// WHY NOT Application.isBatchMode. Branching on batch mode would make the headless path behave
+        /// differently from the shipped one, which is the failure mode this entire bug is made of: the
+        /// harness would then be measuring a world no player ever gets. This runs identically in both.
+        ///
+        /// GAMEPLAY EFFECT, stated rather than hidden: in a normal session the player usually exists before
+        /// the ecology's first SlowTick, so the fallback never fires. When it does - the Kinematic Arrest
+        /// Gate can hold the player suspended for a long time over async voxel terrain - it seeds at the
+        /// origin and costs one sector plus five cells if the player later spawns far away. In exchange it
+        /// closes a latent gap where the ecology was inert for that entire window.
+        ///
+        /// WHAT THIS DOES NOT DO: it does not make the ecology follow an observer that has no player. After
+        /// the single seeding event the fallback stops, so a headless run evolves the cells it was given
+        /// rather than tracking the QA ghost. Making the ecology follow a playerless observer needs slot
+        /// recycling first, and that is a separate change.
+        /// </remarks>
+        private bool TryResolveSeedObserverAup(out AbsoluteUniversePosition observerAup)
+        {
+            if (TryResolvePlayerAup(out observerAup))
+                return true;
+
+            if (_activeBiomassCellCount > 0)
+                return false;
+
+            return TryResolveAupFromRuntimeOrigin(Vector3.zero, out observerAup);
+        }
+
         private void EnsurePlayerSectorRegistered()
         {
             if (HasPendingSimulationJob())
                 return;
 
-            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            if (!TryResolveSeedObserverAup(out AbsoluteUniversePosition playerAup))
                 return;
 
             if (!TryLockSectorSolveJobBuffers())
