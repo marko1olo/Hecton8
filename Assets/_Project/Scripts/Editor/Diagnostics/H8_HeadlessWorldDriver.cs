@@ -130,6 +130,20 @@ namespace Hecton8.EditorTools.Diagnostics
             ResourceDeplete,
             ResourcePickup,
             Craft,
+
+            /// <summary>
+            /// Presses every remaining player VERB once, on the shipping producer, after all four rows have
+            /// latched.
+            ///
+            /// LAST ON PURPOSE, and that placement is the whole reason it is safe. Two of the verbs below
+            /// (Pda, Inventory) open the PDA, which switches the input map away from gameplay, and a third
+            /// (Cancel) is what closes it again. Sweeping them BEFORE the rows would let a UI toggle
+            /// suppress locomotion and tool input for the rest of the schedule, and the four rows would then
+            /// report a product gap caused by the instrument. Every path out of <see cref="DrivePhase.Craft"/>
+            /// latches RowCraft first, and the other three rows latch earlier still, so nothing this phase
+            /// does can reach a verdict.
+            /// </summary>
+            VerbSweep,
             Done,
 
             /// <summary>
@@ -223,6 +237,23 @@ namespace Hecton8.EditorTools.Diagnostics
         private const double ResourceDepleteBudgetSeconds = 6.0;
         private const double ResourcePickupBudgetSeconds = 6.0;
         private const double CraftBudgetSeconds = 14.0;
+
+        /// <summary>
+        /// The verb sweep's box, and the ONE number in this block that was added rather than inherited.
+        ///
+        /// It is deliberately smaller than the work it bounds. The sweep is TICK-bound, not time-bound: it is
+        /// a fixed 16-step handshake (see <see cref="VerbSweepStepCount"/>) and
+        /// <see cref="MinTicksVerbSweep"/> guarantees all 16 steps run, so this box only decides whether the
+        /// phase is labelled TIMEBOXED at the end. That label costs nothing here - the sweep is the last
+        /// phase, it holds no row, and its overrun cannot starve a successor because it has none. The
+        /// alternative, sizing the box for 16 pumped frames in the slow regime, would add ~20 s to
+        /// <see cref="TotalBudgetSeconds"/> and the probe raises its gameplay window by exactly that amount
+        /// (H8_HeadlessPlayModeProbe.cs:479), pushing the run closer to a hard timeout that loses every
+        /// verdict already produced. 6.0 s buys the sweep its full step count in the fast regime and its
+        /// tick floor in the slow one.
+        /// </summary>
+        private const double VerbSweepBudgetSeconds = 6.0;
+
         private const double CraftEvaluationIntervalSeconds = 0.5;
 
         /// <summary>
@@ -244,14 +275,35 @@ namespace Hecton8.EditorTools.Diagnostics
         /// printed an elapsed for a stop it had no code to cause. The only thing that ever ended the
         /// schedule was the probe closing its gameplay window
         /// (H8_HeadlessPlayModeProbe.cs:495), which is why a run reported 160.430s against this 63.0s.
-        /// It is now the trigger for compression. It is NOT a clamp on the phase boxes: the nine boxes sum
-        /// to exactly this number, so clamping each box by what the total had left meant an overrunning
-        /// phase confiscated every later phase's window - see EnterPhase.
+        /// It is now the trigger for compression. It is NOT a clamp on the phase boxes: clamping each box by
+        /// what the total had left meant an overrunning phase confiscated every later phase's window - see
+        /// EnterPhase.
+        ///
+        /// ZERO HEADROOM BY CONSTRUCTION, and this is a known defect rather than a design choice. This
+        /// constant is DERIVED as the sum of all TEN phase boxes (8+5+7+6+6+5+6+6+14+6 = 69.0), so the
+        /// schedule's headroom is exactly 0.0 s. Meanwhile the tolerance documented on
+        /// PhaseBoxOvershootToleranceSeconds exists precisely because "the ceiling is only testable between
+        /// pumped frames, so every phase overshoots by up to one frame's cost as a matter of arithmetic" -
+        /// about 0.23 s in the normal regime. Those two statements cannot both be satisfied: a completely
+        /// healthy run in which several phases each overshoot by one frame breaches this total, compression
+        /// fires, and a later row - Craft, the very row this work was commissioned to explain - is labelled
+        /// as unmeasured with the defect attributed to another phase. A harness that manufactures that label
+        /// on a clean run is the same class of false evidence the rest of this cycle is removing.
+        ///
+        /// NOT FIXED HERE, because the fix is a behaviour change with a coupling that must be checked first:
+        /// the VerbSweep note above records that raising this total requires the probe to raise its gameplay
+        /// window by the same amount (H8_HeadlessPlayModeProbe.cs), and getting that wrong pushes the run
+        /// into a hard timeout that discards every verdict already produced. The principled repair is to add
+        /// headroom derived from the tolerance already justified - phase count x
+        /// PhaseBoxOvershootToleranceSeconds - rather than an invented number, and to verify the probe window
+        /// in the same change. An earlier revision of this comment asserted "the nine boxes sum to exactly
+        /// this number", which was wrong twice: there are ten terms and they sum to 69.0, not 63.0.
         /// </summary>
         internal const double TotalBudgetSeconds =
             SettleBudgetSeconds + SwimSurfaceBudgetSeconds + SwimDiveBudgetSeconds +
             ResourceTargetBudgetSeconds + ToolEquipBudgetSeconds + ToolUseBudgetSeconds +
-            ResourceDepleteBudgetSeconds + ResourcePickupBudgetSeconds + CraftBudgetSeconds;
+            ResourceDepleteBudgetSeconds + ResourcePickupBudgetSeconds + CraftBudgetSeconds +
+            VerbSweepBudgetSeconds;
 
         // ── tick floors ───────────────────────────────────────────────────────────────────────────
         // MEASURED, Logs/h8_playprobe_route.json phases[5] and Logs/omega_route28.log CLOCKS: the
@@ -280,6 +332,16 @@ namespace Hecton8.EditorTools.Diagnostics
         private const int MinTicksCraft = 4;
 
         /// <summary>
+        /// One tick per sweep step, and this is a statement about edges, not padding. The dispatcher's
+        /// discrete producer is an EDGE detector - <c>pressed = current &amp; ~previous</c>
+        /// (InputDispatcher.cs:1050) - so a verb needs one tick with its bit RAISED and, before any re-press,
+        /// one tick with it CLEARED. Reading the consumer's answer needs a third. Compressing two steps into
+        /// one tick would make the driver's own bit its own "previous" mask and produce zero edges, which is
+        /// the one failure mode that would report all 15 verbs dead while the input path was perfect.
+        /// </summary>
+        private const int MinTicksVerbSweep = VerbSweepStepCount;
+
+        /// <summary>
         /// Runaway backstop on the axis the wall clock cannot see. The probe's own clock table measured
         /// 6170 editor ticks per wall second in LoadingMenu and 3242 in WaitingForSettle; only
         /// GameplayWarmup happens to be one tick per game frame. If the driver ever rides a cheap tick
@@ -296,6 +358,47 @@ namespace Hecton8.EditorTools.Diagnostics
         private const float MinPressureDelta = 0.0005f;
         private const float MinNodeHealthDelta = 0.001f;
         private const float MinDurabilityDelta = 0.0001f;
+
+        // ── verb sweep ────────────────────────────────────────────────────────────────────────────
+        //
+        // WHY THIS EXISTS. Measured before this phase was written: the schedule pressed 2 of the 13
+        // PlayerInputSignal commands and 2 of the 17 PlayerInputAction bits. Eleven discrete commands and
+        // fifteen action bits - each one a whole player verb - had never been executed once in this project's
+        // history, so nothing was known about them either way. A verb that has never run is not "probably
+        // fine"; it is unmeasured, and the cheapest possible measurement is one press.
+        //
+        // WHICH LANE IT DRIVES, AND WHY IT IS THE BETTER ONE. The driver already owned
+        // PublishDiscreteCommand, which pushes a PlayerInputSignal directly. That reaches the consumers but
+        // SKIPS the producer, and the producer is code under test: InputDispatcher.PublishDiscreteInputSignals
+        // (InputDispatcher.cs:1048-1107) edge-detects the button mask of the RESOLVED input state and
+        // publishes the eleven commands itself. The resolved state is _currentState, which PollInput writes
+        // AFTER folding the automation override in (InputDispatcher.cs:3133-3147), and rawState is built from
+        // it (:784) before the edge test at :848. So raising a bit on the override lane exercises
+        //   automation override -> resolved snapshot -> dispatcher edge detector -> PlayerInputSignal -> consumer
+        // where the direct push only exercised the last hop. This phase therefore publishes NO
+        // PlayerInputSignal of its own, which is also what makes the attribution sound: any PLIN-hash command
+        // seen on the lane while this phase runs was published by the dispatcher, not by the harness.
+        //
+        // THREE STAGES PER VERB, because three different things can be broken and they have different owners:
+        //   ARRIVED  - the bit is present in IInputService.CurrentInputState.ButtonsBitmask. Failure means the
+        //              override never reached the dispatcher, or the input block mask erased it.
+        //   COMMAND  - the matching PlayerInputSignal command appeared on the lane. Failure with ARRIVED true
+        //              means the dispatcher's edge detector did not fire for that bit.
+        //   CONSUMED - a consumer-visible observable moved. Only some verbs have one that settles inside this
+        //              phase; the ones that do not say so by name instead of implying a pass.
+        private const int VerbCount = 17;
+        private const int VerbSweepStepCount = 16;
+
+        /// <summary>PLIN command ids run 1..13, so a 14-bit mask indexed by command id covers the lane.</summary>
+        private const int PlayerInputCommandCount = 14;
+
+        // Per-verb ledger bits. Kept as flags in one byte per verb rather than four parallel bool arrays:
+        // the flush pass reads them together and a half-updated set of parallel arrays is a reporting bug
+        // waiting to happen.
+        private const byte VerbFlagRaised = 1 << 0;
+        private const byte VerbFlagArrivedInSnapshot = 1 << 1;
+        private const byte VerbFlagCommandObserved = 1 << 2;
+        private const byte VerbFlagConsumerObserved = 1 << 3;
 
         // ── resource placement ────────────────────────────────────────────────────────────────────
         private const float NodePlacementDistanceMeters = 1.75f;
@@ -496,6 +599,71 @@ namespace Hecton8.EditorTools.Diagnostics
         private static float _durabilityAtToolUse;
         private static float _durabilityAfterToolUse;
         private static bool _durabilityReadable;
+
+        // ── inventory upstream census, READ ONLY ──────────────────────────────────────────────────
+        // The driver holds no reference to PlayerInventory and never calls a mutator on it; these are the
+        // three reads that tell a Tool row WHY it is red. PlayerInventory.Awake disables the component when
+        // its DTO layout guard or its vault bind fails (PlayerInventory.cs:1364 and :1387), and a disabled
+        // inventory makes PlayerToolManager.IsToolAvailableInSlot false for EVERY slot by construction
+        // (PlayerToolManager.cs:927-933 -> HasToolInInventory), which is indistinguishable from "no tool
+        // prefabs are authored" unless somebody looks.
+        private static bool _inventoryResolved;
+        private static bool _inventoryComponentPresent;
+        private static bool _inventoryComponentEnabled;
+        private static bool _inventoryGridBound;
+        private static int _inventoryVersionAtResolve;
+        private static int _inventoryVersionLast;
+
+        // ── signal-lane census ────────────────────────────────────────────────────────────────────
+        // Counts of frame-snapshot entries seen on the lanes the four rows depend on. Read-only:
+        // GetFrameSnapshot returns ReadOnlySpan<T>.Empty for a lane that was never registered
+        // (SignalBusRuntime.cs:773-783 via TryReadFrameSnapshot :1542), and it does NOT register one, so
+        // observing a dead lane costs nothing and cannot create the lane it is measuring.
+        //
+        // Each lane below has exactly one interesting producer and a zero therefore names a specific owner:
+        //   InventoryChangedSignal      PlayerInventory.cs:5433      the player's own inventory changed
+        //   ToolLoadoutChangedSignal    PlayerToolManager.cs:833     the only producer of the swap lane
+        //   CraftingStartedSignal       Fabricator.cs:3505           StartCraft reached the shipping lane
+        //   ResourceDepletionDeltaSignal ScavengingLootOracleRuntime.cs:1843  yield accounting ran
+        //   DebrisSpawnSignal           ResourceNode.cs:1325         the node's own damage side effect
+        private static int _laneInventoryChanged;
+        private static int _laneToolLoadoutChanged;
+        private static int _laneCraftingStarted;
+        private static int _laneResourceDepletionDelta;
+        private static int _laneDebrisSpawn;
+        private static int _lanePlayerInputSignals;
+        private static int _laneInputStateSignals;
+
+        // ── verb sweep state ──────────────────────────────────────────────────────────────────────
+        private static int _verbSweepStep;
+        private static bool _verbSweepLogged;
+        private static bool _verbSweepEntered;
+        private static uint _verbSweepRaisedMask;
+        private static uint _verbSweepArrivedMask;
+        private static uint _verbSweepSnapshotButtonsLast;
+        private static uint _verbSweepSnapshotFrameLast;
+        private static bool _verbSweepOverrideFlagObserved;
+        private static bool _verbSweepPdaObservedOpen;
+        private static bool _verbSweepPdaClosedAfterCancel;
+        private static bool _verbSweepPdaOpenedByInventoryVerb;
+        private static bool _verbSweepFlashlightFlipped;
+        private static bool _verbSweepFlashlightOnAtEntry;
+        private static int _verbSweepToolSlotAtEntry = -1;
+        private static int _verbSweepToolSlotObserved = -1;
+        private static int _verbSweepLoadoutSignalsAtEntry;
+
+        // COLD ALLOC: byte[17] + uint[17] + bool[14] - one verb ledger and one command-seen table for the
+        // run, ~85 B total, written from the sweep phase and read once at flush - owner: H8_HeadlessWorldDriver
+        private static readonly byte[] _verbFlags = new byte[VerbCount];
+        private static readonly uint[] _verbArrivedFrame = new uint[VerbCount];
+        private static readonly bool[] _commandSeen = new bool[PlayerInputCommandCount];
+
+        // COLD ALLOC: StringBuilder[1] - verb-sweep and lane-census log composition, at most one flush per
+        // run - owner: H8_HeadlessWorldDriver
+        //
+        // SEPARATE from _detail on purpose: _detail is mid-compose whenever a row latches, and a shared
+        // builder would let a log line truncate a verdict that was being written in the same tick.
+        private static readonly StringBuilder _log = new StringBuilder(512);
 
         // ── craft observations ────────────────────────────────────────────────────────────────────
         private static int _visibleRecipeCount;
@@ -739,6 +907,47 @@ namespace Hecton8.EditorTools.Diagnostics
             _durabilityAfterToolUse = 0f;
             _durabilityReadable = false;
 
+            _inventoryResolved = false;
+            _inventoryComponentPresent = false;
+            _inventoryComponentEnabled = false;
+            _inventoryGridBound = false;
+            _inventoryVersionAtResolve = 0;
+            _inventoryVersionLast = 0;
+
+            _laneInventoryChanged = 0;
+            _laneToolLoadoutChanged = 0;
+            _laneCraftingStarted = 0;
+            _laneResourceDepletionDelta = 0;
+            _laneDebrisSpawn = 0;
+            _lanePlayerInputSignals = 0;
+            _laneInputStateSignals = 0;
+
+            _verbSweepStep = 0;
+            _verbSweepLogged = false;
+            _verbSweepEntered = false;
+            _verbSweepRaisedMask = 0u;
+            _verbSweepArrivedMask = 0u;
+            _verbSweepSnapshotButtonsLast = 0u;
+            _verbSweepSnapshotFrameLast = 0u;
+            _verbSweepOverrideFlagObserved = false;
+            _verbSweepPdaObservedOpen = false;
+            _verbSweepPdaClosedAfterCancel = false;
+            _verbSweepPdaOpenedByInventoryVerb = false;
+            _verbSweepFlashlightFlipped = false;
+            _verbSweepFlashlightOnAtEntry = false;
+            _verbSweepToolSlotAtEntry = -1;
+            _verbSweepToolSlotObserved = -1;
+            _verbSweepLoadoutSignalsAtEntry = 0;
+
+            for (int verb = 0; verb < VerbCount; verb++)
+            {
+                _verbFlags[verb] = 0;
+                _verbArrivedFrame[verb] = 0u;
+            }
+
+            for (int command = 0; command < PlayerInputCommandCount; command++)
+                _commandSeen[command] = false;
+
             _visibleRecipeCount = 0;
             _craftableRecipeCount = 0;
             _craftEvaluatedAt = 0.0;
@@ -794,6 +1003,11 @@ namespace Hecton8.EditorTools.Diagnostics
             // most useful fact about a run that did not finish, and overwriting it with "Done" throws it
             // away. _stopped closes IsActive instead.
             FinaliseUnlatchedRows();
+
+            // AFTER the rows, and unconditional. The lane census is worth printing even on a run that died in
+            // Settle and never reached the sweep - "InputStateSignal=0" explains four dead rows at once - and
+            // the verb ledger then correctly reports every verb as NOT PRESSED rather than as failed.
+            FlushVerbSweepLog(_verbSweepEntered && _verbSweepStep < VerbSweepStepCount);
             _stopped = true;
         }
 
@@ -830,6 +1044,10 @@ namespace Hecton8.EditorTools.Diagnostics
                 _stoppedAtElapsed = ElapsedSeconds;
                 CloseCurrentPhase(PhaseYield.Aborted);
                 LatchAllUnlatched(RowVerdict.Fail, ex.GetType().Name, ex.Message);
+
+                // Stop() early-returns once _stopped is set, so this is the last chance to print the census -
+                // and a run that threw is exactly when a reader needs to know which lanes were alive.
+                FlushVerbSweepLog(_verbSweepEntered && _verbSweepStep < VerbSweepStepCount);
                 _stopped = true;
             }
         }
@@ -892,6 +1110,36 @@ namespace Hecton8.EditorTools.Diagnostics
                     _inputEnabledEverObserved = true;
 
                 _inputBlockMaskLast = input.GetInputBlockMask();
+
+                // The AUTHORITATIVE post-fold snapshot, not the driver's own copy of what it asked for.
+                // IInputDeterminismService.CurrentInputState (GlobalRegistryContracts.cs:940) is the state
+                // InputDispatcher resolved after ApplyAutomationOverride and ApplyInputBlockMask, so a bit
+                // present here provably survived both, and the AutomationOverride flag
+                // (InputDispatcher.cs:1112) proves the override lane was actually consumed rather than merely
+                // published. _publishedOverrides only ever proved the latter.
+                InputState resolved = input.CurrentInputState;
+                _verbSweepSnapshotButtonsLast = resolved.ButtonsBitmask;
+                _verbSweepSnapshotFrameLast = resolved.Frame;
+                if (resolved.HasFlag(InputStateFlags.AutomationOverride))
+                    _verbSweepOverrideFlagObserved = true;
+
+                // Credit arrival only for bits the driver is CURRENTLY holding. Without that guard a bit set
+                // by something else - or left over in a stale snapshot - would be laundered into this
+                // driver's coverage claim, which is the whole class of mistake this ledger exists to avoid.
+                uint arrived = resolved.ButtonsBitmask & _intent.ActionsBitmask;
+                if (arrived != 0u && (arrived & ~_verbSweepArrivedMask) != 0u)
+                {
+                    _verbSweepArrivedMask |= arrived;
+                    for (int verb = 0; verb < VerbCount; verb++)
+                    {
+                        if ((arrived & VerbBit(verb)) == 0u ||
+                            (_verbFlags[verb] & VerbFlagArrivedInSnapshot) != 0)
+                            continue;
+
+                        _verbFlags[verb] |= VerbFlagArrivedInSnapshot;
+                        _verbArrivedFrame[verb] = resolved.Frame;
+                    }
+                }
             }
 
             Hecton8.Gameplay.HectonSurvivalSystem survival = _survival;
@@ -954,6 +1202,14 @@ namespace Hecton8.EditorTools.Diagnostics
                 }
             }
 
+            SampleSignalLaneCensus();
+
+            // Field reads on a cached context property (PlayerRuntimeContext.cs:172 is an auto-property, not
+            // a GetComponent), so this is per-tick safe, and the version delta is worth sampling every tick:
+            // a pickup that bumps InventoryVersion is the difference between "an item entered the bag" and
+            // "a signal was published about an item".
+            ResolveInventoryCensus();
+
             Hecton8.Interaction.PlayerInteraction interaction = _interaction;
             if (interaction != null && interaction.CurrentHovered is Hecton8.Interaction.PickupItem)
                 _sawPickupHover = true;
@@ -971,6 +1227,229 @@ namespace Hecton8.EditorTools.Diagnostics
                 float progress = fabricator.CraftProgress;
                 if (progress > _craftProgressPeak)
                     _craftProgressPeak = progress;
+            }
+        }
+
+        /// <summary>
+        /// Counts what the lanes the four rows depend on actually carried, per tick, without consuming or
+        /// mutating anything.
+        ///
+        /// A lane count is not a verdict, and none of these lanes latches a row on its own. It is the fact
+        /// that turns an ambiguous row into an actionable one: "the tool never damaged the node" and "the
+        /// tool swap lane published 0 signals all run" point at different owners, and before this census the
+        /// second half was simply unknown. Grepped by SIGNAL TYPE, never by DTO or BufferID - the mistake
+        /// that produced a false dead-code verdict on this project once already.
+        /// </summary>
+        private static void SampleSignalLaneCensus()
+        {
+            _laneInventoryChanged += SignalBus<InventoryChangedSignal>.GetFrameSnapshot().Length;
+            _laneToolLoadoutChanged += SignalBus<ToolLoadoutChangedSignal>.GetFrameSnapshot().Length;
+            _laneCraftingStarted += SignalBus<CraftingStartedSignal>.GetFrameSnapshot().Length;
+            _laneResourceDepletionDelta += SignalBus<ResourceDepletionDeltaSignal>.GetFrameSnapshot().Length;
+            _laneDebrisSpawn += SignalBus<DebrisSpawnSignal>.GetFrameSnapshot().Length;
+            _laneInputStateSignals += SignalBus<InputStateSignal>.GetFrameSnapshot().Length;
+
+            System.ReadOnlySpan<PlayerInputSignal> discrete =
+                SignalBus<PlayerInputSignal>.GetFrameSnapshot();
+            for (int i = 0; i < discrete.Length; i++)
+            {
+                if (discrete[i].SourceHash != PlayerInputSignalSourceHash)
+                    continue;
+
+                _lanePlayerInputSignals++;
+
+                // Attribution: only credit a command to the DISPATCHER while the verb sweep is running,
+                // because that is the only phase in which this driver pushes nothing onto the lane itself.
+                // Outside it the harness is a producer too, and crediting its own push as evidence that
+                // InputDispatcher.PublishDiscreteInputSignals works would be a self-certifying instrument.
+                if (_phase != DrivePhase.VerbSweep)
+                    continue;
+
+                byte command = discrete[i].Command;
+                if (command < PlayerInputCommandCount)
+                    _commandSeen[command] = true;
+            }
+        }
+
+        /// <summary>
+        /// Reads the inventory owner's OBSERVABLE STATE once, and only as values. No reference is retained,
+        /// nothing is written, and no inventory mutator is called - the driver is not allowed to put items in
+        /// a bag and then claim the resource route works.
+        ///
+        /// This exists because two unrelated defects shared one red row. PlayerInventory.Awake disables the
+        /// component when its editor-only DTO layout guard fails (PlayerInventory.cs:1356-1372) or when the
+        /// vault bind fails (:1385-1389), and a disabled inventory makes HasToolInInventory - and therefore
+        /// PlayerToolManager.IsToolAvailableInSlot (PlayerToolManager.cs:927-933) - false for every slot. The
+        /// Tool row then printed "no tool exists to select on this route", which reads as unauthored content
+        /// and is not: the loadout can be perfectly authored and still report empty.
+        /// </summary>
+        private static void ResolveInventoryCensus()
+        {
+            if (_inventoryResolved)
+            {
+                RefreshInventoryVersion();
+                return;
+            }
+
+            IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+            if (player == null)
+                return;
+
+            Hecton8.Inventory.PlayerInventory inventory = player.Inventory;
+            if (inventory == null)
+            {
+                // Not latched: the player root may still be assembling, and a permanent "absent" written on
+                // the first tick would be the same false-negative the bounded lookup counters elsewhere in
+                // this file exist to avoid. It is latched below only once a component is actually seen.
+                _inventoryComponentPresent = false;
+                return;
+            }
+
+            _inventoryResolved = true;
+            _inventoryComponentPresent = true;
+            _inventoryComponentEnabled = inventory.enabled;
+            _inventoryGridBound = inventory.Grid != null;
+            _inventoryVersionAtResolve = inventory.InventoryVersion;
+            _inventoryVersionLast = _inventoryVersionAtResolve;
+        }
+
+        private static void RefreshInventoryVersion()
+        {
+            IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+            Hecton8.Inventory.PlayerInventory inventory = player?.Inventory;
+            if (inventory == null)
+                return;
+
+            _inventoryComponentEnabled = inventory.enabled;
+            _inventoryGridBound = inventory.Grid != null;
+            _inventoryVersionLast = inventory.InventoryVersion;
+        }
+
+        /// <summary>
+        /// Names the upstream inventory state in one clause so a Tool row can never again mean two things.
+        /// Appended to every Tool-row detail that reports an empty loadout or an ineffective tool.
+        /// </summary>
+        private static void AppendInventoryUpstreamNote()
+        {
+            _detail.Append(" [INVENTORY inventoryComponent=")
+                .Append(_inventoryComponentPresent ? "present" : "absent")
+                .Append(" enabled=").Append(_inventoryComponentEnabled)
+                .Append(" gridBound=").Append(_inventoryGridBound)
+                .Append(" version ").Append(_inventoryVersionAtResolve).Append("->")
+                .Append(_inventoryVersionLast)
+                .Append(" InventoryChangedSignal lane=").Append(_laneInventoryChanged);
+
+            if (!_inventoryComponentPresent)
+            {
+                _detail.Append(" - UPSTREAM UNKNOWN: no PlayerInventory was published on ")
+                    .Append("GlobalRegistry.RegisteredPlayer.Inventory at all, so tool availability could ")
+                    .Append("not be decided by an inventory that does not exist. This row does NOT say tool ")
+                    .Append("use is broken");
+            }
+            else if (!_inventoryComponentEnabled || !_inventoryGridBound)
+            {
+                _detail.Append(" - UPSTREAM DISABLED, NOT A TOOL DEFECT: PlayerInventory exists and is ")
+                    .Append("switched off. Awake disables it when the editor-only DTO layout guard fails ")
+                    .Append("(PlayerInventory.cs:1356-1372) or when TryBindRuntimeStorageCold fails ")
+                    .Append("(:1385-1389), and a disabled inventory forces HasToolInInventory - and so ")
+                    .Append("IsToolAvailableInSlot (PlayerToolManager.cs:927-933) - false for EVERY slot no ")
+                    .Append("matter how the loadout is authored. Tool use is UNMEASURED on this run: fix the ")
+                    .Append("inventory owner first, then read this row again");
+            }
+            else
+            {
+                _detail.Append(" - UPSTREAM LIVE: the inventory is enabled with its grid bound, so an empty ")
+                    .Append("loadout or an ineffective tool here is a REAL tool/content defect and not the ")
+                    .Append("inventory guard");
+            }
+
+            _detail.Append(']');
+        }
+
+        /// <summary>
+        /// The 17 <see cref="PlayerInputAction"/> bits by index, in declaration order. A switch rather than a
+        /// static array for the same reason <see cref="NodeDamageEffectAtPreference"/> is: no cold managed
+        /// allocation, and a default arm that shows up in the report if the enum ever grows past
+        /// <see cref="VerbCount"/>.
+        /// </summary>
+        private static uint VerbBit(int verb)
+        {
+            switch (verb)
+            {
+                case 0: return (uint)PlayerInputAction.Jump;
+                case 1: return (uint)PlayerInputAction.Interact;
+                case 2: return (uint)PlayerInputAction.PrimaryFire;
+                case 3: return (uint)PlayerInputAction.SecondaryFire;
+                case 4: return (uint)PlayerInputAction.Sprint;
+                case 5: return (uint)PlayerInputAction.Dash;
+                case 6: return (uint)PlayerInputAction.Pda;
+                case 7: return (uint)PlayerInputAction.Inventory;
+                case 8: return (uint)PlayerInputAction.Cancel;
+                case 9: return (uint)PlayerInputAction.TabNext;
+                case 10: return (uint)PlayerInputAction.TabPrevious;
+                case 11: return (uint)PlayerInputAction.ToolSlot1;
+                case 12: return (uint)PlayerInputAction.ToolSlot2;
+                case 13: return (uint)PlayerInputAction.ToolSlot3;
+                case 14: return (uint)PlayerInputAction.ToolSlot4;
+                case 15: return (uint)PlayerInputAction.Flashlight;
+                case 16: return (uint)PlayerInputAction.Pause;
+                default: return 0u;
+            }
+        }
+
+        private static string VerbName(int verb)
+        {
+            switch (verb)
+            {
+                case 0: return "Jump";
+                case 1: return "Interact";
+                case 2: return "PrimaryFire";
+                case 3: return "SecondaryFire";
+                case 4: return "Sprint";
+                case 5: return "Dash";
+                case 6: return "Pda";
+                case 7: return "Inventory";
+                case 8: return "Cancel";
+                case 9: return "TabNext";
+                case 10: return "TabPrevious";
+                case 11: return "ToolSlot1";
+                case 12: return "ToolSlot2";
+                case 13: return "ToolSlot3";
+                case 14: return "ToolSlot4";
+                case 15: return "Flashlight";
+                case 16: return "Pause";
+                default: return "<unmapped>";
+            }
+        }
+
+        /// <summary>
+        /// The PLIN command each bit is expected to produce, taken from the dispatcher's own edge table
+        /// (InputDispatcher.cs:1055-1106). Zero means the bit HAS no discrete command there, and that is a
+        /// fact about the product rather than a hole in this table:
+        ///   Jump   buffers PlayerBufferedAction.Jump instead (:1056),
+        ///   Sprint and Dash are continuous movement modifiers with no discrete lane,
+        ///   Pause has no entry at all - PauseMenuController listens to InputManager.OnPause
+        ///     (PauseMenuController.cs:2908), an InputAction callback that no snapshot producer can reach.
+        /// A verb with an expected command of zero is reported as SNAPSHOT-ONLY, never as a pass.
+        /// </summary>
+        private static byte VerbExpectedCommand(int verb)
+        {
+            switch (verb)
+            {
+                case 1: return PlayerInputSignalCommands.Interact;
+                case 2: return PlayerInputSignalCommands.PrimaryAction;
+                case 3: return PlayerInputSignalCommands.SecondaryAction;
+                case 6: return PlayerInputSignalCommands.TogglePda;
+                case 7: return PlayerInputSignalCommands.ToggleInventory;
+                case 8: return PlayerInputSignalCommands.Cancel;
+                case 9: return PlayerInputSignalCommands.TabNext;
+                case 10: return PlayerInputSignalCommands.TabPrevious;
+                case 11: return PlayerInputSignalCommands.ToolSlot1;
+                case 12: return PlayerInputSignalCommands.ToolSlot2;
+                case 13: return PlayerInputSignalCommands.ToolSlot3;
+                case 14: return PlayerInputSignalCommands.ToolSlot4;
+                case 15: return PlayerInputSignalCommands.Flashlight;
+                default: return 0;
             }
         }
 
@@ -1156,6 +1635,8 @@ namespace Hecton8.EditorTools.Diagnostics
                     return ResourcePickupBudgetSeconds;
                 case DrivePhase.Craft:
                     return CraftBudgetSeconds;
+                case DrivePhase.VerbSweep:
+                    return VerbSweepBudgetSeconds;
 
                 // SwimVerdict latches and advances in the same tick, and Idle/Done/PhaseCount are not
                 // driven at all. TotalBudgetSeconds deliberately does not include SwimVerdict; the clamp
@@ -1214,6 +1695,13 @@ namespace Hecton8.EditorTools.Diagnostics
                 // ItemAcquiredSignal the row is actually judged on.
                 case DrivePhase.Craft:
                     return MinTicksCraft;
+
+                // One tick per verb-sweep step. This floor is what makes the sweep meaningful in the slow
+                // frame regime: at the measured 0.751 game frames per wall second its 6.0s box buys four
+                // ticks, and a sweep cut off after four steps would report eleven verbs as unpressed when the
+                // instrument simply stopped pressing.
+                case DrivePhase.VerbSweep:
+                    return MinTicksVerbSweep;
 
                 default:
                     return 0;
@@ -1317,6 +1805,9 @@ namespace Hecton8.EditorTools.Diagnostics
                     break;
                 case DrivePhase.Craft:
                     TickCraft();
+                    break;
+                case DrivePhase.VerbSweep:
+                    TickVerbSweep();
                     break;
             }
         }
@@ -1813,10 +2304,18 @@ namespace Hecton8.EditorTools.Diagnostics
                     if (!PhaseCeilingReached())
                         return;
 
+                    // "No tool exists to select" was the WRONG claim to make from this observation, and it is
+                    // the claim this row used to make. IsToolAvailableInSlot is
+                    // `prefab != null && HasToolInInventory(prefab)` (PlayerToolManager.cs:927-933), so a
+                    // fully authored loadout reports false for every slot the moment the INVENTORY is off -
+                    // and PlayerInventory.Awake switches itself off on a DTO-layout or vault-bind failure
+                    // (PlayerInventory.cs:1364, :1387). Two unrelated defects, one red row, and the row named
+                    // the wrong one. The note below decides which of them this run actually hit.
                     _detail.Clear();
                     _detail.Append("PlayerToolManager reports slotCount=").Append(slotCount)
-                        .Append(" but IsToolAvailableInSlot is false for every slot, so no tool exists ")
-                        .Append("to select on this route");
+                        .Append(" and IsToolAvailableInSlot is false for every slot, so no tool could be ")
+                        .Append("selected on this route");
+                    AppendInventoryUpstreamNote();
                     AppendPhaseCeilingNote();
                     Latch(RowTool, RowVerdict.Blocked);
                     EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
@@ -1949,9 +2448,28 @@ namespace Hecton8.EditorTools.Diagnostics
                         .Append("snapshot and UsePrimary was never called");
                 else if (_node == null)
                     _detail.Append("; there was no resource node in front of the player for the tool to act on");
-                _detail.Append(" - row NOT accepted");
+
+                // The lane counts turn "no downstream effect" from an observation into a diagnosis. A zero
+                // ToolLoadoutChangedSignal count means the swap never published on its only producer's lane
+                // (PlayerToolManager.cs:833) even though CurrentSlotIndex read back correctly, which is a
+                // different defect from a tool that swapped and then did nothing.
+                _detail.Append("; lanes ToolLoadoutChangedSignal=").Append(_laneToolLoadoutChanged)
+                    .Append(" DebrisSpawnSignal=").Append(_laneDebrisSpawn)
+                    .Append(" ResourceDepletionDeltaSignal=").Append(_laneResourceDepletionDelta);
+
+                // Verdict split, and this is the point of the whole disambiguation: an inventory that is
+                // switched off upstream makes this row UNMEASURABLE, and calling that Partial would file it as
+                // "tool use half works". BLOCKED is the probe's word for "attempted and obstructed at runtime"
+                // (H8_HeadlessPlayModeProbe.cs:1881), which is exactly what a disabled inventory does.
+                bool inventoryUpstreamDown =
+                    !_inventoryComponentPresent || !_inventoryComponentEnabled || !_inventoryGridBound;
+
+                _detail.Append(inventoryUpstreamDown
+                    ? " - row NOT accepted, and NOT attributed to tool use"
+                    : " - row NOT accepted");
+                AppendInventoryUpstreamNote();
                 AppendPhaseCeilingNote();
-                Latch(RowTool, RowVerdict.Partial);
+                Latch(RowTool, inventoryUpstreamDown ? RowVerdict.Blocked : RowVerdict.Partial);
             }
 
             EnterPhase(DrivePhase.ResourceDeplete, HoldYield());
@@ -1970,10 +2488,18 @@ namespace Hecton8.EditorTools.Diagnostics
         /// does not use, and that path hardcodes ToolCapabilityMasks.Cut (ResourceNode.cs:519).
         ///
         /// Cut is unreachable content, not a near miss: NOT ONE of the 27 authored ResourceNodeTemplate
-        /// assets under Assets/_Project/Data/Scavenging/ResourceNodes sets requiredToolClass=Knife (7 are Any,
-        /// 6 Drill, 12 Laser, 2 Salvage), so ApplyCutDamage can never damage an authored node. The measured
-        /// row — vulnerabilityMask=0x00000020, bit 5, ToolCapabilityMasks.Laser — was the template being
-        /// correct and the driver asking with the wrong verb.
+        /// assets under Assets/_Project/Data/Scavenging/ResourceNodes sets requiredToolClass=Knife, so
+        /// ApplyCutDamage can never damage an authored node. The measured row —
+        /// vulnerabilityMask=0x00000020, bit 5, ToolCapabilityMasks.Laser — was the template being correct
+        /// and the driver asking with the wrong verb.
+        ///
+        /// CENSUS, re-measured 2026-07-29 by counting requiredToolClass across all 27 assets: Any(0)=8,
+        /// Drill(2)=6, Laser(3)=13, Knife(1)=0, Salvage(4)=0. Sums to 27. An earlier revision of this
+        /// comment said "7 are Any, 6 Drill, 12 Laser, 2 Salvage" and was wrong on three of the four terms.
+        /// It mattered because those phantom 2 Salvage templates were then reported below as authored content
+        /// stranded without an interaction verb — a content gap this instrument invented. There is no Salvage
+        /// content and no Knife content. Only the Knife/Cut conclusion above survives re-measurement, and it
+        /// survives more strongly: Knife is zero of 27, exactly as claimed.
         ///
         /// The verb is now READ from the node every tick and never hardcoded, so a template retuned from
         /// Laser to Drill needs no change here.
@@ -2093,11 +2619,18 @@ namespace Hecton8.EditorTools.Diagnostics
         /// the metal-vein class, and SeafloorDrillTool publishes it (SeafloorDrillTool.cs:222). The rest are
         /// scanned last so an authored mask nobody anticipated still resolves instead of blocking the row.
         ///
-        /// Returning false is a real finding, not a fallback to force: no effect type resolves to
-        /// ToolCapabilityMasks.Salvage anywhere in ResolveCapabilityMask, so the 2 Salvage-class templates
-        /// have no interaction verb at all. The driver reports that instead of reaching for
-        /// ResourceNode.TakeDamage(float) (ResourceNode.cs:568), which has NO capability gate and would turn
-        /// a genuine content gap into a green row.
+        /// Returning false is a real finding, not a fallback to force. The driver reports it instead of
+        /// reaching for ResourceNode.TakeDamage(float) (ResourceNode.cs:568), which has NO capability gate
+        /// and would turn any genuine content gap into a green row.
+        ///
+        /// CORRECTED 2026-07-29. This paragraph used to justify itself with "the 2 Salvage-class templates
+        /// have no interaction verb at all". There are ZERO Salvage-class templates: counting
+        /// requiredToolClass across all 27 assets in Assets/_Project/Data/Scavenging/ResourceNodes gives
+        /// Any(0)=8, Drill(2)=6, Laser(3)=13, Knife(1)=0, Salvage(4)=0. The stranded-content claim was
+        /// manufactured by this comment, and a reader could have spent a day looking for two assets that do
+        /// not exist. It is still TRUE that no effect type resolves to ToolCapabilityMasks.Salvage in
+        /// ResolveCapabilityMask, so the guard is still correct and still worth keeping — it is unreached by
+        /// authored content today, which makes it a guard against future content, not evidence of a gap.
         /// </summary>
         private static bool TryResolveNodeDamageEffect(
             uint vulnerabilityMask,
@@ -2447,7 +2980,7 @@ namespace Hecton8.EditorTools.Diagnostics
                     Latch(RowCraft, RowVerdict.Pass);
                 }
 
-                EnterPhase(DrivePhase.Done, PhaseYield.Completed);
+                EnterPhase(DrivePhase.VerbSweep, PhaseYield.Completed);
                 return;
             }
 
@@ -2472,7 +3005,7 @@ namespace Hecton8.EditorTools.Diagnostics
                     .Append(" scene searches, so no recipe can be started");
                 AppendPhaseCeilingNote();
                 Latch(RowCraft, RowVerdict.Blocked);
-                EnterPhase(DrivePhase.Done, CeilingYield());
+                EnterPhase(DrivePhase.VerbSweep, CeilingYield());
                 return;
             }
 
@@ -2527,7 +3060,7 @@ namespace Hecton8.EditorTools.Diagnostics
                         .Append(", so no recipe/repair can consume a resource on this route");
                     AppendPhaseCeilingNote();
                     Latch(RowCraft, RowVerdict.Blocked);
-                    EnterPhase(DrivePhase.Done, CeilingYield());
+                    EnterPhase(DrivePhase.VerbSweep, CeilingYield());
                     return;
                 }
 
@@ -2542,7 +3075,7 @@ namespace Hecton8.EditorTools.Diagnostics
                         .Append(" of visible=").Append(_visibleRecipeCount)
                         .Append("; the two gates disagree");
                     Latch(RowCraft, RowVerdict.Fail);
-                    EnterPhase(DrivePhase.Done, PhaseYield.Completed);
+                    EnterPhase(DrivePhase.VerbSweep, PhaseYield.Completed);
                     return;
                 }
 
@@ -2565,7 +3098,475 @@ namespace Hecton8.EditorTools.Diagnostics
                 .Append(" driver ticks - the craft was consumed but never delivered, row NOT accepted");
             AppendPhaseCeilingNote();
             Latch(RowCraft, RowVerdict.Partial);
-            EnterPhase(DrivePhase.Done, CeilingYield());
+            EnterPhase(DrivePhase.VerbSweep, CeilingYield());
+        }
+
+        // ─────────────────────────────────────────────────────────────────────────────────────────
+        //  VERB SWEEP — every remaining player verb, once, on the shipping producer
+        // ─────────────────────────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Presses the 17 <see cref="PlayerInputAction"/> bits in eight fixed groups of two steps each.
+        ///
+        /// TWO STEPS PER GROUP IS NOT PADDING. The dispatcher's discrete producer is an edge detector over the
+        /// RESOLVED input state (InputDispatcher.cs:1050), and this file publishes its intent at the TOP of a
+        /// tick (PublishLocomotionIntent runs before AdvancePhase), so a mask written on step k is not
+        /// published until step k+1 and cannot be read back out of IInputService.CurrentInputState before step
+        /// k+2. A one-step-per-group sweep would clear each bit before its own arrival could be observed and
+        /// would report all fifteen verbs dead on a perfectly healthy input path - the exact false negative
+        /// this phase exists to rule out.
+        ///
+        /// The mask is ASSIGNED, never OR-ed, so entering a new group drops the previous group's bits in the
+        /// same step. That is deliberate: the drop is what makes the next press of an already-pressed bit a
+        /// real 0-to-1 edge, and the PDA sequence below depends on it.
+        ///
+        /// GROUP ORDER IS A SAFETY CONTRACT, not a preference. Group 4 opens the PDA (ToggleInventory ->
+        /// PlayerPDA.HandleInventoryInput, PlayerPDA.cs:2130), group 5 only means anything while it is open
+        /// (HandleTabNextInput returns immediately when it is not), and group 6's Pda verb toggles it shut
+        /// again (HandlePDAInput enqueues -1 when IsOpen). The sweep therefore ENDS with the PDA closed and the
+        /// gameplay input map restored, which matters because the probe's save leg runs immediately after.
+        /// </summary>
+        private static void TickVerbSweep()
+        {
+            if (!_verbSweepEntered)
+            {
+                _verbSweepEntered = true;
+                CaptureVerbSweepBaseline();
+            }
+
+            SampleVerbSweepObservables();
+
+            int step = _verbSweepStep;
+            _verbSweepStep = step + 1;
+
+            if (step >= VerbSweepStepCount)
+            {
+                _intent = default;
+                FlushVerbSweepLog(false);
+
+                // HoldYield, not a bare Completed. The sweep is a fixed-length hold, so reaching its last step
+                // IS its designed completion - but a sweep whose 16 ticks cost far more than its box still owes
+                // the reader the TIMEBOXED label instead of a clean green ledger row.
+                EnterPhase(DrivePhase.Done, HoldYield());
+                return;
+            }
+
+            // Locomotion is deliberately dead for the whole sweep: a moving player keeps changing what
+            // PlayerInteraction hovers and what depth the survival owner reports, and every observable below
+            // is meant to be able to change for exactly one reason.
+            _intent.MoveDelta = Vector2.zero;
+            _intent.LookDelta = Vector2.zero;
+            _intent.VerticalDelta = 0f;
+            _intent.CurrentInputSchemeHash = 0u;
+            _intent.ActionsBitmask = VerbSweepGroupMask(step >> 1);
+            _verbSweepRaisedMask |= _intent.ActionsBitmask;
+
+            for (int verb = 0; verb < VerbCount; verb++)
+            {
+                if ((_intent.ActionsBitmask & VerbBit(verb)) != 0u)
+                    _verbFlags[verb] |= VerbFlagRaised;
+            }
+        }
+
+        /// <summary>
+        /// The bit group for a sweep group index. Groups 0-3 drive independent consumers that cannot interfere;
+        /// groups 4-7 are the UI sequence and their ORDER is load-bearing (see <see cref="TickVerbSweep"/>).
+        /// Pause rides with Cancel in the last group because nothing consumes it off a snapshot at all -
+        /// InputDispatcher.cs:3230 is its only other appearance in the project and that line PRODUCES it - so
+        /// it cannot interact with anything.
+        /// </summary>
+        private static uint VerbSweepGroupMask(int group)
+        {
+            switch (group)
+            {
+                case 0:
+                    return (uint)PlayerInputAction.Jump |
+                        (uint)PlayerInputAction.Sprint |
+                        (uint)PlayerInputAction.Dash;
+                case 1:
+                    return (uint)PlayerInputAction.Interact |
+                        (uint)PlayerInputAction.PrimaryFire |
+                        (uint)PlayerInputAction.SecondaryFire;
+                case 2:
+                    return (uint)PlayerInputAction.Flashlight;
+                case 3:
+                    return (uint)PlayerInputAction.ToolSlot1 |
+                        (uint)PlayerInputAction.ToolSlot2 |
+                        (uint)PlayerInputAction.ToolSlot3 |
+                        (uint)PlayerInputAction.ToolSlot4;
+                case 4:
+                    return (uint)PlayerInputAction.Inventory;
+                case 5:
+                    return (uint)PlayerInputAction.TabNext |
+                        (uint)PlayerInputAction.TabPrevious;
+                case 6:
+                    return (uint)PlayerInputAction.Pda;
+                default:
+                    return (uint)PlayerInputAction.Cancel |
+                        (uint)PlayerInputAction.Pause;
+            }
+        }
+
+        private static void CaptureVerbSweepBaseline()
+        {
+            _verbSweepLoadoutSignalsAtEntry = _laneToolLoadoutChanged;
+            _verbSweepToolSlotAtEntry = _toolManager != null ? _toolManager.CurrentSlotIndex : -1;
+
+            IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+            Hecton8.Gameplay.PlayerFlashlight flashlight = player != null ? player.Flashlight : null;
+            _verbSweepFlashlightOnAtEntry = flashlight != null && flashlight.IsOn;
+        }
+
+        /// <summary>
+        /// Samples the consumer-side observables EVERY sweep tick rather than only at group boundaries.
+        ///
+        /// PlayerPDA does not act on a command in the frame it receives it - HandleInventoryInput enqueues a
+        /// state command (PlayerPDA.cs:2178) that the PDA's own lane drains - and PlayerToolManager runs its
+        /// swap on its own lane too. A boundary-only read would miss a transition that landed one frame late
+        /// and report a working verb as dead. Latched booleans, never cleared, so a transition seen once
+        /// cannot be un-seen by a later sample.
+        /// </summary>
+        private static void SampleVerbSweepObservables()
+        {
+            bool pdaOpen = Hecton8.UI.PlayerPDA.IsOpen;
+            if (pdaOpen)
+            {
+                _verbSweepPdaObservedOpen = true;
+
+                // Attribution windows, and they are deliberately one step LATE rather than one step early.
+                // The mask for group 4 is written at the END of step 8, so step 9 is the first tick on which
+                // an open PDA can be that verb's doing; crediting it from step 8 would hand the Inventory verb
+                // a PDA that something else had already opened. Groups 0-3 raise no UI bit at all, so before
+                // step 9 an open PDA is somebody else's and this ledger says nothing about it.
+                if (_verbSweepStep >= 9)
+                    _verbSweepPdaOpenedByInventoryVerb = true;
+            }
+            else if (_verbSweepPdaObservedOpen && _verbSweepStep >= 13)
+            {
+                // Same rule for the close: the Pda verb's mask is written at the end of step 12, so step 13 is
+                // the first tick on which a closed PDA can be attributed to it.
+                _verbSweepPdaClosedAfterCancel = true;
+            }
+
+            IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+            Hecton8.Gameplay.PlayerFlashlight flashlight = player != null ? player.Flashlight : null;
+            if (flashlight != null && flashlight.IsOn != _verbSweepFlashlightOnAtEntry)
+                _verbSweepFlashlightFlipped = true;
+
+            Hecton8.Gameplay.PlayerToolManager manager = _toolManager;
+            if (manager != null)
+            {
+                int slot = manager.CurrentSlotIndex;
+                if (slot >= 0 && slot != _verbSweepToolSlotAtEntry)
+                    _verbSweepToolSlotObserved = slot;
+            }
+        }
+
+        /// <summary>
+        /// Writes the coverage ledger to the run log.
+        ///
+        /// IT GOES TO Debug.Log AND NOT INTO A ROW, and that is the honest shape. The probe's route table has
+        /// exactly four driver-owned rows (H8_HeadlessPlayModeProbe.cs:1807-1810) and each one is a
+        /// First-20-Minutes acceptance criterion; a verb census is not one of those criteria, so folding it
+        /// into Swim or Tool would either dilute a row that means something specific or invent a fifth row the
+        /// probe cannot read. It prints as its own marked block instead, and every line carries the lane, the
+        /// expected value, the measured value and the frame - an assert that logs only FAILED wastes the whole
+        /// editor run it dies in.
+        ///
+        /// <paramref name="truncated"/> is true when the schedule was stopped from outside while the sweep was
+        /// still walking its steps. A partial sweep is worth printing - eleven of these verbs had never been
+        /// pressed once in this project's history - but it must not read as a complete census, so the step it
+        /// reached is stated.
+        /// </summary>
+        private static void FlushVerbSweepLog(bool truncated)
+        {
+            if (_verbSweepLogged)
+                return;
+
+            _verbSweepLogged = true;
+
+            // Its own try/catch, and not because the reads below are risky. This is called from Stop() and
+            // from Tick()'s exception handler, and both of those run AFTER the four row verdicts have been
+            // written: a throw escaping from here would leave EditorApplication.update carrying an exception
+            // out of the probe and lose an entire run's worth of rows for the sake of a diagnostic block.
+            try
+            {
+                WriteVerbSweepLog(truncated);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.Log(
+                    "[H8_WORLDDRIVER] VERBSWEEP log flush threw " + ex.GetType().Name + ": " + ex.Message +
+                    " - the coverage ledger is lost for this run; the four route rows above are unaffected");
+            }
+        }
+
+        private static void WriteVerbSweepLog(bool truncated)
+        {
+            int raised = 0;
+            int arrived = 0;
+            int commanded = 0;
+            int expectedCommands = 0;
+            int consumerConfirmed = 0;
+
+            for (int verb = 0; verb < VerbCount; verb++)
+            {
+                byte flags = _verbFlags[verb];
+                if ((flags & VerbFlagRaised) == 0)
+                    continue;
+
+                raised++;
+                if ((flags & VerbFlagArrivedInSnapshot) != 0)
+                    arrived++;
+
+                byte expected = VerbExpectedCommand(verb);
+                if (expected == 0)
+                    continue;
+
+                expectedCommands++;
+                if (_commandSeen[expected])
+                {
+                    _verbFlags[verb] |= VerbFlagCommandObserved;
+                    commanded++;
+                }
+            }
+
+            ApplyVerbConsumerObservations();
+            for (int verb = 0; verb < VerbCount; verb++)
+            {
+                if ((_verbFlags[verb] & VerbFlagConsumerObserved) != 0)
+                    consumerConfirmed++;
+            }
+
+            _log.Clear();
+            _log.Append("[H8_WORLDDRIVER] VERBSWEEP ")
+                .Append(truncated ? "TRUNCATED" : "complete")
+                .Append(" step=").Append(_verbSweepStep).Append('/').Append(VerbSweepStepCount)
+                .Append(" raised=").Append(raised).Append('/').Append(VerbCount)
+                .Append(" arrivedInResolvedSnapshot=").Append(arrived).Append('/').Append(raised)
+                .Append(" dispatcherCommands=").Append(commanded).Append('/').Append(expectedCommands)
+                .Append(" consumerConfirmed=").Append(consumerConfirmed)
+                .Append(" | overrideFlagSeen=").Append(_verbSweepOverrideFlagObserved)
+                .Append(" overridesPublished=").Append(_publishedOverrides)
+                .Append(" inputEnabled=").Append(_inputEnabledEverObserved)
+                .Append(" blockMask=0x")
+                .Append(_inputBlockMaskLast.ToString("X8", CultureInfo.InvariantCulture))
+                .Append(" lastResolvedButtons=0x")
+                .Append(_verbSweepSnapshotButtonsLast.ToString("X8", CultureInfo.InvariantCulture))
+                .Append(" atFrame=").Append(_verbSweepSnapshotFrameLast);
+
+            if (raised > 0 && arrived == 0)
+                _log.Append(" - NOTHING ARRIVED: not one raised bit appeared in ")
+                    .Append("IInputService.CurrentInputState.ButtonsBitmask, so the failure is upstream of ")
+                    .Append("every consumer and no verb below is a consumer verdict. Read overrideFlagSeen ")
+                    .Append("first: false means TryConsumeLatestInputOverride never accepted the publish ")
+                    .Append("(InputDispatcher.cs:3345); true with a nonzero blockMask means ")
+                    .Append("ApplyInputBlockMask erased the bits after the fold (InputDispatcher.cs:3199)");
+
+            Debug.Log(_log.ToString());
+
+            for (int verb = 0; verb < VerbCount; verb++)
+                LogVerbRow(verb);
+
+            LogLaneCensus();
+        }
+
+        /// <summary>
+        /// Maps the observables this phase can legitimately read onto the specific verbs that own them.
+        /// Deliberately narrow: a verb only gets a consumer credit when the observable that moved is the one
+        /// THAT verb drives. Crediting all four ToolSlot verbs for one slot change, or crediting Cancel for a
+        /// PDA that the Pda verb closed, would turn the ledger into decoration.
+        /// </summary>
+        private static void ApplyVerbConsumerObservations()
+        {
+            if (_verbSweepFlashlightFlipped)
+                _verbFlags[15] |= VerbFlagConsumerObserved;
+
+            if (_verbSweepPdaOpenedByInventoryVerb)
+                _verbFlags[7] |= VerbFlagConsumerObserved;
+
+            // The Pda verb is group 6 and its authored behaviour with the PDA already open is to CLOSE it
+            // (PlayerPDA.cs:2167-2171), so "opened, then closed" is this verb's observable and not Cancel's.
+            if (_verbSweepPdaObservedOpen && _verbSweepPdaClosedAfterCancel)
+                _verbFlags[6] |= VerbFlagConsumerObserved;
+
+            // Slot verbs are indices 11..14 for slots 0..3, so the observed slot index selects exactly one.
+            if (_verbSweepToolSlotObserved >= 0 && _verbSweepToolSlotObserved <= 3)
+                _verbFlags[11 + _verbSweepToolSlotObserved] |= VerbFlagConsumerObserved;
+        }
+
+        private static void LogVerbRow(int verb)
+        {
+            byte flags = _verbFlags[verb];
+            byte expected = VerbExpectedCommand(verb);
+            bool raisedVerb = (flags & VerbFlagRaised) != 0;
+            bool arrivedVerb = (flags & VerbFlagArrivedInSnapshot) != 0;
+            bool commandedVerb = (flags & VerbFlagCommandObserved) != 0;
+
+            _log.Clear();
+            _log.Append("[H8_WORLDDRIVER] VERB ").Append(VerbName(verb))
+                .Append(" bit=0x").Append(VerbBit(verb).ToString("X8", CultureInfo.InvariantCulture))
+                .Append(" raised=").Append(raisedVerb)
+                .Append(" expectedCommand=").Append(expected)
+                .Append(" arrived=").Append(arrivedVerb)
+                .Append(" atFrame=").Append(_verbArrivedFrame[verb])
+                .Append(" commandOnLane=").Append(commandedVerb)
+                .Append(" consumerObserved=").Append((flags & VerbFlagConsumerObserved) != 0)
+                .Append(" - ");
+
+            if (!raisedVerb)
+            {
+                _log.Append("NOT PRESSED: the sweep stopped before this verb's group, so this verb is ")
+                    .Append("UNKNOWN rather than broken");
+            }
+            else if (!arrivedVerb)
+            {
+                _log.Append("BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x")
+                    .Append(VerbBit(verb).ToString("X8", CultureInfo.InvariantCulture))
+                    .Append(" set in CurrentInputState.ButtonsBitmask; measured 0x")
+                    .Append(_verbSweepSnapshotButtonsLast.ToString("X8", CultureInfo.InvariantCulture))
+                    .Append(" at frame ").Append(_verbSweepSnapshotFrameLast)
+                    .Append(". INPUT PLUMBING failure, not a consumer failure: no consumer of this verb was ")
+                    .Append("ever given a chance to run");
+            }
+            else if (expected == 0)
+            {
+                _log.Append("SNAPSHOT-ONLY BY DESIGN: the bit reached the authoritative snapshot at frame ")
+                    .Append(_verbArrivedFrame[verb])
+                    .Append(" and InputDispatcher.PublishDiscreteInputSignals has no discrete command for it ")
+                    .Append("(InputDispatcher.cs:1055-1106)");
+                AppendVerbConsumerHint(verb);
+            }
+            else if (!commandedVerb)
+            {
+                _log.Append("EDGE DETECTOR DID NOT FIRE: the bit was in the resolved snapshot at frame ")
+                    .Append(_verbArrivedFrame[verb]).Append(", expected one PlayerInputSignal with command ")
+                    .Append(expected)
+                    .Append(" from InputDispatcher.PublishDiscreteInputSignals and measured none while this ")
+                    .Append("phase ran. The phase publishes nothing on that lane itself, so the lane is the ")
+                    .Append("dispatcher's alone; it carried ").Append(_lanePlayerInputSignals)
+                    .Append(" PLIN signals in total. The pressed test is current & ~previous ")
+                    .Append("(InputDispatcher.cs:1050), so a bit already set in the previous resolved frame ")
+                    .Append("produces no edge");
+            }
+            else
+            {
+                _log.Append("PRESSED AND PUBLISHED: bit in the resolved snapshot at frame ")
+                    .Append(_verbArrivedFrame[verb]).Append(", dispatcher published command ")
+                    .Append(expected).Append(" on SignalBus<PlayerInputSignal>");
+                AppendVerbConsumerHint(verb);
+            }
+
+            Debug.Log(_log.ToString());
+        }
+
+        /// <summary>
+        /// States what the consumer side of a verb did, or names the property a future step has to read.
+        /// Naming the unread observable is the point: a bare "consumerObserved=false" is indistinguishable
+        /// from a broken consumer, and only four of the seventeen verbs have an observable that settles inside
+        /// this phase.
+        /// </summary>
+        private static void AppendVerbConsumerHint(int verb)
+        {
+            switch (verb)
+            {
+                case 0:
+                    _log.Append(". Consumer: HectonPlayerMovement reads this bit off its own snapshot ")
+                        .Append("(HectonPlayerMovement.cs:13225) and the dispatcher also buffers ")
+                        .Append("PlayerBufferedAction.Jump (InputDispatcher.cs:1056). NOT READ HERE - a jump ")
+                        .Append("while submerged is a no-op, so a false negative would be worse than no claim");
+                    return;
+                case 5:
+                    _log.Append(". Consumer: ZeroGMovementRuntime.cs:666 and ")
+                        .Append("PrologueSequenceRegistryBridge.cs:745. NOT READ HERE - neither is active on ")
+                        .Append("this route");
+                    return;
+                case 6:
+                    _log.Append(". Consumer observable: PlayerPDA.IsOpen was ")
+                        .Append(_verbSweepPdaObservedOpen ? "observed open" : "never observed open")
+                        .Append(" and then ")
+                        .Append(_verbSweepPdaClosedAfterCancel ? "closed" : "stayed open");
+                    return;
+                case 7:
+                    _log.Append(". Consumer observable: PlayerPDA.IsOpen=")
+                        .Append(Hecton8.UI.PlayerPDA.IsOpen)
+                        .Append(", openedByThisVerb=").Append(_verbSweepPdaOpenedByInventoryVerb);
+                    return;
+                case 9:
+                case 10:
+                    _log.Append(". Consumer: PlayerPDA tab navigation, which returns immediately unless the ")
+                        .Append("PDA is open (PlayerPDA.cs:2190-2199). PDA observed open during the sweep=")
+                        .Append(_verbSweepPdaObservedOpen)
+                        .Append(" - a false here is an ORDERING fact about the sweep, not a broken verb");
+                    return;
+                case 11:
+                case 12:
+                case 13:
+                case 14:
+                    _log.Append(". Consumer observable: PlayerToolManager.CurrentSlotIndex ")
+                        .Append(_verbSweepToolSlotAtEntry).Append("->")
+                        .Append(_verbSweepToolSlotObserved)
+                        .Append(", ToolLoadoutChangedSignal lane +")
+                        .Append(_laneToolLoadoutChanged - _verbSweepLoadoutSignalsAtEntry)
+                        .Append(" during the sweep. A slot whose tool is not in inventory is refused by ")
+                        .Append("design (PlayerToolManager.cs:927-933), so read the LANECENSUS line below ")
+                        .Append("before calling a slot broken");
+                    return;
+                case 15:
+                    _log.Append(". Consumer observable: PlayerFlashlight.IsOn was ")
+                        .Append(_verbSweepFlashlightOnAtEntry).Append(" at entry, flipped=")
+                        .Append(_verbSweepFlashlightFlipped);
+                    return;
+                case 16:
+                    _log.Append(". NO CONSUMER EXISTS: PlayerInputAction.Pause appears exactly once in the ")
+                        .Append("project outside this file, at InputDispatcher.cs:3230, and that line ")
+                        .Append("PRODUCES it. Nothing reads it off a snapshot - PauseMenuController binds ")
+                        .Append("InputManager.OnPause instead (PauseMenuController.cs:2908), an InputAction ")
+                        .Append("callback no snapshot producer can reach. The pause verb is UNREACHABLE from ")
+                        .Append("any input snapshot, which is a routing gap in the product and not a harness ")
+                        .Append("gap");
+                    return;
+                default:
+                    _log.Append(". Consumer observable not read by this phase");
+                    return;
+            }
+        }
+
+        /// <summary>
+        /// Prints what the lanes the four rows depend on actually carried. The value is in the comparison: a
+        /// Tool row that says "no downstream effect" beside a ToolLoadoutChangedSignal count of zero and an
+        /// InventoryChangedSignal count of zero is a different bug report from the same row beside nonzero
+        /// counts.
+        /// </summary>
+        private static void LogLaneCensus()
+        {
+            _log.Clear();
+            _log.Append("[H8_WORLDDRIVER] LANECENSUS ticks=").Append(_ticks)
+                .Append(" InputStateSignal=").Append(_laneInputStateSignals)
+                .Append(" PlayerInputSignal[PLIN]=").Append(_lanePlayerInputSignals)
+                .Append(" InventoryChangedSignal=").Append(_laneInventoryChanged)
+                .Append(" ToolLoadoutChangedSignal=").Append(_laneToolLoadoutChanged)
+                .Append(" CraftingStartedSignal=").Append(_laneCraftingStarted)
+                .Append(" ResourceDepletionDeltaSignal=").Append(_laneResourceDepletionDelta)
+                .Append(" DebrisSpawnSignal=").Append(_laneDebrisSpawn)
+                .Append(" | inventoryComponent=")
+                .Append(_inventoryComponentPresent ? "present" : "absent")
+                .Append(" enabled=").Append(_inventoryComponentEnabled)
+                .Append(" gridBound=").Append(_inventoryGridBound)
+                .Append(" inventoryVersion ").Append(_inventoryVersionAtResolve).Append("->")
+                .Append(_inventoryVersionLast);
+
+            if (_laneInputStateSignals == 0)
+                _log.Append(" - InputStateSignal is ZERO, so InputDispatcher never published a resolved input ")
+                    .Append("frame at all (InputDispatcher.cs:847). Every verb and locomotion verdict in this ")
+                    .Append("run is UNMEASURED rather than negative: read this line before reading any row");
+
+            if (_inventoryComponentPresent && !_inventoryComponentEnabled)
+                _log.Append(" - PlayerInventory is DISABLED, which forces IsToolAvailableInSlot false for ")
+                    .Append("every slot regardless of authoring (PlayerToolManager.cs:927-933). The Tool row ")
+                    .Append("on this run measures the inventory guard, not the tools");
+
+            Debug.Log(_log.ToString());
         }
 
         // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -2659,14 +3660,25 @@ namespace Hecton8.EditorTools.Diagnostics
                     .Append("s box by ").Append(F(wall - _phaseGranted))
                     .Append("s across ").Append(_phaseTicks)
                     .Append(" ticks. The box is only testable between pumped frames, so one expensive ")
-                    .Append("frame lands entirely outside it. The excess is charged to THIS phase and to ")
-                    .Append("nothing else: the next phase is entered with its own full nominal box, so no ")
-                    .Append("later row is starved by this overrun. Fix the frame cost here");
+                    .Append("frame lands entirely outside it");
 
+                // The "nothing else was starved" reassurance is only TRUE when the schedule survived. It
+                // used to print unconditionally, and then the _compressed branch five lines later printed
+                // the opposite - one report row asserting both "no later row is starved by this overrun"
+                // and "the rows after this one run their tick floors and say UNMEASURED". The second is the
+                // truth in that case: EnterPhase does grant the next phase its full nominal box, but
+                // PhaseCeilingReached short-circuits on _compressed, so every later phase runs only its
+                // tick floor regardless of what it was granted. A reader who believed the first sentence
+                // would have read those tick-floor rows as product failures.
                 if (_compressed)
-                    _detail.Append(" - and note the schedule's ").Append(F(TotalBudgetSeconds))
-                        .Append("s total went with it at ").Append(F(_compressedAt))
-                        .Append("s, so the rows after this one run their tick floors and say UNMEASURED");
+                    _detail.Append(". It also took the schedule's ").Append(F(TotalBudgetSeconds))
+                        .Append("s total with it at ").Append(F(_compressedAt))
+                        .Append("s: EVERY ROW AFTER THIS ONE RAN ONLY ITS TICK FLOOR AND MUST BE READ AS ")
+                        .Append("UNMEASURED, not as a product gap. Fix the frame cost here");
+                else
+                    _detail.Append(". The excess is charged to THIS phase and to nothing else: the next ")
+                        .Append("phase is entered with its own full nominal box and the schedule survived, ")
+                        .Append("so no later row is starved by this overrun. Fix the frame cost here");
             }
             else if (_compressed)
             {
