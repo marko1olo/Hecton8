@@ -169,6 +169,37 @@ namespace Hecton8.Core
         private static readonly uint InputOwnerActiveLockConflictMask =
             unchecked((uint)InputOwnerMutationGuardMask) |
             unchecked((uint)(InputOwnerMutationGuardMask >> 32));
+
+        // Low and high halves of the owner guard mask, derived from the same constant so they cannot drift.
+        //
+        // WHY THE SPLIT IS THE DISCRIMINATOR, and it settles a question the census cannot.
+        // GlobalDataVault keeps ONE process-wide guard mask pair, _mutationGuardMaskLow /
+        // _mutationGuardMaskHigh (GlobalDataVault.cs:2944-2946), and ReleaseMutationGuard (:3010-3019) just
+        // clears whatever bits it is handed. There is NO owner identity anywhere in that API. So "bits from
+        // this owner's mask are set" does NOT mean this owner set them, and the code-4 text below - "an owner
+        // holds bits from THIS mask and did not release them" - cannot separate a leak by THIS component from
+        // an unrelated system parked on a colliding residue. Bit arithmetic can.
+        //
+        // GlobalDataVault.cs:3029-3035 records that this tree uses TWO mask conventions: 1UL << (id & 63),
+        // which is MutationGuardBit above, and 1UL << (id & 31), which it calls the 208-call-site majority.
+        // An (id & 31) mask can only ever set bits 0-31, i.e. the LOW word - it is arithmetically incapable of
+        // touching the high word. So a HIGH-word overlap can only come from an (id & 63) caller, and the tree
+        // has exactly three: this file, MemorySentinelRuntime.cs:1153, and the Editor-only
+        // ShinobuStormPropagationDebugGizmo.cs:79.
+        //
+        // This owner's 14 buffer ids fold to guard bits {0,1,2,3,5} low and {56..63} high:
+        //   70520..70527 -> 56..63, 70530 -> 2, 70531 -> 3, 70533 -> 5 (editor only),
+        //   75000 -> 56, 75001 -> 57, 75008 -> 0, 75009 -> 1.
+        // Low half = 0x0000002F, high half = 0xFF000000, and RecordMutationGuardContentionFault's
+        // XOR fold (GlobalDataVault.cs:5612 - it is ^, not |, though the two agree here because the halves
+        // are disjoint) gives 0xFF00002F & 0x7fffffff = 0x7F00002F = 2130706479 - exactly the
+        // vaultLastFaultBufferId printed at Logs/h8_probe7.log:21930.
+        // Consequence: the five LOW bits are shared with every BufferID congruent to 0,1,2,3,5 mod 32,
+        // roughly one id in six across the whole project, while the eight HIGH bits are all but private to
+        // this owner. A low-only overlap is therefore evidence AGAINST a leak here; a high overlap is
+        // evidence FOR one. Diagnostic-only.
+        private static readonly uint InputOwnerGuardMaskLow = unchecked((uint)InputOwnerMutationGuardMask);
+        private static readonly uint InputOwnerGuardMaskHigh = unchecked((uint)(InputOwnerMutationGuardMask >> 32));
 #endif
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -321,6 +352,10 @@ namespace Hecton8.Core
         // refusals use PublishRefusalBufferFlag plus one nibble per buffer, so a change in ANY of the four
         // reprints exactly once. Transition-gated, not per frame: probe7 shows 1240 refusals in 313 frames.
         private int _diagPublishRefusalReported;
+        // Separate latch from _diagPublishRefusalReported on purpose: this one fires at the ACQUIRE, before
+        // the vault is asked, so it must not be silenced by - or silence - the post-refusal reporter.
+        // 0 = nothing reported yet, so the first residue of a session always prints.
+        private int _diagGuardResidueReported;
         // Guard refusal codes, in the order the checks are evaluated - two here, then
         // GlobalDataVault.TryAcquireMutationGuard (GlobalDataVault.cs:2912-2994).
         private const int PublishRefusalGuardVaultNull = 1;
@@ -919,6 +954,84 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _diagPublishBufferFail++;
             DiagReportBufferRefusal();
+#endif
+        }
+
+        // -------------------------------------------------------------------------------------------------
+        // Asserts "this owner holds no guard bits before it tries to acquire" and, when that is violated,
+        // names WHO violated it.
+        //
+        // WHY THIS EXISTS RATHER THAN A SECOND COPY OF DiagReportGuardRefusal. That method runs AFTER the
+        // vault has already refused, and its code 4 is defined as "an owner holds bits from THIS mask" -
+        // which is true both when this component leaked its own bits and when a completely unrelated system
+        // is parked on one of the five low residues this owner shares with roughly one BufferID in six. Those
+        // are opposite defects with opposite owners and the vault cannot tell them apart, because
+        // ReleaseMutationGuard (GlobalDataVault.cs:3010-3019) carries no owner identity at all.
+        //
+        // The split derived on InputOwnerGuardMaskLow/High is what separates them: the (id & 31) convention
+        // used by the rest of the tree cannot reach the high word, so a high-word overlap narrows the author
+        // to an (id & 63) caller - this file or MemorySentinelRuntime.cs:1153 - while a low-only overlap is
+        // positive evidence that this component did NOT leak.
+        //
+        // Reached only at depth 0 and only from the slow path of TryAcquireInputMutationGuard, so the healthy
+        // cost is one interface property read, one AND and one branch; nothing is allocated unless the
+        // invariant is already broken. Latched per (code, lowest culprit bit) so a run prints one line per
+        // distinct culprit instead of one per attempt - probe7 took 1240 refusals in 313 frames.
+        // -------------------------------------------------------------------------------------------------
+        private void DiagReportGuardResidue(IDataVault vault)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (vault == null)
+                return;
+
+            ulong held = vault.ActiveMutationGuardMask & InputOwnerMutationGuardMask;
+            if (held == 0UL)
+                return;
+
+            uint heldLow = unchecked((uint)held);
+            uint heldHigh = unchecked((uint)(held >> 32));
+            // 2 = an (id & 63) caller, i.e. this owner leaked or MemorySentinelRuntime is holding.
+            // 1 = low word only, which an (id & 31) caller can produce and this owner's leak cannot produce
+            //     alone, because every acquire here claims all eight high bits as well.
+            int code = heldHigh != 0u ? 2 : 1;
+            int signature = code | ((int)math.tzcnt(held) << 4);
+            if (_diagGuardResidueReported == signature)
+                return;
+
+            _diagGuardResidueReported = signature;
+            // COLD ALLOC: one residue string per distinct culprit bit per session - owner: InputDispatcher
+            Hecton8.Core.H8Debug.LogWarning(
+                "[H8_INPUTRESIDUE] stage=PRE_ACQUIRE code=" + code +
+                " (1=lowWordOnly:FOREIGN-(id&31)-caller-NOT-this-owner" +
+                " 2=highWordDirty:(id&63)-caller:this-owner-leaked-or-MemorySentinelRuntime)" +
+                " guardDepth=" + _inputMutationGuardDepth +
+                " | heldOverlap=" + held +
+                " heldLow=" + heldLow +
+                " heldHigh=" + heldHigh +
+                " lowestHeldBit=" + (int)math.tzcnt(held) +
+                " | ownerGuardMask=" + InputOwnerMutationGuardMask +
+                " ownerLow=" + InputOwnerGuardMaskLow +
+                " ownerHigh=" + InputOwnerGuardMaskHigh +
+                " vaultGuardMask=" + vault.ActiveMutationGuardMask +
+                " | attempts=" + _diagPublishAttempts +
+                " buffersReady=" + _deterministicVaultBuffersReady +
+                " buffersCleared=" + _deterministicVaultBuffersCleared +
+                " - guardDepth is 0 here by construction (the depth>0 fast path returns before this), so this" +
+                " owner believes it holds nothing and every bit in heldOverlap was set by someone else or" +
+                " leaked by a previous acquire of ours. code=1 EXONERATES this file: all fifteen" +
+                " TryAcquireInputMutationGuard sites release in a finally, and every acquire claims all eight" +
+                " high bits, so a leak by this owner would necessarily show heldHigh!=0. code=1 means an" +
+                " unrelated buffer whose (id & 31) is 0,1,2,3 or 5 is holding a mutation guard - fix the" +
+                " colliding owner or the mask convention, NOT this file. code=2 means an (id & 63) caller, and" +
+                " as of 2026-07-29 only two others exist: ShinobuStormPropagationDebugGizmo.cs:79 (Editor-only)" +
+                " and MemorySentinelRuntime.cs:1153, which is ABSENT from every live scene and prefab and is" +
+                " not in GameBootstrapper, so it should not be able to hold anything in a normal run - if" +
+                " code=2 appears, suspect this file first and re-check that wiring second. The sentinel is" +
+                " still worth naming because its release path is genuinely unbalanced: it builds an (id & 63)" +
+                " mask over ARBITRARY target buffer ids (MemorySentinelRuntime.cs:1130-1142) and holds it" +
+                " across a scheduled job whose CompleteValidationJob returns false twice WITHOUT unlocking" +
+                " (MemorySentinelRuntime.cs:1184-1202), so if it is ever wired, a job that never finalizes" +
+                " parks those bits for the rest of the session.");
 #endif
         }
 
@@ -1976,6 +2089,13 @@ namespace Hecton8.Core
             // Full derivation of the residue collision is on ReleaseStaleHapticSynthesisSchedulePins in
             // HectonInputRuntime_HapticSynth.cs. Cheap: one uint test when nothing is pinned.
             ReleaseStaleHapticSynthesisSchedulePins();
+
+            // Invariant check at the LEAK, not 1240 refusals later. Reached only with
+            // _inputMutationGuardDepth == 0 (the depth > 0 fast path returned above), which means this owner
+            // believes it holds no guard bits at all. Any overlap here therefore has exactly two possible
+            // authors, and DiagReportGuardResidue separates them by which half of the mask is dirty.
+            // Purely observational - it does not alter the return value, so the guard stays fail-closed.
+            DiagReportGuardResidue(vault);
 
             if (!vault.TryAcquireMutationGuard(InputOwnerMutationGuardMask))
                 return false;
