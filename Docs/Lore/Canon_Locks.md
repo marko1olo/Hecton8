@@ -157,6 +157,24 @@ This file records what is fixed enough to build against. It does not replace `Lo
   - 1200-2800 m: brine canyon;
   - 2800-4300 m: abyssal machine field;
   - 4300-5600 m: Atlas basin.
+- UNRESOLVED CANON — TWO DEPTH-BAND SYSTEMS ARE BOTH LOCKED. Owner decision required. Until it is settled,
+  prefer stating a depth in metres over naming a band, and do not silently pick a side.
+  - SET B, locked immediately above and in `Docs/Lore/Lore_Bible.md:253`, which calls it the "HECTON-8
+    physical atlas lock" and adds that the depth bands "do not change": photic shelf 0-250, industrial
+    shelf and cable reef 250-1200, brine canyon 1200-2800, abyssal machine field 2800-4300, Atlas basin
+    4300-5600. Maximum depth 5600 m.
+  - SET A, locked in `Docs/Lore/Lore_Bible.md:229` as "current project ranges": Spine 0-100, Drowned
+    Factories 100-1500, Drop 1000-2500, Deep Abyss 2500-4000, Thermal Fields 4000-5500. Maximum depth
+    5500 m. Set A also overlaps itself: Drowned Factories 100-1500 against Drop 1000-2500.
+  - Different names, different boundaries, different maximum depth. They cannot both be true.
+  - WHAT THE CODE IMPLEMENTS: Set A. `Assets/_Project/Scripts/Editor/HectonLoreSceneSetupEditor.cs:139-157`
+    creates the `DepthZoneProfile` assets as DepthZone_TheSpine 0-100, DepthZone_DrownedFactories 100-1500,
+    DepthZone_TheDropUpper 1000-2500, DepthZone_TheDropDeep 2500-4000, DepthZone_ThermalFields 4000-5500,
+    each carrying its own `requiredHullTier` and `dangerLevel`. Those are the profiles the runtime consumes.
+  - WHAT THE CONTENT IMPLEMENTS: also Set A. The 80-sector ecology table at `Lore_Bible.md:273-352` labels
+    every one of its sectors with a Set A band name.
+  - So the two places that declare Set B are outvoted by the shipped code and by the largest single body of
+    authored content. That is evidence, not a decision: a canon lock is not overturned by a line count.
 - Solid seafloor access is rare: exposed ridges, vent scars, collapsed shelves and Atlas-cut service basins. The whole ocean floor is not a walkable map.
 - Seed invariants: topology, POI order, resource exposure, fauna pressure and safe pockets can vary; star, Aegir, moon ladder, depth bands, Great Tide logic and Atlas basin relation remain fixed.
 
