@@ -2,17 +2,25 @@
 
 <img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/hecton8_banner.jpg" width="100%" alt="Hecton8 Banner"/>
 
-# HECTON8 — Full Technical Specification & Architecture
+# HECTON8 — Technical Engine & Interactive Showcase
 
+[![Live Website](https://img.shields.io/badge/Live%20Website-GitHub%20Pages-00f2fe?style=for-the-badge&logo=github)](https://marko1olo.github.io/Hecton8/)
 [![License](https://img.shields.io/badge/License-True%20People's%20v2.0-red?style=for-the-badge)](LICENSE.md)
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)]()
 [![Audit](https://img.shields.io/badge/Audit-100%25%20Verified-purple?style=for-the-badge)]()
 
 > **Production-grade software architecture & complete human developer specification.**
 
-[🎮 Play / Run](#) &nbsp;·&nbsp; [📊 Data Flow Pipeline](#-execution-pipeline--data-flow) &nbsp;·&nbsp; [📜 Developer Documentation](#-original-human-developer-documentation) &nbsp;·&nbsp; [🐛 Report Issue](../../issues)
+[🌐 Open Live Showcase Site](https://marko1olo.github.io/Hecton8/) &nbsp;·&nbsp; [🎮 Play / Run](#) &nbsp;·&nbsp; [📊 Data Flow](#-execution-pipeline--data-flow) &nbsp;·&nbsp; [📜 Developer Docs](#-original-human-developer-documentation)
 
 </div>
+
+---
+
+## 🌐 Live Interactive GitHub Pages Website
+
+The official interactive web showcase for **marko1olo/Hecton8** is live and hosted on GitHub Pages:
+👉 **[Click here to visit the live site](https://marko1olo.github.io/Hecton8/)**
 
 ---
 
