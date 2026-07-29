@@ -29,10 +29,18 @@ namespace Hecton8.EditorTools.Diagnostics
     ///
     /// EVERY run leaves one machine-readable artifact, by default at
     /// &lt;projectRoot&gt;/Logs/h8_playprobe_route.json, overridable with -h8RouteArtifact. It carries the
-    /// per-phase clock table, the save-directory diff, and a verdict for all ten rows of the First 20
-    /// Minutes Required Route - rows with no producer report NOT_EXERCISED rather than staying
-    /// silent. Before that artifact existed, four runs on the same day used four different argument
-    /// sets, emitted only log text, and could not be compared with one another.
+    /// per-phase clock table, the save-directory diff, the determinism block described below, and a
+    /// verdict for all ten rows of the First 20 Minutes Required Route - rows with no producer report
+    /// NOT_EXERCISED rather than staying silent. Before that artifact existed, four runs on the same day
+    /// used four different argument sets, emitted only log text, and could not be compared with one
+    /// another.
+    ///
+    /// The determinism block (console tag <c>DETERMINISM</c>, artifact key <c>determinism</c>) is the
+    /// answer to "did two runs of one seed do the same thing": it publishes the master state hash that
+    /// LockstepStateValidator already computes, the post-simulation frame it was sampled at, and the
+    /// slow-tick time the dispatcher discarded. This probe computes no hash of its own, and the block's
+    /// <c>coverage</c> field states in the artifact exactly which four buffers the hash does and does not
+    /// cover - read it before quoting a match as proof that two worlds agreed.
     ///
     /// Save-leg arguments: -h8SaveSeconds (default 60, clamped so the leg cannot push the run past
     /// -h8TimeoutSeconds), -h8SaveSlot (0..2), -h8SkipSaveLeg to disable it. The leg only runs after
@@ -312,6 +320,81 @@ namespace Hecton8.EditorTools.Diagnostics
         private static string _artifactPath = string.Empty;
         private static string _scenePath = string.Empty;
         private static bool _artifactWritten;
+
+        // ---- determinism state hash -----------------------------------------------------------
+        // A simulation nobody can repeat cannot be verified, and no run of this probe emitted a single
+        // number two runs could be compared on. This block reads one.
+        //
+        // IT DOES NOT COMPUTE ONE. The whole hash is built by LockstepStateValidator
+        // (Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs) on the dispatcher's
+        // POST_SIMULATION lane, and everything here only reads what that owner already published into the
+        // vault. A second hasher living in the probe would produce a number that agrees with nothing the
+        // game actually runs on, and would agree with itself no matter how wrong it was.
+        //
+        // READ THE COVERAGE LIMIT BEFORE QUOTING THE NUMBER. LockstepHashCategory has exactly four
+        // members, so the "master state hash" folds exactly four vault buffers - the ones
+        // LockstepStateValidator.ExecuteHashJobs reads: RigidbodyAUPs, PlayerKinematicState (one entry,
+        // mirrored by the validator itself), RoomWaterLevels (at most 256 habitat rooms) and EntityAUPs.
+        // Terrain, voxels, ecosystem populations, weather, storms, inventory, quests, fauna genetics,
+        // flora, the water simulation and every RNG stream are OUTSIDE it. Two runs agreeing on this hash
+        // means those four buffers matched at the sampled frame; it does NOT mean the two worlds matched.
+        //
+        // Two further limits that decide whether a comparison is valid at all:
+        //   - Positions are quantised to a millimetre (LockstepHashMath.QuantizeMillimeter, scale 1000)
+        //     and water levels to 1e-4, so any divergence finer than that is INVISIBLE here. A matching
+        //     hash is not proof of bit-identical state.
+        //   - LockstepHashMath.BuildMasterHash folds the sampled frame into the hash, and the sample
+        //     cadence is ResolveHashCadenceFrames() - a lerp over HomeostasisBrain.GlobalQualityWeight and
+        //     SystemHealthIndex01, both of which react to wall-clock frame times. Two runs can therefore
+        //     sample at DIFFERENT frames and produce different hashes from identical state. Compare
+        //     lastCleanPostSimFrame first; a hash difference at different frames proves nothing.
+
+        /// <summary>
+        /// What the end-of-run determinism read actually found. Ordered from "no evidence" upward so an
+        /// absent owner can never be read as a matching hash.
+        /// </summary>
+        private enum DeterminismCapture : byte
+        {
+            NotRead = 0,
+            NoPlaySession = 1,
+            NoDataVault = 2,
+            NoHashBuffer = 3,
+            NeverSampled = 4,
+            Sampled = 5,
+        }
+
+        private struct DeterminismCategorySample
+        {
+            public string Name;
+            public uint Hash;
+            public uint Count;
+            public uint Flags;
+        }
+
+        // Literal mirrors of LockstepStateValidator's PRIVATE ArrayFlag* constants
+        // (LockstepStateValidator.cs:313-315). They are private there and this assembly cannot reach
+        // them, so these three lines WILL drift silently if that file ever renumbers its bits. That is
+        // why the drift-proof reading is printed beside every hash instead: a category whose Count is 0
+        // contributed nothing no matter what any flag says, and the counts come from the owner's own
+        // LockstepArrayHash records.
+        private const uint DeterminismArrayFlagMissing = 1u << 0;
+        private const uint DeterminismArrayFlagTruncated = 1u << 1;
+        private const uint DeterminismArrayFlagNonFinite = 1u << 2;
+
+        private static DeterminismCapture _determinismState;
+        private static ulong _determinismMasterHash;
+        private static uint _determinismMasterFlags;
+        private static ulong _determinismLastCleanHash;
+        private static uint _determinismLastCleanFrame;
+        private static bool _determinismHashFromOwnerAccessor;
+        private static bool _determinismAccessorVaultDisagreement;
+        private static int _determinismValidatorInstances;
+        private static int _determinismValidatorEnabled;
+        private static uint _determinismDispatcherFrameId;
+        private static double _determinismSlowTickDiscardedSeconds;
+        private static int _determinismSlowTickDiscardEvents;
+        private static DeterminismCategorySample[] _determinismCategories =
+            Array.Empty<DeterminismCategorySample>();
 
         public static void Run()
         {
@@ -1612,6 +1695,27 @@ namespace Hecton8.EditorTools.Diagnostics
                 _failures++;
             }
 
+            // Its own try, deliberately, and it sits AFTER the block above for two reasons: this is the
+            // only end-of-run number two runs can be compared on, so it must still be read when an earlier
+            // check threw, and a fault inside it must not suppress the route-moment rows that follow.
+            //
+            // It does not touch _failures. A diagnostics read that could not complete is an instrument
+            // fault, not a product verdict, and making it an exit-code failure would silently change what
+            // every existing caller of this probe means by exit code 1.
+            try
+            {
+                CaptureDeterminismState();
+                ReportDeterminismState();
+            }
+            catch (Exception ex)
+            {
+                _determinismState = DeterminismCapture.NotRead;
+                Debug.Log(
+                    $"{Marker} DETERMINISM READ FAILED {ex.GetType().Name}: {ex.Message} - this run has no " +
+                    "comparable end-of-run state number. Instrument fault, not a product verdict, so the " +
+                    "exit code is unchanged.");
+            }
+
             RecordProofMoment();
             RecordWorldDriverMoments();
             RecordMissionMoment();
@@ -2482,6 +2586,380 @@ namespace Hecton8.EditorTools.Diagnostics
             Debug.Log($"{Marker} VEGINPUT   {verdict} {name,-42} {value.ToString("F3", CultureInfo.InvariantCulture)}  {meaning}");
         }
 
+        /// <summary>
+        /// Reads the determinism numbers this run produced and stores them for the console report and the
+        /// artifact.
+        ///
+        /// Called ONCE, from <see cref="RunChecks"/>, while Play Mode is still live. That is a hard
+        /// requirement, not a preference: the vault arena is a raw pointer owned by
+        /// <c>GlobalDataVault</c>, so resolving a buffer view after the play session has torn down is a
+        /// use-after-free. Nothing in this method may be called from <see cref="WriteRouteArtifact"/>,
+        /// which runs on every terminal path including one taken after Play Mode has exited - the artifact
+        /// writer emits the statics captured here and never re-reads the runtime.
+        ///
+        /// The hash value itself comes from <c>LockstepStateValidator.LastMasterStateHash</c> when the
+        /// owner component exists, because calling the authority's own accessor cannot drift from what the
+        /// authority publishes. The direct buffer read is the fallback, and it is a real case rather than
+        /// defensive padding: <c>LockstepStateValidator.DisposeNativeState</c> documents that the vault
+        /// owns these buffers and preserves the last hash across component lifetime churn, so a run whose
+        /// validator was destroyed still has a readable number.
+        /// </summary>
+        private static void CaptureDeterminismState()
+        {
+            // Read before anything can fail: these two are the counters that say whether the run
+            // simulated what its frame count implies, and they are worth having even if no hash exists.
+            // SystemDispatcher returns 0.0/0 once its ActiveRuntimeInstance is gone, which is the other
+            // reason this is read inside the play session.
+            _determinismSlowTickDiscardedSeconds = SystemDispatcher.SlowTickDiscardedSeconds;
+            _determinismSlowTickDiscardEvents = SystemDispatcher.SlowTickDiscardEvents;
+            _determinismDispatcherFrameId = SystemDispatcher.CurrentFrameId;
+
+            int categoryCount = (int)Hecton8.Core.Determinism.LockstepHashCategory.Count;
+            if (_determinismCategories.Length != categoryCount)
+            {
+                // COLD ALLOC: DeterminismCategorySample[4] - one row per LockstepHashCategory member,
+                // sized from the owner's enum so a fifth category cannot be silently dropped, read once at
+                // end of run - owner: H8_HeadlessPlayModeProbe
+                _determinismCategories = new DeterminismCategorySample[categoryCount];
+            }
+
+            for (int i = 0; i < categoryCount; i++)
+            {
+                _determinismCategories[i] = new DeterminismCategorySample
+                {
+                    Name = ((Hecton8.Core.Determinism.LockstepHashCategory)i).ToString(),
+                };
+            }
+
+            if (!EditorApplication.isPlaying)
+            {
+                _determinismState = DeterminismCapture.NoPlaySession;
+                return;
+            }
+
+            // Owner presence is reported separately from the number, because "no validator exists" and
+            // "the validator exists and never sampled" are different findings with different owners. The
+            // component is created at runtime by a RuntimeInitializeOnLoadMethod and its GameObject is
+            // HideInHierarchy, so a scene search cannot see it; FindObjectsByType can. No
+            // FindObjectsSortMode overload - it is deprecated in 6000.5 (CS0618) and this only enumerates.
+            Hecton8.Core.Determinism.LockstepStateValidator[] validators =
+                UnityEngine.Object.FindObjectsByType<Hecton8.Core.Determinism.LockstepStateValidator>(
+                    FindObjectsInactive.Include);
+            Hecton8.Core.Determinism.LockstepStateValidator owner = null;
+            _determinismValidatorInstances = validators.Length;
+            _determinismValidatorEnabled = 0;
+            for (int i = 0; i < validators.Length; i++)
+            {
+                Hecton8.Core.Determinism.LockstepStateValidator validator = validators[i];
+                if (validator == null)
+                    continue;
+
+                if (owner == null)
+                    owner = validator;
+
+                if (!validator.isActiveAndEnabled)
+                    continue;
+
+                _determinismValidatorEnabled++;
+                owner = validator;
+            }
+
+            Hecton8.Core.Memory.IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+            {
+                _determinismState = DeterminismCapture.NoDataVault;
+                return;
+            }
+
+            // Type arguments are written out at every call site on purpose: NativeArray<T>.ReadOnly is a
+            // nested type of a generic, and relying on the compiler to infer T through one is not worth the
+            // risk in a file whose owner cannot hold the Unity lock to compile it.
+            bool hashBufferPresent = TryReadDeterminismBuffer<ulong>(
+                vault,
+                Hecton8.Core.Memory.BufferID.LockstepMasterStateHash,
+                1,
+                out Unity.Collections.NativeArray<ulong>.ReadOnly liveHash);
+
+            ulong vaultHash = hashBufferPresent ? liveHash[0] : 0UL;
+            ulong accessorHash = owner != null ? owner.LastMasterStateHash : 0UL;
+
+            // Prefer the owner's own accessor: calling the authority cannot drift from what the authority
+            // publishes. Fall back to the published buffer when the accessor reads zero and the buffer does
+            // not - a real case, not defensive padding. LastMasterStateHash resolves through the validator's
+            // OWN cached _dataVault field (LockstepStateValidator.ResolveDataVault returns it verbatim),
+            // while this read goes through GlobalRegistry.DataVault, so a validator that never refreshed its
+            // dependencies reports zero over a buffer that still holds the hash it wrote. Preferring the
+            // accessor and then reporting nothing would have published a zero as "this run's hash".
+            //
+            // A disagreement between the two is therefore a finding, not a formatting detail: it means the
+            // determinism owner is not reading the vault the registry publishes. It is recorded and printed
+            // rather than resolved silently.
+            _determinismMasterHash = accessorHash != 0UL ? accessorHash : vaultHash;
+            _determinismHashFromOwnerAccessor = accessorHash != 0UL;
+            _determinismAccessorVaultDisagreement =
+                owner != null && hashBufferPresent && accessorHash != vaultHash;
+
+            if (!hashBufferPresent)
+            {
+                _determinismState = DeterminismCapture.NoHashBuffer;
+                return;
+            }
+
+            if (TryReadDeterminismBuffer<uint>(
+                    vault,
+                    Hecton8.Core.Memory.BufferID.LockstepMasterFlags,
+                    1,
+                    out Unity.Collections.NativeArray<uint>.ReadOnly masterFlags))
+            {
+                _determinismMasterFlags = masterFlags[0];
+            }
+
+            if (TryReadDeterminismBuffer<Hecton8.Core.Determinism.LockstepArrayHash>(
+                    vault,
+                    Hecton8.Core.Memory.BufferID.LockstepArrayHashes,
+                    categoryCount,
+                    out Unity.Collections.NativeArray<Hecton8.Core.Determinism.LockstepArrayHash>.ReadOnly
+                        arrayHashes))
+            {
+                for (int i = 0; i < categoryCount; i++)
+                {
+                    Hecton8.Core.Determinism.LockstepArrayHash entry = arrayHashes[i];
+                    _determinismCategories[i] = new DeterminismCategorySample
+                    {
+                        Name = ((Hecton8.Core.Determinism.LockstepHashCategory)i).ToString(),
+                        Hash = entry.Hash,
+                        Count = entry.Count,
+                        Flags = entry.Flags,
+                    };
+                }
+            }
+
+            // The history ring is the only place the SAMPLED FRAME is recorded, and the frame is what makes
+            // the hash comparable at all - LockstepHashMath.BuildMasterHash folds it in.
+            // LockstepStateValidator.RecordMasterHashHistory writes an entry only when the sample carried
+            // no missing/truncated/non-finite flag, so this is the newest CLEAN sample, which may be older
+            // than the live master hash above. Scanned by highest frame rather than read through the
+            // cursor: a stale or garbage cursor would otherwise hand back an arbitrary older entry as "the
+            // latest", and the maximum is correct whatever the cursor says.
+            if (TryReadDeterminismBuffer<Hecton8.Core.Determinism.LockstepMasterHashHistoryEntry>(
+                    vault,
+                    Hecton8.Core.Memory.BufferID.LockstepMasterHashHistory,
+                    1,
+                    out Unity.Collections.NativeArray<Hecton8.Core.Determinism.LockstepMasterHashHistoryEntry>
+                        .ReadOnly history))
+            {
+                for (int i = 0; i < history.Length; i++)
+                {
+                    Hecton8.Core.Determinism.LockstepMasterHashHistoryEntry entry = history[i];
+                    if (entry.Frame == 0u || entry.Frame < _determinismLastCleanFrame)
+                        continue;
+
+                    _determinismLastCleanFrame = entry.Frame;
+                    _determinismLastCleanHash = ((ulong)entry.HashHi << 32) | entry.HashLo;
+                }
+            }
+
+            // Zero is the owner's own "before the first sampled frame" value - see the summary on
+            // LockstepStateValidator.LastMasterStateHash - so it is treated as never-sampled here rather
+            // than published as a hash somebody might diff against another zero.
+            _determinismState = _determinismMasterHash != 0UL || _determinismLastCleanFrame != 0u
+                ? DeterminismCapture.Sampled
+                : DeterminismCapture.NeverSampled;
+        }
+
+        /// <summary>
+        /// Read-only view of one published vault buffer. Mirrors the guards in
+        /// <c>LockstepStateValidator.TryReadVaultBuffer</c>: a zero generation means the buffer was never
+        /// allocated, and a short buffer is refused rather than indexed.
+        /// </summary>
+        private static bool TryReadDeterminismBuffer<T>(
+            Hecton8.Core.Memory.IDataVault vault,
+            Hecton8.Core.Memory.BufferID bufferId,
+            int requiredLength,
+            out Unity.Collections.NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(
+                    bufferId, out Hecton8.Core.Memory.VaultGenerationHandle<T> handle))
+            {
+                return false;
+            }
+
+            if (handle.Generation == 0u || handle.BufferID != unchecked((uint)(int)bufferId))
+                return false;
+
+            if (!vault.TryReadOnlyHandle(in handle, out buffer) || !buffer.IsCreated)
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Prints the three numbers a second run of the same seed is compared on, and the coverage limits
+        /// that decide whether the comparison means anything.
+        ///
+        /// The falsifiable part is the per-category element count, not the hash. "Both runs produced
+        /// 0x1234..." cannot be wrong. "0x1234... over RigidbodyAups=0 PlayerKinematicState=1
+        /// RoomWaterLevels=0 EntityAups=0" can be - and a hash folded over three empty categories is
+        /// reproducible for a reason that has nothing to do with the simulation being deterministic.
+        /// </summary>
+        private static void ReportDeterminismState()
+        {
+            bool missing = (_determinismMasterFlags & DeterminismArrayFlagMissing) != 0u;
+            bool truncated = (_determinismMasterFlags & DeterminismArrayFlagTruncated) != 0u;
+            bool nonFinite = (_determinismMasterFlags & DeterminismArrayFlagNonFinite) != 0u;
+            uint hashedElements = SumDeterminismHashedElements();
+            int gameFrames = Time.frameCount - _gameFrameAtPlayStart;
+
+            Debug.Log(
+                $"{Marker} DETERMINISM state={_determinismState} " +
+                $"masterStateHash=0x{_determinismMasterHash.ToString("X16", CultureInfo.InvariantCulture)} " +
+                $"lastCleanStateHash=0x{_determinismLastCleanHash.ToString("X16", CultureInfo.InvariantCulture)} " +
+                $"lastCleanPostSimFrame={_determinismLastCleanFrame} " +
+                $"gameFrames={gameFrames} dispatcherFrameId={_determinismDispatcherFrameId} " +
+                $"slowTickDiscardedSeconds={_determinismSlowTickDiscardedSeconds:F3} " +
+                $"slowTickDiscardEvents={_determinismSlowTickDiscardEvents}");
+
+            Debug.Log(
+                $"{Marker} DETERMINISM   owner=LockstepStateValidator instances={_determinismValidatorInstances} " +
+                $"enabled={_determinismValidatorEnabled} " +
+                $"hashFrom={(_determinismHashFromOwnerAccessor ? "LastMasterStateHash accessor" : "vault buffer")} " +
+                $"masterFlags=0x{_determinismMasterFlags.ToString("X8", CultureInfo.InvariantCulture)} " +
+                $"missing={missing} truncated={truncated} nonFinite={nonFinite} " +
+                $"hashedElements={hashedElements}");
+
+            for (int i = 0; i < _determinismCategories.Length; i++)
+            {
+                DeterminismCategorySample sample = _determinismCategories[i];
+                Debug.Log(
+                    $"{Marker} DETERMINISM   category {sample.Name,-22} " +
+                    $"count={sample.Count,6} hash=0x{sample.Hash.ToString("X8", CultureInfo.InvariantCulture)} " +
+                    $"flags=0x{sample.Flags.ToString("X8", CultureInfo.InvariantCulture)}");
+            }
+
+            if (_determinismAccessorVaultDisagreement)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   OWNER/VAULT DISAGREEMENT - LockstepStateValidator" +
+                    ".LastMasterStateHash and BufferID.LockstepMasterStateHash do not return the same value. " +
+                    "The accessor resolves through the validator's own cached _dataVault field and this read " +
+                    "goes through GlobalRegistry.DataVault, so the determinism owner is looking at a " +
+                    "different vault than the registry publishes. Fix that before treating either number as " +
+                    "this run's state hash.");
+            }
+
+            if (_determinismState == DeterminismCapture.Sampled && hashedElements == 0u)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   REPRODUCIBLE AND EMPTY - every category hashed 0 elements, " +
+                    "so two runs matching on this hash proves only that both hashed nothing. Do not quote " +
+                    "it as determinism evidence until at least one category carries a count.");
+            }
+            else if (_determinismState == DeterminismCapture.Sampled && (missing || truncated || nonFinite))
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   the LIVE master hash was built over flagged categories " +
+                    "(missing/truncated/non-finite above), so compare lastCleanStateHash instead - that is " +
+                    "the newest sample the owner considered clean enough to record.");
+            }
+            else if (_determinismState == DeterminismCapture.NeverSampled)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   the hash buffer exists and is still zero, which is the owner's " +
+                    "'before the first sampled frame' value: this run never reached a hash frame. " +
+                    "ResolveHashCadenceFrames() samples every 60-1200 post-simulation ticks, so a headless " +
+                    "run that advances a handful of frames can end before the first sample.");
+            }
+            else if (_determinismState == DeterminismCapture.NoHashBuffer)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   BufferID.LockstepMasterStateHash is not allocated in the vault " +
+                    "- the determinism owner never opened its buffers, so nothing was hashed at any point " +
+                    "in this run.");
+            }
+            else if (_determinismState == DeterminismCapture.NoDataVault)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   GlobalRegistry.DataVault is null, so no vault-published state " +
+                    "could be read at all. Every number on the line above is absent, not zero.");
+            }
+            else if (_determinismState != DeterminismCapture.Sampled)
+            {
+                Debug.Log(
+                    $"{Marker} DETERMINISM   no read was performed (state={_determinismState}); the numbers " +
+                    "above carry no evidence.");
+            }
+
+            Debug.Log(
+                $"{Marker} DETERMINISM   COVERAGE: {DescribeDeterminismCoverage()}");
+        }
+
+        private static uint SumDeterminismHashedElements()
+        {
+            uint total = 0u;
+            for (int i = 0; i < _determinismCategories.Length; i++)
+                total += _determinismCategories[i].Count;
+
+            return total;
+        }
+
+        /// <summary>
+        /// The honest scope of the hash, in one sentence per limit. Kept as a method so the console line
+        /// and the artifact's <c>coverage</c> field cannot describe the same number differently.
+        /// </summary>
+        private static string DescribeDeterminismCoverage()
+        {
+            return
+                "LockstepHashCategory has 4 members, so this hash folds exactly 4 vault buffers - " +
+                "RigidbodyAUPs, PlayerKinematicState (1 entry), RoomWaterLevels (<=256 habitat rooms) and " +
+                "EntityAUPs. Terrain, voxels, ecosystem populations, weather, storms, inventory, quests, " +
+                "fauna genetics, flora, the water simulation and every RNG stream are OUTSIDE it, so equal " +
+                "hashes mean THOSE FOUR BUFFERS matched at the sampled frame and nothing more. Positions " +
+                "are quantised to 1 mm and water levels to 1e-4, so finer divergence is invisible here. " +
+                "BuildMasterHash folds the sampled frame in, and the sample cadence is derived from " +
+                "HomeostasisBrain.GlobalQualityWeight and SystemHealthIndex01, which react to wall-clock " +
+                "frame times - two runs can sample at different frames and differ on the hash with " +
+                "identical state, so compare lastCleanPostSimFrame before concluding anything from a " +
+                "mismatch. slowTickDiscardedSeconds is the simulation time the slow-tick lane was owed and " +
+                "never received; a run with a large value did not simulate what its frame count implies " +
+                "and is not comparable to a run with a small one.";
+        }
+
+        /// <summary>
+        /// One line of determinism state for the Proof row. Pure string building over the captured
+        /// statics - it must stay callable from <see cref="WriteRouteArtifact"/> on a terminal path where
+        /// <see cref="CaptureDeterminismState"/> never ran.
+        /// </summary>
+        private static string DescribeDeterminismForProof()
+        {
+            if (_determinismState != DeterminismCapture.Sampled)
+            {
+                return $"no comparable state hash this run (state={_determinismState}), " +
+                    $"slowTickDiscardedSeconds={_determinismSlowTickDiscardedSeconds.ToString("F3", CultureInfo.InvariantCulture)} " +
+                    $"over {_determinismSlowTickDiscardEvents} discard events";
+            }
+
+            return
+                $"masterStateHash=0x{_determinismMasterHash.ToString("X16", CultureInfo.InvariantCulture)} " +
+                $"lastCleanPostSimFrame={_determinismLastCleanFrame} " +
+                $"over {SumDeterminismHashedElements()} hashed elements in 4 buffers, " +
+                $"slowTickDiscardedSeconds={_determinismSlowTickDiscardedSeconds.ToString("F3", CultureInfo.InvariantCulture)} " +
+                $"over {_determinismSlowTickDiscardEvents} discard events";
+        }
+
         private static bool IsAlive(object service)
         {
             if (service is UnityEngine.Object unityObject)
@@ -2563,6 +3041,25 @@ namespace Hecton8.EditorTools.Diagnostics
 
             _artifactWritten = false;
 
+            // Determinism statics are cleared for the reason this whole method exists: a second run in one
+            // editor session would otherwise inherit the first run's hash and report it as its own, which
+            // is the single worst failure mode available to a determinism instrument - two runs "agreeing"
+            // because one of them never read anything. The category array is kept and re-filled in place.
+            _determinismState = DeterminismCapture.NotRead;
+            _determinismMasterHash = 0UL;
+            _determinismMasterFlags = 0u;
+            _determinismLastCleanHash = 0UL;
+            _determinismLastCleanFrame = 0u;
+            _determinismHashFromOwnerAccessor = false;
+            _determinismAccessorVaultDisagreement = false;
+            _determinismValidatorInstances = 0;
+            _determinismValidatorEnabled = 0;
+            _determinismDispatcherFrameId = 0u;
+            _determinismSlowTickDiscardedSeconds = 0.0;
+            _determinismSlowTickDiscardEvents = 0;
+            for (int i = 0; i < _determinismCategories.Length; i++)
+                _determinismCategories[i] = default;
+
             _worldDriverStarted = false;
             _worldDriverGraceTicks = 0;
             _graceOpenedLogged = false;
@@ -2579,11 +3076,19 @@ namespace Hecton8.EditorTools.Diagnostics
         /// <summary>
         /// The contract's Proof row (<c>FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md:90</c>) wants
         /// console, run, profiler, GC, memory, screenshot/clip AND the save directory diff. This run
-        /// produces the run log, the per-phase clock table and the save directory diff; profiler, GC,
-        /// memory and capture have no producer here, so the row is Partial and names what is missing.
+        /// produces the run log, the per-phase clock table, the save directory diff and - since
+        /// <see cref="CaptureDeterminismState"/> - a comparable end-of-run state number.
+        ///
+        /// THE ROW STAYS PARTIAL AND THE MISSING LIST IS UNCHANGED. The state hash is a producer for the
+        /// run-repeatability half of the row: before it, two runs of one seed left nothing that could be
+        /// diffed, so "the run was verified" could not be checked by anyone. It is NOT profiler evidence,
+        /// NOT GC evidence, NOT a memory snapshot and NOT a capture, and it must never be offered as a
+        /// substitute for any of the four - which is why the detail string says so in those words.
         ///
         /// Recorded from both the console report and the artifact writer so the two outputs of one run
-        /// can never disagree about it.
+        /// can never disagree about it. <see cref="DescribeDeterminismForProof"/> reads only captured
+        /// statics for exactly that reason: this method runs on terminal paths where Play Mode is already
+        /// gone and the runtime cannot be touched.
         /// </summary>
         private static void RecordProofMoment()
         {
@@ -2591,7 +3096,11 @@ namespace Hecton8.EditorTools.Diagnostics
                 MomentProof,
                 MomentVerdict.Partial,
                 $"run log + per-phase clock table + save directory diff written to '{ResolveArtifactPath()}'; " +
-                "profiler capture, GC evidence, memory snapshot and screenshot/clip have no producer in this probe");
+                $"run-repeatability now has a producer as well - {DescribeDeterminismForProof()} - which is " +
+                "what a second run of the same seed diffs against, bounded by the coverage limits in the " +
+                "artifact's determinism.coverage field; profiler capture, GC evidence, memory snapshot and " +
+                "screenshot/clip STILL have no producer in this probe and the state hash substitutes for " +
+                "none of the four");
         }
 
         private static string ResolveDefaultArtifactPath()
@@ -2711,6 +3220,72 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             builder.Append(firstDriverPhase ? "    ]\n" : "\n    ]\n");
+            builder.Append("  },\n");
+
+            // The state hash and the two discard counters go in the artifact for the same reason the phase
+            // table does: comparing two runs by grepping two 2 MB logs is not a comparison anyone will
+            // repeat, so nobody ever did it. Three fields carry the diff - masterStateHash,
+            // lastCleanPostSimFrame and slowTickDiscardedSeconds - and coverage carries what they do not
+            // cover, in the artifact itself, so a future reader cannot pick up the number without it.
+            //
+            // The hash is written as a hex STRING, and lo/hi are written separately as integers. A ulong
+            // does not survive AppendJsonNumber: only the double overload accepts it, FormatNumber would
+            // round it, and a rounded 64-bit hash silently compares equal to a different hash.
+            builder.Append("  \"determinism\": {\n");
+            AppendJsonField(builder, "state", _determinismState.ToString(), "    ");
+            AppendJsonField(
+                builder,
+                "masterStateHash",
+                "0x" + _determinismMasterHash.ToString("X16", CultureInfo.InvariantCulture),
+                "    ");
+            AppendJsonNumber(builder, "masterStateHashLo", (long)(uint)_determinismMasterHash, "    ");
+            AppendJsonNumber(builder, "masterStateHashHi", (long)(uint)(_determinismMasterHash >> 32), "    ");
+            AppendJsonField(
+                builder,
+                "lastCleanStateHash",
+                "0x" + _determinismLastCleanHash.ToString("X16", CultureInfo.InvariantCulture),
+                "    ");
+            AppendJsonNumber(builder, "lastCleanPostSimFrame", _determinismLastCleanFrame, "    ");
+            AppendJsonField(
+                builder,
+                "masterFlags",
+                "0x" + _determinismMasterFlags.ToString("X8", CultureInfo.InvariantCulture),
+                "    ");
+            AppendJsonBool(
+                builder, "missing", (_determinismMasterFlags & DeterminismArrayFlagMissing) != 0u, "    ");
+            AppendJsonBool(
+                builder, "truncated", (_determinismMasterFlags & DeterminismArrayFlagTruncated) != 0u, "    ");
+            AppendJsonBool(
+                builder, "nonFinite", (_determinismMasterFlags & DeterminismArrayFlagNonFinite) != 0u, "    ");
+            AppendJsonBool(builder, "hashFromOwnerAccessor", _determinismHashFromOwnerAccessor, "    ");
+            AppendJsonBool(
+                builder, "ownerVaultDisagreement", _determinismAccessorVaultDisagreement, "    ");
+            AppendJsonNumber(builder, "validatorInstances", _determinismValidatorInstances, "    ");
+            AppendJsonNumber(builder, "validatorEnabled", _determinismValidatorEnabled, "    ");
+            AppendJsonNumber(builder, "dispatcherFrameId", _determinismDispatcherFrameId, "    ");
+            AppendJsonNumber(builder, "hashedElements", SumDeterminismHashedElements(), "    ");
+            AppendJsonNumber(
+                builder, "slowTickDiscardedSeconds", _determinismSlowTickDiscardedSeconds, "    ");
+            AppendJsonNumber(builder, "slowTickDiscardEvents", _determinismSlowTickDiscardEvents, "    ");
+
+            builder.Append("    \"categories\": [\n");
+            for (int i = 0; i < _determinismCategories.Length; i++)
+            {
+                DeterminismCategorySample sample = _determinismCategories[i];
+                builder.Append("      { \"category\": \"").Append(EscapeJson(sample.Name ?? string.Empty))
+                    .Append("\", \"count\": ").Append(sample.Count.ToString(CultureInfo.InvariantCulture))
+                    .Append(", \"hash\": \"0x")
+                    .Append(sample.Hash.ToString("X8", CultureInfo.InvariantCulture))
+                    .Append("\", \"flags\": \"0x")
+                    .Append(sample.Flags.ToString("X8", CultureInfo.InvariantCulture))
+                    .Append("\" }")
+                    .Append(i == _determinismCategories.Length - 1 ? "\n" : ",\n");
+            }
+
+            // An empty array closes on its own line and is still valid JSON - no special case needed,
+            // because the loop above emits the separator only between elements.
+            builder.Append("    ],\n");
+            AppendJsonFieldLast(builder, "coverage", DescribeDeterminismCoverage(), "    ");
             builder.Append("  },\n");
 
             builder.Append("  \"save\": {\n");
