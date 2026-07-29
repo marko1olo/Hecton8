@@ -703,7 +703,6 @@ namespace Hecton8.SaveSystem
                 DisposeEditorNativeBuffersForLifecycle();
             }
         }
-#endif
 
         private static void DisposeEditorNativeBuffersForLifecycle()
         {
@@ -719,9 +718,7 @@ namespace Hecton8.SaveSystem
 
                 try
                 {
-#if UNITY_EDITOR
                     Test_OnBeforeShutdownServiceState?.Invoke();
-#endif
                     manager.ShutdownServiceState();
                 }
                 catch (Exception exception)
