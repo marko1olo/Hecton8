@@ -198,11 +198,50 @@ What this proves, and what it does not:
 
    **UNPROVEN, and worth stating precisely.** `count <= 0` is *forced* by source — with no player there is
    no seeding path — but it was never *observed*, because the log filter above hid it and the result file
-   surfaces no ecology telemetry. `TryGetGlobalBiomassAudit` has four false branches and one of them,
-   `HasPendingSimulationJob()`, is transient. Settling which fired costs one `Debug.LogWarning` of
+   surfaces no ecology telemetry. `TryGetGlobalBiomassAudit` in fact has **six** false branches, not four —
+   the four commonly quoted are the clauses of its first compound condition only — and one,
+   `HasPendingSimulationJob()`, is transient in a way that is **deterministic rather than unlucky**: within
+   one `SystemDispatcher.RunDispatcherUpdate`, `RunSlowTick` runs before `RunFrostTick`, the ecology's
+   `SlowTick` schedules the sector solve, and the flag is cleared only in a later player-loop phase
+   (`RunDispatcherLateFrame`). So on any frame where a slow tick scheduled the solve, every `FrostTick`
+   after it in that frame — including the runner's, which is exactly where the day boundary is evaluated —
+   is *guaranteed* the unavailable answer. Settling which branch fired costs one `Debug.LogWarning` of
    `_activeBiomassCellCount` and about a minute of Unity. Also unproven: whether a *patched* run passes at
    all. Making the ecology answerable is not the same as making it healthy, and whether the solver keeps
    predator biomass above zero for five simulated days has never been measured once.
+
+### Spending the Unity slot while another session edits `.cs` is a coin flip — measured 2026-07-29
+
+Three batchmode runs were launched today. **Two died on another session's transient mid-edit compile break,
+neither of them in a file this session touched.** This is not bad luck to be waited out; it is a cost to
+plan around, and the evidence names it exactly.
+
+- Run 1 died on `GeologyAtlasTask.cs(134,31): error CS0103` — a missing `Hecton8.Editor.asmdef` reference.
+  The repair appeared in the working tree at `08:41:28`, **2m41s after** the compile died at `08:38:47`.
+- Run 3 died on `ForgeGeneratedMaterialAuthoring.cs(1214,17): error CS0103: The name 'ApplyOrganicRole'
+  does not exist`. That method exists now, at `:1425`. The file's mtime is `11:13:37`, **4m34s after** the
+  log ended at `11:09:03`.
+
+Bee says so outright rather than leaving it to be inferred, and this line is the one to look for:
+
+```
+Modification date of `Assets\_Project\Scripts\Editor\Authoring\ForgeGeneratedMaterialAuthoring.cs`
+changed while running `Csc Library/Bee/artifacts/1900b0aE.dag/Hecton8.Editor.dll (+2 others)`.
+```
+
+It logged that twice with different timestamps, and a `Tundra build success (19.94 seconds), 5 items
+updated` in between — the compile was restarted under it as the file kept being saved. **Diagnosis
+protocol: before blaming your own edit for a CS0103, compare the offending file's mtime against your log's
+last line, and grep the log for `changed while running`.** Both runs would otherwise have been charged to
+the wrong author, and run 1 nearly was.
+
+**The related trap, which cuts the other way.** Run 3's build reached `[3921/3925]` with only
+`Hecton8.Editor.dll` rebuilt — `5 items updated`, everything else a cache hit. `Hecton8.Core`,
+`Hecton8.QA.Headless` and `Hecton8.QA.Headless.Editor` did **not** recompile, even though files in all
+three had been edited. So a batchmode run that ends in a compile error tells you nothing about your
+assembly, and one that *succeeds* tells you nothing either unless the log shows Bee actually rebuilt the
+target. `.claude\rules\hecton8-runtime-source.md` already states that rule; this is the measurement behind
+it. On a cache hit, delete `Library/Bee/artifacts` or touch the asmdef and re-run.
 3. **Time dilation is 3.5x, not the 4x-13x I estimated.** `timeDilationDelivered: 3.500491` against
    `timeDilationNominal: 100`. My own watchdog arithmetic in `60a7ed08d` reasoned from an optimistic floor
    of 4x; the real floor is below it. The budget `420 s + span/4` still held for this run because the run
