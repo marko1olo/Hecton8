@@ -1,26 +1,16 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/hecton8_banner.jpg" width="100%" alt="Hecton8 Banner"/>
+# HECTON-8 — Submerge NASA-Punk Deep Sea Unity 6000 Engine
 
-# HECTON8 — Technical Engine & Interactive Showcase
-
-[![Live Website](https://img.shields.io/badge/Live%20Website-GitHub%20Pages-00f2fe?style=for-the-badge&logo=github)](https://marko1olo.github.io/Hecton8/)
-[![License](https://img.shields.io/badge/License-True%20People's%20v2.0-red?style=for-the-badge)](LICENSE.md)
+[![Unity](https://img.shields.io/badge/Engine-Unity%206000.4%20URP-black?style=for-the-badge&logo=unity)][][![Live Website](https://img.shields.io/badge/Website-GitHub%20Pages-00f2fe?style=for-the-badge)](https://marko1olo.github.io/Hecton8/)
 [![Build](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)]()
 [![Audit](https://img.shields.io/badge/Audit-100%25%20Verified-purple?style=for-the-badge)]()
 
 > **Production-grade software architecture & complete human developer specification.**
 
-[🌐 Open Live Showcase Site](https://marko1olo.github.io/Hecton8/) &nbsp;·&nbsp; [🎮 Play / Run](#) &nbsp;·&nbsp; [📊 Data Flow](#-execution-pipeline--data-flow) &nbsp;·&nbsp; [📜 Developer Docs](#-original-human-developer-documentation)
+[🌐 Open Live Showcase](https://marko1olo.github.io/Hecton8/) &nbsp;·&nbsp; [📊 Architectural Diagram](#-system-architecture--pipeline) &nbsp;·&nbsp; [📜 Developer Specs](#-original-human-developer-documentation)
 
 </div>
-
----
-
-## 🌐 Live Interactive GitHub Pages Website
-
-The official interactive web showcase for **marko1olo/Hecton8** is live and hosted on GitHub Pages:
-👉 **[Click here to visit the live site](https://marko1olo.github.io/Hecton8/)**
 
 ---
 
@@ -30,25 +20,26 @@ This repository contains **marko1olo/Hecton8**. The system architecture enforces
 
 ---
 
-## 📊 Execution Pipeline & Data Flow
+## 📊 System Architecture & Pipeline
 
 ```mermaid
 graph TD
-    A[Input Config / Signals] --> B[Core Processing Subsystem]
-    B --> C{Memory Pool & State Check}
-    C -- Hit --> D[Direct Buffer Pipeline]
-    C -- Miss --> E[Execution Compute Engine]
-    E --> F[State Mutation & Telemetry Audit]
-    F --> D
-    D --> G[Output Interface / Render Pass]
+    A[00_BOOTSTRAP Core Engine] --> B[Crest Hydro-X Ocean Simulation]
+    B --> C[MapMagic 2 Biome Chunk Generator]
+    C --> D[Shapes AR NASA-Punk HUD]
+    D --> E[Zero-GC Event Bus & Survival Systems]
 ```
 
 ---
 
-## 🔧 Technical Configuration & Parameter Specifications
+## 🔧 Technical Configuration & Deep Domain Specifications
+
+- **Hardware Budget**: Locked for NVIDIA GeForce MX350 (2 GB VRAM, 60 FPS target).
+- **Hydro-X Ocean Physics**: Crest URP with restricted LOD count = 6 and base resolution = 128.
+- **Zero GC Update Loop**: Pre-allocated event bus and cached string formatting for interaction HUD.
 
 <details open>
-<summary><b>⚙️ System Configuration Parameters (Click to Collapse)</b></summary>
+<summary><b>⚙️ Core System Configuration Parameters (Click to Collapse)</b></summary>
 
 | Parameter Key | Type | Default Value | Description |
 |---|---|---|---|
@@ -56,18 +47,6 @@ graph TD
 | `FRAME_RATE_TARGET` | Int | `60` | Target loop frequency in Hz |
 | `ENABLE_TELEMETRY` | Bool | `true` | Emit real-time JSON metrics to stdout |
 | `THREAD_POOL_COUNT` | Int | `8` | Worker thread allocations for parallel processing |
-
-</details>
-
-<details>
-<summary><b>⚡ Performance Budget & Resource Allocations (Click to Expand)</b></summary>
-
-### Memory & Execution Profile
-
-- **GC Allocation Budget**: `0 B / frame` (Strict Zero Allocation).
-- **Target Frame Time**: `< 16.6 ms` (60 FPS minimum lock).
-- **VRAM Budget**: `< 512 MB` allocated statically at startup.
-- **CPU Bottleneck**: Single-thread tick loop with multi-worker job dispatcher.
 
 </details>
 
