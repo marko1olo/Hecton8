@@ -504,6 +504,245 @@ NAME_MANIFEST = "MANIFEST_{family}_{name}"
 
 
 # ---------------------------------------------------------------------------
+# Texture roles and channel layouts
+# ---------------------------------------------------------------------------
+# ``3DMODEL_TEXTURES_MATERIALS.md`` section 2 (AMENDED 2026-07-29 on measurement) and
+# ``3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`` section 3 (AMENDED the same day).
+#
+# The suffix set below is the SHIPPED one, not the pre-amendment one. Census, run again
+# from this file's own tree on 2026-07-29 and reproducing the lead's numbers exactly:
+#
+#   suffix                    files under Assets/_Project/Art/TEXTURES
+#   _BaseColor                138
+#   _NormalGL                 138
+#   _MaskMap_UnityURP         138
+#   _ARM_AO_Rough_Metal       138
+#   _Height                   138
+#   _MRAO                       0
+#   _Albedo                     0
+#
+# So the five roles below are one consistent family set repeated 138 times, and the
+# superseded ``_Albedo``/``_Normal``/``_MRAO`` spellings never existed on disk.
+# ``_Normal`` (18) and ``_Detail`` (18) do exist as a smaller, separate set.
+
+TEXTURE_ROLE_BASECOLOR = "BaseColor"
+TEXTURE_ROLE_NORMAL = "NormalGL"
+TEXTURE_ROLE_MASK_URP = "MaskMap_UnityURP"
+TEXTURE_ROLE_ARM = "ARM_AO_Rough_Metal"
+TEXTURE_ROLE_HEIGHT = "Height"
+TEXTURE_ROLE_EMISSION = "Emission"
+TEXTURE_ROLE_DETAIL = "Detail"
+
+# The default shipped stack. Emission and Detail are conditional roles, not defaults:
+# the playbook restricts emission to "bioluminescence, instrument glow, hot venting,
+# energized equipment, or emergency markings", so a family that has none of those must
+# OMIT the map rather than ship a black one.
+SHIPPED_TEXTURE_ROLES = (
+    TEXTURE_ROLE_BASECOLOR,
+    TEXTURE_ROLE_NORMAL,
+    TEXTURE_ROLE_MASK_URP,
+    TEXTURE_ROLE_ARM,
+    TEXTURE_ROLE_HEIGHT,
+)
+
+# TWO PACKED LAYOUTS SHIP AND THEY ARE NOT INTERCHANGEABLE. Binding one where the other
+# is expected puts ambient occlusion in the metallic slot, which is silent and wrong.
+# Every manifest must record which layout each map uses; pick by suffix, never by
+# assumption.
+#
+# ``_MaskMap_UnityURP`` is bit-exact against the live master shader
+# ``Assets/_Project/Art/Shaders/Hecton_ModuleHardSurfaceLit.shader``: the property is
+# labelled "Packed Mask (R Metallic G Occlusion A Smoothness)" at :71 and decoded at
+# :349-353 as ``metallic = packedMask.r``, ``smoothness = packedMask.a``,
+# ``occlusionMap = packedMask.g``. B is never read.
+MASKMAP_URP_CHANNELS = ("metallic", "occlusion", "unused", "smoothness")
+ARM_CHANNELS = ("ambient_occlusion", "roughness", "metallic", "unused")
+
+TEXTURE_CHANNEL_LAYOUTS = {
+    TEXTURE_ROLE_MASK_URP: MASKMAP_URP_CHANNELS,
+    TEXTURE_ROLE_ARM: ARM_CHANNELS,
+}
+
+# ``3DMODEL_TEXTURES_MATERIALS.md`` section 8, "Import And Streaming Rules". These are
+# DECLARATIONS: the Blender lane cannot run Unity's importer, so a generator states the
+# contract and the Unity-side binder enforces it.
+TEXTURE_IMPORT_SETTINGS = {
+    TEXTURE_ROLE_BASECOLOR: {
+        "sRGB": True, "textureType": "Default", "compression": "HighQuality",
+        "format": "BC7", "mobileFormat": "ASTC_6x6", "mipmaps": True,
+        "wrapMode": "Repeat", "filterMode": "Trilinear",
+    },
+    TEXTURE_ROLE_NORMAL: {
+        "sRGB": False, "textureType": "NormalMap", "compression": "HighQuality",
+        "format": "BC5", "mobileFormat": "ASTC_6x6", "mipmaps": True,
+        "wrapMode": "Repeat", "filterMode": "Trilinear",
+        "convention": "OpenGL (+Y up), which is what Unity samples",
+    },
+    TEXTURE_ROLE_MASK_URP: {
+        "sRGB": False, "textureType": "Default", "compression": "HighQuality",
+        "format": "BC7", "mobileFormat": "ASTC_6x6", "mipmaps": True,
+        "wrapMode": "Repeat", "filterMode": "Trilinear",
+    },
+    TEXTURE_ROLE_ARM: {
+        "sRGB": False, "textureType": "Default", "compression": "HighQuality",
+        "format": "BC7", "mobileFormat": "ASTC_6x6", "mipmaps": True,
+        "wrapMode": "Repeat", "filterMode": "Trilinear",
+    },
+    TEXTURE_ROLE_HEIGHT: {
+        "sRGB": False, "textureType": "Default", "compression": "HighQuality",
+        "format": "BC4", "mobileFormat": "ASTC_6x6", "mipmaps": True,
+        "wrapMode": "Repeat", "filterMode": "Trilinear",
+        "note": "offline source for parallax/normal derivation; ships only if the "
+                "shader contract and platform budget allow it (playbook section 3)",
+    },
+}
+
+
+# ``3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`` section 7, "Continuous Quality Lanes".
+# Quoted bands: compact near 0.0 = "512 props, 1024 standard world"; middle ~0.35 =
+# "1024 props, 2048 key world materials"; high ~0.7 = "2048 hero surfaces"; ultra near
+# 1.0 = "2048/4096 hero-only sources".
+#
+# Expressed as a continuous ramp with a hero flag, because section 7 opens with
+# "Texture generation must scale through continuous GlobalQualityWeight, not binary
+# low/high switches" -- the same ban on a binary switch that ``bevel_segments_for``
+# obeys.
+TEXTURE_SIZE_LADDER = (512, 1024, 2048, 4096)
+
+
+def texture_size_for(quality_weight: float, hero: bool = False) -> int:
+    """Bake resolution for a quality weight, clamped to the family's ceiling.
+
+    Non-hero surfaces stop at 2048: section 7 reserves 4096 for "hero-only sources".
+    """
+    q = _saturate(quality_weight)
+    if hero:
+        # 512 -> 1024 -> 2048 -> 4096 across the weight range.
+        index = int(round(q * 3.0))
+    else:
+        # 512 -> 1024 -> 2048, ceiling at 2048 for standard world materials.
+        index = int(round(q * 2.0))
+    return TEXTURE_SIZE_LADDER[max(0, min(len(TEXTURE_SIZE_LADDER) - 1, index))]
+
+
+# ---------------------------------------------------------------------------
+# Geology material-space scale witnesses
+# ---------------------------------------------------------------------------
+# These are the numbers that make a geology texture SCALE-CALIBRATED rather than
+# decorative. ``3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`` section 4 opens the geology
+# recipe with "Geology textures must be scale-calibrated", and section 6 requires a
+# declared tile size in metres.
+#
+# OUTSTANDING DEBT, NOT RESOLVED HERE: ``generators/rock.py`` holds its own copies at
+# :175 ``WITNESS_GRAIN_WAVELENGTH_M = 0.075``, :176 ``WITNESS_PIT_WAVELENGTH_M = 0.052``,
+# :177 ``WITNESS_PIT_DEPTH_M = 0.011`` and :2879 ``TRIPLANAR_METRES_PER_TILE = 1.25``.
+# Verified byte-equal to the rows below on 2026-07-29, so nothing is inconsistent TODAY,
+# but two homes for one number is the drift this file exists to prevent. Migrating
+# ``rock.py`` to import these is a mesh-generator edit and belongs to that file's owner.
+GEOLOGY_TRIPLANAR_METRES_PER_TILE = 1.25
+GEOLOGY_GRAIN_WITNESS_M = 0.075
+GEOLOGY_PIT_WITNESS_M = 0.052
+GEOLOGY_PIT_DEPTH_M = 0.011
+GEOLOGY_BED_THICKNESS_RANGE_M = (0.055, 0.34)
+
+# WHY THE TEXTURE OWNS A BAND AND NOT "DETAIL IN GENERAL".
+#
+# ``rock.py``'s own measurement, recorded per asset in
+# ``profileParameters``/``grainBand``: the finest wavelength the sculpt lattice can
+# represent is 0.087 m on a boulder, 0.205 m on an outcrop, 0.406 m on a cliffchunk.
+# Everything below the size class's own figure is absent from the mesh, and
+# ``3DMODEL_GEOLOGY_ROCKS.md`` section 2 routes it to "baked normal/depth support" --
+# which is this texture family.
+#
+# The CEILING is the boulder's figure, the tightest of the three, and that choice is
+# load-bearing rather than conservative. One tile is shared by every size class. Detail
+# between 0.087 m and 0.406 m is genuinely missing from a cliffchunk mesh but genuinely
+# PRESENT in a boulder mesh, so putting it in the shared tile would double it on
+# boulders -- the texture fighting the geometry, which is the "does not match the mesh"
+# rejection in playbook section 0. Anything strictly under 0.087 m is missing from all
+# three, so a shared tile can carry it without ever competing with a real ledge.
+GEOLOGY_MESH_FINEST_WAVELENGTH_M = {
+    "boulder": 0.087,
+    "outcrop": 0.205,
+    "cliffchunk": 0.406,
+}
+GEOLOGY_TEXTURE_BAND_CEILING_M = 0.087
+
+
+# ---------------------------------------------------------------------------
+# Texture acceptance gate thresholds
+# ---------------------------------------------------------------------------
+# ``3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`` section 9 lists eleven gates in prose with
+# no numbers. These are the numeric forms, and each one is annotated with what the prose
+# asked for. A gate with no number cannot fire, which the project treats as the same
+# defect as a gate that can only fail.
+
+# "2x2 tile seam check for tileable sources." A periodic field has NO seam, so the test
+# is a ratio: gradient magnitude across the wrap boundary against the same statistic
+# measured inside the tile. 1.0 means the seam is statistically indistinguishable from
+# the interior. The allowance is for filter/quantisation asymmetry at the edge row only.
+TEXTURE_SEAM_GRADIENT_RATIO_MAX = 1.35
+
+# "Histogram sanity: no crushed full-black/full-white albedo." Fraction of pixels pinned
+# at 0 or 255 in any base-colour channel.
+TEXTURE_CLIPPED_FRACTION_MAX = 0.010
+
+# "Albedo luminance range compatible with URP lighting; no baked directional
+# highlights." Two numbers. The luminance band keeps albedo inside the range URP's
+# lighting can work with; the correlation test is the one that actually catches baked
+# light -- if albedo encodes a lamp, its luminance correlates with N.L for SOME light
+# direction, so the gate is the MAXIMUM absolute correlation over a sampled sphere of
+# directions.
+TEXTURE_ALBEDO_LUMA_MIN = 0.015
+TEXTURE_ALBEDO_LUMA_MAX = 0.780
+TEXTURE_ALBEDO_LIGHT_CORRELATION_MAX = 0.35
+
+# "Normal strength in family range; no inverted green channel; no flat accidental
+# normal map." Mean slope in degrees: below the floor the map is accidentally flat,
+# above the ceiling it is a slope field no tangent-space normal can represent without
+# shading artefacts. Rock sits high in the band; polished metal sits low.
+TEXTURE_NORMAL_MEAN_SLOPE_MIN_DEG = 2.5
+TEXTURE_NORMAL_MEAN_SLOPE_MAX_DEG = 38.0
+
+# "MRAO channel independence; channels cannot be identical unless manifest proves why."
+# Pearson |r| between the DATA-CARRYING channels of one packed map. A channel pair above
+# this is one map stored twice.
+TEXTURE_CHANNEL_CORRELATION_MAX = 0.85
+
+# "Metallic mask matches only real exposed metal or ore." Coverage ceiling for a
+# non-metal family, plus the fraction of metallic signal that must fall inside the
+# family's own declared ore/inclusion mask.
+TEXTURE_METALLIC_COVERAGE_MAX = 0.12
+TEXTURE_METALLIC_INSIDE_ORE_MASK_MIN = 0.90
+
+# "Roughness variation supports material identity." A constant grey roughness field is
+# explicitly rejected by section 3 unless the material is uniform.
+TEXTURE_ROUGHNESS_STD_MIN = 0.030
+
+# "AO is cavity-biased, not random dirt across exposed planes." Occlusion must
+# correlate with measured concavity and anti-correlate with height. This is the gate
+# that separates a real occlusion integral from a noise field.
+TEXTURE_AO_CONCAVITY_CORRELATION_MIN = 0.30
+TEXTURE_AO_HEIGHT_CORRELATION_MAX = -0.10
+
+# "Emission mask is sparse and semantically placed." Coverage ceiling when the family
+# has emission at all.
+TEXTURE_EMISSION_COVERAGE_MAX = 0.06
+
+# "Compression preview does not destroy key details on compact lane." Peak
+# signal-to-noise ratio, in dB, of a simulated block-compressed round trip at the
+# compact-lane size. 30 dB is the conventional floor for "visually equivalent" on
+# texture data.
+TEXTURE_COMPRESSION_PSNR_MIN_DB = 30.0
+
+# "Mip preview does not create dark seams, ringing, or unreadable hazard/detail
+# decals." Two numbers: mean-luminance drift between adjacent mip levels (a dark seam
+# shows up as a level that loses energy), and the seam ratio must hold at every level,
+# not only at mip 0.
+TEXTURE_MIP_LUMA_DRIFT_MAX = 0.06
+
+
+# ---------------------------------------------------------------------------
 # Where a finished package is allowed to land
 # ---------------------------------------------------------------------------
 # WHY THIS EXISTS, and it is not a convenience. Every FBX the forge has ever
@@ -593,6 +832,38 @@ def forge_proof_dir(family) -> str:
     """
     resolved = family if isinstance(family, Family) else Family(family)
     return "{root}{family}".format(root=FORGE_PROOF_ROOT, family=resolved.value)
+
+
+def forge_texture_dir(family) -> str:
+    """PRODUCTION directory for a generated ``TX_*`` family. Gated, not default.
+
+    Under ``forge_package_dir``'s tree so one family's mesh, manifest and maps stay
+    together and the FBX postprocessor carve-out documented above still applies to the
+    mesh half.
+
+    ``3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`` section 9 is explicit about when a
+    generator is allowed to write here: "If any gate fails, the texture family must not
+    be saved into the production asset route." So a bake writes to
+    :func:`forge_texture_proof_dir` FIRST, runs the eleven gates, and only a clean sweep
+    earns this path. A caller that writes here before gating has skipped the gate, not
+    passed it.
+    """
+    return "{dir}/Textures".format(dir=forge_package_dir(family))
+
+
+def forge_texture_proof_dir(family) -> str:
+    """Gitignored diagnostic tree for texture bakes, per playbook section 9.
+
+    "The bake may write a diagnostic artifact under ``Docs/AgentLogs`` or an editor-only
+    quarantine folder, but it must not become a referenced runtime material."
+
+    Deliberately NOT the same directory as :func:`forge_proof_dir`. That one is the mesh
+    lane's proof tree and is in active use by the mesh generators; a texture bake
+    dropping 5-10 maps plus a lighting sweep into it would interleave two agents' output
+    in one folder and make ``clear_render_dir``'s staleness rule ambiguous across lanes.
+    """
+    resolved = family if isinstance(family, Family) else Family(family)
+    return "{root}{family}Texture".format(root=FORGE_PROOF_ROOT, family=resolved.value)
 
 
 # ---------------------------------------------------------------------------
