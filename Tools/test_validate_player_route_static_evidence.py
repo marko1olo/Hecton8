@@ -27,8 +27,15 @@ class PlayerRouteStaticEvidenceTests(unittest.TestCase):
         spawner = validator.DEFAULT_SPAWNER
         movement = validator.DEFAULT_PLAYER_MOVEMENT
         interaction = validator.DEFAULT_PLAYER_INTERACTION
+        # DEFAULT_WORLD_SHELL is deliberately NOT in this gate. 621403ad5 deleted
+        # HectonWorldShellController1428.cs on 2026-06-15 ("1428 file cleanup"), and because
+        # `shell.exists()` used to be a skip condition, THIS TEST HAS BEEN DORMANT EVER SINCE - six
+        # weeks of `OK (skipped=1)` reading as a pass. Worse, its assertions below still named the
+        # six pre-fix blocker keys, so un-skipping it would have failed on CORRECT behaviour and
+        # invited someone to "fix" the validator back. A skip gate must name only the files the test
+        # actually needs; the validator itself already treats the shell as optional.
         shell = validator.DEFAULT_WORLD_SHELL
-        if not scene.exists() or not bootstrap.exists() or not scene_gate.exists() or not bootstrap_state.exists() or not spawner.exists() or not movement.exists() or not interaction.exists() or not shell.exists():
+        if not scene.exists() or not bootstrap.exists() or not scene_gate.exists() or not bootstrap_state.exists() or not spawner.exists() or not movement.exists() or not interaction.exists():
             self.skipTest("Current project player-route files are not present")
 
         evidence = validator.classify(
@@ -39,19 +46,39 @@ class PlayerRouteStaticEvidenceTests(unittest.TestCase):
             bootstrap_state_text=bootstrap_state.read_text(encoding="utf-8-sig", errors="replace"),
             player_movement_text=movement.read_text(encoding="utf-8-sig", errors="replace"),
             player_interaction_text=interaction.read_text(encoding="utf-8-sig", errors="replace"),
-            world_shell_text=shell.read_text(encoding="utf-8-sig", errors="replace"),
+            world_shell_text=shell.read_text(encoding="utf-8-sig", errors="replace") if shell.exists() else "",
             player_prefab_text=validator.DEFAULT_PLAYER_PREFAB.read_text(encoding="utf-8-sig", errors="replace"),
             hud_internal_prefab_text=validator.DEFAULT_HUD_INTERNAL_PREFAB.read_text(encoding="utf-8-sig", errors="replace"),
             suit_hud_canvas_prefab_text=validator.DEFAULT_SUIT_HUD_CANVAS_PREFAB.read_text(encoding="utf-8-sig", errors="replace"),
+            # The raw bytes, or the whole point is lost: read_text uses errors="replace", so every
+            # non-UTF8 byte of the BINARY world scene becomes U+FFFD and no GUID can be found. Passing
+            # only the mangled text is what let this validator report six false blockers for weeks.
+            scene_bytes=scene.read_bytes(),
         )
         self.assertEqual("PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED", evidence.status)
         joined = "\n".join(evidence.blockers)
-        self.assertIn("scene-missing-production-prefab-guid", joined)
-        self.assertIn("scene-production-prefab-instance-exact", joined)
-        self.assertIn("scene-missing-hud-internal-prefab-guid", joined)
-        self.assertIn("scene-missing-suit-hud-prefab-guid", joined)
-        self.assertIn("scene-missing-player-movement-guid", joined)
-        self.assertIn("scene-missing-player-interaction-guid", joined)
+        # These six assertions used to name the pre-fix keys and were WRONG in both directions:
+        # four of them were false blockers the validator emitted because it text-searched a binary
+        # scene, and two were real findings under a misleading name. Corrected to what the tool now
+        # reports, and split by which kind of claim each one is.
+        joined_notes = chr(10).join(evidence.notes)
+
+        # Retired blockers: these are now POSITIVE notes, and asserting their absence from the blocker
+        # list is the actual regression guard. Player.prefab IS referenced by the scene, and the two
+        # script GUIDs ARE bound on the prefab; a component carried by a prefab instance emits no scene
+        # entry unless overridden, so scene-absence was Unity behaving correctly.
+        self.assertNotIn("scene-missing-production-prefab-guid", joined)
+        self.assertNotIn("scene-missing-player-movement-guid", joined)
+        self.assertNotIn("scene-missing-player-interaction-guid", joined)
+        self.assertIn("scene-production-prefab-guid", joined_notes)
+        self.assertIn("player-movement-component", joined_notes)
+        self.assertIn("player-interaction-component", joined_notes)
+
+        # Re-aimed blockers: still real, asked of the artifact that can answer. HUD_Internal.prefab and
+        # Suit_HUD_Canvas.prefab are referenced by neither the scene nor Player.prefab, and neither
+        # carries a GameObject with their root name.
+        self.assertIn("hud-internal-prefab-unreferenced-by-player-route", joined)
+        self.assertIn("suit-hud-canvas-prefab-unreferenced-by-player-route", joined)
         self.assertIn("player-prefab-pda-null-panel-route", joined)
         self.assertIn("player-prefab-pda-null-tab-route", joined)
         self.assertNotIn("player-prefab-pause-menu-null-route", joined)

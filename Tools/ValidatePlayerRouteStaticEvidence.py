@@ -276,14 +276,36 @@ def has_production_player_authority_guard(
         "IBootstrapLegacyWorldShellOwner",
         "Rigidbody",
     )
-    source_tokens = (
+    source_tokens = [
         "HectonPlayerMovement" in player_movement_text
         and "IBootstrapProductionPlayerMovementAuthority" in player_movement_text,
         "PlayerInteraction" in player_interaction_text
         and "IBootstrapProductionPlayerInteractionAuthority" in player_interaction_text,
-        "HectonWorldShellController1428" in world_shell_text
-        and "IBootstrapLegacyWorldShellOwner" in world_shell_text,
-    )
+    ]
+
+    # The legacy-world-shell token is required ONLY while a legacy world shell exists, and one no
+    # longer does. HectonWorldShellController1428.cs was deleted on 2026-06-15 by 621403ad5
+    # ("1428 file cleanup"), and IBootstrapLegacyWorldShellOwner now appears solely in its own
+    # declaration in BootstrapState.cs with ZERO implementers anywhere under Assets - so the object
+    # this guard exists to reject cannot be constructed at all.
+    #
+    # Demanding evidence of a deleted class made the whole predicate permanently FALSE, which raised
+    # `bootstrap-publish-player-without-production-validation` unconditionally: an accusation that
+    # BootstrapState can publish an unvalidated playerObject, when the movement and interaction
+    # authority tokens are both satisfied and the only missing witness is a file whose absence is
+    # correct.
+    #
+    # Nobody saw it for six weeks because the two things that would have complained were disabled by
+    # the same deletion: this validator short-circuited on the missing file before it could classify,
+    # and Tools/test_validate_player_route_static_evidence.py skipped itself on `shell.exists()`.
+    # Making the file optional unmasked it; un-skipping the test is what caught it. A requirement that
+    # names a deleted file is not a strict check, it is a stuck one.
+    if world_shell_text:
+        source_tokens.append(
+            "HectonWorldShellController1428" in world_shell_text
+            and "IBootstrapLegacyWorldShellOwner" in world_shell_text
+        )
+
     return all(token in bootstrap_state_text for token in bootstrap_tokens) and all(source_tokens)
 
 
