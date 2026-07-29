@@ -20,12 +20,28 @@ namespace MapMagic.Editor.Diagnostics
     /// </summary>
     public static class NodeByNodeDumpTask
     {
+        // Was another agent's private brain directory - outside the repo, unversioned, and invisible to
+        // anyone auditing this project's terrain evidence. Logs/ already holds the route artifacts.
         private static readonly string OutDir =
-            @"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0\node_dump";
+            Path.Combine(Directory.GetCurrentDirectory(), "Logs", "node_dump");
 
         [MenuItem("Hecton8/Diagnostics/Node By Node Dump")]
         public static void Dump()
         {
+            // This task encodes PNGs per node, so it depends on a graphics device.
+            // C:\hades\.claude\rules\hecton8-shaders-compute.md:36-37 bans -nographics for MapMagic
+            // generation tests: compute shaders and Graphics.Blit return zeros with no GPU context, and a
+            // per-node dump of zeros is shaped exactly like a real one.
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                Debug.LogError(
+                    "[NodeByNodeDump] REFUSED: no GPU context (graphicsDeviceType == Null). Every matrix " +
+                    "and PNG this task emits would be zeros wearing the shape of real data. Remove " +
+                    "-nographics from the batch invocation and run again.");
+                EditorApplication.Exit(3);
+                return;
+            }
+
             try
             {
                 Directory.CreateDirectory(OutDir);
@@ -33,13 +49,14 @@ namespace MapMagic.Editor.Diagnostics
             }
             catch (Exception ex)
             {
-                File.WriteAllText(Path.Combine(OutDir, "error.txt"), ex.ToString());
-                Debug.LogError($"[NodeByNodeDump] {ex}");
+                // Previously this exited 0 from a finally block, so a batchmode run that produced no dump
+                // still reported success to whatever read its exit code.
+                Debug.LogError($"[NodeByNodeDump] FAILED, the dump is incomplete or absent: {ex}");
+                EditorApplication.Exit(2);
+                return;
             }
-            finally
-            {
-                EditorApplication.Exit(0);
-            }
+
+            EditorApplication.Exit(0);
         }
 
         private static void DoDump()

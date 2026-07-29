@@ -22,8 +22,10 @@ namespace MapMagic.Editor.Diagnostics
     /// </summary>
     public static class NoiseIsolatorTask
     {
-        private const string OutDir =
-            @"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0\noise_iso";
+        // Was another agent's private brain directory - outside the repo and unversioned. This is
+        // `static readonly` rather than `const` because Path.Combine is not a compile-time constant.
+        private static readonly string OutDir =
+            Path.Combine(Directory.GetCurrentDirectory(), "Logs", "noise_iso");
 
         private const int Res = 512;
         // Sample the noise over a domain matching the meso scale where hatching appears.
@@ -34,6 +36,21 @@ namespace MapMagic.Editor.Diagnostics
         [MenuItem("Hecton8/Diagnostics/Noise Isolator")]
         public static void Run()
         {
+            // Emits hillshade PNGs, so it depends on a graphics device.
+            // C:\hades\.claude\rules\hecton8-shaders-compute.md:36-37 bans -nographics for these tests:
+            // compute shaders and Graphics.Blit return zeros with no GPU context, and a hatching study
+            // made of zeros would read as "no hatching found" - the exact false negative this task exists
+            // to rule out.
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                Debug.LogError(
+                    "[NoiseIsolator] REFUSED: no GPU context (graphicsDeviceType == Null). Every hillshade " +
+                    "would be zeros, which reads as a clean result rather than as a failed run. Remove " +
+                    "-nographics from the batch invocation and run again.");
+                EditorApplication.Exit(3);
+                return;
+            }
+
             try
             {
                 Directory.CreateDirectory(OutDir);
@@ -41,13 +58,14 @@ namespace MapMagic.Editor.Diagnostics
             }
             catch (Exception ex)
             {
-                File.WriteAllText(Path.Combine(OutDir, "noise_iso_error.txt"), ex.ToString());
-                Debug.LogError($"[NoiseIsolator] {ex}");
+                // Previously exited 0 from a finally block, so a run that isolated nothing still reported
+                // success to whatever read the exit code.
+                Debug.LogError($"[NoiseIsolator] FAILED, the report is incomplete or absent: {ex}");
+                EditorApplication.Exit(2);
+                return;
             }
-            finally
-            {
-                EditorApplication.Exit(0);
-            }
+
+            EditorApplication.Exit(0);
         }
 
         private static void DoRun()

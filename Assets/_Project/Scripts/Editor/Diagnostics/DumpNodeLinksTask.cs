@@ -32,16 +32,25 @@ namespace MapMagic.Editor.Diagnostics
                     }
                 }
                 
-                File.WriteAllText("C:/Users/Admin/.gemini/antigravity/brain/7b5d06d2-b333-42a8-ad13-119572c28fd0/node_links.txt", log);
+                // Was another agent's private brain directory - outside the repo and unversioned.
+                string outDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Logs");
+                Directory.CreateDirectory(outDirectory);
+                string outPath = Path.Combine(outDirectory, "node_links.txt");
+                File.WriteAllText(outPath, log);
+                Debug.Log($"[DumpNodeLinksTask] Wrote node link dump to {outPath}");
             }
             catch (System.Exception ex)
             {
-                File.WriteAllText("C:/Users/Admin/.gemini/antigravity/brain/7b5d06d2-b333-42a8-ad13-119572c28fd0/node_links.txt", ex.ToString());
+                // The old catch wrote the stack trace INTO node_links.txt - the same file the success
+                // path writes - and then exited 0. So a failure silently replaced the dump with a stack
+                // trace while reporting success, and anyone opening the file to read link data found
+                // an exception instead, with no way to tell when it had been clobbered.
+                Debug.LogError("[DumpNodeLinksTask] FAILED, no dump was written: " + ex);
+                EditorApplication.Exit(2);
+                return;
             }
-            finally
-            {
-                EditorApplication.Exit(0);
-            }
+
+            EditorApplication.Exit(0);
         }
     }
 }
