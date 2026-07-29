@@ -20,6 +20,98 @@ namespace Hecton8.VFX.Debris
     /// <summary>
     /// GPU-only rock chip feedback for voxel SDF carve events.
     /// </summary>
+    /// <remarks>
+    /// COMPILE-LIVE, RUNTIME-DEAD: NOTHING IN THE PROJECT EVER CREATES THIS COMPONENT. Verified 2026-07-29
+    /// against live source, not inherited from an earlier audit. Every behaviour in the class body below is
+    /// unreachable at runtime today. Read points 1-6 before changing anything here; point 6 is why
+    /// "just AddComponent it" is not the fix.
+    /// <para>
+    /// 1. NO INSTANTIATION, ANYWHERE. The only entry points are the MonoBehaviour hooks
+    /// <c>Awake</c>/<c>OnEnable</c>/<c>Start</c> (this file, :334/:343/:358), all of which need an instance
+    /// that already exists. Repo-wide there is no <c>AddComponent&lt;CarveDebrisComputeRenderer&gt;</c>, no
+    /// <c>Instantiate</c>, no <c>EnsureRuntimeInstance</c>-style factory, no
+    /// <c>[RuntimeInitializeOnLoadMethod]</c> in this file, and no <c>Type.GetType</c>/<c>Activator</c>
+    /// construction by string name - the only string uses of the type name are the two
+    /// <c>nameof(CarveDebrisComputeRenderer)</c> telemetry tags at :2634 and :2658. Script GUID
+    /// <c>0986963ad2f2bc145baba4fea5c6a2ee</c> (CarveDebrisComputeRenderer.cs.meta:2) occurs in exactly two
+    /// files in the tree: that .meta itself, and the generated GUID self-index <c>_guidmap.json</c>. It is
+    /// in NO scene, NO prefab and NO .asset. The URP render-feature route was checked separately and does
+    /// not apply: this is a <c>MonoBehaviour</c> that draws from <c>LateFrameTick</c> (:485), not a
+    /// <c>ScriptableRendererFeature</c>, so a renderer-asset binding cannot reach it either.
+    /// </para>
+    /// <para>
+    /// 2. SOLE IMPLEMENTER, SO THE REGISTRY SLOT IS PERMANENTLY EMPTY. <c>IDebrisComputeService</c>
+    /// (Core/GlobalRegistryContracts.cs:5947) has exactly one implementer: this class. Its backing field
+    /// <c>GlobalRegistry._debrisCompute</c> (Core/GlobalRegistry.cs:552) is assigned from exactly one place,
+    /// <c>RegisterDebrisComputeService</c> (Core/GlobalRegistry.cs:3467-3470), and that method's only caller
+    /// in the project is <c>TryRegisterComputeService</c> below (:579, publishing at :612). No generic
+    /// <c>RegisterService</c>/<c>ResolveServiceSlot</c> route can fill it either - the type is mapped at
+    /// Core/GlobalRegistry.cs:8381 but has zero generic call sites. With no instance,
+    /// <c>GlobalRegistryServiceSlot.DebrisComputeRuntime</c> (Core/GlobalRegistryContracts.cs:4892) is null
+    /// for the whole session, in the editor and in a player.
+    /// </para>
+    /// <para>
+    /// 3. WHO READS THAT EMPTY SLOT AND THEREFORE GETS NOTHING. One behavioural consumer:
+    /// <c>SceneRuntimeService.ClearRuntimeState</c> (Core/SceneRuntimeService.cs:556-557) calls
+    /// <c>GlobalRegistry.DebrisCompute.ClearGpuDebris()</c> behind a null guard, so GPU debris teardown on
+    /// every scene transition is a silent no-op rather than a crash. Three structural readers resolve the
+    /// slot and get null: <c>GlobalRegistry.ResolveRegisteredServiceObject</c>
+    /// (Core/GlobalRegistry.cs:8058), used by <c>ShutdownRegisteredServiceSlot</c>; the contract-to-slot map
+    /// entry at Core/GlobalRegistry.cs:8381, reached via <c>ResolveServiceSlot</c>
+    /// (Core/GlobalRegistry.cs:8296); and the diagnostic slot-name table entry at
+    /// Core/GlobalRegistry.cs:274 (declared :104), which names a slot that is never populated.
+    /// <c>GameBootstrapper.TryResolveBootstrapDependencyNode</c> (Bootstrap/GameBootstrapper.cs:7297-7300)
+    /// still folds this slot onto <c>BootstrapDependencyNode.DebrisManager</c>; the reverse direction was
+    /// corrected to the <c>Debris</c> slot only (Bootstrap/GameBootstrapper.cs:5590-5594 and :8729-8733), and
+    /// correcting that alias is what exposed this type.
+    /// </para>
+    /// <para>
+    /// 4. THE LARGER CONSEQUENCE IS TWO SIGNAL LANES WITH NO OTHER DRAIN. This type is the ONLY consumer in
+    /// the project of <c>VoxelCarveEvent</c> (drained below at :1299 via
+    /// <c>SignalBus&lt;VoxelCarveEvent&gt;.GetFrameSnapshot</c>), whose only producer is
+    /// VoxelDeltaProcessor.cs:2113 - so every voxel carve publishes into a lane nobody empties. It is also
+    /// the ONLY consumer of <c>VfxSparkRequestSignal</c> (drained at :2275), which has three producers
+    /// (Tools/ToolKinematics/ToolKinematicsRuntime.cs:646, Tools/LaserCutterDodRuntime.cs:753,
+    /// Construction/DroneFleetManager.cs:6271). That spark lane has a trap attached:
+    /// Tools/ToolKinematics/ToolKinematicsRuntime.cs:46-49 deliberately EXCLUDES
+    /// <c>VfxSparkRequestSignal</c> from its "lane has no consumer" warning list, citing this file's drain
+    /// as proof the lane is wired. The citation is true in source and false at runtime, so the one warning
+    /// that would surface this is suppressed. The three other lanes drained below are safe to ignore here -
+    /// <c>DebrisSpawnSignal</c> (:1338) also has HectonFluidEngine.cs:4652 and
+    /// Core/Signals/GlobalSignals.LegacyFacade.cs:1061, and <c>SystemHealthIndexSignal</c> (:1961) and
+    /// <c>AupShiftSignal</c> (:2195) have many consumers each.
+    /// </para>
+    /// <para>
+    /// 5. NO BOOTSTRAP NODE, AND NOT IN THE STARTUP-GRAPH VALIDATOR. <c>DebrisComputeRuntime</c> is absent
+    /// from <c>BootstrapRegistryCycleValidator._startupNodes</c>
+    /// (Bootstrap/BootstrapRegistryCycleValidator.cs:40-69; the <c>Debris</c> slot is there at :53, this one
+    /// is not) and from <c>_startupEdges</c> (:71 onward), so it was never a graph node at all. There is no
+    /// <c>BootstrapDependencyNode</c> for it either (Bootstrap/GameBootstrapper.cs:456-486). Both lists are
+    /// length-locked at 27: <c>BootstrapDependencyNode.Count = 27</c> (Bootstrap/GameBootstrapper.cs:485)
+    /// sizes the execution-order and heartbeat arrays (:691-693) and is compared against the built order at
+    /// :5423, and <c>_startupNodes.Length</c> sizes the validator scratch at
+    /// Bootstrap/BootstrapRegistryCycleValidator.cs:120-127. Adding a node is a startup-graph change across
+    /// both files, not a one-line insert.
+    /// </para>
+    /// <para>
+    /// 6. WHAT WOULD HAVE TO BE DECIDED FOR THIS TO MATTER. Owner decision, deliberately NOT taken while no
+    /// runtime or visual check is possible. Instantiating the component is necessary but far from
+    /// sufficient, because seven serialized dependencies have no runtime fallback: <c>fluidAdvectionCompute</c>
+    /// (:221), <c>voxelSdfTexture3D</c> (:229), <c>abyssalFlowTextureOverride</c> (:233),
+    /// <c>emptySdfFlowTexture3D</c> (:234-235), <c>debrisMesh</c> (:238), <c>debrisMaterial</c> (:239) and
+    /// <c>renderCamera</c> (:240). <c>ResolveEditorAssets</c> (:401) is <c>#if UNITY_EDITOR</c> and fills only
+    /// the compute shader; <c>EnsureOwnedMaterial</c> (:2114) does not create a material, it requires a
+    /// pre-authored one whose shader name is exactly <c>DebrisShaderName</c> (:167), and
+    /// <c>ResolveMaterial</c> (:2140) returns null forever otherwise; an unassigned
+    /// <c>emptySdfFlowTexture3D</c> latches the entire lane off and says so at :887. A bare runtime
+    /// <c>AddComponent</c> therefore produces a registered service that renders nothing while reporting
+    /// <c>IsInitialized == false</c>. Reaching player-visible output needs all of: an authored scene/prefab
+    /// owner carrying those assets, a bootstrap node plus edges in both files from point 5, and a Unity
+    /// runtime plus visual pass on the compute path. The alternative decision is equally legitimate: delete
+    /// this type, and with it the <c>IDebrisComputeService</c> contract, the <c>DebrisComputeRuntime</c> slot,
+    /// the readers in point 3, and the two producer-only lanes in point 4.
+    /// </para>
+    /// </remarks>
     [DisallowMultipleComponent]
     public sealed class CarveDebrisComputeRenderer : MonoBehaviour,
         ILateFrameTickable,
