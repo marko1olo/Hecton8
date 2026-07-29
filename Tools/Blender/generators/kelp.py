@@ -760,6 +760,34 @@ def _stipe_material_for(form):
         # holdfast. This is a genuine section 6 slot-1 surface ("exposed cut, bevel,
         # edge, SCAR, or fracture material"), and unlike a blade rim it is a full ring
         # band with enough area to survive to LOD2 as a compact UV island.
+        # STAYS AT 0.17. Widening it was ATTEMPTED AND REVERTED, and the whole attempt is
+        # recorded here because the next owner will otherwise try the same thing.
+        #
+        # The debt being chased: at quality 1.0 LOD2 the plant is ~264 triangles, the collar
+        # band has almost nothing left, and Quadric Edge Collapse takes its LAST polygon.
+        # That surfaces as slotsRepaired={1: 0.17308} -- which is NOT an error magnitude. It
+        # is `preserve_material_slots` FIRING and reporting, in METRES, how far it had to go
+        # to find a survivor to re-tag (0.173 m from the collar's own LOD0 centroid). The
+        # repair is what stops `submesh_empty_declared_slot` failing the save.
+        #
+        # Attempt 1, 0.17 -> 0.21: slotsRepaired came back BYTE-IDENTICAL at {1: 0.17308}.
+        # `u` is i/(rows-1) and rows is 20, so it steps by 0.0526; 0.17 and 0.21 both cover
+        # exactly rings 0-3. The threshold moved but landed between two samples, so the band
+        # never changed at all. A continuous threshold against a discrete parameter is only
+        # meaningful in steps of 1/(rows-1).
+        #
+        # Attempt 2, 0.24 (clears ring 4 at u=0.2105): DID fix the debt at quality 1.0 --
+        # slotsRepaired={} at all three LODs -- and BROKE QUALITY 0.5. LOD1 came back with
+        # uv_stretch_excessive, aspect distortion 3.9783 against the 3.3 outlier ceiling, and
+        # validation aborted the save, so NO FBX WAS WRITTEN. Attributed by reverting and
+        # re-running rather than by reasoning: 0.24 fails q0.5, 0.17 passes it. The mechanism
+        # is that material borders are SPLIT before decimation, so moving the border moves the
+        # split and changes LOD1 topology.
+        #
+        # A quality level that produces no package at all is strictly worse than a cosmetic
+        # repair firing at LOD2, so the debt stays open. It cannot be fixed by making the band
+        # quality-dependent either: `3dmodel.md` section 8 forbids GlobalQualityWeight from
+        # changing material role semantics.
         if u < 0.17:
             return law.MATERIAL_SLOT_CUT_EDGE
         # The bladder slot moved to the blade bases. Painting it along the stipe made a
@@ -1041,7 +1069,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         # correctly as "evenly spaced leaves along a wand". At 1.4x, adjacent nodes cross
         # freely, which is what produces real CLUSTERS and real GAPS instead of a finer comb.
         t += float(rng.uniform(-1.4, 1.4)) * mean_spacing
-        heights.append((t, False))
+        heights.append((t, False, False))
     # THE APEX CLUSTER. Macrocystis is densest at its apex because new blades split off the
     # apical scimitar there and only afterwards get carried down as the stipe elongates, so
     # the growth model has to attach TOP-DOWN at the tip rather than spread a fixed count
@@ -1051,10 +1079,26 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
     for k in range(canopy_count):
         f = k / float(max(1, canopy_count - 1))
         t = 0.862 + 0.133 * f + float(rng.uniform(-0.016, 0.016))
-        heights.append((t, True))
+        heights.append((t, True, False))
 
     golden = 2.399963229728653  # 137.507... degrees in radians
-    for index, (height_t, is_canopy) in enumerate(heights):
+    # THE APICAL SCIMITAR. Authorised by the lead after three failed attempts at the
+    # conical read, on the argument that any form whose axis TERMINATES IN A POINT reads as
+    # a conifer regardless of blade shape. In Macrocystis this blade is the growth
+    # meristem: it continues upward along the stipe axis and splits to produce new blades,
+    # which is why the apex is the densest part of the plant. It is NOT the rejected
+    # fountain strap -- that was a MATURE blade radiating outward from mid-stipe, and that
+    # stays rejected. One blade, terminal, axial.
+    heights.append((0.997, False, True))
+
+    # Apex tangent, for the scimitar to continue. Taken over two spans rather than one so a
+    # single wobble ring cannot tilt it.
+    apex_axis = (stipe_points[-1] - stipe_points[-3])
+    if apex_axis.length <= 1e-6:
+        apex_axis = Vector((0.0, 0.0, 1.0))
+    apex_axis = apex_axis.normalized()
+
+    for index, (height_t, is_canopy, is_apical) in enumerate(heights):
         height_t = min(0.985, max(0.055, height_t))
         row = height_t * (stipe_rows - 1)
         low = int(math.floor(row))
@@ -1294,6 +1338,53 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             reach = 0.30 + 0.25 * float(rng.uniform(0.0, 1.0))
             hang = 0.46 + 0.20 * float(rng.uniform(0.0, 1.0))
             lift_m = float(rng.uniform(0.0, 0.022))
+        scimitar_bend = 0.0
+        blunt_amount = 0.28
+        if is_apical:
+            # ONE terminal blade, and every mature-blade lever is switched off rather than
+            # retuned. Its trajectory is built from the apex tangent in the points loop, so
+            # `reach`, `hang`, `sag`, `drift` and `swing` do not apply at all -- and that is
+            # deliberate. The lead's warning was that the reach_exp/hang_exp relation which
+            # now forces every mature blade to -62..-83 degrees would force this one
+            # horizontal too if it shared the formula. It does not share it.
+            reach = 0.0
+            hang = 0.0
+            hang_early = 0.0
+            sag = 0.0
+            swing = 0.0
+            drift = 0.0
+            lift_m = 0.0
+            # Young meristem tissue: shorter, narrower, and it tapers to a point rather than
+            # ending blunt like a mature strap. 0.9-1.4 m above an 8.5 m apex reads as a
+            # terminal blade continuing the axis, not as a second plant on top of the first.
+            # BROAD, not a whip. At 0.46-0.62 of the mature half-width over 0.9-1.4 m the
+            # scimitar measured 5-12 cm across and, standing clear above the blade mass, read
+            # as a whip antenna -- opened and rejected. The real apical scimitar is a BROAD
+            # undivided blade, comparable in width to a mature one and merely shorter, because
+            # it is the sheet that later splits to produce them. Width costs no triangles.
+            length = float(rng.uniform(0.72, 1.10))
+            half_width = form.blade_half_width * float(rng.uniform(0.78, 0.98))
+            blade_rows = base_rows
+            blade_corrugations = max(1, min(corrugations, blade_rows // 4))
+            blade_teeth = max(3, min(serration_teeth, blade_rows))
+            # Sabre curve: the tip leans over into the current late along the blade. Kept
+            # well under a right angle so the blade never doubles back and never radiates.
+            scimitar_bend = float(rng.uniform(0.16, 0.30))
+            # A mature Macrocystis strap ends BLUNT and frayed, and iteration 4 was rejected
+            # for tapering them to points. The apical scimitar is the one blade that legitimately
+            # does come to a point -- that is what makes it read as a growing tip and as ONE
+            # distinguishable terminal blade rather than another strap.
+            #
+            # 0.52 rather than 0.74, but NOT for the reason first written here. I suspected the
+            # pointed tip of causing a quality-0.5 LOD1 uv_stretch failure and wrote that
+            # attribution into this comment before testing it. Changing 0.74 -> 0.52 left the
+            # failure BYTE-IDENTICAL (triangle[907], aspect 3.9783), which proves the failing
+            # triangle was not on this blade at all -- it was the basal-collar band change, see
+            # _stipe_material_for. An identical number across a parameter change is the cheapest
+            # possible disproof of an attribution, and it is worth reaching for before a fix.
+            # 0.52 is kept anyway: it reads clearly pointed against the mature 0.28 and carries
+            # less sliver risk at LOD1 than 0.74, which is a real if unmeasured margin.
+            blunt_amount = 0.52
         flow_c, flow_s = math.cos(flow_jitter), math.sin(flow_jitter)
         flow_dir = Vector((form.current.x * flow_c - form.current.y * flow_s,
                            form.current.x * flow_s + form.current.y * flow_c, 0.0))
@@ -1408,7 +1499,33 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         u_params = u_params[:blade_rows]
 
         points = []
-        for step in range(blade_rows):
+        if is_apical:
+            # THE APICAL SCIMITAR, built from the apex tangent instead of the mature-blade
+            # trajectory. It CONTINUES the axis: travel is along `apex_axis` (which is the
+            # stipe's own direction at its last ring, so the blade reads as the stipe still
+            # growing), with the tip leaning over into the current late along the length and
+            # only a slight terminal droop. Nothing here can radiate, because there is no
+            # radial term at all.
+            #
+            # The lift clamp is deliberately NOT applied to this blade. That clamp exists to
+            # guarantee no MATURE strap rises above its attachment, which is the lead's
+            # acceptance criterion for the fountain failure; this blade is the authorised
+            # exception and rising is its entire purpose. Scoping the clamp rather than
+            # relaxing it keeps the guarantee intact for the other 56 blades.
+            lean_dir = flow_dir if flow_dir.length > 1e-6 else Vector((1.0, 0.0, 0.0))
+            for step in range(blade_rows):
+                u = u_params[step]
+                along = apex_axis * (length * (u ** 0.92))
+                lean = lean_dir * (length * scimitar_bend * (u ** 2.1))
+                droop = length * scimitar_bend * 0.45 * (u ** 3.0)
+                points.append(Vector((attach.x + along.x + lean.x,
+                                      attach.y + along.y + lean.y,
+                                      attach.z + along.z + lean.z - droop)))
+            lengths = _arclengths(points)
+
+        # Empty iterable when the apical blade already built its own points, so the mature
+        # trajectory below keeps its original indentation and cannot be reached by accident.
+        for step in (() if is_apical else range(blade_rows)):
             u = u_params[step]
             # Start inside the stipe so the junction is a hidden union under the
             # sheath, per the section 3 weld/knuckle/hidden-union clause.
@@ -1464,7 +1581,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         def blade_offset(row_index, u, j, theta,
                          w=half_width, th=half_thickness, sa=serr_amp,
                          spr=serr_phase_right, spl=serr_phase_left,
-                         nfc=face_columns, teeth_n=blade_teeth,
+                         nfc=face_columns, teeth_n=blade_teeth, blunt_amt=blunt_amount,
                          tear_list=tears, scar_u=scar_at, scar_w=scar_width,
                          roll=roll, roll_rev=roll_reverse, roll_rev_k=roll_reverse_k,
                          corr_amp=corr_amp, corr_phase=corr_phase,
@@ -1516,7 +1633,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             # occupies the last tenth at most. That bluntness is a load-bearing part of
             # the archetype, not a detail.
             shoulder = _smoothstep(0.0, shoulder_u, u)
-            blunt = 1.0 - 0.28 * _smoothstep(0.90, 1.0, u)
+            blunt = 1.0 - blunt_amt * _smoothstep(0.90, 1.0, u)
             plan = shoulder * blunt
             # End rings stay a small flat lens rather than collapsing to a cone point:
             # a collapsed ring reintroduces the conformal scale singularity, and the
@@ -1663,6 +1780,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             "index": index,
             "heightT": round(height_t, 5),
             "canopy": bool(is_canopy),
+            "apicalScimitar": bool(is_apical),
             "lengthM": round(length, 5),
             "widthM": round(2.0 * half_width, 5),
             "thicknessM": round(2.0 * half_thickness, 6),
@@ -1701,6 +1819,8 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         "attachmentSpacingMaxM": round(gaps_m_sorted[-1], 4) if gaps_m_sorted else 0.0,
         "attachmentSpacingRealTargetM": "0.10-0.20 (Macrocystis)",
         "apexTop15PctBlades": sum(1 for a in attachments if a["heightT"] >= 0.85),
+        "apicalScimitar": ("one terminal blade continuing the stipe axis; rises along the "
+                           "apex tangent, tapers to a point, exempt from the lift clamp"),
         "rowsCeiling": base_rows,
         "rowsMin": min(row_counts) if row_counts else 0,
         "rowsMax": max(row_counts) if row_counts else 0,
@@ -1712,7 +1832,20 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         "serrationTeeth": serration_teeth,
         "corrugationsPerBladeCeiling": corrugations,
         "tearsPerBlade": tear_count,
-        "pneumatocyst": "one basal gas bladder per blade, material slot 3",
+        # CORRECTED. This said "material slot 3" and there is no slot 3: `_shared_materials`
+        # declares three, `blade_material` returns MATERIAL_SLOT_PRIMARY for every blade face,
+        # and the slot-3 pigment was deliberately removed for four measured reasons recorded in
+        # `blade_material`. So the manifest asserted an amber accent the asset has never had,
+        # which is exactly why three rounds of "pigment reads flat olive" went unexplained.
+        "pneumatocyst": ("one basal gas bladder per blade, carried by SILHOUETTE GEOMETRY "
+                         "and the UVMask parameterisation; NO dedicated material slot and "
+                         "NO amber pigment -- see pigmentGap in this manifest"),
+        "pigmentGap": ("amber bladder accent from forest_kelp.webp is NOT delivered. It needs "
+                       "a per-blade bulb mask, and no stream is free: UV0 is the atlas unwrap, "
+                       "UVMask V is the PLANT-scale geodesic (so a blade base high on the "
+                       "stipe sits at V~0.7, not V~0), and organic vertex colour R/G/B/A are "
+                       "all contracted. TexCoord2 is the bible-sanctioned home (3dmodel.md "
+                       "section 3) but the live shader does not read it."),
     }
 
 
@@ -2493,9 +2626,29 @@ def _shared_materials():
         # read as wet plastic, not wet tissue, and 3dmodel.md section 12 rejects exactly
         # that kind of cheap material read. Translucency carries the wetness instead,
         # which is what section 10 asks the final-material shot to prove.
-        ("tissue", (0.052, 0.128, 0.043, 1.0), 0.62, 0.32, 0.10),
-        ("basal_collar_scar", (0.058, 0.062, 0.034, 1.0), 0.74, 0.06, 0.03),
-        ("holdfast", (0.048, 0.036, 0.026, 1.0), 0.78, 0.0, 0.06),
+        # MACROCYSTIS IS A BROWN ALGA. This is a pigment error, not a taste call: the
+        # Laminariales are Phaeophyceae, golden-brown to olive, and their fucoxanthin
+        # masks the chlorophyll. The three colours below used to be G-dominant --
+        # tissue was (0.052, 0.128, 0.043), so green was 2.5x red -- which pigments a
+        # brown alga as a green one. Corrected to R > G > B on all three.
+        #
+        # Deliberate LINEAR values chosen the way flora_capstem.py chooses its amber:
+        # water absorbs long wavelengths first, so a warm surface must be authored
+        # SATURATED or it goes grey-green within a few metres. The previous three were
+        # also near-identical dark olive-browns, which is the direct cause of the "reads
+        # flat olive" verdict the lead received three times -- pigment VARIATION needs
+        # the slots to actually differ, and section 10 asks the final-material shot to
+        # prove it. Tissue is golden olive, the basal scar is a bleached pale tan, the
+        # holdfast is dark rubbery brown: three clearly separated values.
+        # Opened at (0.115, 0.082, 0.024) and rejected: correctly BROWN but too light and
+        # too desaturated, reading as dry straw or raffia rather than wet tissue. Deepened
+        # and saturated -- wet kelp is a dark amber-brown that gets its brightness from
+        # specular and transmission, not from a pale albedo. 3dmodel.md section 12's ban on
+        # darkness standing in for material work cuts both ways: a washed-out albedo is the
+        # same failure from the other side.
+        ("tissue", (0.072, 0.047, 0.013, 1.0), 0.62, 0.32, 0.10),
+        ("basal_collar_scar", (0.112, 0.088, 0.052, 1.0), 0.74, 0.06, 0.03),
+        ("holdfast", (0.026, 0.017, 0.011, 1.0), 0.78, 0.0, 0.06),
     )
     out = []
     for role, colour, roughness, translucency, sheen in specs:

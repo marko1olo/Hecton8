@@ -6,7 +6,7 @@
   "seed": 4023,
   "qualityWeight": 1.0,
   "family": "Flora",
-  "scaleMeters": 6.95111,
+  "scaleMeters": 7.50123,
   "cameraDistanceClass": "near_interactive",
   "platformLane": "compact_to_ultra_continuous",
   "sourceReferences": [
@@ -40,30 +40,33 @@
   "pneumatocystsPerPlant": 56,
   "bladeShell": "closed thin shell, edge rim is the narrow end of the lens cross-section (no zero-thickness sheet)",
   "bladeDetail": {
-   "bladeCount": 56,
+   "bladeCount": 57,
    "canopyClusterBlades": 12,
    "attachmentSpacingMedianM": 0.092,
-   "attachmentSpacingMinM": 0.0026,
+   "attachmentSpacingMinM": 0.0,
    "attachmentSpacingMaxM": 0.3992,
    "attachmentSpacingRealTargetM": "0.10-0.20 (Macrocystis)",
-   "apexTop15PctBlades": 14,
+   "apexTop15PctBlades": 15,
+   "apicalScimitar": "one terminal blade continuing the stipe axis; rises along the apex tangent, tapers to a point, exempt from the lift clamp",
    "rowsCeiling": 10,
    "rowsMin": 8,
    "rowsMax": 10,
-   "rowsMean": 9.09,
+   "rowsMean": 9.11,
    "crossSectionVerts": 6,
    "faceColumnsPerSide": 2,
    "columnPlan": "j0=right margin, j1..n=upper face, j(n+1)=left margin, j(n+2)..j(2n+1)=lower face",
    "serrationTeeth": 16,
    "corrugationsPerBladeCeiling": 3,
    "tearsPerBlade": 3,
-   "pneumatocyst": "one basal gas bladder per blade, material slot 3"
+   "pneumatocyst": "one basal gas bladder per blade, carried by SILHOUETTE GEOMETRY and the UVMask parameterisation; NO dedicated material slot and NO amber pigment -- see pigmentGap in this manifest",
+   "pigmentGap": "amber bladder accent from forest_kelp.webp is NOT delivered. It needs a per-blade bulb mask, and no stream is free: UV0 is the atlas unwrap, UVMask V is the PLANT-scale geodesic (so a blade base high on the stipe sits at V~0.7, not V~0), and organic vertex colour R/G/B/A are all contracted. TexCoord2 is the bible-sanctioned home (3dmodel.md section 3) but the live shader does not read it."
   },
   "blades": [
    {
     "index": 0,
     "heightT": 0.07475,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.50238,
     "widthM": 0.18642,
     "thicknessM": 0.001996,
@@ -86,6 +89,7 @@
     "index": 1,
     "heightT": 0.08745,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.62624,
     "widthM": 0.20731,
     "thicknessM": 0.001697,
@@ -108,6 +112,7 @@
     "index": 2,
     "heightT": 0.14639,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.80942,
     "widthM": 0.20234,
     "thicknessM": 0.00172,
@@ -130,6 +135,7 @@
     "index": 3,
     "heightT": 0.17299,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.42693,
     "widthM": 0.22455,
     "thicknessM": 0.002066,
@@ -152,6 +158,7 @@
     "index": 4,
     "heightT": 0.18405,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 3.34718,
     "widthM": 0.21145,
     "thicknessM": 0.002122,
@@ -174,6 +181,7 @@
     "index": 5,
     "heightT": 0.1831,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.36051,
     "widthM": 0.16428,
     "thicknessM": 0.001807,
@@ -196,6 +204,7 @@
     "index": 6,
     "heightT": 0.22969,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.92572,
     "widthM": 0.2134,
     "thicknessM": 0.001951,
@@ -218,6 +227,7 @@
     "index": 7,
     "heightT": 0.22278,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.12001,
     "widthM": 0.19397,
     "thicknessM": 0.002029,
@@ -240,6 +250,7 @@
     "index": 8,
     "heightT": 0.2439,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 1.98562,
     "widthM": 0.17558,
     "thicknessM": 0.001781,
@@ -262,6 +273,7 @@
     "index": 9,
     "heightT": 0.26197,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 3.04426,
     "widthM": 0.22163,
     "thicknessM": 0.00198,
@@ -284,6 +296,7 @@
     "index": 10,
     "heightT": 0.31881,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.14202,
     "widthM": 0.18516,
     "thicknessM": 0.001706,
@@ -306,6 +319,7 @@
     "index": 11,
     "heightT": 0.32741,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.81298,
     "widthM": 0.2271,
     "thicknessM": 0.001687,
@@ -328,6 +342,7 @@
     "index": 12,
     "heightT": 0.35344,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.88003,
     "widthM": 0.22679,
     "thicknessM": 0.001866,
@@ -350,6 +365,7 @@
     "index": 13,
     "heightT": 0.33769,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.38889,
     "widthM": 0.17038,
     "thicknessM": 0.002096,
@@ -372,6 +388,7 @@
     "index": 14,
     "heightT": 0.36703,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.52464,
     "widthM": 0.20503,
     "thicknessM": 0.002094,
@@ -394,6 +411,7 @@
     "index": 15,
     "heightT": 0.40502,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 1.94183,
     "widthM": 0.18892,
     "thicknessM": 0.001729,
@@ -416,6 +434,7 @@
     "index": 16,
     "heightT": 0.40112,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.4639,
     "widthM": 0.15722,
     "thicknessM": 0.001882,
@@ -438,6 +457,7 @@
     "index": 17,
     "heightT": 0.44016,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.82506,
     "widthM": 0.22077,
     "thicknessM": 0.001823,
@@ -460,6 +480,7 @@
     "index": 18,
     "heightT": 0.46118,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 1.99264,
     "widthM": 0.15163,
     "thicknessM": 0.001706,
@@ -482,6 +503,7 @@
     "index": 19,
     "heightT": 0.47404,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.50638,
     "widthM": 0.21026,
     "thicknessM": 0.001686,
@@ -504,6 +526,7 @@
     "index": 20,
     "heightT": 0.50283,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.57495,
     "widthM": 0.2041,
     "thicknessM": 0.00209,
@@ -526,6 +549,7 @@
     "index": 21,
     "heightT": 0.49422,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 1.93693,
     "widthM": 0.1881,
     "thicknessM": 0.00167,
@@ -548,6 +572,7 @@
     "index": 22,
     "heightT": 0.4989,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 3.23332,
     "widthM": 0.23276,
     "thicknessM": 0.001678,
@@ -570,6 +595,7 @@
     "index": 23,
     "heightT": 0.55569,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 1.99069,
     "widthM": 0.18044,
     "thicknessM": 0.001898,
@@ -592,6 +618,7 @@
     "index": 24,
     "heightT": 0.53433,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.1385,
     "widthM": 0.19245,
     "thicknessM": 0.001979,
@@ -614,6 +641,7 @@
     "index": 25,
     "heightT": 0.55128,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.58016,
     "widthM": 0.20301,
     "thicknessM": 0.001835,
@@ -636,6 +664,7 @@
     "index": 26,
     "heightT": 0.58365,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.07989,
     "widthM": 0.1761,
     "thicknessM": 0.001924,
@@ -658,6 +687,7 @@
     "index": 27,
     "heightT": 0.62241,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.37288,
     "widthM": 0.20376,
     "thicknessM": 0.002086,
@@ -680,6 +710,7 @@
     "index": 28,
     "heightT": 0.61332,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.41506,
     "widthM": 0.17405,
     "thicknessM": 0.001972,
@@ -702,6 +733,7 @@
     "index": 29,
     "heightT": 0.6228,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.21989,
     "widthM": 0.19419,
     "thicknessM": 0.001981,
@@ -724,6 +756,7 @@
     "index": 30,
     "heightT": 0.63545,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.56259,
     "widthM": 0.21251,
     "thicknessM": 0.001743,
@@ -746,6 +779,7 @@
     "index": 31,
     "heightT": 0.66543,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 1.78092,
     "widthM": 0.14571,
     "thicknessM": 0.001837,
@@ -768,6 +802,7 @@
     "index": 32,
     "heightT": 0.67735,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.01293,
     "widthM": 0.17876,
     "thicknessM": 0.002024,
@@ -790,6 +825,7 @@
     "index": 33,
     "heightT": 0.70931,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.37387,
     "widthM": 0.16448,
     "thicknessM": 0.002078,
@@ -812,6 +848,7 @@
     "index": 34,
     "heightT": 0.73035,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 1.71389,
     "widthM": 0.14827,
     "thicknessM": 0.001995,
@@ -834,6 +871,7 @@
     "index": 35,
     "heightT": 0.74477,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.78188,
     "widthM": 0.18732,
     "thicknessM": 0.001794,
@@ -856,6 +894,7 @@
     "index": 36,
     "heightT": 0.72808,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.13243,
     "widthM": 0.16513,
     "thicknessM": 0.002011,
@@ -878,6 +917,7 @@
     "index": 37,
     "heightT": 0.77096,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.91388,
     "widthM": 0.17335,
     "thicknessM": 0.001993,
@@ -900,6 +940,7 @@
     "index": 38,
     "heightT": 0.7861,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.56551,
     "widthM": 0.18439,
     "thicknessM": 0.001861,
@@ -922,6 +963,7 @@
     "index": 39,
     "heightT": 0.79439,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.00363,
     "widthM": 0.16136,
     "thicknessM": 0.001951,
@@ -944,6 +986,7 @@
     "index": 40,
     "heightT": 0.8221,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.79109,
     "widthM": 0.19568,
     "thicknessM": 0.001722,
@@ -966,6 +1009,7 @@
     "index": 41,
     "heightT": 0.85397,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 1.94404,
     "widthM": 0.16733,
     "thicknessM": 0.001858,
@@ -988,6 +1032,7 @@
     "index": 42,
     "heightT": 0.84909,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.39371,
     "widthM": 0.15107,
     "thicknessM": 0.001851,
@@ -1010,6 +1055,7 @@
     "index": 43,
     "heightT": 0.85266,
     "canopy": false,
+    "apicalScimitar": false,
     "lengthM": 2.98175,
     "widthM": 0.19368,
     "thicknessM": 0.001852,
@@ -1032,6 +1078,7 @@
     "index": 44,
     "heightT": 0.86105,
     "canopy": true,
+    "apicalScimitar": false,
     "lengthM": 1.19326,
     "widthM": 0.17286,
     "thicknessM": 0.002022,
@@ -1054,6 +1101,7 @@
     "index": 45,
     "heightT": 0.87439,
     "canopy": true,
+    "apicalScimitar": false,
     "lengthM": 1.48259,
     "widthM": 0.17847,
     "thicknessM": 0.00204,
@@ -1076,6 +1124,7 @@
     "index": 46,
     "heightT": 0.89859,
     "canopy": true,
+    "apicalScimitar": false,
     "lengthM": 1.44458,
     "widthM": 0.20135,
     "thicknessM": 0.001895,
@@ -1098,6 +1147,7 @@
     "index": 47,
     "heightT": 0.89235,
     "canopy": true,
+    "apicalScimitar": false,
     "lengthM": 1.23306,
     "widthM": 0.15902,
     "thicknessM": 0.001698,
@@ -1120,6 +1170,7 @@
     "index": 48,
     "heightT": 0.90671,
     "canopy": true,
+    "apicalScimitar": false,
     "lengthM": 1.89884,
     "widthM": 0.19321,
     "thicknessM": 0.001738,
@@ -1142,6 +1193,7 @@
     "index": 49,
     "heightT": 0.9335,
     "canopy": true,
+    "apicalScimitar": false,
     "lengthM": 1.31549,
     "widthM": 0.17181,
     "thicknessM": 0.002014,
@@ -1164,6 +1216,7 @@
     "index": 50,
     "heightT": 0.93117,
     "canopy": true,
+    "apicalScimitar": false,
     "lengthM": 1.33875,
     "widthM": 0.15425,
     "thicknessM": 0.001867,
@@ -1186,6 +1239,7 @@
     "index": 51,
     "heightT": 0.93863,
     "canopy": true,
+    "apicalScimitar": false,
     "lengthM": 1.33925,
     "widthM": 0.18393,
     "thicknessM": 0.002013,
@@ -1208,6 +1262,7 @@
     "index": 52,
     "heightT": 0.94314,
     "canopy": true,
+    "apicalScimitar": false,
     "lengthM": 1.25832,
     "widthM": 0.14833,
     "thicknessM": 0.001723,
@@ -1230,6 +1285,7 @@
     "index": 53,
     "heightT": 0.96657,
     "canopy": true,
+    "apicalScimitar": false,
     "lengthM": 1.74871,
     "widthM": 0.19913,
     "thicknessM": 0.001909,
@@ -1252,6 +1308,7 @@
     "index": 54,
     "heightT": 0.98228,
     "canopy": true,
+    "apicalScimitar": false,
     "lengthM": 1.85517,
     "widthM": 0.2018,
     "thicknessM": 0.001728,
@@ -1274,6 +1331,7 @@
     "index": 55,
     "heightT": 0.985,
     "canopy": true,
+    "apicalScimitar": false,
     "lengthM": 1.12902,
     "widthM": 0.18085,
     "thicknessM": 0.002067,
@@ -1291,6 +1349,29 @@
     "swingFractionOfLength": -0.1507,
     "floatLiftM": 0.02129,
     "rows": 8
+   },
+   {
+    "index": 56,
+    "heightT": 0.985,
+    "canopy": false,
+    "apicalScimitar": true,
+    "lengthM": 0.72898,
+    "widthM": 0.16354,
+    "thicknessM": 0.001736,
+    "sheetAspect": 94.2,
+    "tipDropFractionOfLength": 0.0,
+    "tipDropExponent": 1.3461,
+    "radialReachFractionOfLength": 0.0,
+    "radialReachExponent": 1.2823,
+    "catenarySagFractionOfLength": 0.0,
+    "twistRad": -0.2473,
+    "twistReversalRad": -0.2846,
+    "twistReversalPeriods": 0.35,
+    "azimuthalDriftRad": 0.0,
+    "flowDeflectionRad": 0.2333,
+    "swingFractionOfLength": 0.0,
+    "floatLiftM": 0.0,
+    "rows": 10
    }
   ],
   "anchorSocket": "object origin at holdfast base (0,0,0); sway measured from it",
@@ -1304,8 +1385,8 @@
   }
  },
  "topology": {
-  "rawFacesBeforeWeld": 3192,
-  "rawVertsBeforeWeld": 3487,
+  "rawFacesBeforeWeld": 3246,
+  "rawVertsBeforeWeld": 3547,
   "weld": {
    "verts_removed": 0,
    "faces_removed": 0,
@@ -1317,21 +1398,21 @@
    "interior_edges_forced_by_area": 0,
    "windings_flipped": 0,
    "boundary_loops_filled": 0,
-   "boundary_edges_after": 672
+   "boundary_edges_after": 684
   },
-  "uvSeamEdgesMarked": 1075,
+  "uvSeamEdgesMarked": 1093,
   "stipeSeam": {
    "seamColumn": 3,
    "seamEdges": 35,
    "rings": 20,
    "segments": 8
   },
-  "trianglesBeforeBudgetReduce": 6266,
+  "trianglesBeforeBudgetReduce": 6374,
   "trianglesAfterBudgetReduce": 5864,
   "postDecimationClean": {
    "facesBefore": 5864,
-   "faces": 5818,
-   "sliverEdgesCollapsed": 23,
+   "faces": 5814,
+   "sliverEdgesCollapsed": 25,
    "collapsesSkippedIllegal": 0,
    "zeroAreaDeleted": 0,
    "looseDeleted": 0
@@ -1348,19 +1429,19 @@
   "atlasSize": 4096,
   "atlasFamily": "kelp",
   "paddingPx": 24,
-  "islands": 139,
-  "texelDensityPxPerMetreMin": 415.06,
-  "texelDensityPxPerMetreMax": 415.07,
-  "texelDensityPxPerMetreMean": 415.07,
+  "islands": 141,
+  "texelDensityPxPerMetreMin": 418.12,
+  "texelDensityPxPerMetreMax": 418.12,
+  "texelDensityPxPerMetreMean": 418.12,
   "texelDensityMismatchFraction": 1e-05,
   "texelDensityMismatchLimit": 0.2,
-  "aspectDistortionMax": 2.53243,
-  "aspectDistortionP50": 0.00139,
-  "aspectDistortionP95": 0.02916,
-  "aspectDistortionP99": 0.07573,
-  "trianglesOverHeroLimit": 7,
-  "trianglesOverDistantLimit": 2,
-  "trianglesMeasured": 5818,
+  "aspectDistortionMax": 0.97683,
+  "aspectDistortionP50": 0.00145,
+  "aspectDistortionP95": 0.02709,
+  "aspectDistortionP99": 0.06999,
+  "trianglesOverHeroLimit": 6,
+  "trianglesOverDistantLimit": 3,
+  "trianglesMeasured": 5812,
   "zeroAreaUvTriangles": 0,
   "zeroAreaUvBelowEpsilon": 0,
   "degenerate3dTriangles": 0,
@@ -1368,17 +1449,17 @@
   "areaOverLimitBySlot": {
    "0": {
     "role": "tissue",
-    "areaShareOfMesh": 0.9716,
-    "overLimitFractionOfOwnArea": 0.0003,
-    "overLimitShareOfMesh": 0.0003,
-    "worst": 2.532
+    "areaShareOfMesh": 0.9717,
+    "overLimitFractionOfOwnArea": 0.0005,
+    "overLimitShareOfMesh": 0.0005,
+    "worst": 0.977
    },
    "1": {
     "role": "basal_collar_scar",
     "areaShareOfMesh": 0.0075,
     "overLimitFractionOfOwnArea": 0.0,
     "overLimitShareOfMesh": 0.0,
-    "worst": 0.027
+    "worst": 0.026
    },
    "2": {
     "role": "holdfast",
@@ -1389,72 +1470,72 @@
    }
   },
   "worstTriangle": {
-   "tri": 338,
+   "tri": 3203,
    "slot": 0,
-   "worldArea2": "1.100e-02",
-   "uvArea2": "9.151e-05",
+   "worldArea2": "9.151e-03",
+   "uvArea2": "8.591e-05",
    "worldEdges": [
-    0.359116,
-    0.604675,
-    0.246692
+    0.358396,
+    0.113381,
+    0.249238
    ],
    "uvEdges": [
-    0.034533,
-    0.054384,
-    0.019963
+    0.036228,
+    0.013089,
+    0.023475
    ],
    "z": [
+    2.6037,
     2.96,
-    3.3175,
-    2.7157
+    2.8513
    ]
   },
-  "gateIslands": 139,
+  "gateIslands": 141,
   "gateIslandsBelowMinPixels": 0,
   "smallestGateIslandsPx": [
    [
-    8.954,
-    9.354
+    9.02,
+    9.423
    ],
    [
-    9.343,
-    9.568
+    9.411,
+    9.638
    ],
    [
-    9.815,
-    10.05
+    9.887,
+    10.124
    ],
    [
-    10.291,
-    10.498
+    10.366,
+    10.575
    ],
    [
-    10.587,
-    10.844
+    10.665,
+    10.924
    ],
    [
-    10.752,
-    11.015
+    10.831,
+    11.096
    ]
   ],
   "heroLimit": 0.15,
   "distantLimit": 0.25,
-  "uvOutliersCollapsed": 0,
+  "uvOutliersCollapsed": 1,
   "islandGrowth": {
    "islandsGrown": 0,
    "maxScale": 1.0,
    "floorPx": 4
   },
   "solver": "ANGLE_BASED",
-  "islandsOriented": 122,
-  "seamEdges": 1037,
-  "islandsExpected": 139
+  "islandsOriented": 124,
+  "seamEdges": 1038,
+  "islandsExpected": 141
  },
  "texelDensityTargets": {
   "heroHarvestable": 512,
   "commonInstanced": 256,
-  "achievedMean": 415.07,
-  "achievedMin": 415.06,
+  "achievedMean": 418.12,
+  "achievedMin": 418.12,
   "meetsHero": false,
   "meetsCommon": true
  },
@@ -1519,29 +1600,29 @@
    "sway_amplitude": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.42824,
-    "elements": 17454,
+    "mean": 0.43461,
+    "elements": 17436,
     "domain": "CORNER"
    },
    "biolum_phase": {
     "min": 0.0,
     "max": 0.0,
     "mean": 0.0,
-    "elements": 17454,
+    "elements": 17436,
     "domain": "CORNER"
    },
    "baked_ao": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.38857,
-    "elements": 17454,
+    "mean": 0.39703,
+    "elements": 17436,
     "domain": "CORNER"
    },
    "family_specific": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.91157,
-    "elements": 17454,
+    "mean": 0.91217,
+    "elements": 17436,
     "domain": "CORNER"
    }
   },
@@ -1556,7 +1637,7 @@
   "aoHasContrast": true,
   "aoMin": 0.0,
   "aoMax": 1.0,
-  "aoMean": 0.40094,
+  "aoMean": 0.40768,
   "aoSamples": 24,
   "aoDistanceM": 0.5822725658872621,
   "aoReason": "",
@@ -1572,28 +1653,28 @@
   {
    "lod": 0,
    "mesh": "MESH_Flora_Kelp_s4023_q100_LOD0",
-   "triangles": 5818,
+   "triangles": 5812,
    "budget": 6500,
    "withinBudget": true,
-   "vertices": 3210,
+   "vertices": 3208,
    "simplification": "authored analytic surface"
   },
   {
    "lod": 1,
    "mesh": "MESH_Flora_Kelp_s4023_q100_LOD1",
-   "triangles": 1657,
+   "triangles": 1660,
    "budget": 1800,
    "withinBudget": true,
-   "vertices": 1616,
+   "vertices": 1638,
    "simplification": "quadric edge collapse with seam/material border preservation"
   },
   {
    "lod": 2,
    "mesh": "MESH_Flora_Kelp_s4023_q100_LOD2",
-   "triangles": 283,
+   "triangles": 281,
    "budget": 300,
    "withinBudget": true,
-   "vertices": 519,
+   "vertices": 522,
    "simplification": "quadric edge collapse with seam/material border preservation"
   }
  ],
@@ -1602,19 +1683,19 @@
    "atlasSize": 4096,
    "atlasFamily": "kelp",
    "paddingPx": 24,
-   "islands": 139,
-   "texelDensityPxPerMetreMin": 415.06,
-   "texelDensityPxPerMetreMax": 415.07,
-   "texelDensityPxPerMetreMean": 415.07,
+   "islands": 141,
+   "texelDensityPxPerMetreMin": 418.12,
+   "texelDensityPxPerMetreMax": 418.12,
+   "texelDensityPxPerMetreMean": 418.12,
    "texelDensityMismatchFraction": 1e-05,
    "texelDensityMismatchLimit": 0.2,
-   "aspectDistortionMax": 2.53243,
-   "aspectDistortionP50": 0.00139,
-   "aspectDistortionP95": 0.02916,
-   "aspectDistortionP99": 0.07573,
-   "trianglesOverHeroLimit": 7,
-   "trianglesOverDistantLimit": 2,
-   "trianglesMeasured": 5818,
+   "aspectDistortionMax": 0.97683,
+   "aspectDistortionP50": 0.00145,
+   "aspectDistortionP95": 0.02709,
+   "aspectDistortionP99": 0.06999,
+   "trianglesOverHeroLimit": 6,
+   "trianglesOverDistantLimit": 3,
+   "trianglesMeasured": 5812,
    "zeroAreaUvTriangles": 0,
    "zeroAreaUvBelowEpsilon": 0,
    "degenerate3dTriangles": 0,
@@ -1622,17 +1703,17 @@
    "areaOverLimitBySlot": {
     "0": {
      "role": "tissue",
-     "areaShareOfMesh": 0.9716,
-     "overLimitFractionOfOwnArea": 0.0003,
-     "overLimitShareOfMesh": 0.0003,
-     "worst": 2.532
+     "areaShareOfMesh": 0.9717,
+     "overLimitFractionOfOwnArea": 0.0005,
+     "overLimitShareOfMesh": 0.0005,
+     "worst": 0.977
     },
     "1": {
      "role": "basal_collar_scar",
      "areaShareOfMesh": 0.0075,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
-     "worst": 0.027
+     "worst": 0.026
     },
     "2": {
      "role": "holdfast",
@@ -1643,91 +1724,91 @@
     }
    },
    "worstTriangle": {
-    "tri": 338,
+    "tri": 3203,
     "slot": 0,
-    "worldArea2": "1.100e-02",
-    "uvArea2": "9.151e-05",
+    "worldArea2": "9.151e-03",
+    "uvArea2": "8.591e-05",
     "worldEdges": [
-     0.359116,
-     0.604675,
-     0.246692
+     0.358396,
+     0.113381,
+     0.249238
     ],
     "uvEdges": [
-     0.034533,
-     0.054384,
-     0.019963
+     0.036228,
+     0.013089,
+     0.023475
     ],
     "z": [
+     2.6037,
      2.96,
-     3.3175,
-     2.7157
+     2.8513
     ]
    },
-   "gateIslands": 139,
+   "gateIslands": 141,
    "gateIslandsBelowMinPixels": 0,
    "smallestGateIslandsPx": [
     [
-     8.954,
-     9.354
+     9.02,
+     9.423
     ],
     [
-     9.343,
-     9.568
+     9.411,
+     9.638
     ],
     [
-     9.815,
-     10.05
+     9.887,
+     10.124
     ],
     [
-     10.291,
-     10.498
+     10.366,
+     10.575
     ],
     [
-     10.587,
-     10.844
+     10.665,
+     10.924
     ],
     [
-     10.752,
-     11.015
+     10.831,
+     11.096
     ]
    ],
    "heroLimit": 0.15,
    "distantLimit": 0.25,
-   "uvOutliersCollapsed": 0,
+   "uvOutliersCollapsed": 1,
    "islandGrowth": {
     "islandsGrown": 0,
     "maxScale": 1.0,
     "floorPx": 4
    },
    "solver": "ANGLE_BASED",
-   "islandsOriented": 122,
-   "seamEdges": 1037,
-   "islandsExpected": 139,
+   "islandsOriented": 124,
+   "seamEdges": 1038,
+   "islandsExpected": 141,
    "slotsRepaired": {},
    "stretchStats": {
-    "worst": 0.18834270948493104,
-    "p95": 0.005126401290332927,
-    "mean": 0.0014343382233011682,
-    "triangles": 5818
+    "worst": 0.1250829428844995,
+    "p95": 0.004924881445467877,
+    "mean": 0.0013220018918522593,
+    "triangles": 5812
    }
   },
   "1": {
    "atlasSize": 4096,
    "atlasFamily": "kelp",
    "paddingPx": 24,
-   "islands": 148,
-   "texelDensityPxPerMetreMin": 413.48,
-   "texelDensityPxPerMetreMax": 413.49,
-   "texelDensityPxPerMetreMean": 413.48,
+   "islands": 151,
+   "texelDensityPxPerMetreMin": 422.77,
+   "texelDensityPxPerMetreMax": 422.78,
+   "texelDensityPxPerMetreMean": 422.78,
    "texelDensityMismatchFraction": 1e-05,
    "texelDensityMismatchLimit": 0.2,
-   "aspectDistortionMax": 0.74194,
+   "aspectDistortionMax": 0.68766,
    "aspectDistortionP50": 1e-05,
-   "aspectDistortionP95": 0.01533,
-   "aspectDistortionP99": 0.05692,
-   "trianglesOverHeroLimit": 7,
-   "trianglesOverDistantLimit": 4,
-   "trianglesMeasured": 1657,
+   "aspectDistortionP95": 0.01045,
+   "aspectDistortionP99": 0.04583,
+   "trianglesOverHeroLimit": 4,
+   "trianglesOverDistantLimit": 1,
+   "trianglesMeasured": 1660,
    "zeroAreaUvTriangles": 0,
    "zeroAreaUvBelowEpsilon": 0,
    "degenerate3dTriangles": 0,
@@ -1735,119 +1816,119 @@
    "areaOverLimitBySlot": {
     "0": {
      "role": "tissue",
-     "areaShareOfMesh": 0.9757,
-     "overLimitFractionOfOwnArea": 0.0006,
-     "overLimitShareOfMesh": 0.0006,
-     "worst": 0.742
+     "areaShareOfMesh": 0.9745,
+     "overLimitFractionOfOwnArea": 0.0,
+     "overLimitShareOfMesh": 0.0,
+     "worst": 0.076
     },
     "1": {
      "role": "basal_collar_scar",
-     "areaShareOfMesh": 0.0049,
+     "areaShareOfMesh": 0.006,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
      "worst": 0.0
     },
     "2": {
      "role": "holdfast",
-     "areaShareOfMesh": 0.0194,
+     "areaShareOfMesh": 0.0195,
      "overLimitFractionOfOwnArea": 0.0035,
      "overLimitShareOfMesh": 0.0001,
      "worst": 0.688
     }
    },
    "worstTriangle": {
-    "tri": 116,
-    "slot": 0,
-    "worldArea2": "4.234e-02",
-    "uvArea2": "4.166e-04",
+    "tri": 52,
+    "slot": 2,
+    "worldArea2": "4.763e-03",
+    "uvArea2": "5.239e-05",
     "worldEdges": [
-     0.511453,
-     0.572315,
-     1.080924
+     0.11518,
+     0.359238,
+     0.245183
     ],
     "uvEdges": [
-     0.05013,
-     0.060689,
-     0.110559
+     0.011362,
+     0.037717,
+     0.026477
     ],
     "z": [
-     1.5318,
-     2.043,
-     2.6086
+     0.0459,
+     0.0077,
+     0.1447
     ]
    },
-   "gateIslands": 148,
+   "gateIslands": 151,
    "gateIslandsBelowMinPixels": 0,
    "smallestGateIslandsPx": [
     [
-     6.765,
-     9.506
+     6.917,
+     9.719
     ],
     [
-     7.767,
-     8.419
+     7.859,
+     8.359
     ],
     [
-     11.202,
-     9.67
+     7.942,
+     8.609
     ],
     [
-     10.251,
-     10.458
+     8.625,
+     11.256
     ],
     [
-     10.547,
-     10.803
+     9.329,
+     51.746
     ],
     [
-     11.159,
-     186.126
+     10.784,
+     11.046
     ]
    ],
    "heroLimit": 0.15,
    "distantLimit": 0.25,
-   "uvOutliersCollapsed": 0,
+   "uvOutliersCollapsed": 2,
    "islandGrowth": {
     "islandsGrown": 0,
     "maxScale": 1.0,
     "floorPx": 4
    },
    "solver": "ANGLE_BASED",
-   "islandsOriented": 133,
-   "seamEdges": 1531,
+   "islandsOriented": 136,
+   "seamEdges": 1548,
    "healed": {
     "facesBefore": 1728,
-    "faces": 1657,
-    "sliverEdgesCollapsed": 55,
-    "collapsesSkippedIllegal": 29,
+    "faces": 1663,
+    "sliverEdgesCollapsed": 50,
+    "collapsesSkippedIllegal": 59,
     "zeroAreaDeleted": 0,
-    "looseDeleted": 0
+    "looseDeleted": 1
    },
    "slotsRepaired": {},
    "stretchStats": {
-    "worst": 0.16570465580783567,
-    "p95": 0.004004699941502876,
-    "mean": 0.0006997479712972344,
-    "triangles": 1657
+    "worst": 0.16570501082165756,
+    "p95": 0.0037869057935795425,
+    "mean": 0.0005090902779723555,
+    "triangles": 1660
    }
   },
   "2": {
    "atlasSize": 4096,
    "atlasFamily": "kelp",
    "paddingPx": 24,
-   "islands": 120,
-   "texelDensityPxPerMetreMin": 430.65,
-   "texelDensityPxPerMetreMax": 430.65,
-   "texelDensityPxPerMetreMean": 430.65,
+   "islands": 122,
+   "texelDensityPxPerMetreMin": 437.48,
+   "texelDensityPxPerMetreMax": 437.48,
+   "texelDensityPxPerMetreMean": 437.48,
    "texelDensityMismatchFraction": 1e-05,
    "texelDensityMismatchLimit": 0.2,
-   "aspectDistortionMax": 2e-05,
+   "aspectDistortionMax": 4e-05,
    "aspectDistortionP50": 0.0,
    "aspectDistortionP95": 1e-05,
    "aspectDistortionP99": 1e-05,
    "trianglesOverHeroLimit": 0,
    "trianglesOverDistantLimit": 0,
-   "trianglesMeasured": 283,
+   "trianglesMeasured": 281,
    "zeroAreaUvTriangles": 0,
    "zeroAreaUvBelowEpsilon": 0,
    "degenerate3dTriangles": 0,
@@ -1855,66 +1936,66 @@
    "areaOverLimitBySlot": {
     "0": {
      "role": "tissue",
-     "areaShareOfMesh": 0.9932,
+     "areaShareOfMesh": 0.9931,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
      "worst": 0.0
     },
     "2": {
      "role": "holdfast",
-     "areaShareOfMesh": 0.0068,
+     "areaShareOfMesh": 0.0069,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
      "worst": 0.0
     }
    },
    "worstTriangle": {
-    "tri": 237,
+    "tri": 137,
     "slot": 0,
-    "worldArea2": "1.076e-01",
-    "uvArea2": "1.190e-03",
+    "worldArea2": "3.936e-02",
+    "uvArea2": "4.490e-04",
     "worldEdges": [
-     0.876023,
-     1.541408,
-     0.671811
+     0.049546,
+     1.548768,
+     1.506452
     ],
     "uvEdges": [
-     0.092103,
-     0.162061,
-     0.070633
+     0.005292,
+     0.165417,
+     0.160898
     ],
     "z": [
-     4.0306,
-     3.3,
-     4.5635
+     5.0257,
+     4.9791,
+     6.4328
     ]
    },
-   "gateIslands": 120,
+   "gateIslands": 122,
    "gateIslandsBelowMinPixels": 0,
    "smallestGateIslandsPx": [
     [
-     28.985,
-     151.528
+     29.443,
+     153.931
     ],
     [
-     35.999,
-     120.224
+     36.57,
+     122.132
     ],
     [
-     58.583,
-     806.174
+     63.631,
+     560.285
     ],
     [
-     62.274,
-     744.995
+     64.587,
+     623.888
     ],
     [
-     62.637,
-     551.535
+     70.489,
+     568.913
     ],
     [
-     63.579,
-     614.145
+     70.586,
+     751.917
     ]
    ],
    "heroLimit": 0.15,
@@ -1926,61 +2007,61 @@
     "floorPx": 4
    },
    "solver": "ANGLE_BASED",
-   "islandsOriented": 118,
-   "seamEdges": 438,
+   "islandsOriented": 120,
+   "seamEdges": 442,
    "healed": {
     "facesBefore": 288,
-    "faces": 283,
-    "sliverEdgesCollapsed": 4,
-    "collapsesSkippedIllegal": 6,
+    "faces": 281,
+    "sliverEdgesCollapsed": 6,
+    "collapsesSkippedIllegal": 11,
     "zeroAreaDeleted": 0,
-    "looseDeleted": 72
+    "looseDeleted": 76
    },
    "slotsRepaired": {
-    "1": 0.08342
+    "1": 0.07648
    },
    "stretchStats": {
-    "worst": 8.903471800270069e-06,
-    "p95": 3.0121947682815176e-06,
-    "mean": 9.130226101333384e-07,
-    "triangles": 283
+    "worst": 1.3596975690699509e-05,
+    "p95": 3.2293866027988116e-06,
+    "mean": 8.909977304620368e-07,
+    "triangles": 281
    }
   }
  },
  "lodTopology": {
   "0": {
-   "triangles": 5818,
-   "faces": 5818,
-   "components": 65,
-   "boundaryEdges": 566,
+   "triangles": 5812,
+   "faces": 5812,
+   "components": 66,
+   "boundaryEdges": 568,
    "nonmanifoldEdges": 0,
-   "smallestComponent": 56,
-   "largestComponent": 268,
-   "irreducibleFloor": 543,
+   "smallestComponent": 52,
+   "largestComponent": 262,
+   "irreducibleFloor": 548,
    "budget": 6500,
    "explain": ""
   },
   "1": {
-   "triangles": 1657,
-   "faces": 1657,
-   "components": 97,
-   "boundaryEdges": 1707,
+   "triangles": 1660,
+   "faces": 1660,
+   "components": 101,
+   "boundaryEdges": 1730,
    "nonmanifoldEdges": 0,
    "smallestComponent": 1,
-   "largestComponent": 36,
-   "irreducibleFloor": 1241,
+   "largestComponent": 37,
+   "irreducibleFloor": 1269,
    "budget": 1800,
    "explain": ""
   },
   "2": {
-   "triangles": 283,
-   "faces": 283,
-   "components": 120,
-   "boundaryEdges": 523,
+   "triangles": 281,
+   "faces": 281,
+   "components": 122,
+   "boundaryEdges": 525,
    "nonmanifoldEdges": 0,
    "smallestComponent": 1,
    "largestComponent": 5,
-   "irreducibleFloor": 741,
+   "irreducibleFloor": 750,
    "budget": 300,
    "explain": ""
   }
@@ -2027,7 +2108,7 @@
   "max": [
    0.56531,
    1.45185,
-   6.88218
+   7.4323
   ]
  },
  "validation": {
@@ -2037,39 +2118,39 @@
     "mesh": "MESH_Flora_Kelp_s4023_q100_LOD0",
     "lod": 0,
     "passed": true,
-    "triangles": 5818,
-    "vertices": 3210,
+    "triangles": 5812,
+    "vertices": 3208,
     "submeshes": 3,
-    "digest": "7df4c81f5909da052e34ef38d5babab2",
+    "digest": "ed946e34854151dfa67f687c816e3c95",
     "failures": [],
     "notEnforced": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 792 of 5818 triangles below the sliver floor 6.053e-04 m2 (0.1x mean triangle area 6.053e-03 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 758 of 5812 triangles below the sliver floor 6.080e-04 m2 (0.1x mean triangle area 6.080e-03 m2); the area-weighted population test still covered all of them"
     ]
    },
    {
     "mesh": "MESH_Flora_Kelp_s4023_q100_LOD1",
     "lod": 1,
     "passed": true,
-    "triangles": 1657,
-    "vertices": 1616,
+    "triangles": 1660,
+    "vertices": 1638,
     "submeshes": 3,
-    "digest": "f777d5735bd850818c4bbf8558bd7e4e",
+    "digest": "21cf9b927b8b567e82be6a7fb5755227",
     "failures": [],
     "notEnforced": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 277 of 1657 triangles below the sliver floor 2.086e-03 m2 (0.1x mean triangle area 2.086e-02 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 268 of 1660 triangles below the sliver floor 2.090e-03 m2 (0.1x mean triangle area 2.090e-02 m2); the area-weighted population test still covered all of them"
     ]
    },
    {
     "mesh": "MESH_Flora_Kelp_s4023_q100_LOD2",
     "lod": 2,
     "passed": true,
-    "triangles": 283,
-    "vertices": 519,
+    "triangles": 281,
+    "vertices": 522,
     "submeshes": 3,
-    "digest": "739139aab4ac86f00cacb99294b526ba",
+    "digest": "8b6f8d81554894a0a28f68612b5cb39e",
     "failures": [],
     "notEnforced": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 2 of 283 triangles below the sliver floor 1.084e-02 m2 (0.1x mean triangle area 1.084e-01 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 2 of 281 triangles below the sliver floor 1.081e-02 m2 (0.1x mean triangle area 1.081e-01 m2); the area-weighted population test still covered all of them"
     ]
    }
   ],
@@ -2087,10 +2168,10 @@
    "attribute": "Col",
    "domain": "CORNER",
    "areaWeightedMean": [
-    0.48217,
+    0.48343,
     0.0,
-    0.5071,
-    0.97538
+    0.50782,
+    0.97546
    ],
    "min": [
     0.0,
@@ -2120,16 +2201,16 @@
    {
     "channel": "sway_amplitude",
     "tile": "Kelp_s4023_q100_s4023_q100_chan_chan0_sway_amplitude.png",
-    "min": 0.0003,
+    "min": 0.0,
     "max": 1.0,
-    "mean": 0.561,
+    "mean": 0.56296,
     "hasGradient": true,
     "subjectVisible": true,
-    "coverage": 0.05357,
+    "coverage": 0.04707,
     "storedMin": 0.0,
     "storedMax": 1.0,
-    "storedAreaWeightedMean": 0.48217,
-    "minDelta": 0.0003,
+    "storedAreaWeightedMean": 0.48343,
+    "minDelta": 0.0,
     "maxDelta": 0.0
    },
    {
@@ -2140,7 +2221,7 @@
     "mean": 2e-05,
     "hasGradient": true,
     "subjectVisible": true,
-    "coverage": 0.05357,
+    "coverage": 0.04707,
     "storedMin": 0.0,
     "storedMax": 0.0,
     "storedAreaWeightedMean": 0.0,
@@ -2150,16 +2231,16 @@
    {
     "channel": "baked_ao",
     "tile": "Kelp_s4023_q100_s4023_q100_chan_chan2_baked_ao.png",
-    "min": 0.00651,
+    "min": 0.00061,
     "max": 1.0,
-    "mean": 0.70912,
+    "mean": 0.71471,
     "hasGradient": true,
     "subjectVisible": true,
-    "coverage": 0.05357,
+    "coverage": 0.04707,
     "storedMin": 0.0,
     "storedMax": 1.0,
-    "storedAreaWeightedMean": 0.5071,
-    "minDelta": 0.00651,
+    "storedAreaWeightedMean": 0.50782,
+    "minDelta": 0.00061,
     "maxDelta": 0.0
    },
    {
@@ -2167,13 +2248,13 @@
     "tile": "Kelp_s4023_q100_s4023_q100_chan_chan3_family_specific.png",
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.99006,
+    "mean": 0.98996,
     "hasGradient": true,
     "subjectVisible": true,
-    "coverage": 0.05357,
+    "coverage": 0.04707,
     "storedMin": 0.0,
     "storedMax": 1.0,
-    "storedAreaWeightedMean": 0.97538,
+    "storedAreaWeightedMean": 0.97546,
     "minDelta": 0.0,
     "maxDelta": 0.0
    }
@@ -2183,67 +2264,67 @@
    {
     "view": "front",
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4023_q100_s4023_q100_SIL_front.png",
-    "pixels": 28283,
-    "coverageFraction": 0.06905,
-    "perimeterPx": 1522.54,
-    "complexity": 6.7145,
-    "convexity": 0.5876,
-    "hullGapRms": 0.17743,
+    "pixels": 25250,
+    "coverageFraction": 0.06165,
+    "perimeterPx": 1479.78,
+    "complexity": 7.1467,
+    "convexity": 0.5745,
+    "hullGapRms": 0.16915,
     "cornerCount": 18,
-    "turnTop10Fraction": 0.3611,
-    "turnTotalDeg": 3438.9,
-    "fuzzFraction": 0.0337
+    "turnTop10Fraction": 0.3649,
+    "turnTotalDeg": 3445.0,
+    "fuzzFraction": 0.0325
    },
    {
     "view": "side",
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4023_q100_s4023_q100_SIL_side.png",
-    "pixels": 17646,
-    "coverageFraction": 0.04308,
-    "perimeterPx": 2125.29,
-    "complexity": 20.0933,
-    "convexity": 0.4445,
-    "hullGapRms": 0.20707,
+    "pixels": 15801,
+    "coverageFraction": 0.03858,
+    "perimeterPx": 2039.83,
+    "complexity": 20.2031,
+    "convexity": 0.4564,
+    "hullGapRms": 0.20762,
     "cornerCount": 21,
-    "turnTop10Fraction": 0.3431,
-    "turnTotalDeg": 4431.6,
-    "fuzzFraction": 0.0332
+    "turnTop10Fraction": 0.3512,
+    "turnTotalDeg": 4569.4,
+    "fuzzFraction": 0.0346
    },
    {
     "view": "three_quarter",
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4023_q100_s4023_q100_SIL_three_quarter.png",
-    "pixels": 21520,
-    "coverageFraction": 0.05254,
-    "perimeterPx": 1759.08,
-    "complexity": 11.6291,
-    "convexity": 0.5315,
-    "hullGapRms": 0.19493,
+    "pixels": 18902,
+    "coverageFraction": 0.04615,
+    "perimeterPx": 1688.03,
+    "complexity": 12.2549,
+    "convexity": 0.5148,
+    "hullGapRms": 0.18782,
     "cornerCount": 21,
-    "turnTop10Fraction": 0.3457,
-    "turnTotalDeg": 3859.2,
-    "fuzzFraction": 0.0368
+    "turnTop10Fraction": 0.3736,
+    "turnTotalDeg": 3644.8,
+    "fuzzFraction": 0.036
    },
    {
     "view": "low",
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4023_q100_s4023_q100_SIL_low.png",
-    "pixels": 26660,
-    "coverageFraction": 0.06509,
-    "perimeterPx": 1767.22,
-    "complexity": 9.4587,
-    "convexity": 0.5926,
-    "hullGapRms": 0.18546,
-    "cornerCount": 19,
-    "turnTop10Fraction": 0.3591,
-    "turnTotalDeg": 3700.7,
-    "fuzzFraction": 0.0489
+    "pixels": 23941,
+    "coverageFraction": 0.05845,
+    "perimeterPx": 1703.4,
+    "complexity": 9.791,
+    "convexity": 0.5789,
+    "hullGapRms": 0.18068,
+    "cornerCount": 18,
+    "turnTop10Fraction": 0.3659,
+    "turnTotalDeg": 3610.4,
+    "fuzzFraction": 0.05
    }
   ],
   "silhouetteSummary": {
-   "meanCoverageFraction": 0.05744,
-   "minCoverageFraction": 0.04308,
-   "maxCoverageFraction": 0.06905,
-   "meanTurnTop10Fraction": 0.3523,
-   "meanCornerCount": 19.75,
-   "meanConvexity": 0.5391,
+   "meanCoverageFraction": 0.0512,
+   "minCoverageFraction": 0.03858,
+   "maxCoverageFraction": 0.06165,
+   "meanTurnTop10Fraction": 0.3639,
+   "meanCornerCount": 19.5,
+   "meanConvexity": 0.5312,
    "controlSphereTop10": 0.094,
    "controlPotatoTop10": 0.137,
    "controlPolytopeTop10": 0.789,
@@ -2256,5 +2337,5 @@
   "firstInvalidStage": null
  },
  "prefabBoundary": "PF_/GEN_ prefab, LODGroup and Unity import are NOT produced here: only Unity may author .prefab assets (AGENTS.md Evidence Law). This package is the FBX + manifest the Unity-side assembler consumes.",
- "generationSeconds": 86.6
+ "generationSeconds": 81.78
 }
