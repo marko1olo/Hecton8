@@ -703,6 +703,120 @@ GEOLOGY_MIN_EROSIONAL_COVERAGE = 0.18
 
 
 # ---------------------------------------------------------------------------
+# Texture band ceilings for the five families after geology
+# ---------------------------------------------------------------------------
+# THE ONE RULE THAT GENERALISES: every one of these families already carries its primary
+# relief AS GEOMETRY, so the texture owns the band STRICTLY BENEATH it. This is the geology
+# lesson one family over. That family shipped with vugs at rank 1 and bedding at rank 5 and
+# read as pumice; the fix was to make the structural band the basis and every other term a
+# declared fraction of it. A texture that re-states a band the mesh already displaces is the
+# "does not match the mesh" rejection in playbook section 0, and it is worse than a missing
+# map because it actively fights the silhouette the generator worked to produce.
+#
+# Each ceiling below is the measured wavelength of the geometry it must stay under, with the
+# generator line that sets it. These are derived, not chosen.
+
+# Corallite cups are DISPLACED GEOMETRY, not a texture feature: generators/coral_branching.py
+# :278 declares corallite_frequency 120.0 and :904 displaces along the normal by
+# _value_noise(position * corallite_frequency), so the feature wavelength is 1/120 m. The
+# generator's own comment at :276-277 calls this "the coral surface signature" and records that
+# an earlier low-frequency version "read as cauliflower" -- so re-adding cups in the texture
+# would revive a defect this family has already been rejected for once.
+# UNITS: position is vertex.co and the metre reading is CORROBORATED, not assumed -- the
+# sibling coarse band at :903 uses position * 9.0, giving 0.111 m lobes, which is about five
+# across a 0.55 m coral. At any other unit that band would be nonsense.
+CORAL_CORALLITE_WAVELENGTH_M = 0.0083
+CORAL_TEXTURE_BAND_CEILING_M = 0.0083
+
+# Gills are DISPLACED GEOMETRY: generators/flora_capstem.py:766 cuts them into the underside
+# at 2.0 * rib_count * theta with rib_count 7..13 (:459), depth a fraction of local thickness.
+CAPSTEM_TEXTURE_BAND_CEILING_M = 0.0060
+
+# Kelp's primary relief is the longitudinal rib corrugation, and the tile CANNOT carry it --
+# recorded here so the omission is a decision rather than a gap. The rib is ANISOTROPIC and
+# aligned to the growth axis while Hecton_KelpMaster samples every map triplanar from world
+# position, so on a bending blade an isotropic world-space projection destroys it. The tile
+# owns the isotropic sub-band only (cryptostomata pits, bullations, epiphyte crust); the rib
+# stays geometry, or moves to a TEXCOORD1 sample, where UV1 is already metre-calibrated
+# root-to-tip. Moving it is a SHADER change and is not authorised by this row.
+KELP_TEXTURE_BAND_CEILING_M = 0.0100
+KELP_RIB_IS_TILE_CARRYABLE = False
+
+# Bevels are DISPLACED GEOMETRY: 3dmodel.md section 4 mandates a real chamfer on every visible
+# hard edge above 35 degrees and prop_handtool.py builds them, so panel lines and bevels sit
+# below this ceiling by construction and must not appear in the texture's relief list.
+SMALLPROP_TEXTURE_BAND_CEILING_M = 0.0060
+
+# Fauna is the ONE family that is a UNIQUE BAKE rather than a wrapping tile: a dorsoventral
+# countershading gradient cannot be carried by a repeating tile, and 3DMODEL_FAUNA.md:54
+# forbids mirroring on eyes, jaws and named weak spots. CONSEQUENCE FOR THE VALIDATOR: the
+# playbook section 9 gate 1 tile-seam check is MEANINGLESS here and must be SKIPPED rather
+# than passed vacuously -- a gate that cannot fail is the same defect as a missing gate.
+# Island-border bleed and island coverage are the checks that apply instead.
+FAUNA_TEXTURE_IS_UNIQUE_BAKE = True
+FAUNA_TEXTURE_BAND_CEILING_M = 0.0025
+
+# Families whose texture family is a wrapping tile, and therefore the only ones gate 1 applies
+# to. FAUNA is deliberately absent. Keyed by Family so the validator branches on data.
+TEXTURE_TILEABLE_FAMILIES = (
+    Family.GEOLOGY,
+    Family.FLORA,
+    Family.FLORA_CLUSTER,
+    Family.SMALL_PROP,
+    Family.BASE_MODULE,
+    Family.WRECKAGE,
+)
+
+# ---------------------------------------------------------------------------
+# Texel density: WHY THERE IS NO GENERAL m/tile FORMULA HERE
+# ---------------------------------------------------------------------------
+# A proposed "generalised tile rule" was REJECTED ON ARITHMETIC and is recorded so it is not
+# re-derived. It read: the finest scale witness must occupy >= 16 px, therefore
+# metres_per_tile = witness_m * size_px / 16. It reproduces the shipped geology tile
+# (GEOLOGY_PIT_DEPTH_M 0.011 * 2048 / 16 = 1.408 m, and geology ships at 1.25 m, inside it),
+# and it was presented as the source of a proposed tile size for all five families above.
+#
+# IT IS NOT. Checked against its own proposed numbers, every family violates it by about a
+# factor of ten, and one by 195x:
+#     coral      witness 0.4 mm  -> rule allows 0.051 m, proposed 0.50 m  (witness gets 1.6 px)
+#     capstem    witness 0.5 mm  -> rule allows 0.064 m, proposed 0.60 m  (1.7 px)
+#     kelp       witness 0.8 mm  -> rule allows 0.102 m, proposed 1.00 m  (1.6 px)
+#     smallprop  witness 0.08 mm -> rule allows 0.010 m, proposed 2.00 m  (0.08 px)
+# A 0.05 m tile would repeat twenty-five times across a 1.25 m surface and read as fabric, so
+# satisfying the rule is not merely inconvenient here -- it is wrong.
+#
+# THE CONFLATION THAT BROKE IT, which is the part worth keeping: geology's 0.011 m pit is a
+# DISCRETE feature that must read as an individual thing, and a discrete feature genuinely
+# needs pixels to survive BC7 and the mip chain. A 0.4 mm aragonite fibre is STATISTICAL
+# MICRO-TEXTURE -- it is never resolved individually at any tile size a shipping asset would
+# use, and it is carried as an aggregate normal and roughness response instead. One rule
+# cannot govern both quantities, and the 16 px floor only ever applied to the first.
+#
+# So no m/tile constant is declared here. Tile size for these families remains a judgement
+# call that must be MEASURED AGAINST A BAKE and recorded in the manifest, not computed from a
+# witness scale. The band ceilings above are the part that is genuinely derived, and they are
+# what the texture module must obey.
+
+# Emission is a CONDITIONAL role (playbook section 3: bioluminescence, instrument glow, hot
+# venting, energised equipment, emergency markings). A family with none of those must OMIT the
+# map, not ship a black one -- geology correctly omitted it. Gate on the MEASURED channel,
+# never on the family name, because within SmallProp and Fauna it varies per asset: the drill
+# ships emission only for its readout pane. Measured maxima in the generators' own channels:
+# coral G max 0.7305 (real organ, emission ships), kelp G exactly 0.0 and capstem G 0.0003
+# (no organ, omit).
+TEXTURE_EMISSION_REQUIRES_MEASURED_CHANNEL = True
+TEXTURE_EMISSION_MIN_MEASURED_CHANNEL_MAX = 0.02
+
+# Metallic is identically 0 on aragonite, kelp tissue, cap tissue and fish skin -- all
+# non-metallic dielectrics -- which trips the section 9 channel-independence gate. Those
+# families must carry an EXPLICIT manifest exemption rather than perturbing the channel to
+# satisfy a statistic, which would be falsifying data to pass a test. A fish's silver is
+# smoothness plus a thin-film guanine tint, NOT metallic; a metallic fish is precisely the
+# "impossible material truth" rejection in playbook section 6.
+TEXTURE_CONSTANT_METALLIC_REQUIRES_EXEMPTION = True
+
+
+# ---------------------------------------------------------------------------
 # Texture acceptance gate thresholds
 # ---------------------------------------------------------------------------
 # ``3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`` section 9 lists eleven gates in prose with
