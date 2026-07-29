@@ -24,12 +24,27 @@ Texture generation may be AI-assisted, compute-baked, or externally authored, bu
 
 Texture naming:
 
-- `TX_[Family]_[Variant]_Albedo`
-- `TX_[Family]_[Variant]_Normal`
-- `TX_[Family]_[Variant]_MRAO`
+- `TX_[Family]_[Variant]_BaseColor`
+- `TX_[Family]_[Variant]_NormalGL`
+- `TX_[Family]_[Variant]_MaskMap_UnityURP`
+- `TX_[Family]_[Variant]_ARM_AO_Rough_Metal`
+- `TX_[Family]_[Variant]_Height`
 - `TX_[Family]_[Variant]_Emission`
 - `TX_[Family]_[Variant]_Detail`
 - `TX_[Family]_[Variant]_Atlas`
+
+**AMENDED 2026-07-29 on measurement, by the lead.** The suffixes above replace
+`_Albedo` / `_Normal` / `_MRAO`, which are RETAINED HERE AS SUPERSEDED rather than deleted so the
+history of the decision is not lost. Basis: a census of the 703 `TX_*` files actually shipped under
+`Assets/_Project/Art/TEXTURES` returned **`_Albedo` 0 files and `_MRAO` 0 files**, against
+**`_BaseColor` 138, `_NormalGL` 138, `_MaskMap_UnityURP` 138**, with `_ARM_AO_Rough_Metal` and
+`_Height` completing a consistent five-map set at 2K. The document's literal suffixes therefore had
+**zero instances across a year of shipped art**, so the document was the thing that was wrong.
+`Tools/Blender/h8forge/law.py:499-500` already carried the shipped convention and flagged the
+conflict unresolved with "Flagged for the lead rather than resolved here"; this section resolves it.
+Note that `law.py` writes `TX_<Family>_<Set>_<Role>` while this section writes
+`TX_[Family]_[Variant]_[Role]` — `Set` and `Variant` are the same slot under two names, and neither
+spelling is a second convention.
 
 Material naming:
 
@@ -41,12 +56,33 @@ Every generated material must define its texture role paths in a manifest. Missi
 
 ## 3. PBR Channel Packing
 
-Default packed mask:
+Default packed mask, `_MaskMap_UnityURP`:
 
 - R = Metallic.
-- G = Roughness or smoothness according to shader contract. The manifest must state which one.
-- B = Ambient occlusion.
-- A = Emission, wetness, or family mask.
+- G = Ambient occlusion.
+- B = Unused.
+- A = Smoothness.
+
+**AMENDED 2026-07-29 on measurement, by the lead.** The previous packing read
+`R = Metallic / G = Roughness or smoothness according to shader contract / B = Ambient occlusion /
+A = Emission, wetness, or family mask`, and is RETAINED HERE AS SUPERSEDED rather than deleted.
+Basis: the 138 shipped `_MaskMap_UnityURP` files and **both** master shaders use Unity URP's
+packing, and the decode is bit-exact against `Hecton_ModuleHardSurfaceLit` (`_MaskMap` label at
+:71, decode at :349-353). So AO lives in **G**, not B, and smoothness in **A**, not G. B carries
+nothing. Requiring the manifest to state roughness-versus-smoothness is therefore moot for this
+map: A is smoothness by definition of the format.
+
+Two consequences that must not be lost:
+
+- **This is the PACKED TEXTURE mask only.** It says nothing about the VERTEX-COLOUR contract, which
+  is separate and unchanged: organic `R = sway amplitude, G = biolum mask/phase, B = baked AO,
+  A = family-specific`; hard surface `R = edge wear, G = oxidation, B = baked AO, A = emission/decal`
+  (`3dmodel.md:123-126`, `:132-137`). Baked AO sits in **B of the vertex stream** and in **G of the
+  packed texture**, and those two facts are both true. Conflating them is how a reader ends up
+  applying a harvest mask as occlusion.
+- `_ARM_AO_Rough_Metal` is a DIFFERENT layout that also ships (R = AO, G = roughness, B = metal) and
+  is NOT interchangeable with `_MaskMap_UnityURP`. Binding it where the URP mask is expected puts AO
+  in the metallic slot. Pick by suffix, never by assumption.
 
 Normal maps use BC5 on Standalone where possible. Albedo and packed masks use BC7 on Standalone, ASTC 6x6 on mobile/XR targets where required by platform. Albedo is sRGB. Normal and mask textures are linear.
 

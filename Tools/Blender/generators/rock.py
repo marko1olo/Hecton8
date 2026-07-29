@@ -1113,8 +1113,14 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
         "baseWavelengthM": round(grain_wavelength, 5),
         "finestOctaveWavelengthM": round(finest_grain, 5),
         "finestOctaveSamplesPerWavelength": round(finest_grain / coarsest_spacing, 3),
-        "pitWavelengthM": round(pit_wavelength, 5),
-        "pitSamplesPerWavelength": round(pit_wavelength / coarsest_spacing, 3),
+        "pitWitnessWavelengthM": WITNESS_PIT_WAVELENGTH_M,
+        "pitSamplesPerWavelength": round(WITNESS_PIT_WAVELENGTH_M / coarsest_spacing, 3),
+        "pitInMesh": bool(pit_representable),
+        "pitRoute": ("mesh displacement" if pit_representable else
+                     "OMITTED from the mesh: under-sampled at this lattice spacing, so it "
+                     "would arrive as per-vertex noise rather than as pits. Mesh-scale "
+                     "cavities still come from punch_vugs; the 0.052 m witness is a "
+                     "material/normal-map scale on this size class."),
         "amplitudeM": round(grain_amp, 5),
         "amplitudeOverWavelength": round(grain_amp / max(1e-9, grain_wavelength), 4),
         "foldLimitSlope": round(1.0 / (2.0 * math.pi), 4),
@@ -1398,6 +1404,11 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
     pit_mask = np.clip((pit_values - pit_threshold) / max(1e-6, 1.0 - pit_threshold), 0.0, 1.0)
     pit_mask = pit_mask * pit_mask * (3.0 - 2.0 * pit_mask)
     pit_depth = WITNESS_PIT_DEPTH_M * (0.55 + 0.45 * q) * (1.6 if process == "basalt" else 1.0)
+    if not pit_representable:
+        # Under-sampled by 1.4x-4.7x depending on size class, so what reached the mesh was not
+        # pitting but per-vertex noise wearing a pit's name -- the second half of the masonry.
+        # Dropped rather than stretched; see `pit_field_is_representable`.
+        pit_depth = 0.0
     offsets = offsets - pit_mask * pit_depth
 
     for i, vert in enumerate(all_verts):

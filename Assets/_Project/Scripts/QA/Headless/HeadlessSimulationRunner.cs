@@ -1891,12 +1891,23 @@ namespace Hecton8.QA.Headless
 
                 _stream.Write(_buffer, 0, _cursor);
 
-                // Reaching the FileStream is not the same as reaching the disk. Without this the CSV header
-                // and every day row sit in the stream's internal buffer until the writer is disposed, so a
-                // run that is killed - or that dies in a quit path - loses all of its evidence. One 45-minute
-                // run left this file existing at zero bytes for exactly that reason, and the allocation
-                // counts live ONLY in this CSV, not in the result JSON.
-                _stream.Flush();
+                // Flush(true), not Flush(), and the difference is two claims the old comment conflated.
+                //
+                // Flush() moves the managed buffer into the OS file cache, which is ALREADY enough to survive
+                // the process being killed - the kernel still holds the bytes. So "a run that is killed loses
+                // all of its evidence" was wrong. What Flush() does NOT do is call FlushFileBuffers, so
+                // (a) a machine crash or power loss between day rows loses them, and (b) Windows does not
+                // update the visible directory-entry SIZE while this handle is open. (b) is the one that
+                // actually cost time: a zero-byte CSV read mid-run was taken as proof that no days had
+                // completed, when days had completed and the size simply was not visible yet. Flush(true)
+                // closes both.
+                //
+                // Affordable purely because of cadence, which is also why this is not a hot-path violation:
+                // Flush() is reached from TryWriteDailyCsv, called once per SIMULATED DAY - roughly 100
+                // fsyncs across the 100-day default, not one per frame. Worth it, because these allocation
+                // counts exist ONLY in this CSV and in no other artifact, so a lost row is a lost
+                // measurement rather than a lost copy.
+                _stream.Flush(true);
                 _cursor = 0;
                 return true;
             }
