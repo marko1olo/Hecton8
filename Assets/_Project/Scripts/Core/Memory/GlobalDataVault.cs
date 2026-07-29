@@ -6336,6 +6336,49 @@ namespace Hecton8.Core.Memory
             _blocks.RemoveAt(last);
         }
 
+        /// <summary>
+        /// Re-points every occupied block's metadata at its current index and offset after <c>_blocks</c>
+        /// has shifted, and refreshes the resolved base pointer to match.
+        ///
+        /// THIS MUST NOT TOUCH meta.Version, and doing so silently invalidated almost every outstanding
+        /// handle in the project. VaultBufferMeta.Version and VaultArenaBlock.Version are two unrelated
+        /// counters that this method used to conflate:
+        ///   - VaultBufferMeta.Version is the buffer GENERATION that handle validation compares a caller's
+        ///     cached handle against. There are seven such sites: :1630, :1670, :1710, :1850, :1914, :2049
+        ///     and :2435, all of the form `if (handle.Generation != meta.Version) return false;`.
+        ///   - VaultArenaBlock.Version is a block-mutation counter bumped on every split and coalesce.
+        /// They are unequal BY CONSTRUCTION: a first-time key gets meta.Version =
+        /// ResolveInitialGenerationForAllocation(key) = 1 (:1413) while its block was already bumped to >= 2
+        /// inside TryAllocateBlockLocked (:6107, :6126).
+        ///
+        /// This method is reached from TryInsertBlockAfter (:6317), which TryAllocateBlockLocked calls on
+        /// every allocation that splits a free block (:6147) - which is essentially every allocation. So the
+        /// stamp produced this invariant: after N sequential allocations ONLY the most recently allocated
+        /// buffer's outstanding handle still resolved, and every earlier handle was stale while its payload
+        /// sat intact and unmoved.
+        ///
+        /// Measured consequence, from a real headless run: PlayerInventory binds 49 vault lanes in one &amp;&amp;
+        /// chain, so each bind invalidated all its predecessors. The bind chain returned TRUE while only the
+        /// last-bound lane was resolvable. CanServiceItemAdds() then read _stackCounts (ordinal 1, staled 47
+        /// allocations earlier), found it unresolvable, and returned false - so every TryAddItem returned
+        /// false, loot could not be queued, ResourceNode.TakeDamage:1199-1203 rolled the depletion back, and
+        /// 12 authored quests reported 0 completions. One wrong assignment here blocked tools, resources and
+        /// quests simultaneously and presented as three unrelated bugs.
+        ///
+        /// Dropping the stamp is safe rather than merely less wrong: a handle carries a generation, not an
+        /// offset, and the resolved base pointer is recomputed from block.OffsetBytes in this same loop. So
+        /// preserving the generation while refreshing the pointer leaves the handle valid AND pointing at the
+        /// correct memory. The generation exists to detect reallocation and free - which have their own
+        /// explicit paths, ResolveInitialGenerationForAllocation (:1413) and NextGeneration (:2447) - not to
+        /// signal an index fixup.
+        ///
+        /// NOT CHANGED HERE, deliberately: five other sites also assign a block version into meta.Version
+        /// (:5106, :5153, :5168, :5236, :5858). Those sit on defrag and move paths where invalidating a
+        /// handle may well be CORRECT, because a relocated payload should reject stale readers - but if so
+        /// the right mechanism is NextGeneration, not a block-mutation counter that can collide or skip
+        /// arbitrarily. Each needs its own move-versus-index analysis and they are queued rather than swept
+        /// in with this one.
+        /// </summary>
         private void RebuildMetadataBlockIndices()
         {
             for (int i = 0; i < _blocks.Length; i++)
@@ -6349,7 +6392,6 @@ namespace Hecton8.Core.Memory
 
                 meta.BlockIndex = i;
                 meta.OffsetBytes = block.OffsetBytes;
-                meta.Version = block.Version;
                 WriteMetadata(block.BufferKey, in meta);
                 _buffers[block.BufferKey] = (IntPtr)((byte*)_arenaBase + block.OffsetBytes);
             }

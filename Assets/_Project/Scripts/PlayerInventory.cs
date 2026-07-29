@@ -751,6 +751,11 @@ namespace Hecton8.Inventory
         private int _vaultBufferBase;
         private ulong _salinityCorrosionMutationGuardMask;
 
+        // Guards ClearPlayerInventoryVaultBuffersCold against wiping a populated inventory on a re-arm.
+        // Set only after a completed bind-and-clear; cleared by ReleasePlayerInventoryVaultBuffers.
+        private bool _vaultBuffersInitialized;
+        private int _boundVaultCellCount;
+
         private const SystemID PlayerInventoryVaultOwner = SystemID.GameplayPlayer;
         private const int PlayerInventoryVaultBufferBase = 410000;
         private const int PlayerInventoryVaultBufferStride = 64;
@@ -933,6 +938,104 @@ namespace Hecton8.Inventory
                        Handle.Generation != 0u &&
                        _expectedLength > 0;
             }
+
+            /// <summary>
+            /// COLD. Re-reads this lane's generation descriptor from the vault for the SAME buffer id,
+            /// owner and length it was bound with, and keeps the new descriptor only if it resolves.
+            /// Allocates nothing and grows nothing - <c>TryGetGenerationHandle</c> is the read-only
+            /// counterpart of <c>EnsureGenerationHandle</c>.
+            ///
+            /// WHY THIS EXISTS. <see cref="Bind"/> caches <c>Handle.Generation</c> once and every later
+            /// read compares that cached value against the vault's current <c>meta.Version</c>. The vault
+            /// re-stamps <c>meta.Version</c> for EVERY live buffer whenever a new allocation splits an
+            /// arena free block (<c>GlobalDataVault.RebuildMetadataBlockIndices</c> assigns
+            /// <c>meta.Version = block.Version</c> for every occupied block), so a cached descriptor goes
+            /// stale for reasons that have nothing to do with this lane and without the payload moving.
+            /// Every other vault consumer in this project (CraftingSystem, the cognition vaults, the
+            /// fluid engine) therefore re-reads the descriptor at point of use and caches nothing;
+            /// PlayerInventory was the outlier that cached and never re-read, which is why binding 49
+            /// lanes in one chain left only the last one resolvable.
+            ///
+            /// This is NOT a relaxation of any guard: identity is still checked (same buffer id, same
+            /// owner, non-zero generation), the vault still enforces stride/alignment/type-hash inside
+            /// <c>TryGetGenerationHandle</c>, the length floor is still enforced, and the previous
+            /// descriptor is restored on any refusal so a failed refresh cannot leave the lane pointing
+            /// at something it did not own.
+            /// </summary>
+            public bool TryRefreshHandle()
+            {
+                IDataVault vault = _vault;
+                if (vault == null ||
+                    _expectedLength <= 0 ||
+                    _owner == SystemID.Unknown ||
+                    _expectedBufferId == BufferID.Unknown)
+                {
+                    return false;
+                }
+
+                // Swapping the descriptor while a write lock is outstanding would orphan that lock:
+                // ReleaseWriteLock passes the CURRENT handle back to the vault.
+                if (_writeLockVault != null)
+                    return ValidateDescriptor() &&
+                           TryReadOnly(out NativeArray<T>.ReadOnly lockedBuffer) &&
+                           lockedBuffer.Length >= _expectedLength;
+
+                if (!vault.TryGetGenerationHandle(_expectedBufferId, out VaultGenerationHandle<T> refreshed))
+                    return false;
+
+                if (refreshed.BufferID != (uint)_expectedBufferId ||
+                    refreshed.SystemID != (uint)_owner ||
+                    refreshed.Generation == 0u)
+                {
+                    return false;
+                }
+
+                VaultGenerationHandle<T> previous = Handle;
+                Handle = refreshed;
+                if (TryReadOnly(out NativeArray<T>.ReadOnly buffer) && buffer.Length >= _expectedLength)
+                    return true;
+
+                Handle = previous;
+                return false;
+            }
+
+            /// <summary>COLD diagnostics: the buffer id this lane was bound with, as a number.</summary>
+            public uint ExpectedBufferIdValue => (uint)_expectedBufferId;
+
+            /// <summary>COLD diagnostics: the element count this lane was bound with.</summary>
+            public int ExpectedLength => _expectedLength;
+
+            /// <summary>COLD diagnostics: whether the cached descriptor still passes identity checks.</summary>
+            public bool DescriptorValid => ValidateDescriptor();
+
+            /// <summary>
+            /// COLD diagnostics only. The generation the vault reports for this lane's buffer id RIGHT
+            /// NOW, read fresh so a stale cached generation cannot mask it. Zero means the vault will
+            /// not hand out a descriptor for that id at all (never allocated, released, fenced, or a
+            /// stride/type mismatch).
+            /// </summary>
+            public uint ProbeVaultGenerationCold()
+            {
+                IDataVault vault = _vault;
+                if (vault == null || !vault.TryGetGenerationHandle(_expectedBufferId, out VaultGenerationHandle<T> current))
+                    return 0u;
+
+                return current.Generation;
+            }
+
+            /// <summary>
+            /// COLD diagnostics only. The element count the vault reports for this lane's buffer id RIGHT
+            /// NOW, resolved through a freshly read descriptor. -1 means the vault cannot resolve the
+            /// buffer at all, which distinguishes "wrong length" from "not there".
+            /// </summary>
+            public int ProbeVaultLengthCold()
+            {
+                IDataVault vault = _vault;
+                if (vault == null || !vault.TryGetGenerationHandle(_expectedBufferId, out VaultGenerationHandle<T> current))
+                    return -1;
+
+                return vault.TryReadOnlyHandle(in current, out NativeArray<T>.ReadOnly buffer) ? buffer.Length : -1;
+            }
         }
 
         private BufferID ResolvePlayerInventoryVaultBufferId(int ordinal)
@@ -1043,6 +1146,15 @@ namespace Hecton8.Inventory
             }
             else
             {
+                // MANDATORY, not a tidy-up. Every BindVaultLane call above allocates a vault buffer, and a
+                // vault allocation that splits an arena free block re-stamps meta.Version for every buffer
+                // already live (GlobalDataVault.RebuildMetadataBlockIndices writes
+                // meta.Version = block.Version for each occupied block). The descriptor each lane cached at
+                // its own Bind is therefore stale the moment the NEXT lane binds, so by the time this chain
+                // returns true only the last lane bound is still resolvable - every earlier one reads
+                // IsCreated == false and Length == 0 even though its payload is intact and untouched.
+                // Re-reading all 49 descriptors once here is what makes the chain's success mean anything.
+                RefreshPlayerInventoryVaultHandlesCold();
                 _salinityCorrosionMutationGuardMask = BuildSalinityCorrosionMutationGuardMask();
             }
 
@@ -1109,6 +1221,80 @@ namespace Hecton8.Inventory
             _defragUnitVolumeM3.RebindVault(vault);
             _defragUnitRadiationSv.RebindVault(vault);
             _defragResult.RebindVault(vault);
+
+            // NO refresh sweep here on purpose. RebindVault only re-points each lane at the new IDataVault,
+            // so every cached generation is now meaningless (it came from the OLD vault's metadata) and a
+            // sweep IS required - but the only caller, OnGlobalRegistryServiceReplaced's DataVault case,
+            // runs TryBindSoaQueryVault straight afterwards, and those allocations would immediately re-stale
+            // anything refreshed here. The sweep therefore lives at the end of that case, after the last
+            // allocation. If you add a second caller, give it the same treatment.
+        }
+
+        /// <summary>
+        /// COLD. Re-reads the vault generation descriptor of every lane this component owns, for the same
+        /// buffer id / owner / length each was bound with. Allocates nothing, grows nothing, moves nothing,
+        /// and cannot retarget a lane at a buffer it does not own - see
+        /// <c>InventoryVaultLane{T}.TryRefreshHandle</c>.
+        ///
+        /// Return value is deliberately void: a lane that cannot be refreshed is left exactly as it was and
+        /// is caught downstream by the fail-closed checks (<see cref="AllocateSalinityCorrosionScratchCold"/>,
+        /// <see cref="CanServiceItemAdds"/>). This method must never be the thing that decides storage is
+        /// healthy - it only removes staleness as an explanation for a refusal.
+        ///
+        /// Ordering matters: call it AFTER the last allocation in a batch, never between allocations, or the
+        /// next allocation invalidates what it just repaired.
+        /// </summary>
+        private void RefreshPlayerInventoryVaultHandlesCold()
+        {
+            _itemHashes.TryRefreshHandle();
+            _stackCounts.TryRefreshHandle();
+            _itemCondition.TryRefreshHandle();
+            _itemDurability.TryRefreshHandle();
+            _craftLockedCounts.TryRefreshHandle();
+            _anchorStateFlags.TryRefreshHandle();
+            _itemStateFlags.TryRefreshHandle();
+            _itemGenetics.TryRefreshHandle();
+            _qualityMilli.TryRefreshHandle();
+            _durabilities.TryRefreshHandle();
+            _lastUpdateUnixSeconds.TryRefreshHandle();
+            _scavengeSimStackCounts.TryRefreshHandle();
+            _simulationOccupiedCells.TryRefreshHandle();
+            _anchorUnitMassKg.TryRefreshHandle();
+            _anchorUnitVolumeM3.TryRefreshHandle();
+            _anchorUnitRadiationSv.TryRefreshHandle();
+            _derivedMassVolumeScratch.TryRefreshHandle();
+            _radioactiveConversionAnchors.TryRefreshHandle();
+            _radioactiveHalfLifeCounters.TryRefreshHandle();
+            _thermalRunawayByAnchor.TryRefreshHandle();
+            _thermalRunawayPairs.TryRefreshHandle();
+            _thermalRunawayCounters.TryRefreshHandle();
+            _inventoryShadowBuffer.TryRefreshHandle();
+            _inventoryBlackBox.TryRefreshHandle();
+            _salinityCorrosionJobResult.TryRefreshHandle();
+            _salinityBrokenItemHashes.TryRefreshHandle();
+            _salinityCorrosionBlackBox.TryRefreshHandle();
+            _salinityChangedSlotsScratch.TryRefreshHandle();
+            _salinityNextDurabilityScratch.TryRefreshHandle();
+            _salinityNextDurabilityBytesScratch.TryRefreshHandle();
+            _salinityNextQualityMilliScratch.TryRefreshHandle();
+            _salinityNextStateFlagsScratch.TryRefreshHandle();
+            _defragItemHashes.TryRefreshHandle();
+            _defragItemCounts.TryRefreshHandle();
+            _defragCategories.TryRefreshHandle();
+            _defragMaxStacks.TryRefreshHandle();
+            _defragRarities.TryRefreshHandle();
+            _defragWidths.TryRefreshHandle();
+            _defragHeights.TryRefreshHandle();
+            _defragFlags.TryRefreshHandle();
+            _defragStateFlags.TryRefreshHandle();
+            _defragGenetics.TryRefreshHandle();
+            _defragQualityMilli.TryRefreshHandle();
+            _defragDurabilities.TryRefreshHandle();
+            _defragLastUpdateUnixSeconds.TryRefreshHandle();
+            _defragUnitMassKg.TryRefreshHandle();
+            _defragUnitVolumeM3.TryRefreshHandle();
+            _defragUnitRadiationSv.TryRefreshHandle();
+            _defragResult.TryRefreshHandle();
         }
 
         private void ClearPlayerInventoryVaultBuffersCold()
@@ -1167,6 +1353,9 @@ namespace Hecton8.Inventory
         private void ReleasePlayerInventoryVaultBuffers()
         {
             _salinityCorrosionMutationGuardMask = 0UL;
+            // Released lanes come back as UninitializedMemory on the next bind, so the next bind MUST clear.
+            _vaultBuffersInitialized = false;
+            _boundVaultCellCount = 0;
             _itemHashes.Release();
             _stackCounts.Release();
             _itemCondition.Release();
@@ -1218,23 +1407,101 @@ namespace Hecton8.Inventory
             _defragResult.Release();
         }
 
+        /// <summary>
+        /// The per-lane verdict from the last <see cref="AllocateSalinityCorrosionScratchCold"/> run, or
+        /// null when it passed. Cold-only, read by <see cref="AnnounceRuntimeStorageFailureOnce"/>.
+        /// </summary>
+        private string _salinityScratchFailureDetail;
+
+        /// <summary>
+        /// COLD. Validates the salinity-corrosion scratch lanes and, on refusal, names WHICH assertion
+        /// failed with expected-vs-actual numbers.
+        ///
+        /// The name is historical: this method allocates nothing. Every lane it checks was already
+        /// created by <see cref="BindPlayerInventoryVaultBuffers"/>; this is the fail-closed re-read that
+        /// stands between a bad layout and 48 cells of vault corruption, and it stays fail-closed. It is
+        /// deliberately the FIRST thing to re-read the lanes after the bind chain, which makes it the
+        /// messenger for any staleness that hit the earlier lanes too - do not read a refusal here as
+        /// "the salinity lanes specifically are broken" without checking the numbers it now prints.
+        ///
+        /// One handle refresh is attempted per failing lane before the refusal is recorded. That is not a
+        /// weakening: a stale generation descriptor is a cached-identity problem, not a layout problem,
+        /// the payload has not moved, and the same assertions must still pass afterwards or the lane is
+        /// still reported. See <c>InventoryVaultLane{T}.TryRefreshHandle</c> for why a descriptor bound
+        /// in this method's own call chain can already be stale by the time it is read.
+        ///
+        /// Naming the numbers is the point. A previous version of this guard returned one bare bool for
+        /// fifteen conjuncts, so a refusal named the step and nothing else, and three separate theories
+        /// about the cause (DTO layout drift, vault init order, grid allocation) each had to be disproved
+        /// by other means before the real one could be reached. Do not collapse this back into a single
+        /// boolean expression.
+        /// </summary>
         private bool AllocateSalinityCorrosionScratchCold(int cellCount)
         {
-            return cellCount > 0 &&
-                   _salinityCorrosionJobResult.IsCreated &&
-                   _salinityCorrosionJobResult.Length >= InventoryCorrosionConstants.ResultRequiredLength &&
-                   _salinityBrokenItemHashes.IsCreated &&
-                   _salinityBrokenItemHashes.Length >= cellCount &&
-                   _salinityChangedSlotsScratch.IsCreated &&
-                   _salinityChangedSlotsScratch.Length >= cellCount &&
-                   _salinityNextDurabilityScratch.IsCreated &&
-                   _salinityNextDurabilityScratch.Length >= cellCount &&
-                   _salinityNextDurabilityBytesScratch.IsCreated &&
-                   _salinityNextDurabilityBytesScratch.Length >= cellCount &&
-                   _salinityNextQualityMilliScratch.IsCreated &&
-                   _salinityNextQualityMilliScratch.Length >= cellCount &&
-                   _salinityNextStateFlagsScratch.IsCreated &&
-                   _salinityNextStateFlagsScratch.Length >= cellCount;
+            _salinityScratchFailureDetail = null;
+            if (cellCount <= 0)
+            {
+                _salinityScratchFailureDetail = "cellCount=" + cellCount.ToString() +
+                                                " expected>0 (columns*rows); no lane was checked";
+                return false;
+            }
+
+            int failures = 0;
+            int resultLength = InventoryCorrosionConstants.ResultRequiredLength;
+            failures += ValidateSalinityScratchLaneCold(ref _salinityCorrosionJobResult, "jobResult<int>[ord29]", resultLength) ? 0 : 1;
+            failures += ValidateSalinityScratchLaneCold(ref _salinityBrokenItemHashes, "brokenItemHashes<uint>[ord30]", cellCount) ? 0 : 1;
+            failures += ValidateSalinityScratchLaneCold(ref _salinityChangedSlotsScratch, "changedSlots<int>[ord49]", cellCount) ? 0 : 1;
+            failures += ValidateSalinityScratchLaneCold(ref _salinityNextDurabilityScratch, "nextDurability<float>[ord50]", cellCount) ? 0 : 1;
+            failures += ValidateSalinityScratchLaneCold(ref _salinityNextDurabilityBytesScratch, "nextDurabilityBytes<byte>[ord51]", cellCount) ? 0 : 1;
+            failures += ValidateSalinityScratchLaneCold(ref _salinityNextQualityMilliScratch, "nextQualityMilli<ushort>[ord52]", cellCount) ? 0 : 1;
+            failures += ValidateSalinityScratchLaneCold(ref _salinityNextStateFlagsScratch, "nextStateFlags<ushort>[ord53]", cellCount) ? 0 : 1;
+
+            if (failures == 0)
+                return true;
+
+            // 7 of 7 failing is a different diagnosis from 1 of 7: the first says the whole bind went
+            // stale or the vault is refusing this owner wholesale, the second says one lane's length or
+            // ordinal is wrong. Lead with the count so the reader does not have to infer it.
+            _salinityScratchFailureDetail = failures.ToString() + " of 7 lanes refused; cellCount=" +
+                                            cellCount.ToString() + " vaultBufferBase=" +
+                                            _vaultBufferBase.ToString() + "; " +
+                                            _salinityScratchFailureDetail;
+            return false;
+        }
+
+        /// <summary>
+        /// COLD. One lane's half of <see cref="AllocateSalinityCorrosionScratchCold"/>: the same
+        /// <c>IsCreated</c> + length-floor assertions as before, one refresh attempt, then a numbered
+        /// verdict appended to <see cref="_salinityScratchFailureDetail"/> on refusal.
+        /// </summary>
+        private bool ValidateSalinityScratchLaneCold<T>(
+            ref InventoryVaultLane<T> lane,
+            string laneName,
+            int requiredLength) where T : struct
+        {
+            if (lane.IsCreated && lane.Length >= requiredLength)
+                return true;
+
+            if (lane.TryRefreshHandle() && lane.IsCreated && lane.Length >= requiredLength)
+                return true;
+
+            string detail =
+                laneName +
+                " bufferId=" + lane.ExpectedBufferIdValue.ToString() +
+                " requiredLength=" + requiredLength.ToString() +
+                " boundLength=" + lane.ExpectedLength.ToString() +
+                " readableLength=" + lane.Length.ToString() +
+                " isCreated=" + (lane.IsCreated ? "yes" : "no") +
+                " descriptorValid=" + (lane.DescriptorValid ? "yes" : "no") +
+                " cachedGeneration=" + lane.Generation.ToString() +
+                " vaultGenerationNow=" + lane.ProbeVaultGenerationCold().ToString() +
+                " vaultLengthNow=" + lane.ProbeVaultLengthCold().ToString() +
+                " strideBytes=" + UnsafeUtility.SizeOf<T>().ToString();
+
+            _salinityScratchFailureDetail = _salinityScratchFailureDetail == null
+                ? detail
+                : _salinityScratchFailureDetail + " | " + detail;
+            return false;
         }
 
         private void ReleaseSalinityCorrosionScratchCold()
@@ -1515,6 +1782,12 @@ namespace Hecton8.Inventory
                     _cachedDataVault = currentService as IDataVault;
                     RebindPlayerInventoryVaultReferences(_cachedDataVault);
                     TryBindSoaQueryVault(_cachedDataVault, columns * rows);
+                    // AFTER the last allocation in this case, not before it: TryBindSoaQueryVault above
+                    // allocates vault buffers, and every vault allocation that splits an arena free block
+                    // re-stamps meta.Version for all live buffers, staling the 49 descriptors the rebind just
+                    // re-pointed. PublishSoaQueryVaultSnapshotOwnerPhase reads through those lanes, so the
+                    // sweep has to land between the two.
+                    RefreshPlayerInventoryVaultHandlesCold();
                     PublishSoaQueryVaultSnapshotOwnerPhase();
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
@@ -2182,6 +2455,18 @@ namespace Hecton8.Inventory
         /// to false and later back to true with no callback firing anywhere, so the only honest way to know
         /// is to ask at the moment of use.
         /// </summary>
+        /// <remarks>
+        /// KNOWN RESIDUAL - do not "fix" this with a partial refresh. The three IsCreated checks below can
+        /// go false long after a successful bind, because ANY other system allocating a vault buffer splits
+        /// an arena free block and re-stamps meta.Version for every live buffer
+        /// (GlobalDataVault.RebuildMetadataBlockIndices), staling all 49 of this component's cached
+        /// descriptors at once. Refreshing only these three lanes here would make this method return true
+        /// while the other 46 stay stale, and a write through a stale lane silently no-ops
+        /// (InventoryVaultLane's indexer setter returns early when TryAcquireWriteLock refuses) - so
+        /// TryAddItem would write the hash and drop the stack count, which is worse than refusing.
+        /// Recovery must stay all-or-nothing: whoever notices the refusal calls
+        /// <see cref="TryRecoverRuntimeStorageCold"/>, which re-arms every lane together.
+        /// </remarks>
         internal bool CanServiceItemAdds()
         {
             return enabled &&
@@ -2272,11 +2557,30 @@ namespace Hecton8.Inventory
             if (!AllocateSalinityCorrosionScratchCold(cellCount))
             {
                 ReleasePlayerInventoryVaultBuffers();
-                AnnounceRuntimeStorageFailureOnce("salinity-corrosion scratch validation");
+                AnnounceRuntimeStorageFailureOnce(
+                    _salinityScratchFailureDetail == null
+                        ? "salinity-corrosion scratch validation"
+                        : "salinity-corrosion scratch validation [" + _salinityScratchFailureDetail + "]");
                 return false;
             }
 
-            ClearPlayerInventoryVaultBuffersCold();
+            // DO NOT make this unconditional again. The lanes are bound with
+            // NativeArrayOptions.UninitializedMemory, so a FIRST bind must clear or the grid reads garbage
+            // item hashes and stack counts. But this method is also the re-arm path for
+            // TryRecoverRuntimeStorageCold, and a re-bind of buffers that already hold live data returns the
+            // SAME pointers untouched (GlobalDataVault hands back the existing block whenever
+            // existingMeta.Length >= requiredLength). Clearing on that path silently empties a populated
+            // inventory with no log line and no save event - the player's items just cease to exist. So the
+            // clear is skipped only when this component has itself already completed a bind-and-clear at this
+            // exact cell count and has not released the lanes since; a release, a first bind, or a grid resize
+            // all still clear.
+            if (!_vaultBuffersInitialized || _boundVaultCellCount != cellCount)
+            {
+                ClearPlayerInventoryVaultBuffersCold();
+                _vaultBuffersInitialized = true;
+                _boundVaultCellCount = cellCount;
+            }
+
             RegisterNativeMemorySentinel();
             if (_sortBuffer == null || _sortBuffer.Length != cellCount)
                 _sortBuffer = new ItemPlacement[cellCount];
@@ -2290,6 +2594,18 @@ namespace Hecton8.Inventory
             if (_pendingInventoryCommands == null)
                 _pendingInventoryCommands = new PendingInventoryCommand[PendingInventoryCommandSignalCapacity];
             InitializeSoaQueryEngine(cellCount);
+
+            // LAST STATEMENT ON PURPOSE - do not move this up and do not drop it as a duplicate of the sweep
+            // inside BindPlayerInventoryVaultBuffers. That earlier sweep exists so the fail-closed scratch
+            // guard and the clear above see live lanes; this one exists because InitializeSoaQueryEngine calls
+            // SoaInventoryQueryEngine.EnsureVaultBuffers, which allocates FURTHER vault buffers and therefore
+            // re-stales all 49 descriptors that the earlier sweep just repaired. Without this second sweep the
+            // scratch guard passes, this method returns true, and CanServiceItemAdds still reports false at the
+            // first add - storage that reports itself healthy and refuses every item, which is the exact
+            // failure mode this whole path is supposed to make impossible.
+            //
+            // Anything added below this line that touches the vault needs the sweep moved after it.
+            RefreshPlayerInventoryVaultHandlesCold();
             return true;
         }
 
