@@ -39,7 +39,7 @@ The practical question is not "can this thing be killed?" The practical question
 
 ## 4. Armor, Tools And Bad Confidence
 
-Deep water makes animal bodies hard without making them cinematic.
+Pressure armour stops tools it was never shaped against.
 
 Plates, cartilage, mineralized shell and thick pressure tissue are survival hardware. They are not invitations to duel. A harpoon can glance. A cutter can burn enough to make a predator release, then fill the water with heat, metal taste and vibration. A charge that saves one doorway can advertise the next three. The tool that feels like a weapon is often a louder version of the bait.
 
@@ -61,7 +61,7 @@ If a standard sonar screen draws a clean icon for a leviathan-class contact, the
 
 Biology moves evidence.
 
-A body tag can travel in a cleaner's gut. A recorder can be polished free of the blood that proved who held it. A wall plate can grow shell sealant over the stamp the room needs. A carrion bloom can make a sealed route look occupied. A tagged animal can carry an Atlas sensor through a passage no drone can enter. A predator can drag a payload into a claim category that Keelmark prefers: unrecoverable, contaminated, disputed.
+A body tag travels in a cleaner's gut and leaves the animal two rooms from the worker it names. Shell sealant closes over a wall stamp before the room needs it read, and a carrion bloom makes a sealed route read occupied. Tagged animals carry Atlas sensors into passages no drone fits. Keelmark form KM-CC-12 ends a payout on three words: unrecoverable, contaminated, disputed. A predator dragging a payload into a bloom satisfies all three before any office decides.
 
 This is why biological risk is also legal risk. A ruined room does not only threaten the diver. It threatens chain of custody. It changes what can be proved, what can be priced, what can be denied, and what Black Keel is willing to lift through an orbital window.
 

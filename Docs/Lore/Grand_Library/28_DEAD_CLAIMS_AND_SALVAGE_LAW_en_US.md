@@ -49,7 +49,7 @@ The marks are rude because polite language already failed. A flooded workroom do
 
 Marauder work is not clean redemption. It is theft performed inside a licensed wound.
 
-The player steals because the system recognizes stolen objects before it recognizes abandoned people. A cut-open cabinet can prove a safety lock was never wired to open. A recovered badge can restore a worker to a list that converted them into unresolved load. A sample can buy oxygen and still carry the signature that makes Recovery Compliance nervous. A route packet can be valuable because it pays the lien, or dangerous because it proves why the lien existed.
+Marauders steal because the system recognizes a stolen object faster than an abandoned person. A cut-open cabinet can prove a safety lock was never wired to open, and a recovered badge lifts a worker off the unresolved-load line. Samples buy oxygen and carry the signature that makes Recovery Compliance reopen a closed file. A route packet pays the lien and proves why the lien existed, and which fact the desk reads first depends on custody.
 
 That is the hard moral texture of HECTON-8. The ocean is not only a monster. It is also the last archive. The law is not only an enemy. It is also the tool that can make a wet truth survive past the next window.
 

@@ -74,15 +74,15 @@ Black Keel crews understand this better than anyone on HECTON-8. They sit close 
 
 Every serious colony system therefore grows its own rescue doctrine, and every doctrine becomes uglier than the brochure.
 
-On HECTON-8, rescue means pressure doors that still cycle. It means a wet printer that can make a gasket from spoiled feedstock. It means Atlas finding enough intact routing to tell a pump from a coffin. It means a Class-IV suit keeping one body warm while the surrounding station forgets how to be a station. It means a salvage tender with authority to record your death, not prevent it.
+On HECTON-8, rescue means pressure doors that still cycle. It means a wet printer that can make a gasket from spoiled feedstock. It means Atlas finding enough intact routing to tell a pump from a coffin. It means a Class-IV suit holding its rated seal while the station around it forgets how to be one. It means a salvage tender with authority to record your death, not prevent it.
 
 The Marauder learns this quickly. The ocean is not isolated because everyone outside it is ignorant. It is isolated because the correct answer to most emergencies cannot arrive in the same lifetime as the scream.
 
-So the playable world is full of local answers: jury-rigged buoys, dead relays, cached suit patches, route witness tags, battery rafts, pressure maps, blackbox fragments, sealed cargo that still thinks it is in transit. These are not decorations. They are the civilization's failed promises made physical.
+So the water is full of local answers: jury-rigged buoys, dead relays, cached suit patches, route witness tags, battery rafts, pressure maps, blackbox fragments, sealed cargo that still thinks it is in transit. Every one of them was somebody's substitute for a ship that never came.
 
 ## 7. What The Wreckage Says
 
-A player can read interstellar logistics without ever opening a textbook.
+Interstellar logistics can be read off the wreckage without opening a textbook.
 
 Look for ablated forward-plate flakes in old cargo bays. Look for receiver-shutter ceramics bolted into machinery that was never meant to fly again. Look for pellet-catcher scars on fragments traded as lucky charms by people who do not believe in luck. Look for Xenon-Omega components under custody seal, always documented more carefully than the people handling them. Look for cryo crate numbers scratched into bunks because someone woke early and wanted proof that the years had really happened.
 

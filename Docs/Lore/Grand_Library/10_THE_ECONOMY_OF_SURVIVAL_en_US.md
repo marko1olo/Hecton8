@@ -67,7 +67,7 @@ The formal economy is only half the economy.
 
 The other half moves through favors, grudges, quiet warnings and badly folded notes passed where cameras have blind spots. A scrubber slot can buy a route rumor. A recovered family token can buy silence from a handler who knows better than to ask why it mattered. A clean pressure log can make a compliance clerk delay a deduction. A dead relay can become a listening post for anyone willing to share the risk.
 
-Marauders barter because the official system is too slow to care and too fast to bill. They trade not only goods, but exposure. "I saw your tag near that door." "Your suit was late on the recovery rail." "This beacon still answers to Atlas, not Keelmark." On HECTON-8, information is valuable when it changes the price of a future mistake.
+Marauders barter because the official system is too slow to care and too fast to bill. The commodity that moves fastest is exposure. "I saw your tag near that door." "Your suit was late on the recovery rail." "This beacon still answers to Atlas, not Keelmark." On HECTON-8, information is valuable when it changes the price of a future mistake.
 
 This market is not noble. It is full of lies, desperate bargains and small betrayals. But it is also one of the few places where human memory can outrun automated accounting for a while.
 

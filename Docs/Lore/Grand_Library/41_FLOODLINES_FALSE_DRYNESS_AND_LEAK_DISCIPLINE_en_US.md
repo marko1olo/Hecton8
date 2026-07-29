@@ -13,7 +13,7 @@ On HECTON-8, dry does not mean safe. Dry means water is being held somewhere els
 
 Deep Reach sold the first habitats as sealed architecture: ceramic pressure skins, gasketed corridors, pump-backed airlocks, inspection gutters, emergency membranes and redundant drain paths. In brochures, a room was either dry or flooded. On the colony floor, that split died before the first audit cycle.
 
-A module can be dry at boot level and drowning in its ceiling trays. A corridor can hold air because two warped doors happened to jam into a seal. A storage cabinet can look clean until a work lamp warms the brine trapped in its insulation. A nursery can smell scrubbed while one bolt hole behind the wall sweats every six minutes. The sea does not need a cinematic breach. It needs pressure, salt and patience.
+A module can be dry at boot level and drowning in its ceiling trays, and a corridor holds air only because two warped doors jammed into a seal. Open a cabinet that reads clean and a work lamp warms the brine in its insulation within the hour. Berth row 44-B-6 smelled scrubbed for an audit cycle while one bolt hole sweated every six minutes. The sea does not need a breach. It needs pressure, salt and patience.
 
 Old crews stopped asking whether a room was safe. They asked what was keeping the water out, what it was borrowing power from, and what would change when the next person touched it.
 
@@ -83,7 +83,7 @@ Ceilings kill patient people. Trays hold brine above the eyes. Cable bundles sag
 
 A dry room is valuable because it can be used. It is dangerous for the same reason.
 
-A dry locker can store medicine, clean seals, route tags, batteries, witness tubes or a worker's last tool roll. A dry corridor can move air, stretch a hose, hide a return path or give a tired suit one more place to stand. A dry archive can turn rumor into custody.
+A dry locker can store medicine, clean seals, route tags, batteries, witness tubes or a worker's last tool roll. Corridors are worth more: air moves, a hose stretches, a return path hides. Paper pays best: an archive that stayed dry turns rumor into custody, and custody is what Black Keel will lift.
 
 Black Keel prices dryness like an asset. Deep Reach priced it like compliance. Marauders price it by time: how long the floor stays useful, how much air it costs, what it hides, and whether the lie will break before the job is done.
 

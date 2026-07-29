@@ -65,7 +65,7 @@ The safest-looking chamber in a ruin is often the one that has already been clea
 
 Biology can ruin evidence before anyone lies about it.
 
-A body tag can move through a cleaner's gut. A recorder can be polished free of the blood that proves who held it. A sample bag can grow enough film to hide the original sediment. A wall stamp can disappear under shell sealant. A tagged animal can carry an Atlas sensor into a passage where no drone can follow. A predator can drag a payload into a claim category Keelmark prefers: unrecoverable, contaminated, disputed.
+Film grows inside a sample bag fast enough to hide the sediment the bag was opened for. A recorder polished by grazers loses the blood that proved who held it, and scavenger traffic moves small tagged items between rooms, so a find location is only as good as the hour it was logged. Under Keelmark form KM-CC-12 any of that reclassifies the load as unrecoverable, contaminated or disputed, and a reclassified load does not pay.
 
 Good crews bag evidence before cleaning it. They photograph bite pits, shell growth, film edges and missing small life. They record smell, water temperature, pinger response, current direction and whether the object was found in water, silt, gut, bloom, shell growth or Atlas-tagged tissue. Those details look small until a clerk decides whether a dead worker was a person, a contamination source or a payable load category.
 

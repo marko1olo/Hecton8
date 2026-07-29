@@ -3,7 +3,7 @@
 
 > **Source:** Deep Reach Megacorporation, Orbital Asset Registry.
 > **Speaker:** Automated Registry Drone 44-X.
-> **Reviewer Note:** A description of the massive, unfeeling orbital station that serves as the Marauders' only connection to the rest of humanity.
+> **Registry note:** Asset record for the station holding every contractor's lien and return window. Drone 44-X telemetry, accession BK-REG-8804; no crew statement.
 
 ---
 

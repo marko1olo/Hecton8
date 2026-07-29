@@ -55,7 +55,7 @@ The dangerous alarm is not always loud. Loud alarms earn attention and resentmen
 
 A dead sensor can hold a route shut. A worse one can open it.
 
-Remote status is cheap, so it lies cheaply. A locked annex can look clear because every interior probe died on the same clean number. A flooded corridor can look blocked because a pressure transducer still remembers the surge that passed two days ago. A medical cabinet can refuse to open because a spoilage sensor failed dangerous. A specimen vault can open too easily because the chilled-chain alarm died before the contents did.
+Remote status is cheap, so it lies cheaply. A locked annex can look clear because every interior probe died on the same clean number, and a flooded corridor can look blocked because a pressure transducer still reports a two-day-old surge. Failure direction picks the lie: a spoilage sensor that failed dangerous keeps a medical cabinet shut, while a chilled-chain alarm that died first opens a specimen vault on green, contents spoiled.
 
 Route crews treat dead sensors as physical objects, not abstract warnings. They tag housings, photograph cable damage, leave scrape marks near bypassed panels and write short notes where the next crew will actually look. "Bad gas read at ankle height." "Door green lies when pump two is off." "Do not trust camera; lens skin moves." None of that is elegant. It is how a ruin becomes legible without becoming safe.
 

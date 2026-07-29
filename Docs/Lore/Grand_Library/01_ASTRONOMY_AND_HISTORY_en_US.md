@@ -21,7 +21,7 @@ The mirror index lists objects, not ideas, and most objects carry more than one 
 
 ## 2. Ran, Aegir, And The Naming Trick
 
-Ran is the star. Aegir is the giant. HECTON-8 is the ocean moon where the game begins.
+Ran is the star. Aegir is the giant. HECTON-8 is the ocean moon, eighth on the ladder.
 
 The simple sentence hides a legal mess. Route catalogs say Ran because stars make respectable navigation anchors. Claim documents say Aegir because the giant owns the local gravity, radiation, transfer windows, receiver geometry, and insurance timing. Worker speech says HECTON because that is where the water is, where the pressure is, where the debt enters the lungs.
 

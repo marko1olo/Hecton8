@@ -13,7 +13,7 @@ Most worlds teach money first. HECTON-8 teaches pressure.
 
 A person can arrive with a contract, a debt figure, a salvage rating and a clean identity packet, but none of those things hold a hull together. Before any claim can be argued, before any wreck can be cut open, before any voice on Black Keel can call a descent profitable, the ocean asks its older question: what can survive here without being crushed, fouled, chilled, flooded or lost?
 
-That question becomes the economy. A seal is worth money because it holds pressure. A scrubber is worth money because it buys another interval of breath. A warm battery is worth money because a cold hand stops working before the suit does. A dry connector is worth money because one bad pin can turn a descent into a body recovery. Even silence has a price. A quiet pump, a quiet valve and a quiet hull plate are not comforts; they are proof that the system has not yet started to fail.
+That question becomes the economy. The quartermaster ledger prices a seal by the pressure it holds and a scrubber bed by the interval of breath it buys, in that order, on the same page. A warm battery is worth money because a cold hand stops working before the suit does, and one bad pin in a wet connector turns a descent into a body recovery. Even silence has a price: a quiet pump, a quiet valve and a quiet hull plate are proof that the system has not yet started to fail.
 
 The official ledgers still use settlement credit, mass credit, route fees and claim percentages. Marauders learn the deeper accounting fast. In the water, value is counted in minutes of breathing mix, clean seals, charged heaters, uncracked glass, working tethers and the right to occupy a recovery queue before the next weather window closes.
 
@@ -21,7 +21,7 @@ The official ledgers still use settlement credit, mass credit, route fees and cl
 
 New contractors talk about oxygen as if it is a bottle. Old contractors talk about air as if it is a machine with teeth.
 
-The breathing mix itself is only one part of the price. It has to be stored, warmed, metered, scrubbed, dried and kept clean of contaminants. Carbon dioxide must be pulled out before it turns the helmet into a slow panic chamber. Water must stay out of places where water wants to live. Heat must be managed carefully enough that the diver does not freeze, overheat or fog the one piece of glass they trust with their life.
+The breathing mix itself is only one part of the price. It has to be stored, warmed, metered, scrubbed, dried and kept clean of contaminants. Carbon dioxide must be pulled out before it turns the helmet into a slow panic chamber. Water is kept out of the places where water wants to live. Heat must be managed carefully enough that the diver does not freeze, overheat or fog the one piece of glass they trust with their life.
 
 Black Keel sells those pieces separately because the system can fail separately. A contractor may have enough breathing mix and still lose usable time to a tired scrubber. They may have a charged cell and still waste the charge fighting a bad thermal mesh. They may come back alive and still owe a seal replacement because a gasket worked once more than its certified interval allowed.
 

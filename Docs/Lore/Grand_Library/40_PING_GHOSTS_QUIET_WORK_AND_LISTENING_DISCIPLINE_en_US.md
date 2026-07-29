@@ -45,7 +45,7 @@ Quiet work is not romance. It is not the same as stealth. It is the habit of mak
 
 A careful clamp lands once. A careless clamp talks until someone tapes it. A cutter has a steady pitch when the operator is patient; when the operator rushes, the teeth announce it through the frame. A suit fan under clean load becomes background. A fan chewing salt sounds wet, uneven and expensive. Metal under stress gives warning before it gives way, but only to people who have left room to hear it.
 
-Marauders pad loose hooks, kill unnecessary confirmation chirps, keep voice checks short in wreck throats and leave some clicks alive so a nervous suit does not invent worse signals. They do not make a site silent. Silence is not a plan. They make each sound answerable.
+Marauders pad loose hooks, kill unnecessary confirmation chirps, keep voice checks short in wreck throats and leave some clicks alive so a nervous suit does not invent worse signals. A silent site is not the target; silence deletes the warnings with the noise. Each sound is made answerable.
 
 If a noise has no owner, no need and no time limit, it gets removed.
 
@@ -63,7 +63,7 @@ Do not record everything by habit. Do not delete by fear. Keep enough sound to p
 
 Noise can be a tool, but it is never free.
 
-Active pings can wake old responders, map a void, startle fauna, pull another crew's attention, or tell a hidden receiver that someone is looking. A timed knock can test a wall without cutting it. A false beacon can draw a claim jumper off a route. A suit speaker can push a creature away or teach it where suits come from.
+Active pings can wake old responders, map a void, startle fauna, pull another crew's attention, or tell a hidden receiver someone is looking. A timed knock tests a wall without cutting it; a false beacon pulls a claim jumper off a route. Both bills arrive late: a speaker that pushed a creature back once taught it what a suit sounds like.
 
 Deep Reach manuals separated navigation, deterrence and communication. The colony stopped honoring that separation early. The same chirp can locate a door, prove a log, annoy a predator, call a drone and expose a worker. Context decides which bill arrives first.
 

@@ -3,7 +3,7 @@
 
 > **Source:** Black Keel automated medical bay intake rules, Deep Reach labor fitness tables and Marauder post-dive complaint notes.  
 > **Speaker:** Autodoc triage voice, annotated by workers who learned which words mean care and which words mean billable damage.  
-> **Reviewer Note:** Medical lore should not be cartoon cruelty. It should feel colder than that: practical, rationed, technically competent and built around returning useful labor to the ledger.
+> **Intake note:** Triage wording is quoted from autodoc script DR-MED-4 rev 11, which codes every diagnosis for labor fitness before treatment. Worker annotations are kept beside it.
 
 ---
 
