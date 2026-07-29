@@ -411,6 +411,92 @@ def periodic_worley(
     return f1, f2, cell_id
 
 
+def periodic_joint_traces(
+    rng: np.random.Generator,
+    resolution: int,
+    tile_m: float,
+    *,
+    count: int,
+    stress_azimuth_deg: float,
+    conjugate_deg: float,
+    jitter_deg: float,
+    length_min_fraction: float,
+    length_max_fraction: float,
+    width_m: float,
+    waviness_m: float,
+) -> tuple:
+    """Sparse conjugate joint set as a distance field. Returns ``(mask, traces)``.
+
+    WHY THIS EXISTS INSTEAD OF A WORLEY BORDER FIELD. A Voronoi diagram is a PARTITION of
+    the plane, so every cell has a complete boundary and any border-distance field is
+    necessarily a closed network. The first version of this family used one, and the tile
+    read as crazed ceramic glaze -- a full mesh of thin bright lines enclosing polygonal
+    cells. That cannot be fixed by narrowing or fading the lines, because a fainter
+    tessellation is still a tessellation; the topology is the defect.
+
+    Real joint sets are DISCRETE, FINITE-LENGTH traces whose orientations cluster about the
+    principal stress direction, usually as a conjugate pair straddling it. They terminate in
+    the rock, they do not enclose regions, and there are only a handful of them per square
+    metre. That is what this generates.
+
+    Periodicity comes from minimum-image addressing on the vector from each segment's start
+    to the sample point. That is exact wherever it matters: it can pick the wrong image only
+    for points far from the segment, and those are far from every image, so their distance is
+    large and the mask is zero there regardless. Segment length is capped below half the tile
+    so the near field is never ambiguous.
+    """
+    axis = (np.arange(resolution) + 0.5) / resolution * tile_m
+    py, px = np.meshgrid(axis, axis, indexing="ij")
+
+    # A little waviness so a trace is a fracture rather than a ruled line. Applied to the
+    # SAMPLE coordinate, which bends every trace coherently as if the rock itself deformed.
+    if waviness_m > 0.0:
+        px = px + periodic_warp(rng, resolution, tile_m, tile_m * 0.22, waviness_m)
+        py = py + periodic_warp(rng, resolution, tile_m, tile_m * 0.19, waviness_m)
+
+    max_length = min(length_max_fraction, 0.45) * tile_m
+    min_length = max(1e-3, length_min_fraction * tile_m)
+
+    best = np.full((resolution, resolution), np.inf)
+    traces = []
+    for index in range(max(1, count)):
+        # Conjugate pair: alternate sides of the stress axis.
+        side = 1.0 if (index % 2 == 0) else -1.0
+        azimuth = math.radians(stress_azimuth_deg + side * conjugate_deg
+                               + rng.normal(0.0, jitter_deg))
+        length = float(rng.uniform(min_length, max_length))
+        start = rng.random(2) * tile_m
+        direction = np.array([math.sin(azimuth), math.cos(azimuth)])  # (row, col)
+        delta = direction * length
+
+        # Vector from the segment start to every sample, minimum-imaged onto the torus.
+        offset_row = py - start[0]
+        offset_col = px - start[1]
+        offset_row = offset_row - tile_m * np.rint(offset_row / tile_m)
+        offset_col = offset_col - tile_m * np.rint(offset_col / tile_m)
+
+        denom = float(delta @ delta)
+        t = np.clip((offset_row * delta[0] + offset_col * delta[1]) / max(denom, 1e-12),
+                    0.0, 1.0)
+        near_row = offset_row - t * delta[0]
+        near_col = offset_col - t * delta[1]
+        distance = np.sqrt(near_row * near_row + near_col * near_col)
+
+        # Aperture tapers to zero at both tips: a joint does not end in a blunt stop.
+        taper = np.power(np.clip(4.0 * t * (1.0 - t), 0.0, 1.0), 0.35)
+        effective = distance / np.maximum(taper, 1e-3)
+        best = np.minimum(best, effective)
+
+        traces.append({
+            "azimuthDeg": round(math.degrees(azimuth) % 180.0, 3),
+            "lengthM": round(length, 4),
+            "conjugateSide": int(side),
+        })
+
+    mask = 1.0 - _smooth_step(0.0, width_m, best)
+    return mask, traces
+
+
 def periodic_warp(rng: np.random.Generator, resolution: int, tile_m: float,
                   wavelength_m: float, amplitude: float) -> np.ndarray:
     """Low-frequency periodic displacement, used to bend laminae off dead straight.
@@ -505,6 +591,24 @@ LAMINA_THICKNESS_MAX_M = 0.040
 PARTING_WIDTH_M = 0.0012
 PARTING_WIDTH_PIXEL_FLOOR = 2.5
 
+# SPALL PATCHES break lamina CONTINUITY, which is the last thing separating this family
+# from a polished laminated slab. Every earlier iteration had each lamina running unbroken
+# across the whole 1.25 m tile, and that continuity -- not the tone, not the amplitude -- is
+# what made the surface read as wood-grain veneer or a cut stone panel. A weathered rock face
+# is not continuous: packages of laminae flake off along their partings, leaving a scar with a
+# sharp rim where the beds inside no longer line up with the beds outside.
+#
+# Modelled by shifting the bedding COORDINATE by a per-patch amount inside each scar. The
+# discontinuity in lamina index at the rim is the point, not an artefact -- that offset is
+# exactly what a real spall scar shows. Patch layout is a coarse Worley so the scars are
+# discrete and periodic.
+SPALL_PATCH_WAVELENGTH_M = 0.34
+SPALL_OCCUPANCY = 0.46
+SPALL_OFFSET_MIN_FRACTION = 0.35
+SPALL_OFFSET_MAX_FRACTION = 0.85
+SPALL_STEP_FRACTION = 0.30
+SPALL_RIM_M = 0.0025
+
 # Competence band. Hardness of exactly 0 is a lamina with no resistance at all, which
 # drives the differential-relief term to its full depth in one lamina and produces a
 # trench rather than a recess.
@@ -521,6 +625,8 @@ class LaminaStack:
     hardness: np.ndarray       # competence: resists weathering, stands proud
     carbonate: np.ndarray      # pale carbonate cement fraction
     organic: np.ndarray        # dark organic/clay fraction; hosts pyrite
+    porosity: np.ndarray       # where dissolution can open a vug at all
+    spall: np.ndarray          # 0..1 inside a flake scar, sharp at the rim
     contact: np.ndarray        # 1.0 exactly on a lamina contact, falling off
     count: int
     thicknesses_m: np.ndarray
@@ -569,11 +675,41 @@ def build_lamina_stack(spec: GeologyTextureSpec,
     # laminae fold through each other. For a sinusoid of amplitude ``a`` and wavelength
     # ``L`` that derivative is ``2*pi*a/L``, so 0.011 m at 0.94 m gives 0.074 and 0.004 m at
     # 0.18 m gives 0.14 -- together 0.21, safely inside the limit.
+    #
+    # A THIRD, FINE TERM MAKES THE LAMINA EDGES RAGGED, and it fixes a defect the two smooth
+    # terms caused. With only long-wavelength warps every lamina boundary was a smooth
+    # continuous curve running the width of the tile, and combined with the sinusoidal
+    # cross-lamina relief profile the surface read as WOOD GRAIN or plywood veneer rather
+    # than as stone. Measured at the time: mean slope 16.6 degrees, and raising the grain
+    # amplitude 1.8x moved it only 1 degree -- proof the smoothness lived in the BEDDING
+    # term, not in the grain, so piling more noise on top would not have fixed it.
+    #
+    # Physically this is spalling: weathered laminae break off in small flakes along their
+    # partings, so a contact is chipped at the centimetre scale rather than drawn. Fold
+    # budget: 2*pi*0.0015/0.030 = 0.31, taking the total to about 0.52, inside the limit.
     warp = (periodic_warp(rng, resolution, spec.tile_m,
                           wavelength_m=spec.tile_m * 0.75, amplitude=0.011)
             + periodic_warp(rng, resolution, spec.tile_m,
-                            wavelength_m=0.18, amplitude=0.004))
-    coordinate = np.mod(depth_m + warp, spec.tile_m)
+                            wavelength_m=0.18, amplitude=0.004)
+            + periodic_warp(rng, resolution, spec.tile_m,
+                            wavelength_m=0.030, amplitude=0.0015))
+    # Spall scars: discrete flaked patches that offset the bedding coordinate.
+    spall_cells = max(2, int(round(spec.tile_m / SPALL_PATCH_WAVELENGTH_M)))
+    spall_f1, _sf2, spall_id = periodic_worley(rng, resolution, spall_cells, jitter=1.0)
+    spall_slots = spall_cells * spall_cells + 1
+    spalled = (rng.random(spall_slots) < SPALL_OCCUPANCY)[spall_id]
+    spall_extent = (0.45 + 0.55 * rng.random(spall_slots))[spall_id]
+    spall = (1.0 - _smooth_step(0.0, 1.0, spall_f1 / np.maximum(spall_extent, 1e-6)))
+    spall = spall * spalled
+    # Binarise with a soft rim: a flake scar has an EDGE. A smooth falloff would reintroduce
+    # the gradual blending this fix exists to remove.
+    spall = _smooth_step(0.35, 0.55, spall)
+    mean_thickness_actual = float(thicknesses.mean())
+    spall_offset = ((SPALL_OFFSET_MIN_FRACTION
+                     + (SPALL_OFFSET_MAX_FRACTION - SPALL_OFFSET_MIN_FRACTION)
+                     * rng.random(spall_slots))[spall_id]) * mean_thickness_actual
+
+    coordinate = np.mod(depth_m + warp + spall_offset * spall, spec.tile_m)
 
     index = np.clip(np.searchsorted(boundaries, coordinate, side="right") - 1,
                     0, count - 1)
@@ -611,12 +747,31 @@ def build_lamina_stack(spec: GeologyTextureSpec,
     carbonate_field = np.clip(carbonate[index] * (0.68 + 0.64 * lateral), 0.0, 1.0)
     organic_field = np.clip(organic[index] * (0.78 + 0.44 * (1.0 - lateral)), 0.0, 1.0)
 
+    # POROSITY IS A PER-LAMINA PROPERTY, and that is the whole point of adding it.
+    # Dissolution vugs open where there is soluble cement and connected pore space, which is
+    # a property of the BED, not of the rock face. Without this the vug field spread evenly
+    # across every lamina and the tile read as pumice or aerated concrete rather than as
+    # layered stone -- the lead's rejection, and correct.
+    #
+    # It correlates with carbonate because that is the phase that dissolves, but it gets its
+    # own draw and its own exponent: a well-cemented tight limestone lamina is carbonate-rich
+    # and NOT porous. Making porosity a pure function of carbonate would have made it a
+    # second copy of a field that already drives colour and roughness, which is the
+    # duplication section 9's independence gate exists to catch.
+    porosity_per_lamina = np.clip(
+        (0.25 + 0.75 * rng.random(count)) * np.power(carbonate + 0.12, 0.85), 0.0, 1.0)
+    porosity_per_lamina = np.power(porosity_per_lamina, 1.6)  # skew toward tight beds
+    porosity_field = np.clip(porosity_per_lamina[index] * (0.75 + 0.5 * lateral),
+                             0.0, 1.0)
+
     return LaminaStack(
         index=index,
         across=across,
         hardness=hardness[index],
         carbonate=carbonate_field,
         organic=organic_field,
+        porosity=porosity_field,
+        spall=spall,
         contact=contact,
         count=count,
         thicknesses_m=thicknesses,
@@ -631,40 +786,77 @@ def build_lamina_stack(spec: GeologyTextureSpec,
 # 0..1 units cannot answer "is this rock the right roughness at 2 m", which is the
 # question section 4's "scale-calibrated" requirement is asking.
 
-# Differential weathering: a soft clay-rich lamina recesses relative to a hard
-# carbonate-cemented one. Set just under the 0.011 m pit witness so the two features are
-# the same order -- a weathered laminated face where the beds and the vugs are comparably
-# deep, which is what a shoreline siltstone actually looks like.
-DIFFERENTIAL_RECESS_M = 0.009
-
-# The parting incision along a lamina contact. Shallower than the recess: a parting is a
-# knife line, not a channel.
-PARTING_DEPTH_M = 0.0035
-
-# Joints cut ACROSS bedding. A Worley cell border is isotropic, which is correct here --
-# tectonic and desiccation joints have no reason to follow the bedding plane, and a crack
-# field that did would read as more bedding rather than as fracture.
+# THE RELIEF HIERARCHY IS NOW ORDERED, AND EVERY SUBORDINATE TERM IS A FRACTION OF THE
+# BEDDING RELIEF RATHER THAN AN INDEPENDENT ABSOLUTE.
 #
-# JOINTS MUST BE SPARSE, and the first version was not. Drawing every Worley cell border
-# produced a complete polygonal tessellation over the whole tile: seen in the first preview
-# render, it read unmistakably as CRACKED MUD, which is a different material from jointed
-# siltstone and is close to the "generic grunge" and "'interesting' patterns that do not
-# match the mesh and source material" that playbook sections 0 and 1 reject by name. Real
-# jointing is a few discrete fracture traces concentrated in zones, not a closed net around
-# every cell. A low-frequency gate restricts them to roughly a third of the surface, and
-# the width comes down so a trace reads as a fracture rather than a channel.
-JOINT_DEPTH_M = 0.0045
-JOINT_WIDTH_M = 0.0022
-JOINT_ZONE_WAVELENGTH_M = 0.42
-JOINT_ZONE_LOW = 0.30
-JOINT_ZONE_HIGH = 0.78
+# The first version set six depths independently and the result was measured -- from this
+# module's own manifest -- as vugs 11.0 / grain 8.2 / recess 7.3 / joints 4.5 / parting 3.5
+# / bioclasts 2.2 mm. For a laminated sedimentary shelf that ordering is INVERTED: the pits
+# were physically the largest feature on the surface and the bedding came fifth, so the tile
+# read as porous stone rather than as layered stone. The lead rejected the family on exactly
+# that number, and the two visual defects (a joint network reading as crazed glaze, a vug
+# field reading as pumice) were consequences of the same inversion rather than independent
+# faults.
+#
+# This is the same correction already applied one level down when rock.py's grain slope law
+# turned out not to transfer: grain is derived from the structure it decorates. Applying it
+# one level up, BEDDING is the primary relief and everything else is expressed against it,
+# so the hierarchy cannot silently invert again when a single constant is edited.
+BEDDING_RECESS_M = 0.011
+
+# Fractions of BEDDING_RECESS_M. Parting leads the subordinate terms because a parting
+# surface is the sharpest, most legible expression of bedding on a weathered face.
+PARTING_DEPTH_FRACTION = 0.58
+JOINT_DEPTH_FRACTION = 0.30
+VUG_TYPICAL_DEPTH_FRACTION = 0.20
+SHELL_RELIEF_FRACTION = 0.18
+
+PARTING_DEPTH_M = BEDDING_RECESS_M * PARTING_DEPTH_FRACTION
+JOINT_DEPTH_M = BEDDING_RECESS_M * JOINT_DEPTH_FRACTION
+SHELL_RELIEF_M = BEDDING_RECESS_M * SHELL_RELIEF_FRACTION
+
+# The 0.011 m pit witness is retained as the depth of the RAREST, LARGEST vug rather than
+# as the depth of every vug. That keeps rock.py's witness honoured where it is meaningful --
+# a discrete macro cavity really is that deep -- while the typical vug stays subordinate to
+# bedding. Depth scales with radius because a cavity's aspect ratio is roughly constant.
+VUG_MAX_DEPTH_M = law.GEOLOGY_PIT_DEPTH_M
+
+# Joints: a STRESS-ORIENTED SPARSE TRACE SET, not a Worley partition.
+#
+# The Worley generator was replaced outright, not tuned. A Voronoi field is a PARTITION by
+# construction, so every cell carries a complete boundary and the output is necessarily a
+# closed network -- thinning the lines makes a fainter tessellation, not a sparser joint set.
+# Real joints form conjugate sets sub-parallel to the principal stress direction, with finite
+# trace length, and they do not enclose the plane.
+#
+# So joints are now discrete line segments: orientations drawn about two conjugate azimuths
+# at +/- JOINT_CONJUGATE_DEG from a stress axis, finite lengths, random positions, distance
+# field evaluated on the torus. Bed-confined jointing is modelled too -- a trace dies out in
+# soft clay and propagates through brittle cemented laminae, which is real and is also what
+# keeps the traces from looking painted on.
+JOINT_TRACE_COUNT = 11
+JOINT_STRESS_AZIMUTH_DEG = 24.0
+JOINT_CONJUGATE_DEG = 27.0
+JOINT_AZIMUTH_JITTER_DEG = 7.0
+JOINT_TRACE_LENGTH_MIN_FRACTION = 0.12
+JOINT_TRACE_LENGTH_MAX_FRACTION = 0.42
+JOINT_WIDTH_M = 0.0026
+JOINT_WAVINESS_M = 0.004
 
 # Bioclasts. Playbook section 4 names "shell fragments" for sediment specifically. They
 # stand PROUD because carbonate shell resists weathering better than a clay matrix, and
 # they are sparse because a rock face densely paved with shells is a coquina, a different
 # lithology from the one this family declares.
-SHELL_RELIEF_M = 0.0022
 SHELL_OCCUPANCY = 0.16
+
+# Vug size distribution. A power law is what gives the "orders of magnitude" spread real
+# cavities have; a uniform draw produced near-identical pits, which is half of why the field
+# read as aerated concrete. Radii are in CELL units.
+VUG_RADIUS_MIN = 0.05
+VUG_RADIUS_MAX = 0.85
+VUG_PARETO_ALPHA = 1.9
+VUG_POROSITY_LOW = 0.16
+VUG_POROSITY_HIGH = 0.42
 
 # GRAIN AMPLITUDE IS DERIVED FROM THE STRUCTURE IT DECORATES, NOT FROM ITS OWN
 # WAVELENGTH, and that is a correction to the obvious carry-over rather than a preference.
@@ -682,7 +874,14 @@ SHELL_OCCUPANCY = 0.16
 # 0.055-0.34 m. The texture's structure is LAMINA relief at 0.008-0.040 m, an order of
 # magnitude smaller, so the same ratio necessarily inverts the hierarchy. Both numbers are
 # recorded in the manifest so the discrepancy stays visible.
-GRAIN_TO_STRUCTURE_RATIO_MIN = 0.18
+# RESTORED after over-correction. Crushing the ratio to 0.10-0.17 fixed the relief
+# inversion and created a new defect: at grain RMS 0.53 mm against bedding's 6.14 mm
+# there was nothing breaking up the bands, and the tile read as WOOD GRAIN or plywood
+# veneer -- long smooth parallel wavy lines edge to edge. Bedding must LEAD the relief,
+# which is not the same as bedding being the only relief: a weathered rock face has
+# strong bedding AND strong stone micro-character. Mean surface slope, which is what
+# actually carries "reads as stone", had fallen from 26.9 to 16.6 degrees.
+GRAIN_TO_STRUCTURE_RATIO_MIN = 0.20
 GRAIN_TO_STRUCTURE_RATIO_MAX = 0.30
 MESH_GRAIN_SLOPE_MIN = 0.10   # rock.py:223, retained for the manifest comparison
 MESH_GRAIN_SLOPE_MAX = 0.155  # rock.py:224
@@ -756,23 +955,42 @@ def build_height_field(spec: GeologyTextureSpec,
     # A soft lamina is deepest in its middle and rises back toward its contacts, because
     # the contact itself is cemented. A flat step per lamina reads as a stack of discs.
     profile = 0.55 + 0.45 * np.sin(np.pi * lamina.across)
-    recess = -DIFFERENTIAL_RECESS_M * lamina.softness * profile
+    recess = -BEDDING_RECESS_M * lamina.softness * profile
 
     # --- the parting incision ---------------------------------------------------
     parting = -PARTING_DEPTH_M * lamina.contact
+
+    # --- spall scars: a flaked package sits below the intact face ----------------
+    spall_relief = -BEDDING_RECESS_M * SPALL_STEP_FRACTION * lamina.spall
 
     # --- grain: band-limited anisotropic fBm ------------------------------------
     finest_m = FBM_FINEST_PIXELS * mpp
     coarsest_m = law.GEOLOGY_GRAIN_WITNESS_M
     anisotropy = 3.4 if spec.process == "sedimentary" else 2.1
-    grain_unit = _normalise_to_peak(
-        periodic_fbm(rng, resolution, spec.tile_m,
-                     coarsest_m=coarsest_m, finest_m=finest_m,
-                     anisotropy=anisotropy, anisotropy_axis="v"))
+    # GRAIN IS TWO BANDS, AND MAKING IT ONE WAS A DEFECT VISIBLE ONLY UNDER GRAZING LIGHT.
+    #
+    # A single band-limited fBm carrying anisotropy 3.4 all the way down to the pixel floor
+    # produced a dense, coherent, directional micro-pattern that read as WOVEN FABRIC or
+    # burlap under a 7-degree light. Strong spectral anisotropy makes the fine octaves into
+    # long parallel streaks, and a field of parallel streaks at one scale is a weave.
+    #
+    # The physics says to split it. Depositional fabric is genuinely directional at the
+    # millimetre-to-centimetre scale -- that is what bedding IS -- but an individual silt or
+    # clay grain is equant, so the finest band has no reason to be anisotropic and every
+    # reason not to be. Coarse band keeps the bedding-parallel fabric; fine band is isotropic
+    # stone micro-texture.
+    fabric_floor_m = max(finest_m * 2.0, 0.020)
+    grain_coarse = periodic_fbm(rng, resolution, spec.tile_m,
+                                coarsest_m=coarsest_m, finest_m=fabric_floor_m,
+                                anisotropy=anisotropy, anisotropy_axis="v")
+    grain_fine = periodic_fbm(rng, resolution, spec.tile_m,
+                              coarsest_m=fabric_floor_m, finest_m=finest_m,
+                              beta=2.05, anisotropy=1.0)
+    grain_unit = _normalise_to_peak(0.62 * grain_coarse + 0.55 * grain_fine)
     grain_ratio = (GRAIN_TO_STRUCTURE_RATIO_MIN
                    + (GRAIN_TO_STRUCTURE_RATIO_MAX - GRAIN_TO_STRUCTURE_RATIO_MIN)
                    * law.saturate(spec.quality))
-    grain_amplitude = DIFFERENTIAL_RECESS_M * grain_ratio
+    grain_amplitude = BEDDING_RECESS_M * grain_ratio
     grain = grain_unit * grain_amplitude
 
     # Harder laminae hold coarser, better-cemented grain; soft clay laminae weather
@@ -781,53 +999,78 @@ def build_height_field(spec: GeologyTextureSpec,
     # grunge", and grunge is precisely a noise field that ignores what it sits on.
     grain = grain * (0.55 + 0.65 * lamina.hardness)
 
-    # --- dissolution vugs: Worley F1 --------------------------------------------
+    # --- dissolution vugs, clustered in porous laminae, power-law sized ----------
+    # THREE THINGS CHANGED HERE AND THEY ARE ALL THE SAME REJECTION.
+    #  1. DEPTH SCALES WITH RADIUS instead of every vug getting the 0.011 m witness. A big
+    #     cavity is deep and a small one is shallow -- constant aspect ratio -- so the
+    #     TYPICAL vug is now subordinate to bedding while the rarest largest one still
+    #     reaches the witness depth. The witness is honoured where it is meaningful.
+    #  2. RADII ARE POWER-LAW, not uniform. A uniform draw produced near-identical pits;
+    #     real cavities span orders of magnitude.
+    #  3. VUGS CLUSTER IN POROUS LAMINAE via lamina.porosity, so they appear in bands. The
+    #     previous carbonate gate was too weak and too smooth to band them, and the field
+    #     spread evenly over every bed -- which is why the tile read as pumice.
     pit_cells = max(2, int(round(spec.tile_m / law.GEOLOGY_PIT_WITNESS_M)))
-    pit_f1, _pit_f2, pit_id = periodic_worley(rng, resolution, pit_cells, jitter=1.0)
-    # ONE VUG PER CELL AT ONE SIZE IS A DOT GRID, which is what the first preview render
-    # showed: evenly spaced round bubbles in rows, the Worley lattice visible through the
-    # result. Dissolution does not work on a lattice. Per-cell RADIUS variation and an
-    # occupancy draw break the regularity -- some cells host a large vug, some a small one,
-    # a third of them none at all. Jitter goes to full so the centres are not near-regular
-    # either.
-    def pit_layer(cells: int, f1: np.ndarray, ids: np.ndarray) -> np.ndarray:
+
+    def pit_layer(cells: int, f1: np.ndarray, ids: np.ndarray) -> tuple:
         count = cells * cells + 1
-        radius = (0.16 + 0.34 * rng.random(count))[ids]
+        # Bounded Pareto radii: heavy tail, so a few cells host a large cavity.
+        uniform = rng.random(count)
+        span = (VUG_RADIUS_MIN ** -VUG_PARETO_ALPHA
+                - VUG_RADIUS_MAX ** -VUG_PARETO_ALPHA)
+        radii = np.power(VUG_RADIUS_MIN ** -VUG_PARETO_ALPHA - uniform * span,
+                         -1.0 / VUG_PARETO_ALPHA)
+        radius = radii[ids]
         present = (rng.random(count) < 0.62)[ids]
-        return (1.0 - _smooth_step(0.0, 1.0, f1 / np.maximum(radius, 1e-6))) * present
+        shape = (1.0 - _smooth_step(0.0, 1.0, f1 / np.maximum(radius, 1e-6))) * present
+        return shape, radius
 
     # TWO LAYERS AT COPRIME CELL COUNTS. A jittered-grid Worley keeps every centre inside
-    # its own cell, so even at full jitter a residual lattice survives -- visible in the
-    # grazing preview as horizontal ROWS of pocks, which is a grid showing through a field
-    # that is supposed to be dissolution. Overlaying a second layer whose cell count shares
-    # no factor with the first pushes the combined periodicity out to their product, which
-    # is far larger than the tile, so no row structure can align.
+    # its own cell, so even at full jitter a residual lattice survives -- visible in an
+    # earlier grazing preview as horizontal ROWS of pocks. Overlaying a second layer whose
+    # cell count shares no factor with the first pushes the combined periodicity out to
+    # their product, far larger than the tile, so no row structure can align.
     second_cells = max(2, pit_cells - 7)
     while second_cells > 2 and math.gcd(second_cells, pit_cells) != 1:
         second_cells -= 1
+    pit_f1, _pit_f2, pit_id = periodic_worley(rng, resolution, pit_cells, jitter=1.0)
     pit_f1b, _f2b, pit_idb = periodic_worley(rng, resolution, second_cells, jitter=1.0)
-    pit = np.maximum(pit_layer(pit_cells, pit_f1, pit_id),
-                     pit_layer(second_cells, pit_f1b, pit_idb))
-    # Vugs open preferentially in carbonate-rich laminae, because that is the phase that
-    # dissolves. A vug field that ignored lithology would cut straight through a clay
-    # lamina, which does not happen.
-    pit = pit * (0.35 + 0.65 * lamina.carbonate)
-    pit_relief = -law.GEOLOGY_PIT_DEPTH_M * pit
+    shape_a, radius_a = pit_layer(pit_cells, pit_f1, pit_id)
+    shape_b, radius_b = pit_layer(second_cells, pit_f1b, pit_idb)
 
-    # --- joints: Worley cell borders as an SDF ----------------------------------
-    joint_cells = max(2, int(round(spec.tile_m / law.GEOLOGY_TEXTURE_BAND_CEILING_M)))
-    joint_f1, joint_f2, _joint_id = periodic_worley(rng, resolution, joint_cells,
-                                                    jitter=1.0)
-    border_m = (joint_f2 - joint_f1) * (spec.tile_m / joint_cells)
-    joint_trace = 1.0 - _smooth_step(0.0, JOINT_WIDTH_M, border_m)
-    # Fracture ZONES: a low-frequency field decides where the rock is jointed at all, so
-    # the tile carries discrete traces instead of a closed polygonal net.
-    zone_field = _normalise_to_peak(
-        periodic_fbm(rng, resolution, spec.tile_m,
-                     coarsest_m=JOINT_ZONE_WAVELENGTH_M * 2.0,
-                     finest_m=JOINT_ZONE_WAVELENGTH_M, beta=2.4)) * 0.5 + 0.5
-    joint_zone = _smooth_step(JOINT_ZONE_LOW, JOINT_ZONE_HIGH, zone_field)
-    joint = joint_trace * joint_zone
+    # Porosity gate: dissolution needs connected pore space, which is a BED property.
+    porous = _smooth_step(VUG_POROSITY_LOW, VUG_POROSITY_HIGH, lamina.porosity)
+    shape_a = shape_a * porous
+    shape_b = shape_b * porous
+
+    # Per-layer depth from that layer's own radius, capped at the witness. Metres per cell
+    # differs between layers, so radius must be converted before comparing.
+    depth_a = np.minimum(VUG_MAX_DEPTH_M,
+                         BEDDING_RECESS_M * VUG_TYPICAL_DEPTH_FRACTION
+                         * (radius_a * (spec.tile_m / pit_cells)
+                            / (0.25 * law.GEOLOGY_PIT_WITNESS_M)))
+    depth_b = np.minimum(VUG_MAX_DEPTH_M,
+                         BEDDING_RECESS_M * VUG_TYPICAL_DEPTH_FRACTION
+                         * (radius_b * (spec.tile_m / second_cells)
+                            / (0.25 * law.GEOLOGY_PIT_WITNESS_M)))
+    pit_relief = -np.maximum(shape_a * depth_a, shape_b * depth_b)
+    pit = np.maximum(shape_a, shape_b)
+
+    # --- joints: a sparse conjugate trace set ------------------------------------
+    joint_trace, joint_traces = periodic_joint_traces(
+        rng, resolution, spec.tile_m,
+        count=JOINT_TRACE_COUNT,
+        stress_azimuth_deg=JOINT_STRESS_AZIMUTH_DEG,
+        conjugate_deg=JOINT_CONJUGATE_DEG,
+        jitter_deg=JOINT_AZIMUTH_JITTER_DEG,
+        length_min_fraction=JOINT_TRACE_LENGTH_MIN_FRACTION,
+        length_max_fraction=JOINT_TRACE_LENGTH_MAX_FRACTION,
+        width_m=JOINT_WIDTH_M,
+        waviness_m=JOINT_WAVINESS_M)
+    # BED-CONFINED JOINTING: a fracture propagates through brittle cemented laminae and
+    # dies out in soft clay. Real, and it also breaks each trace into segments so it reads
+    # as rock failing rather than as a line drawn on rock.
+    joint = joint_trace * (0.18 + 0.82 * lamina.hardness)
     joint_relief = -JOINT_DEPTH_M * joint
 
     # --- bioclasts --------------------------------------------------------------
@@ -837,12 +1080,26 @@ def build_height_field(spec: GeologyTextureSpec,
     # discrete rather than a thresholded noise field with ragged edges.
     occupied = (rng.random(shell_cells * shell_cells + 1)[shell_id]
                 < SHELL_OCCUPANCY)
-    lens = (1.0 - _smooth_step(0.12, 0.40, shell_f1)) * occupied
+    # Per-cell size variation, or every fragment is the same disc.
+    shell_radius = (0.16 + 0.30 * rng.random(shell_cells * shell_cells + 1))[shell_id]
+    lens = (1.0 - _smooth_step(0.0, 1.0, shell_f1 / np.maximum(shell_radius, 1e-6)))
+    lens = lens * occupied
     # Shells sit in the carbonate-bearing laminae and are absent from organic clay.
     shell = lens * _smooth_step(0.25, 0.75, lamina.carbonate)
+    # SHELL HASH BANDS. Uniform scattering read as confetti -- evenly spaced bright specks
+    # over the whole face. Bioclasts do not scatter uniformly: they concentrate in
+    # storm-deposited shell hash layers PARALLEL TO BEDDING. A bedding-aligned gate puts them
+    # in trains, which is both the real depositional pattern and what stops them reading as
+    # sprinkles on a cake.
+    shell_band = _normalise_to_peak(
+        periodic_fbm(rng, resolution, spec.tile_m, coarsest_m=spec.tile_m * 0.5,
+                     finest_m=0.05, beta=2.2, anisotropy=6.0,
+                     anisotropy_axis="v")) * 0.5 + 0.5
+    shell = shell * _smooth_step(0.42, 0.82, shell_band)
     shell_relief = SHELL_RELIEF_M * shell
 
-    height = (recess + parting + grain + pit_relief + joint_relief + shell_relief)
+    height = (recess + parting + spall_relief + grain + pit_relief + joint_relief
+              + shell_relief)
     height = height - float(height.mean())
 
     report = {
@@ -858,33 +1115,111 @@ def build_height_field(spec: GeologyTextureSpec,
         "grainCoarsestM": round(coarsest_m, 6),
         "grainFinestM": round(finest_m, 6),
         "grainAnisotropy": anisotropy,
+        "grainFabricFloorM": round(fabric_floor_m, 6),
+        "grainBandSplit":
+            "coarse band {c:.4f}-{f:.4f} m anisotropic {a} (depositional fabric); fine "
+            "band {f:.4f}-{n:.4f} m ISOTROPIC (equant silt grains). A single "
+            "anisotropic band down to the pixel floor read as woven fabric under "
+            "grazing light.".format(c=coarsest_m, f=fabric_floor_m, a=anisotropy,
+                                    n=finest_m),
         "grainAmplitudeM": round(grain_amplitude, 6),
         "grainToStructureRatio": round(grain_ratio, 5),
         "grainAmplitudeBasis":
-            "DIFFERENTIAL_RECESS_M * grainToStructureRatio. NOT rock.py's "
+            "BEDDING_RECESS_M * grainToStructureRatio. NOT rock.py's "
             "amplitude/wavelength slope law ({a}-{b}), which is calibrated against BED "
             "relief 0.055-0.34 m and would put grain at {c:.4f} m -- above the lamina "
             "relief it decorates. See the constant's comment.".format(
                 a=MESH_GRAIN_SLOPE_MIN, b=MESH_GRAIN_SLOPE_MAX,
                 c=coarsest_m * MESH_GRAIN_SLOPE_MAX),
         "pitCells": pit_cells,
+        "pitSecondLayerCells": second_cells,
         "pitWavelengthM": round(spec.tile_m / pit_cells, 5),
-        "pitDepthM": law.GEOLOGY_PIT_DEPTH_M,
+        "pitWitnessDepthM": law.GEOLOGY_PIT_DEPTH_M,
+        "pitWitnessRole": "depth of the RAREST LARGEST vug, not of every vug; depth scales "
+                          "with radius at constant aspect ratio",
+        "pitDepthRangeM": [round(float(np.min(np.minimum(depth_a, depth_b))), 6),
+                           round(float(np.max(np.maximum(depth_a, depth_b))), 6)],
+        "pitRadiusDistribution": "bounded Pareto alpha={a}, radii {lo}-{hi} cell units"
+                                 .format(a=VUG_PARETO_ALPHA, lo=VUG_RADIUS_MIN,
+                                         hi=VUG_RADIUS_MAX),
+        "pitPorosityGate": [VUG_POROSITY_LOW, VUG_POROSITY_HIGH],
         "pitCoverage": round(float((pit > 0.5).mean()), 5),
-        "jointCells": joint_cells,
-        "jointSpacingM": round(spec.tile_m / joint_cells, 5),
+        "jointGenerator": "sparse conjugate trace set (NOT a Worley partition)",
+        "jointTraceCount": JOINT_TRACE_COUNT,
+        "jointStressAzimuthDeg": JOINT_STRESS_AZIMUTH_DEG,
+        "jointConjugateDeg": JOINT_CONJUGATE_DEG,
+        "jointTraces": joint_traces,
         "jointWidthM": JOINT_WIDTH_M,
+        "jointBedConfined": True,
         "jointCoverage": round(float((joint > 0.5).mean()), 5),
         "shellCoverage": round(float((shell > 0.5).mean()), 5),
         "heightRangeM": [round(float(height.min()), 6), round(float(height.max()), 6)],
         "heightPeakToPeakM": round(float(height.max() - height.min()), 6),
         "termAmplitudesM": {
-            "differentialRecess": round(float(recess.max() - recess.min()), 6),
+            "beddingRecess": round(float(recess.max() - recess.min()), 6),
             "partingIncision": round(float(parting.max() - parting.min()), 6),
             "grain": round(float(grain.max() - grain.min()), 6),
             "dissolutionVugs": round(float(pit_relief.max() - pit_relief.min()), 6),
             "joints": round(float(joint_relief.max() - joint_relief.min()), 6),
             "bioclasts": round(float(shell_relief.max() - shell_relief.min()), 6),
+            "spallScars": round(float(spall_relief.max() - spall_relief.min()), 6),
+        },
+        "spallCoverage": round(float((lamina.spall > 0.5).mean()), 5),
+        # THE HIERARCHY IS PUBLISHED AS A RANKING so an inversion is visible in the manifest
+        # instead of only in a render. The family was rejected once for shipping
+        # vugs 11.0 / grain 8.2 / recess 7.3 / joints 4.5 / parting 3.5 / bioclasts 2.2 mm --
+        # numerically inverted for a laminated rock, with bedding fifth. Every subordinate
+        # term is now a declared FRACTION of BEDDING_RECESS_M, so the ordering is structural.
+        "reliefHierarchy": {
+            "primary": "beddingRecess",
+            "basisM": BEDDING_RECESS_M,
+            "declaredFractions": {
+                "partingIncision": PARTING_DEPTH_FRACTION,
+                "joints": JOINT_DEPTH_FRACTION,
+                "dissolutionVugsTypical": VUG_TYPICAL_DEPTH_FRACTION,
+                "bioclasts": SHELL_RELIEF_FRACTION,
+                "grain": round(grain_ratio, 5),
+            },
+            # RANKED BY AREA-WEIGHTED RMS, NOT BY PEAK-TO-PEAK, and the choice of statistic
+            # is itself a correction. Peak-to-peak is a MAX statistic: one rare deep cavity
+            # covering 0.4 percent of the tile put the vug term at rank two while bedding,
+            # which displaces the whole surface, ranked below it. That is the same error as
+            # judging a tile seam from one row-pair against a population mean -- an extreme
+            # compared against a distribution. "Primary relief" means what dominates the
+            # surface READ, so the ranking uses RMS, which weights each term by how much of
+            # the surface it actually displaces. Peak-to-peak stays published beside it,
+            # because the extremes are what the witness depths govern.
+            "termRmsM": {name: round(float(np.sqrt((term ** 2).mean())), 6)
+                         for name, term in (("beddingRecess", recess),
+                                            ("partingIncision", parting),
+                                            ("grain", grain),
+                                            ("dissolutionVugs", pit_relief),
+                                            ("joints", joint_relief),
+                                            ("bioclasts", shell_relief),
+                                            ("spallScars", spall_relief))},
+            "rankedByRms": [
+                name for name, _v in sorted(
+                    (("beddingRecess", float(np.sqrt((recess ** 2).mean()))),
+                     ("partingIncision", float(np.sqrt((parting ** 2).mean()))),
+                     ("grain", float(np.sqrt((grain ** 2).mean()))),
+                     ("dissolutionVugs", float(np.sqrt((pit_relief ** 2).mean()))),
+                     ("joints", float(np.sqrt((joint_relief ** 2).mean()))),
+                     ("bioclasts", float(np.sqrt((shell_relief ** 2).mean()))),
+                     ("spallScars", float(np.sqrt((spall_relief ** 2).mean())))),
+                    key=lambda kv: -kv[1])
+            ],
+            "rankedByPeakToPeak": [
+                name for name, _value in sorted(
+                    (("beddingRecess", float(recess.max() - recess.min())),
+                     ("partingIncision", float(parting.max() - parting.min())),
+                     ("grain", float(grain.max() - grain.min())),
+                     ("dissolutionVugs", float(pit_relief.max() - pit_relief.min())),
+                     ("joints", float(joint_relief.max() - joint_relief.min())),
+                     ("bioclasts", float(shell_relief.max() - shell_relief.min()))),
+                    key=lambda kv: -kv[1])
+            ],
+            "requirement": "beddingRecess and partingIncision must occupy the top two RMS "
+                           "ranks on a laminated sedimentary family",
         },
         "bandCeilingM": law.GEOLOGY_TEXTURE_BAND_CEILING_M,
         "bandCeilingReason":
@@ -1349,7 +1684,9 @@ def derive_channels(spec: GeologyTextureSpec, height: HeightField,
         (resolution, resolution, 3)).copy()
     base = _lerp_rgb(base, LITHOLOGY_MUDSTONE, lamina.organic)
     base = _lerp_rgb(base, LITHOLOGY_CALCAREOUS, lamina.carbonate * 0.85)
-    base = _lerp_rgb(base, BIOCLAST_CARBONATE, height.shell * 0.9)
+    # 0.55 not 0.9: at full strength the fragments read as high-contrast white specks
+    # against the darker matrix rather than as weathered carbonate in rock.
+    base = _lerp_rgb(base, BIOCLAST_CARBONATE, height.shell * 0.55)
     # Edge wear reveals fresh rock. Partial lerp at 0.55, the same reveal gain
     # ``rock.py`` :2793 uses for the vertex-colour R channel, so the two agree.
     base = _lerp_rgb(base, ROCK_FRESH, edge_wear * 0.55)
