@@ -194,6 +194,9 @@ namespace Hecton8.Core
         private const uint _DataVaultMassiveMoveHash = 0xDADA7051u;
         private const uint _DataVaultVramPressureHash = 0xDADA7052u;
         private const uint _SystemDispatcherHash = 0x51D15A7Cu;
+        // Slow-tick surplus discarded by the anti-death-spiral clamp. FNV-1a of
+        // "SlowTickSurplusDiscarded", following the literal-hash idiom used by the other warning ids here.
+        private const uint _SlowTickSurplusDiscardedHash = 0x5B7C4E11u;
         private const uint _MasterDispatcherHash = 0x4D445350u; // MDSP
         private const uint _PlayerLoopInstallFailureHash = 0x51D10001u;
         private const uint _HeapLockGuardHash = 0x51D10002u;
@@ -433,6 +436,8 @@ namespace Hecton8.Core
         private double _memoryDefragAccumulator;
         private double _unscaledFastTickAccumulator;
         private double _fixedStepAccumulator;
+        private double _slowTickDiscardedSeconds;
+        private int _slowTickDiscardEvents;
         private IDataVault _dataVault;
         private int _lastVaultGenerationMissCount;
         private float _lastVaultMemoryJobUs;
@@ -6343,8 +6348,46 @@ namespace Hecton8.Core
             }
 
             if (substeps == MaxCadenceSubstepsPerFrame && _slowTickAccumulator >= slowTickIntervalSeconds)
+            {
+                // Anti-death-spiral clamp, and it must stay: trying to catch up on a frame that is already
+                // late makes the next frame later still. But the discarded surplus is simulation time that
+                // every ISlowTickable consumer silently never receives - EcosystemDirector,
+                // ShinobuEcosystemBalancer, EcosystemPopulationBalancer, HectonSurfaceWeatherDirector,
+                // ShinobuStormPropagationRuntime, WorldSpatialHashGrid, CombatDamageRuntime.
+                //
+                // Headless makes this the steady state rather than a rare hitch. Measured on
+                // Logs/omega_route28.log: gameFramesPerWallSecond=0.75, so dt is roughly 1.33 s per frame,
+                // which needs 13 substeps of the 0.1 s interval. Four run. The lane advances at about 30
+                // percent of its rate, so a headless session does not merely run slower than a player
+                // session - it runs a DIFFERENT simulation, which invalidates any comparison between them.
+                //
+                // Deliberately not "fixed" here, because the clamp is correct. Made VISIBLE here, because a
+                // system that can collapse silently must fail loudly instead.
+                double discardedSeconds = _slowTickAccumulator - slowTickIntervalSeconds;
                 _slowTickAccumulator = slowTickIntervalSeconds;
+                if (discardedSeconds > 0.0)
+                {
+                    _slowTickDiscardedSeconds += discardedSeconds;
+                    _slowTickDiscardEvents++;
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        _SlowTickSurplusDiscardedHash,
+                        _SystemDispatcherHash,
+                        (float)discardedSeconds);
+                }
+            }
         }
+
+        /// <summary>
+        /// Total simulation seconds the slow-tick lane was owed and never received. A run reporting a large
+        /// value here has not simulated what its wall clock suggests, and any ecosystem, weather or
+        /// population state it produced is at a different point in time than the frame count implies.
+        /// </summary>
+        internal static double SlowTickDiscardedSeconds =>
+            ActiveRuntimeInstance != null ? ActiveRuntimeInstance._slowTickDiscardedSeconds : 0.0;
+
+        /// <summary>Frames in which slow-tick surplus was discarded.</summary>
+        internal static int SlowTickDiscardEvents =>
+            ActiveRuntimeInstance != null ? ActiveRuntimeInstance._slowTickDiscardEvents : 0;
 
         private void RunBucketedSlowTick(bool blockGameplayLanes)
         {
