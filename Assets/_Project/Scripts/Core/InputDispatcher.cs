@@ -270,6 +270,36 @@ namespace Hecton8.Core
         // per-frame input tick has never run in this session, which is the state a NoOp-latched
         // SystemDispatcher leaves it in - see PumpPreSimulationInputIfDispatcherSkipped.
         private int _lastPreSimulationInputFrame = -1;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // Per-hop counters for the automation-override lane. Editor/dev only; every write goes through a
+        // Diag* method whose body is compiled out of player builds, so the shipping hot path is unchanged.
+        // Read the census emitted by DiagEmitHopCensus - the counters are declared and printed in PIPELINE
+        // ORDER, so the FIRST zero from the left is the hop that dropped the value. See
+        // DiagRecordReadObservation for why the census is emitted from a read accessor and not from a tick.
+        private const int DiagReportAtObservation1 = 240;
+        private const int DiagReportAtObservation2 = 1200;
+        private const int DiagReportAtObservation3 = 3600;
+        private int _diagLateFrameTickCalls;
+        private int _diagPumpFiredCalls;
+        private int _diagPreSimTickCalls;
+        private int _diagPreSimSubsteps;
+        private int _diagCaptureRan;
+        private int _diagCaptureSkippedByFrameGuard;
+        private int _diagOverrideApplied;
+        private int _diagOverrideRejected;
+        private int _diagBlockMaskNonZero;
+        private int _diagPublishAttempts;
+        private int _diagPublishGuardFail;
+        private int _diagPublishBufferFail;
+        private int _diagPublishOk;
+        private int _diagReadObservations;
+        private int _diagReportsEmitted;
+        private bool _diagFinalCensusEmitted;
+        private float _diagLastOverrideMoveX;
+        private float _diagLastOverrideMoveY;
+        private float _diagLastPostMaskMoveX;
+        private float _diagLastPostMaskMoveY;
+#endif
         private int _nextXRDeviceRescanFrame;
         private int _lastXRLookAtHitFrame = -1;
         private int _bufferWriteIndex;
@@ -386,7 +416,17 @@ namespace Hecton8.Core
             set => _inputDelayFrames = Mathf.Clamp(value, 0, MaxInputDelayFrames);
         }
 
-        public InputState CurrentInputState => _currentInputState;
+        public InputState CurrentInputState
+        {
+            get
+            {
+                // The census rides this accessor because probe5 proves it is reached in the failing
+                // configuration while every tick lane this component owns may not be. See the block above
+                // DiagRecordPumpFired.
+                DiagRecordReadObservation(1);
+                return _currentInputState;
+            }
+        }
 
         public InputState PreviousInputState => _previousInputState;
 
@@ -563,6 +603,11 @@ namespace Hecton8.Core
 
         private void ShutdownServiceState(bool resetInitialization, bool clearSubscribers)
         {
+            // Before anything is torn down: ClearFrameState below resets _lastCapturedFrame, and a run that
+            // never tripped an observation threshold would otherwise print no census at all. A probe run
+            // costs a whole editor lock, so the session is guaranteed to leave exactly one readable census.
+            DiagEmitFinalCensus();
+
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
@@ -619,6 +664,7 @@ namespace Hecton8.Core
 
         public void LateFrameTick()
         {
+            DiagRecordLateFrameTick();
             float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
             PumpPreSimulationInputIfDispatcherSkipped();
             UpdateVisualLookInterpolation();
@@ -683,8 +729,261 @@ namespace Hecton8.Core
             if (_lastPreSimulationInputFrame == currentFrame)
                 return;
 
+            DiagRecordPumpFired();
             PreSimulationInputTick(Hecton8.Core.SystemDispatcher.CurrentFrameUnscaledDeltaTime);
         }
+
+        // ---------------------------------------------------------------------------------------------
+        // Automation-override hop census.
+        //
+        // WHY THIS EXISTS. Logs/h8_worldsim_probe5.log reports the Swim moment as
+        // "movementIntent01max=0.000 ... inputServiceRegistered=True inputEnabled=True
+        // switchToPlayerInputCalled=True blockMask=0x00000000", and the VERBSWEEP row as
+        // "overrideFlagSeen=False overridesPublished=152 ... lastResolvedButtons=0x00000000 atFrame=0" plus
+        // "LANECENSUS ... InputStateSignal=0". That is five numbers and they do NOT localise the fault,
+        // because four of them are read from ONE field.
+        //
+        // H8_HeadlessWorldDriver.cs:1153-1157 samples overrideFlagSeen, atFrame, lastResolvedButtons and
+        // arrivedInResolvedSnapshot all from IInputService.CurrentInputState, which is _currentInputState.
+        // That field is assigned in exactly one place, PublishDeterministicInputState (:818), inside the try
+        // block AFTER TryAcquireInputMutationGuard and the four TryResolveInputBuffer calls have all
+        // succeeded, and publishInputState = true is set in the same straight-line block a few statements
+        // later (:831). So "_currentInputState was updated" and "an InputStateSignal was pushed" are the same
+        // event. InputStateSignal=0 therefore forces overrideFlagSeen=False, atFrame=0 and
+        // lastResolvedButtons=0 REGARDLESS of whether the override lane was consumed. The driver's own hint
+        // text - "false means TryConsumeLatestInputOverride never accepted the publish" - does not follow.
+        //
+        // Two hypotheses survive probe5 and produce byte-identical observables:
+        //   H1 LateFrameTick() never ran, so the self-pump above never fired, so PreSimulationInputTick never
+        //      ran. CaptureState is its only per-frame caller, so _currentState stayed at the all-zero cold
+        //      capture (movementIntent01max=0.000) and nothing was ever published (InputStateSignal=0).
+        //      Registration is a live suspect: TryRegisterToDispatcher (:2878) is the sole writer of
+        //      _registeredLateFrame, it returns early when GlobalRegistry.Dispatcher is null, its result is
+        //      never retried, and a false return is not logged anywhere.
+        //   H2 PreSimulationInputTick DID run, but every TryConsumeLatestInputOverride hit the age branch at
+        //      CoreDeterminismSignals.cs:197-202, which clears the signal and returns false with no log at
+        //      all - and, independently, the publish gate failed, because
+        //      OpenOrAcquireInputBufferForOwnerRoute (:1358) returns false on IsAllocationLocked /
+        //      IsCompactionFenceActive and TryAcquireInputMutationGuard (:1418) returns false off the owner
+        //      thread, both silently. probe5 does show vault turbulence across the menu transition
+        //      (FatalMemoryLeakException at 01_MAIN_MENU).
+        // The clock-skew LogError at CoreDeterminismSignals.cs:212 fired ZERO times in probe5, which rules
+        // out the frame-clock latch fixed in 1261c9fc6 but does not separate H1 from H2.
+        //
+        // The census below separates them in one run. Counters are printed in pipeline order, so the first
+        // zero from the left is the break point: lateFrameTick=0 is H1; lateFrameTick>0 with publishOk=0 and
+        // a nonzero publishGuardFail/publishBufferFail is H2's publish gate; overrideRejected>0 with
+        // overrideApplied=0 is the consume gate.
+        //
+        // It is emitted from a READ accessor, not from a tick lane, and that is deliberate. Every tick lane
+        // this component owns (LateFrameTick, SlowTick) is registered by the same TryRegisterToDispatcher
+        // call, so under H1 all of them are dead and a census emitted from one of them would print nothing -
+        // the useless outcome. probe5 PROVES the driver read CurrentInputState (it printed atFrame and
+        // lastResolvedButtons from it), so that accessor is the one observation point in this file with
+        // measured reachability in the failing configuration.
+        // ---------------------------------------------------------------------------------------------
+        private void DiagRecordPumpFired()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _diagPumpFiredCalls++;
+#endif
+        }
+
+        private void DiagRecordLateFrameTick()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _diagLateFrameTickCalls++;
+#endif
+        }
+
+        private void DiagRecordPreSimTick()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _diagPreSimTickCalls++;
+#endif
+        }
+
+        private void DiagRecordPreSimSubstep()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _diagPreSimSubsteps++;
+#endif
+        }
+
+        private void DiagRecordCaptureSkippedByFrameGuard()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _diagCaptureSkippedByFrameGuard++;
+#endif
+        }
+
+        private void DiagRecordCaptureRan()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _diagCaptureRan++;
+#endif
+        }
+
+        private void DiagRecordOverrideOutcome(bool applied, Vector2 consumedMove)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (applied)
+            {
+                _diagOverrideApplied++;
+                _diagLastOverrideMoveX = consumedMove.x;
+                _diagLastOverrideMoveY = consumedMove.y;
+                return;
+            }
+
+            _diagOverrideRejected++;
+#endif
+        }
+
+        private void DiagRecordPostBlockMask(uint blockMask, Vector2 postMaskMove)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (blockMask != 0u)
+                _diagBlockMaskNonZero++;
+
+            _diagLastPostMaskMoveX = postMaskMove.x;
+            _diagLastPostMaskMoveY = postMaskMove.y;
+#endif
+        }
+
+        private void DiagRecordPublishAttempt()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _diagPublishAttempts++;
+#endif
+        }
+
+        private void DiagRecordPublishGuardFail()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _diagPublishGuardFail++;
+#endif
+        }
+
+        private void DiagRecordPublishBufferFail()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _diagPublishBufferFail++;
+#endif
+        }
+
+        private void DiagRecordPublishOk()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _diagPublishOk++;
+#endif
+        }
+
+        /// <summary>
+        /// Counts a read of the resolved/player snapshot and emits the hop census at three fixed
+        /// observation counts. Zero allocation on every call except those three.
+        /// </summary>
+        /// <param name="readHop">
+        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+        /// </param>
+        private void DiagRecordReadObservation(int readHop)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _diagReadObservations++;
+
+            // Monotone stage gate rather than equality against the thresholds: these counters are plain
+            // int increments off two accessors, so an exact-value test could be stepped over and lose the
+            // whole report. This cannot be skipped.
+            int threshold;
+            switch (_diagReportsEmitted)
+            {
+                case 0:
+                    threshold = DiagReportAtObservation1;
+                    break;
+                case 1:
+                    threshold = DiagReportAtObservation2;
+                    break;
+                case 2:
+                    threshold = DiagReportAtObservation3;
+                    break;
+                default:
+                    return;
+            }
+
+            if (_diagReadObservations < threshold)
+                return;
+
+            _diagReportsEmitted++;
+            DiagEmitHopCensus(readHop);
+#endif
+        }
+
+        private void DiagEmitFinalCensus()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_diagFinalCensusEmitted)
+                return;
+
+            _diagFinalCensusEmitted = true;
+            DiagEmitHopCensus(0);
+#endif
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private void DiagEmitHopCensus(int readHop)
+        {
+            // COLD ALLOC: one census string - emitted at most three times per session from a read accessor -
+            // owner: InputDispatcher
+            Hecton8.Core.H8Debug.LogWarning(
+                "[H8_INPUTHOP] readHop=" + readHop +
+                " obs=" + _diagReadObservations +
+                " | lateFrameTick=" + _diagLateFrameTickCalls +
+                " pumpFired=" + _diagPumpFiredCalls +
+                " presimTick=" + _diagPreSimTickCalls +
+                " presimSubsteps=" + _diagPreSimSubsteps +
+                " | captureRan=" + _diagCaptureRan +
+                " captureSkippedByFrameGuard=" + _diagCaptureSkippedByFrameGuard +
+                " | overrideApplied=" + _diagOverrideApplied +
+                " overrideRejected=" + _diagOverrideRejected +
+                " lastOverrideMove=(" + _diagLastOverrideMoveX + "," + _diagLastOverrideMoveY + ")" +
+                " | blockMaskNonZero=" + _diagBlockMaskNonZero +
+                " postMaskMove=(" + _diagLastPostMaskMoveX + "," + _diagLastPostMaskMoveY + ")" +
+                " | publishAttempt=" + _diagPublishAttempts +
+                " publishGuardFail=" + _diagPublishGuardFail +
+                " publishBufferFail=" + _diagPublishBufferFail +
+                " publishOk=" + _diagPublishOk +
+                " | currentStateMove=(" + _currentState.MoveDelta.x + "," + _currentState.MoveDelta.y + ")" +
+                " currentInputStateFrame=" + _currentInputState.Frame +
+                " standardInputFrame=" + _standardInputFrame +
+                " inputStateSequence=" + _inputStateSequence +
+                " | initialized=" + _isInitialized +
+                " regLateFrame=" + _registeredLateFrame +
+                " regSlowTick=" + _registeredSlowTick +
+                " regInputService=" + _registeredInputService +
+                " vaultNull=" + (_dataVault == null) +
+                " vaultBuffersReady=" + _deterministicVaultBuffersReady +
+                " lastPresimFrame=" + _lastPreSimulationInputFrame +
+                " lastCapturedFrame=" + _lastCapturedFrame +
+                " frameIndex=" + Hecton8.Core.SystemDispatcher.CurrentFrameIndex +
+                " frameId=" + Hecton8.Core.SystemDispatcher.CurrentFrameId +
+                " - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the" +
+                " override. lateFrameTick=0 means this component's late-frame lane never ran, so the" +
+                " self-pump never fired and PreSimulationInputTick - the only per-frame caller of" +
+                " CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override" +
+                " lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every" +
+                " capture; compare lastCapturedFrame against frameIndex. captureRan>0 with" +
+                " overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no" +
+                " clock-skew LogError that leaves the silent age>maxFrameAge branch at" +
+                " CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio:" +
+                " overrideRejected is expected to be large even in a fully healthy run because it counts" +
+                " every poll on a frame where the driver published nothing (Sequence==0 early return)." +
+                " overrideApplied>0 with currentStateMove=(0,0) means the" +
+                " value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero." +
+                " publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being" +
+                " zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are" +
+                " the same event - those four driver numbers are not evidence about the override lane.");
+        }
+#endif
 
         public void SlowTick()
         {
@@ -697,6 +996,7 @@ namespace Hecton8.Core
             // one reaches the frame first suppresses the other. Written before any early exit inside the
             // substep loop so a frame that legitimately produces zero substeps still counts as ticked.
             _lastPreSimulationInputFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            DiagRecordPreSimTick();
 #if UNITY_EDITOR
             if (_deterministicVaultBuffersReady)
                 ApplyPendingInputProfileCsv();
@@ -716,6 +1016,7 @@ namespace Hecton8.Core
                 else
                     _standardInputAccumulator = 0d;
 
+                DiagRecordPreSimSubstep();
                 CaptureState((float)StandardInputTickIntervalSeconds);
                 PublishDeterministicInputState(_standardInputFrame++);
                 substepCount++;
@@ -734,6 +1035,7 @@ namespace Hecton8.Core
         /// <returns>Current frame snapshot.</returns>
         public PlayerInputState GetState()
         {
+            DiagRecordReadObservation(2);
             return _currentState;
         }
 
@@ -761,8 +1063,12 @@ namespace Hecton8.Core
             if (_lastDeterministicInputFrame == currentFrame)
                 return;
 
+            DiagRecordPublishAttempt();
             if (!TryAcquireInputMutationGuard())
+            {
+                DiagRecordPublishGuardFail();
                 return;
+            }
 
             bool stageReplaySnapshot = false;
             bool dumpDeterministicBlackBox = false;
@@ -778,7 +1084,10 @@ namespace Hecton8.Core
                     !TryResolveInputBuffer(in _predictedInputHandle, DeterministicInputRingCapacity, out NativeArray<PredictedInputDTO> predictedInputs) ||
                     !TryResolveInputBuffer(in _predictedInputAupTargetHandle, DeterministicInputRingCapacity, out NativeArray<PredictedInputAupTargetDTO> predictedInputTargets) ||
                     !TryResolveInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out NativeArray<InputState> inputStateRing))
+                {
+                    DiagRecordPublishBufferFail();
                     return;
+                }
 
                 _lastDeterministicInputFrame = currentFrame;
                 InputState rawState = BuildInputState(_currentState, currentFrame, unchecked(++_inputStateSequence));
@@ -829,6 +1138,7 @@ namespace Hecton8.Core
                 discreteCurrentButtonMask = resolvedState.ButtonsBitmask;
                 _previousButtonMask = resolvedState.ButtonsBitmask;
                 publishInputState = true;
+                DiagRecordPublishOk();
                 dumpDeterministicBlackBox = WriteDeterministicInputBlackBox(
                     in resolvedState,
                     _currentInputSchemeHash,
@@ -3072,9 +3382,13 @@ namespace Hecton8.Core
 
             int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastCapturedFrame == currentFrame)
+            {
+                DiagRecordCaptureSkippedByFrameGuard();
                 return;
+            }
 
             _lastCapturedFrame = currentFrame;
+            DiagRecordCaptureRan();
             long pollStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
 
             PlayerInputState state = default;
@@ -3132,10 +3446,13 @@ namespace Hecton8.Core
             // published, movementIntent01max=0.000, Swim row FAIL with the input path fully open.
             bool automationOverrideApplied = ApplyAutomationOverride(ref state, Hecton8.Core.SystemDispatcher.CurrentFrameId);
             _lastAutomationOverrideApplied = automationOverrideApplied;
+            DiagRecordOverrideOutcome(automationOverrideApplied, state.MoveDelta);
             if (automationOverrideApplied)
                 _lastDeliveredLookDelta = state.LookDelta;
 
-            ApplyInputBlockMask(ref state, ReadInputBlockMask());
+            uint activeInputBlockMask = ReadInputBlockMask();
+            ApplyInputBlockMask(ref state, activeInputBlockMask);
+            DiagRecordPostBlockMask(activeInputBlockMask, state.MoveDelta);
             uint resolvedSchemeHash = ResolveCurrentInputSchemeHash();
             if (automationOverrideApplied && state.CurrentInputSchemeHash != 0u)
                 resolvedSchemeHash = state.CurrentInputSchemeHash;
