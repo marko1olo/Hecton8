@@ -132,6 +132,26 @@ namespace Hecton8.AI
         // Hard bound on how many detecting creatures may defer dehydration in one pass, so a
         // pathological detection storm can never pin the whole population in presentation.
         private const int FaunaSensoryDehydrationGraceCap = 8;
+        // SlowTicks a creature keeps its sensory hold after the LAST tick on which it actually detected
+        // the player. At DirectorSlowTickIntervalSeconds = 0.5 s that is 2.5 s, inside the 2-3 s
+        // hysteresis band AGENTS.md requires of any AI-behaviour or LOD switch.
+        //
+        // This is also what makes the dehydration grace reachable at all. Effective detection range is
+        //   max(baseAggroDistance * exp(-turbidity),
+        //       min(baseAggroDistance + noiseDetectionBonus, playerSpeed * FaunaSensoryHearingSpeedScale))
+        // and exp(-turbidity) <= 1, so the visual term never exceeds the archetype's own aggro distance.
+        // Authored baseAggroDistance across all 22 Data/AI/CreatureArchetypes assets: 34 (six
+        // Leviathans), 18 (eight Hunters), 14 and 12 (two Territorial), 0 (six Ambient); the
+        // null-archetype fallbacks declared above are 20 visual / 30 hearing. Every one of those is
+        // BELOW DehydrationDistanceMeters = 40, so a same-tick-only detection test can never be true at
+        // the distance where dehydration happens - the grace keyed on the raw verdict was dead code. The
+        // hearing term is the one term that can pass 40 (max authored baseAggroDistance +
+        // noiseDetectionBonus is 34 + 19 = 53), but only while the published player speed is at least
+        // 20 m/s, and the authored suits cap swim speed at 9 (Suit_Light_Default) / 7 (Suit_Heavy_ATLAS)
+        // before runtime multipliers. The hold moves the decision to where detection really occurs: a creature
+        // that noticed the player at 34 m keeps its presentation instance while he swims out past 40 m,
+        // instead of being deactivated out from under him mid-retreat.
+        private const int FaunaSensoryDetectionHoldTicks = 5;
         private const string MaxHibernatedFaunaStatesWarning = "[FaunaDirector] Max hibernated fauna states reached. Extra residents were not saved.";
         // Constant strings: no concat, no interpolation, no ToString in the SlowTick path.
         private const string SensoryPlayerNoticedLog = "[FaunaDirector] Sensory: player entered fauna detection range (see _debugPlayerDetectedCount).";
@@ -194,6 +214,16 @@ namespace Hecton8.AI
             /// Refreshed by <see cref="RefreshFaunaSensoryDetection"/> once per director SlowTick.
             /// </summary>
             public bool playerDetected;
+
+            /// <summary>
+            /// SlowTicks of sensory hold left. Reset to <see cref="FaunaSensoryDetectionHoldTicks"/> on
+            /// every tick <see cref="playerDetected"/> is true, decremented by one on every tick it is
+            /// false. Non-zero means "this creature has the player in its awareness window right now or
+            /// lost him within the hysteresis band", which is what the dehydration grace in
+            /// <see cref="CullOrDehydrateDistantCreatures"/> consumes. Integer countdown, so no wall
+            /// clock is read inside SlowTick and the decay is deterministic.
+            /// </summary>
+            public int sensoryDetectionHoldTicks;
         }
 
         private struct ResolvedFaunaEntry
@@ -482,7 +512,11 @@ namespace Hecton8.AI
         [SerializeField] private float _debugSensoryTurbidity;
         [Tooltip("Player speed in m/s used as the hearing term of the detection model.")]
         [SerializeField] private float _debugSensoryPlayerSpeed;
-        [Tooltip("Creatures that deferred dehydration this tick because they had noticed the player.")]
+        [Tooltip("Creatures still inside the post-detection sensory hold window, i.e. they detected the player " +
+                 "this tick or within the last FaunaSensoryDetectionHoldTicks SlowTicks.")]
+        [SerializeField] private int _debugSensoryHoldCreatures;
+        [Tooltip("Creatures past the dehydration distance that kept their presentation instance this tick " +
+                 "because their sensory hold was still alive.")]
         [SerializeField] private int _debugSensoryDehydrationGrants;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -809,6 +843,8 @@ namespace Hecton8.AI
             // transition against a count left over from the previous session.
             _playerDetectedCreatureCount = 0;
             _debugPlayerDetectedCount = 0;
+            _debugSensoryHoldCreatures = 0;
+            _debugSensoryDehydrationGrants = 0;
             _sensoryDehydrationGraceRemaining = 0;
             if (releaseNativeState && ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -1385,7 +1421,13 @@ namespace Hecton8.AI
         /// This is deliberately NOT a second copy of per-creature perception. <c>FaunaSensorSuite</c> already
         /// owns close-range vision cones, nav-grid line of sight and noise contact. What did not exist
         /// anywhere before this call is a turbidity- and speed-modulated awareness verdict the Director can
-        /// act on for population decisions â€” which is what the dehydration grace below consumes.
+        /// act on for population decisions.
+        ///
+        /// The verdict is consumed through <see cref="ActiveCreature.sensoryDetectionHoldTicks"/>, not
+        /// directly: this pass turns the instantaneous bool into a decaying hold, and the dehydration grace
+        /// in <see cref="CullOrDehydrateDistantCreatures"/> reads the hold. The instantaneous bool cannot be
+        /// read there, because detection is only possible strictly inside the distance at which dehydration
+        /// starts (see <see cref="FaunaSensoryDetectionHoldTicks"/> for the shipped-data arithmetic).
         ///
         /// Cadence: once per director SlowTick (~0.5 s), never per frame. Population is bounded by
         /// <see cref="GlobalFaunaHardCap"/>, so this is at most 200 pure-math calls twice a second.
@@ -1410,6 +1452,7 @@ namespace Hecton8.AI
             int detectedCount = 0;
             int newDetections = 0;
             int lostDetections = 0;
+            int heldCount = 0;
 
             if (_activeCreatures != null && _activeCreatures.Count > 0 && playerAup.IsFinite())
             {
@@ -1475,6 +1518,19 @@ namespace Hecton8.AI
                         lostDetections++;
 
                     creature.playerDetected = isDetected;
+
+                    // Hysteresis for the dehydration LOD switch. Refresh the hold on every tick the
+                    // creature genuinely detects the player; bleed it down one SlowTick at a time once
+                    // detection is lost. Integer countdown - deterministic, no wall clock, no branch on
+                    // Time.deltaTime inside owner tick logic.
+                    if (isDetected)
+                        creature.sensoryDetectionHoldTicks = FaunaSensoryDetectionHoldTicks;
+                    else if (creature.sensoryDetectionHoldTicks > 0)
+                        creature.sensoryDetectionHoldTicks--;
+
+                    if (creature.sensoryDetectionHoldTicks > 0)
+                        heldCount++;
+
                     _activeCreatures[i] = creature;
                 }
             }
@@ -1483,6 +1539,7 @@ namespace Hecton8.AI
             _debugPlayerDetectedCount = detectedCount;
             _debugSensoryNewDetections = newDetections;
             _debugSensoryLostDetections = lostDetections;
+            _debugSensoryHoldCreatures = heldCount;
 
             // Edge-triggered on the aggregate, with constant strings: one line when the world first
             // notices the player and one when it loses him again. Never per creature, never per frame.
@@ -1595,11 +1652,16 @@ namespace Hecton8.AI
                 if (playerDistanceSq < DehydrationDistanceSq)
                     continue;
 
-                // Sensory grace: a creature that has just noticed the player must not be silently
-                // deactivated out from under him. Bounded three ways â€” the creature must actually
-                // report detection this tick, it must still be inside hibernation range, and at most
-                // FaunaSensoryDehydrationGraceCap creatures may defer per pass.
-                if (creature.playerDetected &&
+                // Sensory grace: a creature that has noticed the player must not be silently deactivated
+                // out from under him while he is still pulling away. Keyed on the sensory HOLD, not on
+                // this tick's raw verdict: creature.playerDetected can only be true this far out if the
+                // creature's effective detection range exceeded DehydrationDistanceMeters, and no
+                // shipped archetype's visual range does (the ceiling is 34 m against a 40 m gate - see
+                // FaunaSensoryDetectionHoldTicks for the full arithmetic), so the raw verdict left this
+                // branch permanently false and the grant counter permanently zero. Bounded three ways
+                // â€” the hold must still be alive, at most FaunaSensoryDehydrationGraceCap creatures may
+                // defer per pass, and the creature must still be inside hibernation range.
+                if (creature.sensoryDetectionHoldTicks > 0 &&
                     _sensoryDehydrationGraceRemaining > 0 &&
                     playerDistanceSq < HibernationDistanceSq)
                 {
