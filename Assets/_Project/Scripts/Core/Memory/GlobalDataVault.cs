@@ -547,6 +547,14 @@ namespace Hecton8.Core.Memory
         // op on ARM64 as well as x64. Maintained only under the block mutation gate.
         private int _activeGuardLockMaskLow;
         private int _activeGuardLockMaskHigh;
+        // Second shadow of the same locks, keyed STRICTLY by (id & 63) instead of by both candidates.
+        // The pair above is a union of the tree's two mask conventions, so it stays fail-closed for a caller
+        // whose convention cannot be determined; this pair is exact for a caller that provably uses
+        // (id & 63). Which one applies is decided by the caller's own mask - see
+        // HasActiveLockConflictForMutationMask. Maintained only under the block mutation gate, alongside the
+        // union pair, so the two can never disagree about which locks exist.
+        private int _activeGuardLock64MaskLow;
+        private int _activeGuardLock64MaskHigh;
         private bool _memMoveBlockedByStress;
         private byte _memoryStarvationWarnings;
         private long _allocatedBytes;
@@ -857,6 +865,8 @@ namespace Hecton8.Core.Memory
                 _mutationGuardMaskHigh = 0;
                 _activeGuardLockMaskLow = 0;
                 _activeGuardLockMaskHigh = 0;
+                _activeGuardLock64MaskLow = 0;
+                _activeGuardLock64MaskHigh = 0;
                 _memoryStarvationWarnings = 0;
                 _allocatedBytes = 0L;
                 _macroDatabasePayloadBytes = 0L;
@@ -3040,6 +3050,19 @@ namespace Hecton8.Core.Memory
             return (1UL << unchecked((int)(id & 63u))) | (1UL << unchecked((int)(id & 31u)));
         }
 
+        // The strict half of the pair above: the single bit a caller claims when it provably uses
+        // InputDispatcher.MutationGuardBit's own convention, 1UL << (id & 63), with no (id & 31) candidate
+        // folded in. ResolveGuardLockBits stays the fail-closed default for a mask whose convention cannot
+        // be determined; this one is for the shadow that records what is EXACTLY locked, so the two can be
+        // compared instead of one hiding the other. When (id & 63) < 32 both functions return the same
+        // single bit, which is why the strict shadow can never claim a bit the union shadow lacks.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong ResolveGuard64LockBit(int bufferKey)
+        {
+            uint id = unchecked((uint)bufferKey);
+            return 1UL << unchecked((int)(id & 63u));
+        }
+
         // Both candidates above are congruent mod 32, so one 32-lane active-lock bit 1 << r owns exactly
         // two of the 64 guard bits - r and r + 32 - and no others. That containment is what lets the
         // release path rescope one residue class of the guard shadow without disturbing the other 31.
@@ -3316,6 +3339,20 @@ namespace Hecton8.Core.Memory
                 ref _activeGuardLockMaskHigh,
                 unchecked((int)(uint)(classMask >> 32)),
                 unchecked((int)(uint)(keepBits >> 32)));
+
+            // The strict shadow is rescoped from the same scan, over the same residue class. keepBits already
+            // carries only bits this class owns - r and r + 32 - and the (id & 63) bit of every buffer in the
+            // class is one of those two, so masking it against the class mask is exact rather than a
+            // narrowing. Republished from the identical scan result so the two shadows cannot drift apart.
+            ulong keep64Bits = claimedGuardBits & classMask;
+            ReplaceAtomicBits(
+                ref _activeGuardLock64MaskLow,
+                unchecked((int)(uint)classMask),
+                unchecked((int)(uint)keep64Bits));
+            ReplaceAtomicBits(
+                ref _activeGuardLock64MaskHigh,
+                unchecked((int)(uint)(classMask >> 32)),
+                unchecked((int)(uint)(keep64Bits >> 32)));
         }
 
         private void SetActiveGuardLockBits(int bufferKey)
@@ -3323,6 +3360,12 @@ namespace Hecton8.Core.Memory
             ulong guardBits = ResolveGuardLockBits(bufferKey);
             SetAtomicBits(ref _activeGuardLockMaskLow, unchecked((int)(uint)guardBits));
             SetAtomicBits(ref _activeGuardLockMaskHigh, unchecked((int)(uint)(guardBits >> 32)));
+
+            // Same locks, recorded under the (id & 63) convention alone. Both shadows are written here so a
+            // lock can never be present in one and absent from the other.
+            ulong guard64Bits = ResolveGuard64LockBit(bufferKey);
+            SetAtomicBits(ref _activeGuardLock64MaskLow, unchecked((int)(uint)guard64Bits));
+            SetAtomicBits(ref _activeGuardLock64MaskHigh, unchecked((int)(uint)(guard64Bits >> 32)));
         }
 
         private bool HasActiveBurstLocks(uint externalLockMask)
@@ -3370,6 +3413,27 @@ namespace Hecton8.Core.Memory
 
             int lowMask = unchecked((int)(uint)guardMask);
             int highMask = unchecked((int)(uint)(guardMask >> 32));
+
+            // THE CALLER'S CONVENTION IS DECIDABLE FROM ITS OWN MASK, and that removes the residual
+            // imprecision the comment above calls inherent. 1UL << (id & 31) cannot set a bit >= 32, by
+            // construction. So a mask with ANY high bit set could only have been built by the (id & 63)
+            // convention - InputDispatcher.MutationGuardBit, VaultMemoryContracts, H8MacroDatabaseService -
+            // and for that caller the union shadow's (id & 31) candidates are bits it never meant. Testing it
+            // against the strict shadow instead is exact, not weaker: every locked buffer claims its own
+            // (id & 63) bit in _activeGuardLock64Mask*, so a buffer this mask genuinely names is still
+            // refused. This is what finally separates the bit-56 pair the union shadow cannot:
+            // ShinobuInputCurrentDto(70520) is 70520 & 63 == 56, ShinobuPredictedInputRing(75000) is
+            // 75000 & 63 == 8 - distinct under (id & 63), identical only under the folded union.
+            //
+            // A mask whose bits are ALL < 32 is genuinely ambiguous - either convention could have produced
+            // it - so it keeps the union shadow and stays fail-closed. That is the 208-call-site majority and
+            // loses nothing: under (id & 31) the union shadow's refusal set is already bit-for-bit exact.
+            if (highMask != 0)
+            {
+                return (Volatile.Read(ref _activeGuardLock64MaskLow) & lowMask) != 0 ||
+                    (Volatile.Read(ref _activeGuardLock64MaskHigh) & highMask) != 0;
+            }
+
             return (Volatile.Read(ref _activeGuardLockMaskLow) & lowMask) != 0 ||
                 (Volatile.Read(ref _activeGuardLockMaskHigh) & highMask) != 0;
         }
@@ -4166,6 +4230,8 @@ namespace Hecton8.Core.Memory
             _mutationGuardMaskHigh = 0;
             _activeGuardLockMaskLow = 0;
             _activeGuardLockMaskHigh = 0;
+            _activeGuardLock64MaskLow = 0;
+            _activeGuardLock64MaskHigh = 0;
             _memoryStarvationWarnings = 0;
             _defragBlackBoxCursor = 0;
             _defragBlackBoxRecordedCount = 0;
@@ -5651,6 +5717,13 @@ namespace Hecton8.Core.Memory
             if (writeMask == 0UL || !_blocks.IsCreated)
                 return 0;
 
+            // Must resolve the culprit under the SAME convention the refusal was decided under, or it names a
+            // buffer that did not block anything. HasActiveLockConflictForMutationMask uses the strict
+            // (id & 63) shadow when the mask carries a high bit; matching that here keeps the telemetry
+            // honest, since the union test would happily return the first buffer whose (id & 31) candidate
+            // overlaps - a buffer the caller never named.
+            bool strictConvention = unchecked((int)(uint)(writeMask >> 32)) != 0;
+
             for (int i = 0; i < _blocks.Length; i++)
             {
                 VaultArenaBlock block = _blocks[i];
@@ -5660,7 +5733,10 @@ namespace Hecton8.Core.Memory
                     continue;
                 }
 
-                if ((ResolveGuardLockBits(block.BufferKey) & writeMask) != 0UL)
+                ulong blockGuardBits = strictConvention
+                    ? ResolveGuard64LockBit(block.BufferKey)
+                    : ResolveGuardLockBits(block.BufferKey);
+                if ((blockGuardBits & writeMask) != 0UL)
                     return block.BufferKey;
             }
 
