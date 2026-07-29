@@ -195,18 +195,18 @@ Material:
     - _WaveFoamStart: 0
     - _WaveFoamStrength: 1.25
     m_Colors:
-    - _DepthFogDensity: {r: 0.05675477, g: 0.06019851, b: 0.065364115, a: 0}
-    - _Diffuse: {r: 0.04568002, g: 0.17981417, b: 0.25446776, a: 1}
-    - _DiffuseGrazing: {r: 0.2966431, g: 0.5612263, b: 0.6065156, a: 1}
-    - _DiffuseShadow: {r: 0.30951443, g: 0.45792568, b: 0.6458933, a: 1}
+    - _DepthFogDensity: {r: 0.07999895, g: 0.079999104, b: 0.07999934, a: 0}
+    - _Diffuse: {r: 0.038636066, g: 0.16077895, b: 0.20493905, a: 1}
+    - _DiffuseGrazing: {r: 0.14294776, g: 0.42611068, b: 0.39981848, a: 1}
+    - _DiffuseShadow: {r: 0.30951262, g: 0.45792568, b: 0.6458933, a: 1}
     - _FoamBubbleColor: {r: 0, g: 0, b: 0, a: 1}
     - _FoamWhiteColor: {r: 1, g: 0.99634784, b: 0.97199994, a: 0.6862745}
-    - _SkyAwayFromSun: {r: 0.38988674, g: 0.4483726, b: 0.61415404, a: 1}
-    - _SkyBase: {r: 0.8337229, g: 0.53118867, b: 0.56432027, a: 1}
+    - _SkyAwayFromSun: {r: 0.38904408, g: 0.44847125, b: 0.61509025, a: 1}
+    - _SkyBase: {r: 0.83234996, g: 0.5315582, b: 0.56446356, a: 1}
     - _SkyTowardsSun: {r: 0.81534445, g: 0.5707411, b: 0.24460335, a: 1}
     - _SubSurface: {r: 0, g: 0.48, b: 0.36, a: 1}
-    - _SubSurfaceColour: {r: 0.2966431, g: 0.5612263, b: 0.6065156, a: 1}
-    - _SubSurfaceShallowCol: {r: 0.2966431, g: 0.5612263, b: 0.6065156, a: 1}
+    - _SubSurfaceColour: {r: 0.14294776, g: 0.42611068, b: 0.39981848, a: 1}
+    - _SubSurfaceShallowCol: {r: 0.14294776, g: 0.42611068, b: 0.39981848, a: 1}
     - _SubSurfaceShallowColShadow: {r: 0.8560342, g: 0.71364444, b: 0.86247635, a: 1}
     - _SubSurfaceShallowColour: {r: 0.28, g: 0.62, b: 0.64, a: 1}
   m_BuildTextureStacks: []

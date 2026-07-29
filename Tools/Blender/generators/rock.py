@@ -193,6 +193,36 @@ WITNESS_PIT_DEPTH_M = 0.011
 # scales live in geometry and which live in the material.
 GEOMETRIC_GRAIN_NYQUIST_FACTOR = 2.4
 
+# ...AND THE FACTOR ABOVE MUST GUARD THE FINEST OCTAVE, NOT THE BASE ONE. This is the defect
+# that kept the masonry alive after the clamp above was already in place, and it is worth
+# stating as a number because the clamp LOOKS like it is doing the job:
+#
+#   the clamp set the BASE wavelength to 2.4 x spacing, then `AnisotropicField` was built with
+#   `octaves=3, lacunarity=2.15`, so the finest octave sat at base / 2.15^2 = base / 4.62.
+#   Measured samples-per-wavelength on the finest octave, all three size classes: 0.52.
+#   Nyquist needs more than 2. So the two finest octaves were pure per-vertex white noise --
+#   3.85x below the sampling floor -- on a regular quad grid.
+#
+# White noise on a quad grid IS two-axis masonry: every quad becomes an independent plateau,
+# rows and columns both regular, which is precisely the dry-stone-wall read. The cascade
+# walked straight past the guard standing in front of it.
+#
+# So the band is now defined from its FINE end, where the lattice constraint actually lives,
+# and the octave count is small and the lacunarity gentle so the coarse end stays surface
+# texture instead of becoming the form. Sub-lattice grain is not "reduced" here, it is
+# ABSENT by construction, and the manifest says so: it belongs in the normal map.
+GRAIN_OCTAVES = 2
+GRAIN_LACUNARITY = 1.6
+
+# Amplitude as a fraction of wavelength, i.e. a SLOPE. 1/(2*pi) = 0.159 is the point at which a
+# sinusoid's own gradient reaches 1 and the surface folds through itself; the previous
+# `0.16 + 0.22 * q` reached 0.38 at full quality, 2.4x past that limit, so at q=1 the grain was
+# guaranteed to fold and then be rescued by the per-vertex `local_edge * 0.70` clamp -- which is
+# itself a lattice-frequency term and so a second masonry source. Staying under the fold limit
+# means the clamp stops being load-bearing.
+GRAIN_SLOPE_MIN = 0.10
+GRAIN_SLOPE_MAX = 0.155
+
 # Beds are capped so a tall chunk cannot demand more rings than its triangle budget
 # can carry. Recorded in the manifest when it binds.
 MAX_BEDS = 42
@@ -898,15 +928,54 @@ class LatticeDensity:
     lattice_triangles: int
 
 
-def geometric_grain_wavelength(density: "LatticeDensity") -> float:
-    """Shortest surface-grain wavelength this lattice can actually carry, in metres.
+def finest_representable_wavelength(density: "LatticeDensity") -> float:
+    """Shortest wavelength this lattice can carry at all, in metres.
 
     Keyed off the COARSER of the two achieved spacings, because a field is under-sampled as
     soon as either axis is too coarse for it -- averaging the two would let a fine vertical
     spacing hide a coarse circumferential one, which is exactly the state the outcrop was in.
     """
     coarsest = max(density.achieved_ring_spacing_m, density.achieved_segment_spacing_m)
-    return max(WITNESS_GRAIN_WAVELENGTH_M, coarsest * GEOMETRIC_GRAIN_NYQUIST_FACTOR)
+    return coarsest * GEOMETRIC_GRAIN_NYQUIST_FACTOR
+
+
+def geometric_grain_wavelength(density: "LatticeDensity") -> float:
+    """BASE grain wavelength whose FINEST octave is still representable, in metres.
+
+    The octave cascade is part of the field, so the sampling constraint has to be applied
+    through it rather than to its coarsest member. ``AnisotropicField`` divides the base by
+    ``lacunarity ** octave``, so the finest member is ``base / lacunarity ** (octaves - 1)``
+    and THAT is the one that has to clear the lattice.
+
+    The returned wavelength is therefore always at or above the witness value, and on the
+    outcrop and cliff chunk it is well above it. That is not a compromise to be tuned away:
+    it is the honest statement that those size classes cannot carry 0.075 m relief as
+    GEOMETRY inside their triangle budget, and section 2 of ``3DMODEL_GEOLOGY_ROCKS.md``
+    already routes that detail correctly -- "Major cracks need mesh relief, bevel chips, or
+    baked normal/depth support".
+    """
+    finest = finest_representable_wavelength(density)
+    return max(WITNESS_GRAIN_WAVELENGTH_M,
+               finest * (GRAIN_LACUNARITY ** (GRAIN_OCTAVES - 1)))
+
+
+def pit_field_is_representable(density: "LatticeDensity") -> bool:
+    """Can this lattice carry the ABSOLUTE pit wavelength the scale witness declares?
+
+    The pit field was reading ``WITNESS_PIT_WAVELENGTH_M`` (0.052 m) RAW -- no clamp of any
+    kind -- against achieved spacings of 0.036/0.085/0.169 m, i.e. 1.4/0.6/0.3 samples per
+    wavelength. So it was a second independent white-noise source feeding the same masonry,
+    and the grain clamp never covered it because it is a different field.
+
+    It is NOT clamped up to a representable wavelength, and that is the point. Stretching a
+    0.052 m vug to 0.41 m so the lattice can sample it does not preserve the feature, it
+    replaces it with a different one: a broad shallow dish is not a pit, and the manifest
+    would still be claiming a 0.052 m witness. A scale witness is an ABSOLUTE claim, so the
+    honest options are "in the mesh at its declared size" or "not in the mesh" -- and
+    ``3DMODEL_GEOLOGY_ROCKS.md`` section 2 provides the second route explicitly, with
+    ``punch_vugs`` still supplying the mesh-scale cavities section 3 asks for in silhouette.
+    """
+    return WITNESS_PIT_WAVELENGTH_M >= finest_representable_wavelength(density)
 
 
 def solve_density(strata: Stratigraphy, size: SizeClass, quality: float,
@@ -1015,18 +1084,46 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
     # 2.9 cm here, 1.0 percent of extent, still an order of magnitude under the bed relief so
     # the strata stay dominant, and still far under the `local_edge * 0.70` fold limit.
     grain_wavelength = geometric_grain_wavelength(density)
-    grain_amp = grain_wavelength * (0.16 + 0.22 * q)
+    grain_amp = grain_wavelength * (GRAIN_SLOPE_MIN
+                                    + (GRAIN_SLOPE_MAX - GRAIN_SLOPE_MIN) * q)
+    # More waves per octave now that there are fewer octaves: richness has to come from
+    # DIRECTIONS and PHASES inside the representable band instead of from octaves below it.
+    # The octave count no longer switches on quality -- quality already drives the lattice
+    # spacing, which drives the wavelength, so the field still varies continuously with q and
+    # `AGENTS.md`'s ban on binary quality switches is satisfied by the spacing, not by a
+    # branch that pushed the field under Nyquist at exactly q >= 0.5.
     grain = AnisotropicField(
         rng, grain_wavelength,
-        octaves=2 if q < 0.5 else 3,
+        octaves=GRAIN_OCTAVES, waves_per_octave=11, lacunarity=GRAIN_LACUNARITY,
         bedding_normal=np.array([frame.normal.x, frame.normal.y, frame.normal.z]),
         anisotropy=3.4 if process == "sedimentary" else 2.1,
     )
+    pit_representable = pit_field_is_representable(density)
     pit = AnisotropicField(
         rng, WITNESS_PIT_WAVELENGTH_M, octaves=1, waves_per_octave=7,
         bedding_normal=np.array([frame.normal.x, frame.normal.y, frame.normal.z]),
         anisotropy=1.35,
     )
+    finest_grain = grain_wavelength / (GRAIN_LACUNARITY ** (GRAIN_OCTAVES - 1))
+    coarsest_spacing = max(density.achieved_ring_spacing_m,
+                           density.achieved_segment_spacing_m)
+    grain_report = {
+        "witnessWavelengthM": WITNESS_GRAIN_WAVELENGTH_M,
+        "coarsestLatticeSpacingM": round(coarsest_spacing, 5),
+        "baseWavelengthM": round(grain_wavelength, 5),
+        "finestOctaveWavelengthM": round(finest_grain, 5),
+        "finestOctaveSamplesPerWavelength": round(finest_grain / coarsest_spacing, 3),
+        "pitWavelengthM": round(pit_wavelength, 5),
+        "pitSamplesPerWavelength": round(pit_wavelength / coarsest_spacing, 3),
+        "amplitudeM": round(grain_amp, 5),
+        "amplitudeOverWavelength": round(grain_amp / max(1e-9, grain_wavelength), 4),
+        "foldLimitSlope": round(1.0 / (2.0 * math.pi), 4),
+        "subLatticeGrainRoute":
+            "Detail below {f:.3f} m cannot be sampled by this lattice and is NOT in the "
+            "mesh. 3DMODEL_GEOLOGY_ROCKS.md section 2 routes it to baked normal/depth "
+            "support; the witness {w} m is a MATERIAL-space scale on this size class."
+            .format(f=finest_grain, w=WITNESS_GRAIN_WAVELENGTH_M),
+    }
 
     # Azimuths are NOT uniform any more: the joint-polygon corner azimuths are in the list
     # exactly, and the rest is fill. Every ring shares the list, which is what keeps the
@@ -1322,7 +1419,7 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
                     warning="" if stats["degenerate_faces_deleted"] == 0 else
                     "welded away {n} zero-area faces".format(
                         n=stats["degenerate_faces_deleted"]))
-    return bm, grain, pit
+    return bm, grain, pit, grain_report
 
 
 # ---------------------------------------------------------------------------
@@ -1476,7 +1573,24 @@ def truncate_summit(bm: bmesh.types.BMesh, frame: BeddingFrame, strata: Stratigr
     # from 0.70-0.86 to 0.80-0.91 once the summit and the shear cuts started sharing one
     # volume budget -- at the old value the summit alone could eat a third of the rock.
     keep = float(rng.uniform(0.80 + 0.02 * q, 0.91))
-    offset = float(np.quantile(distances, keep))
+    # A FRACTION OF THE BODY'S EXTENT ALONG THIS NORMAL, not a quantile of the vertex
+    # distribution. The quantile version coupled the cut depth to the STATISTICS of the
+    # surface noise, and that coupling fired the moment the grain field was band-limited:
+    # the old aliased grain scattered vertices into a long tail, so the 0.80-0.91 quantile
+    # sat high and removed little, and with a smooth grain the same quantile sits much
+    # closer to the mean and ate the rock. Measured on the cliff chunk with
+    # `--debug-stage lattice` versus `--debug-stage fracture`: the lattice was an upright
+    # blocky mass and the post-cut body was a low flat wedge -- the "flake" failure
+    # `CUT_VOLUME_BUDGET_FRACTION` above is written to prevent, arriving through a stage
+    # that never checked itself against that budget.
+    #
+    # An extent fraction keeps the author's original intent -- the reason the quantile was
+    # chosen was dip and drift invariance, and measuring ALONG THE CUT NORMAL is invariant
+    # to both for the same reason -- while being independent of how rough the surface is.
+    # Robust percentiles rather than min/max so one spike cannot define the span.
+    low = float(np.percentile(distances, 2.0))
+    high = float(np.percentile(distances, 98.0))
+    offset = low + keep * (high - low)
     # The plane must ALWAYS sit below the highest point by a real margin, whatever the quantile
     # happened to select. Measured on the 7.6 m cliff chunk: a quantile-only offset left the
     # poked top cap intact above the plane, so the summit rendered as the radial starburst fan
@@ -3233,6 +3347,7 @@ class VariantResult:
     mesh_reports: list = field(default_factory=list)
     export_result: object = None
     bedding_erosion: dict = field(default_factory=dict)
+    grain_band: dict = field(default_factory=dict)
 
 
 def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str,
@@ -3272,7 +3387,9 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
                     triangle_count=density.lattice_triangles)
 
     # Stage 3: high-detail source geometry.
-    bm, _grain, _pit = build_body(strata, frame, density, size, rng, q, process, blackbox)
+    bm, _grain, _pit, grain_report = build_body(
+        strata, frame, density, size, rng, q, process, blackbox)
+    result.grain_band = grain_report
 
     # --debug-stage: stop after a named stage and render the raw result.
     # The strata measure 0.17-1.12 m of radius step in the PARAMETERS yet do not appear in
@@ -4453,6 +4570,11 @@ def write_manifest(result: VariantResult, size: SizeClass, frame: BeddingFrame,
         # produced the strata without reading the generator. Section 10 requires the "SDF,
         # voxel, fracture, erosion, or profile parameters used to generate the mesh".
         "beddingErosion": result.bedding_erosion,
+        # Which SCALES are in the mesh and which are not. Section 10 wants the "erosion, or
+        # profile parameters used to generate the mesh"; this is also the honest half of the
+        # scale-witness claim, because a witness the lattice cannot sample is a material
+        # parameter wearing a geometry label.
+        "grainBand": result.grain_band,
         "collider": {
             "kind": result.collider_kind,
             "triangles": result.collider_triangles,
@@ -4777,6 +4899,8 @@ def main(argv: list) -> int:
             print("[rock] collider: {t} tris / {m} ceiling ({k})".format(
                 t=result.collider_triangles, m=law.COLLIDER_CONVEX_TRI_MAX,
                 k=result.collider_kind))
+            if result.grain_band:
+                print("[rock] grain band: " + json.dumps(result.grain_band))
             if result.bedding_erosion:
                 print("[rock] bedding erosion: " + json.dumps(result.bedding_erosion))
             print("[rock] post-fracture census: " + json.dumps(result.post_fracture_topology))

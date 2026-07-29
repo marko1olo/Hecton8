@@ -594,9 +594,33 @@ namespace Hecton8.QA.Headless.Editor
             }
         }
 
+        /// <summary>
+        /// Absolute path for a project-relative path, resolved from the PROJECT rather than from the
+        /// process working directory.
+        /// </summary>
+        /// <remarks>
+        /// WAS `Directory.GetCurrentDirectory()`, and that made this class disagree with the runtime half of
+        /// the same harness. `HeadlessSimulationRunner.ResolveProjectPathStatic` uses
+        /// `Path.GetFullPath(Path.Combine(Application.dataPath, ".."))`, which is the real project root and
+        /// does not care where the process was launched from. Two resolvers for one question is one too
+        /// many, and the failure it produced was silent and expensive: launch Unity with `-projectPath`
+        /// from any other working directory and (a) the flag file lands outside the project, so
+        /// `ShouldRunStatic`'s file check misses it, and (b) the runtime runner writes the result JSON under
+        /// the project while this class's poll loop watches the CWD - so it never sees the verdict, waits out
+        /// the full `420 + simulatedSpan/4`, and writes `BATCH_TIMEOUT` over a run that had already
+        /// succeeded. The artifacts then say the harness timed out when what actually happened is that the
+        /// two halves wrote into different trees.
+        ///
+        /// `Application.dataPath` is valid in the Editor - it returns `&lt;project&gt;/Assets` - so this needs no
+        /// editor-only special case and now matches the runtime side exactly.
+        ///
+        /// Consequence worth knowing: "cd to the project root before launching" stops being load-bearing.
+        /// It remains good practice, but it is no longer the difference between a verdict and a timeout.
+        /// </remarks>
         private static string ResolveProjectPath(string relativePath)
         {
-            return Path.Combine(Directory.GetCurrentDirectory(), relativePath.Replace('/', Path.DirectorySeparatorChar));
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            return Path.Combine(projectRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
         }
 
         private static void WriteRunnerStatus(string status)

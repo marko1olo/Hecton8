@@ -105,10 +105,16 @@ cd C:\hades\Hecton8
   therefore starts the runtime runner while the bootstrapper boots a **full player** and loads
   `01_MAIN_MENU` — which is exactly the "play mode simply carried on running the main menu for 45 minutes"
   symptom already described in a comment at `HeadlessSimulationBatchRunner.cs:28-30`.
-- `cd` to the project root first. The editor side resolves paths from `Directory.GetCurrentDirectory()`
-  (`HeadlessSimulationBatchRunner.cs:462`), the runtime side from `Application.dataPath/..`
-  (`HeadlessSimulationRunner.cs:1490-1494`). A `-projectPath` launch from a foreign CWD splits the flag,
-  the result JSON and the poll loop across two trees and always ends in `BATCH_TIMEOUT`.
+- ~~`cd` to the project root first.~~ **FIXED, but UNCOMPILED — keep doing it until a run proves otherwise.**
+  The editor side resolved paths from `Directory.GetCurrentDirectory()` while the runtime side used
+  `Application.dataPath/..`, so a `-projectPath` launch from a foreign CWD split the flag file, the result
+  JSON and the poll loop across two trees: the poll loop never saw the verdict, waited out the full
+  `420 + span/4`, and wrote `BATCH_TIMEOUT` over a run that had already succeeded. Both halves now use the
+  identical expression `Path.GetFullPath(Path.Combine(Application.dataPath, ".."))` —
+  `HeadlessSimulationBatchRunner.cs:622` and `HeadlessSimulationRunner.cs:1639` — and zero
+  `Directory.GetCurrentDirectory` calls remain in either. `Application.dataPath` is valid in the Editor, so
+  no editor-only special case is needed. Not compiled: `Hecton8.QA.Headless*` has no csproj and the Unity
+  slot was unavailable across four attempts.
 - No `-nographics`, and this is not caution — see the ecology finding below.
 - Staying in `00_BOOTSTRAP` is the DESIGNED state, not a hang: `GameBootstrapper.cs:3120-3123` marks the
   main menu reached and returns. `02_HECTON_WORLD` is never loaded, and the runner does not need it.

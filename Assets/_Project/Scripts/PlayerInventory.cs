@@ -150,7 +150,16 @@ namespace Hecton8.Inventory
             [FieldOffset(60)] public int DefragTimeMicroseconds;
         }
 
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
+        // Size is bound to the SAME constant the layout guard asserts against. It used to be a bare literal
+        // 64 while ValidateInventoryMemorySovereigntyLayouts1317 checked it against
+        // SalinityCorrosionBlackBoxEntrySizeBytes - two numbers that had to agree with nothing forcing them
+        // to. That asymmetry (InventoryTelemetryEntry above was already bound to its constant) was the only
+        // live way this struct could drift out from under the guard and fail-close the whole inventory:
+        // editing the constant alone would not move the struct, and editing the struct alone would not move
+        // the constant. Now one edit moves both.
+        [System.Runtime.InteropServices.StructLayout(
+            System.Runtime.InteropServices.LayoutKind.Explicit,
+            Size = SalinityCorrosionBlackBoxEntrySizeBytes)]
         private struct SalinityCorrosionTelemetryEntry
         {
             [System.Runtime.InteropServices.FieldOffset(0)]
@@ -1234,8 +1243,20 @@ namespace Hecton8.Inventory
         }
 
 #if UNITY_EDITOR
+        // The verdict is a property of the loaded assembly, not of any component instance: a struct's size
+        // and field offsets cannot differ between two PlayerInventory objects in one domain. It was being
+        // recomputed in EVERY Awake - 24 Marshal.OffsetOf reflection lookups plus 3 size intrinsics per
+        // inventory - to re-derive a constant. Statics reset on domain reload, which is exactly the cache
+        // lifetime this needs.
+        private static bool _inventoryLayoutVerdictComputed;
+        private static bool _inventoryLayoutVerdictPassed;
+
         private static bool ValidateInventoryMemorySovereigntyLayouts1317()
         {
+            if (_inventoryLayoutVerdictComputed)
+                return _inventoryLayoutVerdictPassed;
+
+            _inventoryLayoutVerdictComputed = true;
             uint failures = 0u;
             ValidateLayoutSize<InventoryTelemetryEntry>(InventoryBlackBoxEntrySizeBytes, ref failures);
             ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.Frame), 0, ref failures);
@@ -1266,7 +1287,25 @@ namespace Hecton8.Inventory
             ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.Flags), 28, ref failures);
 
             ValidateLayoutSize<VaultGenerationHandle<uint>>(16, ref failures);
-            return failures == 0u;
+
+            _inventoryLayoutVerdictPassed = failures == 0u;
+            if (_inventoryLayoutVerdictPassed)
+            {
+                // A PASSING guard used to emit absolutely nothing, and that silence is the whole reason this
+                // branch became the standing suspect for every empty-inventory symptom in the project: an
+                // unrun guard and a satisfied guard produced byte-identical logs, so "the DTO layout drifted"
+                // could never be disconfirmed from a run - only re-argued. One line per domain reload retires
+                // that question permanently and points the next investigation at the bind, not at the layout.
+                Debug.Log(
+                    "[PlayerInventory] DTO layout sovereignty PASSED: InventoryTelemetryEntry " +
+                    InventoryBlackBoxEntrySizeBytes + "B, SalinityCorrosionTelemetryEntry " +
+                    SalinityCorrosionBlackBoxEntrySizeBytes + "B, VaultGenerationHandle<uint> 16B, all 24 " +
+                    "asserted field offsets in place. Awake did NOT bail here, so an empty inventory this " +
+                    "session has a different cause - look at the GlobalDataVault lane bind " +
+                    "(STORAGE UNAVAILABLE above) instead.");
+            }
+
+            return _inventoryLayoutVerdictPassed;
         }
 
         private static void ValidateLayoutSize<T>(int expectedSize, ref uint failures) where T : struct
@@ -1358,9 +1397,20 @@ namespace Hecton8.Inventory
                 // Fail-closed is correct here - running with a drifted DTO layout would corrupt vault
                 // buffers. Failing SILENTLY was not: this returned before _grid was built and before
                 // BindPlayerInventoryVaultBuffers ran, so the inventory was dead with nothing logged, and
-                // every downstream consumer just saw an empty inventory. A headless run traced four empty
-                // tool slots back to here - PlayerToolManager had valid definitions, prefabs and catalog
-                // entries the whole time and simply had no inventory to grant into.
+                // every downstream consumer just saw an empty inventory.
+                //
+                // THIS BRANCH IS NOT WHAT EMPTIED THE TOOL SLOTS. The earlier attribution of the four empty
+                // slots to this guard was a hypothesis that had never been executed, and it is now
+                // disconfirmed: all three asserted layouts were reproduced field-for-field outside Unity and
+                // every one of the 27 assertions passes. Both telemetry entries are LayoutKind.Explicit with
+                // hardcoded [FieldOffset] values IDENTICAL to the numbers the validator expects, and
+                // VaultGenerationHandle<uint> is four uints under Size = 16 - measured 16 via the same
+                // 'sizeof' opcode UnsafeUtility.SizeOf<T>() lowers to. An explicit-layout struct cannot drift
+                // away from an expectation that is spelled with the same literals, so this guard cannot fail
+                // as written and Awake reaches the grid construction below. The surviving suspect for an
+                // empty inventory is the vault lane bind - see TryBindRuntimeStorageCold and its
+                // STORAGE UNAVAILABLE line, which names _cachedDataVault when the GlobalDataVault service is
+                // not registered yet at Awake time.
                 enabled = false;
                 Debug.LogError(
                     "[PlayerInventory] DISABLED at Awake: DTO layout validation failed (see the layout " +
@@ -2172,9 +2222,17 @@ namespace Hecton8.Inventory
             if (CanServiceItemAdds())
                 return true;
 
-            // _grid == null means Awake bailed on the editor-only DTO layout guard. Do not build the grid
-            // here: InventoryGrid's constructor THROWS on allocation failure, and this method is reachable
-            // from a dispatcher tick, where an escaping throw would amputate the caller's whole lane.
+            // _grid == null means Awake has not completed its grid construction. Do not build the grid here:
+            // InventoryGrid's constructor THROWS on allocation failure, and this method is reachable from a
+            // dispatcher tick, where an escaping throw would amputate the caller's whole lane.
+            //
+            // This used to be documented as "Awake bailed on the editor-only DTO layout guard", i.e. as a
+            // permanent unrecoverable state. It is not that in practice: the layout guard's assertions are
+            // satisfied by construction (see the note in Awake) and cannot fail, so the reachable meaning of
+            // _grid == null is that Awake has not RUN yet - a consumer polled this component before its
+            // Awake, which is ordinary on the AddComponent bootstrap route. Returning false is still correct,
+            // but the caller must treat it as "not ready yet" and keep its retry budget alive rather than
+            // reading it as the unrecoverable layout verdict and giving up.
             if (_grid == null)
                 return false;
 
@@ -2241,10 +2299,14 @@ namespace Hecton8.Inventory
         /// Names the failing storage step ONCE per component. Cold: string building and Unity object context
         /// are fine here, and the latch is what keeps a strided retry from turning this into log spam.
         ///
-        /// The two vault-bind bailouts in <c>Awake</c> are still silent. Until they route through here, a
-        /// bind failure is only visible through a downstream consumer's refusal - which is exactly how the
-        /// blocked starter-tool grant presented: four assigned prefabs, four valid catalog entries, and no
-        /// inventory to grant into.
+        /// <c>Awake</c> now has exactly ONE vault-bind bailout and it DOES route through here, because
+        /// <see cref="TryBindRuntimeStorageCold"/> announces before every one of its three false returns
+        /// (grid sizing, lane binding, scratch validation). So a bind failure is no longer invisible: this is
+        /// the line to look for when the starter-tool grant presents as four assigned prefabs, four valid
+        /// catalog entries and no inventory to grant into. Note the latch is per component and never reset,
+        /// so a lane bind that fails, is announced, and is later repaired by
+        /// <see cref="TryRecoverRuntimeStorageCold"/> leaves one stale error in the log with no paired
+        /// recovery line - read this as "storage was dead at least once", not as "storage is dead now".
         /// </summary>
         private void AnnounceRuntimeStorageFailureOnce(string failedStep)
         {

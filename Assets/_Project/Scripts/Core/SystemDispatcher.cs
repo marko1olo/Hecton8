@@ -75,17 +75,37 @@ namespace Hecton8.Core
         private const double FrostTickIntervalSeconds = 5.0;
         private const int MaxCadenceSubstepsPerFrame = 4;
 
-        // Largest fixed step a step-bounded headless run can take without any cadence lane clamping.
-        // The binding lane is the FAST lane at 1/60 s, NOT the slow lane at 0.1 s: four substeps of
-        // 1/60 s is 0.0667 s, while the slow lane tolerates 0.4 s and the cold lane 4.0 s. A caller who
-        // sizes a headless step against the slow interval - the lane the discard counters made visible -
-        // still silently drops fast-lane simulation time. Sized off the constants so a cadence change
-        // cannot leave this stale.
-        private const double MaxStepBoundedDeltaSeconds = FastTickIntervalSeconds * MaxCadenceSubstepsPerFrame;
+        // Largest fixed step a step-bounded headless run can take without ANY lane discarding time.
+        //
+        // The binding lane is the FIXED-step lane, not the slow lane the discard counters made visible and
+        // not the fast lane either. Derivation, because guessing this wrong is the whole failure mode:
+        //
+        //   Fixed lane (AdvanceFixedStep): temporal compression trips when
+        //   residual + dt > FixedStepSeconds * MaxFixedSubstepsPerFrame = 0.02 * 3 = 0.06 s. The residual
+        //   carried in from the previous frame is anything under one FixedStepSeconds, so the bound must
+        //   leave a whole substep of headroom or a boundary frame compresses on a float hair:
+        //   0.02 * (3 - 1) = 0.04 s.
+        //
+        //   Fast/unscaled-fast lane: the clamp trips at (MaxCadenceSubstepsPerFrame + 1) intervals, and the
+        //   residual is under one interval, so the entire substep budget is usable: 4 * 1/60 = 0.0667 s.
+        //
+        //   Slow lane: 4 * 0.1 = 0.4 s. Cold lane: 4 * 1.0 = 4.0 s. Both far looser.
+        //
+        // So 0.04 s, and a caller who sized a step against the slow interval (0.4 s) or the fast one
+        // (0.0667 s) would silently drop physics/fixed-tick time while believing the run was clean. Both
+        // candidates are derived from the live constants and the minimum is taken, so re-tuning any cadence
+        // cannot leave this stale or silently invert which lane binds.
+        private const double MaxClampFreeFixedStepSeconds = FixedStepSeconds * (MaxFixedSubstepsPerFrame - 1);
+        private const double MaxClampFreeCadenceStepSeconds = FastTickIntervalSeconds * MaxCadenceSubstepsPerFrame;
+        private const double MaxStepBoundedDeltaSeconds =
+            MaxClampFreeFixedStepSeconds < MaxClampFreeCadenceStepSeconds
+                ? MaxClampFreeFixedStepSeconds
+                : MaxClampFreeCadenceStepSeconds;
         private const byte StepBoundedClampLaneFast = 1 << 0;
         private const byte StepBoundedClampLaneUnscaledFast = 1 << 1;
         private const byte StepBoundedClampLaneSlow = 1 << 2;
         private const byte StepBoundedClampLaneCold = 1 << 3;
+        private const byte StepBoundedClampLaneFixed = 1 << 4;
         private const float TimeDilationMinimumScalar = 0f;
         private const float TimeDilationMaximumScalar = 4f;
         private const float HeadlessTimeDilationMaximumScalar = 100f;
@@ -695,7 +715,14 @@ namespace Hecton8.Core
             get
             {
                 SystemDispatcher dispatcher = ActiveRuntimeInstance;
-                return dispatcher != null ? dispatcher._timeSnapshot.UnscaledTime : UnityEngine.Time.unscaledTimeAsDouble;
+                if (dispatcher != null)
+                    return dispatcher._timeSnapshot.UnscaledTime;
+
+                // No dispatcher yet. Falling through to the wall clock here would leak real time into a
+                // step-bounded run during bootstrap, before the first snapshot exists.
+                return _headlessTimeMode == HeadlessTimeMode.StepBounded
+                    ? _stepBoundedElapsedSeconds
+                    : UnityEngine.Time.unscaledTimeAsDouble;
             }
         }
 
@@ -4894,7 +4921,13 @@ namespace Hecton8.Core
             if (!IsFiniteDouble(dilatedTime) || dilatedTime < 0d)
                 dilatedTime = previousDilatedTime;
 
-            double unscaledTime = UnityEngine.Time.unscaledTimeAsDouble;
+            // H8TimeSlot.UnscaledTime is the clock every system reads through the vault, and it is also what
+            // CurrentUnscaledTimeSeconds returns. Under step-bounded time it must be step count times step
+            // size, not wall clock, or the dt would be deterministic while the absolute clock derived from
+            // it was not.
+            double unscaledTime = _headlessTimeMode == HeadlessTimeMode.StepBounded
+                ? _stepBoundedElapsedSeconds
+                : UnityEngine.Time.unscaledTimeAsDouble;
             if (!IsFiniteDouble(unscaledTime) || unscaledTime < 0d)
                 unscaledTime = h8Time[(int)H8TimeSlot.UnscaledTime];
             if (!IsFiniteDouble(unscaledTime) || unscaledTime < 0d)
@@ -5089,8 +5122,7 @@ namespace Hecton8.Core
                 long dispatcherTickStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 long preSimulationStartTimestamp = dispatcherTickStartTimestamp;
                 HectonXRRuntimeState.RefreshFrameState(CurrentFrameIndex);
-                float measuredUnscaledDeltaTime = HectonXRRuntimeState.IsXRActive ? UnityEngine.Time.smoothDeltaTime : UnityEngine.Time.unscaledDeltaTime;
-                float unscaledDeltaTime = HectonXRRuntimeState.ResolveDispatcherDeltaTime(measuredUnscaledDeltaTime);
+                float unscaledDeltaTime = ResolveDispatcherUnscaledDeltaTime();
                 if (!math.isfinite(unscaledDeltaTime) || unscaledDeltaTime < 0f)
                     unscaledDeltaTime = 0f;
                 bool previousFrameMissedBudget = CurrentFrameUnscaledDeltaTime > JobAdmissionFrameBudgetMissThresholdSeconds;
@@ -5346,6 +5378,13 @@ namespace Hecton8.Core
 
         private static float ResolveCurrentFrameMilliseconds()
         {
+            // Not just telemetry: this value feeds FramePacingWarningSignal.CurrentFrameMs and
+            // ResolveFramePacingSeverity, which is published on a SignalBus that consumers act on. Reading
+            // the wall clock here would put machine load back into published simulation state and undo the
+            // determinism the step-bounded dt buys.
+            if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+                return _stepBoundedDeltaSeconds * 1000f;
+
             float deltaTime = UnityEngine.Time.unscaledDeltaTime;
             if (!math.isfinite(deltaTime) || deltaTime < 0f)
                 return 0f;
@@ -6102,6 +6141,19 @@ namespace Hecton8.Core
             {
                 _temporalCompressionFrameCount++;
                 CrashTelemetryBuffer.ReportTemporalCompression();
+
+                // Temporal compression is the fixed lane's version of the slow lane's discarded surplus:
+                // the Math.Min below throws away requested-minus-max seconds of physics and fixed-tick
+                // time, and only a frame COUNT was ever recorded for it - never the seconds lost. Under
+                // step-bounded time this must not happen at all, so say so once and loudly. This sits
+                // inside the already-rare compression branch, so it costs nothing on a normal frame.
+                if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+                {
+                    ReportStepBoundedClamp(
+                        StepBoundedClampLaneFixed,
+                        FixedStepSeconds,
+                        requestedAccumulatedTime - maxAccumulatedTime);
+                }
             }
 
             _fixedStepAccumulator = System.Math.Min(requestedAccumulatedTime, maxAccumulatedTime);
@@ -6295,7 +6347,19 @@ namespace Hecton8.Core
             }
 
             if (substeps == MaxCadenceSubstepsPerFrame && _fastTickAccumulator >= FastTickIntervalSeconds)
+            {
+                // This branch is already the rare path, so the step-bounded check costs nothing on a normal
+                // frame and nothing at all in a player build, where the mode is never enabled.
+                if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+                {
+                    ReportStepBoundedClamp(
+                        StepBoundedClampLaneFast,
+                        FastTickIntervalSeconds,
+                        _fastTickAccumulator - FastTickIntervalSeconds);
+                }
+
                 _fastTickAccumulator = FastTickIntervalSeconds;
+            }
         }
 
         private void RunUnscaledFastTick(float unscaledDeltaTime, bool blockGameplayLanes)
@@ -6337,7 +6401,17 @@ namespace Hecton8.Core
             }
 
             if (substeps == MaxCadenceSubstepsPerFrame && _unscaledFastTickAccumulator >= FastTickIntervalSeconds)
+            {
+                if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+                {
+                    ReportStepBoundedClamp(
+                        StepBoundedClampLaneUnscaledFast,
+                        FastTickIntervalSeconds,
+                        _unscaledFastTickAccumulator - FastTickIntervalSeconds);
+                }
+
                 _unscaledFastTickAccumulator = FastTickIntervalSeconds;
+            }
         }
 
         private void RunSlowTick(float deltaTime, bool blockGameplayLanes)
@@ -6410,6 +6484,12 @@ namespace Hecton8.Core
                 //
                 // Deliberately not "fixed" here, because the clamp is correct. Made VISIBLE here, because a
                 // system that can collapse silently must fail loudly instead.
+                //
+                // The actual cure is not in this branch: it is EnableStepBoundedTime, which replaces the
+                // wall-clock dt that makes this the steady state. Under a clamp-free step this branch never
+                // runs. If it runs anyway while step-bounded time is active, the step size is too coarse and
+                // ReportStepBoundedClamp says so once, loudly - a step-bounded run that still discards time
+                // is repeatable but is NOT simulating what its step count implies.
                 double discardedSeconds = _slowTickAccumulator - slowTickIntervalSeconds;
                 _slowTickAccumulator = slowTickIntervalSeconds;
                 if (discardedSeconds > 0.0)
@@ -6420,6 +6500,8 @@ namespace Hecton8.Core
                         _SlowTickSurplusDiscardedHash,
                         _SystemDispatcherHash,
                         (float)discardedSeconds);
+                    if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+                        ReportStepBoundedClamp(StepBoundedClampLaneSlow, slowTickIntervalSeconds, discardedSeconds);
                 }
             }
         }
@@ -6435,6 +6517,208 @@ namespace Hecton8.Core
         /// <summary>Frames in which slow-tick surplus was discarded.</summary>
         internal static int SlowTickDiscardEvents =>
             ActiveRuntimeInstance != null ? ActiveRuntimeInstance._slowTickDiscardEvents : 0;
+
+        // ===========================================================================================
+        // Step-bounded headless time
+        //
+        // The discard counters above made a headless run's divergence VISIBLE. They could not make it go
+        // away, because the cause is not the clamp - the clamp is correct, and removing it trades a wrong
+        // answer for a death spiral. The cause is that dt came from the wall clock, so a headless frame
+        // was ~1.33 s (gameFramesPerWallSecond=0.75) where a player frame is ~0.016 s, and the surplus the
+        // clamp threw away was the difference between two different simulations.
+        //
+        // This is the second time source. In StepBounded mode dt is a constant the caller chose, so:
+        //   - same seed + same step count -> same state, by construction, not by machine load;
+        //   - a step at or below MaxStepBoundedDeltaSeconds cannot clamp any lane, so nothing is silently
+        //     discarded;
+        //   - a step above it CAN still clamp, and that is reported loudly exactly once per lane instead
+        //     of being absorbed - the original sin here was silence, not the clamp.
+        //
+        // Accessibility: SystemDispatcher is in Hecton8.Core, and Assets/_Project/Scripts/AssemblyInfo.cs
+        // grants InternalsVisibleTo only to Hecton8.Editor, Hecton8.Plugins, Hecton8.SaveSystem.Editor and
+        // Hecton8.SaveSystem.EditModeTests. So `internal` reaches a driver under
+        // Assets/_Project/Scripts/Editor/** (assembly Hecton8.Editor) - the same assembly and the same
+        // access level H8_HeadlessPlayModeProbe already uses to read SlowTickDiscardedSeconds - but does
+        // NOT reach Assets/_Project/Editor/** (assembly Hecton8.Project.Editor), which is not on that
+        // list. A driver there needs its own InternalsVisibleTo entry, not a widening to public.
+        // ===========================================================================================
+
+        /// <summary>Active dispatcher time source. <see cref="HeadlessTimeMode.WallClock"/> unless a driver opted in.</summary>
+        internal static HeadlessTimeMode ActiveHeadlessTimeMode => _headlessTimeMode;
+
+        /// <summary>True while the dispatcher advances by a caller-supplied fixed step instead of the wall clock.</summary>
+        internal static bool IsStepBoundedTimeActive => _headlessTimeMode == HeadlessTimeMode.StepBounded;
+
+        /// <summary>Fixed step in seconds the dispatcher advances by, or 0 when step-bounded time is off.</summary>
+        internal static float StepBoundedDeltaSeconds =>
+            _headlessTimeMode == HeadlessTimeMode.StepBounded ? _stepBoundedDeltaSeconds : 0f;
+
+        /// <summary>
+        /// Dispatcher frames advanced since step-bounded time was enabled. This, not a wall-clock duration,
+        /// is what a determinism comparison must hold equal between two runs.
+        /// </summary>
+        internal static long StepBoundedStepIndex => _stepBoundedStepIndex;
+
+        /// <summary>Simulated seconds elapsed under step-bounded time: step count times the fixed step.</summary>
+        internal static double StepBoundedElapsedSeconds => _stepBoundedElapsedSeconds;
+
+        /// <summary>
+        /// Largest fixed step that discards no simulation time in any lane, in seconds. Currently 0.04 s,
+        /// bounded by the FIXED-step lane's temporal compression - not by the slow lane (0.4 s) and not by
+        /// the fast lane (0.0667 s). Sizing a headless step against either looser lane silently drops
+        /// physics and fixed-tick time.
+        /// </summary>
+        internal static double MaxClampFreeStepSeconds => MaxStepBoundedDeltaSeconds;
+
+        /// <summary>
+        /// Bitmask of lanes that discarded simulation time while step-bounded time was active:
+        /// bit0 fast, bit1 unscaled-fast, bit2 slow, bit3 cold, bit4 fixed-step temporal compression.
+        /// NON-ZERO MEANS THE RUN IS NOT COMPARABLE to another run - a determinism harness should treat a
+        /// non-zero mask as a failed run, not as a passing one, because the step size was too coarse.
+        /// </summary>
+        internal static byte StepBoundedClampedLaneMask => _stepBoundedClampReportedLanes;
+
+        /// <summary>
+        /// Switches the dispatcher onto a fixed step and resets the step clock. Call before pumping the
+        /// player loop (<c>EditorApplication.QueuePlayerLoopUpdate</c>); the existing player-loop node then
+        /// consumes exactly <paramref name="fixedDeltaSeconds"/> per pump no matter how long the pump took
+        /// in wall time.
+        /// </summary>
+        /// <param name="fixedDeltaSeconds">
+        /// Simulated seconds per dispatcher frame. Must be finite and positive. Use
+        /// <see cref="MaxClampFreeStepSeconds"/> or smaller for a run whose state is comparable.
+        /// </param>
+        /// <returns>
+        /// True when the step is clamp-free. False when it will still clamp a cadence lane - the mode is
+        /// enabled either way, deliberately: silently leaving the run on the wall clock after the caller
+        /// asked for determinism would be the same quiet divergence this mode exists to end.
+        /// </returns>
+        internal static bool EnableStepBoundedTime(float fixedDeltaSeconds)
+        {
+            if (!math.isfinite(fixedDeltaSeconds) || fixedDeltaSeconds <= 0f)
+            {
+                ReportStepBoundedConfigRejected(fixedDeltaSeconds);
+                return false;
+            }
+
+            _headlessTimeMode = HeadlessTimeMode.StepBounded;
+            _stepBoundedDeltaSeconds = fixedDeltaSeconds;
+            _stepBoundedElapsedSeconds = 0d;
+            _stepBoundedStepIndex = 0L;
+            _stepBoundedClampReportedLanes = 0;
+            if (fixedDeltaSeconds <= MaxStepBoundedDeltaSeconds)
+                return true;
+
+            ReportStepBoundedStepTooCoarse(fixedDeltaSeconds);
+            return false;
+        }
+
+        /// <summary>
+        /// Returns the dispatcher to the wall clock. Player behaviour is the default and does not need this.
+        /// </summary>
+        internal static void DisableStepBoundedTime()
+        {
+            _headlessTimeMode = HeadlessTimeMode.WallClock;
+            _stepBoundedDeltaSeconds = 0f;
+            _stepBoundedElapsedSeconds = 0d;
+            _stepBoundedStepIndex = 0L;
+            _stepBoundedClampReportedLanes = 0;
+        }
+
+        /// <summary>
+        /// Consumes one fixed step. Called once per dispatcher frame from
+        /// <see cref="ResolveDispatcherUnscaledDeltaTime"/>, never from a substep or per-item loop.
+        /// </summary>
+        private static float AdvanceStepBoundedClock()
+        {
+            float step = _stepBoundedDeltaSeconds;
+            _stepBoundedElapsedSeconds += step;
+            _stepBoundedStepIndex++;
+            return step;
+        }
+
+        /// <summary>
+        /// The dispatcher's single unscaled-delta source. In <see cref="HeadlessTimeMode.WallClock"/> this
+        /// is the previous wall-clock read unchanged, XR smoothing included.
+        /// </summary>
+        private static float ResolveDispatcherUnscaledDeltaTime()
+        {
+            if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+                return AdvanceStepBoundedClock();
+
+            float measuredUnscaledDeltaTime = HectonXRRuntimeState.IsXRActive
+                ? UnityEngine.Time.smoothDeltaTime
+                : UnityEngine.Time.unscaledDeltaTime;
+            return HectonXRRuntimeState.ResolveDispatcherDeltaTime(measuredUnscaledDeltaTime);
+        }
+
+        /// <summary>
+        /// Reports a cadence lane clamping under step-bounded time. Once per lane per session: the message
+        /// names the fix, so repeating it every frame would only bury it.
+        /// </summary>
+        private static void ReportStepBoundedClamp(byte laneBit, double intervalSeconds, double surplusSeconds)
+        {
+            if ((_stepBoundedClampReportedLanes & laneBit) != 0)
+                return;
+
+            _stepBoundedClampReportedLanes |= laneBit;
+            PublishDispatcherComplianceViolation(_StepBoundedTimeClampHash, _SystemDispatcherHash, 4, laneBit);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _StepBoundedTimeClampHash,
+                _SystemDispatcherHash,
+                (float)surplusSeconds);
+#if UNITY_EDITOR
+            // Editor-guarded and latched to once per lane, so this is not a hot-path log and the
+            // concatenation below is not a hot-path allocation. Headless batchmode is the editor, which is
+            // exactly where this has to be readable. InvariantCulture because this host is Russian-locale
+            // and a comma decimal separator would break the numeric greps that read these logs.
+            System.Globalization.CultureInfo invariant = System.Globalization.CultureInfo.InvariantCulture;
+            UnityEngine.Debug.LogError(
+                "[SystemDispatcher] STEP-BOUNDED DETERMINISM BROKEN: lane mask 0x" +
+                laneBit.ToString("X2", invariant) + " (bit0=fast bit1=unscaledFast bit2=slow bit3=cold " +
+                "bit4=fixed) hit its substep cap on a " +
+                intervalSeconds.ToString("F4", invariant) + " s interval and discarded " +
+                surplusSeconds.ToString("F4", invariant) + " s of simulation time. Step is " +
+                _stepBoundedDeltaSeconds.ToString("F4", invariant) + " s at step index " +
+                _stepBoundedStepIndex.ToString(invariant) + ". This run's state is NOT comparable to " +
+                "another run. Use a step of at most " + MaxStepBoundedDeltaSeconds.ToString("F4", invariant) +
+                " s (SystemDispatcher.MaxClampFreeStepSeconds), and note that a time-dilation scalar above " +
+                "1 multiplies the effective step and can reintroduce this.");
+#endif
+        }
+
+        private static void ReportStepBoundedConfigRejected(float requestedDeltaSeconds)
+        {
+            PublishDispatcherComplianceViolation(_StepBoundedTimeConfigHash, _SystemDispatcherHash, 4, 1);
+#if UNITY_EDITOR
+            UnityEngine.Debug.LogError(
+                "[SystemDispatcher] EnableStepBoundedTime rejected a step of " +
+                requestedDeltaSeconds.ToString("F6", System.Globalization.CultureInfo.InvariantCulture) +
+                " s: it must be finite and positive. Time source left as " + _headlessTimeMode.ToString() +
+                "; this run is NOT step-bounded.");
+#endif
+        }
+
+        private static void ReportStepBoundedStepTooCoarse(float requestedDeltaSeconds)
+        {
+            PublishDispatcherComplianceViolation(_StepBoundedTimeConfigHash, _SystemDispatcherHash, 4, 2);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _StepBoundedTimeConfigHash,
+                _SystemDispatcherHash,
+                requestedDeltaSeconds);
+#if UNITY_EDITOR
+            System.Globalization.CultureInfo invariant = System.Globalization.CultureInfo.InvariantCulture;
+            UnityEngine.Debug.LogError(
+                "[SystemDispatcher] Step-bounded time ENABLED with a step of " +
+                requestedDeltaSeconds.ToString("F4", invariant) + " s, which EXCEEDS the clamp-free maximum of " +
+                MaxStepBoundedDeltaSeconds.ToString("F4", invariant) +
+                " s. A lane will discard simulation time every frame, so this run is repeatable but still " +
+                "does not simulate what its step count implies. The binding lane is the FIXED-step lane " +
+                "(temporal compression above " + MaxClampFreeFixedStepSeconds.ToString("F4", invariant) +
+                " s), NOT the 0.1 s slow lane and not the fast lane at " +
+                MaxClampFreeCadenceStepSeconds.ToString("F4", invariant) + " s.");
+#endif
+        }
 
         private void RunBucketedSlowTick(bool blockGameplayLanes)
         {
@@ -6545,7 +6829,17 @@ namespace Hecton8.Core
             }
 
             if (substeps == MaxCadenceSubstepsPerFrame && _coldTickAccumulator >= ColdTickIntervalSeconds)
+            {
+                if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+                {
+                    ReportStepBoundedClamp(
+                        StepBoundedClampLaneCold,
+                        ColdTickIntervalSeconds,
+                        _coldTickAccumulator - ColdTickIntervalSeconds);
+                }
+
                 _coldTickAccumulator = ColdTickIntervalSeconds;
+            }
         }
 
         private void RunFrostTick(float deltaTime, bool blockGameplayLanes)
@@ -7184,4 +7478,46 @@ namespace Hecton8.Core
                 double elapsedMs = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
                 if (elapsedMs <= 0d)
                     return 0f;
-                re
+                return elapsedMs > float.MaxValue ? float.MaxValue : (float)elapsedMs;
+            }
+        }
+
+        public static float RemainingMs => math.max(0f, _budgetMs - ConsumedMs);
+
+        public static void BeginFrame(float globalQualityWeight, uint frameId)
+        {
+            _frameId = frameId;
+            _frameStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            _budgetMs = ResolveBudgetMs(globalQualityWeight);
+        }
+
+        public static bool HasBudgetRemaining(float estimatedCostMs = 0f)
+        {
+            float cost = SanitizeNonNegative(estimatedCostMs);
+            return ConsumedMs + cost <= _budgetMs;
+        }
+
+        public static bool TryConsume(float estimatedCostMs)
+        {
+            return HasBudgetRemaining(estimatedCostMs);
+        }
+
+        private static float ResolveBudgetMs(float globalQualityWeight)
+        {
+            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
+            float curved = quality * quality * (3f - 2f * quality);
+            if (curved < 0.33333334f)
+                return math.lerp(MinimumBudgetMs, MiddleBudgetMs, curved * 3f);
+            if (curved < 0.6666667f)
+                return math.lerp(MiddleBudgetMs, HighBudgetMs, (curved - 0.33333334f) * 3f);
+            return math.lerp(HighBudgetMs, UltraBudgetMs, (curved - 0.6666667f) * 3f);
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            if (!math.isfinite(value) || value <= 0f)
+                return 0f;
+            return value;
+        }
+    }
+}

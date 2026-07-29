@@ -1217,6 +1217,11 @@ namespace Hecton8.Celestial
         [SerializeField, Range(0f, 1f)] private float fullMoonBloomThreshold01 = 0.92f;
         [SerializeField, Range(1f, 3650f)] private float inGameYearDays = 365f;
 
+        [Tooltip("Nominal observer latitude in degrees used by the spring/neap tide envelope. Hecton-8 has no world latitude axis (the world is AUP/planar), so this is an authored constant, not a derived position. 0 is equatorial and gives the widest tidal range.")]
+        [SerializeField, Range(-89f, 89f)] private float nominalObserverLatitudeDegrees;
+        [Tooltip("Floor of the spring/neap tide envelope. At neap the tidal range collapses to this fraction of the authored amplitude instead of to zero, so the water never goes perfectly flat.")]
+        [SerializeField, Range(0.05f, 1f)] private float neapTideRangeFloor01 = 0.34f;
+
         [Header("Eclipse Detection")]
         [SerializeField] private float eclipseAngularRadiusOverride;
         [SerializeField] private bool useCinematicEclipseOccluderRadius = true;
@@ -2528,6 +2533,8 @@ namespace Hecton8.Celestial
             celestialTideAmplitudeMeters = Mathf.Clamp(celestialTideAmplitudeMeters, 0f, 8f);
             highTideThreshold01 = Mathf.Clamp01(highTideThreshold01);
             fullMoonBloomThreshold01 = Mathf.Clamp01(fullMoonBloomThreshold01);
+            nominalObserverLatitudeDegrees = Mathf.Clamp(nominalObserverLatitudeDegrees, -89f, 89f);
+            neapTideRangeFloor01 = Mathf.Clamp(neapTideRangeFloor01, 0.05f, 1f);
             inGameYearDays = Mathf.Max(1f, inGameYearDays);
             CacheCelestialOrbitReciprocals();
             cinematicEclipseOccluderRadiusDegrees = Mathf.Max(0.01f, cinematicEclipseOccluderRadiusDegrees);
@@ -5881,12 +5888,126 @@ namespace Hecton8.Celestial
                 return;
             }
 
+            ApplyTideSpringNeapEnvelope(ref snapshot);
+
             _celestialRuntimeSnapshot = snapshot;
             _celestialRuntimeSequence = snapshot.Sequence;
             _orbitJobPrimed = true;
 
             if (driveObserverBodiesFromAnalyticalOrbits)
                 ApplyAnalyticalObserverDirections(in _celestialRuntimeSnapshot);
+        }
+
+        /// <summary>
+        /// Applies the sun-relative spring/neap envelope to the tide the orbit solver just produced.
+        /// </summary>
+        /// <remarks>
+        /// Scaling <see cref="CelestialRuntimeSnapshot.TideHigh01"/> about the 0.5 mean-level point by the
+        /// same factor used on <see cref="CelestialRuntimeSnapshot.TideHeightMeters"/> keeps the two fields
+        /// algebraically consistent, because the solver defines height as (high01 * 2 - 1) * amplitude.
+        /// Callers must pass the freshly solved snapshot, never <c>_celestialRuntimeSnapshot</c>: this
+        /// operation is not idempotent and re-applying it every publish would decay the tide toward zero.
+        /// </remarks>
+        private void ApplyTideSpringNeapEnvelope(ref CelestialRuntimeSnapshot snapshot)
+        {
+            float3 raiserDirection = snapshot.Moon0Direction;
+            if (math.lengthsq(raiserDirection) <= 0.0001f)
+                raiserDirection = snapshot.GasGiantDirection;
+            if (math.lengthsq(raiserDirection) <= 0.0001f)
+                return;
+
+            float envelope01 = ResolveTideSpringNeapEnvelope01(raiserDirection, snapshot.SunDirection);
+            snapshot.TideHeightMeters *= envelope01;
+            snapshot.TideHigh01 = math.saturate(0.5f + ((snapshot.TideHigh01 - 0.5f) * envelope01));
+        }
+
+        /// <summary>
+        /// Resolves the spring/neap tidal-range envelope from real computed celestial geometry.
+        /// Returns a multiplier in [<c>neapTideRangeFloor01</c>, 1] that scales the tidal range about
+        /// mean sea level — 1 at syzygy (new/full), the floor at quadrature.
+        /// </summary>
+        /// <remarks>
+        /// This is the one tide term the analytical solver does not model: its own <c>moonAlignment01</c>
+        /// compares the two moons to <em>each other</em> and never to the sun, so nothing in the engine
+        /// currently produces a spring/neap cycle.
+        /// <para>
+        /// Latitude is authored, not derived. Hecton-8 has no latitude axis — position is AUP/planar —
+        /// so there is no world quantity to feed the model's cos(latitude) term.
+        /// </para>
+        /// <para>
+        /// The reference amplitude and gravitational parameter are deliberately 1: inspection of
+        /// <see cref="Hecton8.PureLogic.Systems.TidalForceAtPointCalculator"/> shows it divides its raw
+        /// force by (amplitude * gravitationalParam), so both arguments cancel and only their
+        /// zero/infinity degenerate cases affect the result. Passing the real amplitude here would read as
+        /// meaningful and change nothing. Amplitude is applied by the caller instead.
+        /// </para>
+        /// </remarks>
+        private float ResolveTideSpringNeapEnvelope01(float3 tideRaiserDirection, float3 sunDirection)
+        {
+            float3 safeRaiser = NormalizeVisualRsqrt(tideRaiserDirection, new float3(0f, 1f, 0f));
+            float3 safeSun = NormalizeVisualRsqrt(sunDirection, new float3(0f, 1f, 0f));
+
+            // Illuminated fraction of the raiser as seen by the observer: 0 at new, 1 at full. Same
+            // geometry as CinematicOrbitState.Fullness01, so the envelope agrees with the published phase.
+            float fullness01 = math.saturate(0.5f + (0.5f * math.dot(-safeSun, safeRaiser)));
+            // Map illumination back to sun-raiser elongation: 0 degrees at new, 180 at full.
+            return ResolveTideSpringNeapEnvelopeFromPhase01(90f + FastAsinDegrees((2f * fullness01) - 1f));
+        }
+
+        /// <summary>
+        /// Envelope core: turns a sun-raiser phase angle in degrees into a tidal-range multiplier.
+        /// </summary>
+        private float ResolveTideSpringNeapEnvelopeFromPhase01(float phaseAngleDegrees)
+        {
+            if (!math.isfinite(phaseAngleDegrees))
+                phaseAngleDegrees = 0f;
+
+            float force01 = Hecton8.PureLogic.Systems.TidalForceAtPointCalculator.Compute(
+                phaseAngleDegrees,
+                nominalObserverLatitudeDegrees,
+                1f,
+                1f);
+
+            if (!math.isfinite(force01))
+                force01 = 0f;
+
+            return math.lerp(math.clamp(neapTideRangeFloor01, 0.05f, 1f), 1f, math.saturate(force01));
+        }
+
+        /// <summary>
+        /// Advances a moon's phase angle in degrees from world time for the fallback snapshot path.
+        /// 0 degrees is new, 180 is full.
+        /// </summary>
+        /// <remarks>
+        /// The fallback snapshot has no solved moon direction, so without this Moon0Phase01/Moon1Phase01
+        /// publish a hard zero: the full-moon bloom flag can never fire and
+        /// <c>_HectonCelestialBiolumMultiplier</c> never leaves 1, which pins the coral and kelp
+        /// bioluminescence term in Hecton_CoralMaster / Hecton_KelpMaster to its floor for the whole run.
+        /// Not used on the analytical path — the solved orbit's own fullness is strictly better there.
+        /// </remarks>
+        private static float ResolveFallbackLunarPhaseAngleDegrees(
+            double absoluteUniverseTime,
+            in CinematicOrbitDefinition moonOrbit)
+        {
+            float periodSeconds = math.max(1f, math.isfinite(moonOrbit.orbitalPeriodSeconds) ? moonOrbit.orbitalPeriodSeconds : 1f);
+            double clampedTime = math.max(0d, absoluteUniverseTime);
+            // Reuse the authored epoch anomaly so the two moons do not run in lockstep.
+            double offsetSeconds = (double)periodSeconds * (double)(moonOrbit.epochMeanAnomalyDegrees * OrbitDegreesToTurns);
+            float worldSeconds = (float)(clampedTime + offsetSeconds);
+            if (!math.isfinite(worldSeconds))
+                return 0f;
+
+            float phaseAngleDegrees = Hecton8.PureLogic.Systems.LunarPhaseCalculator.Compute(worldSeconds, periodSeconds);
+            return math.isfinite(phaseAngleDegrees) ? phaseAngleDegrees : 0f;
+        }
+
+        /// <summary>Converts a 0-360 phase angle (0 new, 180 full) into an illuminated fraction.</summary>
+        private static float ResolveLunarFullnessFromPhaseAngle01(float phaseAngleDegrees)
+        {
+            if (!math.isfinite(phaseAngleDegrees))
+                return 0f;
+
+            return math.saturate(0.5f - (0.5f * FastCosRadians(math.radians(phaseAngleDegrees))));
         }
 
         private static bool IsCelestialSnapshotFinite(in CelestialRuntimeSnapshot snapshot)
@@ -5918,15 +6039,30 @@ namespace Hecton8.Celestial
             snapshot.GasGiantOffset = snapshot.GasGiantDirection * math.max(1f, gasGiantOrbit.registryOffsetMeters);
             snapshot.EclipseOcclusion01 = math.saturate(_smoothedOcclusionFactor);
             snapshot.RadiationStorm01 = ResolveRadiationStorm01();
+
+            // Moon illumination: the fallback has no solved moon direction, so advance phase from world time.
+            float moon0PhaseAngleDegrees = ResolveFallbackLunarPhaseAngleDegrees(snapshot.AbsoluteUniverseTime, in moon0Orbit);
+            float moon1PhaseAngleDegrees = ResolveFallbackLunarPhaseAngleDegrees(snapshot.AbsoluteUniverseTime, in moon1Orbit);
+            snapshot.Moon0Phase01 = ResolveLunarFullnessFromPhaseAngle01(moon0PhaseAngleDegrees);
+            snapshot.Moon1Phase01 = ResolveLunarFullnessFromPhaseAngle01(moon1PhaseAngleDegrees);
+            snapshot.GasGiantPhase01 = math.saturate(0.5f + (0.5f * math.dot(-snapshot.SunDirection, snapshot.GasGiantDirection)));
+
+            // Tide: before this the fallback left all three tide fields at zero while still stamping the
+            // Valid flag, so every downstream reader saw a permanently flat, permanently "valid" sea.
+            // moon0 is the dominant raiser (authored gravityWeight 1.0 against moon1's 0.72).
+            ApplyFallbackEquilibriumTide(ref snapshot, moon0PhaseAngleDegrees);
+
             snapshot.Flags = PackCelestialRuntimeFlags(
                 _isEclipseActive,
                 snapshot.EclipseOcclusion01,
-                0f,
-                1f,
-                0f,
-                1f,
+                snapshot.TideHigh01,
+                highTideThreshold01,
+                math.max(snapshot.Moon0Phase01, snapshot.Moon1Phase01),
+                fullMoonBloomThreshold01,
                 snapshot.RadiationStorm01);
-            float globalBiolumMultiplier = math.max(1f, _lunarResonanceMultiplier);
+            float globalBiolumMultiplier = ((snapshot.Flags & (uint)CelestialRuntimeFlags.FullMoonBloom) != 0u)
+                ? math.max(2f, _lunarResonanceMultiplier)
+                : math.max(1f, _lunarResonanceMultiplier);
             if ((snapshot.Flags & (uint)CelestialRuntimeFlags.EclipseActive) != 0u)
                 globalBiolumMultiplier = math.max(globalBiolumMultiplier, math.lerp(1f, EclipseBiolumMultiplier, snapshot.EclipseOcclusion01));
 
@@ -5935,6 +6071,48 @@ namespace Hecton8.Celestial
 
             _celestialRuntimeSnapshot = snapshot;
             _celestialRuntimeSequence = snapshot.Sequence;
+        }
+
+        /// <summary>
+        /// Solves an equilibrium tide for the fallback snapshot, where no orbit solver output exists.
+        /// </summary>
+        /// <remarks>
+        /// Semi-diurnal by construction: the tidal bulge sits on both the near and the far side of the
+        /// planet, so the normalised second Legendre term (3cos^2(zenith) - 1) / 2 remapped to 0-1 reduces
+        /// exactly to the square of the raiser's vertical component. High tide when the raiser is overhead
+        /// <em>or</em> antipodal, low when it sits on the horizon — two cycles per rotation.
+        /// <para>
+        /// <c>TideHeightMeters</c> is a signed offset around mean sea level, never an absolute Y.
+        /// <c>GlobalPhysicsStateManager.UpdateFrameCachedCurrentWaterLevelY</c> adds it on top of the
+        /// caller's <c>baseWaterLevelY</c>, so the 14.02 m datum must NOT be folded in here.
+        /// </para>
+        /// </remarks>
+        private void ApplyFallbackEquilibriumTide(ref CelestialRuntimeSnapshot snapshot, float lunarPhaseAngleDegrees)
+        {
+            // Do NOT phase this off snapshot.GasGiantDirection. EnforceAegirFixedDirectionLock pins Aegir
+            // to a constant sky direction on purpose, so a tide driven from it would be a constant that
+            // still looks live — the exact silent-degeneracy trap. The sun's orbital angle is the only
+            // celestial quantity the fallback path actually advances, so synthesise the raiser from it:
+            // the moon trails the sun across the sky by exactly its phase angle (that is what a phase
+            // angle is), which is the number LunarPhaseCalculator returns.
+            float lunarSkyAngleDegrees = _accumulatedOrbitalAngle - lunarPhaseAngleDegrees;
+            if (!math.isfinite(lunarSkyAngleDegrees))
+                return;
+
+            float3 axis = ResolveDominantAxisDirection((float3)sunOrbitAxis, new float3(1f, 0f, 0f));
+            float4x4 lunarRotation = BuildAxisAngleRotationMatrix(axis, math.radians(lunarSkyAngleDegrees));
+            float3 lunarForward = math.mul(lunarRotation, new float4(0f, 0f, 1f, 0f)).xyz;
+            // Observer-to-body direction is the negated forward vector, matching ApplyMathematicalSunDirection.
+            float3 raiserDirection = NormalizeVisualRsqrt(-lunarForward, new float3(0f, 1f, 0f));
+
+            float verticalComponent = math.clamp(raiserDirection.y, -1f, 1f);
+            float tideHigh01 = math.saturate(verticalComponent * verticalComponent);
+            float envelope01 = ResolveTideSpringNeapEnvelopeFromPhase01(lunarPhaseAngleDegrees);
+            float amplitudeMeters = math.max(0f, celestialTideAmplitudeMeters);
+
+            snapshot.TidePullVector = raiserDirection;
+            snapshot.TideHigh01 = math.saturate(0.5f + ((tideHigh01 - 0.5f) * envelope01));
+            snapshot.TideHeightMeters = ((tideHigh01 * 2f) - 1f) * amplitudeMeters * envelope01;
         }
 
         private void ApplyAnalyticalObserverDirections(in CelestialRuntimeSnapshot snapshot)
@@ -8397,10 +8575,19 @@ namespace Hecton8.Celestial
         }
 #endif
     
-        #region JulesLink_TidalForceAtPointCalculator
-        private static void JulesLink_TidalForceAtPointCalculator() { _ = typeof(Hecton8.PureLogic.Systems.TidalForceAtPointCalculator); }
-        #endregion
+        // JulesLink_TidalForceAtPointCalculator removed: TidalForceAtPointCalculator is now called for
+        // real from ResolveTideSpringNeapEnvelopeFromPhase01, reached on both the analytical tide path
+        // (CommitOrbitMathOutput -> ApplyTideSpringNeapEnvelope) and the fallback tide path
+        // (BuildFallbackCelestialRuntimeSnapshot -> ApplyFallbackEquilibriumTide).
+        // LunarPhaseCalculator is likewise called for real from ResolveFallbackLunarPhaseAngleDegrees,
+        // which phases the fallback tide and drives Moon0Phase01/Moon1Phase01.
 
+        // SolarHourAngleCalculator is deliberately NOT wired. CalculateSunElevation() already derives
+        // elevation as asin(dot(_resolvedSunDirection, up)) from the same direction vector that positions
+        // the sun, the sky blend, the star intensity and the atmosphere LUT. Substituting a
+        // latitude/axial-tilt time formula would desync the lighting elevation from the rendered sun and
+        // would need two world quantities Hecton-8 does not have (a latitude axis and an axial tilt).
+        // The keep-alive stays until someone deletes the model or gives the world a real geodetic frame.
         #region JulesLink_SolarHourAngleCalculator
         private static void JulesLink_SolarHourAngleCalculator() { _ = typeof(Hecton8.PureLogic.Systems.SolarHourAngleCalculator); }
         #endregion
