@@ -189,6 +189,10 @@ namespace Hecton8.EditorTools.Diagnostics
         private static bool _worldDriverEnabled = true;
         private static bool _worldDriverStarted;
 
+        // One-shot latch for EnableDisabledPlacementOwnersInMemory. It is what keeps that method's
+        // FindObjectsByType call a cold diagnostic step rather than a per-tick hot-path violation.
+        private static bool _placementOwnersRepaired;
+
         /// <summary>
         /// Hard cap on the tick grace granted after the gameplay window closes. The driver's own tick
         /// floors sum to 24 for the entire schedule, so 48 is two full compressed schedules' worth and
@@ -640,6 +644,15 @@ namespace Hecton8.EditorTools.Diagnostics
                         }
                     }
 
+                    // Content before measurement. This runs BEFORE the driver starts and OUTSIDE the
+                    // _worldDriverEnabled branch on purpose: a -h8SkipWorldDriver run is supposed to
+                    // measure an UNDRIVEN world, not an EMPTY one, and those are different claims.
+                    if (!_placementOwnersRepaired)
+                    {
+                        _placementOwnersRepaired = true;
+                        EnableDisabledPlacementOwnersInMemory();
+                    }
+
                     // The world driver rides THIS tick. It gets no Update, no coroutine and no timer of
                     // its own, so the schedule advances only while the probe is genuinely pumping the
                     // engine - the same discipline that stops "yield return null" hanging a batchmode run.
@@ -695,6 +708,124 @@ namespace Hecton8.EditorTools.Diagnostics
                     if (!EditorApplication.isPlaying)
                         Finish(_failures == 0 ? 0 : 1);
                     break;
+            }
+        }
+
+        /// <summary>
+        /// Enables every authored-but-disabled procedural placement owner, IN MEMORY, on the first
+        /// gameplay tick - before the world driver starts looking for content.
+        ///
+        /// WHY THIS EXISTS. A scene census on 2026-07-27 found WorldProceduralScatterDirector present
+        /// exactly once in 02_HECTON_WORLD, on [MANAGERS]/WorldGen, with the GameObject ACTIVE and the
+        /// COMPONENT DISABLED. Every registration that director owns runs from OnEnable
+        /// (WorldProceduralScatterDirector.cs:757-777), and Unity never calls OnEnable on a disabled
+        /// component - so it registers nothing, ticks nothing and places nothing: no flora, no coral, no
+        /// debris, no resource nodes, no fauna spawn windows, no technogenic scatter. It reads as
+        /// completely correct in code review. Nothing in the project sets its .enabled at runtime, and
+        /// the authoring tool that builds this stack (WorldRuntimeBootstrapAuthoring.cs:120, :685-728)
+        /// resolves the component with GetOrAddComponent and rewrites its serialized fields but never
+        /// touches m_Enabled, so re-running the authoring tool cannot repair one already there and off.
+        ///
+        /// WHY IN MEMORY, AND WHY HERE rather than in the edit-mode audit tool. Two hard constraints meet:
+        ///   1. AGENTS.md:126, the Sandbox Firewall Rule, forbids automated runners and scripts from
+        ///      calling EditorSceneManager.SaveScene, PrefabUtility.SaveAsPrefabAsset or
+        ///      EditorUtility.SetDirty on production assets, so that no automated pass can wipe authored
+        ///      work, and requires that any runtime adjustment occur IN-MEMORY ONLY. So no batchmode pass
+        ///      may write the .unity file. H8_PlacementOwnerEnabledAudit honours that by repairing only
+        ///      what a human already has open and never saving - which is why invoking it with
+        ///      -executeMethod reports "NOTHING TO REPAIR ... no placement owner exists in any loaded
+        ///      scene": batchmode loads no scene, so it inspects nothing. That is the tool behaving
+        ///      correctly, not failing.
+        ///   2. This probe does not open 02_HECTON_WORLD either. When it is going to press New Game it
+        ///      opens 00_BOOTSTRAP (:435), because HandleSceneLoadedGuard (GameBootstrapper.cs:7114)
+        ///      would otherwise see a non-bootstrap scene while _isBootstrapComplete is false, call
+        ///      TryRecoverEntryVector, load 00_BOOTSTRAP as LoadSceneMode.Single (:7164-7166) and DESTROY
+        ///      the scene the probe had opened. The world scene therefore arrives at RUNTIME, and any
+        ///      edit-mode repair made before EnterPlaymode would be thrown away along with it.
+        /// The only moment where the director both exists and is still repairable is inside play mode,
+        /// which is exactly here. Play-mode state is discarded when play mode exits, so this cannot reach
+        /// disk even by accident: it writes no asset, marks no scene dirty and records no Undo entry.
+        ///
+        /// WHAT THIS IS NOT. It is not the fix. The scene still ships with the component disabled, and a
+        /// human still has to open 02_HECTON_WORLD, run the menu item
+        /// "Hecton8/Diagnostics/Enable Disabled World Placement Owners" and save it. Until that happens
+        /// every PLAYER session places nothing while every headless session places content - a divergence
+        /// between the instrument and the product, which is the one thing a probe must never hide. So the
+        /// summary line below states the divergence outright whenever a repair actually fired.
+        ///
+        /// FindObjectsByType with FindObjectsInactive.Include is used instead of walking scene roots
+        /// because a director on a DontDestroyOnLoad object, or one added with AddComponent at runtime,
+        /// is invisible to a root walk - the blind spot H8_PlacementOwnerEnabledAudit documents as
+        /// belonging to this probe. The hot-path ban on FindObjectsByType does not apply because this is
+        /// a single cold call latched by _placementOwnersRepaired, not a cadence path.
+        /// </summary>
+        private static void EnableDisabledPlacementOwnersInMemory()
+        {
+            Hecton8.World.WorldProceduralScatterDirector[] directors =
+                UnityEngine.Object.FindObjectsByType<Hecton8.World.WorldProceduralScatterDirector>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+
+            if (directors.Length == 0)
+            {
+                Debug.Log(
+                    $"{Marker} PLACEMENT OWNER none present in the running session. So an empty world in " +
+                    "this run is NOT the disabled-component defect - the owner is absent entirely, which " +
+                    "points at a missing authoring step rather than a checkbox.");
+                return;
+            }
+
+            int enabledByProbe = 0;
+            int alreadyEnabled = 0;
+            int stillInert = 0;
+
+            for (int i = 0; i < directors.Length; i++)
+            {
+                Hecton8.World.WorldProceduralScatterDirector director = directors[i];
+                if (director == null)
+                    continue;
+
+                if (director.enabled)
+                {
+                    alreadyEnabled++;
+                    continue;
+                }
+
+                director.enabled = true;
+                enabledByProbe++;
+
+                Debug.Log(
+                    $"{Marker} PLACEMENT OWNER ENABLED IN MEMORY '{director.gameObject.name}' " +
+                    $"scene='{director.gameObject.scene.name}' - restores up to " +
+                    $"{director.AuthoredScatterWindowPlacementCeiling} placements per scatter window.");
+
+                // An inactive GameObject still gets no Awake and no OnEnable, so enabling the component
+                // alone does not make it live. Activating the object could undo a deliberate authoring
+                // decision, so this reports and stops rather than guessing - the same line the edit-mode
+                // audit draws.
+                if (!director.gameObject.activeInHierarchy)
+                {
+                    stillInert++;
+                    Debug.Log(
+                        $"{Marker} PLACEMENT OWNER STILL INERT '{director.gameObject.name}' - the component " +
+                        "is now enabled but its GameObject is INACTIVE, so Unity still runs no Awake and no " +
+                        "OnEnable on it. This owner will place nothing regardless. Activating the object is " +
+                        "an authoring decision this probe will not make.");
+                }
+            }
+
+            Debug.Log(
+                $"{Marker} PLACEMENT OWNER SUMMARY found={directors.Length} enabledByProbe={enabledByProbe} " +
+                $"alreadyEnabled={alreadyEnabled} stillInertAfterEnable={stillInert}");
+
+            if (enabledByProbe > 0)
+            {
+                Debug.Log(
+                    $"{Marker} PLACEMENT OWNER DIVERGENCE this run does NOT match a player session. The " +
+                    "shipped scene still has the component disabled, so any world content measured after " +
+                    "this line exists only because the probe enabled it in memory. Persist it by opening " +
+                    "Assets/_Project/Scenes/02_HECTON_WORLD.unity, running the menu item " +
+                    "'Hecton8/Diagnostics/Enable Disabled World Placement Owners' and saving the scene.");
             }
         }
 
@@ -3061,6 +3192,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 _determinismCategories[i] = default;
 
             _worldDriverStarted = false;
+            _placementOwnersRepaired = false;
             _worldDriverGraceTicks = 0;
             _graceOpenedLogged = false;
             _graceClosedLogged = false;
