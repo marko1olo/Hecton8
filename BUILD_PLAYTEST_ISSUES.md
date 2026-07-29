@@ -210,7 +210,30 @@ What this proves, and what it does not:
    all. Making the ecology answerable is not the same as making it healthy, and whether the solver keeps
    predator biomass above zero for five simulated days has never been measured once.
 
-### Spending the Unity slot while another session edits `.cs` is a coin flip — measured 2026-07-29
+### Spending the Unity slot while other sessions are active: 3 attempts, 0 usable runs — measured 2026-07-29
+
+Four batchmode runs were attempted in one day. **One produced a verdict; three produced nothing**, and no
+attempt failed for a reason inside the code under test. Recorded as a planning input, not a complaint:
+budget the slot as *contested*, and never let an UNCOMPILED label be upgraded just because a run happened.
+
+| # | Outcome | Cause |
+|---|---|---|
+| 1 | died in 2 s | `GeologyAtlasTask.cs` CS0103 — foreign mid-edit; repair landed `+2m41s` after the log ended |
+| 2 | **produced the verdict** | `[ECOLOGY_UNAVAILABLE]`, 1/5 days — the run this whole section documents |
+| 3 | died in ~20 s | `ForgeGeneratedMaterialAuthoring.cs` CS0103 — foreign mid-edit; method existed `+4m34s` later |
+| 4 | died in ~2 s | lost the lock race: argv echoed, exit code 1, no project load. Another session's `Temp/UnityLockfile` appeared 76 s after this run started |
+
+Attempt 4 is worth recognising by shape, because it looks like nothing: the log is **42 lines**, ends
+immediately after the `COMMAND LINE ARGUMENTS:` block, and the only warnings are licensing noise that the
+successful run carried too. No project load, no Bee output, no compile. That is contention, not a defect —
+do not go looking for one.
+
+Before spending the slot: check `Temp/UnityLockfile` AND the Unity process count AND the newest `.cs` mtime
+under `Assets/_Project`. Ten minutes of quiet was not enough for attempt 4. And if the goal is to prove a
+specific assembly, `touch` its `.asmdef` first — otherwise Bee serves a cache hit and the run proves nothing
+about your files even when it succeeds.
+
+### Why a batchmode run does not upgrade an UNCOMPILED claim — measured 2026-07-29
 
 Three batchmode runs were launched today. **Two died on another session's transient mid-edit compile break,
 neither of them in a file this session touched.** This is not bad luck to be waited out; it is a cost to
