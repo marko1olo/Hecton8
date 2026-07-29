@@ -1,0 +1,760 @@
+{
+ "colliderSummary": {
+  "allWithinBudget": true,
+  "count": 1,
+  "triangleBudget": 200,
+  "types": [
+   "convex"
+  ]
+ },
+ "colliders": [
+  {
+   "kind": "convex",
+   "name": "COL_Fauna_Fish_2207_00",
+   "reason": "",
+   "triangleBudget": 200,
+   "triangles": 68,
+   "withinBudget": true
+  }
+ ],
+ "export": {
+  "fbx": "Assets/_Project/Art/Generated/Forge/Fauna/MESH_Fauna_Fish_2207_00.fbx",
+  "hasCustomNormals": true,
+  "hasTangents": true,
+  "hasVertexColors": true,
+  "objectNames": [
+   "MESH_Fauna_Fish_2207_00_LOD0",
+   "MESH_Fauna_Fish_2207_00_LOD1",
+   "MESH_Fauna_Fish_2207_00_LOD2",
+   "COL_Fauna_Fish_2207_00"
+  ],
+  "roundtripVerified": true,
+  "settings": {
+   "apply_scale_options": "FBX_SCALE_NONE",
+   "apply_unit_scale": true,
+   "axis_forward": "-Z",
+   "axis_up": "Y",
+   "bake_anim": false,
+   "bake_space_transform": true,
+   "blenderToFbxAxes": "(x, y, z) -> (x, z, -y)",
+   "blenderToUnityAxes": "(x, y, z) -> (x, z, y)",
+   "colors_type": "LINEAR",
+   "embed_textures": false,
+   "fbxHeaderUnitScaleFactor": 1.0,
+   "fbxUnitsPerMetre": 100.0,
+   "global_scale": 1.0,
+   "mesh_smooth_type": "EDGE",
+   "object_types": [
+    "MESH"
+   ],
+   "path_mode": "STRIP",
+   "prioritize_active_color": true,
+   "use_custom_props": false,
+   "use_mesh_edges": false,
+   "use_mesh_modifiers": true,
+   "use_metadata": true,
+   "use_selection": true,
+   "use_space_transform": true,
+   "use_subsurf": false,
+   "use_triangles": true,
+   "use_tspace": true,
+   "use_visible": false
+  },
+  "unitScaleFbxUnitsPerMetre": 100.00000223517424,
+  "uvLayerNames": [
+   "UVMap"
+  ]
+ },
+ "exporterVersion": "1.0.0",
+ "extra": {
+  "animationFallback": {
+   "compact": "VAT page at reduced frame count; procedural tail wag in BoidFishInstanced.shader:513-545 is the fallback when no VAT is bound",
+   "high": "VAT, higher frame count within the 32 MB compact guard (vertexCount x frameCount <= 2^20)",
+   "middle": "VAT, 30 frames (the bake default)",
+   "ultra": "same VAT route; no runtime mesh generation at any tier"
+  },
+  "aoBake": {
+   "baked": true,
+   "hasContrast": true,
+   "max": 1.0,
+   "mean": 0.86934,
+   "min": 0.0,
+   "samples": 64
+  },
+  "axisConvention": "nose +Z, tail -Z, up +Y, lateral X; BoidFishInstanced.shader:12-18. Z is strictly the longest bounds axis so AnalyzeAxis cannot pick another.",
+  "biolum": "channel G is 0 across the whole fish: Sargassum micro-fauna in the photic shallows is not emissive, and 3DMODEL_FAUNA.md section 4 reserves G for a biolum mask/phase.",
+  "bodyPlan": {
+   "asymmetry": "section centre sinks toward mid-body, flank skew on the +X side, right pectoral 6% shorter",
+   "contactZones": "head (weak spot, aligned to the eye lenses), body mass, caudal peduncle and fin",
+   "deformationRoute": "offline baked Vertex Animation Texture (VAT) plus BatchRendererGroup indirect rendering. No skeleton, no blendshapes, no runtime mesh generation.",
+   "locomotion": "swimmer, carangiform -- amplitude concentrated aft of maximum body depth, snout rigid",
+   "materialZones": "ONE slot (flesh/tissue). The indirect draw path renders submesh 0 only, so eye and organ zones are carried by geometry and vertex-colour masks instead of extra slots.",
+   "silhouetteContrast": "thick mid-body mass, narrow caudal peduncle, four thin membranes, forked caudal blade, operculum step, eye lenses"
+  },
+  "channelMeasurements": [
+   {
+    "channel": "sway_amplitude",
+    "coverage": 0.0796,
+    "hasGradient": true,
+    "max": 0.9911,
+    "mean": 0.18743,
+    "min": 0.0,
+    "subjectVisible": true,
+    "tile": "Fish_2207_00_chan0_sway_amplitude.png"
+   },
+   {
+    "channel": "biolum_phase",
+    "coverage": 0.0796,
+    "hasGradient": true,
+    "max": 0.0003,
+    "mean": 2e-05,
+    "min": 0.0,
+    "subjectVisible": true,
+    "tile": "Fish_2207_00_chan1_biolum_phase.png"
+   },
+   {
+    "channel": "baked_ao",
+    "coverage": 0.0796,
+    "hasGradient": true,
+    "max": 1.0,
+    "mean": 0.96022,
+    "min": 0.14413,
+    "subjectVisible": true,
+    "tile": "Fish_2207_00_chan2_baked_ao.png"
+   },
+   {
+    "channel": "family_specific",
+    "coverage": 0.0796,
+    "hasGradient": true,
+    "max": 1.0,
+    "mean": 0.66697,
+    "min": 0.0,
+    "subjectVisible": true,
+    "tile": "Fish_2207_00_chan3_family_specific.png"
+   }
+  ],
+  "consumerContract": {
+   "fishScaleAtMaterial": 0.28,
+   "localSize": [
+    0.4561,
+    0.77697,
+    2.0
+   ],
+   "maxAbsX": 0.23127,
+   "noseZ": 1.0,
+   "renderedLengthMetresAtThatScale": 0.56,
+   "tailZ": -1.0,
+   "widthOverDepth": 0.587,
+   "zLongestMarginOverX": 4.385,
+   "zLongestMarginOverY": 2.5741
+  },
+  "deformationAmplitude": {
+   "max": 1.0,
+   "metric": "authored per-vertex anatomy weight: 0.0 forward of maximum body depth, rising to 1.0 at the caudal tips, and high on every fin membrane regardless of axial position",
+   "min": 0.0,
+   "relativeSpread": 1.0,
+   "stiffnessExponent": 1.25,
+   "uniform": false
+  },
+  "eyes": {
+   "positionY": 0.0651,
+   "positionZ": 0.7357,
+   "radiusLocal": 0.0512
+  },
+  "fins": {
+   "anal": {
+    "heightLocal": 0.1264,
+    "spanZ": [
+     -0.0738,
+     -0.3668
+    ]
+   },
+   "dorsal": {
+    "heightLocal": 0.1771,
+    "spanZ": [
+     0.3774,
+     -0.0488
+    ]
+   },
+   "pectoral": {
+    "baseZ": 0.3572,
+    "lengthLocal": 0.1579,
+    "rightShorterBy": 0.06
+   }
+  },
+  "generatorNotes": [
+   "authored 44 polygons fanned into 500 triangles BEFORE UV packing, so the validated topology is the exported topology: export_unity writes use_triangles=True (mandatory -- use_tspace drops tangents silently on n-gons) and verify_fbx_roundtrip compares PER-CORNER data, which a quad source can never match",
+   "stage order deviation: the shared MAT_* material is built before the AO bake because bpy.ops.object.bake refuses an object with no material slot. No other stage moved.",
+   "shell: 500 triangles in 7 components (body+caudal as ONE closed manifold, plus dorsal, anal, two pectoral membranes and two eye lenses as intentional separate shells), 0 boundary edges, 0 non-manifold edges. The component count is a BODY PLAN, not fragmentation -- compare it against the per-LOD shell trace below before reading a coarse level as damaged.",
+   "consumer contract PASS: local size (0.4561, 0.7770, 2.0000), Z longest by 4.38x over X and 2.57x over Y, width/depth 0.587, snout apex at z=1.0000 on the midline, |x|max 0.2313 inside the 0.556 fin-mask knee",
+   "AO bake distance 0.3600 local units, 64 samples",
+   "LOD1 reunwrap: entry comp=7 tris=336 boundary=0 -> exit comp=7 tris=336 boundary=0; triangulated 0 fused, purged 0 slivers and 0 duplicate faces; refitted 336 against the 12000 budget",
+   "LOD2 reunwrap: entry comp=7 tris=160 boundary=0 -> exit comp=7 tris=160 boundary=0; triangulated 0 fused, purged 0 slivers and 0 duplicate faces; refitted 160 against the 2000 budget",
+   "LOD0 uv edge-ratio: worst=0.7499 p95=0.2483 mean=0.0907 over 500 triangles",
+   "LOD1 uv edge-ratio: worst=0.3973 p95=0.1211 mean=0.0262 over 336 triangles",
+   "LOD2 uv edge-ratio: worst=0.3424 p95=0.1254 mean=0.0234 over 160 triangles"
+  ],
+  "hitboxes": {
+   "bodyCapsule": {
+    "axis": "Z",
+    "centerLocal": [
+     0.0,
+     -0.03629,
+     0.1
+    ],
+    "height": 1.6,
+    "radius": 0.23623,
+    "zone": "spine/body mass"
+   },
+   "caudalCapsule": {
+    "axis": "Z",
+    "centerLocal": [
+     0.0,
+     0.0,
+     -0.8
+    ],
+    "height": 0.4,
+    "radius": 0.1862,
+    "zone": "caudal peduncle and fin, the highest-amplitude region"
+   },
+   "headSphere": {
+    "centerLocal": [
+     0.0,
+     0.02278,
+     0.69571
+    ],
+    "radius": 0.16078,
+    "zone": "head, and the readable weak spot -- aligned to the eye lenses"
+   },
+   "layer": "Fauna_Hitbox",
+   "lodAlignmentNote": "section 7 requires hitbox alignment across LODs; these primitives are authored in LOD0 local space and every LOD shares that space, so no level can visually shrink away from its hit truth.",
+   "route": "primitives, per 3DMODEL_FAUNA.md section 8; the convex hull in this package is a validation/backstop proxy and is not the gameplay hitbox"
+  },
+  "lawGapReported": "law.py has no fauna texel-density row; all four TEXEL_DENSITY_* constants are flora-named and cited to 3DMODEL_FLORA_CORAL.md section 5. This generator uses the COMMON-INSTANCED row rather than inventing a local number, and the missing row is reported as an h8forge diff.",
+  "lodShellTopology": {
+   "LOD1": {
+    "boundaryEdges": 0,
+    "components": 7,
+    "largestComponent": 256,
+    "nonManifoldEdges": 0,
+    "smallestComponent": 12,
+    "triangles": 336
+   },
+   "LOD2": {
+    "boundaryEdges": 0,
+    "components": 7,
+    "largestComponent": 124,
+    "nonManifoldEdges": 0,
+    "smallestComponent": 4,
+    "triangles": 160
+   }
+  },
+  "shading": {
+   "sharpEdges": 75,
+   "smoothAngleDeg": 68.0,
+   "smoothPolygons": 500,
+   "weightedNormalsApplied": true
+  },
+  "topology": {
+   "boundaryEdges": 0,
+   "components": 7,
+   "irreducibleFloor": 28,
+   "nonManifoldEdges": 0,
+   "triangles": 500
+  },
+  "triangleBudgetDerivation": "law.LOD_BUDGETS[Fauna] = (35000, 12000, 2000, impostor 12-500) are HARD MAXIMA for a hero creature body (3dmodel.md:212). The binding figure for a mass-instanced swarm unit is BoidFishInstanced.shader:32 '2000 fish x 200 tris', with REND_GPU_Driven_Animation_VAT.txt:138 capping TIER_LOW at 2048 boids. LOD0 targets ~2x the 200-tri figure to carry a readable near silhouette; LOD1 is the swarm-cost-matched level.",
+  "vatReadiness": {
+   "normalsPresent": true,
+   "note": "FaunaSwarmVatPrefabBinder REFUSES a bake whose page width != boidMesh.vertexCount. Vertex ORDER is equally load-bearing and is NOT checked anywhere, which is why the importer block disables vertex optimisation and welding.",
+   "submeshCount": 1,
+   "uvSets": 1,
+   "vatWidthWillEqual": 264,
+   "vertexCountLOD0": 264
+  },
+  "vertexColorChannels": {
+   "alphaMeaning": "counter_shading_blend: 0.0 along the dorsal ridge rising to 1.0 across the ventral belly, following the real counter-shading of a schooling fish. 3DMODEL_FAUNA.md section 4 permits a shader blend mask in A. A shader may lerp a dark dorsal colour to a pale belly with it; BoidFishInstanced.shader currently derives the same effect from local Y instead and does not read A, so this channel is authored to the bible contract and is not yet consumed.",
+   "alphaWritten": true,
+   "aoWritten": true,
+   "attribute": "Col",
+   "biolumWritten": true,
+   "contract": [
+    "sway_amplitude",
+    "biolum_phase",
+    "baked_ao",
+    "family_specific"
+   ],
+   "swayMax": 1.0,
+   "swayMin": 0.0,
+   "swayStiffnessExponent": 1.25,
+   "swayUniform": false
+  },
+  "vertexColorDirectReadback": {
+   "baked_ao": {
+    "max": 1.0,
+    "mean": 0.88938,
+    "min": 0.0
+   },
+   "biolum_phase": {
+    "max": 0.0,
+    "mean": 0.0,
+    "min": 0.0
+   },
+   "family_specific": {
+    "max": 1.0,
+    "mean": 0.49627,
+    "min": 0.0
+   },
+   "sway_amplitude": {
+    "max": 1.0,
+    "mean": 0.28955,
+    "min": 0.0
+   }
+  }
+ },
+ "forgeVersion": "1.0.0",
+ "identity": {
+  "cameraDistanceClass": "mid_field_instanced",
+  "family": "Fauna",
+  "forgeVersion": "1.0.0",
+  "generator": "fauna_fish.py",
+  "generatorVersion": "1.0.0",
+  "platformLane": "compact_to_ultra",
+  "qualityWeight": 1.0,
+  "scaleMeters": 2.0,
+  "seed": 2207,
+  "sourceReferences": [
+   "3DMODEL_FAUNA.md sections 1-11 (body plan, deformation topology, channel contract, LOD and hitbox law)",
+   "Assets/_Project/Scripts/BoidFishInstanced.shader:12-18 (model axis convention) and :517/:547/:586 (local-extent calibration)",
+   "Assets/_Project/Editor/Generators/Fauna/AbyssalAnatomyStudio1610.cs:1672-1698 (AnalyzeAxis longest-bounds-axis selection) and :1039 (VAT width == vertexCount)"
+  ]
+ },
+ "lod": {
+  "budgets": {
+   "impostorMax": 500,
+   "impostorMin": 12,
+   "lod0": 35000,
+   "lod1": 12000,
+   "lod2": 2000
+  },
+  "exempt": false,
+  "levels": [
+   0,
+   1,
+   2
+  ],
+  "monotonic": true,
+  "triangleCountsPerLod": {
+   "LOD0": 500,
+   "LOD1": 336,
+   "LOD2": 160
+  }
+ },
+ "manifestGaps": [
+  "textures (TX_<Family>_<Set>_<Role>; 3DMODEL_TEXTURES_MATERIALS.md section 2: 'Missing texture is fatal unless the generator is explicitly producing a placeholder diagnostic asset')"
+ ],
+ "materialSlotContract": {
+  "maxSlots": 4,
+  "slot0": "primary structural/tissue",
+  "slot1": "exposed cut, bevel, edge, scar, fracture",
+  "slot2": "secondary trim, gasket, barnacle, mineral vein, growth plate",
+  "slot3": "emissive/bioluminescent/details"
+ },
+ "materials": [
+  {
+   "name": "MAT_Fauna_FishTissue"
+  }
+ ],
+ "meshes": [
+  {
+   "boundsMax": [
+    0.2312714010477066,
+    0.36665990948677063,
+    1.0
+   ],
+   "boundsMin": [
+    -0.2248305082321167,
+    -0.41031089425086975,
+    -1.0
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "3605cef5bfcf9b090b816e8f8bafa15c",
+   "hasTangentBasis": true,
+   "lod": 0,
+   "name": "MESH_Fauna_Fish_2207_00_LOD0",
+   "submeshes": 1,
+   "triangles": 500,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [],
+    "passed": true,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 14 of 500 triangles below the sliver floor 3.948e-04 m2 (0.1x mean triangle area 3.948e-03 m2); the area-weighted population test still covered all of them"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 264
+  },
+  {
+   "boundsMax": [
+    0.2312714010477066,
+    0.36665990948677063,
+    1.0006678104400635
+   ],
+   "boundsMin": [
+    -0.2248305082321167,
+    -0.41031089425086975,
+    -0.9816354513168335
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "3024df801498128838089133c384db1a",
+   "hasTangentBasis": true,
+   "lod": 1,
+   "name": "MESH_Fauna_Fish_2207_00_LOD1",
+   "submeshes": 1,
+   "triangles": 336,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [],
+    "passed": true,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 17 of 336 triangles below the sliver floor 5.858e-04 m2 (0.1x mean triangle area 5.858e-03 m2); the area-weighted population test still covered all of them",
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 182
+  },
+  {
+   "boundsMax": [
+    0.2315617948770523,
+    0.36665990948677063,
+    1.0014162063598633
+   ],
+   "boundsMin": [
+    -0.22511078417301178,
+    -0.41031092405319214,
+    -0.9712033271789551
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "c11a3beaa72d3ca787515a7a06b16733",
+   "hasTangentBasis": true,
+   "lod": 2,
+   "name": "MESH_Fauna_Fish_2207_00_LOD2",
+   "submeshes": 1,
+   "triangles": 160,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [],
+    "passed": true,
+    "warnings": [
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 94
+  }
+ ],
+ "naming": {
+  "collider": "COL_{family}_{name}",
+  "manifest": "MANIFEST_{family}_{name}",
+  "material": "MAT_{family}_{role}",
+  "mesh": "MESH_{family}_{name}_LOD{lod}",
+  "namingNote": "Templates come from law.py, which follows AGENTS.md 'Project Shape' (generated prefabs GEN_*, textures TX_*). PROCEDURAL_ASSET_PIPELINE.md 'Required Output Package' spells the same two artefacts PF_<Family>_<Name>.prefab and TEX_<Family>_<AtlasOrUnique>_<Role>.png; root AGENTS.md outranks it per the authority spine, so GEN_ and TX_ are used. Flagged for the lead rather than resolved here.",
+  "prefab": "GEN_{family}_{name}",
+  "texture": "TX_{family}_{set}_{role}"
+ },
+ "productionReady": false,
+ "proof": {
+  "paths": [
+   "Docs/AgentLogs/ForgePreviews/Fish_2207_00_SHEET_flat.png",
+   "Docs/AgentLogs/ForgePreviews/Fish_2207_00_SHEET_studio.png",
+   "Docs/AgentLogs/ForgePreviews/Fish_2207_00_SHEET_material.png",
+   "Docs/AgentLogs/ForgePreviews/Fish_2207_00_LOD1_SHEET_flat.png",
+   "Docs/AgentLogs/ForgePreviews/Fish_2207_00_LOD2_SHEET_flat.png",
+   "Docs/AgentLogs/ForgePreviews/Fish_2207_00_SHEET_CHANNELS.png"
+  ],
+  "roundtripNotes": [
+   "wrote MESH_Fauna_Fish_2207_00.fbx (106364 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "MESH_Fauna_Fish_2207_00_LOD0: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "MESH_Fauna_Fish_2207_00_LOD1: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "MESH_Fauna_Fish_2207_00_LOD2: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "COL_Fauna_Fish_2207_00: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "COL_Fauna_Fish_2207_00: no material slot. 3dmodel.md section 6 declares slot 0 as the primary structural/tissue material; Unity will assign its default material to submesh 0.",
+   "objects round-tripped: ['COL_Fauna_Fish_2207_00', 'MESH_Fauna_Fish_2207_00_LOD0', 'MESH_Fauna_Fish_2207_00_LOD1', 'MESH_Fauna_Fish_2207_00_LOD2']",
+   "COL_Fauna_Fish_2207_00: verts 36->36 loops 204->204 tris 68->68",
+   "COL_Fauna_Fish_2207_00: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "COL_Fauna_Fish_2207_00: colour max delta 0.0000000 (tol 0.002)",
+   "COL_Fauna_Fish_2207_00: world position max delta 0.0000001 m (tol 0.0001)",
+   "COL_Fauna_Fish_2207_00: world corner-normal max delta 0.0000057 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "COL_Fauna_Fish_2207_00: uv0 max delta 0.00000000 (tol 1e-05)",
+   "COL_Fauna_Fish_2207_00: landmark (-0.00014, 0.31163, -0.9712) -> (-0.00014, 0.31163, -0.9712), delta 0.0000001 m, margin 0.01869 m",
+   "COL_Fauna_Fish_2207_00: signed volume +0.1956758 -> +0.1956758 (ratio +1.000000)",
+   "COL_Fauna_Fish_2207_00: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "MESH_Fauna_Fish_2207_00_LOD0: verts 264->264 loops 1500->1500 tris 500->500",
+   "MESH_Fauna_Fish_2207_00_LOD0: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "MESH_Fauna_Fish_2207_00_LOD0: colour max delta 0.0000000 (tol 0.002)",
+   "MESH_Fauna_Fish_2207_00_LOD0: world position max delta 0.0000001 m (tol 0.0001)",
+   "MESH_Fauna_Fish_2207_00_LOD0: world corner-normal max delta 0.0001329 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Fauna_Fish_2207_00_LOD0: uv0 max delta 0.00000000 (tol 1e-05)",
+   "MESH_Fauna_Fish_2207_00_LOD0: landmark (0.0, 0.33854, -1.0) -> (0.0, 0.33854, -1.0), delta 0.0000001 m, margin 0.01596 m",
+   "MESH_Fauna_Fish_2207_00_LOD0: signed volume +0.1038190 -> +0.1038190 (ratio +1.000000)",
+   "MESH_Fauna_Fish_2207_00_LOD0: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "MESH_Fauna_Fish_2207_00_LOD1: verts 182->182 loops 1008->1008 tris 336->336",
+   "MESH_Fauna_Fish_2207_00_LOD1: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "MESH_Fauna_Fish_2207_00_LOD1: colour max delta 0.0000000 (tol 0.002)",
+   "MESH_Fauna_Fish_2207_00_LOD1: world position max delta 0.0000001 m (tol 0.0001)",
+   "MESH_Fauna_Fish_2207_00_LOD1: world corner-normal max delta 0.0000803 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Fauna_Fish_2207_00_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
+   "MESH_Fauna_Fish_2207_00_LOD1: landmark (0.00012, -0.32065, -0.98164) -> (0.00012, -0.32065, -0.98164), delta 0.0000001 m, margin 0.01091 m",
+   "MESH_Fauna_Fish_2207_00_LOD1: signed volume +0.1036738 -> +0.1036738 (ratio +1.000000)",
+   "MESH_Fauna_Fish_2207_00_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "MESH_Fauna_Fish_2207_00_LOD2: verts 94->94 loops 480->480 tris 160->160",
+   "MESH_Fauna_Fish_2207_00_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "MESH_Fauna_Fish_2207_00_LOD2: colour max delta 0.0000000 (tol 0.002)",
+   "MESH_Fauna_Fish_2207_00_LOD2: world position max delta 0.0000001 m (tol 0.0001)",
+   "MESH_Fauna_Fish_2207_00_LOD2: world corner-normal max delta 0.0000521 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Fauna_Fish_2207_00_LOD2: uv0 max delta 0.00000000 (tol 1e-05)",
+   "MESH_Fauna_Fish_2207_00_LOD2: landmark (-0.00014, 0.31163, -0.9712) -> (-0.00014, 0.31163, -0.9712), delta 0.0000001 m, margin 0.02271 m",
+   "MESH_Fauna_Fish_2207_00_LOD2: signed volume +0.1020647 -> +0.1020647 (ratio +1.000000)",
+   "MESH_Fauna_Fish_2207_00_LOD2: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "COL_Fauna_Fish_2207_00 [fbx-space]: landmark direction expected (-0.00283, -0.97422, -0.22557) measured (-0.00283, -0.97422, -0.22557) delta 0.000000",
+   "COL_Fauna_Fish_2207_00 [fbx-space]: Unity-space landmark offset will be (-0.0043, -1.48243, 0.34324) (Blender (-0.0043, 0.34324, -1.48243)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Fauna_Fish_2207_00_LOD0 [fbx-space]: landmark direction expected (-7e-05, -0.94772, -0.31911) measured (-7e-05, -0.94772, -0.31911) delta 0.000000",
+   "MESH_Fauna_Fish_2207_00_LOD0 [fbx-space]: Unity-space landmark offset will be (-8e-05, -1.08499, 0.36533) (Blender (-8e-05, 0.36533, -1.08499)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Fauna_Fish_2207_00_LOD1 [fbx-space]: landmark direction expected (-0.00084, -0.96858, 0.24871) measured (-0.00084, -0.96858, 0.24871) delta 0.000000",
+   "MESH_Fauna_Fish_2207_00_LOD1 [fbx-space]: Unity-space landmark offset will be (-0.00098, -1.12882, -0.28985) (Blender (-0.00098, -0.28985, -1.12882)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Fauna_Fish_2207_00_LOD2 [fbx-space]: landmark direction expected (-0.0006, -0.9603, -0.27896) measured (-0.0006, -0.9603, -0.27896) delta 0.000000",
+   "MESH_Fauna_Fish_2207_00_LOD2 [fbx-space]: Unity-space landmark offset will be (-0.00074, -1.18844, 0.34523) (Blender (-0.00074, 0.34523, -1.18844)); handedness flip is Unity's, winding is flipped to match",
+   "roundtrip VERIFIED: axis map confirmed=True, chirality preserved=True",
+   "LOD0 MESH_Fauna_Fish_2207_00_LOD0: 500 tris vs law budget 35000 -> within",
+   "LOD1 MESH_Fauna_Fish_2207_00_LOD1: 336 tris vs law budget 12000 -> within",
+   "LOD2 MESH_Fauna_Fish_2207_00_LOD2: 160 tris vs law budget 2000 -> within",
+   "collider COL_Fauna_Fish_2207_00: 68 tris vs law.COLLIDER_CONVEX_TRI_MAX 200 -> within",
+   "Unity side must bind COL_Fauna_Fish_2207_00 to a MeshCollider with convex=true on a collider child, never to an LOD mesh (3dmodel.md section 9)",
+   "Unity LODGroup: create it explicitly from the _LOD suffixed children rather than relying on importer auto-detection, then set screenRelativeTransitionHeight per level with a hysteresis band and fadeMode=CrossFade with animateCrossFading=false (dithered). 3dmodel.md section 7 bans alpha-blended cross-fade for dense flora/coral on the compact lane; dither is not alpha blend."
+  ],
+  "status": "PENDING UNITY/PROFILER VERIFICATION",
+  "statusNote": "Static and Blender-side evidence only. No Unity import log, Console output, Frame Debugger capture, profiler capture or in-engine screenshot exists for this package."
+ },
+ "schema": "h8forge.manifest/1",
+ "surfaceClass": "Organic",
+ "textures": [],
+ "unityImport": {
+  "collider": {
+   "convexTriangleMax": 200,
+   "defaultCollision": "convex proxy or primitive compound",
+   "interactionAnchorNote": "PROCEDURAL_ASSET_PIPELINE.md 'Collision And Interaction Package': anchors must be serialised, never discovered by runtime scene search.",
+   "interactionAnchors": [
+    "ANCHOR_Scan",
+    "ANCHOR_Cut",
+    "ANCHOR_Weld",
+    "ANCHOR_Loot",
+    "ANCHOR_Pry",
+    "ANCHOR_Open",
+    "ANCHOR_Repair"
+   ],
+   "meshColliderConvex": true,
+   "meshColliderOnLod0": false,
+   "physicsLayer": "Fauna_Hitbox",
+   "physicsLayerNote": "Layer name read from ProjectSettings/TagManager.asset. AGENTS.md forbids changing Tags/Layers without explicit instruction, so the authoring script must resolve it by name and fail loudly if absent -- it must not create one. COMMON_SENSE.md rule 2 additionally requires every raycast against these colliders to pass an explicit LayerMask.GetMask(...) plus QueryTriggerInteraction.Ignore.",
+   "proxyNamePrefix": "COL_",
+   "visualNamePrefixes": [
+    "VIS_",
+    "LOD_"
+   ]
+  },
+  "exportSettingsUsed": {
+   "apply_scale_options": "FBX_SCALE_NONE",
+   "apply_unit_scale": true,
+   "axis_forward": "-Z",
+   "axis_up": "Y",
+   "bake_anim": false,
+   "bake_space_transform": true,
+   "blenderToFbxAxes": "(x, y, z) -> (x, z, -y)",
+   "blenderToUnityAxes": "(x, y, z) -> (x, z, y)",
+   "colors_type": "LINEAR",
+   "embed_textures": false,
+   "fbxHeaderUnitScaleFactor": 1.0,
+   "fbxUnitsPerMetre": 100.0,
+   "global_scale": 1.0,
+   "mesh_smooth_type": "EDGE",
+   "object_types": [
+    "MESH"
+   ],
+   "path_mode": "STRIP",
+   "prioritize_active_color": true,
+   "use_custom_props": false,
+   "use_mesh_edges": false,
+   "use_mesh_modifiers": true,
+   "use_metadata": true,
+   "use_selection": true,
+   "use_space_transform": true,
+   "use_subsurf": false,
+   "use_triangles": true,
+   "use_tspace": true,
+   "use_visible": false
+  },
+  "family": "Fauna",
+  "knownProjectConflicts": [
+   "RESOLVED: the importNormals=Calculate clobber no longer applies to forge packages. HectonFBXPostprocessor.cs:401-429 sets importNormals=Import when the sibling manifest declares h8forge.manifest/1 with unityImport.modelImporter.importNormals == 'Import'. Requires the manifest to sit in the SAME directory named MANIFEST_<stem>.json and the mesh file to start with upper-case 'MESH_' (TryResolveForgeManifestPath, :702-736). Both hold by construction from law.NAME_MESH and law.NAME_MANIFEST.",
+   "STILL TRUE, and it does not apply to Assets/ScifiFacility, which TryResolveForgeManifestPath excludes at :715 so a manifest cannot weaken third-party quarantine policy.",
+   "The postprocessor forces materialLocation=ModelImporterMaterialLocation.InPrefab, which conflicts with materialImportMode=None and the shared MAT_* policy.",
+   "HectonBakeryUvAudit.RunAudit() enables generateSecondaryUV and reimports, which overwrites authored UV1. Now sharper than when it was written: Hecton_KelpMaster reads its height and width masks from UV1 as of 2026-07-29, so this audit does not merely overwrite a lightmap set, it would overwrite the sway parameterisation.",
+   "HectonFBXPostprocessor.OnPostprocessModel builds a fallback LODGroup with its own decimation above 2000 triangles when no LODGroup is present. Mitigated for forge packages by the :181-196 branch, which logs the manifest path instead - but only when the manifest parses."
+  ],
+  "lodGroup": {
+   "animateCrossFading": false,
+   "budgets": {
+    "impostorMax": 500,
+    "impostorMin": 12,
+    "lod0": 35000,
+    "lod1": 12000,
+    "lod2": 2000
+   },
+   "childSuffixPattern": "_LOD<n>",
+   "createLodGroupExplicitly": true,
+   "fadeMode": "CrossFade",
+   "nameTemplate": "MESH_{family}_{name}_LOD{lod}",
+   "requiredLevels": [
+    0,
+    1,
+    2
+   ],
+   "why": "3dmodel.md section 7 requires a complete LOD0/LOD1/LOD2 chain and 'LOD switching must use hysteresis and dithered cross-fade where the renderer supports it. Alpha-blended cross-fade is forbidden for dense flora/coral on MX350 because it creates overdraw.' CrossFade with animateCrossFading=false is the dithered path, not alpha blend. AGENTS.md requires a 3-5 m or 2-3 s hysteresis band on any LOD switch. Build the LODGroup explicitly: relying on importer auto-detection risks HectonFBXPostprocessor generating its own __AUTO_LOD1/__AUTO_LOD2 above 2000 triangles."
+  },
+  "modelImporter": {
+   "addCollider": false,
+   "animationType": "None",
+   "bakeAxisConversion": false,
+   "generateSecondaryUV": false,
+   "globalScale": 1.0,
+   "importAnimation": false,
+   "importBlendShapeNormals": "None",
+   "importBlendShapes": false,
+   "importCameras": false,
+   "importColors": true,
+   "importConstraints": false,
+   "importLights": false,
+   "importNormals": "Import",
+   "importTangents": "CalculateMikk",
+   "importVisibility": false,
+   "indexFormat": "Auto",
+   "isReadable": false,
+   "keepQuads": false,
+   "materialImportMode": "None",
+   "meshCompression": "Off",
+   "meshOptimizationFlags": "PolygonOrder",
+   "normalSmoothingAngle": 68.0,
+   "optimizeMeshPolygons": true,
+   "optimizeMeshVertices": false,
+   "preserveHierarchy": true,
+   "sortHierarchyByName": false,
+   "useFileScale": true,
+   "weldVertices": false
+  },
+  "proofStatus": "PENDING UNITY/PROFILER VERIFICATION",
+  "proofStatusNote": "Every value above is derived from the bibles and from measured FBX content. None of it has been applied in Unity by this module: no Unity import log, no Console output and no visual capture exists for it.",
+  "surfaceClass": "Organic",
+  "textureImport": {
+   "albedo": {
+    "compression": "BC7",
+    "mips": true,
+    "sRGB": true
+   },
+   "mrao": {
+    "channels": "R=Metallic G=Roughness-or-Smoothness B=AO A=Emission",
+    "compression": "BC7",
+    "mips": true,
+    "sRGB": false
+   },
+   "namePrefix": "TX_{family}_{set}_{role}",
+   "normal": {
+    "compression": "BC5",
+    "mips": true,
+    "sRGB": false,
+    "textureType": "NormalMap"
+   },
+   "why": "AGENTS.md Visual And Asset Discipline: 'Textures default to BC7 for albedo/roughness/AO and BC5 for normals where applicable.' 3DMODEL_TEXTURES_MATERIALS.md section 3 and section 8: albedo sRGB true, normal NormalMap type with sRGB false, masks sRGB false, mips enabled for world textures, and the manifest must state whether G is roughness or smoothness rather than guessing."
+  },
+  "vertexColorContract": [
+   "sway_amplitude",
+   "biolum_phase",
+   "baked_ao",
+   "family_specific"
+  ],
+  "why": {
+   "addCollider": "3dmodel.md section 9: 'LOD0 visual meshes must never be assigned directly to production MeshCollider components.' Generate Colliders does exactly that. Collision comes from the COL_ proxy in the same FBX.",
+   "animationType": "Static geometry. An Animator on a generated prop would also breach the Zero-GC Scatter protocol.",
+   "bakeAxisConversion": "bake_space_transform=True already baked the axis conversion into the vertex data on the Blender side, so the FBX node transform is identity and Unity has nothing left to bake. Enabling it too would apply a second conversion.",
+   "generateSecondaryUV": "MUST stay off. Unity's secondary-UV generator OVERWRITES UV1, and 3dmodel.md section 3 makes TexCoord1 an authored stream: 'Lightmap, detail, atlas remap, or packed baked masks when required.' Note HectonBakeryUvAudit.RunAudit() sets generateSecondaryUV=true and reimports for models under its managed roots -- a generated package placed there loses its authored UV1.",
+   "globalScale": "The FBX already carries real-world size. law.py expresses every dimension in metres (BEVEL_RANGES, MIN_BOUNDS_EXTENT_M); any scale factor other than 1.0 would silently rescale those budgets.",
+   "importAnimation": "Exported with bake_anim=False; there is no animation data.",
+   "importBlendShapeNormals": "There are no blend shapes: the exporter runs with bake_anim=False and object_types={'MESH'}.",
+   "importBlendShapes": "None present; matches the existing project importer policy.",
+   "importCameras": "preview.py builds a camera into the same scene. object_types={'MESH'} already excludes it, and this is the second gate.",
+   "importColors": "The colour stream is data, not decoration: law.VCOL_CONTRACT for Organic is ['sway_amplitude', 'biolum_phase', 'baked_ao', 'family_specific'] (3dmodel.md sections 4 and 5). Section 8: 'Missing tangents, colors, UVs, or masks are validation failures when the material reads them.' Exported with colors_type='LINEAR' so the numbers arrive unwarped by an sRGB transfer curve.",
+   "importConstraints": "No rigging in a generated static package.",
+   "importLights": "Same reason as cameras: preview.py builds lights.",
+   "importNormals": "3dmodel.md section 3: 'RecalculateNormals, RecalculateTangents, and RecalculateBounds are allowed only as editor fallback after a documented failure, never as the default strategy. A generator owns normals, tangents, UVs, and bounds because it owns the geometry.' mesh_ops.apply_shading_basis bakes the section 4 weighted-normal formula into custom split normals; Calculate throws that away and re-derives from an angle, which is the bevel shading work lost.",
+   "importTangents": "3dmodel.md section 3 requires 'Tangent | Float32 x4 ... MikkTSpace-compatible. w is handedness.' Under MikkTSpace the tangent is fully determined by position, normal and UV0, and all three are measured to survive this export exactly, so CalculateMikk reproduces the same basis expressed in Unity's own left-handed frame. The FBX does carry tangent and binormal layers (use_tspace=True, verified present in the file), so 'Import' is available -- but Blender's importer discards tangents, so no round trip inside Blender can prove the w sign survives Unity's handedness flip. Switching to 'Import' needs a Unity-side normal-map A/B capture first. Matches the existing project policy in HectonFBXPostprocessor.ApplyImporterPolicy.",
+   "importVisibility": "Blender visibility flags are authoring state, not runtime truth; matches the existing project importer policy.",
+   "indexFormat": "Auto picks 16-bit under 65k vertices. law.LOD_BUDGETS tops out at a 35 000 triangle fauna body, so most assets stay 16-bit.",
+   "isReadable": "AGENTS.md Runtime Hot-Path Law forbids mesh.vertices, mesh.normals and mesh.triangles in hot paths, and 3dmodel.md section 0A forbids runtime mutation of vertex buffers, so nothing needs the CPU copy. Read/Write on doubles mesh memory against the compact-lane 1800 MB VRAM ceiling. Colliders do not need it: PhysX cooks at import, and runtime collider cooking is rejected anyway.",
+   "keepQuads": "The FBX is already triangulated (use_triangles=True), so this is moot; leaving it off keeps the imported topology identical to the measured one.",
+   "materialImportMode": "3dmodel.md section 0 requires 'Static material references named MAT_*, never runtime material clones', and PROCEDURAL_ASSET_PIPELINE.md requires shared MAT_<Family>_<SurfaceRole> assets. Letting Unity build materials from the FBX creates per-model materials and breaks the SRP Batcher and atlas policy. The exporter ships nothing to import: path_mode='STRIP' and embed_textures=False. Note the existing project policy forces materialLocation=InPrefab for its managed roots.",
+   "meshCompression": "Compression quantises positions, normals, tangents and UVs. 3dmodel.md section 10 gates 'Normals normalized within 0.995 to 1.005 length' and section 3 fixes a stable Float32 layout; quantised normals fail the first and quantised vertex colours corrupt the AO and sway masks. Note the existing project policy sets Medium for Assets/ScifiFacility third-party models only.",
+   "meshOptimizationFlags": "PolygonOrder only, for the VAT vertex-id reason above.",
+   "normalSmoothingAngle": "law.smooth_angle_for(surface) -- the PER-SURFACE angle, not the flat law.SMOOTH_ANGLE_DEG this used to declare. Inert while importNormals=Import, but the whole point of writing it is that a forced fallback to Calculate reproduces the AUTHORED split rather than a different one, and the flat value did not. Measured 2026-07-29: mesh_ops.apply_shading_basis only DEFAULTS to SMOOTH_ANGLE_DEG (32.0); every generator overrides it with law.smooth_angle_for(SURFACE) -- coral_branching.py:1268 and flora_capstem.py:1805/:2111 pass ORGANIC, which is 68.0. So organic assets were authored at 68 degrees while this manifest declared 32, and geology was authored at 46 while declaring 32. The old `why` string asserted these were 'the same value'; they were not, by 36 and 14 degrees respectively.",
+   "optimizeMeshPolygons": "Triangle-order optimisation touches no per-vertex identity, so it is safe even on VAT families.",
+   "optimizeMeshVertices": "Off for Fauna: this family renders through a baked VAT, which indexes per-vertex animation by vertex id. Reordering vertices desynchronises the texture from the mesh and the asset animates as noise.",
+   "preserveHierarchy": "The _LOD0/_LOD1/_LOD2 and COL_ nodes must stay separate children for the LODGroup and the collider binding to work.",
+   "sortHierarchyByName": "Off: the authored node order already reflects LOD order, and resorting would make the imported hierarchy depend on naming rather than on the manifest.",
+   "useFileScale": "Measured: the exporter writes geometry in centimetres and leaves the header UnitScaleFactor at 1, so Convert Units is what turns 175.0 back into 1.75 m. Off by mistake and the asset arrives 100x too large.",
+   "weldVertices": "Off for Fauna: welding changes the vertex count and therefore the VAT row mapping."
+  }
+ },
+ "uvSummary": {
+  "achievedTexelDensityPxPerM": 256.0,
+  "atlasSize": 1024,
+  "densityScaleApplied": 1.0,
+  "islandCount": 8,
+  "paddingPx": 12,
+  "requestedTexelDensityPxPerM": 256,
+  "route": "authored analytic UVs: cylindrical body+caudal sheet with the seam on the VENTRAL midline (least visible), u = real accumulated arc around each ring and v = mean surface advance along the spine; separate flat islands per fin membrane and per eye lens. No mirroring anywhere -- 3DMODEL_FAUNA.md section 4 forbids mirrored UVs on eyes and jaws, so the head is uniquely mapped.",
+  "usedHeightUv": 0.48047,
+  "usedWidthUv": 0.94747
+ },
+ "validation": {
+  "meshGateFailures": 0,
+  "note": "Mesh, LOD-chain and collider gates are owned by validate.py and must have run before this manifest was written (PROCEDURAL_ASSET_PIPELINE.md 'Validation Before Save'). This block reports their result; it does not re-run them.",
+  "passed": true,
+  "validatorVersion": "1.0.0"
+ },
+ "validationHash": "07980fd1fabe3b6ebdaf0a20f9383f69",
+ "validationHashAlgorithm": "blake2b-128 over the canonical JSON of every other field, sorted keys",
+ "vertexColorContract": {
+  "alphaMeaning": "counter_shading_blend: 0.0 along the dorsal ridge rising to 1.0 across the ventral belly, following the real counter-shading of a schooling fish. 3DMODEL_FAUNA.md section 4 permits a shader blend mask in A. A shader may lerp a dark dorsal colour to a pale belly with it; BoidFishInstanced.shader currently derives the same effect from local Y instead and does not read A, so this channel is authored to the bible contract and is not yet consumed.",
+  "channels": [
+   "sway_amplitude",
+   "biolum_phase",
+   "baked_ao",
+   "family_specific"
+  ],
+  "exportedColorSpace": "LINEAR",
+  "note": "Exported with colors_type='LINEAR'. Measured in the written file: an authored linear 0.25 is stored as 0.25016 with LINEAR and as 0.53725 with SRGB. Unity copies the raw FBX float into Mesh.colors32 without a colour conversion, so SRGB would gamma warp every mask channel."
+ }
+}
