@@ -21,18 +21,35 @@ namespace MapMagic.Editor.Diagnostics
         [MenuItem("Hecton8/Diagnostics/Dump Heights Chain")]
         public static void Dump()
         {
+            // This task used to swallow every failure and then exit 0 from a finally block, so a
+            // batchmode invocation that generated nothing still reported success. Worse, the exception
+            // went to a file under another agent's private brain directory, which no Unity log reader
+            // ever sees - and if that directory was absent, File.WriteAllText threw inside the catch and
+            // destroyed the original exception. Errors now go to the Unity log, which batchmode captures,
+            // and the exit code distinguishes a real dump from a failed one.
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                Debug.LogError(
+                    "[GraphHeightsDumpTask] REFUSED: no GPU context (graphicsDeviceType == Null). This " +
+                    "task generates MapMagic matrices, and compute shaders plus Graphics.Blit return " +
+                    "ZEROS without a graphics device - the dump would be a table of plausible-looking " +
+                    "zeros. Remove -nographics from the batch invocation and run again.");
+                EditorApplication.Exit(3);
+                return;
+            }
+
             try
             {
                 DoDump();
             }
             catch (Exception ex)
             {
-                File.WriteAllText(@"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0\graph_heights_dump_error.txt", ex.ToString());
+                Debug.LogError("[GraphHeightsDumpTask] FAILED, no dump was written: " + ex);
+                EditorApplication.Exit(2);
+                return;
             }
-            finally
-            {
-                EditorApplication.Exit(0);
-            }
+
+            EditorApplication.Exit(0);
         }
 
         private static void DoDump()
@@ -258,8 +275,14 @@ namespace MapMagic.Editor.Diagnostics
                 }
             }
 
-            string outPath = @"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0\graph_heights_dump.md";
+            // The dump itself used to land in another agent's private brain directory: outside the repo,
+            // unversioned, and invisible to anyone reading this project's evidence. Logs/ is where every
+            // other route artifact already lives, so height reasoning can be traced to a file that exists.
+            string outDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Logs");
+            Directory.CreateDirectory(outDirectory);
+            string outPath = Path.Combine(outDirectory, "graph_heights_dump.md");
             File.WriteAllText(outPath, sb.ToString());
+            Debug.Log($"[GraphHeightsDumpTask] Wrote {sb.Length} chars to {outPath}");
         }
     }
 }

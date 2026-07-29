@@ -19,23 +19,39 @@ namespace MapMagic.Editor.Diagnostics
         [MenuItem("Hecton8/Diagnostics/Dump Raw Heights")]
         public static void Dump()
         {
+            // Raw heights are the most load-bearing dump in this project, and until now a failure to
+            // produce them was indistinguishable from success: the exception went to another agent's
+            // private brain directory and the finally block exited 0 regardless. Compute output is also
+            // all zeros without a GPU context, per C:\hades\.claude\rules\hecton8-shaders-compute.md:36-37.
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                Debug.LogError(
+                    "[DumpRawHeightsTask] REFUSED: no GPU context (graphicsDeviceType == Null). Compute " +
+                    "shaders and Graphics.Blit return ZEROS here, so a raw-height dump taken now would be " +
+                    "fabricated zeros wearing the shape of real data. Remove -nographics and run again.");
+                EditorApplication.Exit(3);
+                return;
+            }
+
             try
             {
                 DoDump();
             }
             catch (Exception ex)
             {
-                File.WriteAllText(@"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0\raw_heights_error.txt", ex.ToString());
+                Debug.LogError("[DumpRawHeightsTask] FAILED, no dump was written: " + ex);
+                EditorApplication.Exit(2);
+                return;
             }
-            finally
-            {
-                EditorApplication.Exit(0);
-            }
+
+            EditorApplication.Exit(0);
         }
 
         private static void DoDump()
         {
-            string outDir = @"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0";
+            // Was another agent's private brain directory - outside the repo and unversioned.
+            string outDir = Path.Combine(Directory.GetCurrentDirectory(), "Logs");
+            Directory.CreateDirectory(outDir);
             string path = "Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset";
             Graph graph = AssetDatabase.LoadAssetAtPath<Graph>(path);
             if (graph == null) throw new Exception("Could not find graph");

@@ -19,18 +19,35 @@ namespace MapMagic.Editor.Diagnostics
         [MenuItem("Hecton8/Diagnostics/Zoom Proof Dump")]
         public static void Dump()
         {
+            // Tools/BatchTasks invokes this with -nographics, which C:\hades\.claude\rules\
+            // hecton8-shaders-compute.md:36-37 bans outright for MapMagic/compute generation tests:
+            // "compute shaders and Graphics.Blit return zeros with no GPU context". A zoom proof made of
+            // zeros looks exactly like a zoom proof made of real heights, so refuse instead of producing
+            // one. The old code additionally exited 0 from a finally block after writing the exception to
+            // another agent's private brain directory, so every failure reported success invisibly.
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                Debug.LogError(
+                    "[ZoomProofDumpTask] REFUSED: no GPU context (graphicsDeviceType == Null). Compute " +
+                    "shaders and Graphics.Blit return ZEROS here, so this dump would be indistinguishable " +
+                    "from a real one while being entirely fabricated. Remove -nographics from the batch " +
+                    "invocation and run again.");
+                EditorApplication.Exit(3);
+                return;
+            }
+
             try
             {
                 DoDump();
             }
             catch (Exception ex)
             {
-                File.WriteAllText(@"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0\zoom_proof_error.txt", ex.ToString());
+                Debug.LogError("[ZoomProofDumpTask] FAILED, no dump was written: " + ex);
+                EditorApplication.Exit(2);
+                return;
             }
-            finally
-            {
-                EditorApplication.Exit(0);
-            }
+
+            EditorApplication.Exit(0);
         }
 
         private static Color GetHeightColor(float h)
@@ -90,7 +107,10 @@ namespace MapMagic.Editor.Diagnostics
 
         private static void DoDump()
         {
-            string outDir = @"C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-b333-42a8-ad13-119572c28fd0";
+            // Was another agent's private brain directory: outside the repo, unversioned, invisible to
+            // anyone auditing this project's terrain evidence. Logs/ already holds every route artifact.
+            string outDir = Path.Combine(Directory.GetCurrentDirectory(), "Logs");
+            Directory.CreateDirectory(outDir);
             string path = "Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset";
             Graph graph = AssetDatabase.LoadAssetAtPath<Graph>(path);
             if (graph == null) throw new Exception("Could not find graph");
