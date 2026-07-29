@@ -1,3 +1,21 @@
+// H8_ORGANIC_VCOL_CONTRACT_OK
+//
+// EARNED, NOT ASSERTED. Verified against this file's own source by the lead before this token was
+// written, because the forge material binder's gate is a plain substring search and a comment can
+// satisfy it - so the token must never be cheaper than the evidence behind it.
+//
+//   R -> swayMask            :261   half swayMask = isfinite(vertexColor.r) ? saturate(vertexColor.r) ...
+//   G -> bakedBiolumMask     :525   half bakedBiolumMask = saturate(input.color.g);
+//   B -> bakedVertexAo       :526   half bakedVertexAo   = saturate(input.color.b);
+//
+// That is the organic contract of 3dmodel.md:132-137 in full. And both reads the binder scans for as
+// violations measure ABSENT in this file AND in the _GPUI twin - "saturate(vertexColor.r) *
+// _VertexTintStrength" and "moisture = saturate(vertexColor.g)" each return 0 occurrences in both.
+//
+// This is a POSITIVE marker by deliberate design. A negative "is the bad line still there" probe fails
+// OPEN on a rename; a positive marker fails CLOSED. The cost of that choice is exactly this comment:
+// DO NOT move, copy, or leave this token behind if any of the three reads above is ever repointed. A
+// marker that outlives its evidence is worse than no marker at all.
 Shader "Hecton8/Flora/KelpMaster"
 {
     Properties
