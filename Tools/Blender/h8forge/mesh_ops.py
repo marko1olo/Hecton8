@@ -663,6 +663,74 @@ def _split_uv_seams(obj: bpy.types.Object) -> int:
     return count
 
 
+def material_slot_anchors(obj: bpy.types.Object) -> dict:
+    """Per-slot polygon centroid, so a slot decimation empties can be re-tagged in place.
+
+    Call on LOD0 before ``build_lod_chain`` and hand the result to
+    :func:`preserve_material_slots` for each level.
+    """
+    sums = {}
+    for polygon in obj.data.polygons:
+        entry = sums.setdefault(polygon.material_index,
+                                [Vector((0.0, 0.0, 0.0)), 0])
+        entry[0] += polygon.center
+        entry[1] += 1
+    return {slot: (total / float(count))
+            for slot, (total, count) in sums.items() if count}
+
+
+def preserve_material_slots(obj: bpy.types.Object, anchors: dict) -> dict:
+    """Re-tag the nearest surviving polygon to any material slot decimation emptied.
+
+    Quadric Edge Collapse has no notion of a submesh contract, so the smallest role on
+    an asset can lose its last polygon at LOD2 - measured on coral at 285 triangles and
+    on kelp at 288, both firing the validator's ``submesh_empty_declared_slot``.
+    ``3dmodel.md`` section 10 requires the submesh count to match the declaration and
+    section 6 requires LOD2 to keep the shader semantics it still reads, so the honest
+    repair is to keep the role alive at its own location rather than let a material
+    silently vanish partway down the chain.
+
+    One polygon per emptied slot, chosen by distance to that slot's LOD0 centroid, and
+    never taken from a slot that is itself down to its last polygon.
+
+    IT LIVES HERE BECAUSE THE CODE THAT EMPTIES THE SLOT LIVES HERE. It existed as two
+    copies, in ``kelp.py`` and ``coral_branching.py``, and they had already DRIFTED - not
+    in behaviour but in COST. Coral's built a count dict once and decremented it, O(n).
+    Kelp's recomputed ``sum(1 for q in mesh.polygons if ...)`` INSIDE the loop over
+    polygons, which is O(n^2): on 5864 polygons that is roughly 34 million comparisons per
+    emptied slot. A third copy was about to be written for cap-stem. Consolidating on the
+    cheaper one fixes kelp as a side effect.
+    """
+    mesh = obj.data
+    used = set(polygon.material_index for polygon in mesh.polygons)
+    counts = {}
+    for polygon in mesh.polygons:
+        counts[polygon.material_index] = counts.get(polygon.material_index, 0) + 1
+    repaired = {}
+    for slot in range(len(mesh.materials)):
+        if slot in used:
+            continue
+        anchor = anchors.get(slot)
+        if anchor is None or not mesh.polygons:
+            continue
+        best = None
+        best_distance = None
+        for polygon in mesh.polygons:
+            # Never cannibalise a slot that is itself down to its last polygon.
+            if counts.get(polygon.material_index, 0) <= 1:
+                continue
+            distance = (polygon.center - anchor).length
+            if best_distance is None or distance < best_distance:
+                best_distance = distance
+                best = polygon
+        if best is not None:
+            counts[best.material_index] -= 1
+            best.material_index = slot
+            counts[slot] = counts.get(slot, 0) + 1
+            repaired[slot] = round(best_distance, 5)
+    return repaired
+
+
 def _weld_coincident(obj: bpy.types.Object, distance: float = 1e-6) -> dict:
     """Re-join vertices this pipeline split apart, and nothing else.
 

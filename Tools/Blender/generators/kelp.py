@@ -2436,62 +2436,6 @@ def _build_anchors(form, name: str):
     return out
 
 
-# ---------------------------------------------------------------------------
-# Scene reset
-# ---------------------------------------------------------------------------
-
-def _material_slot_anchors(obj):
-    """Per-slot centroid at LOD0, so an emptied slot can be re-tagged sensibly later."""
-    mesh = obj.data
-    sums = {}
-    for polygon in mesh.polygons:
-        slot = polygon.material_index
-        entry = sums.setdefault(slot, [Vector((0.0, 0.0, 0.0)), 0])
-        entry[0] += polygon.center
-        entry[1] += 1
-    return {slot: (total / float(count)) for slot, (total, count) in sums.items()
-            if count}
-
-
-def _preserve_material_slots(obj, anchors) -> dict:
-    """Re-tag the nearest surviving face to any slot decimation emptied.
-
-    Quadric collapse has no notion of a submesh contract, so a small slot can lose its
-    last triangle at LOD2 -- measured on this asset: slot 1 of 4 empty at 288 triangles
-    in one of six runs, which the validator rejects as submesh_empty_declared_slot.
-    3dmodel.md section 6 requires LOD2 to "Keep vertex color R/G/B semantics" and the
-    material slot declaration to match the submesh count, so the honest repair is to
-    keep the slot alive at its own location rather than silently dropping a material
-    role partway down the chain. One face per emptied slot, chosen by distance to that
-    slot's LOD0 centroid, so the material stays where it belongs on the organism.
-    """
-    mesh = obj.data
-    used = set(polygon.material_index for polygon in mesh.polygons)
-    declared = len(mesh.materials)
-    repaired = {}
-    for slot in range(declared):
-        if slot in used:
-            continue
-        anchor = anchors.get(slot)
-        if anchor is None or not mesh.polygons:
-            continue
-        best = None
-        best_distance = None
-        for polygon in mesh.polygons:
-            # Never cannibalise a slot that is itself down to its last face.
-            if sum(1 for q in mesh.polygons
-                   if q.material_index == polygon.material_index) <= 1:
-                continue
-            distance = (polygon.center - anchor).length
-            if best_distance is None or distance < best_distance:
-                best_distance = distance
-                best = polygon
-        if best is not None:
-            best.material_index = slot
-            repaired[slot] = round(best_distance, 5)
-    return repaired
-
-
 def _triangulate_ngons(obj) -> dict:
     """Split any polygon with more than four sides, and report the count.
 
@@ -2783,7 +2727,7 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
     # so the parameterisation is destroyed while the triangle budget is still met. The
     # hook is family knowledge on purpose: the seam placement and the root-to-tip V
     # orientation below are kelp rules, not a shared helper's.
-    slot_anchors = _material_slot_anchors(obj)
+    slot_anchors = mesh_ops.material_slot_anchors(obj)
     lod_uv = {}
 
     def _reunwrap(level_obj, lod_index):
@@ -2792,7 +2736,7 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
         healed = _heal_degenerate(level_obj)
         lod_uv[lod_index] = _unwrap_and_pack(level_obj, atlas_size, blackbox=bb)
         lod_uv[lod_index]["healed"] = healed
-        lod_uv[lod_index]["slotsRepaired"] = _preserve_material_slots(
+        lod_uv[lod_index]["slotsRepaired"] = mesh_ops.preserve_material_slots(
             level_obj, slot_anchors)
 
     # preserve_seams stays TRUE. Turning it off was tried and measured worse, not better:
@@ -2804,7 +2748,7 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
         obj, family=law.Family.FLORA, name=name, quality_weight=quality,
         levels=3, preserve_seams=True, blackbox=bb, reunwrap=_reunwrap)
     lod_uv[0] = dict(atlas_report)
-    lod_uv[0]["slotsRepaired"] = _preserve_material_slots(obj, slot_anchors)
+    lod_uv[0]["slotsRepaired"] = mesh_ops.preserve_material_slots(obj, slot_anchors)
     # topology_report has had NO CALLERS in this pipeline, which is why a missed budget
     # used to report "584 tris vs 300" instead of a cause. Called per level here so the
     # manifest carries components / boundary edges / non-manifold edges / irreducible

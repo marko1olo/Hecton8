@@ -1108,64 +1108,6 @@ def assign_material_slots(obj: bpy.types.Object, spec: CoralSpec,
     }
 
 
-def _material_slot_anchors(obj: bpy.types.Object) -> dict:
-    """Per-slot polygon centroid at LOD0, so an emptied slot can be re-tagged in place."""
-    sums = {}
-    for polygon in obj.data.polygons:
-        entry = sums.setdefault(polygon.material_index,
-                               [Vector((0.0, 0.0, 0.0)), 0])
-        entry[0] += polygon.center
-        entry[1] += 1
-    return {slot: (total / float(count))
-            for slot, (total, count) in sums.items() if count}
-
-
-def _preserve_material_slots(obj: bpy.types.Object, anchors: dict) -> dict:
-    """Re-tag the nearest surviving polygon to any slot decimation emptied.
-
-    Quadric Edge Collapse has no notion of a submesh contract. The digit tips are the
-    smallest features on the colony and LOD2 keeps ~285 triangles for the whole
-    organism, so slot 1 losing its last polygon there is expected, not exceptional --
-    the kelp author measured the same class of loss at 288 triangles.
-    ``3DMODEL_FLORA_CORAL.md`` section 6 requires LOD2 to keep the shader semantics it
-    still reads, and ``3dmodel.md`` section 10 requires the submesh count to match the
-    declaration, so the honest repair is to keep the role alive at its own location
-    rather than let a material silently disappear partway down the chain.
-
-    One polygon per emptied slot, chosen by distance to that slot's LOD0 centroid, and
-    never taken from a slot that is itself down to its last polygon.
-    """
-    mesh = obj.data
-    used = set(polygon.material_index for polygon in mesh.polygons)
-    counts = {}
-    for polygon in mesh.polygons:
-        counts[polygon.material_index] = counts.get(polygon.material_index, 0) + 1
-    repaired = {}
-    for slot in range(len(mesh.materials)):
-        if slot in used:
-            continue
-        anchor = anchors.get(slot)
-        if anchor is None or not mesh.polygons:
-            continue
-        best = None
-        best_distance = None
-        for polygon in mesh.polygons:
-            if counts.get(polygon.material_index, 0) <= 1:
-                continue
-            distance = (polygon.center - anchor).length
-            if best_distance is None or distance < best_distance:
-                best_distance = distance
-                best = polygon
-        if best is not None:
-            counts[best.material_index] -= 1
-            best.material_index = slot
-            counts[slot] = counts.get(slot, 0) + 1
-            repaired[slot] = round(best_distance, 5)
-    if repaired:
-        mesh.update()
-    return repaired
-
-
 def unwrap_and_assign_materials(obj: bpy.types.Object, spec: CoralSpec,
                                 sampler: "SkeletonSampler",
                                 blackbox: BlackBox) -> dict:
@@ -1357,11 +1299,11 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
         # shattered shell and the weld would then merge vertices across island borders
         # underneath the solution.
         lod_uv = {0: dict(uv_report)}
-        slot_anchors = _material_slot_anchors(obj)
+        slot_anchors = mesh_ops.material_slot_anchors(obj)
 
         def _reunwrap(level_obj, lod_index):
             solved = solve_uv(level_obj)
-            solved["slotsRepaired"] = _preserve_material_slots(level_obj, slot_anchors)
+            solved["slotsRepaired"] = mesh_ops.preserve_material_slots(level_obj, slot_anchors)
             lod_uv[lod_index] = solved
 
         lods = mesh_ops.build_lod_chain(
@@ -1370,7 +1312,7 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
         # LOD0 is the source object and never enters the reunwrap path, so its slot
         # census is verified here instead. It cannot be empty -- assign_material_slots
         # aborts on that -- but the number belongs in the same report as the others.
-        lod_uv[0]["slotsRepaired"] = _preserve_material_slots(obj, slot_anchors)
+        lod_uv[0]["slotsRepaired"] = mesh_ops.preserve_material_slots(obj, slot_anchors)
 
         # POST-DECIMATION non-manifold repair, and it is not redundant with the one inside
         # weld_and_clean. That runs before the LOD chain; Blender's Decimate/COLLAPSE then
@@ -1447,7 +1389,7 @@ def generate(spec: CoralSpec, *, name: Optional[str] = None,
         # numbers recorded here are the ones the exported mesh actually carries.
         for level in lods:
             entry = lod_uv.setdefault(level.index, {})
-            repaired = _preserve_material_slots(level.obj, slot_anchors)
+            repaired = mesh_ops.preserve_material_slots(level.obj, slot_anchors)
             if repaired:
                 entry["slotsRepaired"] = dict(entry.get("slotsRepaired", {}),
                                               **repaired)
