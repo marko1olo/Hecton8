@@ -2145,6 +2145,25 @@ namespace Hecton8.EditorTools.Generators.Fauna
         private const string TokenArgument = "-h8FaunaToken";
 
         /// <summary>
+        /// Selects one Mesh sub-asset by EXACT name inside a model file. Always wins over the LOD0 rule.
+        /// </summary>
+        private const string SubMeshArgument = "-h8FaunaSubMesh";
+
+        /// <summary>
+        /// LOD0 is the only defensible automatic choice. The renderer draws LOD0 at close range and indexes
+        /// the VAT by <c>vertexID</c> over <c>_VatVertexCount</c>
+        /// (BoidFishInstanced.shader:493), and <c>_VatVertexCount</c> comes from the MESH the component
+        /// draws (SargassumMicroFaunaBoids.cs:8868). Baking from LOD1/LOD2 would animate a decimated vertex
+        /// set while LOD0 is on screen: the column count would disagree with the drawn mesh, every vertex
+        /// would sample the wrong column, and every null check would still pass. That is the silent
+        /// degeneracy class the project singles out, so "the first Mesh in the file" is not good enough.
+        /// </summary>
+        private const string Lod0NameSuffix = "_LOD0";
+
+        /// <summary>Any LOD marker at all, used to distinguish "LOD chain without LOD0" from "no LODs".</summary>
+        private const string LodNameMarker = "_LOD";
+
+        /// <summary>
         /// Bakes one mesh named on the command line. Exits non-zero on any rejection.
         /// </summary>
         /// <remarks>
@@ -2201,14 +2220,11 @@ namespace Hecton8.EditorTools.Generators.Fauna
                 return false;
             }
 
-            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+            // ResolveSourceMesh logs its own precise refusal, so there is nothing to add here. It never
+            // returns a mesh it had to guess at.
+            Mesh mesh = ResolveSourceMesh(meshPath);
             if (mesh == null)
-            {
-                Debug.LogError(Marker + " ABORT - no Mesh at '" + meshPath +
-                               "'. For an .fbx, pass the sub-asset path or a Mesh .asset; LoadAssetAtPath<Mesh> " +
-                               "returns null for a model root whose main asset is a GameObject.");
                 return false;
-            }
 
             string materialPath = ReadArgument(MaterialArgument);
             Material material = string.IsNullOrEmpty(materialPath)
@@ -2336,6 +2352,230 @@ namespace Hecton8.EditorTools.Generators.Fauna
         /// <c>SystemInfo.SupportsTextureFormat</c> and <c>Texture2D.Apply</c> report nonsense and persist a
         /// VAT asset full of zeros that looks like a successful bake on disk.
         /// </summary>
+        /// <summary>
+        /// Resolves the source Mesh from either a standalone Mesh <c>.asset</c> path or a model file
+        /// (<c>.fbx</c>), or returns null after logging exactly why. Never guesses.
+        /// </summary>
+        /// <remarks>
+        /// WHY <c>LoadAssetAtPath&lt;Mesh&gt;</c> ALONE IS NOT ENOUGH. A model file's MAIN asset is a
+        /// <c>GameObject</c> (the imported prefab root); its Meshes are SUB-assets. A path string addresses
+        /// a file, not a sub-asset, so there is no path that means "the Mesh inside this fbx".
+        /// <c>LoadAllAssetsAtPath</c> is the API that returns the main asset plus every sub-asset, which is
+        /// why the fix lives here rather than in a smarter path string.
+        ///
+        /// WHY NOT "REQUIRE A STANDALONE Mesh .asset". That was the other candidate: keep this method
+        /// trivial and add an extraction step that writes a Mesh .asset out of the fbx. Rejected because it
+        /// puts a second, divergent copy of the geometry in the project - the extracted copy and the fbx can
+        /// drift on the next forge re-bake, and nothing would detect it. Reading the sub-asset directly keeps
+        /// the fbx the single source of truth.
+        ///
+        /// WHY NOT "ACCEPT A GameObject PATH AND PULL ITS MeshFilter". Rejected because on a model with a
+        /// LODGroup the root carries no MeshFilter and the children carry three, so it collapses to the same
+        /// LOD-selection decision while also depending on hierarchy shape. Selecting among the Mesh
+        /// sub-assets by name is the same decision with fewer moving parts.
+        /// </remarks>
+        private static Mesh ResolveSourceMesh(string meshPath)
+        {
+            // Standalone Mesh .asset: the historical path, still exact and still preferred.
+            Mesh direct = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+            if (direct != null)
+            {
+                Debug.Log(Marker + " source mesh '" + direct.name + "' resolved directly from '" + meshPath +
+                          "' vertexCount=" + direct.vertexCount.ToString(CultureInfo.InvariantCulture));
+                return VerifyMeshIsReadable(direct, meshPath);
+            }
+
+            // COLD ALLOC: Object[] - one AssetDatabase sub-asset census for a headless bake - owner: FaunaHeadlessBake1610
+            Object[] all = AssetDatabase.LoadAllAssetsAtPath(meshPath);
+            if (all == null || all.Length == 0)
+            {
+                Debug.LogError(Marker + " ABORT - '" + meshPath + "' holds no assets at all. Check the path " +
+                               "and that the file has been imported.");
+                return null;
+            }
+
+            // Arrays, not List<T>: this file does not import System.Collections.Generic and adding a using
+            // to 2700 lines of Burst/unsafe code to save four lines here is a poor trade.
+            int meshCount = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] is Mesh)
+                    meshCount++;
+            }
+
+            if (meshCount == 0)
+            {
+                Debug.LogError(Marker + " ABORT - '" + meshPath + "' contains no Mesh sub-asset. " +
+                               "assetsFound=" + all.Length.ToString(CultureInfo.InvariantCulture) +
+                               " mainAssetType=" + (all[0] != null ? all[0].GetType().Name : "<null>") +
+                               ". A model root's main asset is a GameObject, so pass a model that actually " +
+                               "imports geometry, or a standalone Mesh .asset.");
+                return null;
+            }
+
+            // COLD ALLOC: Mesh[] - Mesh sub-asset candidates from one model file - owner: FaunaHeadlessBake1610
+            Mesh[] candidates = new Mesh[meshCount];
+            int written = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i] is Mesh candidate)
+                    candidates[written++] = candidate;
+            }
+
+            string candidateList = DescribeMeshCandidates(candidates);
+
+            // Explicit operator choice always wins. This is the escape hatch for any naming scheme the LOD0
+            // rule below cannot read, so a refusal is never a dead end.
+            string requestedName = ReadArgument(SubMeshArgument);
+            if (!string.IsNullOrEmpty(requestedName))
+            {
+                for (int i = 0; i < candidates.Length; i++)
+                {
+                    if (string.Equals(candidates[i].name, requestedName, StringComparison.Ordinal))
+                    {
+                        Debug.Log(Marker + " source mesh '" + candidates[i].name + "' selected by " +
+                                  SubMeshArgument + " from '" + meshPath + "' vertexCount=" +
+                                  candidates[i].vertexCount.ToString(CultureInfo.InvariantCulture));
+                        return VerifyMeshIsReadable(candidates[i], meshPath);
+                    }
+                }
+
+                Debug.LogError(Marker + " ABORT - " + SubMeshArgument + " '" + requestedName +
+                               "' matches no Mesh in '" + meshPath + "'. Names are compared exactly " +
+                               "(case-sensitive, ordinal). candidates=" + candidateList);
+                return null;
+            }
+
+            if (candidates.Length == 1)
+            {
+                Debug.Log(Marker + " source mesh '" + candidates[0].name + "' is the only Mesh in '" +
+                          meshPath + "' vertexCount=" +
+                          candidates[0].vertexCount.ToString(CultureInfo.InvariantCulture));
+                return VerifyMeshIsReadable(candidates[0], meshPath);
+            }
+
+            // Multiple meshes: LOD0 or refuse. Never "the first one".
+            Mesh lod0Match = null;
+            int lod0Count = 0;
+            bool sawAnyLodMarker = false;
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                string name = candidates[i].name;
+                if (name.IndexOf(LodNameMarker, StringComparison.OrdinalIgnoreCase) >= 0)
+                    sawAnyLodMarker = true;
+
+                if (!name.EndsWith(Lod0NameSuffix, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                lod0Count++;
+                if (lod0Match == null)
+                    lod0Match = candidates[i];
+            }
+
+            if (lod0Count == 1)
+            {
+                Debug.Log(Marker + " source mesh '" + lod0Match.name + "' selected as LOD0 from " +
+                          candidates.Length.ToString(CultureInfo.InvariantCulture) + " Mesh sub-assets in '" +
+                          meshPath + "' vertexCount=" +
+                          lod0Match.vertexCount.ToString(CultureInfo.InvariantCulture) +
+                          ". Rule: the VAT must be baked from the mesh the renderer actually draws, because " +
+                          "_VatVertexCount is fed from that mesh. candidates=" + candidateList);
+                return VerifyMeshIsReadable(lod0Match, meshPath);
+            }
+
+            if (lod0Count > 1)
+            {
+                Debug.LogError(Marker + " ABORT - '" + meshPath + "' has " +
+                               lod0Count.ToString(CultureInfo.InvariantCulture) +
+                               " Mesh sub-assets ending in '" + Lod0NameSuffix +
+                               "', so LOD0 is ambiguous. Disambiguate with " + SubMeshArgument +
+                               " <exactName>. candidates=" + candidateList);
+                return null;
+            }
+
+            Debug.LogError(Marker + " ABORT - '" + meshPath + "' has " +
+                           candidates.Length.ToString(CultureInfo.InvariantCulture) +
+                           " Mesh sub-assets and none ends in '" + Lod0NameSuffix + "'. " +
+                           (sawAnyLodMarker
+                               ? "A LOD chain IS present but carries no LOD0, which means the naming scheme " +
+                                 "is not the one this rule reads."
+                               : "No LOD markers are present at all, so there is no way to tell which mesh " +
+                                 "the renderer draws.") +
+                           " Refusing rather than guessing: a VAT baked from the wrong LOD animates a " +
+                           "different vertex set than the one on screen and every null check still passes. " +
+                           "Name the mesh explicitly with " + SubMeshArgument + " <exactName>. candidates=" +
+                           candidateList);
+            return null;
+        }
+
+        /// <summary>
+        /// Proves the mesh's vertex data is actually reachable, rather than trusting
+        /// <see cref="Mesh.isReadable"/> as a proxy.
+        /// </summary>
+        /// <remarks>
+        /// An imported mesh with Read/Write disabled reports a correct <c>vertexCount</c> from metadata while
+        /// <c>Mesh.vertices</c> can come back empty. The bake reads <c>vertices</c>, so that combination
+        /// would write a full-size VAT page of zeros and still look like a successful bake on disk - exactly
+        /// the failure this whole lane exists to stop. Rather than refuse on the <c>isReadable</c> flag
+        /// (which would block a bake that Unity would in fact have allowed), this performs the read and
+        /// compares lengths, so the gate measures the thing that matters instead of a proxy for it.
+        /// </remarks>
+        private static Mesh VerifyMeshIsReadable(Mesh mesh, string meshPath)
+        {
+            if (mesh.vertexCount <= 0)
+            {
+                Debug.LogError(Marker + " ABORT - mesh '" + mesh.name + "' in '" + meshPath +
+                               "' reports vertexCount=0. There is no geometry to bake.");
+                return null;
+            }
+
+            // COLD ALLOC: Vector3[] - one readability probe of the source mesh - owner: FaunaHeadlessBake1610
+            Vector3[] probe = mesh.vertices;
+            int readable = probe != null ? probe.Length : 0;
+            if (readable != mesh.vertexCount)
+            {
+                Debug.LogError(Marker + " ABORT - mesh '" + mesh.name + "' in '" + meshPath +
+                               "' reports vertexCount=" +
+                               mesh.vertexCount.ToString(CultureInfo.InvariantCulture) +
+                               " but Mesh.vertices returned " +
+                               readable.ToString(CultureInfo.InvariantCulture) +
+                               " element(s). isReadable=" + (mesh.isReadable ? "true" : "false") +
+                               ". Baking now would write a VAT page of zeros that looks successful on disk. " +
+                               "Fix the model importer: enable Read/Write (isReadable: 1) on '" + meshPath +
+                               "' and re-import, then re-run.");
+                return null;
+            }
+
+            if (!mesh.isReadable)
+            {
+                Debug.LogWarning(Marker + " mesh '" + mesh.name + "' has isReadable=false but its vertex " +
+                                 "data read back complete (" +
+                                 readable.ToString(CultureInfo.InvariantCulture) +
+                                 " vertices), so the bake proceeds. This works because an Editor-side " +
+                                 "AssetDatabase read still reaches the imported data; it would NOT work at " +
+                                 "runtime. Enable Read/Write on the importer if anything else ever needs " +
+                                 "these vertices outside the Editor.");
+            }
+
+            return mesh;
+        }
+
+        private static string DescribeMeshCandidates(Mesh[] candidates)
+        {
+            // COLD ALLOC: StringBuilder[128] - one refusal message for a headless bake - owner: FaunaHeadlessBake1610
+            StringBuilder builder = new StringBuilder(128);
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                if (i > 0)
+                    builder.Append(", ");
+
+                builder.Append('\'').Append(candidates[i].name).Append("' verts=")
+                       .Append(candidates[i].vertexCount.ToString(CultureInfo.InvariantCulture));
+            }
+
+            return builder.ToString();
+        }
+
         private static bool RequireGraphicsDevice()
         {
             if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null)
