@@ -11,6 +11,21 @@ namespace Hecton8.Editor
     {
         private const float TwoPi = Mathf.PI * 2f;
 
+        /// <summary>
+        /// Placeholder red for primitive emitters. COLOR.r is the flora contract's sway-amplitude
+        /// channel and is authored per vertex by <see cref="ApplyFloraSwayChannel"/> once the whole
+        /// plant exists, so whatever an emitter passes in this slot is overwritten by design.
+        /// </summary>
+        /// <remarks>
+        /// These 39 call sites previously passed <c>spec.TintByte</c> (and <c>TintByte + 4/6/8/10</c>)
+        /// here. That was dead data occupying a live channel: nothing in the project ever read a tint
+        /// out of COLOR.r. Both kelp shaders consume R as sway amplitude, G as the bioluminescence
+        /// mask, B as baked AO and A as the harvest mask, and their own comments record that the
+        /// earlier COLOR.r-as-hash and COLOR.b-as-AO-scalar reads were removed precisely because the
+        /// channel contract reserves R for sway.
+        /// </remarks>
+        private const byte SwayAuthoredPerVertex = 0;
+
         public static bool CanBuild(string rootToken)
         {
             return TryResolveSpec(rootToken, out _);
@@ -54,8 +69,153 @@ namespace Hecton8.Editor
             if (buffers.Indices.Count < 3)
                 return false;
 
+            SwayChannelStats swayStats = ApplyFloraSwayChannel(buffers, spec);
+            if (!swayStats.CarriesGradient)
+            {
+                // Silent degeneracy is the dominant failure mode for a generator like this one: a
+                // flat channel is still a perfectly valid mesh that simply never moves. Fail loudly.
+                Debug.LogWarning($"[FLORA SWAY] '{rootToken}' LOD{lod} produced a DEGENERATE COLOR.r sway channel: {swayStats.Describe()}. Kelp built from this mesh cannot bend.");
+            }
+
             mesh = CreateMesh(rootToken, lod, buffers);
             return mesh != null;
+        }
+
+        /// <summary>
+        /// Writes the two streams the flora vertex-colour contract and the kelp shaders actually
+        /// consume, in one pass over the finished vertex set:
+        /// <list type="bullet">
+        /// <item>COLOR.r = water-current sway amplitude (3DMODEL_FLORA_CORAL.md section 2 line 24),
+        /// built with that section's line 29 formula
+        /// <c>sway = saturate(distanceFromAnchor / maxFlexibleLength) ^ stiffnessExponent</c>.</item>
+        /// <item>TEXCOORD1 = (UV0.u, linear root-to-tip coordinate). V is deliberately the
+        /// PRE-exponent distance, because the shader multiplies by it separately as
+        /// <c>heightMask</c> and squares it into <c>tipParabola</c>; baking the stiffness curve into
+        /// both streams would cube the falloff and pin the plant straight again.</item>
+        /// </list>
+        /// This runs as a post-pass rather than inside each primitive emitter for two reasons. First,
+        /// "distanceFromAnchor / maxFlexibleLength" is a PLANT-scale quantity, and no individual
+        /// blade, stipe ring, tube or bulb knows the plant's extent while it is being emitted -- the
+        /// per-primitive local <c>t</c> that the emitters do know is exactly the wrong signal, and is
+        /// what UV0.v already carries. Second, it is a single choke point: every current and future
+        /// emitter is covered without having to thread a sway argument through all fourteen blade
+        /// builders, so no emitter can silently regress the channel.
+        /// </summary>
+        /// <remarks>
+        /// The anchor is the mesh's own minimum Y. Every variant in <see cref="TryResolveSpec"/> is
+        /// built holdfast-first around a base at y ~ 0 with growth along +Y, so normalized height is
+        /// the geodesic root-to-tip distance for an upright plant and stays monotonic for a bent or
+        /// drooping one. A frond tip that has curled back down toward the floor reads slightly lower
+        /// than its arc length, which is physically right: it has lost current leverage.
+        /// </remarks>
+        private static SwayChannelStats ApplyFloraSwayChannel(MeshBuffers buffers, VariantSpec spec)
+        {
+            int vertexCount = buffers.Vertices.Count;
+            if (vertexCount <= 0)
+                return SwayChannelStats.Empty;
+
+            float anchorY = buffers.Bounds.min.y;
+            float flexibleSpanY = buffers.Bounds.size.y;
+            // A zero span cannot be masked into something plausible: leave the gradient flat and let
+            // CarriesGradient below report the failure instead of emitting a confident-looking curve.
+            float inverseSpanY = flexibleSpanY > 0.0001f ? 1f / flexibleSpanY : 0f;
+            float stiffnessExponent = ResolveSwayStiffnessExponent(spec);
+
+            // Min-fold seeded so a real candidate can always win; max-fold likewise. Never seed with
+            // 0f/1f here -- that hides an all-zero channel behind a sentinel that looks like data.
+            float minRed = float.MaxValue;
+            float maxRed = -float.MaxValue;
+            double redSum = 0.0;
+
+            for (int i = 0; i < vertexCount; i++)
+            {
+                float height01 = Mathf.Clamp01((buffers.Vertices[i].y - anchorY) * inverseSpanY);
+                float sway01 = MathLodApproximation.ApproxPow01Curve(height01, stiffnessExponent);
+                byte red = (byte)Mathf.Clamp(Mathf.RoundToInt(sway01 * 255f), 0, 255);
+
+                Color32 authored = buffers.Colors[i];
+                // G (bioluminescence), B (baked AO) and A stay exactly as the emitters authored them.
+                // Only R changes: it used to receive spec.TintByte, a per-variant CONSTANT, which is
+                // why root and tip measured 0.641 vs 0.647 -- a 0.006 span carrying no height signal.
+                buffers.Colors[i] = new Color32(red, authored.g, authored.b, authored.a);
+                buffers.UV1s[i] = new Vector2(buffers.UVs[i].x, height01);
+
+                float redNormalized = red * (1f / 255f);
+                if (redNormalized < minRed)
+                    minRed = redNormalized;
+                if (redNormalized > maxRed)
+                    maxRed = redNormalized;
+                redSum += redNormalized;
+            }
+
+            return new SwayChannelStats(vertexCount, minRed, maxRed, (float)(redSum / vertexCount), stiffnessExponent);
+        }
+
+        /// <summary>
+        /// Per-organism stiffness exponent for the section 29 sway formula. The contract requires
+        /// that roots and holdfasts are rigid while tips carry the most movement, and the shader
+        /// comment block is explicit that a stiff organism and a flexible one must not share one
+        /// hardcoded curve.
+        /// </summary>
+        /// <remarks>
+        /// Slenderness (stipe height / base radius) is the beam-theory proxy already present in
+        /// <see cref="VariantSpec"/>. Deriving the exponent from existing fields rather than adding a
+        /// constructor parameter is deliberate: the <see cref="TryResolveSpec"/> table passes 32+
+        /// positional arguments across 55 variants, and inserting one more without a compiler to
+        /// check the result is a high-probability silent-geometry defect.
+        /// </remarks>
+        private static float ResolveSwayStiffnessExponent(VariantSpec spec)
+        {
+            float slenderness = spec.StipeHeightMultiplier / Mathf.Max(spec.BaseRadiusMultiplier, 0.0001f);
+            // 0 = stubby and stiff (bend concentrated at the tip), 1 = long and whippy (bends low).
+            float flexibility = Mathf.InverseLerp(4f, 8f, slenderness);
+            float exponent = Mathf.Lerp(2.1f, 1.15f, flexibility);
+            if (spec.GrowthStyle == GrowthStyle.CrownCanopy)
+            {
+                // A rigid trunk carrying a crown: motion belongs to the crown, not to the stem.
+                exponent += 0.35f;
+            }
+
+            return Mathf.Clamp(exponent, 1.05f, 2.6f);
+        }
+
+        /// <summary>
+        /// Measured min/max/mean of the COLOR.r sway channel over one generated mesh. Exists so the
+        /// gradient is a reported fact rather than an intention.
+        /// </summary>
+        private readonly struct SwayChannelStats
+        {
+            /// <summary>
+            /// Minimum span between root and tip red before the channel counts as a real gradient.
+            /// The pre-fix meshes measured 0.006 (tint constant); anything near that is not a curve.
+            /// </summary>
+            public const float MinimumAcceptableSpan = 0.25f;
+
+            public static readonly SwayChannelStats Empty = new SwayChannelStats(0, 0f, 0f, 0f, 0f);
+
+            public SwayChannelStats(int vertexCount, float minRed, float maxRed, float meanRed, float stiffnessExponent)
+            {
+                VertexCount = vertexCount;
+                MinRed = minRed;
+                MaxRed = maxRed;
+                MeanRed = meanRed;
+                StiffnessExponent = stiffnessExponent;
+            }
+
+            public int VertexCount { get; }
+            public float MinRed { get; }
+            public float MaxRed { get; }
+            public float MeanRed { get; }
+            public float StiffnessExponent { get; }
+
+            public float Span => MaxRed - MinRed;
+
+            public bool CarriesGradient => VertexCount > 0 && Span >= MinimumAcceptableSpan;
+
+            public string Describe()
+            {
+                return $"vertices={VertexCount} R.min={MinRed:F4} R.max={MaxRed:F4} R.mean={MeanRed:F4} R.span={Span:F4} stiffnessExponent={StiffnessExponent:F3}";
+            }
         }
 
         private static void BuildHoldfast(MeshBuffers buffers, VariantSpec spec, Vector3 scale, int lod)
@@ -82,7 +242,7 @@ namespace Hecton8.Editor
                     rootSegments,
                     0.08f,
                     0.16f,
-                    new Color32(spec.TintByte, 196, 46, 255));
+                    new Color32(SwayAuthoredPerVertex, 196, 46, 255));
             }
         }
 
@@ -124,7 +284,7 @@ namespace Hecton8.Editor
                     Vector4 tangent = new Vector4(-MathLodApproximation.ApproxSinBhaskara(angle), 0f, MathLodApproximation.ApproxCosBhaskara(angle), 1f);
                     byte green = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(92f, 188f, v) + bladeBand * 10f - bulbBand * 6f), 0, 255);
                     byte blue = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(32f, 186f, v) - bladeBand * 12f + bulbBand * 8f), 0, 255);
-                    buffers.AddVertex(vertex, normal, tangent, new Vector2(u, v), new Color32(spec.TintByte, green, blue, 255));
+                    buffers.AddVertex(vertex, normal, tangent, new Vector2(u, v), new Color32(SwayAuthoredPerVertex, green, blue, 255));
                 }
             }
 
@@ -318,8 +478,8 @@ namespace Hecton8.Editor
                 Mathf.Max(scale.x * 0.012f, (anchor - stemBase).magnitude * 0.24f),
                 scale.x * Mathf.Lerp(0.015f, 0.009f, normalized),
                 lod,
-                new Color32(spec.TintByte, 184, 52, 255));
-            AddBladeRibbon(buffers, spec, anchor, lateral, up, width, length, twist, bladeSegments, sideCurve, serration, new Color32(spec.TintByte, 208, (byte)Mathf.Lerp(40f, 210f, normalized), 255), primaryProfile, forward, lod);
+                new Color32(SwayAuthoredPerVertex, 184, 52, 255));
+            AddBladeRibbon(buffers, spec, anchor, lateral, up, width, length, twist, bladeSegments, sideCurve, serration, new Color32(SwayAuthoredPerVertex, 208, (byte)Mathf.Lerp(40f, 210f, normalized), 255), primaryProfile, forward, lod);
 
             BladeBuildParams buildParams = new BladeBuildParams(buffers, spec, scale, lod, bladeIndex, normalized, primaryAngleOffset, baseOffset, clusterYawOffsetDegrees, width, length, twist, sideCurve, serration, bladeSegments);
 
@@ -384,7 +544,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.007f, (understoryAnchor - understoryStemBase).magnitude * 0.16f),
                     p.Scale.x * 0.0062f,
                     understoryStemLod,
-                    new Color32(p.Spec.TintByte, 176, 54, 255));
+                    new Color32(SwayAuthoredPerVertex, 176, 54, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -397,7 +557,7 @@ namespace Hecton8.Editor
                     understoryBladeSegments,
                     p.SideCurve * 0.58f,
                     p.Serration * 0.62f,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 4, 0, 255), 204, (byte)Mathf.Lerp(54f, 168f, understoryNormalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 204, (byte)Mathf.Lerp(54f, 168f, understoryNormalized), 255),
                     understoryProfile,
                     understoryForward,
                     p.Lod);
@@ -433,7 +593,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.008f, (companionAnchor - companionStemBase).magnitude * 0.18f),
                     p.Scale.x * Mathf.Lerp(0.009f, 0.0065f, p.Normalized),
                     companionStemLod,
-                    new Color32(p.Spec.TintByte, 172, 58, 255));
+                    new Color32(SwayAuthoredPerVertex, 172, 58, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -446,7 +606,7 @@ namespace Hecton8.Editor
                     companionBladeSegments,
                     companionCurve,
                     companionSerration,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(56f, 196f, p.Normalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 214, (byte)Mathf.Lerp(56f, 196f, p.Normalized), 255),
                     companionProfile,
                     companionForward,
                     p.Lod);
@@ -482,7 +642,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.006f, (tertiaryAnchor - tertiaryStemBase).magnitude * 0.14f),
                     p.Scale.x * Mathf.Lerp(0.0075f, 0.0052f, p.Normalized),
                     tertiaryStemLod,
-                    new Color32(p.Spec.TintByte, 166, 62, 255));
+                    new Color32(SwayAuthoredPerVertex, 166, 62, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -495,7 +655,7 @@ namespace Hecton8.Editor
                     tertiaryBladeSegments,
                     tertiaryCurve,
                     tertiarySerration,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 10, 0, 255), 220, (byte)Mathf.Lerp(64f, 188f, p.Normalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 220, (byte)Mathf.Lerp(64f, 188f, p.Normalized), 255),
                     tertiaryProfile,
                     tertiaryForward,
                     p.Lod);
@@ -535,7 +695,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.0068f, (bridgingAnchor - bridgingStemBase).magnitude * 0.16f),
                     p.Scale.x * Mathf.Lerp(0.0082f, 0.0058f, bridgingNormalized),
                     1,
-                    new Color32(p.Spec.TintByte, 170, 60, 255));
+                    new Color32(SwayAuthoredPerVertex, 170, 60, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -548,7 +708,7 @@ namespace Hecton8.Editor
                     Mathf.Max(2, p.BladeSegments - 4),
                     bridgingCurve,
                     bridgingSerration,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 8, 0, 255), 214, (byte)Mathf.Lerp(62f, 188f, bridgingNormalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 214, (byte)Mathf.Lerp(62f, 188f, bridgingNormalized), 255),
                     bridgingProfile,
                     bridgingForward,
                     p.Lod);
@@ -585,7 +745,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.0072f, (curtainAnchor - curtainStemBase).magnitude * 0.16f),
                     p.Scale.x * 0.0064f,
                     1,
-                    new Color32(p.Spec.TintByte, 178, 60, 255));
+                    new Color32(SwayAuthoredPerVertex, 178, 60, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -598,7 +758,7 @@ namespace Hecton8.Editor
                     Mathf.Max(2, p.BladeSegments - 2),
                     curtainCurve,
                     p.Serration * 0.66f,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 8, 0, 255), 214, (byte)Mathf.Lerp(66f, 194f, curtainNormalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 214, (byte)Mathf.Lerp(66f, 194f, curtainNormalized), 255),
                     BladeProfile.FoldedLamina,
                     curtainForward,
                     p.Lod);
@@ -637,7 +797,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.0072f, (sailAnchor - sailStemBase).magnitude * 0.16f),
                     p.Scale.x * 0.0064f,
                     1,
-                    new Color32(p.Spec.TintByte, 180, 60, 255));
+                    new Color32(SwayAuthoredPerVertex, 180, 60, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -650,7 +810,7 @@ namespace Hecton8.Editor
                     Mathf.Max(2, p.BladeSegments - 2),
                     sailCurve,
                     p.Serration * 0.62f,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(66f, 194f, sailNormalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 214, (byte)Mathf.Lerp(66f, 194f, sailNormalized), 255),
                     BladeProfile.FoldedLamina,
                     sailForward,
                     p.Lod);
@@ -687,7 +847,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.0068f, (fanAnchor - fanStemBase).magnitude * 0.15f),
                     p.Scale.x * 0.0061f,
                     1,
-                    new Color32(p.Spec.TintByte, 178, 62, 255));
+                    new Color32(SwayAuthoredPerVertex, 178, 62, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -700,7 +860,7 @@ namespace Hecton8.Editor
                     Mathf.Max(2, p.BladeSegments - (p.Spec.GrowthStyle == GrowthStyle.CrownCanopy ? 3 : 4)),
                     fanCurve,
                     p.Serration * 0.74f,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 8, 0, 255), 216, (byte)Mathf.Lerp(70f, 198f, fanNormalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 216, (byte)Mathf.Lerp(70f, 198f, fanNormalized), 255),
                     BladeProfile.PaddleLobed,
                     fanForward,
                     p.Lod);
@@ -738,7 +898,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.0068f, (mantleAnchor - mantleStemBase).magnitude * 0.15f),
                     p.Scale.x * 0.0059f,
                     1,
-                    new Color32(p.Spec.TintByte, 178, 62, 255));
+                    new Color32(SwayAuthoredPerVertex, 178, 62, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -751,7 +911,7 @@ namespace Hecton8.Editor
                     Mathf.Max(2, p.BladeSegments - 3),
                     mantleCurve,
                     p.Serration * 0.62f,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 6, 0, 255), 214, (byte)Mathf.Lerp(68f, 194f, mantleNormalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 214, (byte)Mathf.Lerp(68f, 194f, mantleNormalized), 255),
                     BladeProfile.BroadUndulate,
                     mantleForward,
                     p.Lod);
@@ -788,7 +948,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.0068f, (backingAnchor - backingStemBase).magnitude * 0.15f),
                     p.Scale.x * 0.006f,
                     1,
-                    new Color32(p.Spec.TintByte, 178, 60, 255));
+                    new Color32(SwayAuthoredPerVertex, 178, 60, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -801,7 +961,7 @@ namespace Hecton8.Editor
                     Mathf.Max(2, p.BladeSegments - 5),
                     backingCurve,
                     p.Serration * 0.58f,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 6, 0, 255), 212, (byte)Mathf.Lerp(68f, 188f, backingNormalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 212, (byte)Mathf.Lerp(68f, 188f, backingNormalized), 255),
                     BladeProfile.FoldedLamina,
                     backingForward,
                     p.Lod);
@@ -838,7 +998,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.0062f, (lowerMantleAnchor - lowerMantleStemBase).magnitude * 0.14f),
                     p.Scale.x * 0.0054f,
                     1,
-                    new Color32(p.Spec.TintByte, 176, 62, 255));
+                    new Color32(SwayAuthoredPerVertex, 176, 62, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -851,7 +1011,7 @@ namespace Hecton8.Editor
                     Mathf.Max(2, p.BladeSegments - 4),
                     lowerMantleCurve,
                     p.Serration * 0.56f,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 4, 0, 255), 208, (byte)Mathf.Lerp(70f, 184f, lowerMantleNormalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 208, (byte)Mathf.Lerp(70f, 184f, lowerMantleNormalized), 255),
                     BladeProfile.BroadUndulate,
                     lowerMantleForward,
                     p.Lod);
@@ -888,7 +1048,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.0064f, (innerAnchor - innerStemBase).magnitude * 0.14f),
                     p.Scale.x * 0.0058f,
                     1,
-                    new Color32(p.Spec.TintByte, 176, 60, 255));
+                    new Color32(SwayAuthoredPerVertex, 176, 60, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -901,7 +1061,7 @@ namespace Hecton8.Editor
                     Mathf.Max(2, p.BladeSegments - 4),
                     innerCurve,
                     p.Serration * 0.54f,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 6, 0, 255), 210, (byte)Mathf.Lerp(62f, 182f, innerNormalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 210, (byte)Mathf.Lerp(62f, 182f, innerNormalized), 255),
                     BladeProfile.BroadUndulate,
                     innerForward,
                     p.Lod);
@@ -938,7 +1098,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.0062f, (shroudAnchor - shroudStemBase).magnitude * 0.14f),
                     p.Scale.x * 0.0056f,
                     1,
-                    new Color32(p.Spec.TintByte, 170, 60, 255));
+                    new Color32(SwayAuthoredPerVertex, 170, 60, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -951,7 +1111,7 @@ namespace Hecton8.Editor
                     Mathf.Max(2, p.BladeSegments - 4),
                     shroudCurve,
                     p.Serration * 0.56f,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 10, 0, 255), 206, (byte)Mathf.Lerp(72f, 176f, shroudNormalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 206, (byte)Mathf.Lerp(72f, 176f, shroudNormalized), 255),
                     BladeProfile.BroadUndulate,
                     shroudForward,
                     p.Lod);
@@ -988,7 +1148,7 @@ namespace Hecton8.Editor
                     Mathf.Max(p.Scale.x * 0.0062f, (veilAnchor - veilStemBase).magnitude * 0.14f),
                     p.Scale.x * 0.0054f,
                     1,
-                    new Color32(p.Spec.TintByte, 174, 62, 255));
+                    new Color32(SwayAuthoredPerVertex, 174, 62, 255));
                 AddBladeRibbon(
                     p.Buffers,
                     p.Spec,
@@ -1001,7 +1161,7 @@ namespace Hecton8.Editor
                     Mathf.Max(2, p.BladeSegments - 3),
                     veilCurve,
                     p.Serration * 1.12f,
-                    new Color32((byte)Mathf.Clamp(p.Spec.TintByte + 10, 0, 255), 216, (byte)Mathf.Lerp(72f, 190f, veilNormalized), 255),
+                    new Color32(SwayAuthoredPerVertex, 216, (byte)Mathf.Lerp(72f, 190f, veilNormalized), 255),
                     BladeProfile.FrilledRibbon,
                     veilForward,
                     p.Lod);
@@ -1028,8 +1188,8 @@ namespace Hecton8.Editor
                     Mathf.Max(crownRadius * 0.14f, crownFrame.Radius * 0.2f),
                     crownRadius * 0.1f,
                     lod,
-                    new Color32(spec.TintByte, 192, 64, 255));
-                AddSphere(buffers, crownBulbCenter, new Vector3(crownRadius * 1.02f, crownRadius * 1.12f, crownRadius * 1.02f), crownLatSegments, crownLonSegments, new Color32(spec.TintByte, 224, 118, 255));
+                    new Color32(SwayAuthoredPerVertex, 192, 64, 255));
+                AddSphere(buffers, crownBulbCenter, new Vector3(crownRadius * 1.02f, crownRadius * 1.12f, crownRadius * 1.02f), crownLatSegments, crownLonSegments, new Color32(SwayAuthoredPerVertex, 224, 118, 255));
                 if (lod == 0)
                 {
                     AddSphere(
@@ -1038,7 +1198,7 @@ namespace Hecton8.Editor
                         new Vector3(crownRadius * 0.44f, crownRadius * 0.56f, crownRadius * 0.44f),
                         Mathf.Max(2, crownLatSegments - 2),
                         Mathf.Max(4, crownLonSegments - 3),
-                        new Color32(spec.TintByte, 214, 104, 255));
+                        new Color32(SwayAuthoredPerVertex, 214, 104, 255));
                 }
 
                 return;
@@ -1079,8 +1239,8 @@ namespace Hecton8.Editor
                     Mathf.Max(radius * 0.12f, scale.x * 0.026f),
                     radius * 0.09f,
                     lod,
-                    new Color32(spec.TintByte, 192, 64, 255));
-                AddSphere(buffers, nodeBulbCenter, new Vector3(radius * 0.94f, radius * 1.22f, radius * 0.94f), latSegments, lonSegments, new Color32(spec.TintByte, 224, 118, 255));
+                    new Color32(SwayAuthoredPerVertex, 192, 64, 255));
+                AddSphere(buffers, nodeBulbCenter, new Vector3(radius * 0.94f, radius * 1.22f, radius * 0.94f), latSegments, lonSegments, new Color32(SwayAuthoredPerVertex, 224, 118, 255));
                 if (lod == 0)
                 {
                     AddSphere(
@@ -1089,7 +1249,7 @@ namespace Hecton8.Editor
                         new Vector3(radius * 0.42f, radius * 0.62f, radius * 0.42f),
                         Mathf.Max(2, latSegments - 1),
                         Mathf.Max(4, lonSegments - 2),
-                        new Color32(spec.TintByte, 214, 104, 255));
+                        new Color32(SwayAuthoredPerVertex, 214, 104, 255));
                 }
 
                 return;
@@ -1104,8 +1264,8 @@ namespace Hecton8.Editor
                 Mathf.Max(radius * 0.12f, scale.x * 0.026f),
                 radius * 0.09f,
                 lod,
-                new Color32(spec.TintByte, 192, 64, 255));
-            AddSphere(buffers, sideBulbCenter, new Vector3(radius * 0.92f, radius * 1.26f, radius * 0.92f), latSegments, lonSegments, new Color32(spec.TintByte, 224, 118, 255));
+                new Color32(SwayAuthoredPerVertex, 192, 64, 255));
+            AddSphere(buffers, sideBulbCenter, new Vector3(radius * 0.92f, radius * 1.26f, radius * 0.92f), latSegments, lonSegments, new Color32(SwayAuthoredPerVertex, 224, 118, 255));
             if (lod == 0)
             {
                 AddSphere(
@@ -1114,7 +1274,7 @@ namespace Hecton8.Editor
                     new Vector3(radius * 0.48f, radius * 0.72f, radius * 0.48f),
                     Mathf.Max(2, latSegments - 1),
                     Mathf.Max(4, lonSegments - 2),
-                    new Color32(spec.TintByte, 214, 104, 255));
+                    new Color32(SwayAuthoredPerVertex, 214, 104, 255));
             }
         }
 
@@ -2226,13 +2386,19 @@ namespace Hecton8.Editor
                 new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
                 new VertexAttributeDescriptor(VertexAttribute.Tangent, VertexAttributeFormat.Float32, 4),
                 new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
-                new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2));
+                new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
+                // TEXCOORD1 = flora UVMask set. Hecton_KelpMaster / Hecton_KelpMaster_GPUI read
+                // uvMask.y as heightMask and multiply BOTH sway displacement terms and the propwash
+                // term by it, so a mesh that omits this stream renders identically motionless: an
+                // absent UV1 reads as 0.0, which is finite, so the shader's isfinite() fallback
+                // never fires. Declaring it here is what makes the COLOR.r gradient below reachable.
+                new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.Float32, 2));
             meshData.SetIndexBufferParams(buffers.Indices.Count, IndexFormat.UInt32);
 
             NativeArray<VertexData> vertexData = meshData.GetVertexData<VertexData>();
             for (int i = 0; i < buffers.Vertices.Count; i++)
             {
-                vertexData[i] = new VertexData(buffers.Vertices[i], buffers.Normals[i], buffers.Tangents[i], buffers.Colors[i], buffers.UVs[i]);
+                vertexData[i] = new VertexData(buffers.Vertices[i], buffers.Normals[i], buffers.Tangents[i], buffers.Colors[i], buffers.UVs[i], buffers.UV1s[i]);
             }
 
             NativeArray<uint> indexData = meshData.GetIndexData<uint>();
@@ -2394,13 +2560,14 @@ namespace Hecton8.Editor
 
         private readonly struct VertexData
         {
-            public VertexData(Vector3 position, Vector3 normal, Vector4 tangent, Color32 color, Vector2 uv)
+            public VertexData(Vector3 position, Vector3 normal, Vector4 tangent, Color32 color, Vector2 uv, Vector2 uv1)
             {
                 Position = position;
                 Normal = normal;
                 Tangent = tangent;
                 Color = color;
                 UV = uv;
+                UV1 = uv1;
             }
 
             public readonly Vector3 Position;
@@ -2408,6 +2575,7 @@ namespace Hecton8.Editor
             public readonly Vector4 Tangent;
             public readonly Color32 Color;
             public readonly Vector2 UV;
+            public readonly Vector2 UV1;
         }
 
         private readonly struct StipeFrame
@@ -2526,6 +2694,13 @@ namespace Hecton8.Editor
             public float BulbHeightMax { get; }
             public float BulbRadiusMin { get; }
             public float BulbRadiusMax { get; }
+            /// <summary>
+            /// NO READER. Retained only so the 55-variant <see cref="TryResolveSpec"/> table keeps
+            /// its positional argument layout; it is no longer written into any vertex stream.
+            /// Removing it means deleting one positional argument from 55 constructor calls of 32+
+            /// arguments each, which is a silent-geometry risk that must be done with a compiler
+            /// available. Delete it in a follow-up commit, not blind.
+            /// </summary>
             public byte TintByte { get; }
             public int EstimatedVertexCount { get; }
             public GrowthStyle GrowthStyle { get; }
@@ -2597,6 +2772,7 @@ namespace Hecton8.Editor
                 Tangents = new List<Vector4>(capacity);
                 Colors = new List<Color32>(capacity);
                 UVs = new List<Vector2>(capacity);
+                UV1s = new List<Vector2>(capacity);
                 Indices = new List<uint>(capacity * 3);
                 Bounds = new Bounds(Vector3.zero, Vector3.zero);
                 _hasBounds = false;
@@ -2607,6 +2783,16 @@ namespace Hecton8.Editor
             public List<Vector4> Tangents { get; }
             public List<Color32> Colors { get; }
             public List<Vector2> UVs { get; }
+
+            /// <summary>
+            /// TEXCOORD1, the flora "UVMask" set. Written once by
+            /// <see cref="ApplyFloraSwayChannel"/> after all geometry exists, because V is the
+            /// plant-scale root-to-tip coordinate and no single primitive knows the plant's extent
+            /// while it is being emitted. Kept index-parallel with <see cref="Vertices"/> at all
+            /// times so <see cref="AddBladeThicknessShell"/> style index copies stay valid.
+            /// </summary>
+            public List<Vector2> UV1s { get; }
+
             public List<uint> Indices { get; }
             public Bounds Bounds { get; private set; }
 
@@ -2618,6 +2804,7 @@ namespace Hecton8.Editor
                 Normals.Add(normal);
                 Tangents.Add(tangent);
                 UVs.Add(uv);
+                UV1s.Add(Vector2.zero);
                 Colors.Add(color);
                 if (!_hasBounds)
                 {
@@ -2641,6 +2828,230 @@ namespace Hecton8.Editor
                 Indices.Add((uint)c);
                 Indices.Add((uint)d);
             }
+        }
+    }
+
+    /// <summary>
+    /// Measurement harness for the flora sway channel written by
+    /// <see cref="WorldProceduralSeaweedMeshBuilder"/>. Reports min/max/mean of COLOR.r and the
+    /// TEXCOORD1 V span for every kelp variant, so the root-to-tip gradient is a measured fact.
+    /// </summary>
+    /// <remarks>
+    /// It deliberately measures the finished <see cref="Mesh"/> via <c>colors32</c> / <c>uv2</c>
+    /// rather than the builder's internal buffers: that is the same surface the serialized
+    /// <c>.asset</c> carries, so a regression in <c>CreateMesh</c>'s vertex-attribute declaration is
+    /// caught too, not just a regression in the gradient math.
+    /// </remarks>
+    public static class WorldProceduralSeaweedSwayChannelReport
+    {
+        /// <summary>
+        /// Pre-fix baseline measured across 472 production kelp meshes: COLOR.r was a per-mesh
+        /// constant with root 0.641 and tip 0.647. Printed alongside every run for contrast.
+        /// </summary>
+        private const float InheritedBaselineSpan = 0.006f;
+
+        /// <summary>
+        /// Matches the scale <c>BakeEcosystemMeshes</c> bakes with. The channel is normalized to each
+        /// mesh's own bounds, so this choice does not shift min/max/mean; it only sets the geometry.
+        /// </summary>
+        private static readonly Vector3 ReportScale = new Vector3(2f, 6f, 2f);
+
+        /// <summary>
+        /// Mirrors the case labels in <c>WorldProceduralSeaweedMeshBuilder.TryResolveSpec</c>. The
+        /// run logs the resolved count so drift against that table is visible rather than silent.
+        /// </summary>
+        private static readonly string[] RootTokens =
+        {
+            "family_kelp_tall__stalk",
+            "family_kelp_tall__lean",
+            "family_kelp_tall__ribbon",
+            "family_kelp_tall__lamina",
+            "family_kelp_tall__rope",
+            "family_kelp_tall__banner",
+            "family_kelp_tall__lance",
+            "family_kelp_tall__seedling",
+            "family_kelp_tall__tower",
+            "family_kelp_tall__colossus",
+            "family_kelp_tall__sail",
+            "family_kelp_tall__paddle",
+            "family_kelp_tall__broadleaf",
+            "family_kelp_tall__frondcrest",
+            "family_kelp_patch_dense__patch",
+            "family_kelp_patch_dense__patch_tall",
+            "family_kelp_patch_dense__ring",
+            "family_kelp_patch_dense__brush",
+            "family_kelp_patch_dense__sheet",
+            "family_kelp_patch_dense__tuft",
+            "family_kelp_patch_dense__drape",
+            "family_kelp_patch_dense__nest",
+            "family_kelp_patch_dense__sheetwall",
+            "family_kelp_patch_dense__bladder",
+            "family_kelp_patch_dense__paddlespray",
+            "family_kelp_patch_dense__frilltuft",
+            "family_kelp_canopy__crown",
+            "family_kelp_canopy__frond",
+            "family_kelp_canopy__fan",
+            "family_kelp_canopy__mantle",
+            "family_kelp_canopy__splay",
+            "family_kelp_canopy__veil",
+            "family_kelp_canopy__rosette",
+            "family_kelp_canopy__laminaria",
+            "family_kelp_canopy__sheetwall",
+            "family_kelp_canopy__tapestry",
+            "family_kelp_canopy__windrow",
+            "family_kelp_canopy__tanglemat",
+            "family_kelp_canopy__oar",
+            "family_kelp_canopy__paddlefan",
+            "family_kelp_canopy__featherfan",
+            "family_kelp_abyssal__strap",
+            "family_kelp_abyssal__shroud",
+            "family_kelp_abyssal__nodule",
+            "family_kelp_abyssal__whip",
+            "family_kelp_abyssal__mantle",
+            "family_kelp_abyssal__braid",
+            "family_kelp_abyssal__pennant",
+            "family_kelp_abyssal__reed",
+            "family_kelp_abyssal__cathedral",
+            "family_kelp_abyssal__cowl",
+            "family_kelp_abyssal__veilwall",
+            "family_kelp_abyssal__lantern",
+            "family_kelp_abyssal__petal",
+            "family_kelp_abyssal__tatterveil"
+        };
+
+        [UnityEditor.MenuItem("Hecton8/Authoring/Report Flora Sway Vertex Channel", priority = 179)]
+        public static void ReportSwayChannel()
+        {
+            MeasureAllVariants();
+        }
+
+        /// <summary>
+        /// Batchmode entry point. Exits non-zero when any variant/LOD fails to carry a real
+        /// root-to-tip gradient in COLOR.r or leaves TEXCOORD1 flat, so a headless run cannot report
+        /// success over motionless kelp.
+        /// Unity.exe -batchmode -quit -projectPath C:\hades\Hecton8 -executeMethod Hecton8.Editor.WorldProceduralSeaweedSwayChannelReport.ReportSwayChannelBatch
+        /// </summary>
+        public static void ReportSwayChannelBatch()
+        {
+            bool ok = MeasureAllVariants();
+            UnityEditor.EditorApplication.Exit(ok ? 0 : 1);
+        }
+
+        private static bool MeasureAllVariants()
+        {
+            Debug.Log($"[FLORA SWAY] Measuring COLOR.r sway channel over {RootTokens.Length} kelp variants at scale {ReportScale}. Pre-fix baseline for contrast: R was a per-mesh constant, root 0.641 -> tip 0.647, span {InheritedBaselineSpan:F4}.");
+
+            int measuredMeshes = 0;
+            int failedMeshes = 0;
+            float worstSpan = float.MaxValue;
+            string worstSpanLabel = "<none>";
+            float aggregateMin = float.MaxValue;
+            float aggregateMax = -float.MaxValue;
+            double aggregateMeanSum = 0.0;
+
+            for (int tokenIndex = 0; tokenIndex < RootTokens.Length; tokenIndex++)
+            {
+                string rootToken = RootTokens[tokenIndex];
+                if (!WorldProceduralSeaweedMeshBuilder.CanBuild(rootToken))
+                {
+                    failedMeshes++;
+                    Debug.LogError($"[FLORA SWAY] '{rootToken}' is in this report's token list but TryResolveSpec rejects it. The list has drifted from the variant table.");
+                    continue;
+                }
+
+                for (int lod = 0; lod <= 2; lod++)
+                {
+                    Mesh mesh;
+                    if (!WorldProceduralSeaweedMeshBuilder.TryBuild(rootToken, ReportScale, lod, out mesh) || mesh == null)
+                    {
+                        failedMeshes++;
+                        Debug.LogError($"[FLORA SWAY] '{rootToken}' LOD{lod} failed to build.");
+                        continue;
+                    }
+
+                    try
+                    {
+                        Color32[] colors = mesh.colors32;
+                        Vector2[] uv1 = mesh.uv2;
+                        if (colors == null || colors.Length == 0)
+                        {
+                            failedMeshes++;
+                            Debug.LogError($"[FLORA SWAY] '{rootToken}' LOD{lod} has NO vertex colour stream.");
+                            continue;
+                        }
+
+                        float minRed = float.MaxValue;
+                        float maxRed = -float.MaxValue;
+                        double redSum = 0.0;
+                        for (int i = 0; i < colors.Length; i++)
+                        {
+                            float red = colors[i].r * (1f / 255f);
+                            if (red < minRed)
+                                minRed = red;
+                            if (red > maxRed)
+                                maxRed = red;
+                            redSum += red;
+                        }
+
+                        float meanRed = (float)(redSum / colors.Length);
+                        float span = maxRed - minRed;
+
+                        float minV = float.MaxValue;
+                        float maxV = -float.MaxValue;
+                        int uv1Count = uv1 == null ? 0 : uv1.Length;
+                        for (int i = 0; i < uv1Count; i++)
+                        {
+                            float v = uv1[i].y;
+                            if (v < minV)
+                                minV = v;
+                            if (v > maxV)
+                                maxV = v;
+                        }
+
+                        bool uv1Present = uv1Count == colors.Length && maxV - minV > 0.25f;
+                        bool gradientOk = span >= 0.25f;
+                        measuredMeshes++;
+                        aggregateMeanSum += meanRed;
+                        if (minRed < aggregateMin)
+                            aggregateMin = minRed;
+                        if (maxRed > aggregateMax)
+                            aggregateMax = maxRed;
+                        if (span < worstSpan)
+                        {
+                            worstSpan = span;
+                            worstSpanLabel = $"{rootToken} LOD{lod}";
+                        }
+
+                        float reportedMinV = uv1Count > 0 ? minV : 0f;
+                        float reportedMaxV = uv1Count > 0 ? maxV : 0f;
+                        string verdict = gradientOk && uv1Present ? "OK" : "FAIL";
+                        string message = $"[FLORA SWAY] {verdict} {rootToken} LOD{lod}: vertices={colors.Length} R.min={minRed:F4} R.max={maxRed:F4} R.mean={meanRed:F4} R.span={span:F4} | UV1.count={uv1Count} UV1.V.min={reportedMinV:F4} UV1.V.max={reportedMaxV:F4}";
+                        if (gradientOk && uv1Present)
+                        {
+                            Debug.Log(message);
+                        }
+                        else
+                        {
+                            failedMeshes++;
+                            Debug.LogError(message + (uv1Present ? "" : " <- TEXCOORD1 missing or flat: the kelp shaders multiply all sway by uvMask.y, so this mesh cannot move.") + (gradientOk ? "" : " <- COLOR.r carries no root-to-tip gradient."));
+                        }
+                    }
+                    finally
+                    {
+                        UnityEngine.Object.DestroyImmediate(mesh);
+                    }
+                }
+            }
+
+            if (measuredMeshes == 0)
+            {
+                Debug.LogError("[FLORA SWAY] No meshes were measured. Treating as failure rather than reporting a vacuous pass.");
+                return false;
+            }
+
+            float aggregateMean = (float)(aggregateMeanSum / measuredMeshes);
+            Debug.Log($"[FLORA SWAY] TOTAL measured={measuredMeshes} failed={failedMeshes} | aggregate R.min={aggregateMin:F4} R.max={aggregateMax:F4} mean-of-means={aggregateMean:F4} | narrowest span={worstSpan:F4} on {worstSpanLabel} (pre-fix baseline span was {InheritedBaselineSpan:F4}).");
+            return failedMeshes == 0;
         }
     }
 }
