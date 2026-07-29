@@ -85,6 +85,66 @@ Not proven by that log:
 | **Measured time dilation is 3.5x against a nominal 100x** — below the 4x floor the batch runner's own comment calls pessimistic (`HeadlessSimulationBatchRunner.cs:61`) | `[x]` | measured: `timeDilationDelivered: 3.500491` |
 | A missing asmdef reference cost a whole batchmode run, and neither the lock-free gate nor the unit tests could see it | `[x]` | fixed; see `The build break that ate the first headless run` |
 
+### The entire authored world is switched off in the shipping scene — measured 2026-07-29
+
+**This is the largest finding of the day and the repair is one menu press away, unapplied.** A screenshot
+convenience tool was pointed at the production scene. For every scene ROOT whose uppercased name does not
+contain one of TERRAIN / CAMERA / PLAYER / LIGHT / OCEAN / WATER / SUN / SKY / ATMOSPHERE / SYSTEM / MANAGER /
+DIRECTOR / REGISTRY / BOOTSTRAP it called `SetParent(deprecatedParent)` and `SetActive(false)`, then
+**saved the scene**. `[MANAGERS]` contains "MANAGER" so every director survived — which is exactly why code
+review of this project reads clean. `--- WORLD ---` contains none of the tokens.
+
+`Tools`-free proof, from the repair tool's own REPORT ONLY pass (`-executeMethod
+Hecton8.EditorTools.Authoring.H8_WorldRootGraveyardRepair.ReportOnly`), verbatim:
+
+```
+[H8_WORLDROOTREPAIR] scene='02_HECTON_WORLD' roots=29 graveyard=present worldRootsAtSceneRoot=active:0/inactive:0
+[H8_WORLDROOTREPAIR] FOUND '--- WORLD ---' buried under 'DEPRECATED_STUFF': activeSelf=False directChildren=7 descendants=77
+[H8_WORLDROOTREPAIR] REPORT ONLY - would reparent '--- WORLD ---' to scene root and set it active,
+                     touching nothing else in the graveyard.
+```
+
+**Seventy-seven descendants inactive.** `worldRootsAtSceneRoot=active:0/inactive:0` matters as much as the
+find: there is no duplicate world root, so the ambiguous case the tool refuses to touch does not apply. This
+is the clean case.
+
+Consequences, and the second one is why this is getting worse rather than merely being broken:
+- Every `WorldContentSocket` descends from that root, so `OnEnable` never runs, `_ActiveSockets`
+  (`WorldContentSocket.cs:95-99`) stays empty, and **zero of the 14 sockets reach any consumer** — not the
+  "4 of 14" this document said for weeks. Repairing the root takes the reachable count 0 → 4.
+- `WorldRuntimeBootstrapAuthoring`'s reuse check became inactive-inclusive and depth-aware, so it now FINDS
+  the buried root and ADOPTS it. Every route path it writes, plus the biolum zones and `Starter_ReefField`,
+  is parented under the disabled root and inherits `activeInHierarchy=false`. **The graveyard is absorbing
+  new content on every Rebuild.**
+- Historically the opposite failure applied: `GameObject.Find` returns only ACTIVE objects, so with the
+  authored root disabled it found nothing and created a SECOND, active `--- WORLD ---` beside the graveyard
+  copy — in a binary scene that cannot be diffed. `FabricationBootstrapAuthoring.cs:331-341` and
+  `ResourceWorldBootstrapAuthoring.cs:208-211` still have that shape. The asymmetry that makes it precise:
+  `Transform.Find` DOES see inactive children, so child reuse works and root reuse does not.
+
+**Status: REPORT run and clean, APPLY NOT YET RUN.** The apply attempt lost the Unity lock to another
+session — a 19-line log ending at the `COMMAND LINE ARGUMENTS` block with return code 1 and no project load,
+the contention shape documented below. The scene on disk is untouched and consistent: still 6,270,260 bytes,
+mtime `2026-07-27 16:25:31`, clean in git.
+
+To finish it:
+
+```
+Unity.exe -batchmode -quit -h8ApplyWorldRootRepair \
+  -executeMethod Hecton8.EditorTools.Authoring.H8_WorldRootGraveyardRepair.Run
+```
+
+`Run()` reports by default and writes only when `-h8ApplyWorldRootRepair` is present
+(`H8_WorldRootGraveyardRepair.cs:98-109`) — the write is deliberately not one misclick from the diagnostic.
+Rollback point, confirmed before attempting the write:
+`git checkout 32c3c8a1a -- Assets/_Project/Scenes/02_HECTON_WORLD.unity`.
+
+Judge the repair on **world content becoming live, not on `gameReady` turning true**. The tool's own header
+carries a retraction on exactly that point: an earlier version claimed the boot timeout was a consequence of
+the graveyard via `HectonMapMagicVegetationBridge`, and that chain is false — a format-agnostic GUID census
+over 31 scenes, 968 prefabs and every `.asset` finds that script's GUID in ZERO of them, with the spawner's
+own GUID as a positive control. The graveyard and the boot timeout are two independent faults.
+
 ### The first headless simulation run that ever produced a verdict — 2026-07-29
 
 Everything in this section is **runtime proof**, not inspection. It is the first time this harness has
