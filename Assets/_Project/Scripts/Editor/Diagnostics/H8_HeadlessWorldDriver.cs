@@ -271,6 +271,11 @@ namespace Hecton8.EditorTools.Diagnostics
         private const float NodePlacementDistanceMeters = 1.75f;
         private const float ExistingNodeMaxDistanceMeters = 3.5f;
         private const float ExistingNodeMinForwardDot = 0.5f;
+        // Yaw sweep so the 60-degree discovery cone above is swept across the full circle instead of
+        // staring at whatever the spawn orientation faced. 3 degrees per tick completes a revolution in
+        // 120 ticks, comfortably inside a locomotion phase, and is slow enough that the immersion and
+        // depth samples the Swim row reads stay stable between ticks.
+        private const float SweepYawDegreesPerTick = 3.0f;
         private const float NodeDamagePerPulse = 8.0f;
         private const float ScavengeTileSizeMeters = 512.0f; // ScavengePopulator.cs:189 authored default.
         private const int ScavengeLocalIndex = 90001;
@@ -1334,12 +1339,36 @@ namespace Hecton8.EditorTools.Diagnostics
             Latch(RowSwim, RowVerdict.Blocked);
         }
 
+        /// <summary>
+        /// Deterministic yaw sweep for the locomotion phases.
+        /// </summary>
+        /// <remarks>
+        /// LookDelta was hardwired to Vector2.zero in every phase, so the driver never turned the camera and
+        /// content discovery was confined to whatever the spawn orientation happened to face.
+        /// TryAdoptNearbyWorldNode gates on ExistingNodeMinForwardDot 0.5 - a 60 degree half-cone - within
+        /// ExistingNodeMaxDistanceMeters 3.5, and PlayerInteraction's hover raycast follows the same camera.
+        /// A node four metres away or seventy degrees off-axis was invisible, which is why the harness had to
+        /// register its own scatter point 1.75 m dead ahead to make the Resource row reachable at all: the
+        /// success path was content the driver placed for itself.
+        ///
+        /// Derived from the tick counter, never from a clock or Random, so two runs sweep identically -
+        /// determinism is already fragile enough on this lane without the driver adding to it. One full
+        /// revolution per 120 ticks at 3 degrees each, applied as a per-tick yaw delta because LookDelta is
+        /// a mouse-style delta rather than an absolute angle. Pitch stays zero: the vertical axis is driven
+        /// through VerticalDelta, and pitching the camera would fight the immersion and depth sampling the
+        /// Swim row measures.
+        /// </remarks>
+        private static Vector2 SweepLookDelta()
+        {
+            return new Vector2(SweepYawDegreesPerTick, 0f);
+        }
+
         private static void TickSwimSurface()
         {
             // Forward plus ascend. VerticalDelta is the surface/dive axis
             // (HectonPlayerInputHandler.cs:37-53 reads it straight off the snapshot).
             _intent.MoveDelta = new Vector2(0f, 1f);
-            _intent.LookDelta = Vector2.zero;
+            _intent.LookDelta = SweepLookDelta();
             _intent.VerticalDelta = 1f;
             _intent.ActionsBitmask = 0u;
             _intent.CurrentInputSchemeHash = 0u;
@@ -1351,7 +1380,7 @@ namespace Hecton8.EditorTools.Diagnostics
         private static void TickSwimDive()
         {
             _intent.MoveDelta = new Vector2(0f, 1f);
-            _intent.LookDelta = Vector2.zero;
+            _intent.LookDelta = SweepLookDelta();
             _intent.VerticalDelta = -1f;
             _intent.ActionsBitmask = (uint)PlayerInputAction.Sprint;
             _intent.CurrentInputSchemeHash = 0u;
