@@ -535,6 +535,68 @@ namespace Hecton8.EditorTools.Diagnostics
         private static int _publishedOverrides;
         private static int _ticks;
 
+        // ── discrete-lane refusal forensics, latched at the FIRST refused push ─────────────────────
+        //
+        // WHY THIS BLOCK EXISTS. The run that commissioned it reported
+        //   "SignalBus<PlayerInputSignal> refused the ToolSlot1 push on every attempt: pushed=0 dropped=50
+        //    availableSlots=4 - the discrete lane is full or closed ... a lane-capacity fault"
+        // (Logs/h8_worldsim_probe5.log:19062) and every load-bearing word after the colon was invented:
+        //   * "availableSlots=4" was _availableToolSlots - the number of PlayerToolManager slots holding an
+        //     available tool. It is not a SignalBus slot count, has no unit in common with one, and cannot
+        //     support a sentence about lane capacity. A reader chasing "4 slots free but 50 drops" was
+        //     chasing a field from a different subsystem.
+        //   * "lane-capacity fault" named ONE of FOUR refusal paths in SignalBus<T>.TryPush
+        //     (SignalBusRuntime.cs:678-715) and the driver measured none of them:
+        //       1. !_ring.IsCreated after EnsureInitialized (:681). SILENT - EnsureInitialized abandons the
+        //          lane with no log when TryAcquireFrameSnapshotBuffer fails (:626-631), and that fails
+        //          whenever no IDataVault is bound to SignalBusRegistry or the bound one is allocation-locked
+        //          or compaction-fenced (:1491-1495). This path refuses EVERY push forever and prints
+        //          nothing, which is exactly the shape of pushed=0 dropped=50 with a clean log.
+        //       2. NonCriticalVfx load shedding (:684). Not this lane - PlayerInputSignal is absent from
+        //          ResolveNonCriticalVfx (:1666-1682), so this path is excluded by construction.
+        //       3. SignalPayloadFiniteGuards.Sanitize returning nonzero (:693). PlayerInputSignal is three
+        //          uints and two bytes with no float field (GlobalSignalPayloads.CoreFoundation.cs:1269-1279),
+        //          and a nonzero guard code also publishes math-guard telemetry, so this path is both
+        //          implausible and separately observable.
+        //       4. _ring.TryEnqueue refusing a FULL ring (:704). The real capacity is 64
+        //          (GlobalSignals.State.cs:32) and the ring only refuses on count >= capacity
+        //          (CoreLowLevelUtilities.cs:892-924). This is the one the row asserted.
+        //     1 and 4 are opposite defects with opposite owners - a lane that was never given storage versus
+        //     a lane nobody drains - and the row picked the second with no evidence.
+        // The fields below are the discriminator, and they are sampled AT the first refusal rather than at
+        // phase end: by the time the ceiling fires, a lane that has since flushed reads healthy and the
+        // report would describe a moment that was not the failure. Ints and bools only, assigned once - the
+        // capture is a latched cold read, not per-tick work.
+        private static bool _discreteRefusalCaptured;
+        private static byte _discreteRefusalCommand;
+        private static int _discreteRefusalTick;
+        private static uint _discreteRefusalFrame;
+        private static bool _discreteRefusalHadNativeStorage;
+        private static int _discreteRefusalSnapshotCount;
+        private static int _discreteRefusalPeakQueued;
+        private static int _discreteRefusalDroppedLastFlush;
+        private static int _discreteRefusalLoadShedTotal;
+        private static int _discreteRefusalCorruptedTotal;
+        private static int _discreteRefusalRegisteredLanes;
+        private static bool _discreteRefusalRegistrationOverflow;
+        private static bool _discreteRefusalSimulationHalted;
+
+        /// <summary>
+        /// True once a PLIN entry carrying <see cref="_requestedToolSlot"/>'s command has been seen in a
+        /// FLUSHED frame snapshot - i.e. the push not only entered the ring but survived
+        /// SignalBusRegistry.FlushPostSimulation and became visible to PlayerToolManager's own read
+        /// (PlayerToolManager.cs:1954).
+        ///
+        /// A push that returns true is NOT evidence a consumer could see it. TryPush only proves the payload
+        /// entered the ring; the ring is drained into the frame snapshot by the dispatcher's PostSimulation
+        /// flush (SystemDispatcher.cs:3036 -> SignalBusRuntime.cs:890), the flush drops the overflow past its
+        /// per-frame limit (:944-953), and nothing about that is visible to the producer. Without this flag
+        /// the Tool row blamed PlayerToolManager for a swap that never completed - "the discrete lane was
+        /// accepted and the swap never completed" - on runs where the command may never have been delivered
+        /// at all. That is a Fail written against the wrong owner.
+        /// </summary>
+        private static bool _toolSlotCommandFlushObserved;
+
         // Driver-authored locomotion intent. One struct, mutated in place, republished every tick:
         // no per-frame allocation and no per-frame boxing.
         private static PlayerInputState _intent;
@@ -874,6 +936,21 @@ namespace Hecton8.EditorTools.Diagnostics
             _publishedDiscreteSignals = 0;
             _publishedOverrides = 0;
             _ticks = 0;
+
+            _discreteRefusalCaptured = false;
+            _discreteRefusalCommand = 0;
+            _discreteRefusalTick = 0;
+            _discreteRefusalFrame = 0u;
+            _discreteRefusalHadNativeStorage = false;
+            _discreteRefusalSnapshotCount = 0;
+            _discreteRefusalPeakQueued = 0;
+            _discreteRefusalDroppedLastFlush = 0;
+            _discreteRefusalLoadShedTotal = 0;
+            _discreteRefusalCorruptedTotal = 0;
+            _discreteRefusalRegisteredLanes = 0;
+            _discreteRefusalRegistrationOverflow = false;
+            _discreteRefusalSimulationHalted = false;
+            _toolSlotCommandFlushObserved = false;
             _intent = default;
 
             for (int i = 0; i < RowCount; i++)
@@ -1291,6 +1368,19 @@ namespace Hecton8.EditorTools.Diagnostics
 
                 _lanePlayerInputSignals++;
 
+                // DELIVERY, and deliberately measured OUTSIDE the attribution gate below. The gate exists so
+                // the driver cannot credit its own push as proof the dispatcher's edge detector works; that
+                // concern does not apply here, because this flag makes no claim about who produced the entry.
+                // It answers one question the producer otherwise cannot answer at all - did the ToolSlot
+                // command this phase pushed ever survive the flush and become readable by a consumer - and the
+                // Tool row uses it to decide between blaming the tool system and blaming delivery. Gating it on
+                // VerbSweep would leave it false in ToolEquip by construction, which is the phase that needs it.
+                if (_requestedToolSlot >= 0 &&
+                    discrete[i].Command == (byte)(PlayerInputSignalCommands.ToolSlot1 + _requestedToolSlot))
+                {
+                    _toolSlotCommandFlushObserved = true;
+                }
+
                 // Attribution: only credit a command to the DISPATCHER while the verb sweep is running,
                 // because that is the only phase in which this driver pushes nothing onto the lane itself.
                 // Outside it the harness is a producer too, and crediting its own push as evidence that
@@ -1532,9 +1622,111 @@ namespace Hecton8.EditorTools.Diagnostics
 
             bool pushed = SignalBus<PlayerInputSignal>.TryPushTracked(in signal, ref _droppedDiscreteSignals);
             if (pushed)
+            {
                 _publishedDiscreteSignals++;
+                return true;
+            }
 
-            return pushed;
+            CaptureDiscreteRefusal(command);
+            return false;
+        }
+
+        /// <summary>
+        /// Latches the lane's own state the first time it refuses a push, so the row can name WHICH of the
+        /// four <c>TryPush</c> refusal paths fired instead of asserting one. Everything read here is a public
+        /// static on <c>SignalBus&lt;T&gt;</c> or <c>SignalBusRegistry</c> in
+        /// <c>Hecton8.Core.Contracts.Signals</c>, which this file already imports; nothing internal to the
+        /// signal runtime is touched and nothing is mutated.
+        ///
+        /// One-shot by design. Re-sampling on every refusal would overwrite the failing moment with the last
+        /// one, and the last one is typically a phase-ceiling tick several seconds later whose state no longer
+        /// explains anything. Cost after the latch is a single bool test.
+        /// </summary>
+        private static void CaptureDiscreteRefusal(byte command)
+        {
+            if (_discreteRefusalCaptured)
+                return;
+
+            _discreteRefusalCaptured = true;
+            _discreteRefusalCommand = command;
+            _discreteRefusalTick = _ticks;
+            _discreteRefusalFrame = SystemDispatcher.CurrentFrameId;
+
+            // HasNativeStorage is _ring.IsCreated (SignalBusRuntime.cs:477). FALSE here is the whole answer:
+            // the lane has no ring, so capacity is not the subject and no number of retries can help. TryPush
+            // calls EnsureInitialized on every attempt, so a false reading also means the re-init failed again
+            // on this very tick - the vault was still unbound, allocation-locked or compaction-fenced.
+            _discreteRefusalHadNativeStorage = SignalBus<PlayerInputSignal>.HasNativeStorage;
+            _discreteRefusalSnapshotCount = SignalBus<PlayerInputSignal>.SnapshotCount;
+            _discreteRefusalPeakQueued = SignalBus<PlayerInputSignal>.PeakQueuedLastFlush;
+            _discreteRefusalDroppedLastFlush = SignalBus<PlayerInputSignal>.DroppedLastFlush;
+            _discreteRefusalLoadShedTotal = SignalBus<PlayerInputSignal>.LoadShedTotal;
+            _discreteRefusalCorruptedTotal = SignalBus<PlayerInputSignal>.CorruptedSignalTotal;
+            _discreteRefusalRegisteredLanes = SignalBusRegistry.LaneCount;
+            _discreteRefusalRegistrationOverflow = SignalBusRegistry.RegistrationOverflow;
+            _discreteRefusalSimulationHalted = SignalBusRegistry.IsSimulationHalted;
+        }
+
+        /// <summary>
+        /// Appends the latched refusal forensics and the ONE cause they are consistent with. Cold: called at
+        /// most once per run, from the ToolEquip refusal path.
+        /// <para>
+        /// Writes into <c>_detail</c>, so it must only ever be called between a <c>_detail.Clear()</c> and the
+        /// <c>Latch</c> that consumes it. The census line composes the same facts into <c>_log</c> by hand
+        /// instead of calling this: the two builders are separate on purpose (see the note on <c>_log</c>) and
+        /// routing the census through a <c>_detail</c> helper would let a diagnostic truncate a verdict that is
+        /// mid-compose in the same tick.
+        /// </para>
+        /// </summary>
+        private static void AppendDiscreteRefusalNote()
+        {
+            if (!_discreteRefusalCaptured)
+            {
+                _detail.Append(" [lane=SignalBus<PlayerInputSignal> never refused a push this run]");
+                return;
+            }
+
+            _detail.Append(" [lane=SignalBus<PlayerInputSignal> firstRefusal: command=")
+                .Append(_discreteRefusalCommand)
+                .Append(" atDriverTick=").Append(_discreteRefusalTick)
+                .Append(" atDispatcherFrame=").Append(_discreteRefusalFrame)
+                .Append(" expected=accepted actual=refused")
+                .Append(" | hasNativeStorage=").Append(_discreteRefusalHadNativeStorage)
+                .Append(" snapshotCount=").Append(_discreteRefusalSnapshotCount)
+                .Append(" peakQueuedLastFlush=").Append(_discreteRefusalPeakQueued)
+                .Append(" droppedLastFlush=").Append(_discreteRefusalDroppedLastFlush)
+                .Append(" loadShedTotal=").Append(_discreteRefusalLoadShedTotal)
+                .Append(" corruptedTotal=").Append(_discreteRefusalCorruptedTotal)
+                .Append(" registeredLanes=").Append(_discreteRefusalRegisteredLanes)
+                .Append(" registrationOverflow=").Append(_discreteRefusalRegistrationOverflow)
+                .Append(" simulationHalted=").Append(_discreteRefusalSimulationHalted)
+                .Append(']');
+
+            if (!_discreteRefusalHadNativeStorage)
+            {
+                _detail.Append(" - THE LANE HAS NO NATIVE STORAGE, so this is NOT a capacity fault and no ")
+                    .Append("retry cadence can fix it. SignalBus<PlayerInputSignal>.EnsureInitialized ")
+                    .Append("abandoned the lane without logging: either no IDataVault is bound to ")
+                    .Append("SignalBusRegistry or the bound one is allocation-locked or compaction-fenced, so ")
+                    .Append("TryAcquireFrameSnapshotBuffer failed and the ring was disposed on creation ")
+                    .Append("(SignalBusRuntime.cs:626-631 via :1491-1495). Owner is the vault bind, not the ")
+                    .Append("harness and not PlayerToolManager");
+                return;
+            }
+
+            if (_discreteRefusalRegistrationOverflow)
+            {
+                _detail.Append(" - the lane dispatch table OVERFLOWED, so registered lanes are not all ")
+                    .Append("flushed and an unflushed ring fills to its 64-entry capacity and then refuses ")
+                    .Append("every push permanently (GlobalSignals.State.cs:32)");
+                return;
+            }
+
+            _detail.Append(" - storage exists, so the refusal is _ring.TryEnqueue on a FULL ring ")
+                .Append("(SignalBusRuntime.cs:704): 64 entries are queued and undrained. The drain is the ")
+                .Append("dispatcher's PostSimulation flush (SystemDispatcher.cs:3036 -> ")
+                .Append("SignalCorridorRuntime.FlushPostSimulation); snapshotCount=0 with a full ring means ")
+                .Append("that flush is not reaching this lane");
         }
 
         // ─────────────────────────────────────────────────────────────────────────────────────────
@@ -2364,8 +2556,23 @@ namespace Hecton8.EditorTools.Diagnostics
 
                 // A DROPPED push is the one path in this phase that could loop forever: the flag stays
                 // false, the next tick re-enumerates the slots, chooses the same slot, and tries again
-                // with no ceiling test between attempts. SignalBus.TryPushTracked returns false when the
-                // lane is full, which is a lane-capacity fact and not something more retries will fix.
+                // with no ceiling test between attempts, so the ceiling below is what bounds it.
+                //
+                // The retry cadence is still correct and is deliberately NOT increased. Requirement-shaped
+                // temptation here is to push harder; every one of the four refusal paths says that is useless.
+                // Three of them (no ring, load shed, guard rejection) are independent of cadence, and the
+                // fourth - a full ring - is refusing precisely because nobody is DRAINING it, so a second push
+                // in the same frame cannot fit either. One attempt per pumped frame is the fastest cadence that
+                // gives the dispatcher's PostSimulation flush a chance to run between attempts, which is the
+                // only thing that can free a slot. What was missing was never pressure, it was the CAUSE:
+                // CaptureDiscreteRefusal latches it on the first refusal and the detail below names it.
+                //
+                // An earlier version of this comment asserted "TryPushTracked returns false when the lane is
+                // full, which is a lane-capacity fact". That was the seed of a false verdict. TryPush has four
+                // independent refusal paths (SignalBusRuntime.cs:678-715) and capacity is only one of them; the
+                // silent one - a lane that was never given native storage - is both more likely on this harness
+                // and attributable to a completely different owner. See the forensics block beside
+                // _discreteRefusalCaptured.
                 if (!PhaseCeilingReached())
                     return;
 
@@ -2374,10 +2581,14 @@ namespace Hecton8.EditorTools.Diagnostics
                     .Append(chosen + 1)
                     .Append(" push on every attempt: pushed=").Append(_publishedDiscreteSignals)
                     .Append(" dropped=").Append(_droppedDiscreteSignals)
-                    .Append(" availableSlots=").Append(_availableToolSlots)
-                    .Append(" - the discrete lane is full or closed, so no consumer ever saw the command. ")
-                    .Append("This is a lane-capacity fault in the harness's producer path, not a tool ")
-                    .Append("defect");
+                    // RELABELLED, not renamed for taste. This counter is PlayerToolManager slots holding an
+                    // available tool; the previous text printed it as "availableSlots" inside a sentence about
+                    // SignalBus capacity, which invited every reader to treat a tool-manager number as free
+                    // lane slots. It is kept because it proves the phase HAD a slot to press - the press is
+                    // what failed - but it is now named for the subsystem it came from.
+                    .Append(" toolSlotsWithAvailableTool=").Append(_availableToolSlots)
+                    .Append(" - no consumer ever saw the command");
+                AppendDiscreteRefusalNote();
                 AppendPhaseCeilingNote();
                 Latch(RowTool, RowVerdict.NotExercised);
                 EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
@@ -2401,18 +2612,44 @@ namespace Hecton8.EditorTools.Diagnostics
 
             _detail.Clear();
             _detail.Append("published PlayerInputSignal command ToolSlot").Append(_requestedToolSlot + 1)
-                .Append(" on the PLIN lane (availableSlots=").Append(_availableToolSlots)
+                .Append(" on the PLIN lane (toolSlotsWithAvailableTool=").Append(_availableToolSlots)
                 .Append(", pushed=").Append(_publishedDiscreteSignals)
                 .Append(", dropped=").Append(_droppedDiscreteSignals)
+                .Append(", commandSeenInFlushedSnapshot=").Append(_toolSlotCommandFlushObserved)
+                .Append(", laneSnapshotEntriesThisRun=").Append(_lanePlayerInputSignals)
                 .Append(") but CurrentTool stayed null and CurrentSlotIndex=")
                 .Append(manager.CurrentSlotIndex).Append(" after ").Append(F((float)PhaseElapsed))
-                .Append("s - the discrete lane was accepted and the swap never completed");
+                .Append("s at dispatcherFrame=").Append(SystemDispatcher.CurrentFrameId);
 
-            // A Fail here is only honest if the swap was given the ticks it needs. PlayerToolManager runs
-            // the swap on its own lane, so the readback cannot land on the publishing tick; the note says
-            // how many ticks this phase actually got.
+            // THE VERDICT NOW DEPENDS ON DELIVERY, and it did not before. The old text asserted "the discrete
+            // lane was accepted and the swap never completed" and latched Fail - a defect written against
+            // PlayerToolManager - on the strength of TryPush returning true. TryPush returning true only
+            // proves the payload entered the RING. PlayerToolManager reads the FRAME SNAPSHOT
+            // (PlayerToolManager.cs:1954), which the dispatcher's PostSimulation flush fills
+            // (SystemDispatcher.cs:3036), and that flush can drop the queued overflow past its per-frame limit
+            // (SignalBusRuntime.cs:944-953) or not run for this lane at all. On the run that motivated this
+            // change the census recorded PlayerInputSignal[PLIN]=0 for all 152 ticks
+            // (Logs/h8_worldsim_probe5.log:10915) - not one PLIN entry was ever visible in a flushed snapshot -
+            // so "accepted" was never true of anything a consumer could read, and a Fail on the tool system
+            // would have been evidence-free. Undelivered is BLOCKED with the delivery owner named; delivered
+            // and unhandled is the only honest Fail.
+            if (_toolSlotCommandFlushObserved)
+            {
+                _detail.Append(" - the command WAS visible in a flushed frame snapshot and the swap still ")
+                    .Append("never completed, so this is PlayerToolManager's own state machine");
+                AppendPhaseCeilingNote();
+                Latch(RowTool, RowVerdict.Fail);
+                EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
+                return;
+            }
+
+            _detail.Append(" - the push entered the ring but the command was NEVER visible in a flushed frame ")
+                .Append("snapshot, so PlayerToolManager was never given the chance to read it and this row ")
+                .Append("measures DELIVERY, not the tool system. Owner is the PostSimulation flush of ")
+                .Append("SignalBus<PlayerInputSignal> (SystemDispatcher.cs:3036 -> ")
+                .Append("SignalCorridorRuntime.FlushPostSimulation -> SignalBusRuntime.cs:890)");
             AppendPhaseCeilingNote();
-            Latch(RowTool, RowVerdict.Fail);
+            Latch(RowTool, RowVerdict.Blocked);
             EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
         }
 
@@ -3588,6 +3825,35 @@ namespace Hecton8.EditorTools.Diagnostics
                 .Append(" gridBound=").Append(_inventoryGridBound)
                 .Append(" inventoryVersion ").Append(_inventoryVersionAtResolve).Append("->")
                 .Append(_inventoryVersionLast);
+
+            // The discrete lane's OWN storage state, appended to the census rather than only to the Tool row
+            // because this line prints on every run - including runs that die before ToolEquip is entered -
+            // and "the lane has no ring" explains a zero PLIN count without implicating a single consumer.
+            // Read at flush time, which is cold; the latched first-refusal snapshot is the separate fact and it
+            // is reported on the row.
+            bool discreteLaneStorageNow = SignalBus<PlayerInputSignal>.HasNativeStorage;
+            _log.Append(" | PLINlane hasNativeStorage=").Append(discreteLaneStorageNow)
+                .Append(" snapshotCount=").Append(SignalBus<PlayerInputSignal>.SnapshotCount)
+                .Append(" peakQueuedLastFlush=").Append(SignalBus<PlayerInputSignal>.PeakQueuedLastFlush)
+                .Append(" droppedLastFlush=").Append(SignalBus<PlayerInputSignal>.DroppedLastFlush)
+                .Append(" loadShedTotal=").Append(SignalBus<PlayerInputSignal>.LoadShedTotal)
+                .Append(" corruptedTotal=").Append(SignalBus<PlayerInputSignal>.CorruptedSignalTotal)
+                .Append(" laneHash=0x")
+                .Append(SignalBus<PlayerInputSignal>.LaneHash.ToString("X8", CultureInfo.InvariantCulture))
+                .Append(" driverPushed=").Append(_publishedDiscreteSignals)
+                .Append(" driverRefused=").Append(_droppedDiscreteSignals)
+                .Append(" registeredLanes=").Append(SignalBusRegistry.LaneCount)
+                .Append(" registrationOverflow=").Append(SignalBusRegistry.RegistrationOverflow)
+                .Append(" simulationHalted=").Append(SignalBusRegistry.IsSimulationHalted);
+
+            if (!discreteLaneStorageNow)
+                _log.Append(" - THE PLIN LANE HAS NO NATIVE RING: SignalBus<PlayerInputSignal>.TryPush returns ")
+                    .Append("false at SignalBusRuntime.cs:681 for every caller, the harness and ")
+                    .Append("InputDispatcher.cs:4092 alike, and it does so SILENTLY - EnsureInitialized ")
+                    .Append("abandons the lane with no log when TryAcquireFrameSnapshotBuffer fails because no ")
+                    .Append("IDataVault is bound or the bound one is allocation-locked or compaction-fenced ")
+                    .Append("(:626-631 via :1491-1495). Any discrete-input row in this run is UNMEASURED and ")
+                    .Append("the owner is the vault bind, not a consumer and not lane capacity");
 
             if (_laneInputStateSignals == 0)
                 _log.Append(" - InputStateSignal is ZERO, so InputDispatcher never published a resolved input ")
