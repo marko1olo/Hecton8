@@ -67,7 +67,15 @@ Not proven by that log:
 | Data Monolith runtime boot | `[~]` | Unity import/player boot/checksum proof for `static_data.h8bin` |
 | RT/VRAM retained owner set | `[!]` | Memory Profiler / Frame Debugger owner isolation |
 | ~~Tool durability does not persist~~ WITHDRAWN — the codec persists it | `[?]` | none; the premise was wrong, see the correction below |
-| The content vacuum, measured: 4 items, 3 creatures, 0 quests | `[!]` | run the authoring generators, re-bake, and re-read this census |
+| ~~The content vacuum, measured: 4 items, 3 creatures, 0 quests~~ WITHDRAWN — wrong artifact measured | `[?]` | none; the blob has no runtime item reader, see `The content is not missing — the wiring is` |
+| Crafting is unreachable: `Fabricator`'s guid is in zero scenes and its only construction site is an Editor `[MenuItem]` | `[!]` | a build in which the fabrication station exists in the loaded scene |
+| Nine authoring buttons were never pressed; the wiring boundary is `GameBootstrapper`'s 38 `AddComponent` calls | `[!]` | per-lane: the built object present in a loaded scene, or runtime construction |
+| No creature carries `FaunaBrain` — its guid occurs in exactly one file, its own `.cs.meta` | `[!]` | a creature that moves under its own brain in a build |
+| World-content sockets are Editor-authored only, and `WorldShippingContentFilter` drops 10 of the 14 | `[~]` | settle whether `Tool_TrialRange` ships, then port or press |
+| A failed save is invisible in the GAMEPLAY HUD (the main menu shows a real modal) | `[!]` | force a save write failure in a build and watch the gameplay HUD |
+| ~~Notifications never reach the player: `HUDNotification` had zero instances~~ FIXED 2026-07-29, `5caea2a5e` | `[~]` | Play Mode: a warning visible on screen once |
+| ~~Every notification delivered twice (two drains, different hashes, suppressor never matched)~~ FIXED `cc377a985` | `[~]` | Play Mode: exactly one toast per event |
+| ~~Headless world sim could not finish its own default run~~ FIXED `60a7ed08d`; watchdog now derives from the workload | `[~]` | one completed run of `-h8headlessDays 5 -h8headlessDaySeconds 60` with its JSON |
 
 ### The Data Monolith content census — measured from the shipped blob, 2026-07-29
 
