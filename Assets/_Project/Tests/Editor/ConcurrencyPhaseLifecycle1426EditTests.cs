@@ -2005,7 +2005,17 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0, Count(acquire, @"\b(?:TryLockBuffer|TryUnlockBuffer|TryAcquireWriteLock|ReleaseWriteLock)\b"), "rebalance acquire buffer pins");
             Assert.AreEqual(0, Count(release, @"\b(?:TryLockBuffer|TryUnlockBuffer|TryAcquireWriteLock|ReleaseWriteLock)\b"), "rebalance release buffer pins");
             Assert.That(vault, Does.Contain("HasMutationGuardForActiveLockBit(activeLockBit)"));
-            Assert.That(vault, Does.Contain("HasActiveLockConflictForMutationMask(lowMask)"));
+
+            // Asserts the CALL, not the caller's local variable name. This line previously required the
+            // literal "HasActiveLockConflictForMutationMask(lowMask)" and was RED before this session began -
+            // verified absent at 3484e3a4d, so neither the guard-mask work nor anything after it broke it.
+            // The parameter is named writeMask at both call sites (GlobalDataVault.cs:2952, :2988) and
+            // guardMask at the declaration (:3366), and none of those three names is part of the contract
+            // this test exists to protect: what matters is that the conflict check is still consulted before
+            // a mutation guard is granted. Matching the method name alone keeps the invariant enforced while
+            // letting a local be renamed without turning a passing suite red - which is exactly the failure
+            // mode that hid this assertion's own staleness.
+            Assert.That(vault, Does.Contain("HasActiveLockConflictForMutationMask("));
         }
 
         [Test]
