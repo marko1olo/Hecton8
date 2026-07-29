@@ -6,9 +6,46 @@ Subagent source: Chandrasekhar, Russell, and Avicenna static audits.
 
 No Unity, build, import, Play Mode, profiler, scene save, prefab save, material save, or raw YAML edit was performed by this synthesis.
 
+## CORRECTION 2026-07-29 — the scene evidence in this document is invalid
+
+Retested with `python -B Tools/SceneGuidReachability.py` (byte-aware, control-validated). Three facts kill
+the scene half of this synthesis:
+
+1. **`02_HECTON_WORLD.unity` is a BINARY scene.** It has no `%YAML` header, contains `m_Script` zero times,
+   and contains the string `m_PrefabAsset` zero times. It has 2100 newline bytes in total, so the line
+   citations below (`:70213-70345`, `:2390-2428`) cannot refer to it. `Assets/_Recovery/0 (2).unity` is
+   `%YAML`, has 78,446 lines and does contain `HectonWorldShellController1428` — `_Recovery/` is gitignored
+   and holds full scene copies. The scene evidence in this document was, on the balance of the byte
+   evidence, read from a `_Recovery/` text copy and attributed to the live world scene.
+2. **`Player.prefab` IS referenced by the live world scene.** GUID `1c4db7a430141e5408e01b6ce4ed19d7`
+   occurs once in `02_HECTON_WORLD.unity` as a genuine `FileIdentifier` external-reference entry
+   (offset 566551, type 3, nibble-swapped byte order). Every "GUID absent from the scene" line below is
+   false for this GUID. A text search cannot match a binary scene and returns a confident false negative.
+3. **The `HectonPlayerMovement` / `PlayerInteraction` scene-absence observation was read backwards.** Both
+   GUIDs resolve only to `Assets/_Project/Prefabs/Player.prefab`. A component carried by a prefab
+   *instance* emits no scene-level entry unless overridden, so their absence from the scene is the
+   *expected signature of a correct prefab instance*, not evidence against one.
+
+What survives: `HUD_Internal.prefab` (`949b94e6d99fdd44ea13e320d0784005`) and `Suit_HUD_Canvas.prefab`
+(`e286dd44e529d8b4498750dd0abbbfd8`) are genuinely absent from every live scene and prefab, confirmed by
+the same byte-aware scan. The prefab-internal null-reference findings were read from real text prefabs and
+are untouched by this correction.
+
+Still unresolved and NOT claimed here: whether the scene's reference to `Player.prefab` is a
+`PrefabInstance.m_SourcePrefab` binding or a serialized field pointing at the prefab asset. Byte evidence
+cannot separate those two; that needs Unity readback. So the document's *conclusion* is not proven false —
+only the evidence it rested on is.
+
+Also stale: `Assets/_Project/Scripts/World/HectonWorldShellController1428.cs` no longer exists anywhere
+under `Assets` (the class name survives in the binary scene's type tree and as a string in
+`BootstrapState.cs`), and `Tools/ValidatePlayerRouteStaticEvidence.py --require-production-static` now
+returns `blockers=1` (`missing-file`), not the `blockers=19 notes=4` recorded below. That validator's own
+scene checks are text substring tests against this binary scene and can never evaluate true — see
+`Docs/AgentLogs/2026-07-29_REACHABILITY_CLAIM_RETEST.md`.
+
 ## Verdict
 
-The production player/HUD/movement route is not proven active. Static scene evidence says `02_HECTON_WORLD` does not instantiate the production `Player.prefab`, `HUD_Internal.prefab`, or `Suit_HUD_Canvas.prefab`. The active scene object named `Player` is a local shell with stress/radar/audio presentation components, not movement/input/camera authority.
+The production player/HUD/movement route is not proven active. ~~Static scene evidence says `02_HECTON_WORLD` does not instantiate the production `Player.prefab`, `HUD_Internal.prefab`, or `Suit_HUD_Canvas.prefab`.~~ **CORRECTED 2026-07-29: the `Player.prefab` half is false — its GUID is present in the binary world scene. The `HUD_Internal.prefab` and `Suit_HUD_Canvas.prefab` half holds.** The active scene object named `Player` is a local shell with stress/radar/audio presentation components, not movement/input/camera authority.
 
 Any scenic capture without active production player, HUD, tool, movement, and input proof is rejected.
 
@@ -17,7 +54,7 @@ Any scenic capture without active production player, HUD, tool, movement, and in
 1. `Assets/_Project/Scenes/02_HECTON_WORLD.unity:70213-70345` contains an active scene-local `Player` with `m_PrefabAsset: {fileID: 0}`, tag `Player`, and enabled `HectonWorldShellController1428`.
 2. The active scene-local `Player` has `HectonWorldShellController1428`, `PlayerStressVFX`, `DeepPsychosisController`, and `FakeRadarBlipController`. It does not statically show `HectonPlayerMovement`, `PlayerInteraction`, `Rigidbody`, production camera rig, visor HUD owner, or HUD projection owner.
 3. Current `Assets/_Project/Scripts/World/HectonWorldShellController1428.cs:8-15` is a legacy marker only. It has serialized movement-looking fields, but no `Update`, dispatcher tick, input read, camera write, transform write, or authority route. It cannot satisfy walking/swimming/camera/input acceptance.
-4. Static scene search does not find these production GUIDs in `02_HECTON_WORLD.unity`: `Player.prefab` `1c4db7a430141e5408e01b6ce4ed19d7`, `HUD_Internal.prefab` `949b94e6d99fdd44ea13e320d0784005`, `Suit_HUD_Canvas.prefab` `e286dd44e529d8b4498750dd0abbbfd8`, `HectonPlayerMovement` `6d195933dec89b14ebbfa47a621ac549`, or `PlayerInteraction` `215f6ea2a912636499ffc2dda9bdfb9d`.
+4. ~~Static scene search does not find these production GUIDs in `02_HECTON_WORLD.unity`: `Player.prefab` `1c4db7a430141e5408e01b6ce4ed19d7`, `HUD_Internal.prefab` `949b94e6d99fdd44ea13e320d0784005`, `Suit_HUD_Canvas.prefab` `e286dd44e529d8b4498750dd0abbbfd8`, `HectonPlayerMovement` `6d195933dec89b14ebbfa47a621ac549`, or `PlayerInteraction` `215f6ea2a912636499ffc2dda9bdfb9d`.~~ **RETRACTED 2026-07-29 — "static scene search" was a text search against a binary scene.** Byte-aware retest: `Player.prefab` **IS present** in `02_HECTON_WORLD.unity`; `HectonPlayerMovement` and `PlayerInteraction` resolve to `Player.prefab` and are prefab-borne, so their scene absence is expected rather than incriminating; only `HUD_Internal.prefab` and `Suit_HUD_Canvas.prefab` are genuinely absent.
 5. `Assets/_Project/Prefabs/Player.prefab` contains intended production pieces (`PlayerInteraction`, `Rigidbody`, `HectonPlayerMovement`, swim presentation/blockout, visor HUD, HUD camera, and HUD presentation scripts), but static evidence proves candidate status only.
 6. `Assets/_Project/Scripts/HectonPlayerMovement.cs` registers through dispatcher/`GlobalRegistry` and consumes `IInputService` snapshots. `Assets/_Project/Scripts/Gameplay/HectonPlayerInputHandler.cs:13-54` is a zero-allocation snapshot reader. This is the intended route, but it is not proven active in the scene.
 7. `Assets/_Project/Scripts/Core/InputDispatcher.cs` is the intended frame-cached input service, with cached state return at `:651-654`, pre-simulation capture around `:2822-2895`, and block-mask application around `:2944-2964`.
@@ -51,7 +88,7 @@ Result: h8_1475 is blocked by runtime authority, not only visual quality. Higher
 Hooke deepened the player bootstrap/spawn route. The result is worse than "scene prefab not found":
 
 - `Player.prefab` GUID is `1c4db7a430141e5408e01b6ce4ed19d7`.
-- Static search found no runtime/bootstrap/scene reference to that GUID.
+- ~~Static search found no runtime/bootstrap/scene reference to that GUID.~~ **RETRACTED 2026-07-29 — the scene half is false.** That GUID is a real external-reference entry in `02_HECTON_WORLD.unity` (binary, nibble-swapped). The runtime/bootstrap half of the sentence is untested by this correction.
 - `GameBootstrapper` has serialized `playerSpawner`, `playerObject`, `playerController`, and `playerRigidbody`, but no player prefab field.
 - `GameBootstrapper` resolves the current player from `BootstrapState` or scene tag and publishes it; its spawn step calls `HectonPlayerSpawner.SpawnPlayerAsync(...)` or repositions an existing `playerObject`. It does not instantiate `Player.prefab`.
 - `HectonPlayerSpawner` has a `Rigidbody playerRigidbody` inspector reference, no prefab field. Its spawn path teleports an existing Rigidbody/motor/root.
@@ -235,8 +272,8 @@ PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=19 notes=4
 Scene/player authority blockers:
 
 - `Assets/_Project/Scenes/02_HECTON_WORLD.unity` contains a scene-local active `Player` shell with no production prefab binding.
-- Production `Player.prefab` GUID `1c4db7a430141e5408e01b6ce4ed19d7` is absent from the scene.
-- `HUD_Internal`, `Suit_HUD_Canvas`, movement, and interaction GUIDs are also absent from the active scene text.
+- ~~Production `Player.prefab` GUID `1c4db7a430141e5408e01b6ce4ed19d7` is absent from the scene.~~ **RETRACTED 2026-07-29: it is PRESENT** — one `FileIdentifier` entry at offset 566551 of the binary scene, nibble-swapped. The validator that produced this line tests it with a text substring search that can never match a binary scene.
+- ~~`HUD_Internal`, `Suit_HUD_Canvas`, movement, and interaction GUIDs are also absent from the active scene text.~~ **PARTLY HELD 2026-07-29:** `HUD_Internal` and `Suit_HUD_Canvas` are genuinely absent from every live scene and prefab. The movement and interaction GUIDs live in `Player.prefab` and are prefab-borne, so their scene absence is the expected signature of a prefab instance and carries no blocker weight.
 - Source owners exist: `HectonPlayerSpawner.cs`, `BootstrapState.cs`, `SceneInstantiationGate.cs`, and `GameBootstrapper.cs`; static blocker is scene/prefab binding absence, not missing owner source.
 
 Required Unity readback:

@@ -503,12 +503,34 @@ no second hit: not a prefab, not a scene, not a `.cs`. The six generated proxy p
 `Data/AI/GeneratedProxies` exist, but `DroneProxy.prefab` reportedly carries zero `m_Script` lines at all,
 i.e. it is a geometry shell. `[MenuItem]` at `CreatureProxyPrefabAuthoring.cs:22`.
 
-**Widest case: the world runtime stack.** `WorldRuntimeBootstrapAuthoring.cs:55` places roughly sixteen world
+**Widest case: the world runtime stack. — RETRACTED IN FULL, 2026-07-29. All six of its premises are false.**
+
+> The paragraph below is kept verbatim because the shape of the error is worth more than the claim was.
+> `260f3a4a6` retracted the table version of this and **missed this prose copy**, which named two types the
+> retraction never covered. Re-tested with `Tools/SceneGuidReachability.py`, control
+> `WorldStreamingDirector` firing on 2 files so the search is validated: **`SeamRegistry`
+> (guid `1200263adb6511e4e9502bda36d49ba5`) and `FloorBiolumZone` (guid
+> `0c37648b7c41d4547aeca6871aa726f6`) are each PRESENT in both `02_HECTON_WORLD.unity` and
+> `010_TEST.unity`.** The other four were already retracted. So "there is no world content, no scavenge
+> loot and no caves" has zero surviving premises.
+>
+> The lesson is about retraction hygiene, not about scenes: I corrected the table and did not grep my own
+> document for the same claim stated in prose 235 lines further down. A retraction that fixes one
+> presentation of a claim and leaves another standing reads, to the next person, as two independent
+> sources agreeing.
+
+`WorldRuntimeBootstrapAuthoring.cs:55` places roughly sixteen world
 managers, and the reported guid checks put `WorldContentDirector`, `ScavengePopulator`, `WorldCaveDirector`,
 `SeamRegistry`, `FloorBiolumZone` and `WorldContentSocket` each in zero scenes, with consumers holding
 `[SerializeField]` nulls at `WorldProceduralFillDirector.cs:16`, `WorldPopulationDirector.cs:17` and
 `ScatterBudgetController.cs:53`. If that holds, there is no world content, no scavenge loot and no caves — I
 verified the bootstrapper omission for three of those six types but did not re-verify all six guids myself.
+
+The `[SerializeField]` null observation in that paragraph is also weaker evidence than it reads as, and this
+generalises past this one entry: **a component carried by a prefab INSTANCE emits no scene entry unless the
+value is overridden.** So for anything prefab-borne, scene-absence is the expected signature of a *correct*
+instance, not evidence against one. Any audit that treats such an absence as a defect has inverted its own
+observation.
 
 **Also stranded, lower player impact:** the rock runtime stack
 (`HectonRockRuntimeBootstrapAuthoring.cs:32`), two flora topology packs whose output directories do not exist
