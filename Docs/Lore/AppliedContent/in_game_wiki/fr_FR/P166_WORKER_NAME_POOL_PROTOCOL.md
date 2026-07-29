@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.shallow_annex
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Registre des noms de travailleurs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

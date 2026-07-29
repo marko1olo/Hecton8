@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.hecton8_atlas
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "מבוא ציבורי ל-HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

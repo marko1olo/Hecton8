@@ -8,7 +8,7 @@ biome_tags: biome.claim_cache;biome.worker_locker
 locale: pl_PL
 surface: in_game_wiki
 source_voice: PDA Salvage Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Znaki korekty Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

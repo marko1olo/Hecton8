@@ -8,7 +8,7 @@ biome_tags: biome.service_canyons;biome.drowned_infrastructure
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Skrytka martwego roszczenia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "P708_PAD_PR_DRAFT_LANGUAGE"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

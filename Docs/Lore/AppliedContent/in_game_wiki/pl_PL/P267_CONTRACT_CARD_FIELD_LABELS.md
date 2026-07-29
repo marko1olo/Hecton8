@@ -8,7 +8,7 @@ biome_tags: biome.ui;biome.contract
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "PL LOC HOLD: Contract Card Field Labels"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

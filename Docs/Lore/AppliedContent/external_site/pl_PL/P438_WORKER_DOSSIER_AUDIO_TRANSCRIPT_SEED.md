@@ -8,7 +8,7 @@ biome_tags: biome.colony_infrastructure;biome.codex
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Transkrypt audio dossier pracownika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

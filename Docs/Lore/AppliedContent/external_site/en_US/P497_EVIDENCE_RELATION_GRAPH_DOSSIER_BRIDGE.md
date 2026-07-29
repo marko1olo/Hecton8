@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Evidence Relation Graph Dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -21,9 +21,9 @@ localization_flags: 0
 
 ## What the record proves
 
-The relation overlay was built for tired investigators and frightened salvagers, not judges. It pulls records onto the same table when they share a source object, route plate, claimant phrase, witness hash, caption family, injury mark, redaction state, or visible consequence. That makes patterns visible under pressure. It also makes false certainty easy.
+The relation overlay is a review tool, built for tired investigators and salvage crews working from partial dossiers. It draws an edge between two records when they share a source object, route plate, claimant phrase, witness hash, caption family, injury mark, redaction state or visible consequence. Dossier build DG-4C carries 1,180 edges across 340 records.
 
-A hash match does not prove witness truth. A caption match does not prove source recovery. A shared redaction state may only mean the same clerk cut both files with the same template. The overlay is useful because it tells the player where to spend attention: packet custody, source object, claimant wording, witness hash, route consequence, redaction reason, and caption order. It becomes dangerous the moment the line is treated as a verdict.
+Edges are cues rather than findings. A hash match does not prove witness truth. Two records can share a caption family because one clerk cut both files from the same template. A gray edge means nothing beyond shared redaction state.
 
 ## How to read it
 
@@ -32,7 +32,7 @@ Green edge: source object or route plate match.
 Amber edge: claimant phrase or caption family match.
 Red edge: witness hash, injury mark, or suppression consequence match.
 Gray edge: shared redaction state only.
-Every edge must be checked against custody. A beautiful graph can still be a lie with straight lines.
+Every edge is checked against custody before it is cited. A clean graph can still be a lie with straight lines.
 
 ## Field note
 

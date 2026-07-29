@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: en_US
 surface: in_game_wiki
 source_voice: PDA Worker Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Route Permission Stamps"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

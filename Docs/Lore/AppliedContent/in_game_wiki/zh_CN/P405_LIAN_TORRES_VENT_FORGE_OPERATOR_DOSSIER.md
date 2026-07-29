@@ -8,7 +8,7 @@ biome_tags: biome.vent_forge;biome.abyssal_machine_field
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "连·托雷斯，热口锻炉操作员"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

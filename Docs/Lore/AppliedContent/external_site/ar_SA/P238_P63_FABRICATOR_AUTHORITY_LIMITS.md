@@ -8,7 +8,7 @@ biome_tags: biome.p63_shallows;biome.industrial_shelf
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "حدود صلاحية المصنّع P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

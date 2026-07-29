@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.atlas
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Guide du verre de pression et du mastic"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.light
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Lantern Drift Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,17 @@ localization_flags: 0
 
 # Lantern Drift Codex Card
 
-Lantern drift bloom is the shelf’s most beautiful warning system. In quiet water the cells outline current, suspended grit, cable loops, pressure-glass shards, broken shell clamps, and small tooth hazards before a lamp catches them. That makes a bloom useful when the route is visually noisy or the player needs a clean silhouette through reef clutter. It also makes the player legible. Cutter vibration, a coughing pump, repeated pinger use, hull impact, or a panicked thruster can agitate the bloom into a lit wake that carries position through the food web. Storm charge adds another problem: false corridors, overbright residue, and flattened contrast that hides small damage inside too much light. Follow the glow only when current, residue, and fauna agree. Work loud inside a bloom only if being found is part of the plan.
+Specimen card LD-6, lantern drift bloom, shelf water above 90 metres.
+
+  QUIET-WATER READ: rim light steady, debris halos match current and residue
+  REJECT: storm-charged false corridor, bloom flattening small hazards
+  WAKE RISK: tool vibration brightens the water behind the operator
+
+In quiet water the cells outline current, suspended grit, cable loops, pressure-glass shards and broken shell clamps before a lamp reaches them. That is worth using where reef clutter hides a silhouette.
+
+The same cells report you. Cutter vibration, a coughing pump, repeated pinger use or a panicked thruster agitates the bloom into a lit wake that carries position through the food web.
+
+Follow the glow only where current, residue and fauna agree. Working loud inside a bloom marks your position for as long as the bloom holds charge.
 
 ## Scanner
 

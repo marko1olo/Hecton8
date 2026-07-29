@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "HECTON-8-Orbitalgefahrentabelle"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

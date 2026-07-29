@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.industrial_shelf
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kit de pruebas del patio de relés del arrecife de cable"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

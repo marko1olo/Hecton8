@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "打捞真相的证据状态"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

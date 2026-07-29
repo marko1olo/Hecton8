@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: fr_FR
 surface: in_game_wiki
 source_voice: PDA Forensic Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Écart de réserve de combinaison incohérent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

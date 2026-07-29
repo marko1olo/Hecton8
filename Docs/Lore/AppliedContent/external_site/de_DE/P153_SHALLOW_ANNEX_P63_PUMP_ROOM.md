@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pumpenraum P-63 Im Flachwasseranbau"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.carrier_interface
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ID LOC HOLD: Lien Severity Seed Class"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "얕은 부속동 P-63 펌프실"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

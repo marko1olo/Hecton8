@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.vent_forge
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Deep Reach压力陶瓷"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

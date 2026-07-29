@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.shallow_annex
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ドメインの市民法・企業法分裂"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

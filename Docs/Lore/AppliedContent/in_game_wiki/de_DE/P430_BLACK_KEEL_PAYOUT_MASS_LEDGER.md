@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.black_keel_orbit
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "DE LOC HOLD: Black Keel Payout Mass Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.orbital_window;biome.dead_claim_cache
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cold Claims das Luas Externas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

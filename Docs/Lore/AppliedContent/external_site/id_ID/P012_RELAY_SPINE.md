@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.service_canyons
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tulang Punggung Relai"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

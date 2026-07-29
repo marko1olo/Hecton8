@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.ocean
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Rol mareal de órbita media de HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

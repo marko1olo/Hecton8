@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.evidence_route
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Semilla de contrato de carta de pruebas primero"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

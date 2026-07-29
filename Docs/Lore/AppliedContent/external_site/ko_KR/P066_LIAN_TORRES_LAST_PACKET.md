@@ -8,7 +8,7 @@ biome_tags: biome.relay_spine;biome.drowned_comms
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "리안 토레스의 마지막 패킷"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

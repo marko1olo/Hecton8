@@ -8,7 +8,7 @@ biome_tags: biome.deep_abyss;biome.drowned_colony
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Retención de evacuación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

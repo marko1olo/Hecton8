@@ -8,7 +8,7 @@ biome_tags: biome.evacuation_queue;biome.quarantine_gate
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "할데인 격리 해제 보류"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

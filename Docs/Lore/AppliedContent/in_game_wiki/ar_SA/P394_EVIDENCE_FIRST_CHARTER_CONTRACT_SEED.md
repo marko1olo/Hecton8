@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.evidence_route
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "بذرة عقد ميثاق الأدلة أولا"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

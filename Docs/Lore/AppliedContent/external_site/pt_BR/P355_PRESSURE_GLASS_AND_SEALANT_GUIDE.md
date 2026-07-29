@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.atlas
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Guia de vidro de pressão e selante"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories;biome.pressure_base
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tubular Coral"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Tubular Coral
 
-A tube run on a factory wall means the wall behind it is cracked. The growth tracks fractures and fills them; it has held Room 6 of the West Wet Store at 3.4 MPa since 2147.
+A tube run on a factory wall means the wall behind it is cracked. The growth tracks fractures and fills them; it has held Room 6 of the West Wet Store at 20.1 MPa since 2147.
 
 Live runs are pale at the tip, iron-stained at the base; dead ones keep their shape for decades. Read colour, not outline.
 

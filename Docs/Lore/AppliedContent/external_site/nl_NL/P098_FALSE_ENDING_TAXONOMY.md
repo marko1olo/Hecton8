@@ -8,7 +8,7 @@ biome_tags: biome.payload_gantry;biome.carrier_link
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Taxonomie van valse eindes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

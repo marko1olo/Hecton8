@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.worker_locker
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Podpisy Asset Silence Board"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

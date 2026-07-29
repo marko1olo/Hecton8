@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.public_archive
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "最終問い: 公開台帳、失われた制御"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

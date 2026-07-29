@@ -8,7 +8,7 @@ biome_tags: biome.resource;biome.deep
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Польовий довідник історії тиску синього боргу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

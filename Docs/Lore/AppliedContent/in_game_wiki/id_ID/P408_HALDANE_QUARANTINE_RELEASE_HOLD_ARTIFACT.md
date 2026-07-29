@@ -8,7 +8,7 @@ biome_tags: biome.evacuation_queue;biome.quarantine_gate
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Hold Haldane untuk Pelepasan Karantina"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

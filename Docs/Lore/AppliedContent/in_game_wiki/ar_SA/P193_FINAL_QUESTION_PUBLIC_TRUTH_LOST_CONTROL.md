@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.public_archive
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "السؤال الأخير: دفتر عام وفقدان التحكم"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

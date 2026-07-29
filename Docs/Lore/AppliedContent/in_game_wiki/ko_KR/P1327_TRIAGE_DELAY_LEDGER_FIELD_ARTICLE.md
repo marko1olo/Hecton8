@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.medical_bay
 locale: ko_KR
 surface: in_game_wiki
 source_voice: PDA Medical Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "지연 트리아지 장부"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

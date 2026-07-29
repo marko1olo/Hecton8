@@ -8,7 +8,7 @@ biome_tags: biome.aegir;biome.comms
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Peluruhan Sinyal Jendela Blackout"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

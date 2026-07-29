@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Насосная P-63 в мелководной пристройке"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

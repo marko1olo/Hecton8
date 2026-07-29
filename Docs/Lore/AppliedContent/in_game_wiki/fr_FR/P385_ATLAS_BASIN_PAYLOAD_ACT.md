@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.factory_temple
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Porte payload du bassin Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

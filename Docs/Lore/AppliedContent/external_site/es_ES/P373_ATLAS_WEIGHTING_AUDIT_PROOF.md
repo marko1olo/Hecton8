@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.atlas_basin
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Auditoría de ponderación Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

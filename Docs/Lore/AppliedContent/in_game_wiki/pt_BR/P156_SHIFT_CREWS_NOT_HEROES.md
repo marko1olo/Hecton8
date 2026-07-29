@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.shallow_annex
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Equipes de turno, não heróis"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

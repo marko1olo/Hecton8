@@ -8,7 +8,7 @@ biome_tags: biome.atlas_repair_network;biome.deep_ecology
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ZH LOC HOLD: Atlas Lattice Contamination Tag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

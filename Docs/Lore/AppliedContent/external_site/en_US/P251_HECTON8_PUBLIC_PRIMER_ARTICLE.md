@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.hecton8_atlas
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "HECTON-8 Public Primer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,10 +19,12 @@ localization_flags: 0
 
 # HECTON-8 Public Primer
 
-HECTON-8 is not introduced as a dead ruin. It is introduced as a place that was worth crossing interstellar distance for: bright photic shelves, hard blue water, pressure-rated colony bones, clear shallows where old machinery can be seen through living ocean. The first promise is beauty. The first threat is that beauty belongs to a system that has already priced it.
+HECTON-8 was worth crossing 10.5 light years for. The photic shelves are clear and alive, hard blue water over pressure-rated colony structure with machinery visible through it. Deep Reach did not come here for a ruin. It came for tidal energy, clathrate, nodule fields and a pressure environment that produces chemistry no dry facility can reproduce.
 
-The playable premise begins with a Marauder under contract pressure, not a tourist, chosen heir or family avenger. You descend because debt, blacklist risk and Aegir salvage law make the job possible and dangerous at the same time. The drop goes wrong. The ocean does not care whether the contract was fair. The first hours are practical: shelter, pumps, seals, oxygen, tools, signal. The story enters through objects that still have owners.
+The colony died in 2147. The routes did not. Pumps on trickle power, sealed corridors, brine cuts and relay yards went on running against schedules nobody was left to sign, which is why the site is still legally live and still generating recoverable mass.
 
-That is the public face of HECTON-8: ocean survival with industrial memory. Deep Reach built pressure routes and worker habitats here. Black Keel can answer from orbit but cannot erase distance, weather or custody law. The moon is beautiful enough to make the loss matter, and documented enough to make every recovered mark feel like evidence.
+Work on the site now is salvage under contract. Licensed crews out of Barnard Yards enter a disputed claim carrying a lien, a recovery mass window and no rescue authority. The descent is cheap. Nothing about the return is.
+
+Aegir geometry sets the rest. Signal is inexpensive and shielded mass is not, so a carrier holding station can answer a diver years before it can lift one. Recovered objects still have owners, and most of those owners have already filed.
 
 <!-- External Site; generated from P251_HECTON8_PUBLIC_PRIMER_ARTICLE/en_US. -->

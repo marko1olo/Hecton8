@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Échelle des fausses fins"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.colony_infrastructure;biome.codex
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "תמליל שמע תיק עובד"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

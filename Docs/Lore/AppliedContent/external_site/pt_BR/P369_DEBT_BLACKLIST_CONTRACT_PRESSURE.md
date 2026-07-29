@@ -8,7 +8,7 @@ biome_tags: biome.safe_module;biome.claim_route
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pressão de Contrato Blacklist por Dívida"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

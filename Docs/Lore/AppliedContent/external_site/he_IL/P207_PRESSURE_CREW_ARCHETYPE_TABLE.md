@@ -8,7 +8,7 @@ biome_tags: biome.worker_locker;biome.industrial_shelf
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "טבלת ארכיטיפי צוותי לחץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

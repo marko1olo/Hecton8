@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.aegir
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "بروتوكول نافذة الاسترداد المدارية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

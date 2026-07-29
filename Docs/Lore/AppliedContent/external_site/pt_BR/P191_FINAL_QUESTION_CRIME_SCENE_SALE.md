@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.black_keel_orbit
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pergunta final: venda da cena do crime"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

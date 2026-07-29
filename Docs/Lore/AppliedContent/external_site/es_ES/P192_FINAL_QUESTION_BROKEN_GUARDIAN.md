@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.repair_ecology
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pregunta final: guardián averiado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

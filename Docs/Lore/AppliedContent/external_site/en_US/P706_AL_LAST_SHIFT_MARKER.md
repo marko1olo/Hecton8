@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.spine_shallows
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Marker Inventory, P-63 Back Wall"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

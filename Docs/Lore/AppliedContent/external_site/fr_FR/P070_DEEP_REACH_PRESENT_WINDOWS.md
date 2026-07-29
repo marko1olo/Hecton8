@@ -8,7 +8,7 @@ biome_tags: biome.relay_spine;biome.surface_relay
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Fenêtres actuelles de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

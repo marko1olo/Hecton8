@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "高托管样本合同种子"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

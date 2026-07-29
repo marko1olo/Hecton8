@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Chaîne d'origine de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.inventory;biome.resource_custody
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "压力堆叠限制行"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.vent_forge;biome.atlas_basin
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P703_THERMAL_TUBEWORM"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

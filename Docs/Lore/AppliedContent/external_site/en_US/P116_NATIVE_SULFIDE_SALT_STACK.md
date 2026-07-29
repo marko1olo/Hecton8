@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.vent_forge
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Native Sulfide Salt Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Native Sulfide Salt Stack
 
-Native Sulfide Salt Stack is the baseline resource article for HECTON-8's drowned geology. These deposits are not Atlas contamination, not Deep Reach waste and not the beginning of Xenon-Omega. They are the older layer: sulfide salts, metal ions and brine crusts built by pressure, heat and time. In the field they look humble compared with glowing debt material, but they are the reason the first repairs work. A stack can rinse oxidized contacts, feed emergency cell chemistry, lower a ceramic melt point or turn a clean glove into an acid problem in less than a minute. That makes the resource useful in the exact way HECTON-8 should feel useful: practical, dangerous and indifferent. Deep Reach did not invent the moon's appetite for metal. The company learned to invoice it. Good resource placement should teach players this before the bigger horror arrives. The walls are already reactive. The brine already remembers pressure. Salvage begins by learning which pieces of the world will help you breathe and which will eat through the thing keeping you alive.
+Native sulfide salts are the oldest usable chemistry on HECTON-8: black-green sulfide crystal grown by vent heat, brine seepage and metal-rich crust long before Deep Reach filed a claim. They wash oxidised contacts, feed emergency cell chemistry and lower a ceramic melt point. Warm dust from them forms an acid film on suit metal.
 
 ## Scanner
 

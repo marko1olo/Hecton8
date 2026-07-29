@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: ru_RU
 surface: external_site
 source_voice: Public Lore Atlas Evidence Note
-spoiler_tier: 0
+spoiler_tier: 
 title: "Сдвиг полосы повреждения расшифровки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

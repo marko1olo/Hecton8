@@ -8,7 +8,7 @@ biome_tags: biome.scanner;biome.evidence
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "PT LOC HOLD: Scanner Stage Binding"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

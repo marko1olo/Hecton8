@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.surface_relay
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "سلطة تأخير الضوء"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

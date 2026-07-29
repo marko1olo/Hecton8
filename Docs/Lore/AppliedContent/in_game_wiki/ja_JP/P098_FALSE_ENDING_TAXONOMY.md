@@ -8,7 +8,7 @@ biome_tags: biome.payload_gantry;biome.carrier_link
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "偽エンディング分類"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

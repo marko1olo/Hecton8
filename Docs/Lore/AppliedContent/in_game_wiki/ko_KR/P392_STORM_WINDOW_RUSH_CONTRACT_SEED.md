@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.storm_window
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "폭풍 창 러시 계약 시드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

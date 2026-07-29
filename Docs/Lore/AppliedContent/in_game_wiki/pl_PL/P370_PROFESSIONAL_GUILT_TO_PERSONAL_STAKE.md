@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.atlas_basin
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Od Winy Zawodowej do Osobistej Stawki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

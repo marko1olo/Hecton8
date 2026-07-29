@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.black_keel_orbit
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "최종 질문: 범죄 현장 판매"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

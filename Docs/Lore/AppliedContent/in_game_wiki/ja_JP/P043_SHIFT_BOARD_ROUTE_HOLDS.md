@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.service_canyon
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "シフト板ルート保留"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

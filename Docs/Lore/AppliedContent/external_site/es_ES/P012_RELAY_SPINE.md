@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.service_canyons
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Espina de relés"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_admin;biome.carrier_link
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Priority hook de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.silt_plain
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Sinais do emboscador de silte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

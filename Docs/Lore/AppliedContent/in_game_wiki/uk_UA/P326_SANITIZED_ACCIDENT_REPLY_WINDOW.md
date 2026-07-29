@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.deep_reach
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Вичищене вікно відповіді про аварію"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

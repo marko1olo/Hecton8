@@ -8,7 +8,7 @@ biome_tags: biome.service_canyons;biome.industrial_descent
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ресурсный стек"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.drowned_admin
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "掠夺者档案持久性"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

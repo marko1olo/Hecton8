@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base_interior;biome.service_corridor
 locale: ru_RU
 surface: external_site
 source_voice: Public Site Flexible Hose Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Рифленый гибкий шланг"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

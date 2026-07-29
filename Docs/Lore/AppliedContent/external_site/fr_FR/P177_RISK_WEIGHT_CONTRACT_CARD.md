@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Carte de poids de risque contractuel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

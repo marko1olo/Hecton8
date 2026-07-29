@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "圧力破損しきい値"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

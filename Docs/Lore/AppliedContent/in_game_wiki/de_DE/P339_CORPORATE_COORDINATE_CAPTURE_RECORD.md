@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.deep_reach
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Konzern-Koordinatenerfassungsakte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

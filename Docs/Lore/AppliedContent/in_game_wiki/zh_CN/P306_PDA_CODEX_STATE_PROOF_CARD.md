@@ -8,7 +8,7 @@ biome_tags: biome.ui;biome.dossier
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ZH LOC HOLD: PDA Evidence State"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

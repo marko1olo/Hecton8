@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.atlas_basin
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Graine de contrat appât de conformité de récupération"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

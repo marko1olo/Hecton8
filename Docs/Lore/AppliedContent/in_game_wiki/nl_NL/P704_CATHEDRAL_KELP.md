@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.cable_reef
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P704_CATHEDRAL_KELP"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

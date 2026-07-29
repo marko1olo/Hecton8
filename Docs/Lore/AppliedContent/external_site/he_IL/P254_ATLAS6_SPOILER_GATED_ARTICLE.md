@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas_maintenance
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "מאמר Atlas-6 נעול ספוילרים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

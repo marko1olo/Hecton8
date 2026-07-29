@@ -8,7 +8,7 @@ biome_tags: biome.arrival_shelf;biome.drowned_admin
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Aegir 회수 풀"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

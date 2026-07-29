@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas_maintenance
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Artykuł Atlas-6 z blokadą spoilerów"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

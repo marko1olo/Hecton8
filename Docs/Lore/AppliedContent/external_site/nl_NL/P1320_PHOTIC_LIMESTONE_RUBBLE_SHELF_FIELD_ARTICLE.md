@@ -8,7 +8,7 @@ biome_tags: biome.photic_shallows;biome.first_route_shelf
 locale: nl_NL
 surface: external_site
 source_voice: Public Site Photic Shelf Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Fotische kalksteenpuinplaat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;resource.fiberkelp
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Primera reparación PressureSeal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

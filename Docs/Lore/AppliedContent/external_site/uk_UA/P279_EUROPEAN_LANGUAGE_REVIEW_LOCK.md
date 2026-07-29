@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.eu_languages
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "UK LOC HOLD: European Text Expansion Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

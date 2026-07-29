@@ -8,7 +8,7 @@ biome_tags: biome.worker_locker;biome.industrial_shelf
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Таблица архетипов напорных бригад"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

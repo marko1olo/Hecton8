@@ -8,7 +8,7 @@ biome_tags: biome.vent;biome.resource
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "热泉锻炉现场流程指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

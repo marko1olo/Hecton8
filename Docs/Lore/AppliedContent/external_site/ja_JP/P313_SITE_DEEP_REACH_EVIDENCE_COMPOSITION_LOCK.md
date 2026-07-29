@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.deep_reach
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "JP LOC HOLD: Deep Reach Evidence Composition Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.public_archive
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pergunta final: livro público, controle perdido"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

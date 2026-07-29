@@ -8,7 +8,7 @@ biome_tags: biome.thermal_vent;biome.atlas_basin
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Гнізда вент-мікровузлів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

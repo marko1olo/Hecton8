@@ -8,7 +8,7 @@ biome_tags: biome.deep_reach;biome.contract
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "דרישת קואורדינטות של ציות חילוץ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

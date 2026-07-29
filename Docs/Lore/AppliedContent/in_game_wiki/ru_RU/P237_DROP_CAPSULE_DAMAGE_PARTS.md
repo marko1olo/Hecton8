@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.p63_shallows
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Поврежденные узлы посадочной капсулы"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.claim_archive;biome.deep_reach_office
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ledger Ибарры о конверсии потерь"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

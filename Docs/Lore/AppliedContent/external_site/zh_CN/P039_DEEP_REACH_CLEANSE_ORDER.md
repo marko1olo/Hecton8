@@ -8,7 +8,7 @@ biome_tags: biome.dead_claim;biome.industrial_descent
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Deep Reach 实时清理指令"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

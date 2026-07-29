@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.brine_canyon
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Faixas de Pressão por Nível de Receita"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.open_deep_water
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "広域濾過体の痕跡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

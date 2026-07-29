@@ -8,7 +8,7 @@ biome_tags: biome.surface_relay;biome.storm_shelf
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "انجراف relay queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

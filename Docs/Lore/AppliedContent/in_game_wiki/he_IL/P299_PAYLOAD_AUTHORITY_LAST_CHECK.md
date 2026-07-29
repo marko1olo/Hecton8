@@ -8,7 +8,7 @@ biome_tags: biome.final_payload;biome.dossier
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "בדיקת סמכות payload אחרונה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

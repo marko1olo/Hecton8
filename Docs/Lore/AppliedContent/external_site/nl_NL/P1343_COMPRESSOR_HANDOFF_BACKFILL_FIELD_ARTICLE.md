@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: nl_NL
 surface: external_site
 source_voice: Public Lore Atlas Evidence Note
-spoiler_tier: 0
+spoiler_tier: 
 title: "Nagevulde compressoroverdracht"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

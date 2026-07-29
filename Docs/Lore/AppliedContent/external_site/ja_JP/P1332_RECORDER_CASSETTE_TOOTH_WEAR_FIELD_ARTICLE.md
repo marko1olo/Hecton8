@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: ja_JP
 surface: external_site
 source_voice: Public Site Evidence Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "レコーダーカセット歯の摩耗"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

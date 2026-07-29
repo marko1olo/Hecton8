@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.replay
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "부분 귀환 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

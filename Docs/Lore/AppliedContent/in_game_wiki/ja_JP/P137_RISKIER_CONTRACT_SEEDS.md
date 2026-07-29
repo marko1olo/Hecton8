@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "より危険な契約seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

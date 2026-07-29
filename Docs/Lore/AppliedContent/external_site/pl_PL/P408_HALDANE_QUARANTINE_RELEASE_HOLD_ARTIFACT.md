@@ -8,7 +8,7 @@ biome_tags: biome.evacuation_queue;biome.quarantine_gate
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Hold Haldane'a na zwolnienie z kwarantanny"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

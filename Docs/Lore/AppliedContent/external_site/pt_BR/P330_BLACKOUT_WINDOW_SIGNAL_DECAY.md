@@ -8,7 +8,7 @@ biome_tags: biome.aegir;biome.comms
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Decaimento de Sinal na Janela de Blackout"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

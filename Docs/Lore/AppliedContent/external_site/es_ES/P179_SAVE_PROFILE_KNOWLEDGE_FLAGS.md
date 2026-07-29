@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Save Profile Knowledge Flags"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

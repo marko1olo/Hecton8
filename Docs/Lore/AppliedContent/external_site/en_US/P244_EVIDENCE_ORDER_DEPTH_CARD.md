@@ -8,7 +8,7 @@ biome_tags: biome.dossier;biome.colony_ruins
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Evidence Order Depth Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

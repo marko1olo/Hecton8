@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.shallow_annex
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "פרוטוקול לוקליזציה טבעית של שמות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

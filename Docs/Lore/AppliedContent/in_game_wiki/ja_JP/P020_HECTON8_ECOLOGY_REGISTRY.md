@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.cable_forest
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "生態登録簿"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

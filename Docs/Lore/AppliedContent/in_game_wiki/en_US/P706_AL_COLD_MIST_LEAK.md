@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Bolt 14, West Rib"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -23,7 +23,7 @@ A weeping bolt at nine megapascals does not drip. It stands a white atomised con
 
 The compartment hands you a clock for nothing. Sump collars are graduated in millimetres, and two readings an hour turn the weep into a fill rate and the fill rate into standing time. Bay 9 ran one hundred and ten millimetres an hour against a two point four metre ceiling, and the rate climbed as the thread opened.
 
-Bolt 14 on the west rib failed first in three bays carrying different loads. Nobody has explained the ordering.
+Bolt 14 on the west rib failed first in three bays carrying different loads. In the third bay the bolt was new that year.
 
 Assessment: read the collar twice an hour and price the compartment against your own window rather than against the requisition class.
 
@@ -43,7 +43,7 @@ Sump collar read four hundred and ten millimetres on the hour. Five hundred and 
 
 So nineteen hours of compartment, eleven of standing. Rib bolt is a Class 2. Six days.
 
-Madsen, write the number, not the word. Write nineteen against six and --
+Madsen, write the number, not the word. Nineteen against six, in the box, in ink. Then photograph the collar with the chalk mark in frame, because the day crew will say I moved the chalk.
 
 ## Field Note
 

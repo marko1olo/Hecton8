@@ -19,15 +19,17 @@ localization_flags: 0
 
 # Abyssal Nodule Plain Field Article
 
-The abyssal nodule plain is the first place where HECTON-8 looks empty in a dangerous way. No reef color, no warm wreck light, no comforting wall. Just cold clay, pressure, small dark stones and the feeling that the ocean has been keeping accounts longer than any company.
+SURVEY GRID CARD, SQUARE H-19. Abyssal plain, 3,640 metres. Wired to a bent flag stake.
 
-The nodules are not coins scattered on a floor. They grow slowly around grit, bone dust, metal flakes, vent fallout and old mineral skins. Layer after layer, chemistry writes a record the size of a fist. Manganese, iron, nickel traces and adsorbed salts make them useful. The same layers make them evidence. A clean nodule can tell a surveyor where the current has been stable for decades. A stained one can point to industrial leakage, brine migration or a dead machine uphill.
+  NODULE DENSITY .. 14 per square metre
+  CRUST ........... intact, pale on the upstream side
+  SEDIMENT ........ entered RECOVERABLE LOSS, 2146
 
-Deep Reach wanted the plains because they looked patient and cheap. No heroic drilling. No hot vent politics. Send crawlers, scrape grids, box the lumps, file the sediment as recoverable loss. The first mistake was thinking slow geology would tolerate fast accounting. Draglines turned soft clay into whiteout. Buoyancy plumes buried markers. Acoustic pings began returning from clouds instead of ground. A square that looked profitable on a ledger could become blind water in ten minutes.
+A nodule is mineral growth built in layers around grit, bone dust, metal flake and vent fallout. The layers make it worth lifting and make it a record. A clean one dates a stable current. A stained one points upslope at leakage or a failed machine.
 
-For a Marauder, the rule is restraint. Take one nodule badly and you lose the route, the evidence and the next hour of visibility. Read the pattern first: paired nodules on a current line, pale dust on the upstream side, broken crust near an old claw mark, empty circles where previous harvesters lifted too cleanly. The plain is a resource biome, but it is also a page. If you only loot it, you tear out the sentence that tells you where to go next.
+Read the filing twice. Sediment entered as recoverable loss is clay priced as clay, with no line for the acoustic map written into it. Draglines turned clay to whiteout inside ten minutes and buried the markers that made the square navigable.
 
-The best nodule plains should feel quiet, not dead. Tiny life uses the shelter between stones. Old survey flags lie half-buried. A broken crawler track can run straight until it vanishes under its own stirred silt. HECTON-8 makes value heavy here. You do not mine the abyss. You ask it what it can afford to lose.
+H-19 holds four empty harvest rings and a crawler track running straight until it vanishes under silt the crawler raised.
 
 ## Scanner
 

@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "مجموعة شحنة طاقة الصعود"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.factory_temple
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Шлюз payload басейну Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

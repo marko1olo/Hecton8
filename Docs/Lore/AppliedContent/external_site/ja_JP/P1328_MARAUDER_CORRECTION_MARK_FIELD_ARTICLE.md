@@ -8,7 +8,7 @@ biome_tags: biome.claim_cache;biome.worker_locker
 locale: ja_JP
 surface: external_site
 source_voice: Public Site Salvage Culture Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Marauder修正マーク"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

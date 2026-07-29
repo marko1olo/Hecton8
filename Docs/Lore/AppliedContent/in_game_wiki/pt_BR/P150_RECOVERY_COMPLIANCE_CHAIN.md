@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cadeia Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

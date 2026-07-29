@@ -8,7 +8,7 @@ biome_tags: biome.safe_module;biome.claim_route
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Давление долгового blacklist-контракта"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.factory_temple
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Селена Арендт: ваги Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

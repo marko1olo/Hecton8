@@ -8,7 +8,7 @@ biome_tags: biome.deep_reach_pressure;biome.shallow_annex_p63
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "UK LOC HOLD: Sanitized Accident Packet Body"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

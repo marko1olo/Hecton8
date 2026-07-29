@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex_p63;biome.first_hour_tool_chain
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "KO LOC HOLD: P-63 Pump Room First Repair Task"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

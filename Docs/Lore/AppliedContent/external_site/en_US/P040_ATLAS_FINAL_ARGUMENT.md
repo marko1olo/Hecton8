@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.atlas_core
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas Final Argument"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

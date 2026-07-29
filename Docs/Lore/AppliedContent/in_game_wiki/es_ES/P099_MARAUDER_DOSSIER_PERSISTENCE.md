@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.drowned_admin
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Persistencia del dossier de saqueador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

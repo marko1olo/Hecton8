@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "След допуска прилива"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

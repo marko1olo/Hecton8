@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.silt_plain
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Sygnały mułowego zasadzkarza"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

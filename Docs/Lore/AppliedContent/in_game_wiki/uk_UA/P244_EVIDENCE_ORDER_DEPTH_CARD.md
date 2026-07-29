@@ -8,7 +8,7 @@ biome_tags: biome.dossier;biome.colony_ruins
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "UA LOC HOLD: Evidence Order Depth Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

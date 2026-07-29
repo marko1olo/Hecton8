@@ -8,7 +8,7 @@ biome_tags: biome.photic_shallows;biome.first_route_shelf
 locale: he_IL
 surface: in_game_wiki
 source_voice: PDA Limestone Shelf Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "מדף גיר מואר מלא שברים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

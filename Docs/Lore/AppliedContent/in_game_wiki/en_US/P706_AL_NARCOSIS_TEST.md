@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Comfort Channel Test, 620 Metres"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -25,7 +25,7 @@ A suit configured for it carries a sample lot in the guidance field instead of t
 
 Below about five hundred metres on Mix 4 the channel stops being furniture. Judgement narrows, the recording keeps its cadence, and a slowed holder will answer a voice he can still correctly name as a recording.
 
-Fourteen of the sixteen recovered suits with the option enabled worked the same depth band. Nobody has explained the pattern.
+Fourteen of the sixteen recovered suits with the option enabled worked the same depth band.
 
 Assessment: read the collar plate before diving a salvaged suit. That channel has priority over the hazard tone.
 

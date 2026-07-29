@@ -8,7 +8,7 @@ biome_tags: biome.worker_archive;biome.claim_admin
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Conflicto entre firma y testigo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

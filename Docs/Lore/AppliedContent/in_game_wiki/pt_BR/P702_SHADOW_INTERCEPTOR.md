@@ -8,7 +8,7 @@ biome_tags: biome.deep_abyss;biome.abyssal_machine_field
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P702_SHADOW_INTERCEPTOR"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

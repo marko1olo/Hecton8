@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.fauna
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "센서 태그 동물 피드백 루프"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

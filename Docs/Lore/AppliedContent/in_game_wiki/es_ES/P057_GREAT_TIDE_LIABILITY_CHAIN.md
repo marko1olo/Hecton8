@@ -8,7 +8,7 @@ biome_tags: biome.tide_gauge;biome.drowned_colony
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cadena de responsabilidad de la Gran Marea"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

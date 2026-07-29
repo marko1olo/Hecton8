@@ -8,7 +8,7 @@ biome_tags: biome.spoiler_gate;biome.codex
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "엔딩 기록 트랜스크립트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

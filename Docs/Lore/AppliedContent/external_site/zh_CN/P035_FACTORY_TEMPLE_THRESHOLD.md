@@ -8,7 +8,7 @@ biome_tags: biome.bottom_factory;biome.atlas_zone
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "工厂神殿阈限"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

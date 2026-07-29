@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.work_order
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "P-63-Pumpraum-Arbeitsauftrag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

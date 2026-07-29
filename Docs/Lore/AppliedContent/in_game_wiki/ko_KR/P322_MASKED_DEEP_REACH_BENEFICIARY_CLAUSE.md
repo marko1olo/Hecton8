@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.deep_reach
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "가려진 Deep Reach 수익자 조항"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.vent_forge;biome.abyssal_machine_field
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "리안 토레스, 열수구 단조 작업자"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

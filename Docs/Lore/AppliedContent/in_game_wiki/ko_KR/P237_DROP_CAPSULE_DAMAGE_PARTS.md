@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.p63_shallows
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "강하 캡슐 손상 부품"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

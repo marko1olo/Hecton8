@@ -8,7 +8,7 @@ biome_tags: biome.p63_shallows;biome.brine_canyon
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Сервисные классы скафандра давления"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

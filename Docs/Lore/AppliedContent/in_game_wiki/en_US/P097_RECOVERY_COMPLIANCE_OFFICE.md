@@ -8,7 +8,7 @@ biome_tags: biome.drowned_admin;biome.carrier_link
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Recovery Compliance Office"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,16 @@ localization_flags: 0
 
 # Recovery Compliance Office
 
-The Recovery Compliance Office is the present Deep Reach faction pushing back into HECTON-8. It works through windows, proxy authority, legal packets and cleanup orders. It does not need instant command; it needs the player to send the wrong payload first.
+RECOVERY COMPLIANCE OFFICE / STANDING NOTICE 2190-06. Posted at the carrier link, countersigned V. Sato-Ren.
+
+  1. Return actions on RAN-B:H8 proceed by window, not by request.
+  2. Proxy authority is delegated to the claim-tender in transit.
+  3. Cleanup orders attach to payload class, not to persons.
+  4. Packets received out of class are held pending review.
+
+The office issues no commands to licensees and has no need of any. Clause 4 is the whole instrument. It waits for a payload filed in the wrong class and then owns it, and clause 3 means the hold does not have to name anyone to work.
+
+The posted copy is a photocopy of a photocopy. The countersignature is a stamp.
 
 ## Scanner
 

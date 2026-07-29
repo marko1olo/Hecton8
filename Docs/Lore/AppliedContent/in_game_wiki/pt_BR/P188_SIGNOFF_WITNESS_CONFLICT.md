@@ -8,7 +8,7 @@ biome_tags: biome.worker_archive;biome.claim_admin
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Conflito entre Assinatura e Testemunha"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

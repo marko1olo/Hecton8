@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.cable_forest
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Реестр экологии"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.shallow_wreck
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Silt Drifter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -25,7 +25,7 @@ It feeds on what the current brings it, so the bend is a live intake at fifty to
 
 Startle it and it dumps the bottom into the water. A wide lamp will not cut that bloom, it will fill it. Drop to low beam, hold your bearing, and swim out of the lane rather than up.
 
-The furrow always bends anticlockwise around the intake. Nothing in the current accounts for the direction.
+The furrow bends anticlockwise around every screen from 6 to 11, including the two that pull the other way.
 
 Assessment: read the bend, then work the screen from outside the lane.
 

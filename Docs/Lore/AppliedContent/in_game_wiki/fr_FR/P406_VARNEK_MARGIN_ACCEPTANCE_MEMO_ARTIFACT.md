@@ -8,7 +8,7 @@ biome_tags: biome.archive_cache;biome.deep_reach_office
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Mémo Varnek sur la marge acceptée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

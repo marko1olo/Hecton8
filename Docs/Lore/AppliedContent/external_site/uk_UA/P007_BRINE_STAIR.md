@@ -8,7 +8,7 @@ biome_tags: biome.brine_stairs;biome.thermal_field
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Розсільні сходи"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

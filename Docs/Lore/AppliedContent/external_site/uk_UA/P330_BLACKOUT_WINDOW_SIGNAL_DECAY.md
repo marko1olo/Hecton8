@@ -8,7 +8,7 @@ biome_tags: biome.aegir;biome.comms
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Розпад сигналу у blackout window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

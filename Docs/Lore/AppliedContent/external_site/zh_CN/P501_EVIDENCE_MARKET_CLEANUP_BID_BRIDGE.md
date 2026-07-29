@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "证据清理竞价"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

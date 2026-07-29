@@ -8,7 +8,7 @@ biome_tags:
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Xenon-Omega 公共材料"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

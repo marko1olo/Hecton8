@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.black_keel_orbit
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pertanyaan Akhir: Penjualan TKP"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

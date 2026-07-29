@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_hab
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "압력 침상 루틴"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

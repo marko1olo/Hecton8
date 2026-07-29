@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas_maintenance
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas-6剧透封存文章"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

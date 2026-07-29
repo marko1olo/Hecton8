@@ -8,7 +8,7 @@ biome_tags: biome.safe_module;biome.claim_route
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "債務ブラックリスト契約圧"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

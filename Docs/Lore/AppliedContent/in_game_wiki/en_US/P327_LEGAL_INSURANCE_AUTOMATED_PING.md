@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.orbit
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Legal Insurance Automated Ping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,16 @@ localization_flags: 0
 
 # Legal Insurance Automated Ping
 
-Legal Insurance Automated Ping makes corporate pressure playable because it arrives as a useful, hateful little message. The system does not waste words asking if the player is alive. It asks for mass class, contamination state, coordinate proof, claim priority and receiver custody acceptance. That does two jobs at once. Mechanically, it tells the player what categories matter for recovery. Narratively, it shows the player where they stand in the rescue economy: life is not ignored, but it is not first in the queue. The ping should be rare enough to sting. If it repeats constantly, it becomes noise. If it arrives at route thresholds, after the player has risked themselves to carry evidence or sample payload, it becomes a clean corporate hand reaching through the radio to weigh the body before saving it.
+Ping received on the shelf relay at 04:11 local, form IP-90, no operator on the line.
+
+  BIOLOGICAL CLAIMANT STATUS: insufficient
+  REQUIRED BEFORE RECOVERY-WINDOW ASSIGNMENT: mass class, contamination state, coordinate proof, claim priority, receiver custody acceptance
+
+The message does not ask whether anyone is alive. It asks what is being carried, in what class, and who will accept custody of it at the top.
+
+Recovery-window assignment runs off mass and liability, so those five fields are the only ones that open a window.
+
+Answer them in the order printed. A ping answered out of order returns to the queue unassigned, and the next one is not scheduled.
 
 ## Scanner
 

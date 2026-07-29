@@ -8,7 +8,7 @@ biome_tags: biome.tide_gauge;biome.drowned_colony
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cadeia de Responsabilidade da Grande Maré"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

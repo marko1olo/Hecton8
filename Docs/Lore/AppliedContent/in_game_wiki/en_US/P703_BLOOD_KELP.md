@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.old_colony_ruins
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Blood Kelp"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -25,7 +25,7 @@ The amber emergency lens brings it up solid. It roots only on hard structure: a 
 
 Contact fires the photophores, edge first, travelling inward, never outward from the touch. It holds near ninety seconds, long enough to show anything at the rim where you entered.
 
-Stipes carry a diver's weight; a fouled harness will not tear free. Cut from the edge in; cutting from inside is how the four Bay 12 entanglements ended.
+Stipes carry a diver's weight; a fouled harness will not tear free. Cut from the edge in; cutting from inside is how the four Bay 17 entanglements ended.
 
 Yield: bioluminescent compound, heaviest in blades that have not discharged. The edge is always spent. Cut on the amber lens.
 
@@ -35,7 +35,7 @@ Anchored frond growth, dark pigment. Confidence 49 percent. Return sparse. Hazar
 
 ## Terminal
 
-HARVEST LOT 44-K-0774. CLASS: ILLUMINATION FEEDSTOCK, GRADE B. SITE: BAY 12 ROOF, 1,900 M. ENTANGLEMENT EVENTS: 4. CLASSIFICATION UNCHANGED: NON-HAZARD, VEGETATION. REVIEW: ASSET SILENCE BOARD, CLOSED.
+HARVEST LOT 44-K-0774. CLASS: ILLUMINATION FEEDSTOCK, GRADE B. SITE: BAY 17 ROOF, 1,900 M. ENTANGLEMENT EVENTS: 4. CLASSIFICATION UNCHANGED: NON-HAZARD, VEGETATION. REVIEW: ASSET SILENCE BOARD, CLOSED.
 
 ## Field Note
 

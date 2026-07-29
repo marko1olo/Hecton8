@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.brine_canyon
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "옛 절차 인식 신호"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

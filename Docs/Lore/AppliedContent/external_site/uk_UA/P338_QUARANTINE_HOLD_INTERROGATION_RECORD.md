@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.quarantine
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Протокол допиту в карантинному утриманні"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

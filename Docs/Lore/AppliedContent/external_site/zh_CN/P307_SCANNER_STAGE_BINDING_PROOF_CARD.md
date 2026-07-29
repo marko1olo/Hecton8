@@ -8,7 +8,7 @@ biome_tags: biome.scanner;biome.evidence
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ZH LOC HOLD: Scanner Stage Binding"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: uk_UA
 surface: external_site
 source_voice: Public Site Evidence Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Відсіки реєстраторів напірних кімнат"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

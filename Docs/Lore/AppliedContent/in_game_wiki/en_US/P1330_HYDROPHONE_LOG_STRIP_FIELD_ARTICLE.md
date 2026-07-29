@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: en_US
 surface: in_game_wiki
 source_voice: PDA Forensic Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Hydrophone Log Strips"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,13 +19,18 @@ localization_flags: 0
 
 # Hydrophone Log Strips
 
-Hydrophone log strips are not voice diaries. They are maintenance receipts that learned to sound like ghosts.
+STRIP HL-2207, recorder bay 4, pump room B-17. Ceramic-fibre tape, 41 mm, pressure ink legible.
 
-        Every pressure room in the older colony modules kept a narrow ceramic-fiber strip beside its hydrophone recorder. The strip was cheap, dumb and hard to corrupt. It listened through the wall: pump rhythm, door teeth, boot impacts, wrench taps, hull groan, breath inside helmets, and the low animal shudder of a room deciding whether to stay sealed. When the network went down, the strip still moved. That is why so many strips survived and so many official packets did not.
+  NOTARY EDGE ..... HL-2207 / BAY 4 / LADDER 04:00-08:00 / NO SPLICE
+  PUMP 3 STROKE ... continuous to 07:41
+  FILED SHUTDOWN .. 07:00
+  LOCK IMPACT ..... 06:04, single, hinge side
 
-        A strip is read in layers. First comes the pressure ink: slopes, dips, sudden teeth where a lock bit against its frame. Then the acoustic comb: repeating machine notes, missing pump strokes, a voice shape too blurred for words. Then the notary edge: serial, bay stamp, time ladder, splice marks. A player should never treat the recovered sound alone as truth. The strip has to agree with the room.
+A strip is a maintenance receipt, not a diary. It listened through the wall: pump rhythm, door teeth, boot impacts, wrench taps, hull groan, breath shapes inside helmets. Cheap, hard to corrupt, and still moving after the network stopped, which is why strips come up from rooms whose packets do not.
 
-        Good hydrophone evidence changes a route. It can show that a door opened before a permission stamp existed, that a pump kept working after a death time was filed, that a black-box clip was cleaned, or that someone stood in the room while the official log claimed remote operation. The strip does not accuse dramatically. It keeps pressure marks until someone learns to read them.
+Three layers, in order: pressure ink, acoustic comb, notary edge. A recovered sound file with no strip wear behind it carries nothing.
+
+Pump 3 ran forty-one minutes past its own filed shutdown. The route stamp covering the 06:04 impact is dated 06:10.
 
 ## Scanner
 

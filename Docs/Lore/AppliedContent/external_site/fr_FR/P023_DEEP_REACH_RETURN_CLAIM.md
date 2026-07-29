@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.deep_relay
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Réclamation Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

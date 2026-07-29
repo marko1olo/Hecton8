@@ -8,7 +8,7 @@ biome_tags:
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Presión del libro público de Tau Ceti"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

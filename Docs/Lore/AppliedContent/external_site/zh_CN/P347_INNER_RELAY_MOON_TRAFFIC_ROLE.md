@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.system
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Vela 内侧中继交通角色"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

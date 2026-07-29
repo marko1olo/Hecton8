@@ -8,7 +8,7 @@ biome_tags: biome.aegir_orbital_pressure;biome.surface_storm
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Storm Window Risk Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

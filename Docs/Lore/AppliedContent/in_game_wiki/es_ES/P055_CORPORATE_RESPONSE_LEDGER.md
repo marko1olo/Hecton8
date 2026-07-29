@@ -8,7 +8,7 @@ biome_tags: biome.corporate_wreck;biome.return_route
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ledger de respuesta corporativa"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

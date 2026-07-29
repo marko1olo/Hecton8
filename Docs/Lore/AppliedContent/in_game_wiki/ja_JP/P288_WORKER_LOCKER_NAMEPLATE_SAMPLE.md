@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.worker
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "作業員ロッカー銘板サンプル"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.aegir;biome.comms
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Dégradation du signal en fenêtre noire"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

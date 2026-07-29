@@ -8,7 +8,7 @@ biome_tags: biome.deep_reach_archive;biome.claim_admin
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Deep Reach净化包转录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

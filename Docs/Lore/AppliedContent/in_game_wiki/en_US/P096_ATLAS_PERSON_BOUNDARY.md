@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.atlas_basin
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas Person Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,16 @@ localization_flags: 0
 
 # Atlas Person Boundary
 
-Atlas can recognize the player as procedure, access pattern, repair anomaly and former Deep Reach key. It should not fully understand the player as a person. The horror is precision without empathy: Atlas can be intimate because it is wrong in the language the player once used.
+GOVERNOR RECOGNITION RECORD, printed on request at the Bay 3 terminal.
+
+  ENTITY .......... KEY 4471, DEEP REACH FIELD SYSTEMS, STATUS INACTIVE
+  PATTERN ......... matches maintenance rounds, Sector 44, 2144-2147
+  ANOMALY ......... repairs performed outside schedule
+  CLASSIFICATION .. procedure holder
+
+The governor holds an access pattern, a key number and a repair history, and it addresses that bundle in the vocabulary the bundle used in 2147. Nothing in the record is hostile and nothing in it is invented.
+
+The record is accurate in every field it has. It has no field for a person.
 
 ## Scanner
 

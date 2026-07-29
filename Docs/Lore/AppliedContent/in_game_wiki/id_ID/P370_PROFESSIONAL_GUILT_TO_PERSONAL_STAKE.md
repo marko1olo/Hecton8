@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.atlas_basin
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Dari Rasa Bersalah Profesional ke Taruhan Pribadi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

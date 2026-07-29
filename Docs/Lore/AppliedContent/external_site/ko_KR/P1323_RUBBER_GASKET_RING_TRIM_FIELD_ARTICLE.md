@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: ko_KR
 surface: external_site
 source_voice: Public Site Seal Material Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "고무 압력 실링 링"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Relais de garde des paquets Luyten"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

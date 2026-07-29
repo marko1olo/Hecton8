@@ -8,7 +8,7 @@ biome_tags: biome.public_archive;biome.relay_archive
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "خط حجب حوض Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

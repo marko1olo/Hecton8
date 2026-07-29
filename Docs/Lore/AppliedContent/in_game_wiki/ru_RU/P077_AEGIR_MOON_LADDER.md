@@ -8,7 +8,7 @@ biome_tags: biome.orbital_window;biome.relay_spine
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Лунная лестница Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

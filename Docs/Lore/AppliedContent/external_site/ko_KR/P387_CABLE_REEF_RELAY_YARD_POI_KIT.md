@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.industrial_shelf
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "케이블 리프 중계 야드 증거 키트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

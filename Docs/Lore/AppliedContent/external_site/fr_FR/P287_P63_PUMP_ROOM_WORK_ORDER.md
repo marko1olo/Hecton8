@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.work_order
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ordre de travail salle des pompes P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

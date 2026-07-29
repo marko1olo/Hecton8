@@ -8,7 +8,7 @@ biome_tags: biome.service_canyon;biome.cable_reef
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Simbiose de recife de cabos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

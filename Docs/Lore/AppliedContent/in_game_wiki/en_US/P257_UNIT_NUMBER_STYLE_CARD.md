@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.hard_scifi_ui
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Unit And Number Style Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

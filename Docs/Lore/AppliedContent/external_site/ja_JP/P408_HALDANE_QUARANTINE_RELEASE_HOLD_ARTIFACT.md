@@ -8,7 +8,7 @@ biome_tags: biome.evacuation_queue;biome.quarantine_gate
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ハルデイン隔離解除保留"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.service_canyon
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "중계 보관 부채 사슬"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

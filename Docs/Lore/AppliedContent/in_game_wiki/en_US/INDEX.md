@@ -4,7 +4,7 @@ surface: in_game_wiki
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
-localized_pages: 594
+localized_pages: 618
 draft_machine_or_llm_pages: 0
 draft_marker_pages: 0
 ---
@@ -605,5 +605,29 @@ draft_marker_pages: 0
 - [Scrubber Allocation Sheet, Shift Office 3](P708_PAD_OXYGEN_PRODUCTIVITY.md) `P708_PAD_OXYGEN_PRODUCTIVITY`
 - [Depth Band Bonus Schedule](P708_PAD_PRESSURE_BONUS.md) `P708_PAD_PRESSURE_BONUS`
 - [Public Statement, Draft 6](P708_PAD_PR_DRAFT_LANGUAGE.md) `P708_PAD_PR_DRAFT_LANGUAGE`
+- [Two Accounts of the Crown Pin](P710_CROWN_PIN_ACCOUNTS.md) `P710_CROWN_PIN_ACCOUNTS`
+- [Bottle Rack, Foundry Floor](P710_FOUNDRY_BOTTLE_RACK.md) `P710_FOUNDRY_BOTTLE_RACK`
+- [Claim Tag 44-C-0771, Filled Ahead](P710_FOUNDRY_CLAIM_TAG.md) `P710_FOUNDRY_CLAIM_TAG`
+- [Return Line, Two Stages](P710_FOUNDRY_RETURN_LINE.md) `P710_FOUNDRY_RETURN_LINE`
+- [Route Mark 7, Corrected Twice](P710_ROUTE_MARK_SEVEN.md) `P710_ROUTE_MARK_SEVEN`
+- [Crew Plate, Shelf Camp 186](P710_SHELF_CREW_PLATE.md) `P710_SHELF_CREW_PLATE`
+- [Tool Board, Shelf Camp 186](P710_SHELF_TOOL_BOARD.md) `P710_SHELF_TOOL_BOARD`
+- [Window Settlement Worksheet WS-11](P710_WINDOW_SETTLEMENT_WS11.md) `P710_WINDOW_SETTLEMENT_WS11`
+- [Procedure AD-4, Attention Discipline](P711_PAD_ATTENTION_DISCIPLINE.md) `P711_PAD_ATTENTION_DISCIPLINE`
+- [Receiver Handshake Schedule RH-4](P711_PAD_HANDSHAKE_WINDOWS.md) `P711_PAD_HANDSHAKE_WINDOWS`
+- [Intake Form MC-2, Bed 4](P711_PAD_INTAKE_CATEGORY_OTHER.md) `P711_PAD_INTAKE_CATEGORY_OTHER`
+- [Packet Notary Receipt 44-EV-0006](P711_PAD_NOTARY_RECEIPT.md) `P711_PAD_NOTARY_RECEIPT`
+- [Quarantine Hold Record 44-1188](P711_PAD_QUARANTINE_HOLD.md) `P711_PAD_QUARANTINE_HOLD`
+- [Shift Roster 44-C, Shift 3](P711_PAD_ROSTER_DOUBLE_ENTRY.md) `P711_PAD_ROSTER_DOUBLE_ENTRY`
+- [Silence Directive AS-19](P711_PAD_SILENCE_DIRECTIVE.md) `P711_PAD_SILENCE_DIRECTIVE`
+- [Recertification Invoice TC-3390](P711_PAD_TOOL_RECERT_INVOICE.md) `P711_PAD_TOOL_RECERT_INVOICE`
+- [Ground Spanner, Filter Plant 3](P712_GROUND_SPANNER_FILTER_PLANT.md) `P712_GROUND_SPANNER_FILTER_PLANT`
+- [Handover Notes, Section 11 Board](P712_HANDOVER_SECTION_ELEVEN.md) `P712_HANDOVER_SECTION_ELEVEN`
+- [Job Card 4411, Crib 4](P712_JOB_CARD_TOOL_STILL_OUT.md) `P712_JOB_CARD_TOOL_STILL_OUT`
+- [Locker 44-C-17, Crown Muster Row](P712_LOCKER_ROSTER_ARGUMENT.md) `P712_LOCKER_ROSTER_ARGUMENT`
+- [Proof Weight PW-9, Crown Hoist Deck](P712_PROOF_WEIGHT_PW9.md) `P712_PROOF_WEIGHT_PW9`
+- [Route Permission Slip RP-2209](P712_ROUTE_SLIP_GALLERY_NINE.md) `P712_ROUTE_SLIP_GALLERY_NINE`
+- [Tape Seal, Gland Collar G-77](P712_TAPE_SEAL_G77.md) `P712_TAPE_SEAL_G77`
+- [Triage Ledger Page, Medical Post 2](P712_TRIAGE_LEDGER_CATEGORY_FOUR.md) `P712_TRIAGE_LEDGER_CATEGORY_FOUR`
 
 <!-- Generated localized index for in_game_wiki/en_US. -->

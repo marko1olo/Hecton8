@@ -8,7 +8,7 @@ biome_tags: biome.medical_lock;biome.repair_fauna
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "アヤ・モリタの修復医療"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

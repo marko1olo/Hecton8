@@ -8,7 +8,7 @@ biome_tags: biome.resource_tables;biome.brine_canyon
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Черновые строки ценности добычи ресурсов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

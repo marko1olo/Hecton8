@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.deep_reach
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "被遮蔽的 Deep Reach 受益条款"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.industrial_shelf
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Trace de Langage d'Accès Révoqué"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

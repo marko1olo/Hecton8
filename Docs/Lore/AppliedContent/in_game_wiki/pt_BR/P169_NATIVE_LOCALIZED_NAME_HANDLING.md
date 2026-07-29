@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.shallow_annex
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Protocolo de localização nativa de nomes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

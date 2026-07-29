@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive;biome.service_canyon
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Calcul de transit sans FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

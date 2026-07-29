@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.atlas
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "שבר כניסה למפעל-מקדש"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

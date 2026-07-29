@@ -8,7 +8,7 @@ biome_tags: biome.relay_spine;biome.drowned_comms
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Custodia de paquetes de Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

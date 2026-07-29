@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: uk_UA
 surface: external_site
 source_voice: Public Lore Atlas Evidence Note
-spoiler_tier: 0
+spoiler_tier: 
 title: "Відсутня позначка повернення і переведення в претензію"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.relay_spine;biome.claim_admin
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Підписи Packet Notary Interface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.open_deep_water
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "עקבת גוף סינון רחב"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

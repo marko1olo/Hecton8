@@ -8,7 +8,7 @@ biome_tags: biome.p63_shallows;biome.brine_canyon
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "압력복 서비스 등급"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

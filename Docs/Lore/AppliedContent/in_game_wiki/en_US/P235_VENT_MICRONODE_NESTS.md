@@ -8,7 +8,7 @@ biome_tags: biome.thermal_vent;biome.atlas_basin
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Vent Micronode Nests"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,9 +19,18 @@ localization_flags: 0
 
 # Vent Micronode Nests
 
-Vent micronode nests explain how Atlas remains active without becoming an omnipotent villain computer. Deep near the vents, small maintenance nodes harvest heat gradients, minerals and vibration. Each one can push a weak pulse into nearby biofilm, shell sealant, tagged fauna or damaged metal. None of them controls the whole colony. Together they keep repair behavior alive after the clean grid is gone.
+Power trace card VM-3, vent margin at 4,600 metres, node cluster on the warm side.
 
-This makes the final biome feel grown rather than simply built. A node can wake a patch, feed a relay organ, harden shell over a crack or keep a false diagnostic alive. It can also make mistakes locally, repeating a repair pattern because pressure improved once, even if a route became unreadable. For the player, a micronode nest is power source, hazard, clue and possible target. Break one and a room may go quiet. Leave it alone and Atlas keeps whispering through the materials.
+  NODE COUNT IN CLUSTER: 14
+  SOURCE: thermal gradient across the vent margin
+  OUTPUT: weak acoustic pulse into shell sealant, biofilm and tagged metal
+  COMMAND CERTAINTY: low; node autonomy local
+
+Each node draws enough from the gradient to push a repair pulse into whatever is adjacent, which is how maintenance keeps running with the colony grid gone.
+
+A cluster will also re-run a repair pattern because pressure improved once, long after the route it was patching became unreadable.
+
+Break one and the nearby patch goes quiet. The cluster re-seeds from the warm side, so a broken node is a delay, not a shutdown.
 
 ## Scanner
 

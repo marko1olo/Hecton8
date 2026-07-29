@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.deep_launch_route
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black Keel Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,9 +19,17 @@ localization_flags: 0
 
 # Black Keel Ledger
 
-Black Keel is the player's orbital lifeline, but it is not the player's ship. Publicly, it belongs to the Aegir Reclamation Pool. Legally, Keelmark Mutual wraps it in insurance custody, debt accounting and recovery exposure. Secretly, older Deep Reach priority hooks can still bend payload order, quarantine language and route certificate handling.
+Ledger extract, Black Keel claim-tender, custody page 3.
 
-The ledger is cold because it is practical. A living body, a sealed evidence core, a contaminated blue-debt sample, a pressure-rated tool crate and a recoverable hull cut can all compete for the same tonne-window. Black Keel may guide the player because guidance protects value. It may delay pickup because delay protects value too. It may preserve a truth packet while refusing to make that truth public. The right way to use Black Keel is to treat every helpful sentence as a contract line with a pump running in the background.
+  REGISTERED OWNER: Aegir Reclamation Pool
+  INSURER: Keelmark Mutual
+  ACTIVE LIEN ON THIS BERTH: 4.8 tonne-window
+
+The carrier is a tender against a claim pool, not a ride. Guidance and pickup are both entries on the same sheet, and the sheet ranks a living body against a sealed evidence core, a blue-debt sample, a tool crate and a hull cut for one window.
+
+A masked Deep Reach priority hook sits under the payload order. It does not appear on the manifest page. It appears when quarantine language or a route certificate is rewritten between request and lift.
+
+Delay is a line item here. Treat every helpful transmission as one and log the timestamp.
 
 ## Scanner
 

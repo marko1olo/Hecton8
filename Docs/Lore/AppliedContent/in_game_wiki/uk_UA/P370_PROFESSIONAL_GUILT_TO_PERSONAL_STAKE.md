@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.atlas_basin
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Від професійної провини до особистої ставки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

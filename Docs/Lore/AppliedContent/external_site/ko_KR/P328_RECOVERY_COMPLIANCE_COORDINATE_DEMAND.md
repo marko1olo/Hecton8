@@ -8,7 +8,7 @@ biome_tags: biome.deep_reach;biome.contract
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "회수 준수 좌표 요구"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

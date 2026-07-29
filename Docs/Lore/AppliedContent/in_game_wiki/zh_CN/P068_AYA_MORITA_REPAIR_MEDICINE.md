@@ -8,7 +8,7 @@ biome_tags: biome.medical_lock;biome.repair_fauna
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "森田绫修复医学"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

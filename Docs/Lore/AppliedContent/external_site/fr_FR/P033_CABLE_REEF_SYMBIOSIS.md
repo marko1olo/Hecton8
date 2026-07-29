@@ -8,7 +8,7 @@ biome_tags: biome.service_canyon;biome.cable_reef
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Symbiose de récif-câble"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "عدة أدلة الملحق الضحل P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

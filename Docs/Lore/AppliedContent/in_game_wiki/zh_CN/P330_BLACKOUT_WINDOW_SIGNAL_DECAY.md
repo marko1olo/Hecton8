@@ -8,7 +8,7 @@ biome_tags: biome.aegir;biome.comms
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "断联窗口信号衰减"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

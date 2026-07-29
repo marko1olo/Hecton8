@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.ocean
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Peran Pasang Orbit Tengah HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

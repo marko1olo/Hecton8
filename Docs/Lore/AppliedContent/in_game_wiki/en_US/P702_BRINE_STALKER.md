@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Brine Stalker"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -21,7 +21,7 @@ localization_flags: 0
 
 It hunts along the brine boundary because the boundary lies for it.
 
-Sound bends at a density interface. A stalker riding that line returns to sonar at two depths at once, and the cleaner return is usually the false one. Station 88 was logged twice at two depths for the same reason. The animal did not invent the trick, but it uses the layer the way a Marauder uses a wreck.
+Sound bends at a density interface. A stalker riding it returns to sonar at two depths at once, and the cleaner return is usually the false one. Station 88 was logged twice for the same reason. It uses the layer the way a Marauder uses a wreck.
 
 It tests before it commits. The first pass is at distance, off your shoulder, to learn whether you turn. Turn and face it and the pass ends. Keep swimming and the second approach is not a pass.
 

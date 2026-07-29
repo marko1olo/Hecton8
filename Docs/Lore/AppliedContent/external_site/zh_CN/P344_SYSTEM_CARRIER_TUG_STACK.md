@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.contract
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "系统载体拖船栈"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

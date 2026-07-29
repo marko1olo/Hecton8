@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.brine_canyon
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "إشارة التعرف على الإجراء القديم"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.resource_tables;biome.claim_admin
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ID LOC HOLD: Stack Limit Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

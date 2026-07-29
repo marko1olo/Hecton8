@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.service_canyons
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "中继脊柱"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

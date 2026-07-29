@@ -8,7 +8,7 @@ biome_tags: biome.relay_spine;biome.surface_relay
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Obecne okna Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

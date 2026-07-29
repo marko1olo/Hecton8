@@ -8,7 +8,7 @@ biome_tags: biome.service_corridor;biome.machine_trench
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "تجميع سلسلة الهروب"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

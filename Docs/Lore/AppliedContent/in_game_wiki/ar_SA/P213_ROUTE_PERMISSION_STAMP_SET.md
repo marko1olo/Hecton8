@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "مجموعة أختام تصريح المسار"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

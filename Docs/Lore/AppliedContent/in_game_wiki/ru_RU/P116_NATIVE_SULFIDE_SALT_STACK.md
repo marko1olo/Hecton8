@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.vent_forge
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Самородная сульфидно-соляная гряда"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

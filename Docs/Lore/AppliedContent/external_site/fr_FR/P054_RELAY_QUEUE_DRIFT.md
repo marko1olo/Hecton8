@@ -8,7 +8,7 @@ biome_tags: biome.surface_relay;biome.storm_shelf
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Derive de relay queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

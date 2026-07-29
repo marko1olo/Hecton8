@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.medical_bay
 locale: ar_SA
 surface: external_site
 source_voice: Public Site Colony Evidence Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "سجلات الفرز المؤجل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

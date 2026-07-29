@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.photic_shelf
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Leben des Lichtschelfs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

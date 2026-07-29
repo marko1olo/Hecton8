@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.service_canyon
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Drukladder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

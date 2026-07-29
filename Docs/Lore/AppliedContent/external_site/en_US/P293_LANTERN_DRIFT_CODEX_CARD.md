@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.light
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Lantern Drift Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Lantern Drift Codex Card
 
-Lantern drift bloom keeps HECTON-8 beauty from becoming wallpaper. It can guide the player through clear glowing structure, then betray them by recording noise, panic, and storm charge. Bright water is navigation and exposure at the same time.
+Lantern drift bloom is a bioluminescent plankton band that outlines current and debris in quiet shelf water. The same cells record disturbance: tool noise or a panicked thruster turns the bloom into a lit wake behind the operator.
 
 ## Scanner
 

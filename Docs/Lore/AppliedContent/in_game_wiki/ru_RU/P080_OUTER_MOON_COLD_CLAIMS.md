@@ -8,7 +8,7 @@ biome_tags: biome.orbital_window;biome.dead_claim_cache
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Холодные claims внешних лун"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

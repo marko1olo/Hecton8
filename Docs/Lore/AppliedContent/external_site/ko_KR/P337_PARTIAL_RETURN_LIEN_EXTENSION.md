@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.replay
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "부분 귀환 유치권 연장"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

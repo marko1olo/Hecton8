@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Storm-Bent Relay Mast Ledger
 
-The relay mast is one of HECTON-8's cleanest pieces of world logic. It gives the player a thing to fix, a visible direction to the sky, and a cruel result: better contact without guaranteed rescue. That result is not a trick. It is the core difference between being heard and being recoverable.
+A relay mast is local infrastructure. It knows Aegir azimuth, old relay timing, weather noise and packet confidence. It does not own carrier priorities, quarantine receivers, custody law or lift mass.
 
-In fiction terms, the mast is local infrastructure. It knows Aegir azimuth, old relay timing, weather noise and packet confidence. It does not own carrier priorities, quarantine receivers, custody law or lift mass. Repair can make a message less broken, but it cannot force Black Keel to spend an ascent opportunity.
+That is why repairing one produces a specific and limited result. Bracing the root, cleaning a contact pad and correcting the azimuth can move packet confidence from 27 to 64 percent and restore a Black Keel handshake. The same diagnostic that records the improvement records the limit: carrier acknowledgement possible, body recovery still gated by sky window, custody confidence, quarantine receiver and allocated lift mass.
 
-That makes the first packet choice matter. A weak window turns every line into cargo: proof, body, sample, debt, coordinates, apology. The mast is the tool that lets the player send something into the system. The horror is that the system may answer clearly.
+The masts standing on HECTON-8 are storm-bent, salted at the hinge and cracked through the ceramic bushings, and most still hold Aegir azimuth because somebody retightened them after every storm up to 2147. A braced mast buys about one packet before the next storm band crosses the relay, which makes the choice of payload the entire decision.
 
 <!-- External Site; generated from P1426_STORM_BENT_RELAY_MAST_LEDGER/en_US. -->

@@ -8,7 +8,7 @@ biome_tags: biome.photic_shallows;biome.first_route_shelf
 locale: es_ES
 surface: in_game_wiki
 source_voice: PDA Limestone Shelf Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Plataforma fótica de escombro calizo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

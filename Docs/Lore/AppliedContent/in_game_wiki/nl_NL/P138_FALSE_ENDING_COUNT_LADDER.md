@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ladder van valse eindes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.safe_module
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "避難キュー遅延記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

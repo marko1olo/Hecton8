@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.repair_ecology
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Mastic biofibre Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

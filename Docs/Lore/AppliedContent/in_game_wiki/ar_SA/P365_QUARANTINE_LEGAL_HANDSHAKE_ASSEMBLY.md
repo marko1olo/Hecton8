@@ -8,7 +8,7 @@ biome_tags: biome.safe_module;biome.abyssal_machine_field
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "مجموعة المصافحة القانونية للحجر"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.thermal_fields
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Throat 12, Forty Metres Downstream"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -23,7 +23,7 @@ Vent heat in the Thermal Fields travels sideways before it travels up.
 
 A cold bottom set runs across the throats between four and five thousand metres and shears the plume over, so the hot water is not above the hole, it is downstream of the hole, held at working depth in a band forty to sixty metres across. Nothing above the throat reads warm. The suit overlay resolves the band about nine seconds late, and at swim speed nine seconds is most of the crossing.
 
-The band keeps its shape for hours after the throat goes quiet. Nobody has explained that.
+The band keeps its shape for hours after the throat goes quiet.
 
 Assessment: cross a vent field upstream into the cold set even when it costs the shortcut. Outer plate above sixty means look at the gloves before looking at the display.
 
@@ -45,7 +45,9 @@ Overlay is nine seconds behind me. Nine seconds is the crossing.
 
 Cross a vent field upstream. Upstream, into the cold, every time, even if it costs you the run.
 
-My left glove has gone stiff. I am not going to look at it yet. Log --
+My left glove has gone stiff. I am not going to look at it yet.
+
+[RECORDER] CASE TEMPERATURE ABOVE LIMIT. WRITE PROTECT ENGAGED. CHANNEL CLOSED AT 38 SECONDS.
 
 ## Field Note
 

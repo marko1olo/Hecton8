@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.aegir_orbital_pressure
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Aegir System Public Primer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,15 @@ localization_flags: 0
 
 # Aegir System Public Primer
 
-Aegir gives HECTON-8 its practical shape. The system is not a painted skybox around a story; it is the reason routes open, close, delay, and cost too much. HECTON-8 moves inside a ladder of moons, tides, radiation windows, carrier transfer orbits, and relay angles. A message can leave before a rescue craft can enter. A claim can be priced before a human extraction stack can be staged. Black Keel can answer because signal is cheap compared with moving shielded mass. That does not make Aegir empty or unreachable. It makes it industrial: schedules, fuel margins, quarantine language, moon shadows, ocean tides, and orbital custody all pressing down on a single diver. Public Aegir text should keep the science hard and the drama practical. The system works. That is why abandonment can be procedural instead of silent.
+AEGIR ROUTE PRIMER, sheet 2. Moon ladder and window economics.
+
+  H1 Skarn / H2 Vela / H3 Claw / H4 Lumen / H5 Thorne / H6 Anvil / H7 Kestrel / H8 HECTON / H9 Mute
+
+The ladder sets tides, approach windows, radiation weather and relay shadow at H8. Nothing in the system is unreachable. Everything in it is scheduled.
+
+The cost asymmetry is the operative fact. Signal is cheap and shielded mass is expensive, so a message clears a window that a recovery craft cannot. A claim can be priced from orbit before an extraction stack exists on paper. Black Keel answers because answering costs almost nothing.
+
+Aegir is neither empty nor silent. It is a working system of fuel margins, quarantine language, moon shadows and orbital custody, all of it resolving onto one diver at a time. Abandonment here is procedural rather than accidental.
 
 ## Scanner
 

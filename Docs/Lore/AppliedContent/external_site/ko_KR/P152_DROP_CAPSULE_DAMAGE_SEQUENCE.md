@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.photic_shelf
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "투하 캡슐 손상 순서"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.black_keel_orbit
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "最终问题：出售犯罪现场"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

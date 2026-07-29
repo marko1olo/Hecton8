@@ -8,7 +8,7 @@ biome_tags: biome.escape_chain;biome.authoring
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "上升配方成本行"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

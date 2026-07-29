@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.cable_reef
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Eerste Atlas-Reparatiespoor"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

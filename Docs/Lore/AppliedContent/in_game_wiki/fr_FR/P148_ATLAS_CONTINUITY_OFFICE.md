@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.abyssal_machine_field
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Office de continuité Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_slope;biome.repair_ecology
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Fauna abisal reparada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

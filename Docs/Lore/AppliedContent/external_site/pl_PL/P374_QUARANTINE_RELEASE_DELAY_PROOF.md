@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.abyssal_machine_field
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Wstrzymanie zwolnienia kwarantanny"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

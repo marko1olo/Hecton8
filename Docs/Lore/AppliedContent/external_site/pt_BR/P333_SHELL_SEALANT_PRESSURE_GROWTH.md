@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.pressure
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Crescimento de selante de concha pressurizada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

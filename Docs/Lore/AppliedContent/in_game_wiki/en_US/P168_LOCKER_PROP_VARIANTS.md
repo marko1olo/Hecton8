@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Locker Evidence Variants"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,11 +19,17 @@ localization_flags: 0
 
 # Locker Evidence Variants
 
-A locker in HECTON-8 should not be a sentimental prop pile. It is a small pressure-room archive: what a worker touched, what they were allowed to carry, what they hid from the shift lead, and what another Marauder later considered worth correcting.
+Locker set LK-6, B-shift row, Module 3, six units opened.
 
-Useful locker variants speak through combinations. Pressure tape beside a glove points to leak work. A worn gasket kept with personal tools says the worker handled doors often enough to stop trusting spares. A meal-credit strip beside route chalk says the person still expected a next shift. A medlock denial slip changes the room from clutter into evidence: somebody was told to keep working after the body had already become a cost problem.
+  UNIT 4: pressure tape beside a glove, gasket kept with personal tools
+  UNIT 5: meal-credit strip, route chalk, tool-crib token 118
+  UNIT 6: medlock denial slip, dated after the last shift board entry
 
-For gameplay, the locker is a seedable human trace. Contents can vary by run without changing the larger canon. The rule is stable: read before looting. If the player strips the token, gasket and note as generic scrap, the room loses the grammar that made a worker present without a cutscene.
+The combinations carry the reading, not the objects. Tape beside a glove is leak work. A worn gasket kept with personal tools means the doors were handled often enough to stop trusting spares.
+
+The denial slip in Unit 6 turns the row from clutter into evidence: somebody was told to keep working after the body had become a cost line.
+
+Record the arrangement before taking the token, gasket or note. Sorted into scrap they price out at nothing.
 
 ## Scanner
 

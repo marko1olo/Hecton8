@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Мара Венн, начальница насосной"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

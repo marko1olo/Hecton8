@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.ocean
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "淹没地壳层指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

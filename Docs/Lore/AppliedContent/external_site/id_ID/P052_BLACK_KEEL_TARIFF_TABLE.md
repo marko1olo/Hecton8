@@ -8,7 +8,7 @@ biome_tags: biome.corporate_wreck;biome.salvage_route
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tabel Tarif Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

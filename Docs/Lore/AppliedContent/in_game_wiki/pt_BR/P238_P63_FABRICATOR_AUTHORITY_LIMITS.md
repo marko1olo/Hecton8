@@ -8,7 +8,7 @@ biome_tags: biome.p63_shallows;biome.industrial_shelf
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Limites de autoridade do fabricador P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

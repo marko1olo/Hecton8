@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories;biome.brine_canyon
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Depth Band Bonus Schedule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -21,7 +21,7 @@ localization_flags: 0
 
 Schedule DB-3 pays thirty-one percent more for working to 1400 metres, and the supplement is described as voluntary and elected by the worker.
 
-At 1400 metres the water reads 14 MPa. The word voluntary is accurate and it is the whole trick: nobody was ordered deeper, so nobody has to be accounted for going deeper.
+At 1400 metres the water reads 14 MPa. The word voluntary is accurate: nobody was ordered deeper, so nobody has to be accounted for going deeper.
 
 Beside the printed bands somebody kept a grease-pencil tally of elected Band C shifts. The marks run in blocks of five and there are far more than ninety before the next review mark appears.
 

@@ -8,7 +8,7 @@ biome_tags: biome.deep_abyss
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Six Returns, No Range"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -45,9 +45,9 @@ It is not noise. One arc second of scatter across all six.
 
 The gate is throwing the range out as out of parameter and keeping the bearing. It knows where. It will not say how far.
 
-Bearing has walked four degrees in eleven minutes and I have been swimming the whole time. It is holding on me.
+Bearing has walked four degrees in eleven minutes and I have been swimming the whole time. Two hundred metres of my own travel for four degrees of drift. It is holding on me.
 
-Killing the active set. Rook, get somebody onto the extent limit on a Mark 9, the top end of the --
+Killing the active set. Depth change, not heading. Rook, the extent limit on a Mark 9 is a number somebody chose, and I want that number before anybody crosses here again.
 
 ## Field Note
 

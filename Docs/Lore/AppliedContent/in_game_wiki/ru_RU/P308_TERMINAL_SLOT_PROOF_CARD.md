@@ -8,7 +8,7 @@ biome_tags: biome.terminal;biome.localization
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "RU LOC HOLD: Terminal Slot Chain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

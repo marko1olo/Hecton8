@@ -8,7 +8,7 @@ biome_tags: biome.colony_infrastructure;biome.codex
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "工人档案音频转录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

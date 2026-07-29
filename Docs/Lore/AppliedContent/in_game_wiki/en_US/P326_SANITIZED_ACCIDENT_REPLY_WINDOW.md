@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.deep_reach
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Sanitized Accident Reply Window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

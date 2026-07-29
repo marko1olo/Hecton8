@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.hardware
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Autonomielimieten van de salvage carrier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

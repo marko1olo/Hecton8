@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.ocean
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Польовий довідник затоплених пластів кори"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

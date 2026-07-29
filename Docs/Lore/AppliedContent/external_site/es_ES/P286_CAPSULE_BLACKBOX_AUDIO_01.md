@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.capsule
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Audio de caja negra de cápsula 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

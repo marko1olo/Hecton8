@@ -19,13 +19,18 @@ localization_flags: 0
 
 # Claim Window Rescue Delay Ledger
 
-The ledger is ugly because it looks helpful. It carries Black Keel's recovery channel stamp, Keelmark Mutual's mass-window table and the small green authorization mark that makes a desperate person read the first line twice. The channel is open. The carrier can hear a packet. The contract recognizes a living contractor. None of those lines promise that a hull is coming through the water.
+Claim window slate CW-3, Keelmark recovery desk, salt under the laminate.
 
-Aegir claim law separates contact from recovery. Contact is a signal and can move through the local relay when sky, ocean and carrier queue allow it. Recovery is mass. A pressure body needs a sealed ascent path, a rated charge, guidance timing, quarantine clearance and a receiver willing to inherit whatever the survivor brings back. Every kilogram through that window competes with sample custody, spare hardware, insurance exposure and Deep Reach clauses already sitting in the queue.
+  WINDOW CLASS: conditional mass return
+  AUTHORISES: message custody
+  DOES NOT AUTHORISE: body recovery
+  BLANK FIELDS: pressure seal, ascent charge, quarantine handshake, receiver rights
 
-This is why the first Black Keel answer feels obscene. The machine may be useful. It may even be technically honest. It can open a channel, price the return and list what is missing faster than it can save anyone. Keelmark does not need to hate the player. It only has to ask the old question in the old order: what mass returns, under whose seal, with which contamination class, and who pays if the recovered body carries evidence instead of cargo?
+Aegir claim law separates contact from recovery. Contact is a signal and moves through the local relay when sky, ocean and carrier queue allow. Recovery is mass: a sealed ascent path, a rated charge, guidance timing, quarantine clearance and a receiver willing to inherit the payload.
 
-A Marauder reads the ledger as a work order. Build the relay spine. Certify the clamp rings. Find ascent energy that will not shatter under pressure. Obtain a quarantine/legal handshake. Decide whether the payload is coordinates, proof, Atlas continuity, public ledger material or silence. Rescue is not absent from HECTON-8. It is itemized, delayed and waiting for the player to become cheap enough, useful enough or dangerous enough to move.
+Every kilogram through that window competes with sample custody, spare hardware, insurance exposure and Deep Reach clauses already in the queue.
+
+Read the slate as a work order. The four blank fields are the build list, and rescue language stays prohibited until mass is allocated.
 
 ## Scanner
 

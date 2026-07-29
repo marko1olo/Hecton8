@@ -8,7 +8,7 @@ biome_tags: biome.aegir_orbital_pressure;biome.surface_storm
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "JP LOC HOLD: Storm Window Risk Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

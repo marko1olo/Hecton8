@@ -8,7 +8,7 @@ biome_tags: biome.vent_forge;biome.atlas_basin
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Thermal Tubeworm"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -39,7 +39,7 @@ SAMPLE LOT 44-T-4830. DEPTH 4,830 M. CLASS: SENSOR HOST, SERVICEABLE. RECOVERY: 
 
 ## Audio
 
--- gauge is up again. Twenty-two, twenty-two point four. It has been climbing since I came over the rim and nothing climbs down here. Tender, log the raw cell and not the display, log the --
+-- gauge is up again. Twenty-two, twenty-two point four. Correction, twenty-three even. It has been climbing since I came over the rim and nothing climbs down here. Tender, log twenty-two point four. Log the raw cell, not the display. I am stopping the tape.
 
 ## Field Note
 

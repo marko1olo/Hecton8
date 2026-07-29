@@ -8,7 +8,7 @@ biome_tags: biome.marauder;biome.evidence
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Échantillon de correction maraudeuse"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

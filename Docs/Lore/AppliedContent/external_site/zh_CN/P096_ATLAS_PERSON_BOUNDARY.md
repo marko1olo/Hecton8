@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.atlas_basin
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas 人格边界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

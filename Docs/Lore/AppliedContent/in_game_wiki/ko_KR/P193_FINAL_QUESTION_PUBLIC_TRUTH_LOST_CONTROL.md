@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.public_archive
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "최종 질문: 공개 장부, 잃어버린 통제"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.black_keel_link
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ventana de ruta Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

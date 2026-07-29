@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Rib Survey, Frames 22 to 29"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

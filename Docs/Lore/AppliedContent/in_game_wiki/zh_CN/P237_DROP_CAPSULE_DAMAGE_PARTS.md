@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.p63_shallows
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "降落舱损坏部件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

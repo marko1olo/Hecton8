@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.human_space
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Demora de ruta sin FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

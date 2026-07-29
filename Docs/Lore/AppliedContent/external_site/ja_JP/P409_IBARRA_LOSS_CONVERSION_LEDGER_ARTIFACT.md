@@ -8,7 +8,7 @@ biome_tags: biome.claim_archive;biome.deep_reach_office
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "イバラ損失変換台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

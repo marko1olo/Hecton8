@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.open_deep_water
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Wide Filter Body Trace"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,9 +19,11 @@ localization_flags: 0
 
 # Wide Filter Body Trace
 
-Wide Filter Body Trace is how HECTON-8 handles giant fauna without turning it into a staged boss reveal. A wide filter body is moving ecology: a living weather front in the abyss that grazes on plankton clouds, clears visibility lanes, distorts sonar and briefly exposes the geometry of abandoned colony hardware. The player should feel scale because the rules of navigation change, not because the camera stops to admire a monster.
+A wide filter body is a slow plankton harvester wider than a small annex frame, working the open abyss. It does not hunt divers. It changes the water around them: suspended life thins, sonar returns smear along the body edge, and buried industrial outlines surface for a few minutes before the silt closes again.
 
-Under the body, sound loses hard edges. Around the rim, echoes fold. Behind it, the ocean becomes unnaturally clean, and old rails, pipe ribs or service towers can appear where the map was blank. That usefulness is the trap. The same wake that reveals a route can pull a loaded Marauder into deep open water with no wall, no floor and no reliable return line. The animal remains indifferent. It is not evil, not tame and not waiting for the player. It is the ocean proving that survival knowledge includes patience: wait for the pass, read the plankton gap, mark the ruin, leave before the silt falls back.
+Aegir salvage crews use the wake and distrust it. Behind the mouth the water is unnaturally clean, and old rails, pipe ribs and service towers appear where the chart was blank. The same wake pulls a loaded diver into deep open water with no wall, no floor and no reliable return line.
+
+Standing advice is to wait out the pass, read the plankton gap, mark the ruin, and leave before the silt falls back.
 
 ## Scanner
 

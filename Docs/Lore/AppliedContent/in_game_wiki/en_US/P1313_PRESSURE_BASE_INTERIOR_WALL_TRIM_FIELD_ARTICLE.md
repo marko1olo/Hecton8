@@ -19,17 +19,17 @@ localization_flags: 0
 
 # Pressure Base Interior Wall Trim Field Article
 
-Pressure base interior walls are where HECTON-8 can stop looking like a wreck and start looking like a workplace that drowned. The panels are not clean spaceship plastic. They are warm off-white ceramic coating over pressure-rated backing, dark graphite rails where carts and hands scraped past, rubber strips where vibration had to be quieted, and small service hatch lips polished by hundreds of rushed openings.
+Room card WT-5, Module 2 corridor at 780 metres.
 
-A good wall tells time sideways. Condensation grime gathers where warm breath met cold structure. Damp lower-wall staining shows where water stood after pumps failed, then dropped, then rose again. Amber safety paint wears off at corners people actually used. Screw rows tell which panels were opened for maintenance and which were only installed to make a corridor look finished. A clean rectangle behind grime can mean a removed notice, a stored tool board, or a late attempt to hide a leak record.
+  FLOORLINE STAIN: two straight lines, 210 mm and 340 mm above deck
+  AMBER PAINT: worn through at the north corner only
+  SERVICE HATCH LIP: hand-polished, grit in the gasket
 
-For traversal, interior trim is practical. A lower stain can mark a flooded pocket behind the wall. A bowed panel may hide pressure on the other side. A hatch lip with bright hand wear may lead to a bypass valve, cable run or stale ration cache. A gasket strip that has gone flat can mean the room flexed too often. If the player treats every interior wall as background, they miss doors that were never labeled as doors.
+Two stain lines means the room stood in water twice and the pumps came back once between them. Condensation grime collects where warm breath met cold structure, marking where people stood.
 
-The walls also carry the colony's human scale. Deep Reach sold the base as modules, output quotas and safety diagrams. The walls remember shoulders, carts, wet gloves, taped notes, condensation wiped by sleeves and the exact height where tired workers leaned while waiting for a shift board to change. That memory matters because HECTON-8 is not only a disaster site. It was a place where people tried to make pressure feel ordinary.
+A bowed panel can be holding pressure behind it. A clean rectangle in the grime is a removed notice, a lifted tool board or a dried leak record.
 
-When the Great Tide came through, interior walls became better witnesses than official logs. A terminal can be wiped. A wall keeps the tide tick in salt. A report can say the room was evacuated. A hatch lip worn after that date says someone came back. A lower trim replaced with the wrong batch says maintenance was still happening after procurement had already stopped answering.
-
-For a Marauder, read the wall before cutting the crate. Scan floorline stains. Check which side of a panel has grit in the gasket. Look for amber paint rubbed down by repeated hands. If a corridor still feels comfortable, ask who paid for that comfort and what it was meant to hide. The warmest interior wall can be the one that tells you where the ocean entered quietly.
+The hatch lip on this panel was worn after the evacuation date on the room log. Somebody was opening it in a corridor that had already been signed clear.
 
 ## Scanner
 

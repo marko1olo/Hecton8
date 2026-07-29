@@ -8,7 +8,7 @@ biome_tags: biome.aegir;biome.comms
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Decaimiento de señal en ventana de apagón"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

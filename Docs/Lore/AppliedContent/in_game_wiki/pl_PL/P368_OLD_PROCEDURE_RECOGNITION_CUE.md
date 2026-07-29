@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.brine_canyon
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Sygnał Rozpoznania Starej Procedury"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

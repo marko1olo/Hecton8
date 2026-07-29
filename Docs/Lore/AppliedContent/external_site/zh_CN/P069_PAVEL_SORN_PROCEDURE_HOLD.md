@@ -8,7 +8,7 @@ biome_tags: biome.admin_deck;biome.drowned_office
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "帕维尔·索恩的程序性搁置"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

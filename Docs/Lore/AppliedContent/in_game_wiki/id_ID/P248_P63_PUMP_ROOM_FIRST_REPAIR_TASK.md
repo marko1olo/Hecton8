@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex_p63;biome.first_hour_tool_chain
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ID LOC HOLD: P-63 Pump Room First Repair Task"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: ko_KR
 surface: external_site
 source_voice: Public Site Evidence Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "하이드로폰 로그 스트립"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

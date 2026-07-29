@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.quarantine_module
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "تأخير القفل الطبي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

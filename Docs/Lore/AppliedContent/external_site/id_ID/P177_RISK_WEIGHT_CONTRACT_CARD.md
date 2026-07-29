@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kartu Bobot Risiko Kontrak"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

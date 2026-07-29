@@ -8,7 +8,7 @@ biome_tags: biome.resource_pressure;biome.vent_forge
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kegagalan Pressure Containment"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

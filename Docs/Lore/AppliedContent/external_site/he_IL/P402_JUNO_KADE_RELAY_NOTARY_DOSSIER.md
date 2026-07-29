@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.relay_yard
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ג'ונו קייד, נוטריון ממסר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

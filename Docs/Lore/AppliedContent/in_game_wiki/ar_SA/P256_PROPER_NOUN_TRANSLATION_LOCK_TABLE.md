@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.localization
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "AR LOC HOLD: Proper Noun Translation Lock Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.ecology
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Codexkaart: pekelvaan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Luyten Packet Custody Relay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

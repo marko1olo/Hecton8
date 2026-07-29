@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.contract
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Datensatz zur materiellen Auszahlung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.crash_shelf
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Espinha da Primeira Hora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.brine_canyon
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Orbita / geometria plywow HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

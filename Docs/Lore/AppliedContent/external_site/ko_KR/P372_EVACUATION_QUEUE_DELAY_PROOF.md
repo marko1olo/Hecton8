@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.safe_module
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "대피 대기열 지연 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

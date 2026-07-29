@@ -8,7 +8,7 @@ biome_tags: biome.bottom_factory;biome.atlas_zone
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "عتبة المصنع-المعبد"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

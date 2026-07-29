@@ -8,7 +8,7 @@ biome_tags: biome.atlas_repair;biome.fauna
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Codexkaart: sensorgetagde fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_exterior
 locale: id_ID
 surface: in_game_wiki
 source_voice: PDA Exterior Trim Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Trim Luar Lambung Basis Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.audio
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ID LOC HOLD: Audio Bark Family Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

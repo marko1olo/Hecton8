@@ -8,7 +8,7 @@ biome_tags: biome.tide_gauge;biome.drowned_colony
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Chaîne de responsabilité de la Grande Marée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

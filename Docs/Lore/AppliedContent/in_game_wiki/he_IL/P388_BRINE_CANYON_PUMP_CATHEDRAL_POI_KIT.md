@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.pump_station
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ערכת ראיות לקתדרלת המשאבות בקניון התמלחת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

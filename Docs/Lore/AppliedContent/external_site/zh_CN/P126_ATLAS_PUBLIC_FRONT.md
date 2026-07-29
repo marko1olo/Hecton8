@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas的公开门面"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.atlas
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas切断記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

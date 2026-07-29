@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: ja_JP
 surface: in_game_wiki
 source_voice: PDA Paint Wear Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "塗装剥がれと傷の証拠"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

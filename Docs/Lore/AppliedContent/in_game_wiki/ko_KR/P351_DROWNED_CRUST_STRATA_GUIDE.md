@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.ocean
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "침수 지각 지층 가이드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

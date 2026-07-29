@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Pressure Base Interior Wall Trim Field Article
 
-Interior wall trim is one of the best places to make HECTON-8 feel human without softening it. The material is not decorative. It is pressure-rated architecture made bearable: ceramic coating, graphite rails, rubber strips, hatch lips, amber wear, condensation grime and stains where water repeatedly found the floorline.
+Interior wall trim in a Deep Reach pressure module is pressure-rated architecture made habitable: ceramic coating over structural backing, graphite rails where carts and shoulders passed, rubber strips against vibration, amber paint at the corners, and service hatches sized for one hand.
 
-For gameplay, these marks turn corridors into readable surfaces. Lower staining can imply previous flood height. A polished service lip can indicate a useful bypass or maintenance cache. A bowed panel can warn that pressure still exists behind it. A clean rectangle on a dirty wall can be more suspicious than a broken panel.
+The surfaces date themselves. Condensation grime gathers where warm breath met cold structure. A floorline stain marks standing water, and two parallel stains mark two floods with a working pump between them. Amber paint wears through only at corners that were used. Screw rows separate panels opened for maintenance from panels installed to finish a corridor.
 
-For story, the walls complicate Deep Reach's clean diagrams. They remember workarounds, late repairs, human waiting places and returns after the official timeline says nobody should have been there. HECTON-8 becomes stronger when the player learns that the colony did not simply fail. It was used, maintained, lied about and only then drowned.
+That is why the trim contradicts the paperwork. Module 2 carries a 2147 evacuation certification under Haldane. Its north service hatch lip carries hand polish over the post-flood salt line, and its lower trim was replaced from a batch procurement had already stopped shipping. No work order covers either mark.
 
 <!-- External Site; generated from P1313_PRESSURE_BASE_INTERIOR_WALL_TRIM_FIELD_ARTICLE/en_US. -->

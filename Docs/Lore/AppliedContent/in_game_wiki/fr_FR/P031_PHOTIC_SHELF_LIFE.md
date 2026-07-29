@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.photic_shelf
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Vie du plateau photique"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

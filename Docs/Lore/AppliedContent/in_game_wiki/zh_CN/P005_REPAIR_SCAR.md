@@ -8,7 +8,7 @@ biome_tags: biome.cable_forest;biome.deep_abyss
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "修复疤痕"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

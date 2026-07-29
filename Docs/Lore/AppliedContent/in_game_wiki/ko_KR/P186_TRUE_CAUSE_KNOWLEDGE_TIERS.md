@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.worker_archive
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "진짜 원인 지식 단계"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

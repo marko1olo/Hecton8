@@ -8,7 +8,7 @@ biome_tags: biome.admin_deck;biome.drowned_office
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pavel Sorn Procedure Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

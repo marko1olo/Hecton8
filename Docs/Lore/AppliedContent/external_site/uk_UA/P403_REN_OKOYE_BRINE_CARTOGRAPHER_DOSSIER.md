@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.density_ladder
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Рен Окойє, картограф розсолу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

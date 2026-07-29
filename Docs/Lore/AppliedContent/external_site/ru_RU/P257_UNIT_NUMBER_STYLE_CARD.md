@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.hard_scifi_ui
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Карта стиля единиц и чисел"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

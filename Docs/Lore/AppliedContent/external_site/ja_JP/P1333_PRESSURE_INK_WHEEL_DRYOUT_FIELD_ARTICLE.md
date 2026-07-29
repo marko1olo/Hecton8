@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: ja_JP
 surface: external_site
 source_voice: Public Site Evidence Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "圧力インク車の乾燥痕"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

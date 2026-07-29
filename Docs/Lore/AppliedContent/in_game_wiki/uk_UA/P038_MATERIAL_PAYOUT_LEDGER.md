@@ -8,7 +8,7 @@ biome_tags: biome.resource_cache;biome.dead_claim
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Реєстр матеріального розрахунку"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

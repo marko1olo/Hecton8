@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: en_US
 surface: in_game_wiki
 source_voice: PDA Audio Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Audio Fragment Tags"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,11 +19,17 @@ localization_flags: 0
 
 # Audio Fragment Tags
 
-Audio fragment tags keep voice from becoming cheap exposition. On HECTON-8 a voice should come from something that could really have recorded it: a hydrophone strip, suit recorder spool, terminal cache, black-box shard, packet notary footer, damaged transcript band or Marauder scan tag. The object must answer why the voice survived.
+Fragment tag AF-19, voice recovered from a suit recorder spool, custody stamp intact.
 
-A useful fragment is short because the hardware was failing. It may carry a work order, a clipped warning, a breath count, a pump cadence, a failed translation, a correction mark or the last line of a checklist. It should not explain the plot from nowhere. If the player cannot point to the device, the custody stamp and the damage that shaped the transcript, the audio is not evidence yet.
+  SOURCE DEVICE: suit recorder, crushed housing
+  CAPTURE WINDOW: 41 seconds, band 2 missing
+  OBJECT ANCHOR: locker hinge, same shelf, matching salt line
 
-Read audio with the object. A clean transcript over a crushed recorder is suspicious. A missing time band can hide who cut the line. A subtitle damage strip can be diegetic damage and accessibility text at the same time, but it must not make the scene unreadable. The best voice logs do not make colonists melodramatic. They make them working people caught mid-task when the system failed.
+A voice is admissible when the device, the capture window, the transcript band and the object anchor agree.
+
+A hydrophone strip carries room pressure and machine rhythm. A suit recorder carries breath, glove impacts and the pause where somebody stopped talking.
+
+A clean transcript over a crushed recorder is the tell to check first. A missing time band can hide who cut the line, which is why AF-19 is filed with band 2 marked rather than reconstructed.
 
 ## Scanner
 

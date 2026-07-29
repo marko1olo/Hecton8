@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.surface_weather
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Etoile hôte d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

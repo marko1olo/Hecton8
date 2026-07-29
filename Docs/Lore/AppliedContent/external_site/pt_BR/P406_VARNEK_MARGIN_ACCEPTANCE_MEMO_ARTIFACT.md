@@ -8,7 +8,7 @@ biome_tags: biome.archive_cache;biome.deep_reach_office
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Memorando Varnek de margem aceita"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.worker_locker
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Firmas de la junta de silencio de activos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

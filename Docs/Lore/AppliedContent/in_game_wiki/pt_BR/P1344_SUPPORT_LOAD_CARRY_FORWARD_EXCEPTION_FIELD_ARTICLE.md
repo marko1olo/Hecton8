@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: pt_BR
 surface: in_game_wiki
 source_voice: PDA Forensic Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Exceção de Carry-Forward da Carga de Suporte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.deep_reach
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "UK LOC HOLD: Deep Reach Site Accountability Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

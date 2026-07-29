@@ -8,7 +8,7 @@ biome_tags: biome.colony_infrastructure;biome.codex
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Transcrição de Áudio de Dossiê de Trabalhador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

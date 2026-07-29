@@ -8,7 +8,7 @@ biome_tags: biome.arrival_shelf;biome.shallow_annex
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Primeira Voz da Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

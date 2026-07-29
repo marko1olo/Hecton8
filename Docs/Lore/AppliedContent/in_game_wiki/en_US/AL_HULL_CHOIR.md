@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Rib Survey, Frames 22 to 29"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -25,7 +25,7 @@ Steel conducts sound near 5,000 metres per second against roughly 1,500 in water
 
 Part way through this survey, Rib 6 began carrying the pump deck, which hangs off a separate run. The dye check on Frame 26 came back clean.
 
-Assessment: one clamp on a rib gives you no bearing at 640 metres. Two clamps on separate frames and the arrival difference will.
+Assessment: one clamp on a rib gives you no bearing at 2,240 metres. Two clamps on separate frames and the arrival difference will.
 
 ## Scanner
 
@@ -37,7 +37,7 @@ DOCUMENT 44-S-0631. SURVEY: PRESSURE RIBS, FRAMES 22-29. FINDING: ACOUSTIC TRANS
 
 ## Audio
 
-Structures, rib survey, Frames Twenty-Two to Twenty-Nine, second pass. It is not a choir. Steel carries sound three times faster than water, the ribs are welded continuous, so a voice in Bay Twenty-Two arrives in Bay Six because both bays hang off the same rib. Fine. Here is what I do not like. Yesterday Rib Six carried the pump deck. The pump deck is not on that run. [hammer, long ring] And stop using the ribs to find people, you will go to the wrong room. I went to the wrong room on Tuesday and stood there holding the -- Dye check Frame Twenty-Four. Twenty-Six. Both, before shift chan--
+Structures, rib survey, Frames Twenty-Two to Twenty-Nine, second pass. It is not a choir. Steel carries sound three times faster than water, the ribs are welded continuous, so a voice in Bay Twenty-Two arrives in Bay Six because both bays hang off the same rib. Fine. Here is what I do not like. Yesterday Rib Six carried the pump deck. The pump deck is not on that run. [hammer, long ring] And stop using the ribs to find people, you will go to the wrong room. I went to the wrong room on Tuesday and stood there nine minutes with a stretcher. Dye check Frame Twenty-Four and Frame Twenty-Six, both, before shift change. Halloran, is that you on the rib? [voice arrives on the steel, no bearing on it] Say it into a phone. I am not walking to another room on a guess.
 
 ## Field Note
 

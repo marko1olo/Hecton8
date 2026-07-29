@@ -8,7 +8,7 @@ biome_tags: biome.evacuation_queue;biome.service_module
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "사하나 이크발, 분류 정비사"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.photic_shallows;biome.first_route_shelf
 locale: de_DE
 surface: in_game_wiki
 source_voice: PDA Limestone Shelf Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Photic-Kalkstein-Schuttschelf"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

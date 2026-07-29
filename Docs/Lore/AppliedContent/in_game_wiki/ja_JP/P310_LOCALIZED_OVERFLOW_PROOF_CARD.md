@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.ui
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "JA LOC HOLD: Localization Fit Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

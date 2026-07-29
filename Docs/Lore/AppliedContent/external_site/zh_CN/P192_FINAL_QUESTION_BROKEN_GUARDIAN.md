@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.repair_ecology
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "最终问题：破损的守护者"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

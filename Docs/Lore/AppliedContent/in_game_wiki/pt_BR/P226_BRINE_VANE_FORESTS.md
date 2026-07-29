@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.density_layer
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Florestas de lâminas de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.brine_canyon
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "مرحل عضو الترشيح الصوتي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

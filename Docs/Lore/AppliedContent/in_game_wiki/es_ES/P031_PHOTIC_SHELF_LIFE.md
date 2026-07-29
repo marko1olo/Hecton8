@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.photic_shelf
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Vida de la plataforma fótica"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

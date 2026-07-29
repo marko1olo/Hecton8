@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: pl_PL
 surface: external_site
 source_voice: Public Site Evidence Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Paski dziennika hydrofonu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

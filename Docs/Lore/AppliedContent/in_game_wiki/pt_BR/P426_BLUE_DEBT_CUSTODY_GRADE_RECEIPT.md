@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.claim_admin
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "PT LOC HOLD: Blue Debt Custody Grade Receipt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

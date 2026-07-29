@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.med_lock
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Firmas de la puerta de revisión de cuarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

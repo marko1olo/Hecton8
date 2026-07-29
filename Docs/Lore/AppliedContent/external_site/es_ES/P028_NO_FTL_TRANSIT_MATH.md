@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive;biome.service_canyon
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cálculo de tránsito sin FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

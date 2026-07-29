@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.hardware
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "打捞 carrier 自主限制"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

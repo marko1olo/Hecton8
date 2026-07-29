@@ -8,7 +8,7 @@ biome_tags: biome.resource_cache;biome.dead_claim
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "資材精算台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

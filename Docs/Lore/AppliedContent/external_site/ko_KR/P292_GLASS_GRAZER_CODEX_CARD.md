@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.fauna
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "유리 그레이저 코덱스 카드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

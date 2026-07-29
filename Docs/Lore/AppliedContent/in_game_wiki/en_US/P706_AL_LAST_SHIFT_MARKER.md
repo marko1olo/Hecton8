@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.spine_shallows
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Marker Inventory, P-63 Back Wall"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -47,7 +47,7 @@ A badge is a name and a photograph and sixty grams against the window. The tape 
 
 Three point one tonnes to make and I am making it out of other people's warnings.
 
-Keel is calling. Copy it word for word before you --
+Keel is calling. Word for word, then, before I move anything in here. D dash shift. Eleven hundred. Lower stair, hand line.
 
 ## Field Note
 

@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.deep_reach
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Klausul Penerima Manfaat Deep Reach Bertopeng"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

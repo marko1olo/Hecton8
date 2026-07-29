@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.industrial_shelf
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Набор доказательств релейного двора кабельного рифа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

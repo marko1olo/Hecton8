@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.archive
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Program prekursorów Needleprobe"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

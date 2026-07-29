@@ -8,7 +8,7 @@ biome_tags: biome.thermal_vent;biome.brine_canyon
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "מושבות עוגני פתחים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

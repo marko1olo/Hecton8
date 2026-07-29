@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.archive
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Arsitektur Pengereman Seed Ship"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

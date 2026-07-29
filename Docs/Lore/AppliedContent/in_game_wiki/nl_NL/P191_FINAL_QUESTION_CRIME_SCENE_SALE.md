@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.black_keel_orbit
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Laatste vraag: verkoop van de plaats delict"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

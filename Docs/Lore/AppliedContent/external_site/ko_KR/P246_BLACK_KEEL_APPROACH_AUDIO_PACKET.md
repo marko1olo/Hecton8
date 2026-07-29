@@ -8,7 +8,7 @@ biome_tags: biome.carrier_interface;biome.claim_admin
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "KO LOC HOLD: Black Keel Approach Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

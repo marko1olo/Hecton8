@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.medical_bay
 locale: ja_JP
 surface: in_game_wiki
 source_voice: PDA Medical Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "遅延トリアージ台帳"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

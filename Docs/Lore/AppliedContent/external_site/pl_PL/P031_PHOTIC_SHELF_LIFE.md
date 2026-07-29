@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.photic_shelf
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Życie półki fotycznej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

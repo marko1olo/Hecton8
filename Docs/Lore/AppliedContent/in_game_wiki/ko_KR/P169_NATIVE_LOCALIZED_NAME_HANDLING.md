@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.shallow_annex
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "고유 이름 현지화 프로토콜"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

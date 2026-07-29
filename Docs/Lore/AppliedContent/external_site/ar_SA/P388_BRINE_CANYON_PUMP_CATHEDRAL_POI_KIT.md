@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.pump_station
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "عدة أدلة كاتدرائية مضخات وادي الملح"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

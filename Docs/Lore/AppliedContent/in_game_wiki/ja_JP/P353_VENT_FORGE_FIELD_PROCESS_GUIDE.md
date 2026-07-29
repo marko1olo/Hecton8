@@ -8,7 +8,7 @@ biome_tags: biome.vent;biome.resource
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ベントフォージ現地工程ガイド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

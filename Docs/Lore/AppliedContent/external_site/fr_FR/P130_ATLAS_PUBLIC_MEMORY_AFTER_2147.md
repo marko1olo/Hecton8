@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Mémoire publique d'Atlas après 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

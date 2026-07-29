@@ -8,7 +8,7 @@ biome_tags: biome.med_lock;biome.worker_locker
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "トリアージ台帳小道具変種"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

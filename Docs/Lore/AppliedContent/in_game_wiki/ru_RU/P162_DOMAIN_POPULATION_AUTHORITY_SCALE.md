@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.claim_admin
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Шкала Населения И Власти"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

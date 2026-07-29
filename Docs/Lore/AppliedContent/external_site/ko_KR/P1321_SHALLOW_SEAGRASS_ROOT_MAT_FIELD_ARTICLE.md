@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.photic_shallows
 locale: ko_KR
 surface: external_site
 source_voice: Public Site Root-Mat Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "얕은 뿌리 매트 기질"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

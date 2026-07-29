@@ -8,7 +8,7 @@ biome_tags: biome.claim_cache;biome.worker_locker
 locale: ko_KR
 surface: in_game_wiki
 source_voice: PDA Salvage Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Marauder 수정 표식"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

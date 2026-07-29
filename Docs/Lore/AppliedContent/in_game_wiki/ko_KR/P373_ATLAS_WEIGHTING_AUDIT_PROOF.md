@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.atlas_basin
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas 가중치 감사"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

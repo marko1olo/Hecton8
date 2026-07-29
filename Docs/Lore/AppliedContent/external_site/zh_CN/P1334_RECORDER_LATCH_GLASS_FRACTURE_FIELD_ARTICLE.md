@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: zh_CN
 surface: external_site
 source_voice: Public Lore Atlas Short Summary
-spoiler_tier: 0
+spoiler_tier: 
 title: "记录器闩锁玻璃裂纹"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

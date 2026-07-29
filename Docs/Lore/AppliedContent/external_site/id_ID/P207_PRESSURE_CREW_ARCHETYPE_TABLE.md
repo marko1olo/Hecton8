@@ -8,7 +8,7 @@ biome_tags: biome.worker_locker;biome.industrial_shelf
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tabel Arketipe Kru Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -19,13 +19,19 @@ localization_flags: 0
 
 # Return Rights Quarantine Handshake Ledger
 
-The return-rights tag explains why getting upward is not the same as getting free. It is a small object, usually found wired to a console or sealed to a courier case, but it carries the part of rescue most people imagine happens automatically. Somebody must agree to receive the survivor. Somebody must accept the samples, the suit, the contaminated tools, the packet archive, the insurance lien and the legal heat that arrives with them.
+Recovery Compliance Office, Form RR-6 Rev 2. One sheet, wired to the handshake console at Receiver Desk 2, Shallow Annex.
 
-Quarantine in Aegir space is not only a medical word. It is a pause where biology, evidence and ownership are sorted before anyone is allowed to call the return clean. A pressure suit can carry brine spores, vent chemistry, black-box memory, Atlas traces, worker names, route coordinates and corporate liability in the same seams. The handshake asks each authority to sign a different fear: disease, pressure failure, custody breach, debt transfer, public exposure, or continuity contamination.
+  ACCESSION RR-6/2190/0417
+  CARRIER MEDICAL OFFICER ....... signed
+  PRESSURE SEAL CERTIFIER ....... signed
+  CLAIM OWNER, KEELMARK MUTUAL .. signed
+  PAYLOAD CUSTODIAN ............. signed
+  RECEIVER AUTHORITY ............ ____
+  CLAUSE 9: WHERE NO RECEIVER AUTHORITY IS ENTERED BEFORE ASCENT BURN, THE RETURNED PARTY AND ACCOMPANYING PACKETS ENTER NEUTRAL HOLD.
 
-A receiver can save a life and still bury a witness. Keelmark Mutual prefers a return that preserves claim value. Deep Reach prefers a return that contains the record. A public ledger notary prefers proof that cannot be quietly reclassified. Atlas continuity offices prefer payloads that do not make a dead machine look like a person. None of them need to lie at the first moment. They only need to define what the player is before the player arrives.
+Four parties sign for objects: a rated seal, contained samples, an acknowledged lien, a counted packet archive. The fifth line has to name an institution willing to take delivery of a living body.
 
-For a Marauder, the handshake is a lever. A private receiver may move faster but lock the body and packets into custody. A public receiver may protect the record but expose coordinates, names and survivors to everyone with a cleanup budget. A quarantine receiver may keep the player alive and still trap them behind glass. The correct answer is not clean. The important answer is chosen before the ascent burn, while the ocean is still outside and the carrier has not yet decided what the survivor counts as.
+No settle interval is printed against neutral hold. The blank half of the split tag is still seated in the slot.
 
 ## Scanner
 

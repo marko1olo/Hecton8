@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.atlas
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "압력 유리와 실란트 가이드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

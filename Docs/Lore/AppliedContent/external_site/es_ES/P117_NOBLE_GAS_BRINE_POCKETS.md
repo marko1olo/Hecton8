@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.vent_forge
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Bolsas de salmuera con gases nobles"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

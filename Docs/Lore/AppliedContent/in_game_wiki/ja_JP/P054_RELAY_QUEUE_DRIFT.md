@@ -8,7 +8,7 @@ biome_tags: biome.surface_relay;biome.storm_shelf
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Relay Queue Drift"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

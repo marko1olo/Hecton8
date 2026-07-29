@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.abyssal_machine_field
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas 연속성 사무소"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

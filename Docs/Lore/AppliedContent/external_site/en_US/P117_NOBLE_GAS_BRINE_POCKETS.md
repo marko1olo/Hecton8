@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.vent_forge
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Noble Gas Brine Pockets"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

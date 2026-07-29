@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.brine_canyon
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Akoestisch filterorgaan-relais"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

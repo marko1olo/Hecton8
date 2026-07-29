@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "HECTON-8 轨道危险表"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.archive_cache;biome.deep_reach_office
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Varnek-Memo zur akzeptierten Marge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

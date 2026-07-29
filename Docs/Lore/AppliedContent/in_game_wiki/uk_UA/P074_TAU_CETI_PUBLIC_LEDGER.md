@@ -8,7 +8,7 @@ biome_tags: biome.admin_spine;biome.relay_spine
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Публічний реєстр Tau Ceti"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

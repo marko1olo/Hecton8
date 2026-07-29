@@ -1,0 +1,32 @@
+---
+packet_id: P710_CROWN_PIN_ACCOUNTS
+release_set_id: RS710_SALVAGE_CREW_CHAIN
+article_id: hecton8.salvage.crown_pin_accounts
+unlock_id: unlock.salvage.crown_pin_accounts
+poi_tags: poi.factory_face;poi.rigging_station
+biome_tags: biome.drowned_factories
+locale: ko_KR
+surface: external_site
+source_voice: Website Public
+spoiler_tier: 
+title: "P710_CROWN_PIN_ACCOUNTS"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# P710_CROWN_PIN_ACCOUNTS
+
+
+
+## Scanner
+
+
+
+## Terminal
+
+
+
+<!-- External Site; generated from P710_CROWN_PIN_ACCOUNTS/ko_KR. -->

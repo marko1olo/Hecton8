@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Beste route: residu zichtbaar houden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

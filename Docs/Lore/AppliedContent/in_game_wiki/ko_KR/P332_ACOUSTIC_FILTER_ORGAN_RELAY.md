@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.sonar
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "음향 필터 기관 릴레이"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

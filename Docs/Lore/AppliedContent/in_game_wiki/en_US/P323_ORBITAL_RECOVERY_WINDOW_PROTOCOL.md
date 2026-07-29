@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.aegir
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Orbital Recovery Window Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,19 @@ localization_flags: 0
 
 # Orbital Recovery Window Protocol
 
-Orbital Recovery Window Protocol is the hard limit that turns rescue into engineering instead of hope. Black Keel can pass above HECTON-8 often enough to matter, but the carrier cannot simply scoop a wet, unverified object out of a moon-sized storm field. Aegir's upper atmosphere shreds bad ascent angles, magnetic noise eats weak guidance and the receiver will not accept mass that fails quarantine handshake. The protocol therefore asks for several proofs at once: a rated ascent object, a guidance core that can hit the window, a pressure history the receiver trusts and a legal custody state that tells the carrier what it is allowed to catch. This is why an almost-working escape is still dangerous. Launch too early and the storm takes the object. Launch too late and Black Keel becomes a voice receding above the cloud deck. Launch without quarantine sync and the carrier may hear you, mark you and still refuse the mass. The window makes the sky feel real: visible, reachable, timed and not merciful.
+BLACK KEEL / RECOVERY WINDOW PROTOCOL RW-3. Posted at the gantry, revision date illegible.
+
+  ACCEPTANCE REQUIRES ALL FOUR:
+  1. Ascent object rated for the atmospheric pass.
+  2. Guidance core able to hold the window ellipse.
+  3. Pressure history the receiver will accept.
+  4. Quarantine handshake synchronised at burn.
+
+Aegir's upper atmosphere shreds a bad ascent angle and magnetic noise eats weak guidance, so the first two conditions are physics. The last two are paperwork, and RW-3 weights all four the same.
+
+Early, the storm takes the object. Late, the carrier is a receding voice above the cloud deck. Out of handshake, the carrier registers the mass, marks it and declines it.
+
+RW-3 lists no partial acceptance and no appeal.
 
 ## Scanner
 

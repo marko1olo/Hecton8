@@ -8,7 +8,7 @@ biome_tags: biome.service_corridor;biome.machine_trench
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "逃离链组装"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

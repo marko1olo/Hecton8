@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.safe_module
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Registre d'eau de cantine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

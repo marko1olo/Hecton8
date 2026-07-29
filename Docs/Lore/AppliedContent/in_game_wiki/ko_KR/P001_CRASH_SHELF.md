@@ -8,7 +8,7 @@ biome_tags: biome.shallow_reef;biome.storm_shelf
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "추락 선반"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

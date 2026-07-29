@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.engineering
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "لوحة اعتماد الأدوات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

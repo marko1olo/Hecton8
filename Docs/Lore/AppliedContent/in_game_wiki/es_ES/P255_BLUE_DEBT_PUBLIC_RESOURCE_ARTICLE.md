@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.resource_custody
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Artículo público sobre el recurso Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

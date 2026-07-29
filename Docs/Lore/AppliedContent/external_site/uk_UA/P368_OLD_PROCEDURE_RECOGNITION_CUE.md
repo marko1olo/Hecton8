@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.brine_canyon
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Сигнал упізнавання старої процедури"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

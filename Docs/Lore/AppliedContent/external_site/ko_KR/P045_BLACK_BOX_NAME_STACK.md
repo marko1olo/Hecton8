@@ -8,7 +8,7 @@ biome_tags: biome.deep_colony;biome.factory_threshold
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "블랙박스 이름 스택"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

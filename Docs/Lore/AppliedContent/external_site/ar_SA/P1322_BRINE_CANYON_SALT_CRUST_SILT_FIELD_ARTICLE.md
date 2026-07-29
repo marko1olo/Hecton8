@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.density_layer
 locale: ar_SA
 surface: external_site
 source_voice: Public Site Brine Substrate Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "طمي قشرة الملح في وادي المحلول الكثيف"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

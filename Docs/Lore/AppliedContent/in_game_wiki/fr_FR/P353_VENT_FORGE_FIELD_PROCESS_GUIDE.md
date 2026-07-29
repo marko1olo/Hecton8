@@ -8,7 +8,7 @@ biome_tags: biome.vent;biome.resource
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Guide de procédé de terrain des forges-vents"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

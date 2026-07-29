@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.relay_yard
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Juno Kade, notário de retransmissão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

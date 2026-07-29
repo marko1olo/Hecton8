@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.density_ladder
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "렌 오코예, 염수 지도 제작자"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -19,17 +19,15 @@ localization_flags: 0
 
 # Cable Jacket Repair Wrap Field Article
 
-Cable jacket repair wrap is the smallest kind of human confession in a drowned station. It is not biology, not Atlas sealant and not decorative hazard striping. It is black waterproof rubber, gray pressure tape, diagonal fiber showing through a torn edge, salt caught in seams, scratched wet ridges and clamp marks where someone squeezed the line hard enough to keep working.
+Wrap sample from cable run 12-B, service chase behind the flooded locker bay, 610 metres.
 
-A wrapped cable tells the player what official diagrams cannot. The direction of the overlap says which end a technician trusted. White crystals under the lip mean water traveled along the jacket before it dried. A clamp mark crossing the wrap says the line was tied down after the patch, not before it. Smooth tape with no salt may be recent. Wrinkled tape with a dark wet trough may be holding a leak rather than sealing it. A spiral that changes pitch near a hatch usually means the worker ran out of time, not tape.
+  LAYERS: black rubber jacket, gray pressure tape, diagonal fiber underlay
+  OVERLAP LIP: points inboard, toward the hatch clamp
+  SALT UNDER LIP: 2 mm white seam, dry crystal
 
-For gameplay, the wrap is a practical reading surface. A repair band on a cable run can lead to a bypass panel, oxygen hose, powered relay, dead pinger or hidden crawlspace. It can also warn the player away from a shock path or a false-safe diagnostic. If the line is still under load, the wet ridge may warm slightly and collect different growth. If the line is dead, the seam becomes a salt beard and shell grit trap. Cutting before scanning can turn a route clue into loose rubber.
+The lip points at the end the technician trusted. Salt under it means water travelled along the jacket before the line dried, so the band was holding a leak rather than sealing one. A clamp scar crossing the wrap means the run was tied down after the patch.
 
-The important distinction is that human wrap comes before the living repair network. Conductive biofilm may later colonize the crack. Atlas biofiber may later decide the wound wants closing. The gray tape still marks the first decision: a worker saw a failing line, had no replacement, and chose to make the bad part last one more shift. That is better than a generic cable texture. It is labor pressure made visible.
-
-Deep Reach loved clean route maps. Cables in those maps are straight, colored and certain. HECTON-8 cables are none of those things. They bend around flooded lockers, pass through concrete holes that were never on the drawing, disappear under shell grit, and reappear with repair tape where the official maintenance window had already closed. A line with three different wrap batches is a timeline. A line with a perfect new band in an abandoned corridor is a question.
-
-Marauder rule: read the wrap before trusting the current. Follow the overlap. Check which side of the seam grows salt. Look for clamp scars, tape pitch changes and places where the rubber jacket shines from repeated handling. The cable may still feed the thing you need. It may also be the only honest record of who came back after the room was supposed to be empty.
+Three wrap batches on one run is a timeline. A fresh band in a corridor logged as cleared means somebody came back after the room was signed empty, and the wet ridge will still be warm if the conductor is live.
 
 ## Scanner
 

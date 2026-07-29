@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.shallows
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ziarno kontraktu cichego salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

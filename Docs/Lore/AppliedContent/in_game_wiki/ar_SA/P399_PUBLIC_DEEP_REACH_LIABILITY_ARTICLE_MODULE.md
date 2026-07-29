@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.deep_reach
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "أدلة مسؤولية Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

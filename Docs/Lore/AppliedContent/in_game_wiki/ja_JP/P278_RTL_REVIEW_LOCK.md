@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.rtl
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "JA LOC HOLD: Right-to-Left Reading Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

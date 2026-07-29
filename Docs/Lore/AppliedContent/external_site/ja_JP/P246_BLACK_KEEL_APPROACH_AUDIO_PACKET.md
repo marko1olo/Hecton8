@@ -8,7 +8,7 @@ biome_tags: biome.carrier_interface;biome.claim_admin
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "JA LOC HOLD: Black Keel Approach Packet"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

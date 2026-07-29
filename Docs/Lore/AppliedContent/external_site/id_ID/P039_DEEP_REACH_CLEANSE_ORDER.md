@@ -8,7 +8,7 @@ biome_tags: biome.dead_claim;biome.industrial_descent
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Perintah Pembersihan Aktif Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "P-63 Pompkamer In De Ondiepe Annex"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

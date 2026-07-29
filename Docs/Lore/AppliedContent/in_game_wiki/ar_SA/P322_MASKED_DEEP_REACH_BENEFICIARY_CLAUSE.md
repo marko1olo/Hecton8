@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.deep_reach
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "بند المستفيد المقنع Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

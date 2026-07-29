@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.abyssal_machine_field
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "センサータグ付き動物相"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

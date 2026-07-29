@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.truth
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "公開台帳余震記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

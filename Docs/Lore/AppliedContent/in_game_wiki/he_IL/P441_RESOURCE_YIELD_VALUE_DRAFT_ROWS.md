@@ -8,7 +8,7 @@ biome_tags: biome.resource_tables;biome.brine_canyon
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "HE LOC HOLD: Resource Yield Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

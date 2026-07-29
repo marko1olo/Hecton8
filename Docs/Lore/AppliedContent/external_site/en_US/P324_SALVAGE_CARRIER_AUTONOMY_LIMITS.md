@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.hardware
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Salvage Carrier Autonomy Limits"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Salvage Carrier Autonomy Limits
 
-Salvage Carrier Autonomy Limits keep HECTON-8 grounded. Black Keel is dangerous because it is useful and limited at the same time. It can perform the accounting and recovery work that makes escape possible, but its rules forbid the impossible rescue players expect from a personal ship. The result is infrastructure with a pulse, not a companion.
+The Black Keel autonomy schedule permits window scheduling, contaminated mass rejection, telemetry sale, lien update, ballast drop and supply release without reference. Crewed descent, quarantine override, lien cancellation and rescue outside route ownership are not permitted, and the schedule carries no discretionary clause.
 
 ## Scanner
 

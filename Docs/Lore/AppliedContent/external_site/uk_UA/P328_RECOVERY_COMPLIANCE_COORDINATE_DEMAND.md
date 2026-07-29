@@ -8,7 +8,7 @@ biome_tags: biome.deep_reach;biome.contract
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Вимога координат від Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

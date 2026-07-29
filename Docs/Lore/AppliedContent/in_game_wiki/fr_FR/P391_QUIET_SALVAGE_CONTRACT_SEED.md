@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.shallows
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Graine de contrat de salvage calme"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

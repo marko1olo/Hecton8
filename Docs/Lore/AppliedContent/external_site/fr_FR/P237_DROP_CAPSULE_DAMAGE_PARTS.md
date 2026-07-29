@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.p63_shallows
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pièces endommagées de la capsule de chute"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

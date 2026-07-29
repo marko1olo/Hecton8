@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.replay
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Contract Risk Reward Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

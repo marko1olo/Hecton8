@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive;biome.service_canyon
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "חישוב מעבר ללא FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

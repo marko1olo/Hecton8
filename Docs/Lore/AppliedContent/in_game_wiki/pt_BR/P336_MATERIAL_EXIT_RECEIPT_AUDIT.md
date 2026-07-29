@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.contract
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Auditoria do Recibo de Saída Material"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.escape_chain;biome.authoring
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Fila de coste de receta de ascenso"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

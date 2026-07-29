@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.truth
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "公共账本记录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

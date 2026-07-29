@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.work_order
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Orden de trabajo de sala de bombas P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

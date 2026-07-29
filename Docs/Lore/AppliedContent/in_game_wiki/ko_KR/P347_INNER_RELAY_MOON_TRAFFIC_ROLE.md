@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.system
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Vela 내부 릴레이 교통 역할"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

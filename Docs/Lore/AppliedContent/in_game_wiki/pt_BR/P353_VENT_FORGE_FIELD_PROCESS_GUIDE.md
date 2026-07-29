@@ -8,7 +8,7 @@ biome_tags: biome.vent;biome.resource
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Guia de processo de campo da forja-vent"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

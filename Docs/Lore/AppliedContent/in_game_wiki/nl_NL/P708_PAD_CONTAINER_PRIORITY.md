@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories;biome.brine_canyon
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P708_PAD_CONTAINER_PRIORITY"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

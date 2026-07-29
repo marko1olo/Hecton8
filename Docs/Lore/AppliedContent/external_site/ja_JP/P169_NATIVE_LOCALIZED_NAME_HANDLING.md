@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.shallow_annex
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "固有名ローカライズ・プロトコル"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

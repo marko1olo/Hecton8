@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.evidence
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Набір доказів останнього нормального дня"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

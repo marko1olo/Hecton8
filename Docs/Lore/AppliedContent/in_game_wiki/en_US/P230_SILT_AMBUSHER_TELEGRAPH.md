@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.silt_plain
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Silt Ambusher Telegraph"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,9 +19,17 @@ localization_flags: 0
 
 # Silt Ambusher Telegraph
 
-Silt ambushers make low-visibility depth frightening without making it arbitrary. They lie under flat plates of fine sediment where falling organic dust should normally feed microfauna. A true ambush bed is too clean. Grazers avoid it. Tiny filter threads stop at the edge. A scanner pulse returns low and late because the animal's upper membrane absorbs sound before the buried muscle answers.
+Bed card SA-11, filled at 3,180 metres on the silt flat west of the old survey grid.
 
-The rule is simple: the player must be allowed to learn the danger before contact. A clean plate alone is not enough. Pair it with absent life, a crescent seam, a wrong pulse, slow breathing in the silt or a pressure twitch under the lamp. If those signs are missing, the encounter should remain a trace, not an attack. The fear comes from realizing the seafloor has been lying in plain sight.
+  DEEP REACH SURFACE GRADE: TRACTION CLASS 2, CRAWLER-RATED
+  GRAZER COUNT, 40 M TRANSECT: 0
+  PULSE RETURN: 11 dB down, 0.4 s late
+
+The grade describes what the plate looks like. A silt flat carries a collar of grazers and filter threads wherever organic dust settles, and this one carries none. The return comes back low and slow because the upper membrane takes the sound before the buried muscle answers it.
+
+Two tells before anyone crosses: clean plate plus dead margin, or clean plate plus a crescent seam. One tell is a guess.
+
+Traction Class 2 means a crawler drives it. Assessment: two crawlers drove it. Neither returned on the Bay 3 manifest and the grade was never revised.
 
 ## Scanner
 

@@ -8,7 +8,7 @@ biome_tags: biome.atlas_repair_network;biome.deep_ecology
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "AR LOC HOLD: Atlas Lattice Contamination Tag"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

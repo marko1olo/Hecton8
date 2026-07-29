@@ -8,7 +8,7 @@ biome_tags: biome.med_lock;biome.worker_locker
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "分诊账本道具变体"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

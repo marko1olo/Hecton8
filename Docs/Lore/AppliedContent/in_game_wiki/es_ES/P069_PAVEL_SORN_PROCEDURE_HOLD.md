@@ -8,7 +8,7 @@ biome_tags: biome.admin_deck;biome.drowned_office
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Retención procedimental de Pavel Sorn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

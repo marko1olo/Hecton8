@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.fauna
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kartu Kodex Glass Grazer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

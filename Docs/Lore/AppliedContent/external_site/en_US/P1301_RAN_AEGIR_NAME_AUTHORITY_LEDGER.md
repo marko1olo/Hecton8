@@ -19,12 +19,12 @@ localization_flags: 0
 
 # Ran / Aegir Name Authority Ledger
 
-HECTON-8's naming system is a quiet piece of worldbuilding with teeth. The game does not give the moon four names for texture alone. Each name belongs to a different authority and a different moral distance from the same drowned place.
+HECTON-8 carries four names because four different offices needed a defensible way to refer to the same drowned water.
 
-            Ran is astronomical language: star, route anchor, light delay, carrier timing. Aegir is claim language: the gas giant as parent body, public shorthand and corporate umbrella. RAN-B:H8 is insurance language: a sortable moon record that can be priced, transferred and litigated without keeping the colony's voice attached. HECTON-8 is lived language: the name used by workers, Marauders and field systems because it points to the actual doors, rooms, graves and pressure alarms.
+Ran is astronomical: host star, route anchor, light-delay context. Aegir is the gas giant and the claim umbrella, the label that places a moon-scale failure inside a parent-body frame. RAN-B:H8 is the insured moon key, a sortable record that can be priced, transferred and litigated with no colony attached to it. HECTON-8 is the field name, used by workers, Marauders and field systems because it points at actual doors, rooms and pressure alarms.
 
-            Once the player learns that grammar, documents start to change shape. A company notice using Aegir may be zooming out to make a moon-scale failure look like system maintenance. A Black Keel receipt using RAN-B:H8 may be preparing the place for custody pricing. A field note using HECTON-8 may be preserving testimony before the catalog can wash it clean.
+The label therefore identifies the speaker. A company notice using Aegir is widening the frame. A Black Keel receipt using RAN-B:H8 is preparing custody pricing. A field note using HECTON-8 is preserving testimony ahead of the catalog.
 
-            The rule is simple enough to be playable: names are evidence. Preserve them. Compare them. Ask who gets paid when the place is called one thing instead of another.
+Catalog normalisation policy permits RAN-B:H8 for insured moon records only, and prohibits collapsing worker-origin HECTON-8 testimony into Aegir asset language without an attached witness note. Once a record is merged the original label is gone.
 
 <!-- External Site; generated from P1301_RAN_AEGIR_NAME_AUTHORITY_LEDGER/en_US. -->

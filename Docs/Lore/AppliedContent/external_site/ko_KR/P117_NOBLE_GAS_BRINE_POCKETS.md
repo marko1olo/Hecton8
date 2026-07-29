@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.vent_forge
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "비활성기체 염수 포켓"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

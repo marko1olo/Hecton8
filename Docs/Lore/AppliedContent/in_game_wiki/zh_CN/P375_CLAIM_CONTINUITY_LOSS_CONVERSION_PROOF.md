@@ -8,7 +8,7 @@ biome_tags: biome.claim_route;biome.safe_module
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "索赔连续性损失转换"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

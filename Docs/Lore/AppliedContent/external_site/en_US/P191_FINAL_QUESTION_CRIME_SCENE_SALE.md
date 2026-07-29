@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.black_keel_orbit
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Final Question: Crime-Scene Sale"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

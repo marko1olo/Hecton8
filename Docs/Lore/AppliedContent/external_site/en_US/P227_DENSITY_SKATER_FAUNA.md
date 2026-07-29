@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.density_layer
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Density Skater Fauna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,11 @@ localization_flags: 0
 
 # Density Skater Fauna
 
-Density Skater Fauna turns one of HECTON-8's strangest hard-sci-fi ideas into an encounter players can understand without a lecture: water can contain surfaces. In the brine canyon, salinity, temperature and pressure stack into density shelves. Small animals exploit those shelves the way surface insects exploit tension, except the surface is buried inside the ocean. The result should feel uncanny but fair. A skater crosses an apparently empty gap; sonar shows a ripple; the suit trim wobbles; the player realizes there is a boundary there. Good writing and placement should resist fantasy levitation. The skater is not floating because the world forgot physics. It is alive because the physics is specific. Its path can lead toward torn brine vanes, low-salt pockets, warm brine steps or ambush lanes. It can also mislead: what carries a light animal may drop a loaded Marauder into black layered water. The design value is not the creature itself, but the lesson it teaches. The canyon is not open space. It is a machine of stacked water, and every small body that walks across it is drawing the map in motion.
+Density skaters are mid-depth animals that press on density interfaces inside the water column. Salinity, temperature and pressure stack into shelves in the brine canyon, and a small body with hooked pads can hold one for seconds at a time.
+
+They read as animals crossing open water. On a scanner they leave ripples where no surface exists. Aegir salvage crews use the tracks to locate shear windows, brine steps, sonar blind edges and hunting lanes worked by larger fauna.
+
+The trick does not transfer. A Class-IV suit is heavier, louder and the wrong shape, and a shelf that carries a skater will drop a loaded diver into black layered water.
 
 ## Scanner
 

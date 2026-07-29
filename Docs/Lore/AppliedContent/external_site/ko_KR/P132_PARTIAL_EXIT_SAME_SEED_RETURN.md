@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "부분 탈출: 같은 Seed로 귀환"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

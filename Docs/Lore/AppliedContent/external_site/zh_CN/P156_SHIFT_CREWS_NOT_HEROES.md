@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.shallow_annex
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "轮班队，不是英雄"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.safe_module;biome.abyssal_machine_field
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "מכלול לחיצת יד משפטית של בידוד"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

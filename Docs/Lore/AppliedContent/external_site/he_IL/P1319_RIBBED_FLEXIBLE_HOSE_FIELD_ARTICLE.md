@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base_interior;biome.service_corridor
 locale: he_IL
 surface: external_site
 source_voice: Public Site Flexible Hose Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "צינור גמיש מצולע"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

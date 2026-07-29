@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas_maintenance
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "مقال Atlas-6 المحجوب للحرق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

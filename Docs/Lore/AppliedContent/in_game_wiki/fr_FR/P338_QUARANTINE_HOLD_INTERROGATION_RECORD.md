@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.quarantine
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Dossier d'interrogatoire en rétention sanitaire"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: nl_NL
 surface: in_game_wiki
 source_voice: PDA Paint Wear Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Verfschilfers en krassen als bewijs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.payload_gantry;biome.carrier_link
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "False Ending Taxonomy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # False Ending Taxonomy
 
-False Ending Taxonomy explains the game's replay structure: exits can be physically real, profitable, and still morally incomplete. The dossier persists knowledge across attempts, while pressure, debt, and public truth decide whether an ending is only an escape or an actual reckoning.
+Keelmark Loss Desk disposition schedule DS-11 sorts HECTON-8 recoveries into six settlement categories. No settlement interval is printed against quarantine hold. Reaching open air decides which category applies, not whether one applies.
 
 ## Scanner
 

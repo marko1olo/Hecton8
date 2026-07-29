@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.safe_module
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "压力铺位轮班流程"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

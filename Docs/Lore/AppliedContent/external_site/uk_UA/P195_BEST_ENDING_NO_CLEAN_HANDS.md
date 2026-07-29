@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Найкращий маршрут: видимий залишок"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

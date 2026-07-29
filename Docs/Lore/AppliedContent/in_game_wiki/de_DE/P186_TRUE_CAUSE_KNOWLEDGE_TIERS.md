@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.worker_archive
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Wissensstufen der wahren Ursache"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

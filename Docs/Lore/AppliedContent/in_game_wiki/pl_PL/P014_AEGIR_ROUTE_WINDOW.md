@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.black_keel_link
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Okno trasy Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

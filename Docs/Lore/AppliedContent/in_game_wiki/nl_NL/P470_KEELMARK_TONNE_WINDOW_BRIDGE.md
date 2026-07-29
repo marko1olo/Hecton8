@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Keelmark-tonne-window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

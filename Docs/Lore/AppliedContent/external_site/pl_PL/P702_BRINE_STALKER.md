@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "P702_BRINE_STALKER"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

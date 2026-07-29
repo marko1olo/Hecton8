@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.system
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Claw als Eisstreu-Gefahr"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

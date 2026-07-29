@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.deep_reach_pressure
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Publiek Deep Reach-dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

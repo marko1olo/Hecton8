@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories;biome.cable_reef
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P706_AL_ATLAS_REPLY"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

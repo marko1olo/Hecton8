@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.shallow_reef
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Iron Minnow"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,15 +19,17 @@ localization_flags: 0
 
 # Iron Minnow
 
-The shape of the school is the reading, not the fish. Spread across open water they mean nothing. Compressed into a flat band two or three metres thick, they are holding the edge of an oxygen pocket, and a Class-IV can scrub in that water instead of burning reserve.
+The shape of the school is the reading, not the fish. Spread across open water they mean nothing. Compressed into a flat band two or three metres thick, they are holding the edge of an oxygen pocket.
 
-An empty band over a known seam is the opposite reading. The pocket has gone over, the water above will run green, and nothing has fed there in weeks.
+A flat band has a shift or two left in it, and everything that feeds moves when it frays.
 
-Their scales carry ferrous grit, which is why they return so hard on scan that they erase whatever is behind them. Cut your gain before you read a wall through a school.
+An empty band over a known seam is the opposite reading: the pocket has gone over, the water runs green, and nothing has fed there in weeks.
 
-Every school over a seam counts out between eleven and thirteen hundred. Nobody knows why the number holds.
+Ferrous grit on their scales returns hard enough on scan to erase whatever is behind them. Cut gain before reading a wall through a school.
 
-Assessment: swim the top edge of a band, never through it.
+That grit assays as hull plate, not as seam ore.
+
+Assessment: swim the top edge of a band, never through it, and carry your own air.
 
 ## Scanner
 
@@ -39,6 +41,6 @@ SAMPLE LOT 44-XO-0091. CLASS: TRACE ASSAY, INCIDENTAL. METHOD: SCHOOL DENSITY, S
 
 ## Field Note
 
-The tonnage your lien is measured against was estimated by counting these off a shelf grid in 2146, and the assay has never been re-run. Follow the band for air. Do not trust it for ore.
+The tonnage your lien is measured against was estimated by counting these off a shelf grid in 2146, and the assay has never been re-run. Read the band for where the good water ends. Your air still comes off the bottle you were billed for, and the count is no good for ore.
 
 <!-- In-Game Wiki; generated from P700_IRON_MINNOW/en_US. -->

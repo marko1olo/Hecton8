@@ -8,7 +8,7 @@ biome_tags: biome.carrier_interface;biome.claim_admin
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "מגבלות פנים הטנדר Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

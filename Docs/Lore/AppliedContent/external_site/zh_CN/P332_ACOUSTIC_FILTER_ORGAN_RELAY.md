@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.sonar
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "声学过滤器官中继"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

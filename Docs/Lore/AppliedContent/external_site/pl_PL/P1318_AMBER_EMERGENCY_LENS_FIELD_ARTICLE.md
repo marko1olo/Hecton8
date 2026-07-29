@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base_interior;biome.flooded_airlock
 locale: pl_PL
 surface: external_site
 source_voice: Public Site Emergency Lens Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Bursztynowa soczewka awaryjna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

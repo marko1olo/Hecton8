@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "의료 분류 ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

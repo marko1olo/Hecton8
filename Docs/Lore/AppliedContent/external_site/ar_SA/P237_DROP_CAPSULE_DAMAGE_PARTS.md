@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.p63_shallows
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "أجزاء كبسولة الهبوط المتضررة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

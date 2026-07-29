@@ -8,7 +8,7 @@ biome_tags: biome.claim_cache;biome.worker_locker
 locale: en_US
 surface: external_site
 source_voice: Public Site Salvage Culture Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Marauder Correction Marks"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,14 +19,14 @@ localization_flags: 0
 
 # Marauder Correction Marks
 
-Marauders are not trusted because they are noble. They are trusted, when they are trusted at all, because they have already been paid to notice how claims lie.
+Correction marks recovered from HECTON-8 follow one rule: the mark sits beside the official line, not over it.
 
-On HECTON-8 their correction marks survive in places official systems wanted clean: beside shift boards, under quarantine stamps, on pressure bunk lips, across packet footers, inside tool crates and near worker tags. The marks are short because long notes fail underwater. They are physical because clean summaries travel too easily.
+The printed sentence is retained because the printed sentence is also evidence. RELEASE PENDING stencilled on a locked medical door records who wanted a sealed room to read as temporary. PAYOUT EXPOSURE written on a pressure bunk lip records which part of the room was being priced. Erasing either removes the only surviving trace of who wrote it.
 
-A correction mark has one job: keep the object arguing. It does not say this is the whole truth. It says do not let that sentence finish the room. The official line remains visible because it can prove who renamed a body, a route or a cost. The correction remains beside it because the next diver may have seconds, not minutes, to decide what the label is trying to hide.
+The marks are physical and short: grease pencil, etched arrows, tape flags, washer scratches, knot codes, salvage chalk, gasket cuts. Long notes fail underwater and clean summaries travel too easily. Recovered examples read door held, half name, air billed before rescue, return stamp missing, translation too clean, body chain cut here.
 
-The culture around these marks is practical, suspicious and not innocent. A good Marauder can restore a half-erased name. A bad one can steer a claim toward payout. A tired one can leave a useful mark in ugly handwriting and still be wrong. That tension is the point. HECTON-8 should never turn Marauders into pure rescuers or pure thieves. They are the dirty edge of evidence work.
+They are not disinterested. Keelmark licensees are paid to notice how claims lie, and are paid either way. A mark can preserve a name, warn a route, price a sample, conceal a witness, or steer the next crew into a profitable mistake. Field practice is to read a mark against the hinge, the waterline, the scrape direction and the source stamp before acting on it.
 
-For the player, correction marks are inherited suspicion. They teach a habit: read the official sentence, read the object, read the mark, then decide which part survives contact with the room.
+Marks survive in the places official systems wanted clean: beside shift boards, under quarantine stamps, across packet footers, inside tool crates, near worker tags.
 
 <!-- External Site; generated from P1328_MARAUDER_CORRECTION_MARK_FIELD_ARTICLE/en_US. -->

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories;biome.brine_canyon
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P708_PAD_PRESSURE_BONUS"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

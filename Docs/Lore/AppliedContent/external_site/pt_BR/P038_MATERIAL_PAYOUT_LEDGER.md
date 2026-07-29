@@ -8,7 +8,7 @@ biome_tags: biome.resource_cache;biome.dead_claim
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ledger de Acerto Material"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

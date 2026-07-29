@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_slope;biome.repair_ecology
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "深淵修復動物"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -19,12 +19,10 @@ localization_flags: 0
 
 # Claim Window Rescue Delay Ledger
 
-The first reply from orbit is one of HECTON-8's cruelest pieces of hard science. Black Keel can acknowledge a contractor long before it can retrieve one. A radio packet can cross a local window with almost no mass. A person cannot. The difference between those two facts is where the game's salvage economy lives.
+The first reply from orbit is an accounting document. Black Keel can acknowledge a contractor long before it can retrieve one, because a radio packet crosses a local window with almost no mass and a person does not.
 
-A claim window is not a rescue promise. It is an accounting slot in which mass, liability and authority are allowed to move. Keelmark Mutual can preserve a channel, Aegir Reclamation Pool can acknowledge custody, and Deep Reach can contest the payload before a recovery package has any safe way to climb. Pressure-rated seals, ascent charge, guidance timing and quarantine handshake are not flavor. They decide whether the carrier accepts a body, a sample, a file or nothing.
+A claim window is an allocation slot in which mass, liability and authority are permitted to move. Keelmark Mutual can hold a channel open, the Aegir Reclamation Pool can acknowledge custody, and Deep Reach can contest the payload, all while no recovery package has a safe way to climb. Four fields decide the case: pressure-rated seal, ascent charge, guidance timing and quarantine handshake, plus a receiver willing to accept whatever comes up with the body.
 
-That delay makes HECTON-8 feel abandoned without making civilization vanish. Civilization is present as paperwork, signal and pricing. It can hear. It can threaten. It can put a number on a survivor. What it cannot do, without hardware and a receiver, is turn concern into upward motion.
-
-For the player, the ledger changes the meaning of escape. The objective is not simply to call for help. Help has already answered in the only language the system trusts. The player has to make the return physically possible and legally inconvenient to refuse.
+That is why the colony reads as abandoned while civilisation is plainly still present. It is present as paperwork, signal and pricing. It can hear a survivor, threaten one and put a number on one. Without hardware and a named receiver it cannot convert any of that into upward motion. Slate CW-3 carries a 4.8 tonne-window base lien and authorises message custody only.
 
 <!-- External Site; generated from P1410_CLAIM_WINDOW_RESCUE_DELAY_LEDGER/en_US. -->

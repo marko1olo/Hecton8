@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Retenção de quarentena: ar velho"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

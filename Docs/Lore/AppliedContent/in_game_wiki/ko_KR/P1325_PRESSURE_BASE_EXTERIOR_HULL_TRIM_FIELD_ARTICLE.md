@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_exterior
 locale: ko_KR
 surface: in_game_wiki
 source_voice: PDA Exterior Trim Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "압력 기지 외부 선체 트림"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

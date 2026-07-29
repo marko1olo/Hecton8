@@ -8,7 +8,7 @@ biome_tags: biome.orbital_window;biome.surface_relay
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "内层卫星中继危险"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

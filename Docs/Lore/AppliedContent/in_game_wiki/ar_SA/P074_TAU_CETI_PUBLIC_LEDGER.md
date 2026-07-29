@@ -8,7 +8,7 @@ biome_tags: biome.admin_spine;biome.relay_spine
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "السجل العام لتاو سيتي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

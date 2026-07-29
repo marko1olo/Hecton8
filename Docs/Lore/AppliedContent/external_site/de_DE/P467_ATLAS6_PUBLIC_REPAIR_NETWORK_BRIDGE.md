@@ -8,7 +8,7 @@ biome_tags:
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas-6 Öffentliches Reparaturnetz"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

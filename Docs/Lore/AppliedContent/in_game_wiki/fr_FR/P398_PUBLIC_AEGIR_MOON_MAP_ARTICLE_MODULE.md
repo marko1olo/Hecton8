@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.aegir_system
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Carte de route des lunes d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.replay
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "계약 위험/보상 행"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.p63_shallows
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Assinaturas da Mesa de Continuidade Contratual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

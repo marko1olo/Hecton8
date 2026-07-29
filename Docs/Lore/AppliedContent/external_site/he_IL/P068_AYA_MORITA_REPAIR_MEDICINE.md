@@ -8,7 +8,7 @@ biome_tags: biome.medical_lock;biome.repair_fauna
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "רפואת התיקון של איה מוריטה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

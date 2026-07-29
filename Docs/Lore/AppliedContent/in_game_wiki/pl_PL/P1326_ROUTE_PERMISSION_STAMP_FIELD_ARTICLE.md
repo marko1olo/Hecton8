@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: pl_PL
 surface: in_game_wiki
 source_voice: PDA Worker Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Stemple Zezwoleń Trasowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

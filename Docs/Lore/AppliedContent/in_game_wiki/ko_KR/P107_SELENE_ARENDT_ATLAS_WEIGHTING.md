@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.factory_temple
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "셀레네 아렌트 Atlas 가중치"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

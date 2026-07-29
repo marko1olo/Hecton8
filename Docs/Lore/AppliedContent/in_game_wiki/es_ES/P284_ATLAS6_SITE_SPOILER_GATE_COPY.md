@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ES LOC HOLD: Atlas6 Site Spoiler Gate Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

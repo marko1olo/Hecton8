@@ -8,7 +8,7 @@ biome_tags: biome.colony_infrastructure;biome.codex
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Worker Dossier Audio Strip"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

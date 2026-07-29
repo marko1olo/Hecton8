@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.relay_yard
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Juno Kade, notario de relevo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

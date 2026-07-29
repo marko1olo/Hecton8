@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.system
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Claw氷散乱危険役"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

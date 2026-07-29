@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.storm_window
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Семя контракта штормового рывка"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

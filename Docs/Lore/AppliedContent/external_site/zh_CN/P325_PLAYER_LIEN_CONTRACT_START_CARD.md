@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.contract
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "玩家 lien 合同起始卡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

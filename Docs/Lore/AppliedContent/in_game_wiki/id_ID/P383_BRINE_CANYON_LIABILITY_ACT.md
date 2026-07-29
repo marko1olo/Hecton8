@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.industrial_shelf
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Gerbang Liabilitas Ngarai Brine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

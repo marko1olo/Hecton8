@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.claim_admin
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Bevölkerungs- Und Autoritätsskala"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

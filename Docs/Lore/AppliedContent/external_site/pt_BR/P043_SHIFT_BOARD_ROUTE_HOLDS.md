@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.service_canyon
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Retenções de Rota no Quadro de Turnos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

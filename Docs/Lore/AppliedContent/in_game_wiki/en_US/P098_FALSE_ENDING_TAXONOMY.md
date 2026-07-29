@@ -8,7 +8,7 @@ biome_tags: biome.payload_gantry;biome.carrier_link
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "False Ending Taxonomy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,18 @@ localization_flags: 0
 
 # False Ending Taxonomy
 
-HECTON-8 treats false and partial endings as real outcomes rather than fake-outs. A material payout can roll credits. A partial exit can send the player back into the same seed with retained dossier knowledge. Corporate capture and quarantine hold can punish bad payloads or dangerous evidence routing. The deeper endings require public proof, Atlas-state resolution, and a decision about what kind of rescue the player is willing to buy.
+KEELMARK LOSS DESK / DISPOSITION SCHEDULE DS-11 REV 6. Posted above the settlement board at the payload gantry.
+
+  DS-1  MATERIAL SETTLEMENT, PAYLOAD ACCEPTED .......... 90 d
+  DS-2  PARTIAL RECOVERY, LIEN RETAINED, RE-ENTRY PERMITTED .. 90 d
+  DS-3  CUSTODY TRANSFERRED TO PRINCIPAL ............... 180 d
+  DS-4  QUARANTINE HOLD ................................ —
+  DS-5  PUBLIC LEDGER RELEASE, CLAIM VALUE WRITTEN DOWN .. 90 d
+  DS-6  CONTINUITY RESOLUTION, ATLAS BASIN ............. under review
+
+Every line on the sheet is a settlement. A claimant can clear the water, bank the payout, and be filed under DS-3 by the same desk that wired the transfer.
+
+The dash in the DS-4 interval column is not a printing fault. It has been a dash through six revisions, and the schedule carries no appeal route for a category with no clock.
 
 ## Scanner
 

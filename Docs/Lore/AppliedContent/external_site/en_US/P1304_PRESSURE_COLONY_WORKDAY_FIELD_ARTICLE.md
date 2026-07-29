@@ -19,10 +19,14 @@ localization_flags: 0
 
 # Pressure Colony Workday Field Article
 
-Colony life in HECTON-8 is not written as cozy frontier nostalgia. The settlement survived by turning ordinary human routines into pressure operations. Sleeping, eating, repairing, logging a route and handing off a tool were not separate categories. They were linked demands on the same air system, the same doors, the same pumps and the same exhausted bodies.
+Colony records recovered from HECTON-8 do not describe a settlement with an industry attached. They describe a pressure plant with rooms in it.
 
-This is the reason the game treats everyday spaces as evidence. A bunk row can explain staffing pressure better than a corporate memo. A service galley can show how long people were kept on call. A route board can expose the difference between a clean schedule and the dirty reality of who had to enter a failing section. The player does not learn the colony by reading lore plaques. The player learns it by noticing that personal life was always stapled to a job.
+Shift boards from Sector 44 carry one line per habitable volume across six columns: room, plant kept alive, authorised route, air burden in filter-hours, tool custody number, and return stamp. Domestic space is not a separate category on any recovered board. A bunk row appears against a scrubber bank. A galley corner appears with a 0.6 burden and no route.
 
-That tone matters. HECTON-8 is not about noble colonists building a dream city or faceless workers waiting to become tragedy props. It is about competent people living inside a system that converted competence into endurance until the margin broke. When the player later cuts open cabinets or takes salvage from rooms, the moral pressure comes from understanding what those objects once did for living people.
+Those columns account for the objects that outlasted the paperwork. A tool locker was a job boundary before it was anything personal: the number inside recorded which door the holder could open, at what depth, and who carried the loss if the tool did not return. A meal token left beside a route strip records a schedule with no time to eat away from the hatch.
+
+The heading on the air column is BURDEN. Deep Reach habitat notes from the same period direct that occupied rooms be classified by pressure service, route authority, scrubber load and accepted delay, and archived under operations rather than culture. On that one point the boards and the instruction agree.
+
+Recovered boards stop at different dates. Bay 9 stops with one return line unstamped.
 
 <!-- External Site; generated from P1304_PRESSURE_COLONY_WORKDAY_FIELD_ARTICLE/en_US. -->

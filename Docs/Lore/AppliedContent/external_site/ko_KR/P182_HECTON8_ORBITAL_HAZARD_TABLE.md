@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "HECTON-8 궤도 위험표"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

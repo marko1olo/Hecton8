@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.claim_route
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "بروتوكول مستقبل السجل العام payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

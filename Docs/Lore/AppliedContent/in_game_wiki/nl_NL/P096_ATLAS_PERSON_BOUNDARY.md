@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.atlas_basin
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Persoonsgrens van Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.photic_shallows;biome.first_route_shelf
 locale: zh_CN
 surface: external_site
 source_voice: Public Site Photic Shelf Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "有光层石灰岩碎屑台地"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

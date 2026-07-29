@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.comms
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Mute外側死んだbeacon役"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

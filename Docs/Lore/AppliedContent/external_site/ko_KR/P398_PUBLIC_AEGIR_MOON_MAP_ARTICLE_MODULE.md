@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.aegir_system
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Aegir 위성 경로 지도"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

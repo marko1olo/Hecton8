@@ -8,7 +8,7 @@ biome_tags: biome.claim_route;biome.safe_module
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Конверсія втрат за збереження претензії"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

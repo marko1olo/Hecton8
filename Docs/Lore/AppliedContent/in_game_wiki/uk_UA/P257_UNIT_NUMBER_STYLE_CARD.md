@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.hard_scifi_ui
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "UA LOC HOLD: Unit And Number Style Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

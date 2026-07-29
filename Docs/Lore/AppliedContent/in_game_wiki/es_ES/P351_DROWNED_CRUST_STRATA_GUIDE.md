@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.ocean
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Guía de estratos de corteza ahogada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "יציאה חלקית: חזרה לאותו seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.relay_archive
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Registro De Suboficinas Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

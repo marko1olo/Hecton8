@@ -1,0 +1,32 @@
+---
+packet_id: P711_PAD_HANDSHAKE_WINDOWS
+release_set_id: RS711_DEEP_REACH_LIABILITY_PADS_2
+article_id: hecton8.pad.handshake_windows
+unlock_id: unlock.pad.handshake_windows
+poi_tags: poi.tender_board;poi.shallow_annex_p63
+biome_tags: biome.shallow_annex;biome.photic_shelf
+locale: ar_SA
+surface: external_site
+source_voice: Website Public
+spoiler_tier: 
+title: "P711_PAD_HANDSHAKE_WINDOWS"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: rtl
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# P711_PAD_HANDSHAKE_WINDOWS
+
+
+
+## Scanner
+
+
+
+## Terminal
+
+
+
+<!-- External Site; generated from P711_PAD_HANDSHAKE_WINDOWS/ar_SA. -->

@@ -8,7 +8,7 @@ biome_tags: biome.service_canyons;biome.drowned_infrastructure
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cache de revendication morte"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

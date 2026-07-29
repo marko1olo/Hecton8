@@ -8,7 +8,7 @@ biome_tags: biome.orbital_window;biome.surface_relay
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Innere-Mond-Relay-Gefahren"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: es_ES
 surface: in_game_wiki
 source_voice: PDA Forensic Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Fractura del vidrio del pestillo del grabador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.deep_reach_pressure
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Deep Reach 공개 서류"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

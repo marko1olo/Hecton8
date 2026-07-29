@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.safe_module
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "압력 침상 교대 루틴"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

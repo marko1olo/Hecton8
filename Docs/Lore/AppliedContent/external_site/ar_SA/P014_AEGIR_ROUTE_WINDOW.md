@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.black_keel_link
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "نافذة طريق Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

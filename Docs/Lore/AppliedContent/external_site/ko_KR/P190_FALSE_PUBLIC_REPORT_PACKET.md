@@ -8,7 +8,7 @@ biome_tags: biome.public_archive;biome.relay_archive
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "거짓 공개 보고 패킷"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

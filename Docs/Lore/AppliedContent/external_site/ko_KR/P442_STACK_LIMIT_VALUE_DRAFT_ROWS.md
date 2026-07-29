@@ -8,7 +8,7 @@ biome_tags: biome.resource_tables;biome.claim_admin
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "KO LOC HOLD: Stack Limit Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.density_layer
 locale: id_ID
 surface: external_site
 source_voice: Public Site Brine Substrate Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Lanau Kerak Garam Ngarai Brine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

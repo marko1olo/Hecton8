@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: ko_KR
 surface: external_site
 source_voice: Public Lore Atlas Evidence Note
-spoiler_tier: 0
+spoiler_tier: 
 title: "누락된 귀환 표식과 클레임 전환"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.service_canyon
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "中継保管の債務鎖"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

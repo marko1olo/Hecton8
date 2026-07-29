@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.worker_archive
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Уровни знания истинной причины"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

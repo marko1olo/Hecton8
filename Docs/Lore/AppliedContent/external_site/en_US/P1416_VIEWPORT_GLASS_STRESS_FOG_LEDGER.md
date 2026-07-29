@@ -19,12 +19,10 @@ localization_flags: 0
 
 # Viewport Stress Fog Ledger
 
-A viewport is one of the crueler objects in a drowned colony. It was built to make the ocean visible without letting it become present. After the colony fails, it keeps doing half of that job. You can see through it. That does not mean it is safe.
+A viewport was built to make the ocean visible without letting it become present. After the colony failed it still performs half of that job, which is the dangerous half.
 
-HECTON-8 viewport reading starts at the edge. The middle of the glass is a liar because humans cleaned it, cameras stared through it, and players naturally trust what they can see. The rim is less vain. Milky arcs mean layers flexed under pressure. Salt fog under the gasket means water migrated where it was never invited. Condensation sealed inside the laminate means the dry side breathed wet air for a long time before collapse. Dark grime at the lower rim marks leak cycles, not decoration.
+Reading a pane starts at the edge. The middle was cleaned by hand and stared through by cameras, so it carries the least information. The rim is honest. Milky arcs mean the layers flexed under pressure. Salt fog under the gasket means water migrated into the laminate. Condensation sealed between layers means the dry side breathed wet air for a long time before anything broke. Dark grime at the lower rim marks repeated leak cycles rather than one impact.
 
-Good use of a viewport changes behavior. The player can identify a dry pocket, choose a low-stress cut line, preserve the pane as proof of slow failure, or avoid a room whose glass has already become a pressure spring. It also changes mood without a monologue. A clean observation blister says someone still tried to work normally. A fogged family-room pane says the ocean arrived slowly enough for people to watch it negotiate.
-
-Pressure glass as a resource can be valuable, but this article is about built glass as witness. The pane does not accuse anyone. It records patience, maintenance, denial and the exact places where the colony stopped keeping water outside.
+A pane can therefore contradict a report. The observation blister in Module 5 at 520 metres carries a 40 mm delamination arc and grime on the lower rim only, which describes a slow failure across many cycles. It was filed at the time as an instant breach. A pane in that condition is also a loaded spring, and it releases as spall rather than as a crack.
 
 <!-- External Site; generated from P1416_VIEWPORT_GLASS_STRESS_FOG_LEDGER/en_US. -->

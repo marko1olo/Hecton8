@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.safe_module
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Rutinitas Ranjang Tekanan Giliran Kerja"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

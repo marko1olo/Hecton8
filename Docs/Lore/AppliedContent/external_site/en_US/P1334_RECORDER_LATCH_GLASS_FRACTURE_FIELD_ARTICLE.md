@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: en_US
 surface: external_site
 source_voice: Public Lore Atlas Short Summary
-spoiler_tier: 0
+spoiler_tier: 
 title: "Recorder Latch Glass Fracture"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,12 +19,12 @@ localization_flags: 0
 
 # Recorder Latch Glass Fracture
 
-HECTON-8 evidence works best when the player can distrust a voice by looking at the thing that carried it. The recorder latch glass is one of those objects: too small to be dramatic, too physical to ignore.
+The recorder latch glass is a pressure-rated cover fitted over the latch of a colony recorder bay, installed so a technician could confirm the latch was seated without opening the recorder. In a working colony it was a convenience. In a flooded one it is the custody record for whatever the recorder holds.
 
-        It sits over the latch of a pressure-room recorder bay. In a working colony it was a maintenance convenience. After the flood it becomes a truth surface. Crack direction, chip depth, mineral bloom and scrape order reveal whether the bay stayed sealed through impact, was opened by a trapped worker, or was touched later by someone with cleaner hands and a better story.
+Glass takes force differently from metal, and the difference stays legible. A door shock leaves a tight star with short legs and no scrape along the latch tongue. A hand tool bites a crescent at the outer edge before the glass runs. Someone opening the bay from inside a failing room leaves glove polish, salt-wet bloom and chips on the hinge side. A late arrival cuts cleaner hooks through settled mineral dust.
 
-        The glass does not compete with audio. It disciplines audio. A recovered voice log may sound intact, but the latch glass can ask who opened the bay, which side took the force, whether the cassette was already seated, and whether salt grew inside the fracture before the official recovery. A clean file with dirty glass is suspicious. Dirty sound with honest glass can be trusted further.
+The glass is read against the cassette teeth and the pressure ink wheel. Teeth record strip pull, the wheel records whether the recording was made wet or dry, and the glass records access. Bay 4 in Sector 44 came up carrying a pry hook cut through old salt, against a recovery filing that describes the bay as sealed on retrieval.
 
-        This is the tone HECTON-8 should keep: no magic black boxes, no omniscient recordings, no lore dump solving the colony. A cover shard, a cassette tooth, a pigment wheel and a route stamp should make the player slow down, compare physical witnesses and earn the right to believe one line of sound.
+The glass has no motive and no version of events. It holds force direction and the order in which the marks arrived.
 
 <!-- External Site; generated from P1334_RECORDER_LATCH_GLASS_FRACTURE_FIELD_ARTICLE/en_US. -->

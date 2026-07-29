@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Override Request 6-114, Returned"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

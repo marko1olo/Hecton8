@@ -8,7 +8,7 @@ biome_tags: biome.tide_gauge;biome.drowned_colony
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ланцюг відповідальності Великого припливу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

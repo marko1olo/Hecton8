@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.atlas
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Полевой справочник давленого стекла и герметика"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

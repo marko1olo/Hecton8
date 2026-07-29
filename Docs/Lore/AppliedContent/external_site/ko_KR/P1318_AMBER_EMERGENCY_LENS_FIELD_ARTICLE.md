@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base_interior;biome.flooded_airlock
 locale: ko_KR
 surface: external_site
 source_voice: Public Site Emergency Lens Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "호박색 비상 렌즈"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

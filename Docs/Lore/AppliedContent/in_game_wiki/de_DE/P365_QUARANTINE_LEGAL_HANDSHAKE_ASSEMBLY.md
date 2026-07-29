@@ -8,7 +8,7 @@ biome_tags: biome.safe_module;biome.abyssal_machine_field
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Baugruppe des Quarantäne-Rechtshandshakes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

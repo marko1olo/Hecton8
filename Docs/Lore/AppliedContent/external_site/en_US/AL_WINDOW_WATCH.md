@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Observation Bay 4 Watch Log"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

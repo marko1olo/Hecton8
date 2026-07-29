@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.hecton8_atlas
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "HECTON-8 Public Primer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,13 @@ localization_flags: 0
 
 # HECTON-8 Public Primer
 
-HECTON-8 is introduced as a place worth surviving, not just a crime scene. The moon belongs to the Aegir system: cold, tidal, valuable, and inconveniently far from any quick rescue. Its photic shelves can be clear and alive, with colony hardware visible through bright water. Below that beauty, the old Deep Reach routes descend into pump rooms, pressure corridors, brine cuts, broken relay yards, and machinery that kept working after people stopped answering. The public primer stays spoiler-safe. It can say the player returns as a debt-bound Marauder. It can say the colony failed, the salvage contract is coercive, and the ocean holds evidence. It does not reveal the final payload choice or the full Atlas question. The point is to invite the player into the world without sanding off its teeth.
+AEGIR ROUTE PUBLIC PRIMER, sheet 1. Dry catalog RAN-B:H8. Local name HECTON-8.
+
+An ocean moon in the Aegir system, tidal, cold, mineral-rich, 10.5 light years from Sol. The photic shelves stay clear to roughly sixty metres, with colony structure visible through living water. Below that the Deep Reach service routes run down into pump rooms, pressure corridors, brine cuts and relay yards that kept operating after the shift boards stopped being filled in.
+
+The primer states three things and stops. The colony failed in 2147. Salvage is worked under coercive contract by licensed crews out of Barnard Yards. The water holds recoverable evidence, which is why the claim is disputed rather than closed.
+
+Enquiries route to the Contract Continuity Desk. The primer carries no evacuation section.
 
 ## Scanner
 

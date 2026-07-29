@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: en_US
 surface: in_game_wiki
 source_voice: PDA Forensic Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Recorder Cassette Tooth Wear"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,13 +19,16 @@ localization_flags: 0
 
 # Recorder Cassette Tooth Wear
 
-Recorder cassette teeth are the dull edge of an audio clue, which is exactly why they matter. A hydrophone strip can be copied, clipped and equalized until it sounds almost official. The cassette teeth are harder to flatter. They sit on the feed edge, taking the small violence of the room recorder: pawl taps, reverse drag, salt grit, panic pulls and the uneven bite of a machine that kept moving when the room did not.
+Cassette edge card CT-4, feed edge from a pressure-room recorder, Bay 12 claimed.
 
-        Maintenance crews called the tooth line the witness edge. It was not meant to be poetic. A clean forward comb meant the cassette advanced under normal load. A polished high tooth meant someone held the strip while the bay tried to feed it. Two skipped notches beside a pressure spike meant the recorder jammed, recovered, and lost time. A broken corner with fresh metal under old salt meant the cassette was damaged during recovery, not during the event. The shape of the edge is small, but it can kill a lie cleanly.
+  FORWARD COMB: clean for 60 mm, then two skipped notches
+  HIGH TOOTH: polished, strip held while the bay fed
+  GAPS: old salt, new handling smear over it
+  PAWL MATCH: does not match the Bay 12 pawl scar
 
-        For the player, tooth wear is a comparison object. It should be read against the recorder bay pawl, the hydrophone strip edge, the transcript damage band, and any route permission stamp tied to the room. If the strip claims to come from Bay 12 but its tooth spacing never touched Bay 12's worn pawl, the sound has been moved. If the cassette edge shows a panic pull before the official evacuation hold, somebody tried to take the room's memory before the paperwork arrived. If the tooth gaps are packed with old salt under a new handling smear, the cassette waited in water before anyone admitted it existed.
+Maintenance called the feed edge the witness edge. A clean forward comb means normal load. A polished high tooth means somebody held the strip while the bay tried to advance it. Two skipped notches beside a pressure spike mean the recorder jammed, recovered and lost time.
 
-        This is the kind of evidence that makes HECTON-8 feel inhabited. Not every truth needs a voice. Sometimes the colony speaks through a row of cheap ceramic teeth, worn down by the same machine rhythm that outlasted the crew.
+This cassette did not run in Bay 12. Old salt under a new smear also puts it in water before anyone recorded that it existed, so the strip is filed as relocated and the missing seconds stay unexplained.
 
 ## Scanner
 

@@ -8,7 +8,7 @@ biome_tags: biome.brine;biome.geology
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "塩水峡谷密度梯子ガイド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

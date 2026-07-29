@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.ecology
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Кодекс: фотический мат"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

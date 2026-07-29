@@ -8,7 +8,7 @@ biome_tags: biome.dossier;biome.colony_ruins
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "PT-BR LOC HOLD: Evidence Order Depth Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

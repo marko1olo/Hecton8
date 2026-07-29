@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.industrial_shelf
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Portão de responsabilidade do cânion de salmoura"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

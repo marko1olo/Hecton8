@@ -8,7 +8,7 @@ biome_tags: biome.service_canyons;biome.drowned_infrastructure
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cache Klaim Mati"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.contract
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Player Lien Contract Start Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Player Lien Contract Start Card
 
-The HECTON-8 protagonist is a former Deep Reach professional turned salvage operator. That origin keeps the story adult and practical: the player comes for work, not destiny. The emotional turn is earned through evidence, contracts and remembered access, letting the mystery become personal without reducing it to family revenge.
+Black Keel salvage engagements are written against a recovery mass window rather than a wage. Recovered contract SC-4471-B sets the window at 4.8 tonnes gross and counts the contractor's own suit, consumables and body mass against it. Clause 7.4 provides that the lien survives non-recovery and settles against the estate.
 
 ## Scanner
 

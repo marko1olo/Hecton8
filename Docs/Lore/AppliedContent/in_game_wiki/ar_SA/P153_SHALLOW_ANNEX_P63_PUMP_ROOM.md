@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.photic_shelf
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "غرفة مضخة P-63 في الملحق الضحل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

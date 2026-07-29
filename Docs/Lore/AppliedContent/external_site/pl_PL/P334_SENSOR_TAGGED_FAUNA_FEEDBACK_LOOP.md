@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.fauna
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pętla sprzężenia fauny z tagiem czujnika"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

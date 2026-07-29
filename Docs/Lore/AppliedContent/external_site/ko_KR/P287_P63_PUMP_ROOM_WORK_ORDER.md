@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.work_order
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "P-63 펌프실 작업 지시서"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

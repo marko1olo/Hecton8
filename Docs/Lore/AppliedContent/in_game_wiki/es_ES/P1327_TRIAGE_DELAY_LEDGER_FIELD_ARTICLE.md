@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.medical_bay
 locale: es_ES
 surface: in_game_wiki
 source_voice: PDA Medical Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Registros de triaje demorado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

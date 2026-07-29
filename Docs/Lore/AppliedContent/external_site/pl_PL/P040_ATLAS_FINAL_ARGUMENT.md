@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.atlas_core
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ostateczny argument Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

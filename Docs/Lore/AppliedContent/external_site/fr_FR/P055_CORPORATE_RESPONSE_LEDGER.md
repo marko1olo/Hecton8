@@ -8,7 +8,7 @@ biome_tags: biome.corporate_wreck;biome.return_route
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ledger de reponse corporate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

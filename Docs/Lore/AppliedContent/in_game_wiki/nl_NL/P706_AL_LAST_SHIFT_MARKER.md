@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.spine_shallows
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P706_AL_LAST_SHIFT_MARKER"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

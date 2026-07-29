@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: ko_KR
 surface: in_game_wiki
 source_voice: PDA Paint Wear Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "페인트 벗겨짐과 긁힘 증거"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.safe_module;biome.abyssal_machine_field
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Conjunto de Handshake Legal de Quarentena"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

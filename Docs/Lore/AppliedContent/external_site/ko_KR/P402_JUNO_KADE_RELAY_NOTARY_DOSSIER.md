@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.relay_yard
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "주노 케이드, 중계 공증인"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.escape_chain;biome.authoring
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "صف تكلفة وصفة الصعود"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

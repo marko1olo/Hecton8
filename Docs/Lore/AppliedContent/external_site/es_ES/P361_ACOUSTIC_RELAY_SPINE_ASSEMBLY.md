@@ -8,7 +8,7 @@ biome_tags: biome.shallow_shelf;biome.industrial_shelf
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Conjunto de espina de relé acústico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

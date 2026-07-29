@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.p63_shallows
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "계약 연속성 데스크 서명"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

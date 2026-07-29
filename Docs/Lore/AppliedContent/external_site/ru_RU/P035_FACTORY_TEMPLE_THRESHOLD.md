@@ -8,7 +8,7 @@ biome_tags: biome.bottom_factory;biome.atlas_zone
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Порог фабрики-храма"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

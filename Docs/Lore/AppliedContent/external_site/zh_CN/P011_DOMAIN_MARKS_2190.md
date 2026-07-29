@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "2190 域标记"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

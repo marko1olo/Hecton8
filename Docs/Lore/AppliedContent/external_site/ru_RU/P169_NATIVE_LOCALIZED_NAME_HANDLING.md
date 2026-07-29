@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.shallow_annex
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Протокол локализации личных имен"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

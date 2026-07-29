@@ -8,7 +8,7 @@ biome_tags: biome.service_canyons;biome.industrial_descent
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Resource Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories;biome.drop_wall
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Wrist Count Against The Board"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -23,7 +23,7 @@ A green board is a claim about the alarm band, not a measurement of the holder.
 
 Calibration drift widens that band until the warning falls outside it, so the display holds green through the whole excursion and the printed strip agrees with itself afterwards. The body has no such setting. A pulse taken at the glove seam against a bay clock, counted twice, is analog data no firmware revision can widen, which is why a strip carrying an ink column beside the printed one is the only telemetry in Sector 44 worth carrying out.
 
-Recorded drift only ever moves toward green. Nobody has explained the direction.
+Recorded drift only ever moves toward green.
 
 Assessment: write the wrist count in ink beside the printout, both numbers, ink first. A board that has never left green has not measured anything.
 
@@ -43,7 +43,9 @@ I am counting one hundred and thirty at the wrist, through the glove seam, again
 
 So either my hand is lying or the band got widened. One of those is on a form somewhere with a signature under it.
 
-I am putting the wrist number in ink beside the printout. Morita, if the green one goes up alone, that was a choice somebody made, and I want it --
+I am putting the wrist number in ink beside the printout. Morita, if the green one goes up alone, that was a choice somebody made.
+
+Whoever pulls this cartridge: the ink column is mine and the printed column is theirs. Keep both, and do not let anybody file the strip without the ink.
 
 ## Field Note
 

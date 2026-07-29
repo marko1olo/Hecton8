@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_exterior
 locale: zh_CN
 surface: in_game_wiki
 source_voice: PDA Exterior Trim Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "压力基地外部船壳饰条"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

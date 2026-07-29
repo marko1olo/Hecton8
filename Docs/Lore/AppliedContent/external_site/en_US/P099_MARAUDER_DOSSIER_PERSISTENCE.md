@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.drowned_admin
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Marauder Dossier Persistence"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Marauder Dossier Persistence
 
-Marauder Dossier Persistence defines HECTON-8's replay contract: the player inherits context, not power. The dossier lets later attempts read old mistakes faster, recognize contract traps earlier, and understand which endings were incomplete without turning memory into a mechanical advantage that breaks survival pressure.
+A Marauder dossier is a paper binder issued per licence at Barnard Yards. It carries closed outcomes, contract types, rumour families, evidence classes, route warnings and publication record forward between descents. It carries no hardware state.
 
 ## Scanner
 

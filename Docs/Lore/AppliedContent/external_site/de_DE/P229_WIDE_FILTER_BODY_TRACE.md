@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.open_deep_water
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Spur des breiten Filterkörpers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

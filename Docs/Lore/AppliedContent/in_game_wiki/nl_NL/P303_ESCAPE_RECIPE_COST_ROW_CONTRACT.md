@@ -8,7 +8,7 @@ biome_tags: biome.escape_chain;biome.authoring
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kostenregel voor opstijgrecept"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

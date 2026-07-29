@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.silt_plain
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "실트 매복자의 전조"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

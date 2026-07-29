@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.medical_bay
 locale: nl_NL
 surface: in_game_wiki
 source_voice: PDA Medical Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Triagevertragingsregisters"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.surface_weather;biome.orbit_window
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ventana de relevo Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

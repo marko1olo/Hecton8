@@ -8,7 +8,7 @@ biome_tags: biome.atlas_bottom;biome.deep_launch_route
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Payload Window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

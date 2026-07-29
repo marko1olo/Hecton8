@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.system
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Aegir主星光と放射線"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

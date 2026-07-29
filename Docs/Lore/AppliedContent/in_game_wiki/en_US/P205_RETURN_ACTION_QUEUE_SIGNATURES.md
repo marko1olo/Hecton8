@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.black_keel
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Return Action Queue Signatures"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

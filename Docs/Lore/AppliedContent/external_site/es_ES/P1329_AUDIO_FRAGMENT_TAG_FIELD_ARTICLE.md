@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: es_ES
 surface: external_site
 source_voice: Public Site Audio Evidence Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Etiquetas de fragmento de audio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.thermal_vent;biome.atlas_basin
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Vent Micronode Nests"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,9 +19,7 @@ localization_flags: 0
 
 # Vent Micronode Nests
 
-Vent Micronode Nests define Atlas' deep power model. The AI does not survive as a clean central tower with perfect command over the ocean. It survives as distributed maintenance ecology: small warm nodes at vent margins, each drawing enough energy from thermal gradient and chemistry to pulse nearby biology and metal.
-
-That model keeps Atlas frightening without making it omnipotent. A micronode nest can wake conductive biofilm, feed an acoustic filter organ, encourage shell sealant growth or read a sensor tag as if it were still a reliable instrument. It is local, stubborn and damaged. The final zone should feel like a factory grown from pressure because the factory is no longer only machinery. It is heat, shell, signal, old corporate logic and native life all forced into the same repair loop.
+Vent micronode nests are clusters of small maintenance nodes at the vent margins, each drawing enough from the thermal gradient to pulse nearby shell sealant, biofilm and tagged metal. They hold no central command. Atlas-6 maintenance persists at those margins because the nodes are local, stubborn and damaged, not because the grid survived.
 
 ## Scanner
 

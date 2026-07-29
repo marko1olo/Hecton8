@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.industrial_shelf
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "企业捕获：干净救援"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

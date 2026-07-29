@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: pt_BR
 surface: in_game_wiki
 source_voice: PDA Forensic Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Corte do Livro de Oxigênio e Retenção de Claim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

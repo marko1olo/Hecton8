@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.contract
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Стартова contract card з lien гравця"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

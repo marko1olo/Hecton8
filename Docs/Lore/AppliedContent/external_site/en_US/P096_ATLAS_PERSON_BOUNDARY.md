@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.atlas_basin
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas Person Boundary"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Atlas Person Boundary
 
-Atlas Person Boundary defines the AI's agency for endings. Atlas is not a villain mind and not a friendly ghost; it is a damaged industrial intelligence with partial recognition and broken categories.
+Recognition records printed from the RAN-B:H8 factory governor list access pattern, key number, maintenance history and classification. No recovered record carries a name field. The categories are damaged rather than hostile.
 
 ## Scanner
 

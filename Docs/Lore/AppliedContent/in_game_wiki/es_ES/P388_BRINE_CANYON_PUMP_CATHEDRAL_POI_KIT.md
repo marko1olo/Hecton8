@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.pump_station
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kit de pruebas de la catedral de bombas del cañón de salmuera"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.process_chemistry
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Процессная lot-карта brine salt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

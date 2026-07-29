@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.photic_shelf
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Teilweiser Ausstieg: Rückkehr im selben Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

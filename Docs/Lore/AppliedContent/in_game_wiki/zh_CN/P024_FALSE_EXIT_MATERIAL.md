@@ -8,7 +8,7 @@ biome_tags: biome.deep_launch_route;biome.orbit_window
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "物资撤离"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: ru_RU
 surface: external_site
 source_voice: Public Lore Atlas Short Summary
-spoiler_tier: 0
+spoiler_tier: 
 title: "Направление разрыва сервисной пломбы регистратора"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

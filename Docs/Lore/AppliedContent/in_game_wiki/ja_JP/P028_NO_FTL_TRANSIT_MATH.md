@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive;biome.service_canyon
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "FTLなしの航行計算"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

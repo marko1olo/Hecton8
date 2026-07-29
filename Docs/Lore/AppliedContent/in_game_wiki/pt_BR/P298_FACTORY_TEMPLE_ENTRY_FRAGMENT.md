@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.atlas
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Fragmento de Entrada da Fábrica-Templo"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

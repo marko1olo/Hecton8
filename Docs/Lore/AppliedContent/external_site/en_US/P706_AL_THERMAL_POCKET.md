@@ -8,7 +8,7 @@ biome_tags: biome.thermal_fields
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Throat 12, Forty Metres Downstream"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

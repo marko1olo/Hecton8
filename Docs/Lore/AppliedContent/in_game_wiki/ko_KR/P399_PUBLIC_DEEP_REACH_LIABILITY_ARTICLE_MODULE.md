@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.deep_reach
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Deep Reach 책임 증거"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

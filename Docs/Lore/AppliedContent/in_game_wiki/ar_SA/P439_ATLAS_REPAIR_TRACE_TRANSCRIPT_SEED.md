@@ -8,7 +8,7 @@ biome_tags: biome.atlas_repair_network;biome.deep_ecology
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "تفريغ أثر إصلاح Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

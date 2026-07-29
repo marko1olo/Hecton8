@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.open_shallow_water
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Bloom latarniowego dryfu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

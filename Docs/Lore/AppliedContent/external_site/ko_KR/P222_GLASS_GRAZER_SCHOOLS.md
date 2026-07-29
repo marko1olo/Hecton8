@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.cable_reef
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "글래스 그레이저 무리"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

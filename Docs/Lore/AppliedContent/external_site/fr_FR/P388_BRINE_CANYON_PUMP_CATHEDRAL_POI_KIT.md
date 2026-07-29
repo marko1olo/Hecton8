@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.pump_station
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kit de preuves de la cathédrale de pompes du canyon de saumure"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

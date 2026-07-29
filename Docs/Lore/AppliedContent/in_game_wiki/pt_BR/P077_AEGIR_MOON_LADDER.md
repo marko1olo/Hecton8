@@ -8,7 +8,7 @@ biome_tags: biome.orbital_window;biome.relay_spine
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Escada Lunar de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

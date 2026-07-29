@@ -8,7 +8,7 @@ biome_tags: biome.cable_forest;biome.deep_abyss
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "수리 흉터"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

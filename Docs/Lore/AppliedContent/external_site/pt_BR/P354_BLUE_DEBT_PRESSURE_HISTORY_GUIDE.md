@@ -8,7 +8,7 @@ biome_tags: biome.resource;biome.deep
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Guia de histórico de pressão da dívida azul"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

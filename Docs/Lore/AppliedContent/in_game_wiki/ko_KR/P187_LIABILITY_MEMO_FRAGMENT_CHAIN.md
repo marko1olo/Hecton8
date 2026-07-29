@@ -8,7 +8,7 @@ biome_tags: biome.worker_archive;biome.relay_archive
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "책임 메모 조각 사슬"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

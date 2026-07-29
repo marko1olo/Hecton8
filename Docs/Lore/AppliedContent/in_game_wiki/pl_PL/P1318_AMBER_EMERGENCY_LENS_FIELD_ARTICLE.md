@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base_interior;biome.flooded_airlock
 locale: pl_PL
 surface: in_game_wiki
 source_voice: PDA Warning Lens Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Bursztynowa soczewka awaryjna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.worker_locker;biome.p63_shallows
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "アンカー作業員名セットA"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

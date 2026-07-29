@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.dossier
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "깨끗한 엔딩 없음 dossier 메모"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

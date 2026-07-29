@@ -8,7 +8,7 @@ biome_tags: biome.medical_lock;biome.repair_fauna
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "아야 모리타의 수리 의학"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

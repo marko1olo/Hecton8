@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.p63_shallows
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "契約継続デスクの署名"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

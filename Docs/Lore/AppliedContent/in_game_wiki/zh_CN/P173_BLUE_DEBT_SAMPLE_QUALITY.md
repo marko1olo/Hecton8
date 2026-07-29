@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.atlas_basin
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Blue Debt 样本质量"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

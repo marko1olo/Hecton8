@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.abyssal_machine_field
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Вера Сато-Рен: возвратное действие"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

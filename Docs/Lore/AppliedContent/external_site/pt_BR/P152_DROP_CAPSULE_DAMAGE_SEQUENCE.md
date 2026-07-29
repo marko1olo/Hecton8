@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.photic_shelf
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Sequência De Dano Da Cápsula"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

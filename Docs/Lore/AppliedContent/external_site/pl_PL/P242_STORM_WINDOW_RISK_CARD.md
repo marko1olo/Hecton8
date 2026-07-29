@@ -8,7 +8,7 @@ biome_tags: biome.aegir_orbital_pressure;biome.surface_storm
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "PL LOC HOLD: Storm Window Risk Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

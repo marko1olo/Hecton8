@@ -8,7 +8,7 @@ biome_tags: biome.drowned_admin;biome.carrier_link
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "משמורת Keelmark Mutual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

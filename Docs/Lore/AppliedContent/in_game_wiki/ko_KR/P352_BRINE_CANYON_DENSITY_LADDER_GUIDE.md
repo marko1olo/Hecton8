@@ -8,7 +8,7 @@ biome_tags: biome.brine;biome.geology
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "염수 협곡 밀도 사다리 가이드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

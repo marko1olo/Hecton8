@@ -8,7 +8,7 @@ biome_tags: biome.deep_reach;biome.contract
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "回収コンプライアンス座標要求"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

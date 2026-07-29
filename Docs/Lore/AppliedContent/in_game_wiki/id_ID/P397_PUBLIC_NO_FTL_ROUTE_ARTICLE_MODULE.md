@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.human_space
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Penundaan rute tanpa FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

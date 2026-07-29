@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.atlas_basin
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Blue Debt 샘플 품질"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

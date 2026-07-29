@@ -8,7 +8,7 @@ biome_tags: biome.evacuation_queue;biome.quarantine_gate
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "עיכוב הלדיין לשחרור מהסגר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

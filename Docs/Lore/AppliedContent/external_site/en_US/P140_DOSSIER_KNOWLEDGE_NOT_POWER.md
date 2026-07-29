@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Dossier Knowledge, Not Power"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

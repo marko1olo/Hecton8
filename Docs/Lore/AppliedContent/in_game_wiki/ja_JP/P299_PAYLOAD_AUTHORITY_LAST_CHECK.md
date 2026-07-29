@@ -8,7 +8,7 @@ biome_tags: biome.final_payload;biome.dossier
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ペイロード権限最終確認"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

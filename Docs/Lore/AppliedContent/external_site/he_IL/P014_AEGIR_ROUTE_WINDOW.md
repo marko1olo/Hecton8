@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.black_keel_link
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "חלון נתיב Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

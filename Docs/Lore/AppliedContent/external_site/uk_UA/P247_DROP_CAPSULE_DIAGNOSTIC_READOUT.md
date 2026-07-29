@@ -8,7 +8,7 @@ biome_tags: biome.first_hour_capsule;biome.surface_storm
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "UK LOC HOLD: Drop Capsule Diagnostic Readout"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

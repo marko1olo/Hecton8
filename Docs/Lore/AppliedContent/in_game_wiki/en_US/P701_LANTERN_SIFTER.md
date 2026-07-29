@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.industrial_shelf
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Lantern Sifter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -25,7 +25,7 @@ The first return is the wall. The second arrives a fifth of a second later, off 
 
 The wrong bearing points at the next colony. Walk the chain and it ends at cable still under load, which is worth the swim. The first pulse also gave your position to everything on that route, and the route runs past forced-flow vents.
 
-One chain out of Bay 12 points into solid rock.
+One chain out of Bay 31 points into solid rock.
 
 Assessment: ping once, then clear the vent ahead before you follow the second bearing.
 
@@ -35,11 +35,11 @@ Colonial filter feeder. Dense inclusion in gill basket, non-biological. Confiden
 
 ## Terminal
 
-SPECIMEN 44-D-402. INVENTORY LINE: ACOUSTIC REPEATER, GROWN. SITE: CABLE RUN 12, 740 M. UNIT COUNT: 41,000 EST. SERVICE INTERVAL: NONE, UNITS SELF-REPLACE. ORIGIN: GOVERNOR MAINTENANCE ROUTING, UNVERIFIED.
+SPECIMEN 44-D-402. INVENTORY LINE: ACOUSTIC REPEATER, GROWN. SITE: CABLE RUN 12, 2,120 M. UNIT COUNT: 41,000 EST. SERVICE INTERVAL: NONE, UNITS SELF-REPLACE. ORIGIN: GOVERNOR MAINTENANCE ROUTING, UNVERIFIED.
 
 ## Audio
 
--- coming back twice again, Corran, second one off my port quarter and there is nothing off my port quarter, I can see the whole bearing. No. I am not chasing it. I am logging it and sitting still until whatever else heard that pulse gets --
+-- coming back twice again, Corran, second one off my port quarter and there is nothing off my port quarter, I can see the whole bearing. No. I am not chasing it. I am logging it and sitting still. How many are you getting? Corran says three.
 
 ## Field Note
 

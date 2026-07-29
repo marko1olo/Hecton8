@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "사물함 이름 프로토콜"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

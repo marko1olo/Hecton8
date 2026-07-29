@@ -8,7 +8,7 @@ biome_tags: biome.dead_claim;biome.industrial_descent
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Deep Reach 활성 정리 명령"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

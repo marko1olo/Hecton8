@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.system
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Свет основной звезды Aegir и радиация"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

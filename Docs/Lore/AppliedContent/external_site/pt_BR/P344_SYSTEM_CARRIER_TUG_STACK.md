@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.contract
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pilha de carrier e rebocadores de sistema"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

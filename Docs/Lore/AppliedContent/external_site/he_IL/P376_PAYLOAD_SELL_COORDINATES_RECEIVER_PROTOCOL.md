@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.factory_temple
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "פרוטוקול מכירת קואורדינטות payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.safe_module;biome.colony
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kartoteka Specjalisty Systemów Terenowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

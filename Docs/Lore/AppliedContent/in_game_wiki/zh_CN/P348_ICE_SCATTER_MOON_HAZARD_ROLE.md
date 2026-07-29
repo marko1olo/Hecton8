@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.system
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Claw 冰散射危险角色"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

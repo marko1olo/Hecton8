@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.warning
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "تحذير حقل الآلات السحيق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.claim_archive;biome.deep_reach_office
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ledger Ibarra de conversão de perdas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

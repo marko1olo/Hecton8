@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.shallows
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "תביעת הפתיחה של Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

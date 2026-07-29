@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.replay
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Черновые строки риска и награды контрактов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

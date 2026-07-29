@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.pressure_gate
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Brama ciśnieniowa basenu Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.factory_temple
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "payload 检疫保存接收协议"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

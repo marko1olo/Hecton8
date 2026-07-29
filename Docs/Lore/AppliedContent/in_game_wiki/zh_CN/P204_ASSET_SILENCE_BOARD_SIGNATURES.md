@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.worker_locker
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Asset Silence Board 签名"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

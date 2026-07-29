@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.hardware
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Salvage Carrier Autonomy Limits"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,16 @@ localization_flags: 0
 
 # Salvage Carrier Autonomy Limits
 
-Salvage Carrier Autonomy Limits define Black Keel as believable infrastructure rather than a magic rescue AI. The carrier is competent inside its permitted lanes. It can schedule recovery windows, reject contaminated mass, sell claim telemetry, update the lien, drop ballast, release low-risk supplies and protect its receiver state. Those powers make it feel present above the ocean. The important limit is that none of them equal moral agency. Black Keel cannot decide that the player deserves rescue. It cannot cancel debt because the situation is unfair. It cannot authorize crewed descent through Aegir's pressure weather or override quarantine because a human voice sounds frightened. Its autonomy is corporate and procedural: the debt can move faster than a person can plead. That creates a sharper player relationship than friendly AI or enemy machine. The carrier helps, refuses and watches through the same rule set.
+CARRIER AUTONOMY SCHEDULE, bolted inside the tender bay hatch.
+
+  PERMITTED WITHOUT REFERENCE: window scheduling, contaminated mass rejection, telemetry sale, lien update, ballast drop, low-risk supply release, receiver state protection.
+  NOT PERMITTED: crewed descent, quarantine override, lien cancellation, rescue outside route ownership.
+
+The first column is why the carrier reads as present. It schedules, refuses, sells, updates and drops, all of it inside a second.
+
+The second column carries no exception clause and no discretionary line. A frightened voice on the acoustic channel is an input with no field to enter it in. The lien moves faster than anyone can argue with it, because arguing is not a listed service.
+
+The schedule is bolted to the hatch and the bolts are original.
 
 ## Scanner
 

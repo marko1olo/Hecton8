@@ -8,7 +8,7 @@ biome_tags: biome.scanner;biome.evidence
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "UK LOC HOLD: Scanner Stage Binding"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

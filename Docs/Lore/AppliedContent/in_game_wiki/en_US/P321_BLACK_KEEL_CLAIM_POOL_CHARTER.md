@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.contract
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black Keel Claim-Pool Charter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,16 @@ localization_flags: 0
 
 # Black Keel Claim-Pool Charter
 
-The Black Keel Claim-Pool Charter is the first document that should make the player distrust the word ship. Black Keel is useful, close and real, but it is not a loyal vessel waiting overhead. It is a rented recovery asset inside the Aegir Reclamation Pool, built to move claims, bodies, cargo, telemetry and debt through a legal channel without giving the contractor ownership of the hull. That distinction matters because it explains the central HECTON-8 trap without magic. The carrier can hear pings, sell telemetry, schedule windows and drop low-risk supplies, yet still refuse a clean rescue because the player is not the owner of the route. Transport is permitted. Rescue priority is conditional. The lien remains active. The charter turns orbit into pressure rather than freedom: something is above you, but it answers the claim before it answers the person.
+AEGIR RECLAMATION POOL / CARRIER CHARTER, EXTRACT. Black Keel, automated claim-tender.
+
+  ART. 2  The carrier is a pooled recovery asset. No licensee acquires an interest in the hull.
+  ART. 5  Permitted services: window scheduling, telemetry sale, lien update, ballast drop, low-risk supply release.
+  ART. 6  Rescue priority is conditional on route ownership.
+  ART. 9  Article 5 services continue while Article 6 is unsatisfied.
+
+Article 9 is the mechanism. The carrier can hear a pinger, price the telemetry, book a window and drop a crate, and none of it establishes a duty to lift anyone, because the licensee does not own the route.
+
+Something is above the water the whole time. The charter is countersigned by the pool, and there is nobody aboard to appeal to.
 
 ## Scanner
 

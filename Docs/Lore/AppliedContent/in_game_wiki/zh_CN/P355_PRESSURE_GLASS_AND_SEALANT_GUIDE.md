@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.atlas
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "压力玻璃与密封剂指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

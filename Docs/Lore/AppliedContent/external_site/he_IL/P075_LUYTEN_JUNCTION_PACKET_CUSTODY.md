@@ -8,7 +8,7 @@ biome_tags: biome.relay_spine;biome.drowned_comms
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "משמורת חבילות של Luyten Junction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

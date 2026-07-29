@@ -8,7 +8,7 @@ biome_tags: biome.claim_cache;biome.worker_locker
 locale: en_US
 surface: in_game_wiki
 source_voice: PDA Salvage Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Marauder Correction Marks"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,13 +19,18 @@ localization_flags: 0
 
 # Marauder Correction Marks
 
-Marauder correction marks are small field annotations left beside official labels, not over them. They can be grease pencil, etched arrows, tape flags, washer scratches, knot codes, salvage chalk, gasket cuts or short audio tags attached to scan packets. A good mark does not make the Marauder right about everything. It says a trained claim worker distrusted the label enough to keep the object readable for the next person.
+CORRECTION MARK KEY, scratched inside the lid of a claim cache at 240 metres.
 
-The official sentence stays visible because it is also evidence. If Deep Reach wrote release pending, that phrase proves who tried to make a locked medical door sound temporary. If Keelmark wrote payout exposure, the phrase proves which part of the room was being priced. A Marauder correction should sit next to the lie, not replace it with a cleaner counter-lie.
+The mark sits beside the official line, never over it. The printed sentence is evidence too. RELEASE PENDING on a locked medical door records who wanted a sealed room to read as temporary. PAYOUT EXPOSURE on a bunk lip records what part of the room was being priced.
 
-The best marks are ugly and exact: door held, half name, air billed before rescue, return stamp missing, translation too clean, body chain cut here. They are not manifestos. They are working notes for somebody reading in bad light with bad oxygen. The mark should change how the player reads the object, the route risk or the custody chain. If it only adds attitude, it is graffiti.
+Hatch 12 of the annex:
 
-Correction marks can also contaminate a claim. Marauders are paid to notice how records lie, but they are still paid. A mark can preserve a name, warn a route, price a sample, hide a witness or push the next salvager toward a profitable mistake. Read it with the hinge, the waterline, the scrape direction and the source stamp. A correction is not the final truth. It is a refusal to let the official sentence finish the room too early.
+  PRINTED: ROUTE CLEARED 06:10, REMOTE OPERATION
+  MARKED:  door held / half name / air billed 06:00 / hinge, not anger
+
+Grease pencil, etched arrows, tape flags, washer scratches, knot codes. The useful ones are ugly and exact, because they get read in bad light on bad air.
+
+A mark can also steer a claim. Licensees are paid to notice how records lie and paid regardless. Read one against the hinge, the waterline and the scrape direction.
 
 ## Scanner
 

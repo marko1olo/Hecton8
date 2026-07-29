@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Observation Bay 4 Watch Log"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -23,9 +23,9 @@ The north floodlight bank at Observation Bay 4 throttles itself to twenty percen
 
 Those lamps run on a photocell that measures returned light and trims current to hold a set brightness. Something large and pale sitting sixteen metres out reflects enough of the cone back into the cell that the circuit reads the wall as overlit and pulls power. Nothing trips. Nothing logs. The bay goes dark while the panel shows full output, and the watch is left facing a window with no light behind it.
 
-Two watch logs describe the shape as flatter than it is wide. Neither describes it leaving.
+Two watch logs call the shape flatter than it is wide. The desk edge under the viewport is worn to bare metal, door side untouched.
 
-Assessment: put the north bank on manual current from the corridor panel before you approach that glass at 240 metres.
+Assessment: put the north bank on manual current from the corridor panel before you approach that glass at 1,895 metres.
 
 ## Scanner
 

@@ -8,7 +8,7 @@ biome_tags: biome.service_canyon;biome.cable_reef
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "סימביוזת שונית כבלים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

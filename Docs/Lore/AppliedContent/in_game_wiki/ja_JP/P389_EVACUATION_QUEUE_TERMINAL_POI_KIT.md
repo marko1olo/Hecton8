@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "避難待機端末証拠キット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

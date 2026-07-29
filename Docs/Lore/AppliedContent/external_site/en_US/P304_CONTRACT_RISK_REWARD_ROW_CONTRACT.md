@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.replay
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Contract Risk/Reward Row"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

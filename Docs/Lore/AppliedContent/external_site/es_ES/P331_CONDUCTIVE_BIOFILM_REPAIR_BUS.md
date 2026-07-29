@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.ecology
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Bus de reparación por biopelícula conductora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

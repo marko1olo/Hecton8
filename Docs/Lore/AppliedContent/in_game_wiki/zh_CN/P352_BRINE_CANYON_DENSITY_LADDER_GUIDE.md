@@ -8,7 +8,7 @@ biome_tags: biome.brine;biome.geology
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "盐水峡谷密度梯指南"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

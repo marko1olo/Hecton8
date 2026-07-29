@@ -8,7 +8,7 @@ biome_tags: biome.archive_cache;biome.deep_reach_office
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Мемо Варнека про прийнятий запас"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

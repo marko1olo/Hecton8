@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.site
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "NL LOC HOLD: Public Opening Composition Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

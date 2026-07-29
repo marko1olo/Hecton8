@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.aegir_orbital_pressure
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Öffentliche Einführung in das Aegir-System"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

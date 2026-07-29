@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Keelmark 톤 창"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

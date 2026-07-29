@@ -8,7 +8,7 @@ biome_tags: biome.bottom_factory;biome.atlas_zone
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "공장-사원 문턱"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

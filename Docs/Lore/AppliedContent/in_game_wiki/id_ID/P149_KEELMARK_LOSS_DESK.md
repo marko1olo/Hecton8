@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.shallow_annex
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Meja Kerugian Keelmark"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

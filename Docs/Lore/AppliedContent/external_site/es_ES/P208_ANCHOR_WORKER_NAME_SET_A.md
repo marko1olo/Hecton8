@@ -8,7 +8,7 @@ biome_tags: biome.worker_locker;biome.p63_shallows
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Conjunto A de nombres laborales ancla"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

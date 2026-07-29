@@ -8,7 +8,7 @@ biome_tags: biome.shallow_shelf;biome.industrial_shelf
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "음향 중계 스파인 조립체"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

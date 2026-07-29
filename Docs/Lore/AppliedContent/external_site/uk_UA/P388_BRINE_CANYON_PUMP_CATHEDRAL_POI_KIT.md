@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.pump_station
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Набір доказів насосного собору соляного каньйону"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

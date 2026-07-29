@@ -8,7 +8,7 @@ biome_tags: biome.dead_claim;biome.industrial_descent
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Orden de limpieza activa Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

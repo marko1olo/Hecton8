@@ -8,7 +8,7 @@ biome_tags: biome.drowned_admin;biome.carrier_link
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Recovery Compliance Office"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Recovery Compliance Office
 
-Recovery Compliance Office keeps Deep Reach alive in 2190 as a specific corporate pressure cell rather than a vague historical shadow.
+Recovery Compliance Office standing notices from 2190 route return actions by window and proxy authority, attach cleanup orders to payload class rather than to persons, and hold out-of-class packets pending review.
 
 ## Scanner
 

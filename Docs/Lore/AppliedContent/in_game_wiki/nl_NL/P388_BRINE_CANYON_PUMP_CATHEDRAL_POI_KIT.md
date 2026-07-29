@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.pump_station
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Bewijskit Brinecanyon Pompkathedraal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -19,12 +19,14 @@ localization_flags: 0
 
 # Marauder Salvage Law Field Article
 
-The word Marauder is supposed to catch in the throat. It is not a power fantasy label. It is the kind of title a frontier legal system invents when it needs someone to touch a ruined asset without admitting that the asset used to be a workplace full of people.
+Marauder is a licence class before it is an insult. Keelmark Mutual issues class DS-3, disputed salvage, third party, to crews willing to enter a claim its own adjusters will not.
 
-            HECTON-8 uses Marauders to keep the player's actions morally loaded. You loot because oxygen, debt and tools make looting necessary. You also document because the objects you steal may be the only evidence that survives water, pressure and corporate cleanup. A good Marauder is not clean. A good Marauder knows the difference between stripping a room and preserving what the room proves.
+The grant is narrow and the withholdings carry the meaning. DS-3 permits entry to disputed or abandoned property, salvage lien notice, emergency custody of evidence and recoverable-mass accounting. It withholds rescue authority, medical command and clean title. Clause 11 files a licensee who dies inside a claim as contractor loss. Failed rescue is a separate file, and nothing in DS-3 opens it.
 
-            The field culture follows from that contradiction. Marks on walls, crossed labels, worker names, pressure arrows and ugly shorthand all form a second law written under the official one. It is rude because official language already had its chance. It is fast because no one has time to read a claims manual while a bulkhead breathes.
+That structure produces the double handling visible in recovered salvage from Sector 44. A pressure door is cut for metal and the cut edge is kept, because the edge dates the weld against the shift roster. A nameplate sells as alloy and the wet hash is kept, because the hash restores a name to an accounting category.
 
-            This lets the game make salvage more than inventory collection. Every recovered object asks what else came with it: context, custody, debt, shame, proof. The player is not rewarded for pretending to be innocent. The player is pressured to decide what kind of guilty work might still save the truth.
+It also produced a field notation. Recovered marks include a black ring for a hostile or lying owner, a split arrow for a false pressure path, a crossed corporate stamp for an unreliable printed cause, and a hook scratched near a cabinet meaning sample before cargo. The notation is crude because the formal channel was slow before 2147 and unanswered afterwards.
+
+Deep Reach filings from the same period prefer contaminated asset recovery to abandoned staff, and lien processing to sold risk. Both vocabularies describe the same rooms.
 
 <!-- External Site; generated from P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE/en_US. -->

@@ -8,7 +8,7 @@ biome_tags: biome.bottom_factory;biome.atlas_zone
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ambang Pabrik-Kuil"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

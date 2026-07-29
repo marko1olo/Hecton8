@@ -8,7 +8,7 @@ biome_tags: biome.deep_fabrication;biome.machine_trench
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Forja de Pressão de Oskar Neumann"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

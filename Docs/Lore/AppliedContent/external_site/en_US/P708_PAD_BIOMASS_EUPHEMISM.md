@@ -8,7 +8,7 @@ biome_tags: biome.deep_abyss;biome.drowned_factories
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Sector Reconciliation Strip, Q4 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

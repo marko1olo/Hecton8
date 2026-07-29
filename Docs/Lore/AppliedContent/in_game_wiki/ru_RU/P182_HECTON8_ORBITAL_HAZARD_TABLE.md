@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Таблица орбитальных угроз HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

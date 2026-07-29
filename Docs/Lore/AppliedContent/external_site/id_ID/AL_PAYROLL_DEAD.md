@@ -8,7 +8,7 @@ biome_tags: biome.spine_shallows
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "AL_PAYROLL_DEAD"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

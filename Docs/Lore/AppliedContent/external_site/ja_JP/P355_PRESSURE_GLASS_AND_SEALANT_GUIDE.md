@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.atlas
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "圧力ガラスとシーラントガイド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

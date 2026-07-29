@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.cable_forest
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "생태 등록부"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

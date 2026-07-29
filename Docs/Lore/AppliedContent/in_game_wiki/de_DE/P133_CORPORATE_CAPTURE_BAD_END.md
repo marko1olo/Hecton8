@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.industrial_shelf
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Corporate Capture: saubere Rettung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

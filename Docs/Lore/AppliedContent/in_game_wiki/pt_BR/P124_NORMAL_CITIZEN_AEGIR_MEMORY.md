@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Memória do cidadão comum sobre Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

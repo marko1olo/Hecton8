@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.dossier
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Нотатка досьє без чистої кінцівки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

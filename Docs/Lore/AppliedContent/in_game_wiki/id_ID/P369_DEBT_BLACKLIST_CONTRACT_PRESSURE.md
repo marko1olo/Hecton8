@@ -8,7 +8,7 @@ biome_tags: biome.safe_module;biome.claim_route
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tekanan Kontrak Blacklist Utang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.black_keel_link
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "근광속 선박 등급"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

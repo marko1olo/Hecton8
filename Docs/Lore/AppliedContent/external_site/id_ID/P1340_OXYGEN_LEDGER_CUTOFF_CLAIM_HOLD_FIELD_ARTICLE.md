@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: id_ID
 surface: external_site
 source_voice: Public Lore Atlas Evidence Note
-spoiler_tier: 0
+spoiler_tier: 
 title: "Potongan Buku Oksigen dan Penahanan Klaim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

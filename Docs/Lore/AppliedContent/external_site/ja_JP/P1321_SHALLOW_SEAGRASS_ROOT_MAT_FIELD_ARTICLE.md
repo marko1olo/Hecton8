@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.photic_shallows
 locale: ja_JP
 surface: external_site
 source_voice: Public Site Root-Mat Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "浅瀬の根マット基質"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.terminal;biome.localization
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ID LOC HOLD: Terminal Slot Chain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

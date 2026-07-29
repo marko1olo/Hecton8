@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.aegir
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "궤도 회수 창 프로토콜"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

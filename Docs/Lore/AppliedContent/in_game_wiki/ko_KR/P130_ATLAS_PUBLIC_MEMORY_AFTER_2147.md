@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "2147년 이후 Atlas의 공적 기억"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

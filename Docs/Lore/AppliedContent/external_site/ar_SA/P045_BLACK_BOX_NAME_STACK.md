@@ -8,7 +8,7 @@ biome_tags: biome.deep_colony;biome.factory_threshold
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "رزمة أسماء الصندوق الأسود"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

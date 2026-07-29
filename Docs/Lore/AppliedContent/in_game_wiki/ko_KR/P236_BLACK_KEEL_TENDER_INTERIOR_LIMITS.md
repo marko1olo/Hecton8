@@ -8,7 +8,7 @@ biome_tags: biome.carrier_interface;biome.claim_admin
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black Keel 텐더 내부 한계"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

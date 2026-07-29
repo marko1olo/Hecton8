@@ -8,7 +8,7 @@ biome_tags: biome.cable_forest;biome.deep_abyss
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cicatriz de reparación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.abyssal_machine_field
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Escritório de continuidade Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

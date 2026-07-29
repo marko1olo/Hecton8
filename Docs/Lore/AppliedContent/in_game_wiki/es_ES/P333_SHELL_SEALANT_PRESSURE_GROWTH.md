@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.pressure
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Crecimiento de sellante de concha a presión"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

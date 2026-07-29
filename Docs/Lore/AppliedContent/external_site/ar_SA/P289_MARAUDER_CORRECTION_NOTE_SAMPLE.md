@@ -8,7 +8,7 @@ biome_tags: biome.marauder;biome.evidence
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "عينة تصحيح من نهّاب"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

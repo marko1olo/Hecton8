@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.work_order
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P-63 泵房工作单"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.system
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Światło główne i promieniowanie Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

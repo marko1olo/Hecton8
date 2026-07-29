@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.replay
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "HE LOC HOLD: Contract Risk Reward Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

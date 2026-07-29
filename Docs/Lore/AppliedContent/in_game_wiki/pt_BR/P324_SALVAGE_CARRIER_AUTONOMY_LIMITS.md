@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.hardware
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Limites de Autonomia do Carrier de Salvage"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

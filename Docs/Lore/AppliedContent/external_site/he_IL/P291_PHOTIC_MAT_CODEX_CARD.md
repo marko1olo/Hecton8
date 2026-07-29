@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.ecology
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "כרטיס קודקס יריעת אור"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

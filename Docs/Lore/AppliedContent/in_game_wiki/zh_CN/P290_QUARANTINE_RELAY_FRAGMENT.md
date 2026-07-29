@@ -8,7 +8,7 @@ biome_tags: biome.quarantine;biome.relay
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "隔离中继碎片"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

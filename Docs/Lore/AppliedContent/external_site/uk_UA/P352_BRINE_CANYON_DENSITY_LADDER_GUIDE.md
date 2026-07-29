@@ -8,7 +8,7 @@ biome_tags: biome.brine;biome.geology
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Польовий довідник щільнісної драбини brine-каньйону"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

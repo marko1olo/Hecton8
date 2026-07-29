@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.sonar
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "音響フィルター器官リレー"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

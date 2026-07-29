@@ -8,7 +8,7 @@ biome_tags: biome.claim_route;biome.safe_module
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Конверсия потерь при сохранении претензии"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

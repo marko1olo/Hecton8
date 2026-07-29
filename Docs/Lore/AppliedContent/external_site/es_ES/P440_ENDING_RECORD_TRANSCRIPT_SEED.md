@@ -8,7 +8,7 @@ biome_tags: biome.spoiler_gate;biome.codex
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Transcripción de registro final"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

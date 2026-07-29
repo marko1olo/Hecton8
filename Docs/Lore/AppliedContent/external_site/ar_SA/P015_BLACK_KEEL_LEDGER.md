@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.deep_launch_route
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "دفتر Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

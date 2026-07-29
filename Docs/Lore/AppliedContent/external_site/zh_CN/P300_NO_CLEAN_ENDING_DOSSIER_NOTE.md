@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.dossier
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "无干净结局档案备注"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

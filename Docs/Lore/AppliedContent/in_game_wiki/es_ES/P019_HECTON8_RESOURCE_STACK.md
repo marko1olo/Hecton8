@@ -8,7 +8,7 @@ biome_tags: biome.service_canyons;biome.industrial_descent
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pila de recursos"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

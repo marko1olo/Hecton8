@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.industrial_shelf
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "剥奪アクセス言語痕跡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pressure Job Title Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,11 +19,16 @@ localization_flags: 0
 
 # Pressure Job Title Table
 
-The job title table is the colony's labor skeleton. It keeps worker evidence from becoming generic tragedy by tying each person to a system: pumps, seals, relays, medlocks, fabricators, route boards, vent kilns and Atlas safety consoles.
+Shift board plate, B-shift, Module 3, ten titles carrying badge permissions.
 
-A title should make the player expect physical evidence. A seal rigger leaves gasket chalk, clamp scars and hatch logs. A brine diver leaves density notes, weighted line cuts and suit rinse stains. A relay custodian leaves timing slips and access denials. A medlock aide leaves forms that quietly prove the station chose staffing over recovery.
+  PUMP TECH / SEAL RIGGER / ROUTE CLERK / BRINE DIVER / FABRICATOR OPERATOR
+  MEDLOCK AIDE / RELAY CUSTODIAN / VENT-KILN HAND / ATLAS SAFETY READER / SHIFT SUPERVISOR
 
-This vocabulary also protects the setting from soft sci-fi fog. HECTON-8 was not staffed by abstract colonists. It was kept alive by workers whose permissions were narrow, whose tools were expensive and whose failures were converted into paperwork before anyone admitted they were dead.
+A title is access logic. It records what a worker knew, which panel accepted their badge, which room held their tools, and which failure was assigned to them after the Great Tide.
+
+Each one leaves different residue. A seal rigger leaves gasket chalk, clamp scars and hatch logs. A brine diver leaves density notes and suit rinse stains. A relay custodian leaves timing slips and access denials.
+
+Match the residue to the badge before believing the room log. Titles were reassigned after the tide. The tool marks were not.
 
 ## Scanner
 

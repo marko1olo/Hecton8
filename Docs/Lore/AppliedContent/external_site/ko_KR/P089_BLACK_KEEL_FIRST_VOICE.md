@@ -8,7 +8,7 @@ biome_tags: biome.arrival_shelf;biome.shallow_annex
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black Keel의 첫 목소리"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

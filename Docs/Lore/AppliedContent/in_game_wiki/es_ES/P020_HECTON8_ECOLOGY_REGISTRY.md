@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.cable_forest
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Registro ecológico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

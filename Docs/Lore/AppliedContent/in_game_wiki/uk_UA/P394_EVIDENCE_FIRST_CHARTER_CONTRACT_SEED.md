@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.evidence_route
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Зерно контракту Хартії доказів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

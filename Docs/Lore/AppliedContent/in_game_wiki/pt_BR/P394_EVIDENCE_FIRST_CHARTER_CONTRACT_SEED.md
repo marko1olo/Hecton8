@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.evidence_route
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Semente de contrato de carta prova primeiro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

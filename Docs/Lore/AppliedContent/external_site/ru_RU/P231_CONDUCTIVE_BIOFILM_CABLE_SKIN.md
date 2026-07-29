@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.industrial_shelf
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Проводящая биопленка кабельной кожи"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

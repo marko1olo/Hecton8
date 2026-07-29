@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.drowned_colony
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ghost Weed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -23,7 +23,7 @@ It returns sonar like a bulkhead and parts like nothing at all.
 
 The blades are gas-filled and almost clear, so a lamp passes through and lights the room behind it. Sonar does the opposite: the vesicles hand back a hard flat face, and the plot draws a floor across an open shaft mouth. The name belongs to the return, not the plant.
 
-Steel gives one return. A mat gives that face and then the true bottom under it, twelve metres late and faint. Look for the second return before you put weight on anything at 340 metres.
+Steel gives one return. A mat gives that face and then the true bottom under it, twelve metres late and faint. Look for the second return before you put weight on anything at 1,960 metres.
 
 A mat closes behind whatever falls through it. Whoever comes looking pings a floor.
 

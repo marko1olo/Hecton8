@@ -19,11 +19,17 @@ localization_flags: 0
 
 # Aegir Sky Weather Ledger
 
-Aegir is not a painted backdrop. It is the largest machine the survivor can see without owning any part of it. The gas giant, its magnetosphere, the moon ladder, storm bands, relay angles, and Black Keel traffic all press on the same small ocean where you are trying to keep a suit sealed.
+Window plate from the Black Keel sky timing desk, read at the shelf hatch.
 
-A clear break over the water can feel like mercy because the light returns and the carrier starts to sound less broken. That is only half the reading. Clear sky can also mean the charged-particle count is climbing. A storm can hide Aegir and ruin a packet window while giving your body a little shelter from the worst noise. A moon shadow can make a tide card lie by a few minutes, and a few minutes is enough to turn a shallow hatch, a brine lip, or an ascent estimate into bad advice.
+  UPLINK CONFIDENCE: 61 percent
+  CHARGED-PARTICLE COUNT: rising
+  MOON OCCULTATION CLEARS: 00:18:40
 
-Old stations survive by treating the sky like a gauge, not like scenery. Their ephemeris plates do not solve live celestial mechanics. They keep authored, repeated, believable window tables: when a relay lane is clean enough to send evidence, when the tide model is suspect, when the Black Keel can answer, and when an ascent stack is just expensive metal waiting under the wrong sky. If Aegir looks beautiful, check the radio. Beauty usually means something is moving through you.
+A clear break over the water raises uplink confidence and the particle count together. A storm band does the reverse: it shelters the body and buries the carrier in static.
+
+A moon shadow pulls the tide card off by a few minutes, which is enough to make a shallow hatch, a brine lip or an ascent estimate wrong.
+
+These plates hold authored window tables, not live celestial solutions. Read the count before standing under a clean sky, and treat the ascent-mass estimate as withheld until carrier geometry, storm band and quarantine receiver agree.
 
 ## Scanner
 

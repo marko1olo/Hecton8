@@ -8,7 +8,7 @@ biome_tags: biome.surface_squall;biome.shallow_shelter
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "紧急撤离链"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

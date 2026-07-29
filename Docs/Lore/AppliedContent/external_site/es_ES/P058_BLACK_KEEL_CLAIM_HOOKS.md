@@ -8,7 +8,7 @@ biome_tags: biome.claim_pool;biome.surface_relay
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ganchos de reclamación Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

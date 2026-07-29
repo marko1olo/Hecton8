@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.atlas_basin
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas 인격 경계"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

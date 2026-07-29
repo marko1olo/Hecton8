@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.contract
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Carta del fondo de reclamaciones Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.shallow_annex
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "División cívico-corporativa de dominios"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.atlas_repair_network;biome.deep_ecology
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas 수리 흔적 기록"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

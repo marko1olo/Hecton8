@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base_interior;biome.service_corridor
 locale: en_US
 surface: external_site
 source_voice: Public Site Flexible Hose Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ribbed Flexible Hose"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,10 +19,14 @@ localization_flags: 0
 
 # Ribbed Flexible Hose
 
-The flexible hose is the humble part that keeps a pressure base from becoming a monument. It crosses places rigid pipe cannot cross: moving hatches, service drawers, suit racks, pump cradles, temporary salvage rigs and machine-room bypasses made during the last hour of panic. Its ribs are not decoration. They let the hose bend without folding, give gloves purchase in wet corridors, and leave a high-low pattern that catches residue like a slow recorder.
+A flexible ribbed hose crosses the places rigid pipe cannot: moving hatches, service drawers, suit racks, pump cradles, temporary salvage rigs and the machine-room bypasses made in the last hours. The ribs let it bend without folding, give a glove purchase in a wet corridor, and hold residue in a high-low pattern.
 
-Reading begins with direction. Ridge tops collect dry salt and abrasion. Troughs hold water, oil sheen and fine silt. A hose with clean ridges and dark troughs probably breathed with the room. A hose with one polished side was dragged or rubbed by current after installation. Flattened rings show clamp points; a clamp over old salt means a late repair, while salt over clamp edges means the clamp was present before the room started breathing wet air. Paint flecks matter. Cyan often marks coolant service, off-white marks life-support routing, graphite black marks generic pressure sheath, and bare gray tape means field repair.
+Direction is read first. Ridge tops collect dry salt and abrasion. Troughs hold water, oil sheen and fine silt. Clean ridges over dark troughs describe a line that breathed with the room. One polished side describes a line that was dragged, or rubbed by current after installation.
 
-Players should not treat hoses as background clutter. A cut oxygen hose can change a room from recoverable to hostile. A coolant bypass can explain why one machine stayed warm after the rest of the corridor died. A tool tether can lead to the person who used a cutter in the wrong direction. A staged hose can mislead scavengers toward an easy door and away from the real powered junction. The rule is simple: read both ends, read the ribs, then decide whether to cut. Rubber remembers pressure better than most people remember guilt.
+Clamps date themselves. A clamp band over old salt is a late repair. Salt over the clamp edge means the clamp was in place before the room started breathing wet air.
+
+Paint identifies function when the label is gone: cyan for coolant service, off-white for life-support routing, graphite black for generic pressure sheath, bare gray tape for field repair.
+
+A cut oxygen hose turns a recoverable room hostile. A coolant bypass explains why one machine stayed warm after the corridor died. A tool tether leads back to whoever used a cutter in the wrong direction. Hose RH-4, a 6 m run from a service drawer to a pump cradle, carries all four readings at once. Trace both ends before cutting.
 
 <!-- External Site; generated from P1319_RIBBED_FLEXIBLE_HOSE_FIELD_ARTICLE/en_US. -->

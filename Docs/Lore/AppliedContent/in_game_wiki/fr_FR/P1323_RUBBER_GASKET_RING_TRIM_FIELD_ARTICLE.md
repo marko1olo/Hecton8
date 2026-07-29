@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: fr_FR
 surface: in_game_wiki
 source_voice: PDA Pressure Seal Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Joint annulaire en caoutchouc de pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

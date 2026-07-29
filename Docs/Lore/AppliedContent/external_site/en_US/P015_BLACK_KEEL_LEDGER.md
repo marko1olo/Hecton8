@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.deep_launch_route
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black Keel Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,8 +19,10 @@ localization_flags: 0
 
 # Black Keel Ledger
 
-Black Keel is not a friendly home ship waiting above HECTON-8. It is a claim-pool tender: part workhorse, part ledger, part quarantine gate, part insurance machine. It can hear the player, route a packet, calculate a recovery window and eventually lift mass. It can also decide that the evidence core, the sample or the insured hull cut has a better claim on the window than the person asking for help.
+Black Keel is an automated claim-tender in orbit of HECTON-8, registered to the Aegir Reclamation Pool and insured through Keelmark Mutual. It answers, routes packets, calculates recovery windows and lifts mass. It carries no crew and it is nobody's ship.
 
-That does not make Black Keel a villain. It makes it one of HECTON-8's best machines: reliable inside its contract and dangerous when mistaken for mercy. The player can use it, bargain with it, trick its priorities and force better evidence into its custody. But the carrier will never become a loyal companion by tone alone. Its ledger remembers the starting lien, the quarantine risk, the Deep Reach hooks and the fact that every kilogram leaving the ocean changes who gets paid.
+Its custody sheet ranks payload rather than people. A living contractor, a sealed evidence core, a contaminated sample, a pressure-rated tool crate and a recoverable hull cut can all be entered against the same tonne-window, and the highest insured value on the sheet lifts first unless a custody proof reorders the class.
+
+Two things sit under the visible order. Keelmark exposure sets what the carrier will risk. Older Deep Reach priority hooks, masked in the beneficiary field, can still bend quarantine language and route certificate handling after a request is filed. The lien recorded against the current berth is 4.8 tonne-window, and it accrues while the carrier waits.
 
 <!-- External Site; generated from P015_BLACK_KEEL_LEDGER/en_US. -->

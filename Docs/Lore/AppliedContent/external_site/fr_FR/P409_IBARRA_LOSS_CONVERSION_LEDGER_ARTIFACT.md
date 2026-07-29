@@ -8,7 +8,7 @@ biome_tags: biome.claim_archive;biome.deep_reach_office
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ledger Ibarra de conversion des pertes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

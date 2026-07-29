@@ -8,7 +8,7 @@ biome_tags: biome.vent;biome.resource
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Feldprozessführer für Vent-Schmieden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

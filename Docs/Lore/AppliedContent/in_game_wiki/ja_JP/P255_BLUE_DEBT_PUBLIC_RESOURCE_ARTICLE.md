@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.resource_custody
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Blue Debt公開資源記事"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

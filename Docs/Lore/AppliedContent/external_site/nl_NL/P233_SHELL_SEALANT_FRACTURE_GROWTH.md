@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.abyssal_machine_field
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Schelpkitgroei in de breuk"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.brine_canyon
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "مدار / هندسة مد HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

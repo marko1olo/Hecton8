@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.medical_bay
 locale: ru_RU
 surface: in_game_wiki
 source_voice: PDA Medical Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Журналы задержанного триажа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

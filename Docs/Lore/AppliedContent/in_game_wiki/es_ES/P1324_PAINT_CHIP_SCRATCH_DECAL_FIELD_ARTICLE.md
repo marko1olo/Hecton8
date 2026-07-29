@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: es_ES
 surface: in_game_wiki
 source_voice: PDA Paint Wear Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Desconchones y arañazos como prueba"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

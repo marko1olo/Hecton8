@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.deep_reach
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Masked Deep Reach Beneficiary Clause"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Masked Deep Reach Beneficiary Clause
 
-The Masked Deep Reach Beneficiary Clause defines the modern shape of HECTON-8's conspiracy. Deep Reach is not an omnipotent puppet master. It is a beneficiary hidden in recovery priority, insurance routing and shell custody. The result is more frightening because it is ordinary: paperwork with teeth around a disaster that never stopped paying out.
+Deep Reach appears on HECTON-8 hire sheets as an unnamed beneficial interest rather than a named party. Schedule 3 designates a proxy loss desk, permits onward assignment without notice, and ties recovery channel priority and coordinate release to the beneficiary of record.
 
 ## Scanner
 

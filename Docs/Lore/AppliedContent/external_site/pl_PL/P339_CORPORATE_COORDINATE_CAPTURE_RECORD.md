@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.deep_reach
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Rejestr korporacyjnego przejęcia współrzędnych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.safe_module;biome.colony
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Запис спеціаліста польових систем"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

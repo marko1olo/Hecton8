@@ -8,7 +8,7 @@ biome_tags: biome.medical_lock;biome.repair_fauna
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Medicina de Reparo de Aya Morita"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

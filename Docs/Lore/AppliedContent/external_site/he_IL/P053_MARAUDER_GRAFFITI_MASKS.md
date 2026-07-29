@@ -8,7 +8,7 @@ biome_tags: biome.service_corridor;biome.salvage_route
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "מסכות גרפיטי של marauders"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

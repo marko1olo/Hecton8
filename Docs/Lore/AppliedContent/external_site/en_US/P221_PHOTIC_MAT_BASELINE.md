@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.shallow_reef
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Photic Mat Baseline"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Photic Mat Baseline
 
-Photic Mat Baseline turns HECTON-8's beauty into a practical rule. The mat is not scenery. It is a living gauge that makes the early shelf readable: color for oxygen exchange, rim hardness for pressure chemistry, bubble rhythm for water movement and acoustic texture for hidden seams. This is why the first bright rocks should feel inviting and suspicious at the same time. A stranded Marauder can use a mat edge for fiber, sealing paste precursors or an emergency oxygen read, but every cut changes the pocket. The safest harvest is loose fringe away from metal, away from hatch seams and away from old Deep Reach pipework. The worst harvest is the beautiful center, because that is usually the part doing the most work. Good placement should let players learn without a lecture: a healthy mat glows on clean stone; a stressed mat grows hard white rims around pressure leaks; a poisoned mat looks too smooth and sounds wrong under the tool. The shallow shelf stays bright because life is working there. It stays tense because the player can break that work with one greedy scrape.
+Photic mats are mineral-fed living films on the shallow shelf, thick enough to oxygenate the water around them. Colour reports oxygen exchange, rim hardness reports pressure chemistry, and a clicking seam reports contamination held under the mat. Loose fringe can be harvested; the bright centre is the part doing the work.
 
 ## Scanner
 

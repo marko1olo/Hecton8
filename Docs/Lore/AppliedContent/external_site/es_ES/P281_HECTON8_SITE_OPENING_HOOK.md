@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.hecton8
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ES LOC HOLD: HECTON-8 Public Opening Hook"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

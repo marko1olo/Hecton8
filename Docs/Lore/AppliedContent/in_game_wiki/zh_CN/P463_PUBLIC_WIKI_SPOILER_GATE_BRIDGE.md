@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.codex
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "剧透门控"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.contract
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "تدقيق إيصال الخروج المادي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

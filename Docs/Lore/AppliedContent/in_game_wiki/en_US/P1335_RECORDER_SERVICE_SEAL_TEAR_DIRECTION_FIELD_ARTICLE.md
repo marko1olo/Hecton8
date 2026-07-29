@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: en_US
 surface: in_game_wiki
 source_voice: PDA Forensic Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Recorder Service Seal Tear Direction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,13 +19,17 @@ localization_flags: 0
 
 # Recorder Service Seal Tear Direction
 
-The recorder service seal is a cheap tamper strip over an expensive question. It sits across the service latch on a pressure-room recorder bay, where a technician can break it only by opening the latch path. Deep Reach liked these seals because they made custody look tidy. Marauders like them because cheap seals do not lie as smoothly as people do.
+Seal record SS-8, fiber-metal tamper strip over a recorder bay service latch.
 
-        A seal pulled from inside the room lifts its fiber-metal lip toward the dry side and drags glove grit under the tear. A tool from the corridor cuts the outer paint first and leaves old salt under the hook. A replacement seal sits too clean on a scratched latch: new adhesive, old oxide, mineral dust trapped where fresh glue should have touched metal. The direction is small, but it can separate a trapped worker opening the bay from a later hand cleaning the story.
+  TEAR LIP: fibers folded toward the dry compartment
+  GRIT: glove grit under the tear
+  ADHESIVE SHADOW: clean glue on a scratched latch
 
-        Read the seal with the latch glass, cassette teeth and pressure ink wheel. The glass shows force direction. The teeth show strip pull. The ink wheel shows wet or dry recording. The service seal shows whether the bay was officially closed, opened from the room, opened from the corridor or resealed after recovery. One part can be ambiguous. Four parts agreeing against a clean transcript are not a theory; they are a custody problem.
+A seal pulled from inside the room lifts its lip toward the dry side and drags glove grit under the tear. A tool working from the corridor cuts the outer paint first and hooks over old salt. A replacement sits too clean: new adhesive, old oxide, mineral dust where fresh glue never met metal.
 
-        For the player, the useful rule is simple: scan before cutting. A cutter makes a neat access route and destroys a torn edge. If the seal points inward, treat the room as the first access side. If the outer hook rides over old salt, mark the audio as handled late. If the adhesive is cleaner than the latch, somebody replaced the last honest strip with a better-looking one.
+SS-8 shows both. An inward tear, then a clean replacement over a scratched latch.
+
+Photograph the seal before cutting the latch. A cutter destroys the tear edge, and the tear edge is what names the access side.
 
 ## Scanner
 

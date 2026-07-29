@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.shallow_wreck
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "作業員ロッカー列"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

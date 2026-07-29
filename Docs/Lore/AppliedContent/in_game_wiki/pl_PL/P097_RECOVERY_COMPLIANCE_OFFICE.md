@@ -8,7 +8,7 @@ biome_tags: biome.drowned_admin;biome.carrier_link
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Biuro Zgodności Odzysku"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

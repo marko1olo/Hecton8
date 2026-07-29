@@ -8,7 +8,7 @@ biome_tags: biome.relay_spine;biome.surface_relay
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "نوافذ Deep Reach الحالية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

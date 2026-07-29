@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.worker_locker
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Assinaturas do Asset Silence Board"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

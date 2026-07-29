@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "علامات النطاق 2190"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

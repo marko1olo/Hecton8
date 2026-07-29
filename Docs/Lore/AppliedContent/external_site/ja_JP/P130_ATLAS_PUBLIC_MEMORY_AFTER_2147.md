@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "2147年後のAtlas公的記憶"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

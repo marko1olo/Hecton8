@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.deep_reach
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Masked Deep Reach Beneficiary Clause"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,18 @@ localization_flags: 0
 
 # Masked Deep Reach Beneficiary Clause
 
-The Masked Deep Reach Beneficiary Clause keeps the conspiracy grounded in contract pressure instead of villain theater. Deep Reach does not need to appear on the visible hire sheet to shape the mission. It appears in the order of access: which recovery channel opens first, which receiver is insured, which coordinate packet escapes redaction and which desk gets paid if the claim survives. The clause uses a proxy loss desk to keep liability away from the old name while preserving the one thing Deep Reach still wants: access to a flooded coordinate chain they failed to bury. That makes the discovery colder than a confession. The player is not reading a monologue. They are reading a machine that already sorted them into asset, witness, contractor and recoverable debt. Deep Reach is present as pressure, not smoke. The missing name is the proof.
+SCHEDULE 3, BENEFICIARY DESIGNATION. Attached to the hire sheet, initialled, not signed.
+
+  3.1  Primary beneficiary: Keelmark Loss Desk, as proxy.
+  3.2  Beneficial interest may be assigned onward without notice to the licensee.
+  3.3  Recovery channel priority follows beneficial interest.
+  3.4  Coordinate packets release to the beneficiary of record.
+
+No entity called Deep Reach appears anywhere on the hire sheet. It appears in the order of operations: which recovery channel opens first, which receiver carries insurance, which coordinate packet clears redaction, which desk is paid if the claim survives.
+
+Clause 3.2 is why the name is absent. Beneficial interest moved and the sheet was never required to say where.
+
+The initials in the margin of Schedule 3 are not the licensee's.
 
 ## Scanner
 

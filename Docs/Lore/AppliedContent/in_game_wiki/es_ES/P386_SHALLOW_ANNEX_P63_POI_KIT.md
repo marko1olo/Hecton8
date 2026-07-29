@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kit de pruebas del anexo somero P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

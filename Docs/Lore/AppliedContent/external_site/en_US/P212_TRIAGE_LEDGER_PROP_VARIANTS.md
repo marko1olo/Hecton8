@@ -8,7 +8,7 @@ biome_tags: biome.med_lock;biome.worker_locker
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Triage Ledger Prop Variants"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

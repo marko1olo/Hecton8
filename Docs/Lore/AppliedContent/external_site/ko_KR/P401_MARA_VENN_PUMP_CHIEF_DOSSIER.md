@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "마라 벤, 펌프 책임자"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

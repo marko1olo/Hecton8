@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.shallows
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Reclamación inicial del Merodeador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.audio
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ES LOC HOLD: Audio Bark Family Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

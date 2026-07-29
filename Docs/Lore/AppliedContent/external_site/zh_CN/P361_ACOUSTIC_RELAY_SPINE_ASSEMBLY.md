@@ -8,7 +8,7 @@ biome_tags: biome.shallow_shelf;biome.industrial_shelf
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "声学中继脊组件"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.quarantine;biome.relay
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "검역 릴레이 파편"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

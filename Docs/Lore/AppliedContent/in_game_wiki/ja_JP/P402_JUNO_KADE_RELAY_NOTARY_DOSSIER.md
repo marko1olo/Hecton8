@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.relay_yard
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ジュノ・ケイド、中継公証人"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

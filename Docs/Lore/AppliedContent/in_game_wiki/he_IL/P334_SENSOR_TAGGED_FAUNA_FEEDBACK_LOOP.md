@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.fauna
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "לולאת משוב של פאונה מתויגת חיישן"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

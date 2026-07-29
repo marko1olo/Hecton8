@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.orbit_window
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Echelle lunaire d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

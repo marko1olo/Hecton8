@@ -8,7 +8,7 @@ biome_tags: biome.p63_shallows;biome.brine_canyon
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "圧力スーツ整備グレード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

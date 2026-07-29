@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.safe_module
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Schichtroutine der Druckkoje"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

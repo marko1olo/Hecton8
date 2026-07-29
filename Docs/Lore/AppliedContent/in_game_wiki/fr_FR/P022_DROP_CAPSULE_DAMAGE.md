@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.shallow_repair
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Dégâts de capsule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

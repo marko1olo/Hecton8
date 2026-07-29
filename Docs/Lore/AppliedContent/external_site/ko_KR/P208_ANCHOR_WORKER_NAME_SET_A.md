@@ -8,7 +8,7 @@ biome_tags: biome.worker_locker;biome.p63_shallows
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "앵커 작업자 이름 세트 A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

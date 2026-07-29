@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.replay
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "계약 위험/보상 행"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

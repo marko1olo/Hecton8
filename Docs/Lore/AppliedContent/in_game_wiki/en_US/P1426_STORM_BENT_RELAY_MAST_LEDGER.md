@@ -19,11 +19,18 @@ localization_flags: 0
 
 # Storm-Bent Relay Mast Ledger
 
-The first useful antenna on HECTON-8 usually looks pathetic: a storm-bent mast, a salted hinge, cracked ceramic, cable jacket patched with the wrong tape, and a direction mark that still points at Aegir because somebody kept tightening it after every storm. That is why it matters. It is not heroic technology. It is tired infrastructure that has not forgotten which way the sky is.
+Mast root log RM-5, storm-bent signal mast above the shelf hatch.
 
-Repairing the mast changes the game, but not in the simple way a stranded person wants. A cleaner uplink can lift packet confidence, restore a broken handshake, or let Black Keel admit that the operator is alive. It can also make the carrier ask for claim state, sample state, coordinates, and evidence before it offers anything that sounds like rescue. The mast improves the sentence. It does not improve the listener.
+  HINGE: salted, still turning
+  CERAMIC BUSHINGS: cracked, two of four
+  AZIMUTH: still on Aegir, retightened after each storm
+  PACKET CONFIDENCE, BRACED: 27 to 64 percent
 
-This is the first lesson of orbital survival: communication is not extraction. A good brace, a clean contact pad, and a corrected azimuth can buy one packet before a storm band rolls over the relay. The player still has to choose what rides that packet: medical status, evidence hash, sample telemetry, location, or a lie. Black Keel can hear all of those differently. The mast only makes sure the argument leaves the ocean.
+Bracing the mast raises packet confidence and restores the carrier handshake. It does not change recovery priority. The diagnostic separates the two: carrier acknowledgement possible, body recovery gated by sky window, custody confidence, quarantine receiver and lift mass.
+
+A clean contact pad and a corrected azimuth buy roughly one packet before the next storm band crosses the relay.
+
+Decide what rides it before you climb: medical status, evidence hash, sample telemetry, coordinates. Black Keel prices each of those differently and logs whichever arrives first.
 
 ## Scanner
 

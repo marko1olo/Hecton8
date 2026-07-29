@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.public_archive
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pertanyaan Akhir: Ledger Publik, Kendali Hilang"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

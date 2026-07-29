@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.black_keel
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Підписи Return Action Queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

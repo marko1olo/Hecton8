@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.carrier_interface
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "DE LOC HOLD: Lien Severity Seed Class"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

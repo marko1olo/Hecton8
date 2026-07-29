@@ -8,7 +8,7 @@ biome_tags:
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Centauri Charter Legitimacy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

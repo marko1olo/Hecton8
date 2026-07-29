@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base_interior;biome.flooded_airlock
 locale: pt_BR
 surface: in_game_wiki
 source_voice: PDA Warning Lens Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Lente âmbar de emergência"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

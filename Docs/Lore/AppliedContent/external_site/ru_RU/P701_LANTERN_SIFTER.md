@@ -8,8 +8,8 @@ biome_tags: biome.cable_reef;biome.industrial_shelf
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
-title: "P701_LANTERN_SIFTER"
+spoiler_tier: 
+title: "Фонарный фильтратор"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
 direction: ltr
@@ -17,16 +17,10 @@ localization_status: draft_machine_or_llm
 localization_flags: 1
 ---
 
-# P701_LANTERN_SIFTER
+# Фонарный фильтратор
 
+Сообщения с кабельных рифов HECTON-8 описывают колониального биолюминесцентного фильтратора, который переизлучает падающий сонар. Команды устойчиво фиксируют два возврата на один импульс: второй задержан примерно на две десятых секунды, смещён с истинного пеленга и по амплитуде выше, чем предсказывает дистанция.
 
-
-## Scanner
-
-
-
-## Terminal
-
-
+Вскрытия сообщают об одном плотном минеральном включении в жаберной корзине каждой особи, отвечающем скорее проводящей подложке следового класса, чем биологической минерализации. Записи Deep Reach по Сектору 44 ведут вид как складскую позицию выращенных акустических повторителей без интервала обслуживания на том основании, что единицы заменяют себя сами.
 
 <!-- External Site; generated from P701_LANTERN_SIFTER/ru_RU. -->

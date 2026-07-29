@@ -8,7 +8,7 @@ biome_tags: biome.deep_reach;biome.contract
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Coördinateneis van Recovery Compliance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

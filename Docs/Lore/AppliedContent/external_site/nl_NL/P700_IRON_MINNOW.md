@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.shallow_reef
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "P700_IRON_MINNOW"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

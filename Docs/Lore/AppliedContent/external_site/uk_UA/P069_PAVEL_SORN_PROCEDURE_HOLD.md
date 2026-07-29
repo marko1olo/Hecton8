@@ -8,7 +8,7 @@ biome_tags: biome.admin_deck;biome.drowned_office
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Процедурне утримання Павла Сорна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

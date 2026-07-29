@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.drowned_admin
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "استمرارية ملف الناهب"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

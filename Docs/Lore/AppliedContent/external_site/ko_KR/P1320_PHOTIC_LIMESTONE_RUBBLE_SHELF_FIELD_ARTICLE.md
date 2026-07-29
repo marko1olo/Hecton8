@@ -8,7 +8,7 @@ biome_tags: biome.photic_shallows;biome.first_route_shelf
 locale: ko_KR
 surface: external_site
 source_voice: Public Site Photic Shelf Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "유광층 석회암 잔해 선반"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

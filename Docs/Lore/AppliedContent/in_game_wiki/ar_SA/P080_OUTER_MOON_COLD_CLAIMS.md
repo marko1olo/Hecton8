@@ -8,7 +8,7 @@ biome_tags: biome.orbital_window;biome.dead_claim_cache
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cold claims للأقمار الخارجية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

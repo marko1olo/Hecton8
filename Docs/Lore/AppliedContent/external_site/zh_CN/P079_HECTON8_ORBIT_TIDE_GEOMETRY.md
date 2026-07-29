@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.brine_canyon
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "HECTON-8轨道 / 潮汐几何"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

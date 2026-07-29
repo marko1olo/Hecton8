@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.abyssal_machine_field
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "P701_GLASSWORM_JUVENILE"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

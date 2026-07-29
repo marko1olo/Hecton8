@@ -8,7 +8,7 @@ biome_tags: biome.med_lock;biome.worker_locker
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "분류 장부 소품 변종"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

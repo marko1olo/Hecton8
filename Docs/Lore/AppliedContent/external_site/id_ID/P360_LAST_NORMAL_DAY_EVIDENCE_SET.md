@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.evidence
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Set Bukti Hari Normal Terakhir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

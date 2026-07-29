@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.cjk
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "DE LOC HOLD: CJK Font And Width Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

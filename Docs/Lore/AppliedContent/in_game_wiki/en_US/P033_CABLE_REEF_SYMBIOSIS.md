@@ -8,7 +8,7 @@ biome_tags: biome.service_canyon;biome.cable_reef
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cable Reef Symbiosis"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

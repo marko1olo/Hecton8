@@ -8,7 +8,7 @@ biome_tags: biome.claim_archive;biome.deep_reach_office
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ledger Ibarra untuk Konversi Kerugian"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

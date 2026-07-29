@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.drowned_admin
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Persistance du dossier de maraudeur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

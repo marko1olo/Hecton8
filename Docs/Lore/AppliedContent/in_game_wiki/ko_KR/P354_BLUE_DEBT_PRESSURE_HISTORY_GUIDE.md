@@ -8,7 +8,7 @@ biome_tags: biome.resource;biome.deep
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "블루 데트 압력 이력 가이드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

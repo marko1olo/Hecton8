@@ -8,7 +8,7 @@ biome_tags: biome.p63_shallows;biome.brine_canyon
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Graus de serviço do traje de pressão"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

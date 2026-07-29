@@ -19,17 +19,17 @@ localization_flags: 0
 
 # Damped Insulation Blanket Field Article
 
-Damped insulation blanket is the soft-looking layer behind hard pressure interiors. It is not decoration, bedding, or suit fabric. Deep Reach used quilted technical blankets behind panels, pump housings, equipment racks and safe-room shells because metal alone made rooms loud, cold and impossible to service. The blanket trapped heat, muted vibration, protected ceramic backing and gave maintenance crews a visible record of what the wall had suffered.
+Blanket panel BL-3, pulled from behind the pump rack at 1,240 metres.
 
-A dry blanket should look boring: gray-beige fabric, shallow quilting, compressed seams, a little salt dust near lower edges. A useful blanket is rarely dry for long. Moisture darkens stitch lines first because thread holes pull water inward. A sagging square means the inner batting has held weight. Salt dust along one seam means condensation dried there repeatedly. A tear showing darker inner layer tells the player that the room has been opened, scraped, cut or leaned on by equipment after the last official service.
+  STITCH LINES: dark to 40 mm depth, third wet-dry cycle
+  QUILT SAG: one square, water retained
+  SALT DUST: one seam only, lower edge
 
-The player reads insulation differently from metal. Metal shows impact and pressure. Insulation shows time. It remembers small leaks before they become visible streams. It remembers which pump housing ran warm for weeks. It remembers where a panel was resealed without drying the backing. When the scanner finds damp stitching behind an apparently calm corridor, the right question is not whether the fabric is wet. The right question is what the wall has been hiding.
+Thread holes pull water inward, so stitch lines darken before anything shows on the panel face. A sagging square means the batting is holding weight. Salt on one seam means condensation dried there repeatedly, not standing water.
 
-For gameplay, damp insulation can mark several useful decisions. Warm damp backing near a rack can point to a powered relay or overworked charger. Cold damp backing under a vent can point to a failing seal or hidden water path. Salted quilt seams near a cable tray warn that cutting nearby may expose a live or corroded line. Torn blanket around a hatch lip can show that someone made a fast access cut and put the panel back badly. In a safe room, clean insulation is comfort; stained insulation is the ocean practicing patience.
+Warm damp backing near a rack means something behind it still has power. Cold damp backing under a vent is a failing seal.
 
-The material also keeps HECTON-8 from becoming clean corridor fiction. A room that survived flooding should not look freshly painted unless someone spent labor hiding the flood. Damped blankets make that labor visible. The cloth edge at a screw washer, the darker seam under a warm junction box, the line where salt stopped under a shelf: these are the small facts that make a base feel maintained instead of merely modeled.
-
-Marauder note: never trust a soft wall. Press near the seam with a tool, not a glove. If salt falls, the leak is old. If the fabric warms, a machine is alive behind it. If the tear smells metallic, the backing plate is exposed. If somebody patched over damp quilting, they were buying another shift, not solving the room.
+This section was resealed over damp quilting. The backing plate is exposed and the cable tray beside it has salt in the jacket seams. Cut nothing here until the run is proved dead.
 
 ## Scanner
 

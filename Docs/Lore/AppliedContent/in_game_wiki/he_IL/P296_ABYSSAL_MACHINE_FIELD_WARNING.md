@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.warning
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "אזהרת שדה מכונה תהומי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

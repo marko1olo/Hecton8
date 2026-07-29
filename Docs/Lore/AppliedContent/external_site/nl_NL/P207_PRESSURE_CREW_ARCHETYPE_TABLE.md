@@ -8,7 +8,7 @@ biome_tags: biome.worker_locker;biome.industrial_shelf
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tabel met drukcrew-archetypen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

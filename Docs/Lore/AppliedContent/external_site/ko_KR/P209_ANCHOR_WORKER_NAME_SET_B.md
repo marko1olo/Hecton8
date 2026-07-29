@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.abyssal_machine_field
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "앵커 작업자 이름 세트 B"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

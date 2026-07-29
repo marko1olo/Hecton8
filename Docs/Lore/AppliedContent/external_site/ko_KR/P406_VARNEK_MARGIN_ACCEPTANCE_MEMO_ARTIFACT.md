@@ -8,7 +8,7 @@ biome_tags: biome.archive_cache;biome.deep_reach_office
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "바르네크 마진 승인 메모"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

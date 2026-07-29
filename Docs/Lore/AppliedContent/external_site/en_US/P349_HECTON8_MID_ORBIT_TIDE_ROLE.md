@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.ocean
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "HECTON-8 Mid-Orbit Tide Role"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

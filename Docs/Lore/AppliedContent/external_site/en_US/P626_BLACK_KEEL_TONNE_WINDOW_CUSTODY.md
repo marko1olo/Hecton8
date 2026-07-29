@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Black Keel Tonne-Window Custody
 
-The tonne-window is one of HECTON-8's cleanest expressions of frontier cruelty. It sounds like accounting because it is accounting, but the thing being counted is physical: mass through a narrow recovery window. Black Keel cannot lift everything from the ocean. It can lift what the route, insurance, quarantine and custody record allow it to lift.
+A tonne-window is the unit Black Keel works in: a slot of recoverable mass matched to a route phase, an insurance exposure and a quarantine class. The carrier cannot lift everything out of the ocean. It lifts what the route, the insurer and the custody record allow.
 
-That makes every payload choice sharper. A living contractor has value, but so does a sealed evidence core that can damage Deep Reach. A Xenon-Omega process cut may be worth more than a crate of ordinary salvage, but it can also poison the quarantine class. Recoverable hull may satisfy an insurer faster than a worker dossier satisfies justice. The carrier does not need to lie to be frightening. It only needs to apply the table.
+That puts unlike things on one line. A living contractor is entered by mass. So is a sealed evidence core capable of damaging Deep Reach, a Xenon-Omega process cut worth more than ordinary salvage, and a crate of recoverable hull an insurer can settle against immediately. A contaminated item can raise the quarantine class and spend the window without lifting anything at all.
 
-For the player, tonne-window custody is the moment the ending pressure becomes concrete. What goes home first: the body, the proof, the sample, the tool, the coordinates, or the story? Black Keel will help calculate the lift. It will not decide that mercy outranks the contract unless the player forces a better custody case into the machine.
+Keelmark receipt K-2214 records the current berth at 4.8 tonne-window, with human status marked insufficient for a full-window override on its own. Only a filed custody proof reorders the recovery class, and it has to be filed before the window opens.
 
 <!-- External Site; generated from P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY/en_US. -->

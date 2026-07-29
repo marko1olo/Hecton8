@@ -8,7 +8,7 @@ biome_tags: biome.surface_weather;biome.orbit_window
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Релейное окно Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

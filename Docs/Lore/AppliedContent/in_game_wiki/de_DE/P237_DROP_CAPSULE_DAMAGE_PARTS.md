@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.p63_shallows
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Beschädigte Teile der Abwurfkapsel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

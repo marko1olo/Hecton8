@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "공개 원장 유출"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

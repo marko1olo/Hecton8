@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_hab
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "耐圧寝台ルーチン"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

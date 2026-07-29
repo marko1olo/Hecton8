@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base_interior;biome.flooded_airlock
 locale: he_IL
 surface: external_site
 source_voice: Public Site Emergency Lens Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "עדשת חירום ענברית"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

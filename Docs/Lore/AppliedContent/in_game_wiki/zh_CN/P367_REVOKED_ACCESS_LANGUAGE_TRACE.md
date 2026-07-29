@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.industrial_shelf
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "撤销访问语言痕迹"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

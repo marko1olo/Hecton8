@@ -8,7 +8,7 @@ biome_tags: biome.claim_pool;biome.surface_relay
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black Keel 索赔钩"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

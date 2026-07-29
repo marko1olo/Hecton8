@@ -8,7 +8,7 @@ biome_tags: biome.atlas_bottom;biome.deep_launch_route
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Nutzlastfenster"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

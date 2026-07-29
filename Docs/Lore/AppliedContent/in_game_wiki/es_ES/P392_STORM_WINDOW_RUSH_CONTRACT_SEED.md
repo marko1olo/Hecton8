@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.storm_window
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Semilla de contrato de prisa por ventana de tormenta"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.tide_gauge;biome.drowned_colony
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Great Tide Liability Chain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

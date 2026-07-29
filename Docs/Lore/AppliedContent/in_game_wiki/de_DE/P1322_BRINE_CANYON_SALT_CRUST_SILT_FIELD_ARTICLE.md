@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.density_layer
 locale: de_DE
 surface: in_game_wiki
 source_voice: PDA Salt-Crust Silt Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Salzkrusten-Schlick im Brine-Canyon"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

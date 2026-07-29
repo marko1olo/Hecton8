@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.hard_scifi_ui
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ES LOC HOLD: Unit And Number Style Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

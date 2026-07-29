@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.photic_shallows
 locale: id_ID
 surface: external_site
 source_voice: Public Site Root-Mat Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Substrat Mat Akar Dangkal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

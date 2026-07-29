@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.ui
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "RTL And CJK Font Risk Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

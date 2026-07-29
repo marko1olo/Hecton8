@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.vent_forge
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Deep Reach圧力セラミック"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

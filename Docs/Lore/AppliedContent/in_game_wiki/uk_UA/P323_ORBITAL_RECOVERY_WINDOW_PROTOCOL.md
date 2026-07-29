@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.aegir
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Протокол орбітального вікна повернення"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

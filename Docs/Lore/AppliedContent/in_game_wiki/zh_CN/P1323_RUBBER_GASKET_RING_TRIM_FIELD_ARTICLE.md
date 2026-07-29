@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: zh_CN
 surface: in_game_wiki
 source_voice: PDA Pressure Seal Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "橡胶压力舱门密封环"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

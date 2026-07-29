@@ -8,7 +8,7 @@ biome_tags: biome.dossier;biome.colony_ruins
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Карта глубины цепочки доказательств"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

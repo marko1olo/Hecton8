@@ -8,7 +8,7 @@ biome_tags: biome.claim_cache;biome.worker_locker
 locale: es_ES
 surface: external_site
 source_voice: Public Site Salvage Culture Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Marcas de corrección Marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

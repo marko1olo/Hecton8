@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.system
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Vela como lua interna de relay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

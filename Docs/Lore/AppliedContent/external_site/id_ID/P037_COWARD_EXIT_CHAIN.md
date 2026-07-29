@@ -8,7 +8,7 @@ biome_tags: biome.surface_squall;biome.shallow_shelter
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Rantai Keluar Darurat"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

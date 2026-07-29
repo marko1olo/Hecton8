@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.deep_archive
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "여섯 도메인 원장"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

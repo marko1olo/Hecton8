@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.relay_archive
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ledger Rute Bulan Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

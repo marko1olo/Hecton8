@@ -8,7 +8,7 @@ biome_tags: biome.ui;biome.dossier
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ID LOC HOLD: PDA Evidence State"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

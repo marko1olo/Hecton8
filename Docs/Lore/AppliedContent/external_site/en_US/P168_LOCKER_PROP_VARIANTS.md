@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Locker Evidence Variants"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,11 +19,7 @@ localization_flags: 0
 
 # Locker Evidence Variants
 
-HECTON-8 uses lockers as evidence surfaces, not nostalgia boxes. A worker's locker can carry pressure tape, worn gasket fragments, tool-crib tokens, meal-credit strips, route chalk, shift stickers, medlock denial slips and later Marauder correction notes. None of these objects needs to explain the whole disaster. Together they make the drowned colony feel like a workplace that had habits before it had ruins.
-
-The design value is restraint. A locker should not tell the player to feel sad. It should show what the worker did with wet hands and limited air: patch a leak, borrow a gasket, mark a route, keep a denied medical slip, save a meal credit, or leave a tool dirty because the next shift was supposed to finish the job. These details let procedural rooms keep human texture without inventing a unique cinematic for every dead worker.
-
-The salvage choice matters. Tokens, strips and small tools have value, but their arrangement has meaning. A good Marauder records the set before taking it. A careless one turns a person into loose parts.
+Worker lockers in the drowned modules hold pressure tape, worn gasket fragments, tool-crib tokens, meal-credit strips, route chalk, shift stickers, medlock denial slips and later Marauder correction notes. The arrangement carries more than the contents: a denial slip dated after the last shift board entry records somebody kept on shift while already sick.
 
 ## Scanner
 

@@ -8,7 +8,7 @@ biome_tags: biome.claim_pool;biome.surface_relay
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kait Klaim Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

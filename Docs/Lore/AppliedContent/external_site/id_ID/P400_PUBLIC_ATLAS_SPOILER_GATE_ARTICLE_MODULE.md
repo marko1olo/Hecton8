@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas_basin
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Batas akses Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

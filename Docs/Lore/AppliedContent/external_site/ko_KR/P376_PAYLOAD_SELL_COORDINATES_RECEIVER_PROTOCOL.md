@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.factory_temple
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "payload 좌표 판매 수신 프로토콜"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

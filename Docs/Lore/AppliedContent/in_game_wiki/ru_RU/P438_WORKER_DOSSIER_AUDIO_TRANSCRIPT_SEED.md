@@ -8,7 +8,7 @@ biome_tags: biome.colony_infrastructure;biome.codex
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Аудиотранскрипт рабочего досье"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

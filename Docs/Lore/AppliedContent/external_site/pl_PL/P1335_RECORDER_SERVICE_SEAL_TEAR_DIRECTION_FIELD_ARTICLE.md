@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: pl_PL
 surface: external_site
 source_voice: Public Lore Atlas Short Summary
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kierunek rozdarcia plomby serwisowej rejestratora"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

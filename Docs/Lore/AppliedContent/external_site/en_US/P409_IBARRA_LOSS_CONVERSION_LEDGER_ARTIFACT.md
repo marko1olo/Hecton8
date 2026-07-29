@@ -8,7 +8,7 @@ biome_tags: biome.claim_archive;biome.deep_reach_office
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ibarra Loss Conversion Ledger"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

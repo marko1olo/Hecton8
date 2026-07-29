@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: nl_NL
 surface: external_site
 source_voice: Public Site Surface Evidence Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Verfschilfers en krassen als bewijs"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

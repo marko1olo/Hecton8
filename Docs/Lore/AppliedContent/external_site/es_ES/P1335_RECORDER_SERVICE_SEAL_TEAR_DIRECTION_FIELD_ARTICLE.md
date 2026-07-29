@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: es_ES
 surface: external_site
 source_voice: Public Lore Atlas Short Summary
-spoiler_tier: 0
+spoiler_tier: 
 title: "Dirección de rotura del precinto de servicio del registrador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.claim_route;biome.safe_module
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "請求継続損失変換"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

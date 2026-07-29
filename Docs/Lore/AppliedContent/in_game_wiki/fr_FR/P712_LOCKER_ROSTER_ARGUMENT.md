@@ -1,0 +1,32 @@
+---
+packet_id: P712_LOCKER_ROSTER_ARGUMENT
+release_set_id: RS712_COLONIST_WORK_EVIDENCE
+article_id: hecton8.work.locker_44c17
+unlock_id: unlock.work.locker_44c17
+poi_tags: poi.locker_row;poi.crown_muster_deck
+biome_tags: biome.worker_locker;biome.industrial_shelf
+locale: fr_FR
+surface: in_game_wiki
+source_voice: Neutral Reference
+spoiler_tier: 
+title: "P712_LOCKER_ROSTER_ARGUMENT"
+source: AppliedContent packet JSON
+runtime_reads_markdown: false
+direction: ltr
+localization_status: draft_machine_or_llm
+localization_flags: 1
+---
+
+# P712_LOCKER_ROSTER_ARGUMENT
+
+
+
+## Scanner
+
+
+
+## Terminal
+
+
+
+<!-- In-Game Wiki; generated from P712_LOCKER_ROSTER_ARGUMENT/fr_FR. -->

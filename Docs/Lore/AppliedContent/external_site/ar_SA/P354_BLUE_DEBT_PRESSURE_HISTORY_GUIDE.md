@@ -8,7 +8,7 @@ biome_tags: biome.resource;biome.deep
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "دليل تاريخ ضغط الدين الأزرق"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

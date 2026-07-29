@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.storm_window
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Stormvenster Rush Contractseed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

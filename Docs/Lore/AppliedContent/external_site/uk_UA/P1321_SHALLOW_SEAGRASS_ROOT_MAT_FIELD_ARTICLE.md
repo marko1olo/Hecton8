@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.photic_shallows
 locale: uk_UA
 surface: external_site
 source_voice: Public Site Root-Mat Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Мілководний кореневий мат"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

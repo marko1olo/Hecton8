@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories;biome.brine_stair
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Muster Two Queue Log"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -37,7 +37,7 @@ DOCUMENT 44-E-6006. STATION: MUSTER 2. CARD STOCK: 900, CORRIDOR 6. CORRIDOR 6: 
 
 ## Audio
 
-Muster Two, queue log, on tape because nobody picks up the board line. [crowd, alarm loop] The cards say Corridor Six. Corridor Six took water at oh two hundred. I have four hundred -- I have a box of nine hundred cards that all say Six and a line that does not stop. If you are holding a Six you go to the brine stair. Brine stair. Say it back. [voice off mic] Sir, I need you to -- whoever prints the next lot, strike Six off the plate. Off the plate, not off the -- [thud] -- I have got my own card here and it say--
+Muster Two, queue log, on tape because nobody picks up the board line. [crowd, alarm loop] The cards say Corridor Six. Corridor Six took water at oh two hundred. I have four hundred -- I have a box of nine hundred cards that all say Six and a line that does not stop. If you are holding a Six you go to the brine stair. Brine stair. Say it back. [voice off mic] Sir, hold the line where it is. Whoever prints the next lot, strike Six off the plate itself, not off the cards. [thud, alarm loop continues] Muster Two, oh two forty-one, queue tally to follow at relief. Steward Okonkwo, Muster Two, off.
 
 ## Field Note
 

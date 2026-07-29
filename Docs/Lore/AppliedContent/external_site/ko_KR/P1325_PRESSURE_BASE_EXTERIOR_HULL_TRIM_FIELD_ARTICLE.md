@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_exterior
 locale: ko_KR
 surface: external_site
 source_voice: Public Site Hull Language Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "압력 기지 외부 선체 트림"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

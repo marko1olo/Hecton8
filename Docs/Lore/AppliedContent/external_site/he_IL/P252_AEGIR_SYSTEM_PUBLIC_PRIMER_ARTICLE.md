@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.aegir_orbital_pressure
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "מבוא ציבורי למערכת Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

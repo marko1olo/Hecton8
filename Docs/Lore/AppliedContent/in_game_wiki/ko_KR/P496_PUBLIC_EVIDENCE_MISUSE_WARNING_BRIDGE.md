@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "공개 증거 오남용 경고"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

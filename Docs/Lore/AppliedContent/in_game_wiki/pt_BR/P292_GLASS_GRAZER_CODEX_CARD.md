@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.fauna
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cartão de códice do raspador de vidro"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

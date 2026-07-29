@@ -8,7 +8,7 @@ biome_tags: biome.drowned_crust;biome.vent_forge
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "PL LOC HOLD: Pressure Glass Field Certificate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

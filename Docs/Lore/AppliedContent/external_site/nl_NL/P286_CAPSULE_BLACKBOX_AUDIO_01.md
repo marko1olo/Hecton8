@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.capsule
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Capsule-blackboxaudio 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

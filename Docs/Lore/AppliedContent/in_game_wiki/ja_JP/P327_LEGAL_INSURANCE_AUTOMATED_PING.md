@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.orbit
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "法務保険自動ping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

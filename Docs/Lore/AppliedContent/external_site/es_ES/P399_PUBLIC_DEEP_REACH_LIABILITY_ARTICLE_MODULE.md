@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.deep_reach
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pruebas de responsabilidad de Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

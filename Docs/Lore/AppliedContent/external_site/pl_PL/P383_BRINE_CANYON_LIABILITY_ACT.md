@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.industrial_shelf
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Brama odpowiedzialności kanionu solanki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

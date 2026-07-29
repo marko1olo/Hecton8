@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: en_US
 surface: external_site
 source_voice: Public Site Surface Evidence Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Paint Chip And Scratch Evidence"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,12 +19,12 @@ localization_flags: 0
 
 # Paint Chip And Scratch Evidence
 
-Paint is one of the few honest public languages left in a drowned base. The company painted surfaces to organize work: off-white for pressure skin, graphite primer under hard coating, orange for service action, small safety strips where hands and tools needed to find the right edge under stress. After the ocean gets in, that order falls apart, but it does not vanish. It becomes a record.
+Deep Reach painted surfaces to organise work: off-white pressure coating on skin panels, graphite primer beneath it, orange for service action, and small safety strips where hands and tools had to find the right edge in bad water. After the flood that order became a record rather than an instruction.
 
-A paint chip is a cross-section of time. The top color says what the surface was meant to be. The primer says how deep the wound went. Salt inside the chip says the wound stayed open while the room breathed wet air. Salt only on top says the chip is newer than the leak. A scratch crossing algae, gasket grime or old mineral dust is late. A scratch buried under those layers is old. The direction of a mark can be more useful than its size: crescent arcs at latches, vertical crate rubs, horizontal crawler drags, small hooked cuts where a Marauder tested a seam with a blade.
+A paint chip is a cross-section of time. The top colour says what the surface was meant to be. The primer says how deep the wound went. Salt inside the chip says the wound stayed open while the room breathed wet air. Salt only on top says the chip is newer than the leak.
 
-This is why scratch decals belong in lore, not only art production. They let a player solve history through surface behavior. A clean handle in a dirty corridor is suspicious. A fresh orange flake below a dead switch can say the switch was tried after power loss. A polished edge beside an unopened hatch can reveal that people queued there. A panel with every scratch running away from the official exit can prove the evacuation map lied.
+Direction carries more than size. Crescent arcs collect at latches. Vertical rubs come from crates. Long horizontal drags come from crawlers. Small hooked cuts are a blade testing a seam.
 
-Deep Reach could rewrite a report. It could not make every damaged edge age in the same direction. Good players should learn to distrust perfect paint and read damaged paint carefully. The wall is not asking to be admired. It is showing where hands went when instructions stopped helping.
+That is why paint survives contradiction better than paperwork. A clean handle in a dirty corridor is anomalous. A fresh orange flake below a dead switch says the switch was tried after power loss. A polished edge beside an unopened hatch says people queued there. A panel whose scratches all run away from the marked exit is evidence that the evacuation map was wrong, and no revision issued in 2147 can age the edges back.
 
 <!-- External Site; generated from P1324_PAINT_CHIP_SCRATCH_DECAL_FIELD_ARTICLE/en_US. -->

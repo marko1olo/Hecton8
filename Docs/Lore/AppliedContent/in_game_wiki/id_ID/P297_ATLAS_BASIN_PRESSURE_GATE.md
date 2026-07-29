@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.pressure_gate
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Gerbang Tekanan Cekungan Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

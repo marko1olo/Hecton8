@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.shallow_repair
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Повреждение спусковой капсулы"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

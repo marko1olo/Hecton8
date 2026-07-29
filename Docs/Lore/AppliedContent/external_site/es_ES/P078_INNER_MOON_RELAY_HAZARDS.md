@@ -8,7 +8,7 @@ biome_tags: biome.orbital_window;biome.surface_relay
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Riesgos relay de lunas internas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.atlas_basin
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "職業上の罪責から個人的な利害へ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

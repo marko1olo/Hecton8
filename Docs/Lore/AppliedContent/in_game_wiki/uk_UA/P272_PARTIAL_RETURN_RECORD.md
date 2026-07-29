@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.replay
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Запис часткового повернення"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

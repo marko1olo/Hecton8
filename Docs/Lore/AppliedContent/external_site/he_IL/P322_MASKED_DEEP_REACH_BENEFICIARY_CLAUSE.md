@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.deep_reach
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "סעיף המוטב המוסווה של Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

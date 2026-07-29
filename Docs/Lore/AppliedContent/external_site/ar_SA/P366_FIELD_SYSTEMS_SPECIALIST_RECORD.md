@@ -8,7 +8,7 @@ biome_tags: biome.safe_module;biome.colony
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "سجل اختصاصي الأنظمة الميدانية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.industrial_shelf
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "전도성 바이오필름 케이블 피부"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

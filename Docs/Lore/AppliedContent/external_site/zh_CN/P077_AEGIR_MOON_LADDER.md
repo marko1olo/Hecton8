@@ -8,7 +8,7 @@ biome_tags: biome.orbital_window;biome.relay_spine
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Aegir卫星阶梯"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

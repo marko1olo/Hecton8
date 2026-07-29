@@ -8,7 +8,7 @@ biome_tags: biome.worker_locker;biome.p63_shallows
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Jeu de noms ouvriers d'ancrage A"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

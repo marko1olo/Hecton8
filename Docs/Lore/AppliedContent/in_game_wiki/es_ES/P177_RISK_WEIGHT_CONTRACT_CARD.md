@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.claim_admin
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tarjeta de peso de riesgo contractual"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

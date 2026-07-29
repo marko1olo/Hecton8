@@ -8,7 +8,7 @@ biome_tags: biome.escape_chain;biome.authoring
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "上昇レシピ費用行"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

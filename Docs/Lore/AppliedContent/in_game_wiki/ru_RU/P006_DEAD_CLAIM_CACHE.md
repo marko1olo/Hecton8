@@ -8,7 +8,7 @@ biome_tags: biome.service_canyons;biome.drowned_infrastructure
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Кэш мертвой заявки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

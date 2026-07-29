@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas_maintenance
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas-6 Spoiler-Gated-Artikel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

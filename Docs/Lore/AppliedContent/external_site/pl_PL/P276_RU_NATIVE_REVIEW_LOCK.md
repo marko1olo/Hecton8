@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.review
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "PL LOC HOLD: Russian Operational Voice Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

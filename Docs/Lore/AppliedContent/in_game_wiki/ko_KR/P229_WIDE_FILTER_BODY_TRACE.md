@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.open_deep_water
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "넓은 여과체의 흔적"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

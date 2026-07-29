@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.ecology
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "브라인 베인 코덱스 카드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.atlas_basin
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "직업적 죄책에서 개인적 이해로"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

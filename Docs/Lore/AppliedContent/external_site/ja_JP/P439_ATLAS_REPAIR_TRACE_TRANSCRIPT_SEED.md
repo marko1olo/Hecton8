@@ -8,7 +8,7 @@ biome_tags: biome.atlas_repair_network;biome.deep_ecology
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas修復痕跡記録"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

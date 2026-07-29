@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.old_colony_ruins
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "P703_BLOOD_KELP"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

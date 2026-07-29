@@ -8,7 +8,7 @@ biome_tags: biome.vent;biome.resource
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "벤트 포지 현장 공정 가이드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

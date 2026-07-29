@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "인양 진실의 증거 상태"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

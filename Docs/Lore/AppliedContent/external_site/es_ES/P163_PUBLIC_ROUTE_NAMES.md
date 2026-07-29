@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.black_keel_orbit
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Nombres Públicos De Ruta"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

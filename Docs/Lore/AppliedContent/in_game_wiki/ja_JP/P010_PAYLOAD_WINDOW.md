@@ -8,7 +8,7 @@ biome_tags: biome.atlas_bottom;biome.deep_launch_route
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ペイロード・ウィンドウ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

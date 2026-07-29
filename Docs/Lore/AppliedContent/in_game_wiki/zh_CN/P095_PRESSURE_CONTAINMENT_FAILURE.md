@@ -8,7 +8,7 @@ biome_tags: biome.resource_pressure;biome.vent_forge
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "压力封存失效"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

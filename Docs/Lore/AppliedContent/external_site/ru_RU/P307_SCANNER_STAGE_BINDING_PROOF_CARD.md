@@ -8,7 +8,7 @@ biome_tags: biome.scanner;biome.evidence
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "RU LOC HOLD: Scanner Stage Binding"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

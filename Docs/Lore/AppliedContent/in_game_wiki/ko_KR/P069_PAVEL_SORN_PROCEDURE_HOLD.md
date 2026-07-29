@@ -8,7 +8,7 @@ biome_tags: biome.admin_deck;biome.drowned_office
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "파벨 소른의 절차 보류"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

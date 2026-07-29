@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.shallow_reef
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Shore Skimmer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -25,7 +25,7 @@ The flock runs a continuous line along the surface, feeding on whatever the swel
 
 Anything that flickers gets struck, and a lamp held near the surface will draw the whole line into your faceplate for two seconds. That is long enough to lose the horizon with a full sling on.
 
-They break formation about forty seconds before a squall, earlier than the Class-IV barometer manages. Nobody has worked out what they are reading.
+They break formation about forty seconds before a squall, earlier than the Class-IV barometer manages. The line broke on flat water the morning the Annex lost the plate.
 
 Assessment: follow the line, and treat the gap where it ends as closed water.
 
@@ -39,7 +39,7 @@ SPECIMEN 44-S-016. CLASS: SURFACE CONDITION INDICATOR, UNMAINTAINED. STATION: SH
 
 ## Audio
 
--- whole line just came apart, no reason, flat water, and the deck barometer has not moved. Third time this month. Get the sling in and get in, Corran, I am not arguing with fish about weather --
+-- whole line just came apart, no reason, flat water, and the deck barometer has not moved. Third time this month. Get the sling in and get in, Corran, I am not arguing with fish about weather. Stopping the log, I need the hand.
 
 ## Field Note
 

@@ -8,7 +8,7 @@ biome_tags: biome.surface_squall;biome.shallow_shelter
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cadena de salida de emergencia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

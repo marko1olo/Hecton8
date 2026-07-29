@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.ecology
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "導電性バイオフィルム修理バス"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

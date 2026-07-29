@@ -8,7 +8,7 @@ biome_tags: biome.arrival_shelf;biome.shallow_annex
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Primera voz de Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlasの保険上の人格状態"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

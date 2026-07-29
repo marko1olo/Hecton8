@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: fr_FR
 surface: in_game_wiki
 source_voice: PDA Paint Wear Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Éclats de peinture et rayures comme preuves"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

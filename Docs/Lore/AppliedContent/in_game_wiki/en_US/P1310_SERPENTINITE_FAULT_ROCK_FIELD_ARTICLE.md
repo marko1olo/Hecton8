@@ -19,17 +19,17 @@ localization_flags: 0
 
 # Serpentinite Fault Rock Field Article
 
-Serpentinite is the first rock on HECTON-8 that looks like it is keeping a secret. Basalt reads as broken black bone. Limestone reads as old shell and pressure. Serpentinite reads as something deeper that has been touched by water and changed its mind.
+Anchor log SF-6, green-black fault face at 3,110 metres.
 
-The stone begins as ultramafic rock, material from deep below ordinary crust. Water works into it through fractures, heat and pressure. Minerals rearrange. The surface turns green-black, waxy in places, pale-veined in others, and slick along old shear faces. It is not soft, but it often behaves like a surface that remembers slipping. A lamp will make it look polished and safe. A boot or clamp can find the weak plane underneath.
+  ROCK: altered ultramafic, sheared faces, pale cross-veins
+  PULL TEST, POLISHED PLANE: failed at 2.1 kN
+  PULL TEST, VEIN-LOCK BAND: held at 9.4 kN
 
-For a route, serpentinite matters because it marks old movement. A cave wall of green-black rock is not just scenery. It can tell you where the crust opened, where alkaline seepage may change local chemistry, where instruments may read salt and metal strangely, and where a clean-looking ledge may peel away under load. Thin white veins are usually better anchors than glossy green faces. Powder in a seam means recent motion. A damp black-green shine without drip marks means the wall may be feeding water through itself.
+This is not basalt. Water and heat rearranged the minerals and the old shear planes stayed slick. A lamp reads them as polished and solid; a clamp finds the weak plane under the polish.
 
-Deep Reach liked these faults for access. The stone was already broken in useful directions. A survey team could cut a service passage along it, place sensor cables in the seam, and pretend the wall was cooperative. That worked until vibration, tide flex or careless drilling reminded the fault that it had never stopped being a fault. Some of the neatest abandoned passages are not neat because engineers were careful. They are neat because the rock allowed one straight lie before it moved again.
+Drill across the pale veins, never along a glossy face. A damp black-green shine with no drip marks means water is still moving inside the rock rather than over it.
 
-For a Marauder, the rule is respect the green. Do not trust a smooth handhold. Do not wedge a winch into a polished plane. Scan across the veins, not along them. If the seam smells alkaline through the suit filter or leaves pale dust on the glove, assume water is still changing the rock. Good serpentinite can guide you to hidden seep rooms and deep shortcuts. Bad serpentinite gives you a silent slide, a jammed tool head and a new ceiling where the route used to be.
-
-The point is not that the rock is hostile. It is older than the colony and indifferent to your map. It shows where HECTON-8 was already active before any company arrived. Read it well and it becomes a door. Treat it like a fixed wall and it becomes the reason the door closes behind you.
+Deep Reach ran three service passages along this fault because it was already broken in convenient directions. Two of them are now floored with a single sheet of it.
 
 ## Scanner
 

@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.pressure_gate
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas Basin Pressure Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

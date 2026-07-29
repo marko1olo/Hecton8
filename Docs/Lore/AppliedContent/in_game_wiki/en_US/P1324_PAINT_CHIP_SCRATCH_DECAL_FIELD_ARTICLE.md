@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: en_US
 surface: in_game_wiki
 source_voice: PDA Paint Wear Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Paint Chip And Scratch Evidence"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,11 +19,18 @@ localization_flags: 0
 
 # Paint Chip And Scratch Evidence
 
-Paint wear on HECTON-8 is not cosmetic noise. The colony used off-white pressure coating, dark graphite primer and small runs of orange safety paint because workers needed surfaces to stay readable in dirty water. When those layers break, they expose use.
+Wear card PC-9, latch panel from the east cross-corridor, coating broken through to primer.
 
-Direction matters first. A crescent around a latch means repeated hand or tool motion. A straight bright scrape along a deck edge means cargo drag. Random star cuts can come from collapse debris, but a clean scratch crossing old salt means someone touched the surface after flooding. If the exposed primer is dark and dry, the chip may be recent. If salt has settled inside the broken edge, the damage breathed water for a long time.
+  TOP COAT: off-white pressure coating
+  PRIMER: graphite, dry in the chip floor
+  SAFETY FLAKES: orange, at the latch arc
+  SALT: polished on the lower edge only
 
-The player should read paint before stripping it. A chipped panel can point toward the door people actually used, the cabinet someone opened after the alarm, or a surface cleaned to hide a warning. Paint is cheap as material and expensive as context. Loot it blind and the wall becomes mute.
+A crescent around a latch is repeated hand or tool motion. A straight bright scrape along a deck edge is cargo drag. A clean scratch crossing old salt means the surface was touched after flooding.
+
+Dry primer in the chip floor makes the damage recent. Salt settled inside the broken edge means it breathed water for a long time.
+
+Scan before stripping. Paint pays almost nothing as material, and a chipped panel is often the only record of which door people actually used.
 
 ## Scanner
 

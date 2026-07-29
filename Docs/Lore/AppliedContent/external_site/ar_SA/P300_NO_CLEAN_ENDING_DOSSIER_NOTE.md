@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.dossier
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ملاحظة ملف بلا نهاية نظيفة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

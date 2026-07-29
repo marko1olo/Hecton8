@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.relay_archive
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Aegir 달 항로 원장"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

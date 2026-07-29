@@ -8,7 +8,7 @@ biome_tags: biome.escape_chain;biome.authoring
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Baris Biaya Resep Naik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

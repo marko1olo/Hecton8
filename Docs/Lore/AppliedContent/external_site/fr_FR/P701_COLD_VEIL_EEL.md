@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.abyssal_machine_field
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "P701_COLD_VEIL_EEL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

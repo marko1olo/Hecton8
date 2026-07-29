@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base_interior;biome.service_corridor
 locale: en_US
 surface: in_game_wiki
 source_voice: PDA Hose Reading Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ribbed Flexible Hose"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,18 @@ localization_flags: 0
 
 # Ribbed Flexible Hose
 
-Flexible ribbed hoses connect the soft systems of a pressure base: oxygen, coolant, pump priming, tool power, suit service and emergency bypasses. The ribs protect the line from crushing, but they also make the surface readable. Salt dust catches on the high ridges after dry cycles. Wet troughs hold the last seep long after a pipe stops dripping. Flat bands mark clamps, door crushes or desperate anchors. Abrasion on one side means the hose was dragged, not installed. A small cyan paint fleck can identify a coolant line even when the label is gone. Before cutting or looting, follow the hose with the scanner and by hand. A hose can be dead, live, pressurized, contaminated, or deliberately staged to look harmless.
+Hose trace card RH-4, ribbed pressure line, service drawer to pump cradle, 6 m run.
+
+  RIDGE TOPS: dry salt, abrasion on one side
+  TROUGHS: still wet
+  CLAMP BANDS: two flats, one clamp over old salt
+  PAINT FLECK: cyan at the drawer end
+
+Salt on the ridges is dry cycling. Wet troughs mean the line carried pressure after the room flooded. Abrasion on one side means it was dragged, not installed.
+
+A clamp over old salt is a late repair; salt over the clamp edge means the clamp was there first. Cyan identifies a coolant line once the label is gone.
+
+Trace both ends before cutting. A dead-looking hose can be the only thing still feeding air, coolant or a powered junction.
 
 ## Scanner
 

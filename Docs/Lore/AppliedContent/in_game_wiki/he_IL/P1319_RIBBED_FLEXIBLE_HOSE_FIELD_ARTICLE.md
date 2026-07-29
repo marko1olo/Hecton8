@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base_interior;biome.service_corridor
 locale: he_IL
 surface: in_game_wiki
 source_voice: PDA Hose Reading Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "צינור גמיש מצולע"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

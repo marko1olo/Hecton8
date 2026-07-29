@@ -8,7 +8,7 @@ biome_tags:
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas-6 공개 수리망"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

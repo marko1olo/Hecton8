@@ -8,7 +8,7 @@ biome_tags: biome.thermal_vent;biome.atlas_basin
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "أعشاش العقد الدقيقة عند الفتحات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

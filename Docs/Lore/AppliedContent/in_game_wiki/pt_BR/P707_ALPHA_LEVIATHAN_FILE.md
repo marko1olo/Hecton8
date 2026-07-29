@@ -8,7 +8,7 @@ biome_tags: biome.deep_abyss;biome.drowned_factories
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P707_ALPHA_LEVIATHAN_FILE"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

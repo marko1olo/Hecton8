@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.shallow_reef
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black Keel联络"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories;biome.abyssal_machine_field
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Iron Coral"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -25,7 +25,7 @@ Colour reads the substrate: rust-red over structural steel, grey-black over mach
 
 The skeleton is harder than a Class-IV palm plate. Two shifts hauling across a stand will open a glove seam, which will not read as a leak until you flex the hand.
 
-Crust over a crack runs three times thicker than crust on sound plate 200 mm away. Nothing in the metal explains it. Where it bridges a weld, the seam cannot be inspected again.
+Crust over a crack runs three times thicker than crust on sound plate 200 mm away. Where it bridges a weld, the seam cannot be inspected again.
 
 Yield is the crust itself, richest where thickest. Plate cut with crust on it bills at gross, and a 4.8 tonne window does not itemise, so chip it at the wreck, not on the Keel.
 

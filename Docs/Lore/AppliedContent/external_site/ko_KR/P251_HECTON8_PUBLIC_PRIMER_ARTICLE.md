@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.hecton8_atlas
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "HECTON-8 공개 입문"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

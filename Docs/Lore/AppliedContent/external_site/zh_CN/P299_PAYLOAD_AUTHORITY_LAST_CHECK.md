@@ -8,7 +8,7 @@ biome_tags: biome.final_payload;biome.dossier
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "载荷权限最终检查"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

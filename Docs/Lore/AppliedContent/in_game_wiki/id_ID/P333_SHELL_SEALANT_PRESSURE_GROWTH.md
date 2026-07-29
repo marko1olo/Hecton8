@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.pressure
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pertumbuhan Sealant Cangkang Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

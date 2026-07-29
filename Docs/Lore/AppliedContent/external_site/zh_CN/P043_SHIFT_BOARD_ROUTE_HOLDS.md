@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.service_canyon
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "班次板路线搁置"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

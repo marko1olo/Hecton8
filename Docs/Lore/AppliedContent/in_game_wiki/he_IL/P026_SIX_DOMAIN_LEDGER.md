@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.deep_archive
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ספר ששת הדומיינים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

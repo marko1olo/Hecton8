@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.orbit
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Legal Insurance Automated Ping"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Legal Insurance Automated Ping
 
-Legal Insurance Automated Ping is a compact expression of HECTON-8's bureaucratic horror. Present-day Deep Reach can speak through automated insurance custody as effectively as through a person. The system asks what the survivor is carrying before it asks whether the survivor should be saved.
+An automated insurance ping is the standard Deep Reach reply to a distress signal in 2190. It requests mass class, contamination state, coordinate proof, claim priority and receiver custody acceptance. Biological claimant status on its own is recorded as insufficient for recovery-window assignment.
 
 ## Scanner
 

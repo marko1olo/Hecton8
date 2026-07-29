@@ -8,7 +8,7 @@ biome_tags: biome.public_archive;biome.relay_archive
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Linia redakcji Basenu Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

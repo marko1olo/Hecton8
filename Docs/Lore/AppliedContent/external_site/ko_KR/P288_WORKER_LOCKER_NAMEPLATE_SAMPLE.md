@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.worker
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "작업자 사물함 이름표 샘플"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

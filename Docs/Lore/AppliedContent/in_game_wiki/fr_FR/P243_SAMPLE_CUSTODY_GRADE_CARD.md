@@ -8,7 +8,7 @@ biome_tags: biome.resource_custody;biome.claim_admin
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "FR LOC HOLD: Sample Custody Grade Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

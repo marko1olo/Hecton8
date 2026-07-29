@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.worker
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "工人储物柜名牌样本"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

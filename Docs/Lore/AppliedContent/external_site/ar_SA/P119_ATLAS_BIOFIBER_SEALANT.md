@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.repair_ecology
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "مانع تسرب ألياف حيوية من Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

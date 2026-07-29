@@ -8,7 +8,7 @@ biome_tags: biome.drowned_crust;biome.vent_forge
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Полевой сертификат pressure glass"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

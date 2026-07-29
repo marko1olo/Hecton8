@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.process_chemistry
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ES LOC HOLD: Brine Salt Process Lot Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

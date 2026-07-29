@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pressure Job Title Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,9 +19,7 @@ localization_flags: 0
 
 # Pressure Job Title Table
 
-Pressure Job Title Table gives HECTON-8 its labor vocabulary. The titles are built to be read through rooms and objects, not through exposition alone. Pump technicians, seal riggers, route clerks, brine divers, fabricator operators, medlock aides, relay custodians, vent-kiln hands, Atlas safety readers and shift supervisors each imply a workspace, a tool set, a permission boundary and a failure mode.
-
-For worldbuilding, this table makes the colony legible. For gameplay, it turns a name into a path: if the worker maintained seals, look near hatches; if they handled relay custody, look for timing slips; if they served medlock, expect denial forms and triage lies. A good title lets the player infer the room before the terminal explains it.
+Pressure job titles in the colony recorded access rather than status. Pump technicians, seal riggers, route clerks, brine divers, fabricator operators, medlock aides, relay custodians, vent-kiln hands, Atlas safety readers and shift supervisors each carried a badge permission, a tool set, and a failure category that could be assigned to them after the Great Tide.
 
 ## Scanner
 

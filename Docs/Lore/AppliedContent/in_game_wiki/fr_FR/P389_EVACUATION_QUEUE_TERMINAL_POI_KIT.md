@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kit de preuves du terminal de file d'évacuation"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

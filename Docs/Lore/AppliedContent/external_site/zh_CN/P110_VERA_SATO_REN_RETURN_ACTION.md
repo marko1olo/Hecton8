@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.abyssal_machine_field
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "维拉·佐藤-任的返行动作"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

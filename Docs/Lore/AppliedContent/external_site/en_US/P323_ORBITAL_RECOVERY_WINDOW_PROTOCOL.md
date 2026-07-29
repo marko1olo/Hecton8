@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.aegir
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Orbital Recovery Window Protocol"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Orbital Recovery Window Protocol
 
-Orbital Recovery Window Protocol grounds HECTON-8's escape loop in local astronomy and systems engineering. The player is not stranded because the story says so. They are stranded because Aegir's storm shear, magnetic interference, damaged ascent chain and legal receiver state only align in narrow windows. Rescue becomes a route to build, not a button to press.
+Recovery window protocol RW-3 requires four conditions together before the Black Keel accepts mass: a rated ascent object, a guidance core that can hold the window, a pressure history the receiver accepts, and a synchronised quarantine handshake. The protocol lists no partial acceptance.
 
 ## Scanner
 

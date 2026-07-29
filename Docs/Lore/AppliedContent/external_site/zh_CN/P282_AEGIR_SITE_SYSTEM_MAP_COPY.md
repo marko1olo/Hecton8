@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.aegir
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ZH LOC HOLD: Aegir Site System Map Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

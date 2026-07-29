@@ -8,7 +8,7 @@ biome_tags: biome.inventory;biome.resource_custody
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Baris Batas Tumpukan Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

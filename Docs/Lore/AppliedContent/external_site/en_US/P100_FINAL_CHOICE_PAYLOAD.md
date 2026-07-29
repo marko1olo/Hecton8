@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.atlas_basin
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Final Choice Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Final Choice Payload
 
-Final Choice Payload defines HECTON-8's ending philosophy: the player chooses what leaves the moon, who receives it, and what that makes possible for Deep Reach, public law, Atlas, and the ocean-machine ecology.
+Ascent payload declaration PD-2 is a single sheet carrying a tick list and one consignee line. What leaves RAN-B:H8, and who it is consigned to, decides who can act on the site afterwards.
 
 ## Scanner
 

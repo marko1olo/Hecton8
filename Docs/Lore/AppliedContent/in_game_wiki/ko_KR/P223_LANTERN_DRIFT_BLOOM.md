@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.open_shallow_water
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "랜턴 드리프트 bloom"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.deep_archive
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Doutrina Seed Ship"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

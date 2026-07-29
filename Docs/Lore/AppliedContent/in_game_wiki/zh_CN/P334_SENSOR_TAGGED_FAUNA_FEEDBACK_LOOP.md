@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.fauna
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "传感标记动物反馈环"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.med_lock;biome.worker_locker
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Варианты реквизита триажных реестров"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

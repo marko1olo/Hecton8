@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.black_keel
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "توقيعات طابور إجراء العودة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

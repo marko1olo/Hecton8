@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: id_ID
 surface: external_site
 source_voice: Public Site Surface Evidence Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Serpihan Cat dan Goresan sebagai Bukti"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

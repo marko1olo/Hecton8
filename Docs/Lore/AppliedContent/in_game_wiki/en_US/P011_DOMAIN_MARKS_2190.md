@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Domain Marks 2190"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,9 +19,17 @@ localization_flags: 0
 
 # Domain Marks 2190
 
-Domain marks are the small legal scars that make HECTON-8 feel far away without making it feel primitive. A single bracket can carry Sol Core safety grammar, a Centauri charter phrase, a Barnard Yards repair bite, a Luyten custody hash and an Aegir local claim code. None of those marks are decoration. Each one tells the player who certified the part, who repaired it, who can prove a packet, who can insure a loss and who will argue over the salvage after the room floods.
+Bracket B-14, corroded, five domain marks on one part.
 
-The useful detail is not the list of domains. It is the way they stack on tired metal. Sol can still certify an object it cannot save. Barnard can normalize dead-claim work. Luyten can preserve custody without caring whether the evidence is merciful. Aegir can execute dirty local law under everyone else's paperwork. When a Marauder reads the marks, the ocean stops being empty. It becomes a place where human authority arrived before human warmth.
+  SOL CORE: safety format stamp
+  CENTAURI: charter seal
+  BARNARD YARDS: repair bite
+  LUYTEN: custody hash
+  AEGIR: local claim code
+
+Each mark names a different authority over the same object: who certified it, who repaired it, who can prove a packet carrying it, and who will argue over it once the room floods.
+
+The stacking order is the useful part. Sol certification survives on a part Sol cannot reach. Barnard normalises dead-claim work. Luyten preserves custody whether or not the evidence helps anyone. Aegir local claim law supersedes open salvage after a descent loss, which is the mark that decides who owns the bracket now.
 
 ## Scanner
 

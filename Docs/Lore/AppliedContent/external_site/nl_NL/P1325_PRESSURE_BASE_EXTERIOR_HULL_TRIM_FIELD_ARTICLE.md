@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_exterior
 locale: nl_NL
 surface: external_site
 source_voice: Public Site Hull Language Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Buitentrim van drukbasisromp"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

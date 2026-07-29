@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.quarantine
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "隔离留置审讯记录"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

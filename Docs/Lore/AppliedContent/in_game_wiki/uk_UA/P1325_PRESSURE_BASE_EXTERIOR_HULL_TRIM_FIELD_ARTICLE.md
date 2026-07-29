@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_exterior
 locale: uk_UA
 surface: in_game_wiki
 source_voice: PDA Exterior Trim Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Зовнішній трим корпусу бази тиску"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

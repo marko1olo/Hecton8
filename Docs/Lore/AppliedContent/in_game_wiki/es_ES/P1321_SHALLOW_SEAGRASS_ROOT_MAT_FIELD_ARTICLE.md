@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.photic_shallows
 locale: es_ES
 surface: in_game_wiki
 source_voice: PDA Root-Mat Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Sustrato somero de raíces marinas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

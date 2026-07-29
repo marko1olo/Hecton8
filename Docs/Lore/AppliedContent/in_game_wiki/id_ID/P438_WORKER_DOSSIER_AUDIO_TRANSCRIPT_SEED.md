@@ -8,7 +8,7 @@ biome_tags: biome.colony_infrastructure;biome.codex
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Transkrip Audio Dossier Pekerja"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

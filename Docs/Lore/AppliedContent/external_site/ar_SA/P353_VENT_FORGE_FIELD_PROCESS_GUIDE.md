@@ -8,7 +8,7 @@ biome_tags: biome.vent;biome.resource
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "دليل عملية حقلية للمطرقة الحرارية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

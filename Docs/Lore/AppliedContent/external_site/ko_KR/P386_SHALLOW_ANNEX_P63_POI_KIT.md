@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "얕은 부속동 P-63 증거 키트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

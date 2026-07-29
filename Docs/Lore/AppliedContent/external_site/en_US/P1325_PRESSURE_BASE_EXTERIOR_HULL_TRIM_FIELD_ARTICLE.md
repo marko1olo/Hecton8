@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_exterior
 locale: en_US
 surface: external_site
 source_voice: Public Site Hull Language Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pressure Base Exterior Hull Trim"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

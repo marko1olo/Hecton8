@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.brine_canyon
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Relai Organ Filter Akustik"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

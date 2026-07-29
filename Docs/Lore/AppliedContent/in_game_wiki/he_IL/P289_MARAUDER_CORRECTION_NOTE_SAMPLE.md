@@ -8,7 +8,7 @@ biome_tags: biome.marauder;biome.evidence
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "דגימת תיקון של בוזז"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

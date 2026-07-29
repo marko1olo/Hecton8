@@ -8,7 +8,7 @@ biome_tags: biome.thermal_vent;biome.atlas_basin
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "热泉微节点巢"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

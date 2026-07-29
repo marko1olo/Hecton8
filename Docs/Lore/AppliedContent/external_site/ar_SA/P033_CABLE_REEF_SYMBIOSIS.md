@@ -8,7 +8,7 @@ biome_tags: biome.service_canyon;biome.cable_reef
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "تكافل شعاب الكابلات"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

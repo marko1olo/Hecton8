@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Limestone Cave Ceiling Mineral Drip Field Article
 
-Limestone cave ceilings help HECTON-8 avoid treating caves as interchangeable tunnels. A carbonate roof has a different memory than basalt. It records old shells, dissolved minerals, pressure pulses, brine seepage and the places where water lingered long enough to leave root scars and halos.
+A submerged limestone ceiling is a carbonate roof: shells, microbial crust and reef rubble cemented into stone before the cave that now holds it existed. Fractures let water through, cavities opened, and calcium moved for as long as the water stayed still. The stub scars where stalactites once grew record the moment those conditions ended.
 
-That memory is useful in play. A ceiling can guide route reading when the floor is buried in silt. A pale drip line can show a hidden seep. A biofilm pocket can mark low current. Salt in a crack can warn that the seam still moves with pressure. Cutting or anchoring overhead becomes a choice with consequences, not a neutral interaction.
+The roof stays readable underwater. A pale mineral streak follows seep direction. Salt in a crack means the seam still moves with pressure pulses. Green-brown biofilm sits where current is low, which is also where disturbed sediment stays in the water instead of clearing.
 
-It also fits the colony story. Deep Reach could sell a limestone passage as clean, stable access because it looked calm on camera. The same roof could later fail in chalky plates, and the paperwork could blame local chemistry. HECTON-8 should make the player distrust that calm without turning the cave into a horror set. The stone is not evil. It is old, readable and perfectly capable of being misread.
+Deep Reach access sheets graded carbonate roofs as low mechanical threat, a category that made survey lines cheap to approve and easy to photograph. When panels and cable trays came down on the west cave chain, the same sheets attributed the failure to local seep chemistry. No revision was ever filed. Access sheet LC-4, issued in 2146, still reads low mechanical threat for that 940 m roof.
 
 <!-- External Site; generated from P1312_LIMESTONE_CAVE_CEILING_MINERAL_DRIP_FIELD_ARTICLE/en_US. -->

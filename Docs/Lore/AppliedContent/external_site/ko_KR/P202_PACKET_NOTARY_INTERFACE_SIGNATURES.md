@@ -8,7 +8,7 @@ biome_tags: biome.relay_spine;biome.claim_admin
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Packet Notary Interface 서명"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

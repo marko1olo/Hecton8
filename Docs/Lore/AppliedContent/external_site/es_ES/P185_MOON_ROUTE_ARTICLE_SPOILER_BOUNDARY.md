@@ -8,7 +8,7 @@ biome_tags: biome.public_archive;biome.relay_archive
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Línea de redacción de la cuenca Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

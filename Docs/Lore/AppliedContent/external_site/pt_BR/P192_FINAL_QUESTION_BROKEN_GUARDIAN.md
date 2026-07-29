@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.repair_ecology
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pergunta final: guardião quebrado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

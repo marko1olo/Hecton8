@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.atlas_basin
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "От профессиональной вины к личной ставке"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

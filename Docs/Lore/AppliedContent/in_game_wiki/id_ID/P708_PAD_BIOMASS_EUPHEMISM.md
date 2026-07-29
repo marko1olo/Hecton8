@@ -8,7 +8,7 @@ biome_tags: biome.deep_abyss;biome.drowned_factories
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P708_PAD_BIOMASS_EUPHEMISM"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

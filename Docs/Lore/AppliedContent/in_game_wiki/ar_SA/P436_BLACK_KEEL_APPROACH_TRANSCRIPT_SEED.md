@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.black_keel_orbit
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "تفريغ اقتراب Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

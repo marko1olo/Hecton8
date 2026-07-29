@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.system
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Luz primaria y radiación de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

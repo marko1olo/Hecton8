@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "공개 기록 보관소 수신자 충돌"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

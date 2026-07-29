@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.medical_bay
 locale: ar_SA
 surface: in_game_wiki
 source_voice: PDA Medical Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "سجلات الفرز المؤجل"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

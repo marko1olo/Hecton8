@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.p63_shallows
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Beschadigde onderdelen van de dropcapsule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

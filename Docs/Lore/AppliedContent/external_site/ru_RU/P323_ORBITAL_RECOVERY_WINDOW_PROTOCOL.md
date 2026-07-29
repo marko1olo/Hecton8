@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.aegir
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Протокол орбитального окна возврата"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

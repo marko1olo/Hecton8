@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories;biome.cable_reef
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P702_POCKET_AMBUSHER"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.pump_station
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "브라인 캐니언 펌프 대성당 증거 키트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

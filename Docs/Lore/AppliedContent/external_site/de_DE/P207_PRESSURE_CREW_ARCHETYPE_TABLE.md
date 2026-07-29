@@ -8,7 +8,7 @@ biome_tags: biome.worker_locker;biome.industrial_shelf
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tabelle der Druckcrew-Archetypen"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

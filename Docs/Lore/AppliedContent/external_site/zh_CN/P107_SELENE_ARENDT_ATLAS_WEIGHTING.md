@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.factory_temple
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "塞勒涅·阿伦特的Atlas权重"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

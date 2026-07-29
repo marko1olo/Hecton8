@@ -19,9 +19,17 @@ localization_flags: 0
 
 # Black Keel Tonne-Window Custody
 
-A Keelmark receipt explains why Black Keel speaks in mass before it speaks in rescue. The carrier runs on tonne-window custody: a legal slot matched to a physical payload, an insurance exposure and a phase of the route clock. A living body, a sealed evidence core, a cut of Xenon-Omega process material and a crate of recoverable hull all compete for the same window if the contract places them on the same line. The system is cold, but it is not random. It tells the player what the frontier values and which choices will travel home first.
+Keelmark receipt K-2214: one tonne-window, one carrier slot, one recovery class.
 
-The ugly part is that Black Keel can be honest while still being cruel. If the player increases proof value, a packet may climb the queue before the body. If the player carries contaminated material, quarantine can eat the window. If the player proves Deep Reach liability, hidden priority hooks may try to seize custody before public evidence escapes. A tonne-window is not a wallet number. It is a physical promise with legal teeth.
+  WINDOW: 4.8 t
+  ENTERED AGAINST IT: living contractor, sealed evidence core, Xenon-Omega process cut, hull crate
+  HUMAN STATUS OVERRIDE: insufficient on its own
+
+A tonne-window is a legal slot matched to a physical payload, an insurance exposure and a phase of the route clock. Everything on the receipt competes for the same mass allowance.
+
+Proof value moves an item up the list, so a packet can climb above a body. Contaminated material raises the quarantine class and can spend the window without lifting anything.
+
+Custody proof is the only lever that reorders the class. File it before the window opens; the carrier will not re-sort a slot mid-lift.
 
 ## Scanner
 

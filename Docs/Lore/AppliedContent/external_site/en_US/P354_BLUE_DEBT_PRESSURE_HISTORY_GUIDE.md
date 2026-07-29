@@ -8,7 +8,7 @@ biome_tags: biome.resource;biome.deep
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Blue Debt Pressure History Guide"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

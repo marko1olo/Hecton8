@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.density_layer
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Brine Vane Forests"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,11 @@ localization_flags: 0
 
 # Brine Vane Forests
 
-Brine Vane Forests are where HECTON-8 stops letting water behave like empty space. In the canyon, water becomes architecture: density layers stack like walls, sonar bends around invisible shelves, and a careless descent can put a suit below its expected buoyancy before the depth gauge feels dramatic. Brine vanes make that math visible. They are not Earth plants and not a speaking alien reef. They are salt-mineral membranes that grow where chemical gradients keep feeding them, flat enough to look botanical and physical enough to be trusted. A living vane sheet says do not cross here. A torn edge says something crossed recently. A curled tip says the boundary is weakening. A pale rib says the membrane has been shedding material, possibly useful for brine chemistry, sealant grit or density-sensor calibration. Good canyon design should make players navigate by these signs rather than by arrows: drift along an intact wall, find the torn mouth, watch sonar warp, feel the suit trim change, and understand that the ocean is not blocking the path out of spite. It is obeying pressure. That is why brine vane forests are beautiful in a colder way than the photic shelf. They are not welcoming. They are legible.
+Brine vane forests grow along boundaries between brine, temperature and pressure in the canyon walls of HECTON-8. They are salt-mineral membranes, flat enough to read as botanical, and they mark density walls steep enough to bend sonar and pull a suit off trim.
+
+Aegir salvage crews navigate by their condition rather than by chart. An intact sheet marks a boundary nothing has crossed. A torn edge means recent passage. Curled tips show a boundary weakening into a shear window. Pale ribs indicate shed material, harvested for brine chemistry, sealant grit and density-sensor calibration.
+
+Cutting a live sheet can close the only readable lane through a canyon wall.
 
 ## Scanner
 

@@ -8,7 +8,7 @@ biome_tags: biome.escape_chain;biome.authoring
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ascent Recipe Cost Row"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

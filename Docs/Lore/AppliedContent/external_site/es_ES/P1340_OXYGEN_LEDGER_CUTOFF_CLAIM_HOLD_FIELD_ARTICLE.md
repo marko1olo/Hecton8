@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: es_ES
 surface: external_site
 source_voice: Public Lore Atlas Evidence Note
-spoiler_tier: 0
+spoiler_tier: 
 title: "Corte del registro de oxígeno y retención de reclamación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

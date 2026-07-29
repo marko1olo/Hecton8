@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.ocean
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Panduan Lapisan Kerak Tenggelam"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

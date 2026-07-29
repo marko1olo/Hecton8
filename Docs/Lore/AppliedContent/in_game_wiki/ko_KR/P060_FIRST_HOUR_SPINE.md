@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.crash_shelf
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "첫 시간의 등뼈"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

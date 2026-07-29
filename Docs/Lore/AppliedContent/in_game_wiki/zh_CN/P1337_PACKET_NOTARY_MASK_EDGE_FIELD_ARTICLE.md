@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: zh_CN
 surface: in_game_wiki
 source_voice: PDA Forensic Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "packet notary遮罩边缘"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

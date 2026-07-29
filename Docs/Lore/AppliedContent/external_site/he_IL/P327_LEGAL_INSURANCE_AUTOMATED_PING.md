@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.orbit
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "פינג משפטי-ביטוחי אוטומטי"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

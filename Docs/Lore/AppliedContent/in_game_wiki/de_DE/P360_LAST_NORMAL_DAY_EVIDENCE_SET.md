@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.evidence
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Beweissatz des letzten normalen Tages"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

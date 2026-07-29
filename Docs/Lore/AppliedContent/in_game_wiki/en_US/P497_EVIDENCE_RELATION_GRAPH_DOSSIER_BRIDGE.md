@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Evidence Relation Graph Dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,9 +19,16 @@ localization_flags: 0
 
 # Evidence Relation Graph Dossier
 
-The relation overlay was built for tired investigators and frightened salvagers, not judges. It pulls records onto the same table when they share a source object, route plate, claimant phrase, witness hash, caption family, injury mark, redaction state, or visible consequence. That makes patterns visible under pressure. It also makes false certainty easy.
+Relation overlay, dossier build DG-4C. An edge means two records share a source object, route plate, claimant phrase, witness hash, caption family, injury mark, redaction state or visible consequence.
 
-A hash match does not prove witness truth. A caption match does not prove source recovery. A shared redaction state may only mean the same clerk cut both files with the same template. The overlay is useful because it tells the player where to spend attention: packet custody, source object, claimant wording, witness hash, route consequence, redaction reason, and caption order. It becomes dangerous the moment the line is treated as a verdict.
+  GREEN EDGE: source object or route plate match
+  AMBER EDGE: claimant phrase or caption family match
+  RED EDGE: witness hash, injury mark or suppression consequence match
+  GRAY EDGE: shared redaction state only
+
+The overlay was built for tired investigators and frightened salvagers, not for judges. A hash match does not prove witness truth. Two records can share a caption family because one clerk cut both files from the same template. A gray edge means nothing beyond shared redaction state.
+
+Check every edge against custody before spending attention on it. A straight line between two records is a place to look, not a finding.
 
 ## Scanner
 

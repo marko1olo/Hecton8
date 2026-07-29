@@ -8,7 +8,7 @@ biome_tags: biome.service_corridor;biome.machine_trench
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Montaje de la cadena de escape"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

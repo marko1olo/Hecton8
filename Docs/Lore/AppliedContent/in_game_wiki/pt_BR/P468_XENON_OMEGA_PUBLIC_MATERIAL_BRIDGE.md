@@ -8,7 +8,7 @@ biome_tags:
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Material público Xenon-Omega"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

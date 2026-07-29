@@ -8,7 +8,7 @@ biome_tags: biome.orbital_window;biome.relay_spine
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Drabina ksiezycow Aegira"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

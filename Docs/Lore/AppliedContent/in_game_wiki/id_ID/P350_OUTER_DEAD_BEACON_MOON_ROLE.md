@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.comms
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Mute sebagai Beacon Mati Luar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: fr_FR
 surface: external_site
 source_voice: Public Site Surface Evidence Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Éclats de peinture et rayures comme preuves"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

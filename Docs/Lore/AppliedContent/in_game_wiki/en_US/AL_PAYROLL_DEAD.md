@@ -8,7 +8,7 @@ biome_tags: biome.spine_shallows
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Payroll Period Close, Sector 44"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -37,7 +37,7 @@ DOCUMENT 44-P-1204. PERIOD CLOSE: SECTOR 44. BADGES CLOSED: 34, ASSET REASSIGNME
 
 ## Audio
 
-Payroll, period close, Sector Forty-Four, and I want somebody above me to hear this. The atmosphere plan pulls off the active roll. Off the roll. So when a badge goes to asset reassignment, the plant stops counting that body, the locker stops issuing to it, and the body is still on shift, still breathing, still queuing at the -- [keys, drawer] Thirty-one closed this period. Thirty-four. Thirty-four, I have the sheet in front of me. None of them are on a departure manifest, where would they even -- if your badge reads closed you go to the Contract Continuity Desk before shift. Before. After is a form, and a form is eleven d--
+Payroll, period close, Sector Forty-Four, and I want somebody above me to hear this. The atmosphere plan pulls off the active roll. Off the roll. So when a badge goes to asset reassignment, the plant stops counting that body, the locker stops issuing to it, and the body is still on shift, still breathing, still queuing at the -- [keys, drawer] Thirty-one closed this period. Thirty-four. Thirty-four, I have the sheet in front of me. None of them are on a departure manifest. If your badge reads closed you go to the Contract Continuity Desk before shift, not after, because after is a form and the form runs eleven days. [switch, line tone] Continuity Desk, this is Payroll Forty-Four. Are you taking these off me. [line tone holds] Payroll Forty-Four. Are you taking these.
 
 ## Field Note
 

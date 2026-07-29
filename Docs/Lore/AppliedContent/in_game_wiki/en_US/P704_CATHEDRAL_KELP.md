@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.cable_reef
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cathedral Kelp"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -23,7 +23,7 @@ A single holdfast at 1,240 metres carries stalk to within 380 metres of the surf
 
 The blades carry the same black film that grows on lamp housings, so they take light and give none back. Ten metres in, a Class-IV lamp lands a coin of light on one blade at arm's length and nothing else in eight hundred metres of water. The stalks are gas-cored and scatter sonar, so the plot shows stalk at five metres and open ocean past it. That works both ways: nothing inside can see you either.
 
-Pale nodes mark the stalk every nine metres, identical, so they give height and no position. Nobody has found a young one. Every stand is full height.
+Pale nodes mark the stalk every nine metres, identical, so they give height and no position. Every stand is full height.
 
 The blades all fold downcurrent. Assessment: cross the fold to find an edge, eighteen minutes through or 1.4 kilometres around.
 
@@ -37,7 +37,7 @@ DOCUMENT 44-D-2211. CLASS: NAVIGATION OBSTRUCTION, PERMANENT. ROUTE 12 REDRAWN T
 
 ## Audio
 
--- lamp on full and I can see one blade. One. Nine-forty on the gauge, twelve nodes since the fold, and the fold has moved. Corran, if you are counting nodes to find the edge, count the --
+-- lamp on full and I can see one blade. One. Nine-forty on the gauge, twelve nodes since the fold, and the fold has moved. Corran, stop counting nodes and cross the fold. Corran. Cross the fold.
 
 ## Field Note
 

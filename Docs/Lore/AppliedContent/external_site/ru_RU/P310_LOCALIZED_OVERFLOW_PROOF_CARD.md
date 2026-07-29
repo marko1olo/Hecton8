@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.ui
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "RU LOC HOLD: Localization Fit Record"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

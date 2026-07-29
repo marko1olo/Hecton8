@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.relay_archive
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "سجل مسارات أقمار Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

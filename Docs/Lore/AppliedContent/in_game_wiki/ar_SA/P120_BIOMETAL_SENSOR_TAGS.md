@@ -8,7 +8,7 @@ biome_tags: biome.repair_ecology;biome.abyssal_machine_field
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "وسوم استشعار بمعدن حيوي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

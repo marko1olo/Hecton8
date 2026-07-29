@@ -8,7 +8,7 @@ biome_tags: biome.orbital_window;biome.dead_claim_cache
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "外层卫星冷claims"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

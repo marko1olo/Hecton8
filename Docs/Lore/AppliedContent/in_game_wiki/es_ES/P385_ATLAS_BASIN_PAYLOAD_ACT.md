@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.factory_temple
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Puerta payload de la cuenca Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

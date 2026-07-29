@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories;biome.pressure_base
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P703_TUBULAR_CORAL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

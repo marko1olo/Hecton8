@@ -8,7 +8,7 @@ biome_tags: biome.dead_claim;biome.industrial_descent
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "أمر تنظيف Deep Reach النشط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

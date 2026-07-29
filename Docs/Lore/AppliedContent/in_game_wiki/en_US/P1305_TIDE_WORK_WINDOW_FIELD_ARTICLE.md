@@ -19,13 +19,17 @@ localization_flags: 0
 
 # Tide Work Window Field Article
 
-HECTON-8's ocean has working hours. The phrase sounds like a joke until a hatch refuses to equalize, a pinger dies in a brine lean, or a route that was open ten minutes ago becomes a grinder. Tide phase is not background weather on this moon. It changes door strain, silt load, acoustic range, brine-layer drift, suit ballast, pump duty and the few clean angles a carrier can hear through Aegir noise.
+WINDOW BOARD, ROUTE OFFICE, SECTOR 44. Chalk over a printed grid.
 
-Deep Reach compressed those conditions into the polite word window. Slack window. Pump window. Lift window. Relay window. Blackout window. The language is efficient and poisonous. It makes a physical mercy sound like a calendar slot and makes a missed worker sound like late execution. On the boards, a name can slide from cleared to delayed to held with one stroke of a grease pencil. The ocean did not need bureaucracy to be dangerous, but bureaucracy made danger easier to invoice.
+  W-114   SLACK 12 MIN   DRAWDOWN 0   CARRIER SHADOW CLEAR
+  W-115   SLACK 04 MIN   DRAWDOWN 2   SHADOW PARTIAL
+  W-116   BLACKOUT       --           --
 
-A Marauder learns to read the windows as field grammar. White arcs on hatch rims mark strain direction. Pinger intervals stretch before a route goes bad. Brine curtains lean before the bottom current changes. A quiet relay is not always broken; sometimes the moon is simply in the wrong shadow and the legal queue keeps ticking without voice. The useful part is that windows cut both ways. A bad storm can hide an approach. A slack tide can make a heavy door honest. A blackout can keep a stolen packet alive long enough to leave the wrong office.
+Three clocks agree or a hatch will not equalise without argument: slack water, pump duty, and whether the moon sits in the wrong shadow for the carrier to hear anything. Twelve minutes is a window. Four is a queue.
 
-The Great Tide was not a fairy-tale wave. It was the final stack of too many work windows being treated as negotiable: evacuation delayed into load, heat discharge held against drainage, Atlas continuity placed above retreat, workers left inside a schedule that physics had already stopped honoring. The player survives the same world at smaller scale. Read the window, take the route, distrust the clean board, and remember that safe on HECTON-8 usually means safe if nobody lied about the clock.
+The vocabulary does the damage. A physical margin printed as a scheduled slot lets a worker who missed it read as late execution. On this board a name moves cleared, delayed, held, in one stroke of the same chalk.
+
+Windows run both ways. Storm closes visibility and opens deniability. Slack makes a heavy door honest. A blackout keeps a lifted packet out of the queue for its whole length.
 
 ## Scanner
 

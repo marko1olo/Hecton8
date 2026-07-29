@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.storm_window
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "嵐窓ラッシュ契約シード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_shelf;biome.brine_stairs
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Утопленная геология"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

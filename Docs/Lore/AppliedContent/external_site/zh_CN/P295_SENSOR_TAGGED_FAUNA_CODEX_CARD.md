@@ -8,7 +8,7 @@ biome_tags: biome.atlas_repair;biome.fauna
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "传感器标记动物图鉴卡"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

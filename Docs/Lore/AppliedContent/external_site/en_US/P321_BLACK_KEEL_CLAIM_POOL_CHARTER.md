@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.contract
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black Keel Claim-Pool Charter"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,7 @@ localization_flags: 0
 
 # Black Keel Claim-Pool Charter
 
-Black Keel is HECTON-8's hard-sci-fi answer to the escape-ship problem. The player has access to an orbital asset, but access is not ownership and proximity is not rescue. The carrier is debt infrastructure: useful enough to make escape imaginable, constrained enough to keep every return route entangled with claims, quarantine and recovery value.
+Black Keel is an automated claim-tender chartered to the Aegir Reclamation Pool. Its charter permits window scheduling, telemetry sale, lien update and supply release, and makes rescue priority conditional on route ownership. Licensees acquire no interest in the hull, and no crew is aboard to petition.
 
 ## Scanner
 

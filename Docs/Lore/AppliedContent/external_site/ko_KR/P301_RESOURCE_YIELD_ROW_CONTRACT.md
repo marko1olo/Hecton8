@@ -8,7 +8,7 @@ biome_tags: biome.authoring;biome.resource
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "자원 산출 접수 행"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

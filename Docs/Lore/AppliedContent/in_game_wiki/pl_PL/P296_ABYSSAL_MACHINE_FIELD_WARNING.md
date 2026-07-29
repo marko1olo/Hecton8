@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.warning
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ostrzeżenie o abisalnym polu maszyn"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

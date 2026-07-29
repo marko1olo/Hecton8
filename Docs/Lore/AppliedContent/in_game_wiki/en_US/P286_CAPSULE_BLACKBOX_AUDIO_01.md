@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.capsule
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Capsule Blackbox Audio 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

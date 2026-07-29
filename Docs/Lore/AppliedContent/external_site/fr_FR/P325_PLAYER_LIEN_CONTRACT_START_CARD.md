@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.contract
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Carte de départ du contrat avec lien joueur"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

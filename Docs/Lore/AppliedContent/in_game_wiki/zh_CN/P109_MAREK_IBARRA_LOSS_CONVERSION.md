@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.brine_canyon
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "马雷克·伊瓦拉的损失转换"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

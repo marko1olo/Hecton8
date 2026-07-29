@@ -8,7 +8,7 @@ biome_tags: biome.service_corridor;biome.machine_trench
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "הרכבת שרשרת הבריחה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Cold Seep Hydrate Crack Field Article
 
-Cold seep hydrate cracks let HECTON-8 make a resource feel like a physics contract. Methane hydrate is not magic ice and not a glowing pickup. It is a cold-pressure arrangement: methane held inside water cages because depth, temperature and chemistry agree for a while. The player can use it, but the act of using it threatens the conditions that made it stable.
+Cold seep hydrate is methane held inside cages of water molecules, stable only while temperature and pressure stay inside a narrow band. On HECTON-8 that band sits on the faulted clay slopes of the Deep Abyss, below 2,500 metres, where the water column supplies about 25 MPa and the seep supplies the gas.
 
-That gives the biome a clear gameplay language. A safe edge has quiet bubbles, settled dust and crust that fades into clay. A bad seam knocks under the scanner, shows fresh pockmarks, carries stretched biofilm or sits beside an old extraction scrape. These are not flavor details. They are instructions. The best version of this terrain teaches the player that resource gathering in HECTON-8 is evidence reading under pressure.
+Deep Reach survey sheets from 2145 and 2146 classify these seams as passive feedstock. The class carried no crew bonus and no extended survey, and it explains the shape of the company's own rupture log: forty-one entries, thirty-eight of them filed under operator agitation.
 
-Deep Reach fits naturally into that system because the company did not need to be cartoonishly stupid. It only needed to price the seam as feedstock and discount the route, the worker, the sediment record and the next diver's visibility. A ruptured hydrate crack does not punish greed with fire. It punishes haste with blindness.
+Recovered field cards disagree with the log on one point. A hydrate crack does not fail at the cut. It fails under the crust, minutes later, once a gas path has opened and the silt begins to travel upward. Edge samples survive that. Centre cuts do not.
 
 <!-- External Site; generated from P1308_COLD_SEEP_HYDRATE_CRACK_FIELD_ARTICLE/en_US. -->

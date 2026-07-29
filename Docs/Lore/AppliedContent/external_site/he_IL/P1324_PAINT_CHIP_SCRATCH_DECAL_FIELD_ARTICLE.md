@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: he_IL
 surface: external_site
 source_voice: Public Site Surface Evidence Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "קילופי צבע ושריטות כראיות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

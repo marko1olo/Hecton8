@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.contract
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black-Keel-Claim-Pool-Charta"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

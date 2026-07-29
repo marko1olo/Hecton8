@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.service_canyon
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Wstrzymania tras zmianowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

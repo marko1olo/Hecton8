@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: ko_KR
 surface: external_site
 source_voice: Public Site Colony Evidence Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "경로 허가 스탬프"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

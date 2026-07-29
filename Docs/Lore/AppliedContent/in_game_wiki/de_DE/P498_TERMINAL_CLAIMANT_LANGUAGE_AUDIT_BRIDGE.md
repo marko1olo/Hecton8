@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Audit der Anspruchssprache"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

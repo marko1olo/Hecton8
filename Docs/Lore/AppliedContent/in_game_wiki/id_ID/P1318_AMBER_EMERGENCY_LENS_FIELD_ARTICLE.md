@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base_interior;biome.flooded_airlock
 locale: id_ID
 surface: in_game_wiki
 source_voice: PDA Warning Lens Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Lensa Darurat Amber"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

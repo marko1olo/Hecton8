@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.claim_route
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Protocolo de receptor livro público do payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

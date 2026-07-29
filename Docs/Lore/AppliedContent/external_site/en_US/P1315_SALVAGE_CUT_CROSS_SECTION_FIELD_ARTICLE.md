@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Salvage-Cut Cross-Section Field Article
 
-A salvage-cut cross-section is the readable edge left when a pressure panel, wreck plate or old colony wall has been opened by tool force. The exposed layers matter more than the missing piece. Paint, primer, metal, ceramic insulation, gasket rubber, cable bundles, burn marks and salt deposits each record a different moment.
+A salvage-cut cross-section is the edge left when a pressure panel or wreck plate is opened by tool force. The exposed layers matter more than the missing piece: paint, primer, graphite load plate, sprayed ceramic insulation, gasket rubber, cable bundle, cutter burn and salt.
 
-In play, these edges can guide access, warn against live systems, or expose late human activity. Burn over salt points to a post-flood cut. Chalky insulation shows water movement inside the wall. A cleanly severed cable bundle can mean a hurried breach or a deliberate disabling cut. Compressed gasket rubber can show that pressure was still part of the system when the edge was made.
+Order dates the work. Burn running over salt places the cut after flooding. Chalky ceramic at the edge shows water moved inside the wall. Compressed gasket rubber shows pressure was still in the system when the edge was made. A cleanly severed cable bundle with no isolation tag shows either a hurried breach or a deliberate disabling cut.
 
-The article also separates salvage culture from simple looting. A Marauder reads the cut because custody, hazard and route value all sit in the same exposed seam. The edge says what the terminal may hide: who opened the hull, what they risked, and whether the path is worth following.
+The distinction is commercial. Under Keelmark loss-conversion practice a pre-flood breach remains a rescue action, while a cut made after 2147 converts the plate to salvage and moves custody to whoever holds it. Black Keel payout clerks record mass, alloy class and custody. They do not record burn direction, which is why cut-edge cards are filed separately.
 
 <!-- External Site; generated from P1315_SALVAGE_CUT_CROSS_SECTION_FIELD_ARTICLE/en_US. -->

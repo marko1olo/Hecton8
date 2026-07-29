@@ -8,7 +8,7 @@ biome_tags: biome.marauder;biome.evidence
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "약탈자 수정 메모 표본"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

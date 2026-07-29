@@ -8,7 +8,7 @@ biome_tags: biome.photic_shallows;biome.first_route_shelf
 locale: en_US
 surface: in_game_wiki
 source_voice: PDA Limestone Shelf Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Photic Limestone Rubble Shelf"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,15 @@ localization_flags: 0
 
 # Photic Limestone Rubble Shelf
 
-The photic limestone rubble shelf is the first place many crews mistake visibility for safety. In shallow HECTON-8 water, calcium plates reflect Aegir-filtered light and turn the sea floor pale enough to read from a distance. That is useful, but incomplete. Shell grit collects where small currents still work. Olive algae stains protected pores where the surface has stayed stable long enough for life to hold. Bright white fractures mark fresh breakage, old quarry scuffs or recent salvage. A shelf that looks smooth from above may hide undercut edges and loose rubble pockets. Walk it like a ledger, not a beach.
+Shelf card PL-7, photic limestone plates and rubble at 55 metres.
+
+  SHELL GRIT IN SEAMS: present, sorted
+  OLIVE STAIN IN PORES: heavy on the inner ledges
+  WHITE FRACTURE FACES: three, no grit collected
+
+Calcium plates reflect enough filtered light here to read the floor from a distance. That is not the same as reading it correctly. Shell grit gathers where small currents still work. Olive stain means the surface held stable long enough for life to take the pores. Clean white fracture means fresh breakage, an old quarry scuff or a recent salvage cut.
+
+The three fracture faces on this shelf have collected no grit at all, so they are days old, and the rubble above the undercut edge has not settled yet.
 
 ## Scanner
 

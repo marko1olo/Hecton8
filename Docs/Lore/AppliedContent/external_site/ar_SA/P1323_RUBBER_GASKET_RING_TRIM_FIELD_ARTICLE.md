@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: ar_SA
 surface: external_site
 source_voice: Public Site Seal Material Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "حلقة مطاطية لختم الضغط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

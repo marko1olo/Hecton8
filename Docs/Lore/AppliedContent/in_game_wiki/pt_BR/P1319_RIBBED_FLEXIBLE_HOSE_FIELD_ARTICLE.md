@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base_interior;biome.service_corridor
 locale: pt_BR
 surface: in_game_wiki
 source_voice: PDA Hose Reading Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Mangueira flexível estriada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

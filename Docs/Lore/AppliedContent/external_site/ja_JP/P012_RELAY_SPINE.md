@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.service_canyons
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "リレー・スパイン"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

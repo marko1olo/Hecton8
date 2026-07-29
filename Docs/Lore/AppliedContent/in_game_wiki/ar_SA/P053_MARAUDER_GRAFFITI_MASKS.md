@@ -8,7 +8,7 @@ biome_tags: biome.service_corridor;biome.salvage_route
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "أقنعة غرافيتي marauder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

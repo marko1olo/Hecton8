@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas_maintenance
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas-6 스포일러 잠금 기사"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

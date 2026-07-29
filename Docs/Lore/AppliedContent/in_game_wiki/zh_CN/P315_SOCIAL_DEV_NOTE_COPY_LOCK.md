@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.copy
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "CN LOC HOLD: Public Note Copy Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

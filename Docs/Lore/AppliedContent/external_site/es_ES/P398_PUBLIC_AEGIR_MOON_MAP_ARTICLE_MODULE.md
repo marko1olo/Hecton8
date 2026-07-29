@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.aegir_system
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Mapa de ruta de lunas de Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

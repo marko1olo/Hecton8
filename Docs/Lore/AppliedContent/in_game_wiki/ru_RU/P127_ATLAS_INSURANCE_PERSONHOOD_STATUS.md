@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Страховой статус Atlas и правосубъектность"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

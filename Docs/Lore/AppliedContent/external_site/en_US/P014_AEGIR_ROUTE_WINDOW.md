@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.black_keel_link
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Aegir Route Window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,8 +19,10 @@ localization_flags: 0
 
 # Aegir Route Window
 
-HECTON-8 is an ocean moon, but the sky is part of the dungeon. Aegir's radiation weather, moon shadows, relay shutters, storm plumes, tide shear and carrier transfer geometry all decide whether a signal, body, sample or evidence core can leave. The player does not wait for a picturesque sunrise. The player waits for several hostile systems to stop disagreeing long enough to spend mass.
+HECTON-8 has a sky that behaves like part of the structure. Aegir's radiation weather, moon shadows, relay shutters, storm plumes, tide shear and carrier transfer geometry each decide whether a signal, a body, a sample or an evidence core can leave, and they rarely agree.
 
-The important rule is separation. A window for data is not automatically a window for rescue. A window for rescue is not automatically a window for contaminated cargo. A window for cargo is not automatically a public receipt. Black Keel can guide a calculation, but it also asks who owns the tonne-window, who accepts quarantine exposure and which clause wins if the payload embarrasses Deep Reach. Aegir makes physics and paperwork meet in the same minute.
+The separation is what matters operationally. A window for data is not a window for recovery. A window for recovery is not a window for contaminated cargo. A window for cargo is not a public receipt.
+
+The window solver on the shelf relay prints those lines separately, and it will print data uplink partial beside body recovery closed in the same cycle. Black Keel can run the calculation. It cannot commit mass until the tonne-window owner, the quarantine receiver and the governing clause are all named, which takes longer than any window stays open.
 
 <!-- External Site; generated from P014_AEGIR_ROUTE_WINDOW/en_US. -->

@@ -8,7 +8,7 @@ biome_tags: biome.spoiler_gate;biome.ending_records
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "FR LOC HOLD: Ending Payout Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

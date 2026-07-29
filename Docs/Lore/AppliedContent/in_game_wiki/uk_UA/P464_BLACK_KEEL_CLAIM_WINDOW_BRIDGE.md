@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.shallow_annex
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Вікно претензії Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

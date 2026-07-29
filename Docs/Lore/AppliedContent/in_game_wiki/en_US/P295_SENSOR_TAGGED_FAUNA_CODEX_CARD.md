@@ -8,7 +8,7 @@ biome_tags: biome.atlas_repair;biome.fauna
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Sensor-Tagged Fauna Codex Card"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

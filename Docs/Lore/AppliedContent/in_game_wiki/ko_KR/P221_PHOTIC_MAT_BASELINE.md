@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.shallow_reef
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "유광 매트 기준선"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

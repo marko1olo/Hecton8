@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.vent_forge
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cerâmica de pressão Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

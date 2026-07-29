@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.vent_forge
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ceramika ciśnieniowa Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

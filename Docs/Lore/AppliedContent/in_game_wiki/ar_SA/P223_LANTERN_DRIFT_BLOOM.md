@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.open_shallow_water
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "تفتح الانجراف الفانوسي"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

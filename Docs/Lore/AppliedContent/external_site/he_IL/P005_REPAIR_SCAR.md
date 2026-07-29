@@ -8,7 +8,7 @@ biome_tags: biome.cable_forest;biome.deep_abyss
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "צלקת תיקון"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

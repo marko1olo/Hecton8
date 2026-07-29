@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.open_shallow_water
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "פריחת סחף פנסים"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

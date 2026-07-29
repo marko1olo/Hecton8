@@ -8,7 +8,7 @@ biome_tags: biome.final_payload;biome.dossier
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Letzte Payload-Autoritätsprüfung"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_exterior
 locale: fr_FR
 surface: in_game_wiki
 source_voice: PDA Exterior Trim Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Bordures extérieures de coque de base pressurisée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

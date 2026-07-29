@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.capsule
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "캡슐 블랙박스 오디오 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

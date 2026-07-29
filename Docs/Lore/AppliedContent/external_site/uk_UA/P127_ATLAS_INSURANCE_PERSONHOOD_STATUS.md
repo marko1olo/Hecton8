@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Страховий статус Atlas і правосуб'єктність"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

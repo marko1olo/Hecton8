@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.atlas_basin
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "De la Culpabilité Professionnelle à l'Enjeu Personnel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

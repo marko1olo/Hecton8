@@ -8,7 +8,7 @@ biome_tags: biome.deep_fabrication;biome.machine_trench
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Oskar Neumann Pressure Forge"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

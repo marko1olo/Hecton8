@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.med_lock
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Signatures de la porte de revue de quarantaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

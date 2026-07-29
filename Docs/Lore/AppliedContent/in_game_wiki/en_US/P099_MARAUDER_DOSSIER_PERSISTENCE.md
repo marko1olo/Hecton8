@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.drowned_admin
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Marauder Dossier Persistence"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,14 @@ localization_flags: 0
 
 # Marauder Dossier Persistence
 
-The Marauder dossier is the campaign memory that survives between salvage attempts. It keeps endings, discovered contract types, rumor families, evidence categories, route warnings, and the consequences of what the player already chose to publish or hide. It does not carry over suit strength, safe pressure, cleared rooms, or a kinder ocean. Knowledge changes decisions. It does not make the depth harmless.
+MARAUDER DOSSIER, front sheet. Barnard Yards issue, one binder per licence, refilled each descent.
+
+  CARRIED FORWARD ..... closed outcomes, contract types seen, rumour families, evidence classes, route warnings, publication record
+  NOT CARRIED FORWARD . suit condition, rated depth, cleared rooms, open hatches
+
+The binder is paper because paper survives a claim audit and a flooded locker. The first list is knowledge. The second list is hardware, and hardware goes back to the yard condition it was issued in.
+
+A licensee who has read the binder twice recognises a contract trap earlier. The water is at the depth it was.
 
 ## Scanner
 

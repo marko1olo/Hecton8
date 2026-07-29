@@ -8,7 +8,7 @@ biome_tags: biome.thermal_vent;biome.brine_canyon
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "벤트 앵커 군체"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.atlas
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "دليل زجاج الضغط ومانع التسرب"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

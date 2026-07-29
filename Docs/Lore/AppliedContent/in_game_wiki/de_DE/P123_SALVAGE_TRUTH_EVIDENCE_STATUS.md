@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Beweisstatus geborgener Wahrheit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.escape_chain;biome.authoring
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Строка стоимости рецепта подъема"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

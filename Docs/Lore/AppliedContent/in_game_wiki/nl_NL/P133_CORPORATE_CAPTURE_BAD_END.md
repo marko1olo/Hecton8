@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.industrial_shelf
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Corporate capture: schone redding"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

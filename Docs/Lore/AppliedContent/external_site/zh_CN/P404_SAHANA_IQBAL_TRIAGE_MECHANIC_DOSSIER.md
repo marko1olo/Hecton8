@@ -8,7 +8,7 @@ biome_tags: biome.evacuation_queue;biome.service_module
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "萨哈娜·伊克巴尔，分诊机械师"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

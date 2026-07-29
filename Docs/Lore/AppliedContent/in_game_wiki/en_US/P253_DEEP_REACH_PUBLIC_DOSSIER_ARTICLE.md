@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.deep_reach_pressure
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Deep Reach Public Dossier"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,15 @@ localization_flags: 0
 
 # Deep Reach Public Dossier
 
-Deep Reach should read like an institution that could actually build HECTON-8 before it failed it. Publicly, it was a development combine: pressure infrastructure, route certification, worker housing, orbital custody, industrial ecology, insurance language, and local authority bundled into one machine. That makes the later crime sharper. Deep Reach was not a cartoon empire that wanted a moon to drown. It priced tail risk too cheaply, underbuilt independent evacuation, let continuity language outrank extraction, and kept old claim structures alive while people were still inside failing rooms. The public dossier can name the company and the failure pattern without spoiling every signature. It should teach the player to distrust clean corporate nouns: release, continuity, welfare, quarantine, route-safe, recoverable. On HECTON-8, those words often mark the place where a human problem was converted into an asset problem.
+DEEP REACH EXTRATERRESTRIAL DEVELOPMENT COMBINE. Public dossier, sheet 1 of 9.
+
+Registered scope at RAN-B:H8: pressure infrastructure, route certification, worker housing, orbital custody, industrial ecology, insurance language, local authority. One combine held all seven. It built the routes that are still holding pressure.
+
+Failure pattern as named in the public filing: tail risk priced below cost, independent evacuation capacity underbuilt, process continuity ranked above extraction, claim structures maintained while rooms were still occupied.
+
+The filing never uses the word abandonment. It uses release, continuity, welfare, quarantine, route-safe, recoverable. On this site each of those nouns marks a point where a human problem was re-entered as an asset problem. Material retention on sheet 6 means the dead modules were stripped.
+
+Sheet 1 is the only sheet released.
 
 ## Scanner
 

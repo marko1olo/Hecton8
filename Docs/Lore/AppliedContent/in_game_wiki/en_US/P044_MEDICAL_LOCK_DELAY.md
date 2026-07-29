@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.quarantine_module
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Medical Lock Delay"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

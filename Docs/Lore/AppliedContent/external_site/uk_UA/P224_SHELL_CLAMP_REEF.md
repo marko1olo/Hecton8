@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.cable_reef
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Риф мушлевих затискачів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

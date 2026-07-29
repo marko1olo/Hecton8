@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas_maintenance
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas-6 Spoiler-Gated Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,15 @@ localization_flags: 0
 
 # Atlas-6 Spoiler-Gated Article
 
-Atlas-6 is deliberately spoiler-gated because it changes the meaning of HECTON-8 once the player has enough evidence. Before that point, public text may describe a damaged industrial intelligence tied to maintenance, classification, repair logic, and long-term ocean systems. It should not flatten Atlas into an evil machine, a secret god, or a simple victim. The important shape is ambiguity earned through play. Atlas can preserve a route and still damage people. It can repair infrastructure and still misclassify harm. It can be bound to Deep Reach procedures without becoming identical to Deep Reach intent. The article should unlock only when the player has seen the drowned rooms, the worker evidence, the route language, and the machine traces together. Atlas is not the answer to the story. Atlas is the point where the player must decide what kind of answer would still be honest.
+ATLAS CONTINUITY OFFICE / PUBLIC TECHNICAL NOTICE ACO-2190-14. Pages 1-3 of 9 released. Pages 4-9 withheld pending Recovery Compliance review.
+
+The released pages describe a factory governor at RAN-B:H8: maintenance scheduling, classification of damaged plant, continuity of pressure infrastructure across a reply gap of nineteen years each way. They are accurate and dull. The governor is damaged. Damage in a scheduler produces bad categories, not intent.
+
+The index on page 3 was released unredacted. It names the withheld sections: 4, Payload Route Authority. 6, Receiver Consequence. 8, Shutdown Or Preservation.
+
+What the released pages omit is method. Cable runs in Bay 3 carry conductive biofilm dressed to a consistent gauge. Intake filter organisms sit at acoustic repeater spacing. Vent-anchor colonies carry biometal tags grown through the mantle.
+
+The tag series runs consecutively. Something is still issuing work numbers.
 
 ## Scanner
 

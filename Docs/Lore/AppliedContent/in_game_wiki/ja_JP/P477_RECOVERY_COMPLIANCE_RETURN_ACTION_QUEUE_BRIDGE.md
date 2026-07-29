@@ -8,7 +8,7 @@ biome_tags:
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "返却行動キュー"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

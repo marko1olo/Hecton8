@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.black_keel_link
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Aegir Route Window"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,9 +19,18 @@ localization_flags: 0
 
 # Aegir Route Window
 
-An Aegir route window is not a fancy weather forecast. It is the short period when hostile clocks agree enough for one action to count. The gas giant throws radiation and magnetic noise. HECTON-8 moves through eclipse and relay-shadow bands. Storm plumes dirty uplink. Tides move through canyons and colony shafts. Acoustic links change with pressure and water chemistry. Black Keel sits in a high transfer pattern, not like a loyal helicopter above the roof.
+Window solver output WS-2, local ephemeris table, current cycle.
 
-The window can be open for one thing and closed for another. A data packet may fit while a living body does not. A sealed evidence core may clear quarantine while a blue-debt sample triggers custody delay. A payload may be physically liftable and legally blocked. This is why the player cannot treat rescue as a button. The route window is a survival clock, a legal clock and a mass clock crossing each other for a few dangerous hours.
+  DATA UPLINK: partial
+  BODY RECOVERY: closed
+  RADIATION: surge in the drift band
+  MOON RELAY SHUTTER: active next local cycle
+
+A route window is the short period when several hostile clocks agree enough for one action to count. Aegir supplies radiation and magnetic noise, the moon ladder supplies eclipse and relay shadow, storm plumes dirty the uplink, and tides move through the canyons.
+
+The window opens per category, not per hour. A packet can fit while a body cannot. A sealed evidence core can clear quarantine while a blue-debt sample holds custody.
+
+Black Keel will not commit mass until the legal and quarantine handshake is on file, whatever the sky is doing.
 
 ## Scanner
 

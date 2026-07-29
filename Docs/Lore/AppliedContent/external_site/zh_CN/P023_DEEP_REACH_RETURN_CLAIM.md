@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.deep_relay
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Deep Reach返还主张"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

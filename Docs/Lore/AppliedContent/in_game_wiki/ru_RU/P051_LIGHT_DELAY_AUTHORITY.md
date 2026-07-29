@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.surface_relay
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Власть световой задержки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

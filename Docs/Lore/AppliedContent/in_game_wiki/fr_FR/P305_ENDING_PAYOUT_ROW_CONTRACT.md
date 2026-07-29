@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.dossier
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ligne d'enregistrement de paiement final"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

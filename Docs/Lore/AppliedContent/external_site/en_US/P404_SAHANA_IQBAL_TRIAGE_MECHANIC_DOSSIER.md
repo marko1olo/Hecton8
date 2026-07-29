@@ -8,7 +8,7 @@ biome_tags: biome.evacuation_queue;biome.service_module
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Sahana Iqbal, Triage Mechanic"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

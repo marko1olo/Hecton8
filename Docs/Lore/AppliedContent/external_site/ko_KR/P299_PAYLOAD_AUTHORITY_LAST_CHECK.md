@@ -8,7 +8,7 @@ biome_tags: biome.final_payload;biome.dossier
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Payload 권한 마지막 확인"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

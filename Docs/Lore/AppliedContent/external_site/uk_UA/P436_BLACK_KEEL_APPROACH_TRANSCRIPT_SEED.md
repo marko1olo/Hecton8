@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.black_keel_orbit
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Транскрипт підходу Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

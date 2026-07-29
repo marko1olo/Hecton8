@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.audio
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "CN LOC HOLD: Audio Bark Family Rules"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

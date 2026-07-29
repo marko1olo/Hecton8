@@ -8,7 +8,7 @@ biome_tags: biome.vent_forge;biome.abyssal_machine_field
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Lian Torres, operador de forja de respiradero"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

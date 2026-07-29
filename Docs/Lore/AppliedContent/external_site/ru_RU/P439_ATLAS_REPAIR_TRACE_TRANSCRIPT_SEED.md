@@ -8,7 +8,7 @@ biome_tags: biome.atlas_repair_network;biome.deep_ecology
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Транскрипт ремонтного следа Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

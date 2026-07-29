@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.work_order
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Zlecenie pracy pompowni P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

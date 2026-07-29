@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.quarantine_module
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tunda Kunci Medis"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

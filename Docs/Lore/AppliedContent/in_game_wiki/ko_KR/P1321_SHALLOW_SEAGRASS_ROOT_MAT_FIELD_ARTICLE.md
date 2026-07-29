@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.photic_shallows
 locale: ko_KR
 surface: in_game_wiki
 source_voice: PDA Root-Mat Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "얕은 뿌리 매트 기질"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

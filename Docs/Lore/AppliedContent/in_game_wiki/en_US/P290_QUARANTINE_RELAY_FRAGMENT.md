@@ -8,7 +8,7 @@ biome_tags: biome.quarantine;biome.relay
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Quarantine Relay Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.photic_shallows;biome.first_route_shelf
 locale: ja_JP
 surface: external_site
 source_voice: Public Site Photic Shelf Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "有光層石灰岩瓦礫棚"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.escape_chain;biome.atlas_basin
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Черновые строки стоимости escape recipes"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

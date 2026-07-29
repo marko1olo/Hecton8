@@ -8,7 +8,7 @@ biome_tags: biome.claim_cache;biome.worker_locker
 locale: uk_UA
 surface: in_game_wiki
 source_voice: PDA Salvage Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Мародерські правки"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

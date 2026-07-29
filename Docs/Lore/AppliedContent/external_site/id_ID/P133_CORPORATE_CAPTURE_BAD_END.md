@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.industrial_shelf
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Penangkapan Korporat: Penyelamatan Bersih"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

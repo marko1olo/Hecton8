@@ -8,7 +8,7 @@ biome_tags: biome.worker_archive;biome.claim_admin
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Konflikt podpisu i świadka"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

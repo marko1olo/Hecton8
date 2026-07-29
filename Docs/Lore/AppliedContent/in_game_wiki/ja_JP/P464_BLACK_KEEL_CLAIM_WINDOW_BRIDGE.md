@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.shallow_annex
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black Keel請求ウィンドウ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

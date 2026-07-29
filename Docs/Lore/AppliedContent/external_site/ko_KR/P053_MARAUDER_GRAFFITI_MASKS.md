@@ -8,7 +8,7 @@ biome_tags: biome.service_corridor;biome.salvage_route
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Marauder 그래피티 마스크"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

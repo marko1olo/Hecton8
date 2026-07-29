@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Метки доменов 2190"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

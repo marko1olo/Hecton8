@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Oferta de Limpeza de Evidência"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

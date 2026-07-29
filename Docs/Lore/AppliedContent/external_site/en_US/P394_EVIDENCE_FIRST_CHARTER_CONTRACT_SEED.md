@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.evidence_route
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Evidence-First Charter Contract Seed"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

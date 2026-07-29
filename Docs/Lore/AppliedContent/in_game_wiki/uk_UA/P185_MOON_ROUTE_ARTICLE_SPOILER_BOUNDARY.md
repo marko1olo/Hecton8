@@ -8,7 +8,7 @@ biome_tags: biome.public_archive;biome.relay_archive
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Лінія редагування Atlas Basin"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

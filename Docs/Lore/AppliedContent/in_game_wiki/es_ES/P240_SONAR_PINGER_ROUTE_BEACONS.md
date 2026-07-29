@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.brine_canyon
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Balizas de ruta con pinger sónar"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

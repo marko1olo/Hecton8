@@ -8,7 +8,7 @@ biome_tags: biome.deep_fabrication;biome.machine_trench
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "オスカー・ノイマンの圧力鍛造炉"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

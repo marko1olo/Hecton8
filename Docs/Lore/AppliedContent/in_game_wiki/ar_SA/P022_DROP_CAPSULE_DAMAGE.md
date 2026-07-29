@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.shallow_repair
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ضرر كبسولة الهبوط"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

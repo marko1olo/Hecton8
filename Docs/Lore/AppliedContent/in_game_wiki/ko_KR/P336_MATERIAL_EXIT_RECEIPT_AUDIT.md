@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.contract
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "물자 탈출 영수 감사"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

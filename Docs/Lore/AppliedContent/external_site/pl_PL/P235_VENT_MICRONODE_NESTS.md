@@ -8,7 +8,7 @@ biome_tags: biome.thermal_vent;biome.atlas_basin
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Gniazda mikrowęzłów kominowych"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

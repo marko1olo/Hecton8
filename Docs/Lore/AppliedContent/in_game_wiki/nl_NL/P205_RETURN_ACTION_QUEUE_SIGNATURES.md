@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.black_keel
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Handtekeningen van de Return Action Queue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

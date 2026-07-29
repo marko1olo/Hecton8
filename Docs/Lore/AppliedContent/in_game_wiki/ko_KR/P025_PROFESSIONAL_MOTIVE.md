@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.drowned_colony
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "전문가 동기"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

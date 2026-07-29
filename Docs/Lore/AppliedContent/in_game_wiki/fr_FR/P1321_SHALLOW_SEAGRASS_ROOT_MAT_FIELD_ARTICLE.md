@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.photic_shallows
 locale: fr_FR
 surface: in_game_wiki
 source_voice: PDA Root-Mat Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tapis racinaire d'herbier peu profond"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.engineering
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "工具認証ボード"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

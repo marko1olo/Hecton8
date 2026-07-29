@@ -8,7 +8,7 @@ biome_tags: biome.shallow_shelf;biome.industrial_shelf
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Складання акустичного релейного хребта"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

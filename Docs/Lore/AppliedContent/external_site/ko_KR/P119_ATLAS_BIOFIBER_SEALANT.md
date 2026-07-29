@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.repair_ecology
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas 바이오섬유 실런트"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

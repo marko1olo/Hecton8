@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.abyssal_machine_field
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "베라 사토-렌 반환 조치"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

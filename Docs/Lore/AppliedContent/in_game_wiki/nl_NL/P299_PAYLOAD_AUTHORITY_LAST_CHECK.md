@@ -8,7 +8,7 @@ biome_tags: biome.final_payload;biome.dossier
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Laatste controle van payloadautoriteit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.factory_temple
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Selene Arendt: ponderación Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

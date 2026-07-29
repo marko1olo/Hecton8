@@ -19,15 +19,18 @@ localization_flags: 0
 
 # Ran / Aegir Name Authority Ledger
 
-HECTON-8 has too many names because too many offices wanted a clean way to own dirty water. Ran is the star. Use it when the document cares about light, routes, carrier delay or where a ship can actually point itself. Aegir is the gas giant. Use it when the speaker wants the moon to disappear into a larger claim system, a sky, a parent body, an asset group. RAN-B:H8 is the insured moon key, the name a ledger can sort without remembering who lived there. HECTON-8 is the field name, the one that sticks to wet ladders, hatch rims, route boards and old pressure doors.
+Catalog resolver output, Black Keel name authority: four labels for one place.
 
-            The names are not interchangeable. They are fingerprints. A route office saying Ran is probably doing navigation. A Deep Reach memo saying Aegir is often protecting ownership at system scale. A Black Keel receipt saying RAN-B:H8 is turning the place into a billable object. A worker note saying HECTON-8 is not slang or sentiment. It is testimony from the level where the ocean killed people one compartment at a time.
+  RAN: host star, route and light-delay context
+  AEGIR: gas giant, claim umbrella
+  RAN-B:H8: insured moon key, sortable ledger record
+  HECTON-8: field name for the water, the colony and the damage
 
-            Good evidence keeps the name it found. Normalizing names too early can destroy motive. A quarantine order that says Aegir asset may be hiding a local failure by widening the frame. A salvage quote that says RAN-B:H8 may be stripping memory so the moon can travel through insurance without grief attached. A scratched HECTON name on a panel may be more honest than a thousand clean catalog lines.
+A route office writing Ran is doing navigation. A Deep Reach memo writing Aegir is widening the frame to parent-body scale. A Black Keel receipt writing RAN-B:H8 is preparing a billable object.
 
-            This is why the PDA preserves name conflicts instead of smoothing them. The conflict tells the player who was speaking, what they wanted counted, and what they wanted buried. The same ocean can be star route, gas-giant asset, insured moon, or home, depending on the column. The physical place does not change. The permitted crime does.
+A worker note writing HECTON-8 is testimony from compartment level.
 
-            When in doubt, read the smallest name first. Big names make liability foggy. Small names bring the water back into the room.
+Keep whatever name the document arrived with. Normalising a worker-origin HECTON-8 line into Aegir asset language without a witness note destroys the motive, and the resolver cannot restore the original label once the record is merged.
 
 ## Scanner
 

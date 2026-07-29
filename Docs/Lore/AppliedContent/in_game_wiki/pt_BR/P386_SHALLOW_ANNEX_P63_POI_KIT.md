@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.shallow_annex
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kit de provas do anexo raso P-63"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

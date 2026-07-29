@@ -8,7 +8,7 @@ biome_tags: biome.corporate_wreck;biome.return_route
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "سجل الاستجابة corporate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

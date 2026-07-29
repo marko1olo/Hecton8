@@ -19,10 +19,12 @@ localization_flags: 0
 
 # Clay Silt Turbidity Slope Field Article
 
-Clay-silt turbidity slopes are useful because they let HECTON-8 make low-visibility terrain feel earned rather than arbitrary. The water does not turn opaque because the level designer needs tension. It turns opaque because the player, a machine, a slide or an old collapse put fine clay back into suspension.
+A clay-silt turbidity slope is fine sediment that fell out of the water after an older turbidity flow. Heavier grains stop high on the slope and the clay travels further, so the surface builds in layers and the top layer stays soft enough to record whatever crossed it last.
 
-That gives the surface three jobs. It is a hazard: thruster wash and bad footing can blind a route. It is evidence: fresh scars, compressed ripples and drag marks can show what happened before the player arrived. It is navigation: the same streaks can point toward buried infrastructure or away from a weak shelf.
+Three readings come off that layer. Compression ripples run downslope and can point toward buried structure. A dark damp streak with no ripple recovery is recent. A fresh scar at the upper lip marks where the face failed under load.
 
-For the setting, the slope also fits Deep Reach's habit of turning physical ambiguity into paperwork. A failed route can be filed as natural turbidity. A natural slide can be blamed on a worker. A clean patch can mean geology, cleanup or someone hiding the path. The gray surface becomes interesting when the player realizes it is not background. It is a record that can be read once, maybe twice, before movement destroys it.
+The same softness destroys the record. Thruster wash, a cutter plume or a dragged skid lifts clay into suspension, and acoustic returns then come back off moving water instead of ground.
+
+Deep Reach survey practice split the difference on paper. Slope access memo 8/2146 files unstable faces as seasonal turbidity where a route was pending approval, and as operator disturbance where a shift report was open. The slope does not distinguish the two cases.
 
 <!-- External Site; generated from P1311_CLAY_SILT_TURBIDITY_SLOPE_FIELD_ARTICLE/en_US. -->

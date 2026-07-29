@@ -8,7 +8,7 @@ biome_tags: biome.marauder;biome.evidence
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Amostra de Correção de Saqueador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.relay_spine;biome.drowned_comms
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Paket Terakhir Lian Torres"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

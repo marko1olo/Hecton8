@@ -8,7 +8,7 @@ biome_tags: biome.deep_abyss;biome.drowned_colony
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Évacuation retenue"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

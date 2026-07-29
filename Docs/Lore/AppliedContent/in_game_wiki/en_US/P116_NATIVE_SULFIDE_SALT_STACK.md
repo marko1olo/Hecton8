@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.vent_forge
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Native Sulfide Salt Stack"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,17 @@ localization_flags: 0
 
 # Native Sulfide Salt Stack
 
-Native sulfide salt stacks are one of the first proofs that HECTON-8 had a dangerous chemistry of its own before the corporate crime scene covered it. They grow where vent heat, brine seepage and metal-rich crust grind against each other under pressure, leaving black-green salts in shelves, ribs and brittle chimneys. They clean conductors, wake emergency cells, tune ceramic flux and ruin tools when a crew treats them like ordinary ore. For the player, they should appear before blue debt: the moon has native chemistry, native value and native hazards before Deep Reach ever stamped a claim on it.
+Sample card NS-4, vent rack at 4,320 metres, black-green salt shelf over metal-rich crust.
+
+  FORM: shelves, ribs, brittle chimneys
+  CONDUCTIVITY: rises sharply once wet
+  REACTION: acid film on suit metal within a minute of warm dust
+
+These salts predate the claim. Vent heat, brine seepage and metal-rich crust work against each other under 43.2 MPa and leave sulfide crystal in layers.
+
+Uses: conductor wash, emergency cell chemistry, ceramic flux, corrosion catalyst.
+
+Seal the sample away from warm intake air. Dust that reaches a heated intake blooms into acid film, and the first sign is usually the itch through the glove.
 
 ## Scanner
 

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.medical_bay
 locale: ru_RU
 surface: external_site
 source_voice: Public Site Colony Evidence Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Журналы задержанного триажа"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.relay_archive
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Conhecimento do dossiê, não poder"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

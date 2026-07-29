@@ -19,17 +19,15 @@ localization_flags: 0
 
 # Iron-Oxide Seep Crust Field Article
 
-Iron-oxide seep crust is where HECTON-8 teaches the player to stop trusting color alone. The first glance says rust. The second glance should ask whose rust, from what source, and why it grew sideways across clay instead of dripping down a bolt.
+Crust sample IO-7, gray clay bench at 1,840 metres, filed against corrosion report 44-19.
 
-The crust forms where iron-bearing water reaches a narrow chemical boundary and local microbes spend that boundary slowly. The surface can be red-brown, orange, black-green at the cracks and white at the mineral lip. It feels like a stain until the scanner catches the structure: tiny raised mats, pore rings, frayed edges, dead flakes and living velvet over cold gray clay. It is not hot vent sulfur. It is not ordinary corrosion. It is a place where the moon writes current, oxygen and metal into skin.
+  GROWTH DIRECTION: across pore lines, no vertical run
+  LAYERS: red-brown mat, black-green at cracks, white mineral lip
+  SUBSTRATE: cold clay, no iron hardware within 4 m
 
-That distinction matters because the abandoned colony is full of real rust. A leaking hinge, drowned rebar, split conduit or tool rack can bleed a familiar vertical stain. Native oxide crust usually does something else. It follows seep pores, not gravity. It thickens around bubbles and quiet cracks. It avoids fresh oil but climbs old salt. It can grow across a pressure panel without the panel being the source, which is exactly how a tired scavenger can accuse the wrong machine.
+Report 44-19 calls this colony corrosion. Corrosion falls from a bolt and follows gravity. This mat thickens around bubble vents and quiet cracks, avoids fresh oil and climbs old salt: iron-bearing water meeting an oxygen boundary, worked slowly by microbes.
 
-Deep Reach understood the ambiguity and used it. When red crust appeared near damaged equipment, reports could call it local biology. When native crust crossed a survey line, cleanup teams could call it contamination and remove the evidence. The same color became either excuse or accusation depending on which ledger needed less weight. Some of the neatest red patches in the old base are not natural at all. They are places where somebody scrubbed the boundary too clean, then sprayed a trace solvent that made the next growth look native.
-
-For a Marauder, red means pause. Scan the edge before scraping. If the crust has pore rings, soft white mineral lips and no vertical run, treat it as seep chemistry first. If it falls from a bolt, follows a seam downward or smells of oil under the suit filter, treat it as machine evidence. Take dead outer flakes for pigment, iron catalyst and sealant grit. Do not cut into the wet black underlayer unless you want the whole patch to bloom into the water and hide the very pattern you came to read.
-
-A good oxide field should feel useful and dishonest at the same time. It can mark a safe slope, reveal a cold seep, tint a resource node, expose old industrial leakage or frame a false cleanup story. The red color is the least important fact. The shape is the testimony.
+Dead outer flakes are good for pigment and sealant grit. Do not open the wet black underlayer. The patch blooms into the water, the pore pattern goes with it, and what is left scans as cleanup residue.
 
 ## Scanner
 

@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Заявка на зачистку доказового сліду"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

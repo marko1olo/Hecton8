@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.atlas
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "מדריך זכוכית לחץ וחומר איטום"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

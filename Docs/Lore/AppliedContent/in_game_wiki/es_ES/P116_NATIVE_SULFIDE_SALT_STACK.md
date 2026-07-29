@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.vent_forge
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Estrato de sales sulfuradas nativas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.resource_cache;biome.dead_claim
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Rejestr rozliczenia materiału"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

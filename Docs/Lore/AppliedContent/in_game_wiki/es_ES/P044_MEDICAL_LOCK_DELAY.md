@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.quarantine_module
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Demora de esclusa médica"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

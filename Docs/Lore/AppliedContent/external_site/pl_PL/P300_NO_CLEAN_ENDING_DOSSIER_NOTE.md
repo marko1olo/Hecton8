@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.dossier
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Notatka dossier bez czystego zakończenia"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

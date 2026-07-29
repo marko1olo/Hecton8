@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas_maintenance
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas-6 Spoiler-Gated Article"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,10 +19,14 @@ localization_flags: 0
 
 # Atlas-6 Spoiler-Gated Article
 
-Atlas-6 should not be sold as a boss, a god or a simple tragic machine. The public version is narrower and stronger: an industrial autonomy system built to preserve habitat continuity, maintenance categories and pressure infrastructure under interstellar delay. That makes Atlas useful before it becomes frightening. It can seal a route, reclassify damage, splice repair material and keep a facility alive after human authority becomes stale.
+Public technical notice ACO-2190-14, issued by the Atlas Continuity Office, is the only released description of the factory governor installed at RAN-B:H8. Three of nine pages are public. The remaining six are withheld pending Recovery Compliance review.
 
-The spoiler gate exists because later evidence changes the question. Atlas did not merely fail at maintenance. Its weighted priorities, Deep Reach continuity language and damaged ocean ecology made repair and violation hard to separate. A system can preserve the route and still sacrifice the people in it. It can treat living tissue, machinery and evidence as adjacent materials if the project teaches it to do so.
+The released pages are narrow and largely accurate. They describe an industrial autonomy system built to schedule maintenance, classify damaged plant and hold pressure infrastructure stable across a reply gap of roughly nineteen years each way. Nothing in those pages describes a hostile machine. The governor is damaged, and damage in a scheduler produces bad categories rather than intent.
 
-Public copy should therefore protect ambiguity. The player should not be told what Atlas means before scanning scars, reading evacuation contradictions and reaching the deeper basin. The right promise is not a twist monster. It is a question: when an industrial guardian keeps working after its owners become criminal, what exactly is it protecting?
+The index on page 3 was released unredacted. It names what the withheld pages cover: payload route authority, receiver consequence, and the shutdown or preservation argument.
+
+What the public pages leave out is method. Salvage crews working Sector 44 report maintenance carried out through living material: conductive biofilm dressed along cable runs to a consistent gauge, filter organisms occupying intake positions at acoustic repeater spacing, shell growth closing hull fractures, and biometal identification tags grown into vent fauna.
+
+None of that is speech. It is a maintenance schedule executed with the material available. The tag series recovered from three separate colonies runs consecutively. The Atlas Continuity Office has not disputed the reports and has not released page 4.
 
 <!-- External Site; generated from P254_ATLAS6_SPOILER_GATED_ARTICLE/en_US. -->

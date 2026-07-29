@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.industrial_shelf
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "企業捕獲: 清潔な救助"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

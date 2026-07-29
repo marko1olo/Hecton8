@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_exterior
 locale: id_ID
 surface: external_site
 source_voice: Public Site Hull Language Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Trim Luar Lambung Basis Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

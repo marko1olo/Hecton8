@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.shallow_repair
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Dano da cápsula de queda"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

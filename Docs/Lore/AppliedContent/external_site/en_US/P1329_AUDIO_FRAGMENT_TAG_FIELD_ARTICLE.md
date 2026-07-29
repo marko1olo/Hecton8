@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: en_US
 surface: external_site
 source_voice: Public Site Audio Evidence Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Audio Fragment Tags"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,12 +19,10 @@ localization_flags: 0
 
 # Audio Fragment Tags
 
-HECTON-8 should never use voice as a shortcut around evidence. A good audio fragment is a damaged object that happens to speak.
+An audio fragment on HECTON-8 is a damaged object that happens to speak, and the tag attached to it carries as much weight as the voice. The tag records the source device, the capture window, the custody stamp, and the damage that shaped the transcript.
 
-The tag matters as much as the voice. It tells the player where the sound came from, who captured it, what device carried it and what damage changed the transcript. Hydrophone strips, suit recorder spools, black-box shards and terminal caches all speak differently. A hydrophone catches room pressure and machine rhythm. A suit recorder catches breath, glove impacts and panic suppression. A terminal cache catches what someone intended to preserve. A black-box fragment catches what the system could not afford to forget.
+Devices hear differently. A hydrophone strip catches room pressure and machine rhythm. A suit recorder catches breath, glove impacts and the point where someone stopped speaking. A terminal cache holds what somebody chose to preserve. A black-box shard holds what the system was not permitted to discard.
 
-This keeps voice humane without making it manipulative. The colony should not be filled with perfect death speeches. It should be filled with fragments of work: hold the pump, count the oxygen, do not open the lock, repeat the route, leave the official line visible. When those fragments are tied to physical proof, the player hears people without being told what to feel.
-
-For designers and writers, the rule is simple: no object, no voice. The transcript must carry damage, custody and source. The audio can deepen an object, contradict a label or humanize a route. It must never replace the object.
+Packet notary rule admits audio only when device, capture window, transcript band and object anchor agree. Fragment AF-19 meets that test: a crushed suit recorder, 41 seconds of capture with band 2 missing, and a locker hinge on the same shelf carrying the same salt line. A clean transcript recovered from a crushed housing does not meet it, and neither does a voice with no recorder behind it.
 
 <!-- External Site; generated from P1329_AUDIO_FRAGMENT_TAG_FIELD_ARTICLE/en_US. -->

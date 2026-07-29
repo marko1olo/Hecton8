@@ -8,7 +8,7 @@ biome_tags: biome.deep_abyss;biome.drowned_factories
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Sector Reconciliation Strip, Q4 2147"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -23,7 +23,7 @@ Sector 44's biomass total rose eighteen percent in the quarter the colony drowne
 
 The mechanism is one word. Unrecovered personnel were moved to organic inventory pending determination of status. Inventory does not have to be searched for. It has to be counted, and counting it made the quarter look better than the one before.
 
-Ibarra signed it. His other work is careful and his arithmetic is correct throughout, which is worse than if it were not.
+Ibarra signed it. His other work is careful and his arithmetic is correct throughout.
 
 The strip was printed inside a room whose door is still sealed from the corridor side. Assessment: the payroll cabinet behind that door holds worker IDs, and carrying them changes who answers a recovery call.
 

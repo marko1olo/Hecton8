@@ -8,7 +8,7 @@ biome_tags: biome.contract_layer;biome.evidence_route
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "증거 우선 차터 계약 시드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

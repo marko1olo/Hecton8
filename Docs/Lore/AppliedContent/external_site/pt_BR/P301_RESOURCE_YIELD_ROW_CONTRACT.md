@@ -8,7 +8,7 @@ biome_tags: biome.authoring;biome.resource
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Linha de aceitação de rendimento"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

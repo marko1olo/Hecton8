@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.shallow_annex
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Okno roszczenia Black Keel"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

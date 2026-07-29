@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.old_colony_ruins
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P703_BLOOD_KELP"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

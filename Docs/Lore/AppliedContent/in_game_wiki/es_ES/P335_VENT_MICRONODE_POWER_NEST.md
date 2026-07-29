@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.abyss
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Nido de micronodos de energía de respiradero"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Alcove Nine Work Order, Colony Maintenance"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -27,7 +27,7 @@ Valve 4 carries two crosses. The binder shows Valve 4 isolated. A work order to 
 
 One outline lies under sprayed sealant applied before the alcove entered service.
 
-Assessment: read the wall at 355 metres first, and treat any valve carrying two marks as live whatever the drawing says.
+Assessment: read the wall at 2,060 metres first, and treat any valve carrying two marks as live whatever the drawing says.
 
 ## Scanner
 
@@ -39,7 +39,7 @@ DOCUMENT 44-C-0919. ROOM: SERVICE ALCOVE 9. WORK ORDER 44-C-0919-B: UNAUTHORISED
 
 ## Audio
 
-Colony Maintenance, Alcove Nine, work order reads remove unauthorised surface marking. [brush on concrete, then it stops] I am not scrubbing this wall. Half of it is hand outlines, which is what people do. The other half is a valve map, and it is right, and the drawing in the binder is not. Two crosses means cross-tied to the live header. Valve Four has two crosses. Binder has Four isolated. Somebody scratched that one in, not chalked. Gloves on, no time. And there is an outline at the skirting the size of my -- [breath] Order stands. Closing it complete. Wall stays. Read Nine before you turn anything in that ro--
+Colony Maintenance, Alcove Nine, work order reads remove unauthorised surface marking. [brush on concrete, then it stops] I am not scrubbing this wall. Half of it is hand outlines, which is what people do. The other half is a valve map, and it is right, and the drawing in the binder is not. Two crosses means cross-tied to the live header. Valve Four has two crosses. Binder has Four isolated. Somebody scratched that one in, not chalked. Gloves on, no time. And there is an outline down at the skirting the size of my hand. [breath] Order stands. Closing it complete, wall stays. Two marks means live. Valve Four has two marks. Two marks means live.
 
 ## Field Note
 

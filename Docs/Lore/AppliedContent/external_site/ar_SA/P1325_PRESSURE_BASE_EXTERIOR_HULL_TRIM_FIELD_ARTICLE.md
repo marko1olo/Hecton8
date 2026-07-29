@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_exterior
 locale: ar_SA
 surface: external_site
 source_voice: Public Site Hull Language Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "حواف هيكل قاعدة الضغط الخارجية"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

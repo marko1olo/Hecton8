@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.deep_reach
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Clause bénéficiaire Deep Reach masquée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

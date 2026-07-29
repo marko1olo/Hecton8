@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.comms
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Mute 外侧死 beacon 角色"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

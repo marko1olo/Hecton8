@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.vent_forge
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "خزف ضغط Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

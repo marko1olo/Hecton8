@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.contract
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black Keel 청구 풀 헌장"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

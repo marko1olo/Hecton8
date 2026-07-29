@@ -8,7 +8,7 @@ biome_tags: biome.p63_shallows;biome.industrial_shelf
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P-63 ファブリケータ権限制限"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.system
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Aegir 주성 빛과 방사선"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

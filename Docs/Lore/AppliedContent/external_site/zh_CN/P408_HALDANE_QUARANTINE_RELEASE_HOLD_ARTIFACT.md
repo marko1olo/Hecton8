@@ -8,7 +8,7 @@ biome_tags: biome.evacuation_queue;biome.quarantine_gate
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "霍尔丹隔离释放搁置"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.escape_chain;biome.atlas_basin
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "PL LOC HOLD: Escape Recipe Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

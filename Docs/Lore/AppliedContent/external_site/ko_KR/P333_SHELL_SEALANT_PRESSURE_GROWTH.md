@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.pressure
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "껍질 밀봉재 압력 성장"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

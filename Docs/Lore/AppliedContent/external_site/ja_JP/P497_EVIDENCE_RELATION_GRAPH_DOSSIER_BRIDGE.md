@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "証拠関係グラフ調書"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

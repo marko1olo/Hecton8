@@ -8,7 +8,7 @@ biome_tags: biome.resource;biome.deep
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Guía de historial de presión de deuda azul"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -19,11 +19,17 @@ localization_flags: 0
 
 # Viewport Stress Fog Ledger
 
-Viewport glass in HECTON-8 is a promise made under pressure. It lets a room look out without letting the ocean in, and that makes every stain political. A clear center is only the part people cleaned. The edge tells the truth: milky delamination, salt fog, crescent scratches from old cleaning arms, gasket grime, trapped condensation and cloudy pressure arcs.
+Pane record VP-11, observation blister, Module 5 at 520 metres.
 
-The player should read viewports like instruments. A pane with stress arcs but clean gasket may be old but stable. A pane with fog under the gasket has leaked between layers. A pane with droplets inside the laminate failed slowly from the dry side. A pane scratched in crescents probably belonged to a maintained room; random cuts suggest collapse debris or later salvage. The glass is not just a window. It is a pressure history record.
+  EDGE: milky delamination arc, 40 mm inboard of the gasket
+  GASKET LINE: salt fog, dark grime on the lower rim only
+  SCRATCHES: crescents at cleaning-arm radius
 
-This matters because a viewport can mark both route and risk. It can show a dry pocket behind a wall, expose a room that still has air, reveal whether workers watched the ocean daily, or prove that a claimed 'instant breach' was actually a slow failure. Cutting around a tired pane may release a room gently. Striking the center because it looks clean can turn a quiet wall into knives.
+The centre is the part that was cleaned. The rim carries the pressure history. Stress arcs with a clean gasket read old but stable. Fog under the gasket means water migrated between layers. Droplets sealed inside the laminate mean the dry side failed slowly.
+
+Crescent scratches belong to a maintained room; random cuts are collapse debris or later salvage.
+
+Cut around a tired pane, low and slow. Striking the clean centre of a pane with an arced rim releases it as spall, not as a crack.
 
 ## Scanner
 

@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.localization
 locale: nl_NL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "NL LOC HOLD: Proper Noun Translation Lock Table"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

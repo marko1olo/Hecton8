@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.pressure
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Croissance de scellant coquillier sous pression"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

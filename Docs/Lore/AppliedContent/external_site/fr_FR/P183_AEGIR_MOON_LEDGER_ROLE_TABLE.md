@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.relay_archive
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Registre de route des lunes d'Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

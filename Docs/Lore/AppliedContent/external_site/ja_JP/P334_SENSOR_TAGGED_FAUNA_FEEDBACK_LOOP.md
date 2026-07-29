@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.fauna
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "センサータグ付き動物フィードバックループ"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

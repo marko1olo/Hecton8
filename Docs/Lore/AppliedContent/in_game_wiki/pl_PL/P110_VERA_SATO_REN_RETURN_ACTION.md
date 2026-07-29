@@ -8,7 +8,7 @@ biome_tags: biome.carrier_link;biome.abyssal_machine_field
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Vera Sato-Ren: akcja zwrotna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

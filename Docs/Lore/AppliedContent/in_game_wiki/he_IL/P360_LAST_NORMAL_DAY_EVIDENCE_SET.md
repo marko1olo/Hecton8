@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.evidence
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ערכת ראיות היום הרגיל האחרון"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

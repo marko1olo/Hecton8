@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.quarantine
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Запис збереження карантину"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

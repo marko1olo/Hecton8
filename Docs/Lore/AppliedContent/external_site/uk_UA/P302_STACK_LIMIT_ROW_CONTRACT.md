@@ -8,7 +8,7 @@ biome_tags: biome.inventory;biome.resource_custody
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Рядок ліміту тискового стосу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

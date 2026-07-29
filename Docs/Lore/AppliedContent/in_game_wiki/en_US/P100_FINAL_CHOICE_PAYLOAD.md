@@ -8,7 +8,7 @@ biome_tags: biome.factory_temple;biome.atlas_basin
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Final Choice Payload"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,18 @@ localization_flags: 0
 
 # Final Choice Payload
 
-The last decision is not a clean victory screen. It is a shipping problem with moral weight. The Marauder decides what rises from the moon: coordinates, samples, worker names, Atlas access, quarantine instructions, public proof, or nothing useful at all. Every payload creates a different owner for the aftermath. Deep Reach can regain control. Public law can get a wound it can finally see. Atlas continuity can be cut or caged. The ocean-machine ecology can be protected, sold, or left outside human language. The ending is not who escapes with clean hands. It is who receives enough truth to move first.
+ASCENT PAYLOAD DECLARATION, form PD-2. One sheet, filled at the gantry, no continuation page.
+
+  DECLARED CONTENTS, TICK APPLICABLE:
+  [ ] route coordinates        [ ] biological samples
+  [ ] worker name index        [ ] governor access keys
+  [ ] quarantine instructions  [ ] public ledger copy
+  [ ] none of the above
+  CONSIGNED TO: ______________________
+
+Each tick creates a different owner for the aftermath. Coordinates returned to the principal restore control of the site. A worker name index lodged with a public notary creates an injury the law can see. Governor access can be cut or held. Samples can be protected, sold, or left off the sheet entirely.
+
+There is one consignee line and no box for intent. Whoever holds the sheet moves first.
 
 ## Scanner
 

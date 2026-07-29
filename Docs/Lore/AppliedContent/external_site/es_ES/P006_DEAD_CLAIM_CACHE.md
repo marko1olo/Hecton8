@@ -8,7 +8,7 @@ biome_tags: biome.service_canyons;biome.drowned_infrastructure
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Caché de reclamación muerta"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

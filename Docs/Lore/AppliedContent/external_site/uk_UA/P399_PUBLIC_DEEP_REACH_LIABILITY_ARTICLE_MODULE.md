@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.deep_reach
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Докази відповідальності Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

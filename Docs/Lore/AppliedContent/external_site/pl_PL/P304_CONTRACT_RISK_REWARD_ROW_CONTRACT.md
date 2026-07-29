@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.replay
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Wiersz ryzyka/nagrody kontraktu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

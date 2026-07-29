@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: fr_FR
 surface: in_game_wiki
 source_voice: PDA Audio Evidence Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tags de fragments audio"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

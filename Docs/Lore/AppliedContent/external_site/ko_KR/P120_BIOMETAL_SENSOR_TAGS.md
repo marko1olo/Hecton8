@@ -8,7 +8,7 @@ biome_tags: biome.repair_ecology;biome.abyssal_machine_field
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "바이오메탈 센서 태그"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

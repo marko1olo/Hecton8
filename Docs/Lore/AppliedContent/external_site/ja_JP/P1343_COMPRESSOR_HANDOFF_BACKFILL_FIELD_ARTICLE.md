@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: ja_JP
 surface: external_site
 source_voice: Public Lore Atlas Evidence Note
-spoiler_tier: 0
+spoiler_tier: 
 title: "コンプレッサー引き渡しの後追い記入"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.sonar
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Relé de órgão filtrante acústico"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

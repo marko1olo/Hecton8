@@ -8,7 +8,7 @@ biome_tags: biome.archive_cache;biome.deep_reach_office
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "مذكرة فارنيك لقبول الهامش"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

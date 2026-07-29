@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.orbit_window
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Лунная лестница Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

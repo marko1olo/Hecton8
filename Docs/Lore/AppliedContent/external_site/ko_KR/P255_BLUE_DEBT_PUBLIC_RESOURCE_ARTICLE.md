@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.resource_custody
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Blue Debt 공개 자원 기사"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

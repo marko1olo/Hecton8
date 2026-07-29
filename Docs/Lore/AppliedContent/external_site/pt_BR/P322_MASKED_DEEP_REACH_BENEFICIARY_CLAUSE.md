@@ -8,7 +8,7 @@ biome_tags: biome.contract;biome.deep_reach
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cláusula de Beneficiário Deep Reach Mascarado"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

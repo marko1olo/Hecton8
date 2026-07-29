@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.factory_temple
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "セレネ・アーレントのAtlas重み付け"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

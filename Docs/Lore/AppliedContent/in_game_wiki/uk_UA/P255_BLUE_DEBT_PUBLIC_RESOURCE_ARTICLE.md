@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.resource_custody
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Публічна стаття про ресурс Blue Debt"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

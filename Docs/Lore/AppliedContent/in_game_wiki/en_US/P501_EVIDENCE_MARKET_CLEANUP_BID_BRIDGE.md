@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Evidence Cleanup Bid"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,9 +19,17 @@ localization_flags: 0
 
 # Evidence Cleanup Bid
 
-A cleanup bid is not a verdict. It is a purchase order against an evidence route. The request may ask a broker to dry a tag, normalize a label, move a fragment into a salvage lot, delay publication, translate a worker name into a payout category, or bury the raw object behind a claimant-safe summary. It matters because money appears before the record changes. The payer may be guilty, frightened, careless, or buying time; the bid itself proves pressure on the trail, not the truth of the fragment.
+Cleanup bid EB-31, filed against evidence route 9-K, escrow held.
 
-Read the bid by sequence. Original label, bid origin, escrow hold, handler account, cleaned label, custody transfer, and object route must stay together. If a cleaned label appears before payment, it may be normal archive handling. If payment arrives before the relabel, someone bought the route change. Preserve the original label beside the cleaned one, or the archive becomes part of the cleanup.
+  ORIGINAL LABEL: worker return, partial
+  CLEANED LABEL: cargo fitness, partial
+  ESCROW HOLD: opened before the relabel
+
+A cleanup bid is a purchase order against an evidence route. It can ask a broker to dry a tag, normalise a label, move a fragment into a salvage lot, delay publication, or translate a worker name into a payout category.
+
+Read it by sequence. A cleaned label appearing before payment can be ordinary archive handling. Payment arriving before the relabel means somebody bought the route change.
+
+Keep the original label beside the cleaned one. Archive only the clean label and the archive becomes part of the cleanup.
 
 ## Scanner
 

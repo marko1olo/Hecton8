@@ -8,7 +8,7 @@ biome_tags:
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Rede pública de reparo Atlas-6"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

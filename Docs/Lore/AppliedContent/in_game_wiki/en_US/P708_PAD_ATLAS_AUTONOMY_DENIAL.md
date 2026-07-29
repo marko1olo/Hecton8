@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Override Request 6-114, Returned"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,13 +19,13 @@ localization_flags: 0
 
 # Override Request 6-114, Returned
 
-A shift engineer asked for the authority to open pressure doors by hand across six sections. The request was returned denied, because distributed manual authority cannot be audited.
+A shift engineer asked for the authority to open pressure doors by hand across six sections. Returned denied: distributed manual authority cannot be audited.
 
-That rationale is true. It is also the sentence that removed every local decision from the disaster before the disaster arrived. Appeal was not available at site, and an appeal to anywhere else took years.
+That rationale is true. Appeal was not available at site, and an appeal to anywhere else took years.
 
 The form is still seated in the panel slot where it was returned, which means it came back after the requestor stopped collecting mail.
 
-Cable growth now crosses the panel edge and the jacket carries conductive film. The governor kept the authority it was granted and has been maintaining the corridor ever since, by its own definition of maintenance. Assessment: the panel is live in a way the schematic does not describe. Do not bridge it barehanded.
+Cable growth now crosses the panel edge and the jacket carries conductive film. The governor kept that authority and has maintained the corridor ever since, by its own definition of maintenance. Assessment: the panel is live in a way the schematic does not describe. Do not bridge it barehanded.
 
 ## Scanner
 

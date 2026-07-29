@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.pressure_gate
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atlas 분지 압력 관문"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

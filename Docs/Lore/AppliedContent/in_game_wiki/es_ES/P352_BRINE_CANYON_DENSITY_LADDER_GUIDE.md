@@ -8,7 +8,7 @@ biome_tags: biome.brine;biome.geology
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Guía de escalera de densidad de cañón de salmuera"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

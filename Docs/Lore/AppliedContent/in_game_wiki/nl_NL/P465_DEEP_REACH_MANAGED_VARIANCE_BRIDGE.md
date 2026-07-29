@@ -8,7 +8,7 @@ biome_tags:
 locale: nl_NL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Beheerde afwijking van Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

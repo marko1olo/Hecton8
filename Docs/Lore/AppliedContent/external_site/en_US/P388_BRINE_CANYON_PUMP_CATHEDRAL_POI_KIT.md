@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.pump_station
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Brine Canyon Pump Cathedral Evidence Kit"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

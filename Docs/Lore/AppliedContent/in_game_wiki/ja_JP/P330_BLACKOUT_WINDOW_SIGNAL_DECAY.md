@@ -8,7 +8,7 @@ biome_tags: biome.aegir;biome.comms
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ブラックアウト窓の信号崩壊"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

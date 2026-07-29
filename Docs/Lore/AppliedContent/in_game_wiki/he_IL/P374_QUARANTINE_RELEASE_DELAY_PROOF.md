@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.abyssal_machine_field
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "החזקת שחרור הסגר"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

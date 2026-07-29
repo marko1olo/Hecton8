@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "מארה ון, ראש צוות המשאבות"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

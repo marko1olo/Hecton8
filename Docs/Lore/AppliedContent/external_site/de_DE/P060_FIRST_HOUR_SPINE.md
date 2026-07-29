@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.crash_shelf
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Rückgrat der ersten Stunde"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

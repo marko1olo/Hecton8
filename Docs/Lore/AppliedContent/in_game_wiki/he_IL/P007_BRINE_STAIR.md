@@ -8,7 +8,7 @@ biome_tags: biome.brine_stairs;biome.thermal_field
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "מדרגת תמלחת"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

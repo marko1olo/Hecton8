@@ -8,7 +8,7 @@ biome_tags: biome.shallow_reef;biome.storm_shelf
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Absturzschelf"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

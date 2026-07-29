@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.density_layer
 locale: ru_RU
 surface: in_game_wiki
 source_voice: PDA Salt-Crust Silt Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Солевой ил brine-каньона"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: pt_BR
 surface: external_site
 source_voice: Public Lore Atlas Short Summary
-spoiler_tier: 0
+spoiler_tier: 
 title: "Fratura do vidro da trava do gravador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

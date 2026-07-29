@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories;biome.brine_canyon
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "P708_PAD_CONTAINER_PRIORITY"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

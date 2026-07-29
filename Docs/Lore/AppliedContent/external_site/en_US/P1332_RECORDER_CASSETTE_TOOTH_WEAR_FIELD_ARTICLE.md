@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: en_US
 surface: external_site
 source_voice: Public Site Evidence Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Recorder Cassette Tooth Wear"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,12 +19,12 @@ localization_flags: 0
 
 # Recorder Cassette Tooth Wear
 
-Recorder cassette tooth wear gives HECTON-8 audio evidence a physical chain of custody.
+Recorder cassette tooth wear gives audio evidence a physical chain of custody. The clue is the cassette feed edge that dragged through a pressure-room recorder while the room was failing, not the recovered voice.
 
-        The clue is intentionally unglamorous. It is not the recovered voice or the frightening missing second. It is the cassette edge that dragged through the pressure room recorder while the room was failing. Every tooth is a mechanical contact point. The bay pawl touches it, the strip pulls against it, grit collects in it, and rough handling leaves marks that no cleaned audio file can explain away.
+Every tooth is a mechanical contact point. The bay pawl strikes it, the strip pulls against it, grit collects in the gaps, and rough handling leaves marks that a cleaned audio file cannot explain.
 
-        That makes the teeth valuable to the player. A cassette can prove a strip was pulled after the room flooded, because salt sits under the handling smear. It can prove a strip was copied from another recorder, because the tooth spacing does not match the local pawl scar. It can show a missing second as a real jam instead of a dramatic edit. It can make a polished official clip look suddenly weak, because the physical cassette says the room was opened before the route stamp existed.
+Four readings come off the edge. Salt under a handling smear places the removal after flooding. Tooth spacing that does not match the local pawl scar places the strip in another recorder. Skipped notches beside a pressure spike make a missing second a jam rather than an edit. A broken corner with fresh metal over old salt makes the damage part of recovery instead of part of the event.
 
-        The design use is simple: let the player learn to distrust clean evidence. The tooth line is small, dirty and specific. It rewards attention to objects, not exposition dumps. A good cassette edge should make the player lean closer and ask who touched the record before the colony decided what the record was allowed to say.
+Cassette CT-4 fails the bay test: its comb never touched the Bay 12 pawl, and the transcript filed against it is clean. One part on its own can be ambiguous. An edge and a transcript disagreeing is a custody problem.
 
 <!-- External Site; generated from P1332_RECORDER_CASSETTE_TOOTH_WEAR_FIELD_ARTICLE/en_US. -->

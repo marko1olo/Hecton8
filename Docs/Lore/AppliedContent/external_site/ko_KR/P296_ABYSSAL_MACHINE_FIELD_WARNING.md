@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.warning
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "심연 기계장 경고"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

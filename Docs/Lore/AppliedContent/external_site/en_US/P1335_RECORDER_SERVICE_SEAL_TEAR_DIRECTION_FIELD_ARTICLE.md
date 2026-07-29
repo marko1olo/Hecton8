@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: en_US
 surface: external_site
 source_voice: Public Lore Atlas Short Summary
-spoiler_tier: 0
+spoiler_tier: 
 title: "Recorder Service Seal Tear Direction"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,12 +19,12 @@ localization_flags: 0
 
 # Recorder Service Seal Tear Direction
 
-In HECTON-8, the smallest custody objects often carry the hardest claims. The recorder service seal is a fiber-metal tamper strip placed across the service latch of a pressure-room recorder bay. In daily maintenance it was disposable. After the colony failed, its torn edge could decide whether an audio record belonged to a room, a corridor or a later recovery table.
+A recorder service seal is a fiber-metal tamper strip across the service latch of a pressure-room recorder bay. In daily maintenance it was disposable. After the colony failed, its torn edge can decide whether an audio record belongs to that room, to the corridor, or to a later recovery table.
 
-        The seal is useful because it keeps a physical order. A pull from inside the room folds fibers toward the compartment and traps glove grit under the tear. A corridor-side hook breaks outer paint and rides over whatever salt and dust were already there. A replacement seal betrays itself when its adhesive is cleaner than the latch below it. It does not need to carry readable text to matter; the metal, glue and dirt preserve sequence.
+The seal keeps a physical order without carrying readable text. A pull from inside the room folds the fibers toward the compartment and traps glove grit under the tear. A corridor-side hook breaks the outer paint first and rides over whatever salt and dust were already there. A replacement betrays itself when its adhesive is cleaner than the latch beneath it.
 
-        This makes the seal a partner to the recorder bay evidence chain. Latch glass records force. Cassette teeth record strip handling. The pressure ink wheel records wet timing. The service seal records access and reseal behavior. When all four disagree with a sanitized transcript, the player is not being asked to believe a conspiracy from a paragraph. The player is reading a machine part, then another, until the official sound loses its clean edge.
+That makes the seal one part of a four-part chain. Latch glass records force. Cassette teeth record strip handling. The pressure ink wheel records wet timing. The service seal records access side and reseal behaviour.
 
-        Publicly, Deep Reach could call a broken seal a maintenance irregularity. In a flooded recorder bay, the tear direction can say more: somebody reached the latch before rescue language arrived, or somebody reached it afterward and tried to make the bay look closed.
+Deep Reach filed a broken seal as a maintenance irregularity. Seal SS-8 carries an inward tear under a later clean replacement, which puts one hand at that latch before recovery language existed in 2147 and another hand there afterwards.
 
 <!-- External Site; generated from P1335_RECORDER_SERVICE_SEAL_TEAR_DIRECTION_FIELD_ARTICLE/en_US. -->

@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas_maintenance
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Artículo de Atlas-6 bloqueado por spoilers"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

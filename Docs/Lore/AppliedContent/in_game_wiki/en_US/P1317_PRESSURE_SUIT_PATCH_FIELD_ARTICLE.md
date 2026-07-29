@@ -19,17 +19,17 @@ localization_flags: 0
 
 # Pressure Suit Patch Field Article
 
-A pressure suit patch is never neutral fabric. It is a decision made with air running down, a route still unfinished, or a body that had to come back through a hatch before anyone could argue over custody. The material may look simple: dark neoprene-like textile, reinforced seam tape, stitched repair islands, muted off-white panels, graphite bands, salt scuffs and worn abrasion arcs. The order of those marks matters more than the patch shape.
+Suit locker tag SL-22, Class-IV shell, two field patches, no seam-pressure test recorded.
 
-A clean factory seam has even tape, regular stitching and no salt under the edge. A field patch is different. It may sit crooked because the worker patched while the sleeve was still on an arm. It may cross a bend where no proper shop would approve it. It may have two thread colors because the locker had one spool for suit fabric and another for tool pouches. A dull white rim around the stitch means salt dried after pressure cycling. A glossy dark crescent means the diver kept rubbing the same patched zone against a ladder, hatch lip or cable run.
+  PATCH 1: left cuff, above the glove gasket, two thread colours
+  PATCH 2: across the right knee bend
+  SALT AT STITCH RIM: dry white, 1 mm, lifted
 
-For the player, repaired suit fabric is a small survival log. A patch near a cuff gasket can warn that a glove seal once failed. A patch over the chest bladder can mean the suit was condemned but reused anyway. Seam tape over a tool pouch may mark a Marauder habit: keep the pouch, trust the tool, distrust the suit. A repair island with no pressure-test tag should not be treated as safe equipment. It may be loot, evidence, or a warning from someone who had no better option.
+A factory seam has even tape, regular stitch spacing and no salt under the edge. These do not. The crooked cuff patch was sewn with the sleeve still on an arm. The knee patch crosses a bend, the one place a locker will not sign off.
 
-The patch also separates human triage from automated repair. Atlas fiber can close wounds in ways that ignore human ownership. Conductive biofilm can bridge a line. A suit patch is uglier and clearer: somebody saw damage, found material, pressed it flat, stitched through a trembling layer and hoped the seam would hold long enough. That hope can be practical without being heroic.
+Salt lifting from a stitch means the repair has cycled wet under pressure. A glossy dark crescent beside it means the same zone kept rubbing a ladder rung or hatch lip.
 
-HECTON-8 suit culture is full of borrowed time. Deep Reach wrote clean locker procedures. Black Keel wrote payout custody around recovered gear. Marauders wrote corrections on the fabric with paint marker, knife notch, thread color and silence. A patched suit in a flooded locker can tell the player who came back, who left in a hurry and who could not afford a new seal.
-
-Marauder check: bend the patch before trusting it. If salt lifts from the stitch, the repair has cycled wet. If the edge shines, it has rubbed under load. If the patch crosses a joint, downgrade the suit. If the patch sits over clean fabric but the gasket beside it is scarred, somebody repaired the thing that looked cheap and ignored the thing that could kill them.
+The gasket next to Patch 1 is scarred and unrepaired. Without a seam-pressure soak this shell is return-only.
 
 ## Scanner
 

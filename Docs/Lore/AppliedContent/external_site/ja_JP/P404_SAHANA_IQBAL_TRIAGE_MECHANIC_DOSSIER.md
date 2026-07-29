@@ -8,7 +8,7 @@ biome_tags: biome.evacuation_queue;biome.service_module
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "サハナ・イクバル、トリアージ整備士"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

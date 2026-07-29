@@ -8,7 +8,7 @@ biome_tags: biome.atlas_bottom;biome.deep_launch_route
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Fenêtre de charge utile"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

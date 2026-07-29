@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.upper_atmosphere
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tabla de peligros orbitales de HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

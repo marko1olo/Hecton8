@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: ar_SA
 surface: external_site
 source_voice: Public Site Surface Evidence Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "قشور الطلاء والخدوش كأدلة"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

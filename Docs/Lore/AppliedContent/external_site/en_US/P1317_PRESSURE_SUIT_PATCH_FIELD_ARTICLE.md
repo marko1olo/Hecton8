@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Pressure Suit Patch Field Article
 
-Pressure suit repair patches are small but dense evidence surfaces in HECTON-8. Dark technical fabric, reinforced seam tape, stitch islands, salt scuffs and abrasion arcs show whether a suit was maintained, borrowed, condemned, or pushed through one more return trip.
+A pressure suit patch is a field repair on Class-IV shell fabric: dark technical textile, reinforced seam tape, a stitched repair island, and the salt and abrasion marks that collect afterwards.
 
-The practical reading is physical. Salt under a stitched edge means wet pressure cycling. A glossy crescent marks repeated contact with ladders, hatches or cable runs. A patch across a joint is worse than a patch on flat fabric. A missing pressure-test tag can turn apparent salvage into hazard.
+The marks can be read in order. Salt under a stitched edge means the patch has cycled wet under pressure. A glossy crescent marks repeated contact with a ladder rung, hatch lip or cable run. Mismatched thread colour means the locker held one spool for suit fabric and another for tool pouches. A patch crossing a joint is worse than a patch on flat panel, and a locker that finds one holds the shell return-only until a seam-pressure soak is signed.
 
-The patch keeps human survival visible. It shows a technician or Marauder making a limited repair under bad conditions, not a perfect sci-fi heal. A suit patch may be useful, but it should never feel decorative.
+Deep Reach issued clean locker procedure. Black Keel wrote payout custody around recovered gear. The corrections that survive are on the fabric itself, in paint marker, knife notch and thread colour. Locker tag SL-22, pulled from a flooded bay in 2190, records the last person who wore the shell and shows no signature on the test line.
 
 <!-- External Site; generated from P1317_PRESSURE_SUIT_PATCH_FIELD_ARTICLE/en_US. -->

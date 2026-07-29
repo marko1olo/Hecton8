@@ -8,7 +8,7 @@ biome_tags: biome.drowned_factories;biome.brine_canyon
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Evacuation Load Priority Notice"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -21,7 +21,7 @@ localization_flags: 0
 
 Notice ELP-7 is a numbered loading order for Berth 3. Personnel are line four.
 
-The basis line is not a lie. Sealed substrate genuinely cannot be reconstituted off-site, and the office that wrote this had a defensible engineering argument for every line above four. Nobody had to decide that workers mattered less. They only had to decide what was irreplaceable, and then let the list sort itself.
+The basis line is not a lie. Sealed substrate genuinely cannot be reconstituted off-site, and the office that wrote this had a defensible engineering argument for every line above four.
 
 Berth 3 still holds the racks. They are latched, rated, and intact, which means they were never loaded either. Whatever window this notice was written for did not open.
 

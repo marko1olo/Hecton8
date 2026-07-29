@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black Keel 請求受諾"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

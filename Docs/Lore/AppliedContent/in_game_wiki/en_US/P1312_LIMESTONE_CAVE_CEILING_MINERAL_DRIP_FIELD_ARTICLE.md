@@ -19,17 +19,17 @@ localization_flags: 0
 
 # Limestone Cave Ceiling Mineral Drip Field Article
 
-Limestone cave ceilings are the quiet opposite of HECTON-8's black basalt tunnels. They are pale, calm and easy to mistake for safe stone. That is exactly why they matter. The roof is not only a surface above the player. It is an old ledger of shell, pressure, water chemistry and rooms that changed shape after the ocean took them.
+Roof survey LC-4, 940 metres, carbonate ceiling over the west cave chain.
 
-The limestone began as carbonate: shells, microbial crusts, reef rubble and mineral mud packed into stone before the present cave was a cave. Later fractures let water work through it. Cavities opened. Some were flooded, some breathed brine, some held gas or low-current pockets long enough for calcium to move and settle. The little root scars where stalactites once tried to grow are not decoration. They show where water once hung long enough to build a point, then lost the conditions that made the point possible.
+  DEEP REACH ACCESS GRADE: LOW MECHANICAL THREAT
+  DRIP-ROOT SCARS COUNTED, 20 M RUN: 31
+  POWDER SEAM UNDER WET LINE: 6 mm, spalls on contact
 
-Underwater, the ceiling still speaks. A pale mineral streak can mark seep direction. Salt crust in a crack can mean a seam that breathes with pressure pulses. Green-brown biofilm tucked into a hollow can show a low-current pocket, a food trace, or a place where disturbed sediment will cling instead of clearing. A smooth white face with no grit may be freshly exposed. A powdery edge under a dark wet line may be ready to spall.
+Low mechanical threat was written for the camera. The stone is shell and reef rubble cemented before the cave flooded, and it carries three tells: a bright face with no grit is freshly exposed, a salt-crusted crack still moves with pressure pulses, and a powdery edge under a dark wet line comes down as plates.
 
-For traversal, the ceiling changes how a cave feels. It can guide you through a pale roof channel when the floor is silted out. It can hide a service conduit drilled into old carbonate. It can also shed flakes into your face, jam a tool head with calcium grit or turn a clean overhead anchor into a falling plate. In a tight passage, the danger is not only collapse. It is blindness from your own cut, a shower of chalky dust, and the loss of the roof marks you needed to get out.
+Green-brown biofilm pockets mark low current, which is where your own cut dust will hang instead of clearing.
 
-Deep Reach liked limestone caves because they looked civilized. Pale stone photographs well. A survey line under carbonate looks cleaner than a line under black fracture rock. Reports called these roofs 'low mechanical threat' when they needed cheap access, then blamed local seep chemistry when panels or cable trays came down. The company did not have to invent the lie. The ceiling already looked harmless.
-
-For a Marauder, the rule is read above before trusting below. Scan drip halos before anchoring. Do not cut a salt-crusted crack just because the stone is bright. Follow biofilm pockets if you need a quiet route, but do not assume quiet means dead. Limestone remembers older water than you do. Sometimes it gives you a sheltered way through the cave. Sometimes it gives you the last clean thing you see before the ceiling turns the water white.
+Anchor into ribbed carbonate, never into a drip halo. Two cable trays came down on this run and both reports blamed seep chemistry.
 
 ## Scanner
 

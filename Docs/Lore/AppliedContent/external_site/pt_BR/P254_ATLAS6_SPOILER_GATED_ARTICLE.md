@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas_maintenance
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Artigo de Atlas-6 Bloqueado por Spoiler"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

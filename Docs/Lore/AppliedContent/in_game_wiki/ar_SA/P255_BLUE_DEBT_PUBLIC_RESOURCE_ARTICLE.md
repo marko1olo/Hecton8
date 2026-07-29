@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.resource_custody
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "مقال مورد Blue Debt العام"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

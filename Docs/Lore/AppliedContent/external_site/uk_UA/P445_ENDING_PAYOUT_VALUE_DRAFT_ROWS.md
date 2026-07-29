@@ -8,7 +8,7 @@ biome_tags: biome.spoiler_gate;biome.ending_records
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "UK LOC HOLD: Ending Payout Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

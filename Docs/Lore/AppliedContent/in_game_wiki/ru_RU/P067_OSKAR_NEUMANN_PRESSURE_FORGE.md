@@ -8,7 +8,7 @@ biome_tags: biome.deep_fabrication;biome.machine_trench
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Кузня давления Оскара Нойманна"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

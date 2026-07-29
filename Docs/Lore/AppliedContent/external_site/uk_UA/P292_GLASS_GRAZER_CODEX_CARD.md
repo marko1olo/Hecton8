@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.fauna
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Картка кодексу: скляний шкребак"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

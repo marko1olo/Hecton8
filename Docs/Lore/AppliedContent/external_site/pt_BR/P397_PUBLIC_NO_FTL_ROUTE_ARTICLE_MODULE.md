@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.human_space
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atraso de rota sem FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

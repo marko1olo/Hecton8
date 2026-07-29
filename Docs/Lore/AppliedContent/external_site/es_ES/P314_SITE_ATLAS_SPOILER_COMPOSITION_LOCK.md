@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ES LOC HOLD: Atlas Spoiler Composition Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

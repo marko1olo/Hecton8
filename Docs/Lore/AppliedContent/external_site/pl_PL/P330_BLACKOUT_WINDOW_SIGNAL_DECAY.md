@@ -8,7 +8,7 @@ biome_tags: biome.aegir;biome.comms
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Zanik sygnału w oknie blackoutu"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

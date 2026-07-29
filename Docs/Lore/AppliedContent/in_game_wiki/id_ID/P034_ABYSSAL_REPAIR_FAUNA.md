@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_slope;biome.repair_ecology
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Fauna Perbaikan Abisal"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.terminal;biome.localization
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "PT LOC HOLD: Terminal Slot Chain"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

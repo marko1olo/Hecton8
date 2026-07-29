@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.atlas_basin
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "从职业负罪到个人利害"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

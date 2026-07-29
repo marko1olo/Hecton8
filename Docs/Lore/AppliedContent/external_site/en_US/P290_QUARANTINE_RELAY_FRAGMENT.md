@@ -8,7 +8,7 @@ biome_tags: biome.quarantine;biome.relay
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Quarantine Relay Hold"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

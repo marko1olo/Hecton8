@@ -8,7 +8,7 @@ biome_tags: biome.first_hour_capsule;biome.surface_storm
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Drop Capsule Diagnostic Readout"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

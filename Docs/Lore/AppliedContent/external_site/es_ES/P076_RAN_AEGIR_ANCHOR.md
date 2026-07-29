@@ -8,7 +8,7 @@ biome_tags: biome.surface_relay;biome.orbital_window
 locale: es_ES
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Ancla Ran / Aegir"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

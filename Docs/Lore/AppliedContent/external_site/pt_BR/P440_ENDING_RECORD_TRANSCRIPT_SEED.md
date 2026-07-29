@@ -8,7 +8,7 @@ biome_tags: biome.spoiler_gate;biome.codex
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Transcrição do Registro de Final"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.black_keel_orbit;biome.shallow_annex
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Цивільно-корпоративний розкол доменів"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

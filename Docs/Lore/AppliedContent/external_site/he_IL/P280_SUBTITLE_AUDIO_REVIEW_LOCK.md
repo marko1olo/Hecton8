@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.audio
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "HE LOC HOLD: Subtitle And Audio Timing Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

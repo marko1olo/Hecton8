@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.ecology
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Kodexkarte: Salzlakenfächer"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

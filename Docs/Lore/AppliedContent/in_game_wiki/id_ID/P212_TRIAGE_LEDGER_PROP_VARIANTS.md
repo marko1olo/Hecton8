@@ -8,7 +8,7 @@ biome_tags: biome.med_lock;biome.worker_locker
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Varian Prop Buku Triase"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

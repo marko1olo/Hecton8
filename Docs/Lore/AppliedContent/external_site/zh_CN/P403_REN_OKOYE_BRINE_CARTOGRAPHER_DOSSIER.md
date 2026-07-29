@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.density_ladder
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "伦·奥科耶，盐层制图员"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

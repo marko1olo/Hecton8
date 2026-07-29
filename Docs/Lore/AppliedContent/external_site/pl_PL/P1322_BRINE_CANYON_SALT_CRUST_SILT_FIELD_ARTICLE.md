@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.density_layer
 locale: pl_PL
 surface: external_site
 source_voice: Public Site Brine Substrate Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Muł z solną skorupą kanionu solanki"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

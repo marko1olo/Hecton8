@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.p63_shallows
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Drop Capsule Damage Parts"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

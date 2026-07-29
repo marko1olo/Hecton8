@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.cable_reef
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Шлюз ремонту абісального машинного поля"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

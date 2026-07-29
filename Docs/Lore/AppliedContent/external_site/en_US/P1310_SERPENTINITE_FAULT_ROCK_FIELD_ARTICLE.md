@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Serpentinite Fault Rock Field Article
 
-Serpentinite lets HECTON-8 make cave geology feel specific rather than interchangeable. It is not just green rock. It is deep ultramafic material altered by water, heat and pressure until its minerals changed and its surfaces became slick along old shear planes. In a game about reading a hostile ocean, that gives the player a useful visual grammar.
+Serpentinite is ultramafic rock from below the ordinary crust, altered by water, heat and pressure until its minerals rearranged. On HECTON-8 it is exposed where deep faults cut the abyssal walls: green-black, waxy in places, pale-veined, and slick along shear faces that moved long before the colony existed.
 
-A serpentinite wall should promise route and threat at the same time. Pale vein bands can be safer for anchors. Glossy green planes can be old slip surfaces. Alkaline seepage can change nearby biology, corrode assumptions and mark hidden water movement. A player who treats the wall as decoration misses the route. A player who treats it as ordinary stone may lose the route.
+The distinction that matters underwater is mechanical. Pale vein-lock bands take a drilled anchor. Glossy green planes are old slip surfaces and take almost nothing. Powder in a seam indicates recent motion. A wet shine with no drip trail means water is moving through the rock rather than across it.
 
-For Deep Reach, serpentinite faults were convenient because they were already broken. That convenience is the moral and engineering problem. The company repeatedly mistook old weakness for permission. HECTON-8 should make the player feel that mistake physically: the straight corridor, the polished seam, the anchor point that looks good until it does not.
+Deep Reach surveyed these faults as cheap access because the stone was already fractured in useful directions, then cut service passages along the shear direction with sensor cable laid into the seam. Fault access note 6/2146 records the practice as approved. It does not record that the shear direction is also the direction the rock releases in.
 
 <!-- External Site; generated from P1310_SERPENTINITE_FAULT_ROCK_FIELD_ARTICLE/en_US. -->

@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.comms
 locale: de_DE
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Mute als äußerer toter Beacon"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

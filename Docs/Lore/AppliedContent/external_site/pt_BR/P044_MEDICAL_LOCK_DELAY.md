@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.quarantine_module
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Atraso da Eclusa Médica"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

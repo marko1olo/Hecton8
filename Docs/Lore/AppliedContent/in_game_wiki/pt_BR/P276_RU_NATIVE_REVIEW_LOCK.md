@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.review
 locale: pt_BR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "PT LOC HOLD: Russian Operational Voice Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

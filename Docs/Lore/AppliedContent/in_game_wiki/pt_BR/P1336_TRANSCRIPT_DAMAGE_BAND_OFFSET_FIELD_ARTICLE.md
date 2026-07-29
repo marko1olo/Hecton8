@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: pt_BR
 surface: in_game_wiki
 source_voice: PDA Forensic Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Deslocamento da faixa de dano da transcrição"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.brine_canyon
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "레시피 단계 압력대"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

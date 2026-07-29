@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.archive
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Arquitetura de frenagem de seed ship"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

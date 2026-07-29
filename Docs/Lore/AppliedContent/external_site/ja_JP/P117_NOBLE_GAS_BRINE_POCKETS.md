@@ -8,7 +8,7 @@ biome_tags: biome.brine_canyon;biome.vent_forge
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "貴ガス塩水ポケット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

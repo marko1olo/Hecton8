@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.contract
 locale: ru_RU
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Аудит квитанции материального выхода"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.deep_abyss
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Six Returns, No Range"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

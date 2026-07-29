@@ -19,10 +19,10 @@ localization_flags: 0
 
 # Cable Jacket Repair Wrap Field Article
 
-Cable jacket repair wrap is one of HECTON-8's strongest small-scale evidence surfaces. It is ordinary material under extraordinary pressure: black waterproof rubber, gray pressure tape, exposed fiber, salt seams, clamp scars and scratched wet ridges.
+Cable jacket repair wrap is field material: black waterproof rubber, gray pressure tape and a diagonal fiber underlay, applied by hand to a line that had no replacement in the locker.
 
-In gameplay, a wrap band can guide the player toward a bypass, oxygen route, relay, crawlspace or hazard. The key is physical reading. Salt under the overlap means water followed the line. A polished clamp scar means the cable stayed in service after repair. A changed tape pitch near a hatch means the repair was hurried. A clean new band in a supposedly abandoned corridor can prove someone returned.
+The wrap stays readable after decades underwater. The direction of the overlap lip shows which end the technician trusted. White crystal under the lip means water travelled along the jacket before the run dried out. A polished clamp scar crossing the band means the cable stayed in service after the repair. A change in spiral pitch near a hatch marks a hurried finish.
 
-The wrap also separates human maintenance from Atlas repair ecology. Biofilm and living sealant may arrive later, but the tape records the first human compromise: no replacement part, no clean schedule, one more shift to survive. That makes a cable run feel like evidence instead of background clutter.
+Deep Reach route maps drew cables straight, coloured and certified. The runs recovered from the drowned service chases bend around lockers, pass through concrete holes that appear on no drawing, and carry tape from more than one maintenance period. A run with three wrap batches dates itself. A run with one fresh band in a corridor closed in 2147 dates somebody's return.
 
 <!-- External Site; generated from P1314_CABLE_JACKET_REPAIR_WRAP_FIELD_ARTICLE/en_US. -->

@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_exterior
 locale: fr_FR
 surface: external_site
 source_voice: Public Site Hull Language Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Bordures extérieures de coque de base pressurisée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

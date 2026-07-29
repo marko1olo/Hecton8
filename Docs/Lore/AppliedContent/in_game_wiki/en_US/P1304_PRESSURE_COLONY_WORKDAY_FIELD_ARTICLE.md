@@ -19,13 +19,19 @@ localization_flags: 0
 
 # Pressure Colony Workday Field Article
 
-The drowned colony was not a town that happened to sit under an ocean. It was a pressure workplace that had to pretend, for morale and accounting, that work could still be divided from life. Every habitable volume existed because it kept some part of the machine alive: scrubbers, pumps, food heat, gasket repair, sample custody, route clearance, tired people who could still stand a watch after four bad hours of alarm light.
+SHIFT BOARD, SERVICE BAY 9, SECTOR 44. Grease pencil on melamine, salt line across the sixth row.
 
-That is why ordinary rooms on HECTON-8 should never be read as simple set dressing. A bunk is not only where someone slept. It is proof that a pressure band had enough air budget to keep a worker near a fault window. A galley corner is not comfort first. It is calorie delivery timed against scrubber load and suit turnaround. A locker is a job boundary before it is a personality shrine: the tool inside tells you who was allowed through which door, under what depth rule, and who would be blamed if it did not return.
+  ROOM  KEEPS ALIVE      ROUTE  BURDEN  TOOL   RETURN
+  B-12  scrubber bank 2   R-4    1.0     T-118  stamped
+  B-14  gasket press      R-4    1.0     T-121  stamped
+  B-17  pump 3 watch      R-9    1.4     T-140  ____
+  B-19  galley heat       --     0.6     --     stamped
 
-The colony workday was built from overlapping clocks. There was the clean clock people wrote on boards, the pump clock heard through walls, the air clock counted by filters, the route clock stamped at hatches, the corporate clock that translated delay into liability, and the private clock inside a worker's body when sleep stopped arriving cleanly. Deep Reach records flattened all of it into shifts and exceptions. The rooms preserved the truth because rooms are bad at lying. Salt collects where hands kept touching. Tape curls where somebody reopened a panel too often. A meal token left beside a route strip says the schedule did not leave enough time to be human.
+One line covers the whole colony. A bunk existed because a pressure band could afford the air to keep a worker near a fault window. A locker was a job boundary before it was anything personal: the tool number recorded which door the holder could open, at what depth, and who carried the loss if it did not return.
 
-For a Marauder, this changes how a wreck is read. The first question is not who decorated this place. The first question is what this room kept alive. The second is who had to be present for that work to continue. The third is what the official record called it when the person failed to come back. Useful loot and human evidence often sit in the same cabinet. HECTON-8 is cruel because the correct action may be to take the part, keep the context, and let the room accuse the ledger after you leave.
+B-17 is the only unstamped return on the board. The pump it watched is two bays down, still turning on trickle power.
+
+The air column is counted in filter-hours. It is headed BURDEN.
 
 ## Scanner
 

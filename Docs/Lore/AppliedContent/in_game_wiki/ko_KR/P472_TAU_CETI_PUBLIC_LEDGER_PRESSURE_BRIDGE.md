@@ -8,7 +8,7 @@ biome_tags:
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tau Ceti 공개 장부 압력"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

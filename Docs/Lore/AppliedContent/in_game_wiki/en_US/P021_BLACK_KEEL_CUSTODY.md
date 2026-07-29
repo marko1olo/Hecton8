@@ -8,7 +8,7 @@ biome_tags: biome.crash_shelf;biome.surface_weather
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Black Keel Custody"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

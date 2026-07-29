@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.shallow_reef
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Photic Mat Baseline"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,7 +19,17 @@ localization_flags: 0
 
 # Photic Mat Baseline
 
-Photic mats are the first shallow life that can help the player breathe and still punish careless harvesting. The film grows where light, mineral runoff and slow water meet, skinning rock with oxygen-rich color. A healthy center reads soft and bright; a salt-hard rim means pressure chemistry or old infrastructure is stressing the pocket. The mat also changes sound: good growth dulls small impacts, while contaminated seams click and fizz under a scraper. Cut only loose fringe when you need fiber or oxygen chemistry. Tearing the bright center near a hatch, pipe or sealed panel can drop local oxygen and expose whatever the mat was holding down.
+Baseline card PM-2, photic shelf at 40 metres, mineral-fed film over shallow rock.
+
+  CENTRE: soft, bright, oxygenating
+  RIM: salt-hard for 200 mm on the seam side
+  ACOUSTIC: dull under small impacts, clicking near the hatch seam
+
+The film grows where light, mineral runoff and slow water meet. A soft bright centre reads as working growth. A salt-hard rim means pressure chemistry or old pipework is stressing the pocket, and a clicking, fizzing seam means the mat is holding contamination down.
+
+Harvest loose fringe for fiber and oxygen chemistry, away from metal and hatch seams.
+
+Tearing the bright centre near a hatch, pipe or sealed panel drops local oxygen and exposes whatever the mat was covering.
 
 ## Scanner
 

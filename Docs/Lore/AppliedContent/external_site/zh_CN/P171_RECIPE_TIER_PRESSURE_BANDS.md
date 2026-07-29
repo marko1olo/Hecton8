@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.brine_canyon
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "配方层级压力带"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

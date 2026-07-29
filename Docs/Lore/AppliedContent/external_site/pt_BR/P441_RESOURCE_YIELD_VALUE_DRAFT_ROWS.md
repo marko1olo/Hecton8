@@ -8,7 +8,7 @@ biome_tags: biome.resource_tables;biome.brine_canyon
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "PT LOC HOLD: Resource Yield Value Draft Rows"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

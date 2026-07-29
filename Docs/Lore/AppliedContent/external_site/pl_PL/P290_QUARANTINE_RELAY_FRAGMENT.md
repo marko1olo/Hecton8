@@ -8,7 +8,7 @@ biome_tags: biome.quarantine;biome.relay
 locale: pl_PL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Fragment przekaźnika kwarantanny"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

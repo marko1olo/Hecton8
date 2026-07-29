@@ -8,7 +8,7 @@ biome_tags: biome.colony;biome.evidence
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "最後の平常日の証拠セット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

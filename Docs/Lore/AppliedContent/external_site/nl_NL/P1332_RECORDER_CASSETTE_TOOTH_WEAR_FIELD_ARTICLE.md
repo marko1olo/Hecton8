@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: nl_NL
 surface: external_site
 source_voice: Public Site Evidence Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Slijtage van recorder-cassettetanden"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

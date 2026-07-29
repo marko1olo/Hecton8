@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.truth
 locale: fr_FR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Dossier de contrecoup du registre public"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

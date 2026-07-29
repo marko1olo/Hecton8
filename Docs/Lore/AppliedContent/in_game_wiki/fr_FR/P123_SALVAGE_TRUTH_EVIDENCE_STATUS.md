@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.industrial_shelf
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Statut probatoire de la vérité récupérée"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

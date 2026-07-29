@@ -8,7 +8,7 @@ biome_tags: biome.photic_shelf;biome.crash_shelf
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Tulang Punggung Jam Pertama"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

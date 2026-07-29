@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.atlas_basin
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "حد وصول Atlas"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

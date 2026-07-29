@@ -8,7 +8,7 @@ biome_tags: biome.relay_archive;biome.claim_admin
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "人口与权力尺度"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

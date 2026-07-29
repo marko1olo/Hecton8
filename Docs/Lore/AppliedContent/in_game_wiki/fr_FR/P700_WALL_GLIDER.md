@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.shallow_wreck
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "P700_WALL_GLIDER"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

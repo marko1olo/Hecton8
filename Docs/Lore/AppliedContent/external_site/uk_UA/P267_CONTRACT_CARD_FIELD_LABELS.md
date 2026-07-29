@@ -8,7 +8,7 @@ biome_tags: biome.ui;biome.contract
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "UA LOC HOLD: Contract Card Field Labels"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

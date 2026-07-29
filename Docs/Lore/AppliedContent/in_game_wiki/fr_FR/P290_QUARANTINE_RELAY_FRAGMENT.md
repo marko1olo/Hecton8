@@ -8,7 +8,7 @@ biome_tags: biome.quarantine;biome.relay
 locale: fr_FR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Fragment de relais de quarantaine"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.first_hour_capsule;biome.surface_storm
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "KO LOC HOLD: Drop Capsule Diagnostic Readout"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

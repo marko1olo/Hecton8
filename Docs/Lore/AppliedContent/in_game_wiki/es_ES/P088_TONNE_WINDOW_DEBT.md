@@ -8,7 +8,7 @@ biome_tags: biome.arrival_shelf;biome.carrier_link
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Deuda de ventana-tonelada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

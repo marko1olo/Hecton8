@@ -8,7 +8,7 @@ biome_tags: biome.atlas;biome.fauna
 locale: uk_UA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Петля фауни із сенсорною міткою"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

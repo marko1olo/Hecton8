@@ -8,7 +8,7 @@ biome_tags: biome.admin_deck;biome.drowned_office
 locale: de_DE
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Pavel Sorns Verfahrenssperre"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

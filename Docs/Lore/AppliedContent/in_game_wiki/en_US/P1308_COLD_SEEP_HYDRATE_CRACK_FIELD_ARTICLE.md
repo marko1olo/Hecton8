@@ -19,19 +19,17 @@ localization_flags: 0
 
 # Cold Seep Hydrate Crack Field Article
 
-A cold seep hydrate crack looks almost gentle the first time the lamp catches it. A white vein in blue clay. A little glassy frost where no frost should live. Tiny dark pockmarks around it like old needle scars. It is tempting to treat the seam as mineral, ice or decoration. That mistake is how tools vanish into clouds and divers lose the bottom.
+Seep card CS-9, filled at 2,760 metres on the faulted clay under the canyon step.
 
-Methane hydrate is a bargain between water, gas, cold and pressure. The gas is held inside cages of water molecules because HECTON-8 keeps that layer dark, heavy and cold. Along faulted clay slopes, old organic decay, deep seep chemistry and tidal flexure push methane upward. Where the pressure stays stable, a milky rind forms. It can support silt, biofilm and small shelter life. It can also fail like a lid.
+  RIND THICKNESS AT LIP: 40 mm
+  BUBBLE COUNT, 60 S: 4 before the edge cut, 19 after
+  DEEP REACH SURVEY CLASS: PASSIVE FEEDSTOCK
 
-The useful part is real. Hydrate chips can feed carbon chemistry, emergency bladder cartridges, sealant cultures and low-grade thermal buffers. A clean edge sample can tell a surveyor whether a seep is new, old, contaminated or disturbed by machines. The same white crust can mark a route across featureless clay better than a flag, because the crack follows stress, not human convenience.
+The pale crust is methane hydrate, gas held in cages of water while that layer stays cold and under 27.6 MPa. It will carry silt, biofilm and a boot until a cut opens a gas path beneath it. Then silt rises from below instead of settling, and the return comes off moving fog.
 
-The danger is not explosion. Underwater, the crack does something worse for a stranded person: it changes the room. A bad cut opens a gas path under the crust. Bubbles shake the clay loose. Silt rises from below instead of falling from above. Buoyancy lifts tool heads, dead leaves of hydrate roll away, and sonar comes back from moving fog. If the crack runs under a mat or crawler scrape, the burst may happen behind you after you think the first cut is over.
+Sample the outer rind. The bright centre is the lid.
 
-Deep Reach called these seams passive feedstock. That phrase is almost a confession. Passive meant no crew bonus, no long survey, no need to explain why a white scar on clay could hold a route together. They scraped straight lines across seep slopes, boxed hydrate like cheap coolant, and filed ruptures as operator agitation. The old survey markers you find near collapsed seams are not warnings from a careful company. They are receipts from a company that learned exactly enough to keep billing.
-
-For a Marauder, the rule is to listen before you take. Watch the bubble rhythm. Check which side of the crust carries pale dust. Put a pinger upstream, not on the seam. Sample the outer rind, never the bright center. If the scan shows warm contamination, living mat tension or repeated hollow knocks, leave the crack alone. You can come back with better tools. You cannot put pressure back once you have taught the seabed to breathe through the hole.
-
-A good hydrate field should make the player slow down. It is a resource, a hazard, a map and a small legal problem in one place. Take it cleanly and the ocean keeps speaking. Cut it blind and the ocean answers with a white wall.
+Passive feedstock is a billing class, not a stability grade. Of the eleven ruptures logged on this slope as operator agitation, six opened behind the cutter after the first pass was called finished.
 
 ## Scanner
 

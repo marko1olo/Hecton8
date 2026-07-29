@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.contract
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "플레이어 Lien 계약 시작 카드"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

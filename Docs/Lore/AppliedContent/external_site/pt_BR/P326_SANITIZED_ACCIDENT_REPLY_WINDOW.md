@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.deep_reach
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Janela de Resposta de Acidente Sanitizada"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

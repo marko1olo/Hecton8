@@ -8,7 +8,7 @@ biome_tags: biome.vent_forge;biome.abyssal_machine_field
 locale: id_ID
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Lian Torres, operator tempa ventilasi"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

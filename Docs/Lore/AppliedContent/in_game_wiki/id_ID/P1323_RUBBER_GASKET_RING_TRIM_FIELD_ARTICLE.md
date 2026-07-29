@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: id_ID
 surface: in_game_wiki
 source_voice: PDA Pressure Seal Primer
-spoiler_tier: 0
+spoiler_tier: 
 title: "Cincin Karet Segel Tekanan"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

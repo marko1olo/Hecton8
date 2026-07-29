@@ -8,7 +8,7 @@ biome_tags: biome.claim_route;biome.safe_module
 locale: es_ES
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Conversión de pérdida con continuidad de reclamación"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

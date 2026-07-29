@@ -8,7 +8,7 @@ biome_tags: biome.first_hour;biome.capsule
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Áudio da Caixa-preta da Cápsula 01"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

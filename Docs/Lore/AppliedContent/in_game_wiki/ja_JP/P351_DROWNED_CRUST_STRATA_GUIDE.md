@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.ocean
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "沈水地殻層ガイド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.worker_archive;biome.relay_archive
 locale: zh_CN
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "责任备忘碎片链"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

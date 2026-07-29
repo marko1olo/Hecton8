@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: en_US
 surface: external_site
 source_voice: Public Site Evidence Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Hydrophone Log Strips"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,12 +19,12 @@ localization_flags: 0
 
 # Hydrophone Log Strips
 
-The hydrophone strip is one of HECTON-8's most useful evidence objects because it makes sound physical.
+A hydrophone log strip is a narrow ceramic-fibre tape pulled through a recorder in a colony pressure room. The recorder listened to the room, not to a person. It took pump cadence, hatch impacts, cable snaps, tool knocks, hull strain and the smeared shapes of voices through water and metal, and wrote them as pressure ink.
 
-        It is a narrow ceramic-fiber tape pulled through an old room recorder. The recorder listened to the pressure chamber, not to a person. It caught pump cadence, hatch impacts, cable snaps, tool knocks, hull strain and the smeared shapes of voices through water and metal. The strip survived because it was simple. It did not need a live network, a clean terminal, or a cooperative company archive. It needed pressure, ink and movement.
+Strips survive because they are simple. They need pressure, ink and movement, and none of a live network, a clean terminal or a cooperative archive. That is why strips are recovered from rooms whose official packets are not.
 
-        For the player, a strip should read like a forensic object. The audio can be eerie, but the proof is in the mismatch: a door impact before authorization, a pump note after the claimed shutdown, a missing second where every other recorder goes flat, a voice shape that appears beside a route stamp no living operator signed. It is not a monologue. It is a room contradicting its paperwork.
+A strip is read in three layers. Pressure ink gives slopes, dips and the sudden teeth where a lock bit its frame. The acoustic comb gives repeating machine notes and missing pump strokes. The notary edge gives serial, bay stamp, time ladder and splice marks. Maintenance standing orders hold a strip admissible only when all three agree, and give no weight to a recovered sound file with no matching strip wear.
 
-        This is the tone HECTON-8 needs: human presence recovered through work surfaces. The strip does not tell the player what to feel. It lets the player hear a place still trying to do its job after everyone above it decided the paperwork mattered more than the people inside.
+The value is in mismatch. Strip HL-2207 from bay 4 records pump 3 running continuously to 07:41 against a filed shutdown of 07:00, and a single hinge-side lock impact at 06:04 against a route permission stamp dated 06:10. The strip makes no accusation. It holds the marks until someone sets them beside the paperwork.
 
 <!-- External Site; generated from P1330_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE/en_US. -->

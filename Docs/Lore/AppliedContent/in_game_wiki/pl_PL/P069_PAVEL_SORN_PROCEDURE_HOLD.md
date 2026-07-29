@@ -8,7 +8,7 @@ biome_tags: biome.admin_deck;biome.drowned_office
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Proceduralne wstrzymanie Pavla Sorna"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

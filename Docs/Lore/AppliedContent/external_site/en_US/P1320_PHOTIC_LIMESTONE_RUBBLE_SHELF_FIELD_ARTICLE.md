@@ -8,7 +8,7 @@ biome_tags: biome.photic_shallows;biome.first_route_shelf
 locale: en_US
 surface: external_site
 source_voice: Public Site Photic Shelf Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Photic Limestone Rubble Shelf"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,8 +19,10 @@ localization_flags: 0
 
 # Photic Limestone Rubble Shelf
 
-Photic shelves sit where light still has authority. At this depth the ocean is not dark enough to hide everything, and not gentle enough to forgive careless feet. Limestone plates form from old biogenic calcium, pressure-worn shell grit and mineral cement. The rubble on top is a mixed record: natural breakage, colonial extraction, storm surge, crawler traffic and the patient work of small organisms that turn cracks into shelter.
+Photic shelves sit where light still reaches the floor. Limestone plates form from old biogenic calcium, pressure-worn shell grit and mineral cement, and the rubble on top is a mixed record: natural breakage, colonial extraction, storm surge, crawler traffic, and small organisms turning cracks into shelter.
 
-The useful reading is local. Shell grit gathered in a seam means water is still sorting the floor. Fine pale dust on a ledge means recent fracture. Olive stain inside pores means the surface stayed protected through multiple cycles. A clean circular scuff may be a tool foot, anchor pad or old quarry clamp. If the player only sees brightness, the shelf feels like a safe tutorial. If the player reads the surface, it becomes the first honest map: which ledge holds, which crack drains, which rubble pocket will slide, and where the colony stole stone before pretending the shallows were untouched.
+The reading is local. Shell grit gathered in a seam means water is still sorting the floor. Fine pale dust on a ledge means recent fracture. Olive stain inside pores means the surface stayed protected through several cycles. A clean circular scuff is a tool foot, an anchor pad or an old quarry clamp.
+
+That makes brightness the least informative property of the shelf. A face that looks smooth from above can be undercut, and rubble sitting on an undercut edge moves under load. The quarry cuts matter to the record as well: Deep Reach took building stone from these shelves through 2146 and filed the shallows as untouched habitat.
 
 <!-- External Site; generated from P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE/en_US. -->

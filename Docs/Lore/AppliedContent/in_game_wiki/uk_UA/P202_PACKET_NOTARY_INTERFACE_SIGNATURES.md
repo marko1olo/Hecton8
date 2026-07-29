@@ -8,7 +8,7 @@ biome_tags: biome.relay_spine;biome.claim_admin
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Підписи Packet Notary Interface"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

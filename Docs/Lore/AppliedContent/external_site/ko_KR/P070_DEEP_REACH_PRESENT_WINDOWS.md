@@ -8,7 +8,7 @@ biome_tags: biome.relay_spine;biome.surface_relay
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Deep Reach 현재 통신 창"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -19,12 +19,12 @@ localization_flags: 0
 
 # Return Rights Quarantine Handshake Ledger
 
-A return in HECTON-8 is not complete when a survivor reaches the surface or carrier deck. The game treats recovery as a custody problem: who receives the body, what follows with it, and which institution becomes responsible for the evidence the survivor carries.
+Recovered Recovery Compliance Office paperwork from HECTON-8 includes Form RR-6, a single-sheet return rights ledger held at the quarantine handshake console. The form gathers five signatures: carrier medical officer, pressure seal certifier, claim owner, payload custodian, and receiver authority.
 
-The quarantine/legal handshake is the mechanism behind that decision. It combines medical clearance, pressure hardware certification, claim ownership, receiver authority and payload custody. The word quarantine is deliberately broader than infection. A suit can bring up organisms, toxic chemistry, black-box records, public testimony and a debt claim at once. The system cannot decide which problem matters most until someone signs.
+The first four lines certify objects. The seal is rated, the samples are contained, the lien is acknowledged, the packet archive is accounted for. The fifth line names the institution that accepts delivery of the returned person. Clause 9 provides that where the fifth line is empty at ascent burn, the returned party and accompanying packets enter neutral hold, and that neutral hold may be contested by Keelmark Mutual, by the principal, by a public ledger notary, or by the Atlas Continuity Office.
 
-That signature is political. A corporate receiver can move quickly and make the survivor disappear into lawful custody. A public ledger receiver can make evidence harder to erase while making victims and coordinates easier to hunt. A neutral quarantine hold can keep a person alive while suspending every right that would let them speak freely. HECTON-8's rescue horror is not that nobody answers. It is that every answer defines the player as an asset, a risk, a witness or a contaminant.
+No settlement interval is printed against neutral hold on any recovered revision of the form.
 
-This article gives the player a practical reading of the route. Do not only build ascent hardware. Build leverage over the receiver. Preserve packet custody, choose what becomes public, and understand that the last door of escape is not mechanical. It is the desk that decides what arrived.
+Copies recovered from Sector 44 are signed on four lines. Aegir salvage crews report the same pattern from three separate consoles: the half of the split custody tag stamped by Recovery Compliance is still seated in its slot, and the receiver half is still blank. The word quarantine on this form is not restricted to infection. The same clause governs brine spores, black-box memory, route coordinates and worker names, all of which come up inside the same suit seams.
 
 <!-- External Site; generated from P1411_RETURN_RIGHTS_QUARANTINE_HANDSHAKE_LEDGER/en_US. -->

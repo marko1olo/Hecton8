@@ -8,7 +8,7 @@ biome_tags: biome.geology;biome.ocean
 locale: he_IL
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "מדריך שכבות הקרום הטבוע"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

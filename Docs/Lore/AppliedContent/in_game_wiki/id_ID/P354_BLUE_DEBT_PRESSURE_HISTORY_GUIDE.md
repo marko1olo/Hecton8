@@ -8,7 +8,7 @@ biome_tags: biome.resource;biome.deep
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Panduan Riwayat Tekanan Utang Biru"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

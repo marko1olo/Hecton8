@@ -8,7 +8,7 @@ biome_tags: biome.resource_tables;biome.claim_admin
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Черновые строки лимитов стаков"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

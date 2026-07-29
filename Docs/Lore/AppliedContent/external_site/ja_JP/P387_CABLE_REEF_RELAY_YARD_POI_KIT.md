@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.industrial_shelf
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "ケーブルリーフ中継ヤード証拠キット"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

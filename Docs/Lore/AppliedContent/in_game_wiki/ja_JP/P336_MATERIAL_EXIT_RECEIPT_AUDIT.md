@@ -8,7 +8,7 @@ biome_tags: biome.ending;biome.contract
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "物資退出領収監査"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

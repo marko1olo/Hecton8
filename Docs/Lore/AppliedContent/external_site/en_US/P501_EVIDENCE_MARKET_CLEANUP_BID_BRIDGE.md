@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Evidence Cleanup Bid"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -21,9 +21,9 @@ localization_flags: 0
 
 ## What the record proves
 
-A cleanup bid is not a verdict. It is a purchase order against an evidence route. The request may ask a broker to dry a tag, normalize a label, move a fragment into a salvage lot, delay publication, translate a worker name into a payout category, or bury the raw object behind a claimant-safe summary. It matters because money appears before the record changes. The payer may be guilty, frightened, careless, or buying time; the bid itself proves pressure on the trail, not the truth of the fragment.
+A cleanup bid is a purchase order against an evidence route, not a verdict. Bid EB-31, filed against route 9-K in 2190, asked a broker to convert an original label reading worker return, partial into a cleaned label reading cargo fitness, partial.
 
-Read the bid by sequence. Original label, bid origin, escrow hold, handler account, cleaned label, custody transfer, and object route must stay together. If a cleaned label appears before payment, it may be normal archive handling. If payment arrives before the relabel, someone bought the route change. Preserve the original label beside the cleaned one, or the archive becomes part of the cleanup.
+What matters is sequence. The escrow hold on EB-31 opened before the relabel, which makes this label change a purchased one. Had the cleaned label appeared first, the same file could have been ordinary archive handling. The bid proves pressure on the trail. It does not prove the fragment is true, and the payer may be liable, frightened, careless or buying time.
 
 ## How to read it
 

@@ -8,7 +8,7 @@ biome_tags: biome.deep_archive;biome.service_canyon
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Математика польоту без FTL"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.surface_relay
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "光延迟权限"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.safe_module;biome.abyssal_machine_field
 locale: ko_KR
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "격리 법무 핸드셰이크 조립체"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

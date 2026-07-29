@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.contract
 locale: zh_CN
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "光束帆与颗粒航道"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

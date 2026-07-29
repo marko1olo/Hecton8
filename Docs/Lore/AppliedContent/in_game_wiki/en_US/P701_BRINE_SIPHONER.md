@@ -8,7 +8,7 @@ biome_tags: biome.industrial_shelf;biome.service_corridor
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Brine Siphoner"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -21,7 +21,7 @@ localization_flags: 0
 
 Where these hold station, the plate behind them is open.
 
-A siphoner pumps the brine layer instead of swimming it, feeding on the difference between the two densities it draws. It will not give up a sharp boundary, and the sharpest ones down here are ours: a split coolant line bleeding fresh water into brine at 620 metres, an intake grate still pulling through a dead pump.
+A siphoner pumps the brine layer instead of swimming it, feeding on the difference between the two densities it draws. It will not give up a sharp boundary, and the sharpest ones down here are ours: a split coolant line bleeding fresh water into brine at 2,185 metres, an intake grate still pulling through a dead pump.
 
 Count the animals along a grate and you have measured the breach behind it. Disturbed, one voids the dense side in a single slug, and that slug sinks past a Class-IV and takes the depth channel with it for four to ten seconds.
 
@@ -35,7 +35,7 @@ Osmotic specialist holding a density interface. Confidence 64 percent. Hazard: e
 
 ## Terminal
 
-SPECIMEN 44-D-118. CLASS: LEAK DETECTION SERVICE, UNCONTRACTED. SITE: COOLANT GALLERY 3 INTAKE GRATE, 620 M. FINDING: BRINE VARIANCE MAPPED BY OBSERVATION. SENSOR REPLACEMENT LINE 22-B: CLOSED, CALIBRATION DRIFT.
+SPECIMEN 44-D-118. CLASS: LEAK DETECTION SERVICE, UNCONTRACTED. SITE: COOLANT GALLERY 3 INTAKE GRATE, 2,185 M. FINDING: BRINE VARIANCE MAPPED BY OBSERVATION. SENSOR REPLACEMENT LINE 22-B: CLOSED, CALIBRATION DRIFT.
 
 ## Field Note
 

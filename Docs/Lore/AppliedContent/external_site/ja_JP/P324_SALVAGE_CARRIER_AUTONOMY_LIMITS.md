@@ -8,7 +8,7 @@ biome_tags: biome.orbit;biome.hardware
 locale: ja_JP
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "サルベージキャリア自律限界"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

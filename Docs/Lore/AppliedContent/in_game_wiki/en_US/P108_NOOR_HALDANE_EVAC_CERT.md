@@ -8,7 +8,7 @@ biome_tags: biome.shallow_annex;biome.industrial_shelf
 locale: en_US
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Noor Haldane Evacuation Certificate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
@@ -19,11 +19,17 @@ localization_flags: 0
 
 # Noor Haldane Evacuation Certificate
 
-Noor Haldane is the Deep Reach legal and certification voice behind evacuation holds. Her signature is not written as panic. It is written as control. The route must remain certifiable. The carrier must accept custody. The biological state must be reviewable. The legal chain must survive the disaster even if the people inside the route do not.
+Certification hold, N. Haldane, Evacuation Certification Counsel, 2147.
 
-That is why Haldane's file hurts. The language can defend itself. Quarantine breaches can spread contamination. Uncertified extraction can strand carriers. Port refusal can turn rescue into another disaster. In a clean meeting room, every clause sounds like responsible containment. In a pressure corridor with water rising, the same clauses become a lock.
+  RELEASE: denied
+  PENDING: pressure-biological quarantine, carrier custody, external route review
+  FORM WARNING: unauthorised extraction may compromise claimant chain, habitat liability and downstream port acceptance
 
-For the player, this article connects colony route holds, medical delays and Deep Reach liability. Haldane does not need to hate anyone. She only needs to make evacuation wait for the conditions that prove evacuation is safe. Pressure does not wait. Oxygen does not wait. The certificate did.
+The hold is written as control rather than panic. Each condition defends itself: a quarantine breach can spread contamination, an uncertified extraction can strand a carrier, a port refusal can turn a rescue into a second loss.
+
+In a meeting room those clauses are containment. In a corridor with water rising they are a lock, and the corridor is where this copy was found.
+
+Haldane's signature dates the hold to the evacuation window itself, and no release countersignature exists on any recovered copy.
 
 ## Scanner
 
@@ -39,6 +45,6 @@ The door was not locked by fear. It was locked by compliance.
 
 ## Field Note
 
-This is the paper signature players should hate: not panic, not malice, just a door waiting for external review while oxygen keeps counting down.
+No panic on this door and no malice. It was held for external review while the oxygen log kept counting. Check the hold date before you cut the latch.
 
 <!-- In-Game Wiki; generated from P108_NOOR_HALDANE_EVAC_CERT/en_US. -->

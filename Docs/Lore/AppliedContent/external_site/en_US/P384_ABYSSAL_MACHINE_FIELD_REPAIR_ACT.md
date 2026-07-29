@@ -8,7 +8,7 @@ biome_tags: biome.abyssal_machine_field;biome.cable_reef
 locale: en_US
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Abyssal Machine Field Repair Gate"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

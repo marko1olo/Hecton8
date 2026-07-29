@@ -8,7 +8,7 @@ biome_tags: biome.claim_admin;biome.relay_archive
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Имена сотрудников подофисов"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

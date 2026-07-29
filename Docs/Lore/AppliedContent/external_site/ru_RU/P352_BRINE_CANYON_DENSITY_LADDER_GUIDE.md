@@ -8,7 +8,7 @@ biome_tags: biome.brine;biome.geology
 locale: ru_RU
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Полевой справочник плотностной лестницы brine-каньона"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

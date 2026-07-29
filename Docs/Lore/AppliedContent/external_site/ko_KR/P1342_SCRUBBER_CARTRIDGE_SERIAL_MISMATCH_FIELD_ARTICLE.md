@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: ko_KR
 surface: external_site
 source_voice: Public Lore Atlas Evidence Note
-spoiler_tier: 0
+spoiler_tier: 
 title: "스크러버 카트리지 일련번호 불일치"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

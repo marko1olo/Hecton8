@@ -8,7 +8,7 @@ biome_tags: biome.atlas_basin;biome.dossier_archive
 locale: he_IL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "הנתיב הטוב ביותר: שארית גלויה"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

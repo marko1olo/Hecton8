@@ -8,7 +8,7 @@ biome_tags: biome.storm_shelf;biome.brine_canyon
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Orbita / Geometria de Mare de HECTON-8"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

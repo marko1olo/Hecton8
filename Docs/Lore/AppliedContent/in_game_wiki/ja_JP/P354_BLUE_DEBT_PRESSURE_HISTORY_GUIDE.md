@@ -8,7 +8,7 @@ biome_tags: biome.resource;biome.deep
 locale: ja_JP
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ブルーデット圧力履歴ガイド"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

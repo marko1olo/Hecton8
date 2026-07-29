@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.resource
 locale: ar_SA
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "AR LOC HOLD: Blue Debt Site Resource Copy"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

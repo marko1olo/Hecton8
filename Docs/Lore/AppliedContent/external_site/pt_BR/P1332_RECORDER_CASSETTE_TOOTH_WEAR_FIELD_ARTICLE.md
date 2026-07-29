@@ -8,7 +8,7 @@ biome_tags: biome.drowned_colony;biome.pressure_base
 locale: pt_BR
 surface: external_site
 source_voice: Public Site Evidence Object Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "Desgaste dos dentes do cassete do gravador"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

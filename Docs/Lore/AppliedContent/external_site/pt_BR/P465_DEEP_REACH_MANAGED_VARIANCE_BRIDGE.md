@@ -8,7 +8,7 @@ biome_tags:
 locale: pt_BR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "Variação gerida Deep Reach"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

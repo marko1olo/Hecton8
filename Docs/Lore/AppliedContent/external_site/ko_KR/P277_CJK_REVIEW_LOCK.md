@@ -8,7 +8,7 @@ biome_tags: biome.localization;biome.cjk
 locale: ko_KR
 surface: external_site
 source_voice: Website Public
-spoiler_tier: 0
+spoiler_tier: 
 title: "KO LOC HOLD: CJK Font And Width Contract"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.publication;biome.aegir
 locale: ar_SA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "AR LOC HOLD: Aegir System Art Rule"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

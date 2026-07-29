@@ -8,7 +8,7 @@ biome_tags: biome.cable_reef;biome.industrial_shelf
 locale: pl_PL
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Zestaw dowodowy stoczni przekaźników rafy kablowej"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

@@ -8,7 +8,7 @@ biome_tags: biome.pressure_base;biome.wreck_interior
 locale: zh_CN
 surface: external_site
 source_voice: Public Site Surface Evidence Article
-spoiler_tier: 0
+spoiler_tier: 
 title: "漆面剥落与划痕证据"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

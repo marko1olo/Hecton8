@@ -8,7 +8,7 @@ biome_tags: biome.deep_reach_pressure;biome.shallow_annex_p63
 locale: id_ID
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "ID LOC HOLD: Sanitized Accident Packet Body"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false

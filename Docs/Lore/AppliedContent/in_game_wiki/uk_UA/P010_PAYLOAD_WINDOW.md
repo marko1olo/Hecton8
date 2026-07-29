@@ -8,7 +8,7 @@ biome_tags: biome.atlas_bottom;biome.deep_launch_route
 locale: uk_UA
 surface: in_game_wiki
 source_voice: Neutral Reference
-spoiler_tier: 0
+spoiler_tier: 
 title: "Вікно корисного вантажу"
 source: AppliedContent packet JSON
 runtime_reads_markdown: false
