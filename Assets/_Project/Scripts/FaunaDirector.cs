@@ -110,7 +110,32 @@ namespace Hecton8.AI
         private const float AcousticPingBoidPanicDurationSeconds = 3f;
         private const uint ActiveCreatureFlagPredator = 1u << 0;
         private const uint ActiveCreatureFlagHasBrain = 1u << 1;
+        // Director-level sensory awareness (PureLogic FaunaSensoryDetectionRangeCalculator).
+        // Reference clarity used by the celestial readability consumers (PlayerFlashlight, ARWaypointOverlay):
+        // >= this many metres of underwater visibility reads as clear water, i.e. zero turbidity.
+        private const float FaunaSensoryClearWaterVisibilityMeters = 42f;
+        // Upper bound on the turbidity exponent handed to the model. exp(-4) ~= 0.018, so fully
+        // turbid water collapses visual range to ~2% of the archetype's aggro distance without ever
+        // reaching exactly zero.
+        private const float FaunaSensoryMaxTurbidity = 4f;
+        // Metres of extra hearing reach per metre/second of player speed. A motionless player is
+        // inaudible; the model clamps the result to the archetype's hearing ceiling.
+        private const float FaunaSensoryHearingSpeedScale = 2f;
+        // Fallbacks for creatures whose archetype asset failed to resolve.
+        private const float FaunaSensoryFallbackVisualRangeMeters = 20f;
+        private const float FaunaSensoryFallbackHearingRangeMeters = 30f;
+        // Any creature further than this from the player cannot detect it under any archetype tuning,
+        // so it is rejected before the model call. Also keeps the AUP delta inside float range.
+        private const double FaunaSensoryMaxConsideredRangeMeters = 400d;
+        private const double FaunaSensoryMaxConsideredRangeMetersSq =
+            FaunaSensoryMaxConsideredRangeMeters * FaunaSensoryMaxConsideredRangeMeters;
+        // Hard bound on how many detecting creatures may defer dehydration in one pass, so a
+        // pathological detection storm can never pin the whole population in presentation.
+        private const int FaunaSensoryDehydrationGraceCap = 8;
         private const string MaxHibernatedFaunaStatesWarning = "[FaunaDirector] Max hibernated fauna states reached. Extra residents were not saved.";
+        // Constant strings: no concat, no interpolation, no ToString in the SlowTick path.
+        private const string SensoryPlayerNoticedLog = "[FaunaDirector] Sensory: player entered fauna detection range (see _debugPlayerDetectedCount).";
+        private const string SensoryPlayerLostLog = "[FaunaDirector] Sensory: no live creature can detect the player any more.";
         private static readonly string[] ThermalHabitatTokens = { "thermal", "brine", "heat", "furnace", "volcanic", "chemical" };
         private static readonly string[] CaveHabitatTokens = { "cave", "nest", "ambush", "rift", "pocket", "burrow", "crevice" };
         private static readonly Vector2[] _spawnDirectionLut = BuildSpawnDirectionLut(); // COLD ALLOC: Vector2[64] - spawn ring direction lookup table - owner: FaunaDirector
@@ -163,6 +188,12 @@ namespace Hecton8.AI
             /// <summary>Ð˜Ð½Ð´ÐµÐºÑ Ñ€ÐµÐ·Ð¸Ð´ÐµÐ½Ñ‚Ð½Ð¾Ð³Ð¾ ÑÐ»Ð¾Ñ‚Ð° Ð´ÐµÐ³Ð¸Ð´Ñ€Ð°Ñ‚Ð°Ñ†Ð¸Ð¸.</summary>
             public uint uniqueInstanceUid;
             public int dehydrationSlotIndex;
+
+            /// <summary>
+            /// Ð¡ÑƒÑ‰ÐµÑÑ‚Ð²Ð¾ Ð·Ð°Ð¼ÐµÑ‚Ð¸Ð»Ð¾ Ð¸Ð³Ñ€Ð¾ÐºÐ° Ð½Ð° Ð¿Ð¾ÑÐ»ÐµÐ´Ð½ÐµÐ¼ ÑÐµÐ½ÑÐ¾Ñ€Ð½Ð¾Ð¼ Ð¿Ñ€Ð¾Ñ…Ð¾Ð´Ðµ Ð”Ð¸Ñ€ÐµÐºÑ‚Ð¾Ñ€Ð°.
+            /// Refreshed by <see cref="RefreshFaunaSensoryDetection"/> once per director SlowTick.
+            /// </summary>
+            public bool playerDetected;
         }
 
         private struct ResolvedFaunaEntry
@@ -437,6 +468,23 @@ namespace Hecton8.AI
         [SerializeField] private float _debugDepthZoneBudgetScale = 1f;
         [SerializeField] private float _debugDepthZoneSpecialistScale = 1f;
 
+        [Header("â”€â”€ Sensory Awareness â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
+        [Tooltip("Logs one line when the first creature notices the player and one when the last one loses it. " +
+                 "Edge-triggered only â€” never per creature and never per frame.")]
+        [SerializeField] private bool logSensoryDetectionTransitions = true;
+        [Tooltip("How many live creatures currently have the player inside their turbidity- and speed-modulated detection range.")]
+        [SerializeField] private int _debugPlayerDetectedCount;
+        [Tooltip("Creatures that crossed undetected -> detected on the last sensory pass.")]
+        [SerializeField] private int _debugSensoryNewDetections;
+        [Tooltip("Creatures that crossed detected -> undetected on the last sensory pass.")]
+        [SerializeField] private int _debugSensoryLostDetections;
+        [Tooltip("Turbidity exponent fed to the detection model. 0 = clear water, 4 = fully turbid.")]
+        [SerializeField] private float _debugSensoryTurbidity;
+        [Tooltip("Player speed in m/s used as the hearing term of the detection model.")]
+        [SerializeField] private float _debugSensoryPlayerSpeed;
+        [Tooltip("Creatures that deferred dehydration this tick because they had noticed the player.")]
+        [SerializeField] private int _debugSensoryDehydrationGrants;
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CACHED STATE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -608,6 +656,8 @@ namespace Hecton8.AI
         private bool _currentZoneIsSafePocket;
         private float _currentDepthZoneBudgetScale = 1f;
         private float _currentDepthZoneSpecialistScale = 1f;
+        private int _playerDetectedCreatureCount;
+        private int _sensoryDehydrationGraceRemaining;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PREDATOR PRESSURE STATE
@@ -755,6 +805,11 @@ namespace Hecton8.AI
                 DisposeDehydrationResidencyState();
 
             _slowTickAccumulator = 0f;
+            // Clear the sensory edge state so a re-enable cannot log a spurious "player noticed"
+            // transition against a count left over from the previous session.
+            _playerDetectedCreatureCount = 0;
+            _debugPlayerDetectedCount = 0;
+            _sensoryDehydrationGraceRemaining = 0;
             if (releaseNativeState && ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
         }
@@ -1237,6 +1292,11 @@ namespace Hecton8.AI
             }
 
             RestorePersistedTier2Fauna(in playerAup);
+
+            // Sensory awareness runs before culling so the dehydration gate below reads a
+            // same-tick detection verdict rather than a 0.5 s stale one.
+            RefreshFaunaSensoryDetection(in playerAup);
+
             int spawnValidationAttempts = 0;
             int spawnValidationSuccesses = 0;
             int anchorBasedSpawns = 0;
@@ -1313,6 +1373,175 @@ namespace Hecton8.AI
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  SENSORY AWARENESS
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+        /// <summary>
+        /// Director-level sensory pass. For every live creature, asks
+        /// <see cref="Hecton8.PureLogic.Ecosystem.FaunaSensoryDetectionRangeCalculator"/> whether the player
+        /// sits inside a detection range built from that creature's own archetype tuning, the current water
+        /// turbidity, and the player's speed.
+        ///
+        /// This is deliberately NOT a second copy of per-creature perception. <c>FaunaSensorSuite</c> already
+        /// owns close-range vision cones, nav-grid line of sight and noise contact. What did not exist
+        /// anywhere before this call is a turbidity- and speed-modulated awareness verdict the Director can
+        /// act on for population decisions â€” which is what the dehydration grace below consumes.
+        ///
+        /// Cadence: once per director SlowTick (~0.5 s), never per frame. Population is bounded by
+        /// <see cref="GlobalFaunaHardCap"/>, so this is at most 200 pure-math calls twice a second.
+        ///
+        /// ZERO GC: the model is static and allocation-free, all inputs are structs, the turbidity and
+        /// player-speed terms are resolved once outside the loop, and the only logging is edge-triggered
+        /// on a constant string.
+        /// </summary>
+        /// <param name="playerAup">Origin-shift-stable player position resolved earlier this SlowTick.</param>
+        private void RefreshFaunaSensoryDetection(in AbsoluteUniversePosition playerAup)
+        {
+            int previousDetectedCount = _playerDetectedCreatureCount;
+            _sensoryDehydrationGraceRemaining = FaunaSensoryDehydrationGraceCap;
+            // Per-pass counter: the culling pass that runs straight after this one fills it in.
+            _debugSensoryDehydrationGrants = 0;
+
+            float turbidity = ResolveFaunaSensoryTurbidity();
+            float playerSpeed = ResolveFaunaSensoryPlayerSpeed();
+            _debugSensoryTurbidity = turbidity;
+            _debugSensoryPlayerSpeed = playerSpeed;
+
+            int detectedCount = 0;
+            int newDetections = 0;
+            int lostDetections = 0;
+
+            if (_activeCreatures != null && _activeCreatures.Count > 0 && playerAup.IsFinite())
+            {
+                for (int i = 0; i < _activeCreatures.Count; i++)
+                {
+                    ActiveCreature creature = _activeCreatures[i];
+                    bool wasDetected = creature.playerDetected;
+                    bool isDetected = false;
+
+                    // Refreshing the logic AUP here (rather than reusing last tick's) is what makes the
+                    // verdict same-tick fresh for the dehydration gate. Transform read, no allocation.
+                    if (creature.gameObject != null &&
+                        creature.transform != null &&
+                        TryResolveActiveCreatureLogicAup(ref creature, out AbsoluteUniversePosition creatureAup))
+                    {
+                        double3 delta = AbsoluteUniversePosition.DeltaMetersClamped(in playerAup, in creatureAup);
+                        double deltaSq = (delta.x * delta.x) + (delta.y * delta.y) + (delta.z * delta.z);
+
+                        // NaN fails `>= 0d`, Infinity fails the range test. Rejecting both here is what
+                        // stops a bogus delta from being folded to Vector3.Zero inside the model and
+                        // silently reporting "detected at distance 0".
+                        if (deltaSq >= 0d && deltaSq <= FaunaSensoryMaxConsideredRangeMetersSq)
+                        {
+                            CreatureArchetypeData archetype = creature.archetype;
+                            float baseVisualRange = FaunaSensoryFallbackVisualRangeMeters;
+                            float maxHearingRange = FaunaSensoryFallbackHearingRangeMeters;
+                            float hearingSpeedScale = FaunaSensoryHearingSpeedScale;
+
+                            if (archetype != null)
+                            {
+                                // Per-archetype tuning, read from THIS creature's own asset. A species
+                                // with a short aggro distance stays short-sighted; a species with
+                                // reactToPlayerNoise disabled gets no hearing term at all.
+                                baseVisualRange = Mathf.Max(0f, archetype.baseAggroDistance);
+                                maxHearingRange = archetype.reactToPlayerNoise
+                                    ? baseVisualRange + Mathf.Max(0f, archetype.noiseDetectionBonus)
+                                    : 0f;
+                                hearingSpeedScale = archetype.reactToPlayerNoise
+                                    ? FaunaSensoryHearingSpeedScale
+                                    : 0f;
+                            }
+
+                            // The model takes absolute positions and differences them internally. Feeding
+                            // the creature-relative delta keeps the arithmetic in single-precision range no
+                            // matter how far from the world origin the pair actually is.
+                            isDetected = Hecton8.PureLogic.Ecosystem.FaunaSensoryDetectionRangeCalculator.Compute(
+                                System.Numerics.Vector3.Zero,
+                                new System.Numerics.Vector3((float)delta.x, (float)delta.y, (float)delta.z),
+                                turbidity,
+                                playerSpeed,
+                                baseVisualRange,
+                                maxHearingRange,
+                                hearingSpeedScale);
+                        }
+                    }
+
+                    if (isDetected)
+                        detectedCount++;
+
+                    if (isDetected && !wasDetected)
+                        newDetections++;
+                    else if (!isDetected && wasDetected)
+                        lostDetections++;
+
+                    creature.playerDetected = isDetected;
+                    _activeCreatures[i] = creature;
+                }
+            }
+
+            _playerDetectedCreatureCount = detectedCount;
+            _debugPlayerDetectedCount = detectedCount;
+            _debugSensoryNewDetections = newDetections;
+            _debugSensoryLostDetections = lostDetections;
+
+            // Edge-triggered on the aggregate, with constant strings: one line when the world first
+            // notices the player and one when it loses him again. Never per creature, never per frame.
+            if (!logSensoryDetectionTransitions)
+                return;
+
+            if (previousDetectedCount == 0 && detectedCount > 0)
+                Debug.Log(SensoryPlayerNoticedLog);
+            else if (previousDetectedCount > 0 && detectedCount == 0)
+                Debug.Log(SensoryPlayerLostLog);
+        }
+
+        /// <summary>
+        /// Maps the celestial runtime's underwater visibility into the 0..<see cref="FaunaSensoryMaxTurbidity"/>
+        /// exponent the detection model expects. Fails OPEN (zero turbidity) when the celestial snapshot is
+        /// absent, invalid, or reports the player above water, so a missing celestial engine cannot silently
+        /// blind every creature in the world.
+        /// </summary>
+        private static float ResolveFaunaSensoryTurbidity()
+        {
+            CelestialLightReadabilitySnapshot light = GlobalRegistry.CelestialLightReadabilitySnapshot;
+            if ((light.Flags & (uint)CelestialLightReadabilityFlags.Valid) == 0u ||
+                (light.Flags & (uint)CelestialLightReadabilityFlags.Underwater) == 0u)
+            {
+                return 0f;
+            }
+
+            float visibilityMeters = light.UnderwaterVisibilityMeters;
+            if (!math.isfinite(visibilityMeters) || visibilityMeters < 0f)
+                return 0f;
+
+            float clarity01 = math.saturate(visibilityMeters * math.rcp(FaunaSensoryClearWaterVisibilityMeters));
+            return (1f - clarity01) * FaunaSensoryMaxTurbidity;
+        }
+
+        /// <summary>
+        /// Player speed in m/s for the model's hearing term. Zero when no movement state is published, so a
+        /// missing player runtime context removes the hearing bonus rather than inventing one.
+        /// </summary>
+        private float ResolveFaunaSensoryPlayerSpeed()
+        {
+            if (!TryResolveCachedPlayerRuntimeContext(out FaunaDirectorPlayerRuntimeContextSnapshot runtimeContext) ||
+                !TryResolveCachedMovementState(in runtimeContext, out PlayerMovementRuntimeState movementState))
+            {
+                return 0f;
+            }
+
+            float3 velocity = movementState.Velocity;
+            if (!math.all(math.isfinite(velocity)))
+                return 0f;
+
+            float speedSq = math.lengthsq(velocity);
+            if (!math.isfinite(speedSq) || speedSq <= 0f)
+                return 0f;
+
+            return math.sqrt(speedSq);
+        }
+
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CULLING
         /// <summary>
         /// Dehydrates distant active fauna into resident data-only slots instead of hard-despawning them.
@@ -1355,8 +1584,22 @@ namespace Hecton8.AI
                 }
 
                 _activeCreatures[i] = creature;
-                if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) < DehydrationDistanceSq)
+                double playerDistanceSq = AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup);
+                if (playerDistanceSq < DehydrationDistanceSq)
                     continue;
+
+                // Sensory grace: a creature that has just noticed the player must not be silently
+                // deactivated out from under him. Bounded three ways â€” the creature must actually
+                // report detection this tick, it must still be inside hibernation range, and at most
+                // FaunaSensoryDehydrationGraceCap creatures may defer per pass.
+                if (creature.playerDetected &&
+                    _sensoryDehydrationGraceRemaining > 0 &&
+                    playerDistanceSq < HibernationDistanceSq)
+                {
+                    _sensoryDehydrationGraceRemaining--;
+                    _debugSensoryDehydrationGrants++;
+                    continue;
+                }
 
                 UpdateResidencyStateFromActiveCreature(in creature, in creatureAup, markDehydrated: true);
                 QueuePresentationDeactivation(creature.gameObject);
@@ -5666,9 +5909,11 @@ namespace Hecton8.AI
             return new WorldMacroZoneCoordinate(x, z);
         }
     
-        #region JulesLink_FaunaSensoryDetectionRangeCalculator
-        private static void JulesLink_FaunaSensoryDetectionRangeCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.FaunaSensoryDetectionRangeCalculator); }
-        #endregion
+        // JulesLink_FaunaSensoryDetectionRangeCalculator removed 2026-07-29: the model now has a real call
+        // site in RefreshFaunaSensoryDetection, so the keep-alive stub would misreport it as unwired.
+        // The two stubs below are still accurate â€” neither model is called from this file. See the lane
+        // report: FaunaPheromoneTrackingVector duplicates ChemicalInfluenceGrid.TryReadAttractantGradient,
+        // and FaunaPatrolPathSmootherCalculator's only real target is FaunaBrain._voxelRouteWaypoints.
 
         #region JulesLink_FaunaPheromoneTrackingVector
         private static void JulesLink_FaunaPheromoneTrackingVector() { _ = typeof(Hecton8.PureLogic.Ecosystem.FaunaPheromoneTrackingVector); }
