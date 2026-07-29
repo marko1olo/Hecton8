@@ -145,8 +145,23 @@ namespace Hecton8.Core
         [SerializeField, Min(1f)] private float terrainFadeWidthMeters = 420f;
         [SerializeField, Range(0f, 1f)] private float terrainFadeNoirFogBlend = 0.85f;
         [SerializeField] private bool enableDistantTerrainShadowMask = true;
+        // CS0649 on the field below is correct, expected, and must stay suppressed rather than "fixed".
+        // No C# path writes it; Unity's serializer is the only assigner, which is what a [SerializeField]
+        // authoring hook IS. It is genuinely unpopulated today - every text-serialized copy of the world
+        // scene records it as {fileID: 0} (Assets/_Recovery/0.unity:18670 and three siblings;
+        // Docs/DEPRECATED/RejectedVisualPasses/20260608_scene_cleanup/
+        // 02_HECTON_WORLD_before_rejected_visual_cleanup.unity:43409) and no asset in the project is named
+        // for a baked canyon-darkness / distant-terrain-shadow mask to point it at.
+        //
+        // Null here is NOT a skipped render feature and must not grow a null-warning gate: it is the
+        // shipped default. UpdateDistantTerrainShadowMask falls through the override branch straight into
+        // the runtime generation path, which allocates, solves, uploads, and publishes the mask. A LogError
+        // on null would fire on every correct run. The field stays so an artist can swap the procedural
+        // mask for a baked one with no code change - the one thing that would be lost by deleting it.
+#pragma warning disable CS0649
         [SerializeField, Tooltip("Optional pre-rendered 256x256 canyon darkness mask. When assigned, runtime generation is bypassed.")]
         private Texture2D distantTerrainShadowMaskOverride;
+#pragma warning restore CS0649
         [SerializeField, Range(32, DistantTerrainShadowMaskMaxResolution)] private int distantTerrainShadowMaskResolution = 256;
         [SerializeField, Min(256f)] private float distantTerrainShadowMaskWorldSize = 4096f;
         [SerializeField, Min(1f)] private float distantTerrainShadowProbeDistanceMeters = 140f;
@@ -592,8 +607,21 @@ namespace Hecton8.Core
                 return;
             }
 
+            // UnityEngine.Time is spelled out in full at all three Time sites in this file, on purpose.
+            // This file is in namespace Hecton8.Core, and the project declares a Hecton8.Core.Time
+            // assembly whose root namespace is Hecton8.Core.Time
+            // (Assets/_Project/Scripts/Core/Time/Hecton8.Core.Time.asmdef, AssemblyInfo.cs:1). A bare
+            // "Time" is then looked up in the enclosing namespace FIRST and binds to that namespace
+            // instead of UnityEngine.Time. It compiles today only because Hecton8.Plugins.asmdef does not
+            // list Hecton8.Core.Time; the day anyone adds it, all three sites become CS0234. Not
+            // hypothetical - measured: the first compile-gate run for this assembly referenced
+            // Hecton8.Core.Time.dll via a wildcard and reported exactly three CS0234 in this file
+            // (CONTRIBUTING.md:123-126, Tools/GenerateAssemblyCompileGateProject.py:20-24). Same family as
+            // Hecton8.Environment shadowing System.Environment (CONTRIBUTING.md:236). Qualifying, not a
+            // using alias, is the existing idiom - see SystemDispatcher.cs, also namespace Hecton8.Core.
+            // Do not "simplify" these back to bare Time.
             if (_distantTerrainShadowMask != null &&
-                Time.time < _nextDistantTerrainShadowMaskUpdateTime)
+                UnityEngine.Time.time < _nextDistantTerrainShadowMaskUpdateTime)
             {
                 PublishDistantTerrainShadowMaskGlobals(runtimeCenter);
                 return;
@@ -646,7 +674,7 @@ namespace Hecton8.Core
             _distantTerrainShadowMask.SetPixelData(_distantTerrainShadowPixels, 0);
             _distantTerrainShadowMask.Apply(false, false);
             _distantTerrainShadowMaskAppliedResolution = resolution;
-            _nextDistantTerrainShadowMaskUpdateTime = Time.time + DistantTerrainShadowMaskUpdateIntervalSeconds;
+            _nextDistantTerrainShadowMaskUpdateTime = UnityEngine.Time.time + DistantTerrainShadowMaskUpdateIntervalSeconds;
             PublishDistantTerrainShadowMaskGlobals(runtimeCenter);
             PublishDistantTerrainShadowSolveWarningIfNeeded(solveStartTicks);
         }
@@ -2988,7 +3016,9 @@ namespace Hecton8.Core
             if (mapMagicObject != null && playerTransform != null)
                 return;
 
-            float currentTime = Time.unscaledTime;
+            // Qualified for the Hecton8.Core.Time shadowing hazard - see the comment in
+            // UpdateDistantTerrainShadowMask.
+            float currentTime = UnityEngine.Time.unscaledTime;
             if (currentTime < _nextSceneBindingRefreshTime)
                 return;
 
