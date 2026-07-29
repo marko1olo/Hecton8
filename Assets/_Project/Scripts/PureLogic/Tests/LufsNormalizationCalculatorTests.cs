@@ -89,19 +89,33 @@ namespace Hecton8.PureLogic.Tests
         [Test]
         public void Test_ExtremeInputs_Case05()
         {
-            // Arrange: Setup extreme or infinity values
+            // Arrange: Setup extreme or infinity values.
+            //
+            // These four were previously declared and then IGNORED - the Act block passed 10f/-10f inline
+            // instead of maxGainDB/minGainDB - so a test whose assertions claim to "verify robust
+            // calculation and overflow protection" never sent an overflow-capable value to either gain
+            // clamp. That is what the CS0219 unused-local warnings on these lines were actually telling
+            // anyone who read them, in a project where five of those warnings appear in every single
+            // compile-gate run.
             float measuredLUFS = float.NaN;
             float targetLUFS = float.PositiveInfinity;
             float maxGainDB = float.MaxValue;
             float minGainDB = float.MinValue;
 
             // Act
-            float resultNaN = LufsNormalizationCalculator.Compute(float.NaN, -14f, 10f, -10f);
-            float resultInf = LufsNormalizationCalculator.Compute(-14f, float.PositiveInfinity, 10f, -10f);
+            float resultNaN = LufsNormalizationCalculator.Compute(measuredLUFS, -14f, maxGainDB, minGainDB);
+            float resultInf = LufsNormalizationCalculator.Compute(-14f, targetLUFS, maxGainDB, minGainDB);
+
+            // Extreme but FINITE clamp bounds, with finite inputs, so execution reaches the clamp instead of
+            // short-circuiting on the NaN/Infinity guard at LufsNormalizationCalculator.cs:22-27. Neither
+            // case above gets that far - which is why "overflow protection" was previously unexercised.
+            float resultExtremeClamp = LufsNormalizationCalculator.Compute(-20f, -14f, float.MaxValue, float.MinValue);
 
             // Assert
             Assert.AreEqual(0f, resultNaN, Tolerance, "Verify robust calculation and overflow protection (NaN).");
             Assert.AreEqual(0f, resultInf, Tolerance, "Verify robust calculation and overflow protection (Inf).");
+            Assert.AreEqual(6f, resultExtremeClamp, Tolerance,
+                "Gain of 6 dB must survive clamping against float.MaxValue/float.MinValue bounds.");
         }
     }
 }

@@ -54,8 +54,15 @@ namespace Hecton8.PureLogic.Tests
         public void Test_ZeroInputs_Case03()
         {
             // Arrange: Setup zero values (zero speed, zero volume, zero duration)
+            //
+            // There was a `float targetFillLevel = 0.5f;` here, unused, raising CS0219. It is REMOVED rather
+            // than wired in, and that direction matters: the calls below deliberately pass a target of 1.0f,
+            // i.e. a real fill demand that the zero deltaTime and the zero rates must then refuse to act on.
+            // Substituting targetFillLevel would have made target == current, so both assertions would pass
+            // trivially because there was nothing to do - weakening the test while silencing the warning.
+            // The sibling CS0219s in LufsNormalizationCalculatorTests needed the OPPOSITE fix, which is why
+            // this warning class cannot be cleared mechanically.
             float currentFillLevel = 0.5f;
-            float targetFillLevel = 0.5f;
 
             // Act
             float resultZeroTime = BallastTankController.Calculate(currentFillLevel, 1.0f, 0.1f, 0.1f, 0.0f);
