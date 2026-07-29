@@ -117,6 +117,11 @@ namespace Hecton8.EditorTools.Diagnostics
         private const string AttachMenuPath = "Hecton8/Authoring/Attach Hazard Components To Hazard Prefabs";
         private const string ReportMenuPath = "Hecton8/Validation/Report Hazard Prefab Authoring";
 
+        // Opt-in flag for the batchmode entry point. Naming matches the established convention in
+        // H8_ScatterPlacementOwnerEnableAuthoring.cs:122 (-h8ApplyScatterOwnerEnable) on purpose, so the
+        // pattern is learned once rather than per tool. See AuthorHazardComponentsFromCommandLine.
+        private const string ApplyFlag = "-h8ApplyHazardComponents";
+
         // Serialized backing field names on HectonHazardSource.cs:29-45. The
         // fields are private with no ConfigureForEditor entry point, so
         // SerializedObject is the only supported way in. A rename must fail
@@ -228,8 +233,60 @@ namespace Hecton8.EditorTools.Diagnostics
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
+        /// Batchmode entry point. REPORTS BY DEFAULT and writes nothing; pass
+        /// <c>-h8ApplyHazardComponents</c> to actually author the prefabs.
+        ///
+        /// WHY THE SPLIT, and why a bare -executeMethod must not write. AGENTS.md:126, the Sandbox
+        /// Firewall Rule, forbids automated runners and scripts from calling
+        /// PrefabUtility.SaveAsPrefabAsset or EditorUtility.SetDirty on production assets, so that no
+        /// automated pass can wipe a level designer's work. These four hazard prefabs ARE production
+        /// assets. A no-argument public static void is reachable by -executeMethod, so before this gate
+        /// existed any batchmode invocation - including one aimed at something else entirely that merely
+        /// listed this method - would have rewritten four shipped prefabs.
+        ///
+        /// A human clicking the MenuItem is a deliberate act and stays permitted; an automated pass is
+        /// not, and now has to say so out loud. That is the same split
+        /// H8_ScatterPlacementOwnerEnableAuthoring.cs:122,:166-202 uses with -h8ApplyScatterOwnerEnable,
+        /// and the same one H8_WorldRootGraveyardRepair.cs:222-236 and H8_DuplicateSceneRootAudit.cs:303-316
+        /// use. Matching the existing convention matters more than inventing a tidier one: an agent that
+        /// learns the flag pattern once should not have to relearn it per tool.
+        /// </summary>
+        public static void AuthorHazardComponentsFromCommandLine()
+        {
+            bool apply = false;
+            string[] args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (string.Equals(args[i], ApplyFlag, System.StringComparison.Ordinal))
+                {
+                    apply = true;
+                    break;
+                }
+            }
+
+            if (!apply)
+            {
+                Debug.Log(
+                    Marker + " REPORT-ONLY no " + ApplyFlag + " argument was passed, so nothing will be " +
+                    "written. AGENTS.md:126 forbids an automated pass from writing production prefabs. " +
+                    "Re-run with " + ApplyFlag + " to author, or use the menu item '" + AttachMenuPath +
+                    "'. The state report follows.");
+                ReportHazardPrefabs();
+                return;
+            }
+
+            Debug.Log(
+                Marker + " APPLY " + ApplyFlag + " was passed explicitly, so the four production prefabs " +
+                "WILL be rewritten through the Unity API. This is the opt-in path, not the default.");
+            AttachHazardComponents();
+        }
+
+        /// <summary>
         /// Authors every plan above. Batchmode safe: each prefab is independent,
         /// a failure on one is reported and the run continues.
+        ///
+        /// This is the WRITING half. Reachable by a human through the menu item, and from batchmode only
+        /// through <see cref="AuthorHazardComponentsFromCommandLine"/> with an explicit opt-in flag.
         /// </summary>
         [MenuItem(AttachMenuPath, priority = 219)]
         public static void AttachHazardComponents()
