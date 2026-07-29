@@ -4234,11 +4234,63 @@ namespace Hecton8.Core
             }
         }
 
+        /// <summary>
+        /// Caches the input-determinism service, rejecting a service that is not initialized.
+        ///
+        /// WHY THE NULL CHECK WAS NOT ENOUGH, and this cost the project every movement intent for a whole
+        /// session. This method has exactly ONE caller - InitializeService (:2167) - so it is a one-shot cold
+        /// read. It ran while this dispatcher was a BootstrapPhase.CoreServices node and InputDispatcher was
+        /// still a BootstrapPhase.Player node (GameBootstrapper phase mapping), so the registry's Input slot
+        /// was empty. GlobalRegistry.InputDeterminism is `=> Input` (GlobalRegistry.cs:943), and Input
+        /// substitutes the NON-NULL NoOpInputService null object for an empty slot, whose IsInitialized is a
+        /// hardcoded false. Rejecting only null therefore latched the no-op permanently, the per-frame guard
+        /// at the consumer was false forever, PreSimulationInputTick never ran, and every published input
+        /// override went unconsumed while the log cheerfully reported inputServiceRegistered=True.
+        ///
+        /// The one recovery path never fired either: GlobalRegistry.Register queues a rebound only when the
+        /// slot ALREADY held a service (GlobalRegistry.cs:7351-7353), and first registration fills an empty
+        /// slot, so nobody was told.
+        ///
+        /// Commit 37438fa9c fixed the two LEAVES of this - the input dispatcher self-pumps its tick and
+        /// HectonPlayerMovement rebinds off GlobalRegistry.RegisteredInput, the raw slot that never
+        /// substitutes the null object. This is the ROOT: the cache no longer accepts a service that cannot
+        /// work, so the field stays null and the self-heal below can succeed later.
+        /// </summary>
         private void RefreshInputDeterminismDependency()
         {
             IInputDeterminismService inputDeterminism = GlobalRegistry.InputDeterminism;
-            if (inputDeterminism != null)
+
+            // IsInitialized is the null object's own tell: NoOpInputService hardcodes it false, and a real
+            // service reports true once its own initialization completed. Caching only an initialized service
+            // means a cold read that lands too early leaves the field null rather than poisoning it.
+            if (inputDeterminism != null && inputDeterminism.IsInitialized)
                 _inputDeterminism = inputDeterminism;
+        }
+
+        /// <summary>
+        /// Re-resolves the input-determinism cache when it is empty or holds something that cannot tick.
+        /// <para>
+        /// HOT-PATH COST, because this runs once per dispatcher frame: one static property read - which is
+        /// `=> Input`, itself a field read plus a null-substitution branch (GlobalRegistry.cs:943) - and one
+        /// interface bool read, and ONLY when the cache is not already usable. Once the real service is
+        /// registered this method is a single reference compare and a bool, forever. No allocation, no
+        /// reflection, no lambda, no string. Registration order is a boot-time race that resolves within the
+        /// first frames, so the branch is cold almost immediately.
+        /// </para>
+        /// <para>
+        /// This exists rather than a registry callback because the registry does not offer one for a FIRST
+        /// registration - see the Register gate cited above. Fixing that gate is the better repair and is
+        /// queued; until it lands, a consumer that re-reads its own dependency is strictly better than one
+        /// that trusts a cold read taken before the dependency existed.
+        /// </para>
+        /// </summary>
+        private void EnsureInputDeterminismResolved()
+        {
+            IInputDeterminismService cached = _inputDeterminism;
+            if (cached != null && cached.IsInitialized)
+                return;
+
+            RefreshInputDeterminismDependency();
         }
 
         private void RefreshPeripheralDependencies()
@@ -5128,6 +5180,11 @@ namespace Hecton8.Core
                 bool previousFrameMissedBudget = CurrentFrameUnscaledDeltaTime > JobAdmissionFrameBudgetMissThresholdSeconds;
                 CurrentFrameUnscaledDeltaTime = unscaledDeltaTime;
                 HomeostasisBrain.PreSimulationTick(unscaledDeltaTime);
+
+                // Self-heal before reading. The cold resolve in InitializeService runs while the registry's
+                // Input slot is still empty, and first registration notifies nobody, so without this the
+                // guard below is false for the entire session and the input tick never runs at all.
+                EnsureInputDeterminismResolved();
                 IInputDeterminismService inputDeterminism = _inputDeterminism;
                 if (inputDeterminism != null && inputDeterminism.IsInitialized)
                     inputDeterminism.PreSimulationInputTick(unscaledDeltaTime);
