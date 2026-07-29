@@ -41,11 +41,20 @@ import sys
 
 CONTROL_META = "Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs.meta"
 
+# Deliberately broad, because the first version was NOT and it produced a false negative on its own
+# headline result. It globbed Prefabs/**/*.prefab and Data/**/*.asset, and the creature proxy prefabs live at
+# Data/AI/GeneratedProxies/Prefabs/*.prefab - a .prefab under Data/, matched by neither. So after a run that
+# demonstrably attached FaunaBrain to five prefabs (m_Script went 0 -> 2 in each), this tool still reported
+# "0 references". Caught only because an independent check existed. A reachability tool that misses a
+# directory reports absence, which is the exact failure it was written to prevent, so the patterns now cover
+# every binding file type anywhere under Assets/ rather than a curated list of places bindings were expected.
 HAYSTACK_PATTERNS = (
-    "Assets/_Project/Scenes/*.unity",
-    "Assets/_Project/Prefabs/**/*.prefab",
-    "Assets/_Project/Data/**/*.asset",
-    "Assets/_Project/Resources/**/*",
+    "Assets/**/*.unity",
+    "Assets/**/*.prefab",
+    "Assets/**/*.asset",
+    "Assets/**/*.controller",
+    "Assets/**/*.playable",
+    "Assets/**/*.mat",
 )
 
 
