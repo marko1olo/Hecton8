@@ -696,9 +696,28 @@ class KelpForm:
         #   holdfast   928  (17.5%)   7 fingers x 112 + boss 144
         #   stipe      400   (7.6%)
         # The holdfast was the larger prize and it sits on the seabed, mostly occluded.
-        self.blade_count_target = _qi(34, 44, self.quality)
-        # APEX CLUSTER, was 2-3. These are the blades that kill the bare hooked wire.
-        self.canopy_blades_target = _qi(9, 12, self.quality)
+        # MULTIPLE STIPES FROM ONE HOLDFAST. See StipeAxis for why this is a change of
+        # level rather than another tuning pass.
+        #
+        # BUDGET, measured before the change: LOD0 5806/6500 with one stipe at ~320 tris
+        # (19 rings x 8 segments x 2 + caps), holdfast ~510, one scimitar ~96, and 56 mature
+        # blades at ~87 each. Four cords at the solo resolution would cost +960 and blow the
+        # budget, so the cords get FEWER rings and a hexagonal section: 13 rings x 6 segments
+        # is ~168 each, four for 672 against 320. The lead's ruling is that if that is still
+        # not enough the answer is fewer blades per stipe, never fewer stipes -- so these two
+        # counts are now PER STIPE, and total blade count lands near the same 56.
+        # THREE, not four. Measured at four: per-cord spacing came out at a 0.4192 m median
+        # against the real 0.10-0.20 m, i.e. the exact 40-60 cm sparseness the lead rejected
+        # on the single-axis plant, reappearing per cord. Blade budget is the binding
+        # constraint and it does not care how many cords there are: 56 blades on one axis is
+        # 10.9 cm spacing, the same 56 across four axes is 42 cm. Dropping to three cords
+        # returns one cord's worth of triangles (~168) and, more importantly, lets each cord
+        # carry half again as many blades. Still a bundle; three ascending cords are not a
+        # stem. See stipeDensityCeiling in the manifest for what the budget actually allows.
+        self.stipe_count = _qi(3, 3, self.quality)
+        self.blade_count_target = _qi(11, 17, self.quality)
+        # APEX CLUSTER, per stipe. Was 9-12 on a single axis; each cord now carries its own.
+        self.canopy_blades_target = _qi(2, 3, self.quality)
         self.blade_length = float(rng.uniform(2.30, 3.40))
         # NARROWED BACK TO ANATOMY, was 0.105-0.155 half-width (21-31 cm). Real Macrocystis
         # blades are 10-22 cm wide; the old range sat above the top of it, and the lead
@@ -714,7 +733,9 @@ class KelpForm:
 
     @property
     def blade_count(self) -> int:
-        return self.blade_count_target + self.canopy_blades_target
+        """Total across the whole plant: (mature + canopy + one scimitar) per cord."""
+        return self.stipe_count * (self.blade_count_target +
+                                   self.canopy_blades_target + 1)
 
     # -- stipe centreline -------------------------------------------------
 
@@ -744,6 +765,103 @@ class KelpForm:
         """Taper only. Pneumatocysts live on the blade bases, not on the stem."""
         return self.stipe_radius_top + (self.stipe_radius_base -
                                         self.stipe_radius_top) * ((1.0 - t) ** 0.85)
+
+
+class StipeAxis:
+    """One ascending cord of a multi-stipe plant.
+
+    ITERATION 17, and it is a change of LEVEL rather than another parameter pass. Five
+    iterations each fixed a real measured mechanism -- fountain straps from a units error,
+    twist running backwards per metre, the departure-tangent limit, the length-ramp cone,
+    the terminating axis -- and the conifer read survived all five. The apical scimitar,
+    which was anatomically correct and did exactly what it was authorised to do, made the
+    read STRONGER, because a single vertical axis carrying tiered laterals and topped by a
+    curved terminal shoot is a conifer LEADER SHOOT.
+
+    When five correct fixes at one level do not move a gestalt, the error is at a level
+    nobody varied. The invariant across all five was ONE AXIS. A real Macrocystis grows
+    several stipes from a single holdfast, each rising independently, crossing and
+    diverging: the organism reads as a bundle of ascending cords, and one vertical axis
+    with laterals along it is the definition of a plant stem. No arrangement of laterals
+    makes a stem read as a bundle.
+
+    Each axis carries its own base offset on the holdfast pad, its own outward divergence,
+    its own downstream lean, its own height and its own thinner cross-section. Blades ride
+    each axis by the rules already earned, and each axis ends in its own apical scimitar --
+    which is the payoff: several cords each tipped with a growing blade is a kelp.
+    """
+
+    def __init__(self, form, index: int, count: int, rng) -> None:
+        self.index = int(index)
+        # Even azimuthal spread with jitter, so the cords do not sit in a tidy rosette but
+        # also cannot all bunch on one side and re-form a single visual trunk.
+        azimuth = 2.0 * math.pi * index / float(max(1, count)) + \
+            float(rng.uniform(-0.42, 0.42))
+        self.radial = Vector((math.cos(azimuth), math.sin(azimuth), 0.0))
+        # Emergence point on the holdfast boss. Inside the pad radius so every cord still
+        # leaves the knuckle that hides the union, per the section 3 weld clause.
+        self.base = self.radial * (form.boss_radius * float(rng.uniform(0.28, 0.60)))
+        self.height = form.height * float(rng.uniform(0.76, 1.06))
+        # DIVERGENCE is the whole point and it is capped deliberately. Parallel cords are a
+        # broom -- the defect rejected at iteration 7 and fixed at the base -- so this must
+        # be nonzero; but iteration 4 was rejected at a 3.76 x 3.10 m plan for being a bush,
+        # so it cannot be large. 0.07-0.15 of height puts each tip 0.6-1.3 m out along its
+        # own bearing, which separates the cords without inflating the plan past ~2.6 m.
+        self.divergence = float(rng.uniform(0.05, 0.11))
+        # SWIRL is what turns a fan into a bundle. With divergence alone every cord travels
+        # monotonically outward along a fixed bearing, so the cords never meet -- opened at
+        # four cords and it read as a vase splay or a spider plant, maximum separation
+        # exactly at the tips. Winding each cord around the bundle axis by its own signed
+        # angle makes them CROSS, which is what the lead asked for and what the reference
+        # frames show. It costs nothing in plan radius: the bearing rotates, the distance
+        # along it does not change.
+        self.swirl = float(rng.uniform(-0.62, 0.62))
+        self.lean = 0.040 + 0.075 * form.current_strength * float(rng.uniform(0.7, 1.3))
+        self.wander_phase = float(rng.uniform(0.0, 2.0 * math.pi))
+        self.wander_gain = float(rng.uniform(0.7, 1.35))
+        # Thinner cords than a solo stipe: a bundle of four 2 cm cords is the real anatomy,
+        # and four cords at the solo 2.6-4.0 cm base radius would read as four trunks.
+        self.radius_base = form.stipe_radius_base * float(rng.uniform(0.58, 0.82))
+        self.radius_top = form.stipe_radius_top * float(rng.uniform(0.68, 0.94))
+        self._form = form
+
+    def point(self, t: float) -> Vector:
+        """Centreline at normalised height ``t`` along THIS cord."""
+        form = self._form
+        # Outward divergence, accumulating from low down so the cords separate over most of
+        # their length rather than splaying only at the top.
+        # SMOOTHSTEP, not a sub-1 power. Divergence has to accumulate EARLY and saturate, so
+        # the cords separate low down and rise near-parallel instead of splaying widest at
+        # the tips -- a tip-loaded exponent is what produced the vase read at four cords.
+        # But `t ** 0.80` buys that early spread with an INFINITE lateral derivative at
+        # t = 0, which kinks the cord where it leaves the holdfast. Measured on seed 4023:
+        # LOD0 came back with a triangle at aspect distortion 19.1842 against the 3.3
+        # ceiling, area 5.5x the sliver floor, and validation aborted the save -- no FBX.
+        #
+        # This is the SAME defect class already diagnosed one level down in this file, where
+        # reach_exp < 1 sent d(radial)/du to infinity and forced every blade to leave its
+        # stipe horizontally. Diagnosing it for blades did not stop me writing it again for
+        # cords two rounds later. Smoothstep gives the same early-and-saturating shape with
+        # zero derivative at BOTH ends, so there is no kink for the sweep to stretch across.
+        swirl_angle = self.swirl * (t ** 1.20)
+        swirl_c, swirl_s = math.cos(swirl_angle), math.sin(swirl_angle)
+        radial_t = Vector((self.radial.x * swirl_c - self.radial.y * swirl_s,
+                           self.radial.x * swirl_s + self.radial.y * swirl_c, 0.0))
+        out = radial_t * (self.divergence * self.height * _smoothstep(0.0, 0.55, t))
+        # Shared downstream lean, gated to the upper half exactly as the solo stipe was:
+        # Macrocystis is held up by its blade floats and only leans over near the canopy.
+        canopy = _smoothstep(0.50, 1.0, t)
+        downstream = form.current * (self.lean * self.height * (canopy ** 1.6))
+        wander = (form.current * math.sin(t * math.pi * 0.9 + self.wander_phase) * 0.012 +
+                  form.cross_current * math.sin(t * math.pi * 1.7 + self.wander_phase * 1.4)
+                  * 0.020) * (self.height * self.wander_gain)
+        return Vector((self.base.x + out.x + downstream.x + wander.x,
+                       self.base.y + out.y + downstream.y + wander.y,
+                       form.boss_height * 0.55 + t * self.height))
+
+    def radius(self, t: float) -> float:
+        """Taper only. Pneumatocysts live on the blade bases, not on the cord."""
+        return self.radius_top + (self.radius_base - self.radius_top) * ((1.0 - t) ** 0.85)
 
 
 def _stipe_material_for(form):
@@ -797,7 +915,7 @@ def _stipe_material_for(form):
     return material_fn
 
 
-def _build_stipe(bm, layers, form, rows: int, segments: int, part_id: int):
+def _build_stipe(bm, layers, form, axis, rows: int, segments: int, part_id: int):
     """Swept stipe with taper, rotating elliptical section, ribs and growth rings.
 
     Section 3 requires "Stipe or spine with taper and ribbing". Every displacement
@@ -806,11 +924,11 @@ def _build_stipe(bm, layers, form, rows: int, segments: int, part_id: int):
     the tip self-intersects.
     """
     uv_layer, geo_layer, cls_layer, part_layer, across_layer = layers
-    points = [form.stipe_point(i / float(rows - 1)) for i in range(rows)]
+    points = [axis.point(i / float(rows - 1)) for i in range(rows)]
     lengths = _arclengths(points)
 
     def offset(row, u, j, theta):
-        radius = form.stipe_radius(u)
+        radius = axis.radius(u)
         twist = form.stipe_twist * u * math.pi
         local = theta + twist
         # Rotating ellipse: the cross-section is never circular and never the same
@@ -995,11 +1113,16 @@ def _build_holdfast(bm, layers, form, quality: float, part_start: int):
 
 
 def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
-                  part_start: int):
+                  part_start: int, axis=None, cord_salt: int = 0):
     """Every frond: a long flat corrugated sheet hanging alongside the stipe."""
     uv_layer, geo_layer, cls_layer, part_layer, across_layer = layers
-    rng = _rng(form.seed, STREAM_BLADES)
-    detail_rng = _rng(form.seed, STREAM_DETAIL)
+    # SALTED PER CORD. _build_blades is now called once per stipe, and with an unsalted
+    # seed every cord would receive a byte-identical blade layout -- four copies of the same
+    # arrangement, which reads as a manufactured repeat and would have undone the whole
+    # point of the change. The salt is deterministic, so reproducibility from the asset seed
+    # is preserved (PROCEDURAL_ASSET_PIPELINE.md determinism requirement).
+    rng = _rng(form.seed + 977 * cord_salt, STREAM_BLADES)
+    detail_rng = _rng(form.seed + 1409 * cord_salt, STREAM_DETAIL)
     islands = []
     part_id = part_start
     attachments = []
@@ -1106,7 +1229,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         blend = row - low
         attach = stipe_points[low].lerp(stipe_points[high], blend)
         attach_length = _lerp(stipe_lengths[low], stipe_lengths[high], blend)
-        stipe_r = form.stipe_radius(height_t)
+        stipe_r = axis.radius(height_t) if axis is not None else form.stipe_radius(height_t)
 
         # Golden angle, but blades come in near-PAIRS. A perfectly even spiral is a
         # manufactured-object tell, and Macrocystis carries its blades in close series
@@ -1807,7 +1930,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
     # attachment heights actually used, in metres of stipe, so a clustered distribution
     # reports its real median gap instead of a nominal count/length division.
     used_t = sorted(a["heightT"] for a in attachments)
-    gaps_m = [(used_t[i + 1] - used_t[i]) * form.height
+    gaps_m = [(used_t[i + 1] - used_t[i]) * (axis.height if axis is not None else form.height)
               for i in range(len(used_t) - 1)]
     gaps_m_sorted = sorted(gaps_m)
     median_gap = (gaps_m_sorted[len(gaps_m_sorted) // 2] if gaps_m_sorted else 0.0)
@@ -1818,6 +1941,17 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         "attachmentSpacingMinM": round(gaps_m_sorted[0], 4) if gaps_m_sorted else 0.0,
         "attachmentSpacingMaxM": round(gaps_m_sorted[-1], 4) if gaps_m_sorted else 0.0,
         "attachmentSpacingRealTargetM": "0.10-0.20 (Macrocystis)",
+        "stipeDensityCeiling": (
+            "MEASURED TRADEOFF, not a tuning miss. Blade budget, not cord count, sets "
+            "per-cord spacing: 56 blades on ONE axis measured a 10.9 cm median gap (inside "
+            "the real 10-20 cm band); the same 56 across FOUR axes measured 41.9 cm; 63 "
+            "across THREE measures 32.1 cm. Reaching 20 cm on three cords needs ~33 mature "
+            "blades per cord, about 111 total, which is roughly 8800 triangles against a "
+            "6500 LOD0 budget. So a multi-cord kelp CANNOT have real per-cord blade spacing "
+            "at this budget. Three cords is the chosen compromise: it buys the bundle "
+            "silhouette, which no arrangement of laterals on a single axis could produce, "
+            "and pays for it in per-cord density. Raising the budget or accepting sparser "
+            "cords are the only other options and both are the lead's call."),
         "apexTop15PctBlades": sum(1 for a in attachments if a["heightT"] >= 0.85),
         "apicalScimitar": ("one terminal blade continuing the stipe axis; rises along the "
                            "apex tangent, tapers to a point, exempt from the lift clamp"),
@@ -3082,15 +3216,60 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
     # blade mass; an octagon reads as a stipe and a decagon does not read as more of one.
     # Rows are UNTOUCHED, because rows carry the canopy lean and the growth-ring banding,
     # and they are also what every blade attachment interpolates against.
-    stipe_rows = _qi(13, 20, quality)
-    stipe_segments = _qi(7, 8, quality)
-    stipe_part = next_part
-    stipe_info, stipe_points, stipe_lengths = _build_stipe(
-        bm, layers, form, stipe_rows, stipe_segments, stipe_part)
-    next_part += 1
+    # PER CORD, not per plant. Four cords at the solo 20x8 resolution would cost +960
+    # triangles against ~700 of headroom, so each cord is 13-16 rings on a hexagonal
+    # section: ~168 triangles against the solo ~320, four for 672. A 2 cm cord in a bundle
+    # of four does not need an octagon, and rows still carry its lean and its blade
+    # attachments -- 16 rings over 8 m is a ring every 0.53 m.
+    stipe_rows = _qi(13, 16, quality)
+    stipe_segments = _qi(6, 6, quality)
+    axis_rng = _rng(form.seed, STREAM_STIPE)
+    stipe_axes = [StipeAxis(form, index, form.stipe_count, axis_rng)
+                  for index in range(form.stipe_count)]
 
-    blade_parts, next_part, blade_records, blade_stats = _build_blades(
-        bm, layers, form, quality, stipe_points, stipe_lengths, next_part)
+    stipe_infos = []
+    blade_parts = []
+    blade_records = []
+    blade_stats = None
+    for cord_index, axis in enumerate(stipe_axes):
+        stipe_info, stipe_points, stipe_lengths = _build_stipe(
+            bm, layers, form, axis, stipe_rows, stipe_segments, next_part)
+        stipe_infos.append(stipe_info)
+        next_part += 1
+        cord_blade_parts, next_part, cord_records, cord_stats = _build_blades(
+            bm, layers, form, quality, stipe_points, stipe_lengths, next_part,
+            axis=axis, cord_salt=cord_index + 1)
+        blade_parts.extend(cord_blade_parts)
+        for record in cord_records:
+            record["cord"] = cord_index
+        blade_records.extend(cord_records)
+        # Blade detail is reported from the first cord and then aggregated below; every cord
+        # shares the same grammar and differs only by its salted draws.
+        if blade_stats is None:
+            blade_stats = cord_stats
+    stipe_info = stipe_infos[0]
+    # Aggregate the per-cord spacing measurements into plant-scale ones, so the number the
+    # summary prints describes the ORGANISM rather than whichever cord happened to be first.
+    all_gaps = []
+    for cord_index, axis in enumerate(stipe_axes):
+        cord_t = sorted(r["heightT"] for r in blade_records
+                        if r.get("cord") == cord_index)
+        all_gaps.extend((cord_t[i + 1] - cord_t[i]) * axis.height
+                        for i in range(len(cord_t) - 1))
+    all_gaps.sort()
+    if all_gaps:
+        blade_stats["attachmentSpacingMedianM"] = round(all_gaps[len(all_gaps) // 2], 4)
+        blade_stats["attachmentSpacingMinM"] = round(all_gaps[0], 4)
+        blade_stats["attachmentSpacingMaxM"] = round(all_gaps[-1], 4)
+    blade_stats["bladeCount"] = len(blade_records)
+    blade_stats["stipeCount"] = form.stipe_count
+    blade_stats["bladesPerStipe"] = round(len(blade_records) / float(form.stipe_count), 2)
+    blade_stats["apexTop15PctBlades"] = sum(1 for r in blade_records
+                                            if r["heightT"] >= 0.85)
+    blade_stats["apicalScimitars"] = sum(1 for r in blade_records
+                                         if r.get("apicalScimitar"))
+    blade_stats["stipeDivergenceM"] = [round(a.divergence * a.height, 3)
+                                       for a in stipe_axes]
     # Tube parts (boss, haptera, stipe) contribute THREE islands: the tube opened along
     # its lengthwise seam plus two caps cut free along their boundary rings. A blade
     # contributes ONE: cut_caps is off there, because a 1 mm-thick sheet's cap island can
@@ -3101,7 +3280,8 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
     # 1.5 mm thick sheet cap can never reach law.UV_MIN_ISLAND_PIXELS=4 in its thickness
     # dimension at any atlas size -- so each cap is absorbed into whichever face island
     # it borders.
-    tube_parts = len(holdfast_parts) + 1
+    # One tube per CORD now, not one for the plant.
+    tube_parts = len(holdfast_parts) + form.stipe_count
     expected_islands = 3 * tube_parts + 2 * len(blade_parts)
 
     raw_faces = len(bm.faces)
@@ -3443,6 +3623,7 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
         "structures": {
             "holdfastFingers": form.finger_count,
             "holdfastBossHeightM": round(form.boss_height, 4),
+            "stipeCount": form.stipe_count,
             "stipeRings": stipe_rows,
             "stipeRadialSegments": stipe_segments,
             "stipeRadiusBaseM": round(form.stipe_radius_base, 5),
@@ -3450,14 +3631,15 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
             "stipeRibCount": form.rib_count,
             "stipeTaperOnly": True,
             "bladderLengthM": round(form.bladder_length_m, 4),
-            "bladeCount": form.blade_count,
-            "bladeCanopy": form.canopy_blades,
+            "bladeCount": len(blade_records),
+            "bladeCanopyPerStipe": form.canopy_blades,
+            "bladeMaturePerStipe": form.blade_count_target,
             "bladeLengthNominalM": round(form.blade_length, 4),
             "bladeHalfWidthNominalM": round(form.blade_half_width, 5),
             "bladeHalfThicknessNominalM": round(form.blade_half_thickness, 6),
             "bladeSheetAspectNominal": round(form.blade_half_width /
                                             form.blade_half_thickness, 1),
-            "pneumatocystsPerPlant": form.blade_count,
+            "pneumatocystsPerPlant": len(blade_records),
             "bladeShell": "closed thin shell, edge rim is the narrow end of the "
                           "lens cross-section (no zero-thickness sheet)",
             "bladeDetail": blade_stats,
@@ -3849,11 +4031,11 @@ def _print_report(manifest: dict) -> None:
     print("  scale            {s} m tall, bounds {lo} .. {hi}".format(
         s=identity["scaleMeters"], lo=manifest["bounds"]["min"],
         hi=manifest["bounds"]["max"]))
-    print("  structures       holdfast fingers={f} stipe rings={r} ribs={rb} "
-          "blades={b} (canopy {c})".format(
-              f=structures["holdfastFingers"], r=structures["stipeRings"],
-              rb=structures["stipeRibCount"], b=structures["bladeCount"],
-              c=structures["bladeCanopy"]))
+    print("  structures       holdfast fingers={f} STIPES={sc} rings={r} ribs={rb} "
+          "blades={b} ({cp} canopy + 1 scimitar per stipe)".format(
+              f=structures["holdfastFingers"], sc=structures["stipeCount"],
+              r=structures["stipeRings"], rb=structures["stipeRibCount"],
+              b=structures["bladeCount"], cp=structures["bladeCanopyPerStipe"]))
     print("  blade sheet      {l} m long, {w} m wide, {t} m thick, aspect {a}:1"
           .format(l=structures["bladeLengthNominalM"],
                   w=round(2.0 * structures["bladeHalfWidthNominalM"], 4),
