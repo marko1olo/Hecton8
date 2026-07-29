@@ -274,9 +274,28 @@ SCULPT_DENSITY_MULTIPLIER = 1.05
 # is not a gemstone, and demanding 0.79 would push the generator back into the faceted-
 # gemstone failure this file has already produced once. A gate that can only be passed by
 # the wrong answer is worse than no gate.
-SILHOUETTE_CONTROL_SPHERE = 0.094
-SILHOUETTE_CONTROL_POTATO = 0.137
-SILHOUETTE_CONTROL_POLYTOPE = 0.789
+# RE-MEASURED 2026-07-29 with `silhouette_probe.py --controls --resolution 640` on Blender 4.5.9,
+# because these three numbers are published into every manifest as `controlSphereTop10` and
+# friends, and two of them had drifted from what the probe actually returns:
+#
+#   sphere    0.094 -> 0.1085   (+15 percent; the stale value made the asset look further above
+#                                the smooth control than it is)
+#   potato    0.137 -> 0.1382
+#   polytope  0.789 -> 0.7841
+#
+# The FLOORS below are unchanged and are deliberately not derived from these: a floor that tracks
+# a re-measured control would move every time the probe is recalibrated, which is a gate that
+# cannot fail consistently.
+#
+# Total turning, measured in the same run, corrects a claim worth keeping straight: the smooth
+# controls ARE exactly 360.0 degrees in both views (sphere and potato), and only the POLYTOPE
+# overshoots, at 385.7 and 381.2. So the arc-length resampling and the Gaussian pre-smoothing are
+# unbiased on a smooth closed outline and overshoot by 6-7 percent on hard arrises, where one
+# physical corner is spread over roughly one resample stride. It is not a general "the controls
+# do not sum to 360" instrument fault.
+SILHOUETTE_CONTROL_SPHERE = 0.1085
+SILHOUETTE_CONTROL_POTATO = 0.1382
+SILHOUETTE_CONTROL_POLYTOPE = 0.7841
 SILHOUETTE_POTATO_FLOOR = 0.20      # at or below this the outline IS a potato: FAIL
 SILHOUETTE_TARGET_FLOOR = 0.30      # below this the fractures are weak: WARN
 
@@ -2357,14 +2376,136 @@ def raise_mineral_seams(bm: bmesh.types.BMesh, frame: BeddingFrame,
     return veins
 
 
+# Ceiling on the ASPECT RATIO of the pocket a vug is allowed to cut, and the reason this
+# constant exists at all is the tick-mark artefact -- the last visible geometry defect in this
+# family, localised with the `--debug-stage` ladder to this function and to nothing else.
+#
+# MEASURED on the cliff chunk, seed 1713 q1.0, at the point `punch_vugs` runs:
+#
+#   host face footprint        long 0.666 m x short 0.168 m,  aspect 3.98 (p90 4.77)
+#   pocket actually cut        long 0.521 m x short 0.061 m,  aspect 8.58 (p90 13.75, max 19.49)
+#   declared vug diameter      2 * target_radius = 0.120 m
+#
+# So a "macro vug" declared as a 12 cm hollow arrived as a 52 cm x 6 cm SLOT, 101 of them, all
+# lattice-aligned. Rendered, a chain of straight-walled slots on the flanks reads as tally
+# marks or hieroglyphs, which is exactly what the studio sheet showed.
+#
+# THE MECHANISM IS THE INSET, NOT THE JITTER, and the jitter was the plausible-looking suspect.
+# `inset_individual` takes ONE scalar offset and applies it to every side, so the pocket is the
+# host face minus a constant margin: `pocket = (L - 2t) x (S - 2t)`, whose aspect ratio is
+# strictly WORSE than the host's. Feeding it a 4:1 lattice quad cannot produce a round hole at
+# any offset. The pocket's size, orientation and aspect were therefore the LATTICE's, not the
+# geology's -- a field resolving per element instead of per unit length.
+#
+# Discriminating measurement that killed the jitter theory: only 3 of 480 pocket vertices ended
+# up proud of the host face plane (0.6 percent, deepest 0.017 m). The marks read as raised
+# because a 6 cm slot with near-vertical walls shows a lit wall and a dark floor in a
+# mid-roughness studio material, not because the geometry bulges.
+#
+# AND THE ELIGIBILITY TEST WAS THE ROOT OF IT. `inradius = sqrt(area / pi)` treats the face as
+# a disc, which overstates the radius a hole can actually fit inside an elongated quad by a
+# measured 1.37-1.64x (p50) and up to 2.33x (p90) across the three size classes. So faces that
+# geometrically cannot hold the pocket were declared able to, and the inset then took what it
+# could get -- along the one axis that had room.
+#
+# Gate expressed as the pocket aspect the ASSET may show, with the face test DERIVED from it:
+# with `pocket_short = 2r` and `pocket_long = L - S + 2r`, the aspect is `1 + (L - S) / 2r`, so
+# the admissible face satisfies `L - S <= (VUG_POCKET_ASPECT_MAX - 1) * 2r`. Deriving it keeps
+# one number in one place instead of a face-aspect constant that has to be re-solved by hand
+# whenever the rim fraction moves.
+#
+# 1.6 AND NOT 2.0, and this is the measured half of the constant rather than a taste call. The
+# cost of each ceiling in vug count, seed 1713 q1.0, boulder / outcrop / cliff chunk:
+#
+#   ceiling 1.6    50 / 159 / 240 host faces  ->   2 /  2 / 13 vugs
+#   ceiling 2.0   128 / 337 / 398 host faces  ->   2 /  5 / 23 vugs
+#   ceiling 2.4   190 / 550 / 524 host faces  ->   2 /  9 / 34 vugs
+#
+# 2.0 was tried, and it puts BOTH validator failures straight back. Four trials at each ceiling,
+# same seed, same process, `--no-preview --no-fbx` so nothing but the geometry differs:
+#
+#   cliff chunk  ceiling 1.6 : 0 of 4 trials failed
+#   cliff chunk  ceiling 2.0 : 4 of 4 trials failed, every one
+#                              `LOD0 tangent_length_out_of_range tangent[43997] length=0.000000`
+#   boulder      ceiling 1.6 : 0 of 4 trials failed
+#   boulder      ceiling 2.0 : 4 of 4 trials failed, every one `LOD1 inconsistent_winding`
+#                              with 1 edge carrying 4 triangles
+#
+# Deterministic, both directions, so it is not the known run-to-run noise this generator has. And
+# the boulder is the informative half: its vug COUNT is 2 at both ceilings, so what changed is
+# WHICH faces became eligible -- a more elongated pocket, not more pockets. One cause, three
+# symptoms: the visible tick marks, the zero-length tangent, and a non-manifold edge at LOD1.
+#
+# So the count stays low and that is a real, named cost: 3 / 12 / 101 vugs before, 2 / 2 / 13 now.
+# The 101 is NOT a number to restore, because all 101 were slots -- a count only reachable by
+# producing the defect. Restoring density honestly needs `punch_vugs` to own its host topology
+# (split an elongated lattice quad into near-square sub-faces before insetting) rather than a
+# looser ceiling; that adds geometry and is left as a proposal, not smuggled in here.
+#
+# The size FLOOR barely moves the count (measured: 240 -> 259 candidates on the cliff chunk across
+# 0.50 -> 0.30 of the declared diameter), so relaxing it buys nothing and it stays at the honest
+# half-vug bound.
+VUG_POCKET_ASPECT_MAX = 1.6
+
+# Pocket radius as a fraction of the host face's SHORT in-plane extent, i.e. what is left for
+# the rim. At 0.30 the pocket takes 60 percent of the narrow axis and the rim keeps 20 percent
+# on each side. The rim is not cosmetic: the previous 2.5x area margin existed because "a nested
+# inset on a face only marginally larger than the pocket leaves a hairline rim, and those
+# slivers are the source of the non-manifold junctions that the rim-repair pass then cannot fix
+# cleanly (measured: 3-31 non-manifold edges, aborting 4 of 12 matrix configs)". That
+# requirement is preserved; only its measure changes, from an area proxy to the real width.
+VUG_RADIUS_OF_SHORT_EXTENT = 0.30
+
+
+def _face_plane_extents(face: bmesh.types.BMFace) -> tuple:
+    """``(long, short, tangent_long, tangent_short)`` of a face's own footprint, in metres.
+
+    The face's principal axes IN ITS OWN PLANE, not a bounding box in world axes: a lattice
+    quad on a dipping flank is axis-aligned in neither, and a world-space box would report a
+    square face as elongated purely from its orientation.
+    """
+    normal = face.normal.copy()
+    if normal.length <= 1e-9:
+        return 0.0, 0.0, Vector((1.0, 0.0, 0.0)), Vector((0.0, 1.0, 0.0))
+    normal.normalize()
+    centre = face.calc_center_median()
+    rel = np.array([[(v.co - centre).x, (v.co - centre).y, (v.co - centre).z]
+                    for v in face.verts])
+    axis = np.array([normal.x, normal.y, normal.z])
+    rel = rel - np.outer(rel @ axis, axis)
+    if rel.shape[0] < 3:
+        return 0.0, 0.0, Vector((1.0, 0.0, 0.0)), Vector((0.0, 1.0, 0.0))
+    values, vectors = np.linalg.eigh(rel.T @ rel)
+    order = np.argsort(values)[::-1]
+    first = vectors[:, order[0]]
+    second = vectors[:, order[1]]
+    span_first = float((rel @ first).max() - (rel @ first).min())
+    span_second = float((rel @ second).max() - (rel @ second).min())
+    if span_second > span_first:
+        span_first, span_second = span_second, span_first
+        first, second = second, first
+    return (span_first, span_second,
+            Vector((float(first[0]), float(first[1]), float(first[2]))),
+            Vector((float(second[0]), float(second[1]), float(second[2]))))
+
+
 def punch_vugs(bm: bmesh.types.BMesh, size: SizeClass, rng: np.random.Generator,
-               quality: float, process: str, blackbox: BlackBox) -> int:
-    """Nested inset pockets: steep-walled macro hollows for genuine AO contrast.
+               quality: float, process: str, blackbox: BlackBox) -> dict:
+    """Inset pockets: steep-walled macro hollows for genuine AO contrast.
 
     The fine absolute-wavelength pitting from ``build_body`` is the scale witness; these
     are the macro wave-drilled hollows and basalt vesicle clusters, which legitimately
-    scale with block size. Two nested insets give near-vertical walls, because a single
-    shallow dish does not occlude anything and would leave the B channel flat.
+    scale with block size.
+
+    ONE inset, not two. The docstring here used to claim "two nested insets give near-vertical
+    walls" while the code has done a single `inset_individual` for as long as the pocket jitter
+    has existed -- a stale claim about wall steepness in a function whose pocket shape was the
+    open defect. The wall angle comes from `depth` against the rim width, and both are
+    reported.
+
+    Returns the achieved shape report, not just a count: the whole tick-mark defect was a
+    pocket whose dimensions nobody measured, and a bare integer cannot show that a 0.120 m
+    declared vug arrived as a 0.52 x 0.06 m slot.
     """
     q = law.saturate(quality)
     target_radius = min(0.060, max(0.008, 0.012 * size.longest_extent_m))
@@ -2374,69 +2515,152 @@ def punch_vugs(bm: bmesh.types.BMesh, size: SizeClass, rng: np.random.Generator,
     # form; the ledges are the primary cavity source.
     density = (0.7 + 1.5 * q) * (1.8 if process == "basalt" else 1.0)
 
+    report = {
+        "declaredVugDiameterM": round(target_radius * 2.0, 5),
+        "pocketAspectCeiling": VUG_POCKET_ASPECT_MAX,
+        # Say what the ceiling actually bounds, because the achieved figure legitimately exceeds
+        # it and a reader comparing the two numbers would otherwise read a broken gate. The gate
+        # constrains the INSET FOOTPRINT; the jitter then moves the floor vertices by up to
+        # +-0.34 r in the face plane, which widens the measured aspect most on the smallest
+        # pocket -- measured 2.49 on the boulder, whose pocket is only 7 mm across, against 1.59
+        # on the outcrop where the jitter is a smaller share of the footprint.
+        "pocketAspectCeilingAppliesTo": "the inset footprint before the in-plane jitter",
+        "radiusOfShortExtent": VUG_RADIUS_OF_SHORT_EXTENT,
+        "count": 0,
+    }
+
     candidates = []
+    rejected_aspect = 0
+    rejected_width = 0
     for face in bm.faces:
         if face.material_index == law.MATERIAL_SLOT_CUT_EDGE:
             continue
         area = face.calc_area()
         if area <= 0.0:
             continue
-        inradius = math.sqrt(area / math.pi)
-        # 2.5x margin, not 1.75x. A nested inset on a face only marginally larger than the
-        # pocket leaves a hairline rim, and those slivers are the source of the
-        # non-manifold junctions that the rim-repair pass then cannot fix cleanly
-        # (measured: 3-31 non-manifold edges, aborting 4 of 12 matrix configs).
-        if inradius > target_radius * 2.5:
-            candidates.append((face, inradius, area))
+        long_m, short_m, _t1, _t2 = _face_plane_extents(face)
+        if short_m <= 1e-6:
+            continue
+        radius = min(target_radius, VUG_RADIUS_OF_SHORT_EXTENT * short_m)
+        # Half the declared vug is the floor. Below that the hollow is a dimple rather than a
+        # cavity, it contributes nothing the AO bake can find, and shrinking it further to make
+        # a face eligible would be the same "stretch the witness until the lattice can sample
+        # it" move `pit_field_is_representable` already refuses.
+        if radius < target_radius * 0.5:
+            rejected_width += 1
+            continue
+        if (long_m - short_m) > (VUG_POCKET_ASPECT_MAX - 1.0) * 2.0 * radius:
+            rejected_aspect += 1
+            continue
+        candidates.append((face, radius, short_m, long_m, area))
     if not candidates:
-        blackbox.record("punch_vugs", warning="no face large enough for a macro vug")
-        return 0
+        report["rejectedTooNarrow"] = rejected_width
+        report["rejectedTooElongated"] = rejected_aspect
+        blackbox.record("punch_vugs", warning="no face can hold an equant macro vug",
+                        failure_code="VUG_NO_HOST_FACE")
+        return report
 
-    total_area = sum(c[2] for c in candidates)
+    total_area = sum(c[4] for c in candidates)
     wanted = max(2, int(round(total_area * density)))
     wanted = min(wanted, len(candidates), 220)
-    weights = np.array([c[2] for c in candidates])
+    weights = np.array([c[4] for c in candidates])
     weights = weights / weights.sum()
     chosen = rng.choice(len(candidates), size=wanted, replace=False, p=weights)
 
     punched = 0
+    achieved_long = []
+    achieved_short = []
+    achieved_depth = []
     for pick in chosen:
-        face, inradius, _area = candidates[int(pick)]
+        face, radius, short_m, _long_m, _area = candidates[int(pick)]
         if not face.is_valid:
             continue
-        radius = target_radius * float(rng.uniform(0.72, 1.28))
-        thickness = max(1e-4, inradius - radius)
+        normal = face.normal.copy()
+        if normal.length <= 1e-9:
+            continue
+        normal.normalize()
+        _l, _s, tangent_a, tangent_b = _face_plane_extents(face)
+        # Thickness from the SHORT half-extent, so the pocket's narrow axis is exactly the
+        # pocket diameter and the rim is what is left. The old `(sqrt(area/pi) - radius)*0.45`
+        # was an area proxy times a magic 0.45 and had no geometric meaning on a face that is
+        # not a disc.
+        thickness = max(1e-4, short_m * 0.5 - radius)
         depth = radius * float(rng.uniform(0.45, 0.85))
-        rim_verts = {v.index for v in face.verts}
+        # BMVert OBJECTS, not indices. `bmesh.ops` leaves new vertices at index -1 until an
+        # explicit `index_update`, so an index-keyed rim set is comparing stale numbers to a
+        # sentinel and only works by accident.
+        rim_verts = set(face.verts)
         first = bmesh.ops.inset_individual(
-            bm, faces=[face], thickness=thickness * 0.45, depth=-depth,
+            bm, faces=[face], thickness=thickness, depth=-depth,
             use_even_offset=True, use_interpolate=True, use_relative_offset=False)
         pocket_faces = [f for f in first.get("faces", ()) if f.is_valid]
         if not pocket_faces:
             continue
 
-        # `inset_individual` on a quad produces a RECTANGULAR pocket with parallel sides.
-        # On the old lumpy surface that was hidden; on flat joint faces the iteration-3
-        # studio sheet showed them as recessed service panels -- exactly the "decorative
-        # sci-fi panels" `TASTE.md` rejects. A wave-drilled vug or a basalt vesicle is
-        # irregular, so the new pocket vertices are jittered in all three axes by up to a
-        # third of the pocket radius. Bounded by the pocket radius rather than by an absolute
-        # figure so it cannot punch through the far wall on a small vug.
+        # `inset_individual` produces a pocket with parallel sides. On the old lumpy surface
+        # that was hidden; on flat joint faces the iteration-3 studio sheet showed them as
+        # recessed service panels -- exactly the "decorative sci-fi panels" `TASTE.md` rejects.
+        # A wave-drilled vug or a basalt vesicle is irregular, so the pocket vertices are
+        # jittered. Bounded by the pocket radius rather than by an absolute figure so it cannot
+        # punch through the far wall on a small vug.
+        #
+        # IN THE FACE'S OWN FRAME, and the outward component is clamped. World-axis jitter gave
+        # every vug on the asset the same three preferred directions, and its unconstrained
+        # normal component reached `0.34 * r * sqrt(3) = 0.589 r` against a minimum depth of
+        # `0.45 r`, so a pocket floor could legally come out PROUD of the surface it was cut
+        # into. Measured at 3 of 480 vertices, deepest 0.017 m. Capping the outward half at
+        # 0.30 of the jitter makes that arithmetically impossible -- `0.30 * 0.34 r = 0.102 r`
+        # against `0.45 r` of depth -- while the tangential halves keep the irregularity the
+        # panel read needs.
         jitter = radius * 0.34
+        moved = []
         for pocket in pocket_faces:
             for vert in pocket.verts:
-                if vert.index in rim_verts:
+                if vert in rim_verts:
                     continue        # keep the surrounding surface where the body put it
-                vert.co += Vector((float(rng.uniform(-jitter, jitter)),
-                                   float(rng.uniform(-jitter, jitter)),
-                                   float(rng.uniform(-jitter, jitter))))
+                vert.co += (tangent_a * float(rng.uniform(-jitter, jitter))
+                            + tangent_b * float(rng.uniform(-jitter, jitter))
+                            + normal * float(rng.uniform(-jitter, jitter * 0.30)))
+                moved.append(vert)
+        if moved:
+            floor = np.array([[v.co.x, v.co.y, v.co.z] for v in moved])
+            axis = np.array([normal.x, normal.y, normal.z])
+            flat = floor - np.outer(floor @ axis, axis)
+            if flat.shape[0] >= 3:
+                flat = flat - flat.mean(axis=0)
+                values, vectors = np.linalg.eigh(flat.T @ flat)
+                order = np.argsort(values)[::-1]
+                spans = sorted(
+                    (float((flat @ vectors[:, order[k]]).max()
+                           - (flat @ vectors[:, order[k]]).min()) for k in (0, 1)),
+                    reverse=True)
+                achieved_long.append(spans[0])
+                achieved_short.append(spans[1])
+        achieved_depth.append(depth)
         punched += 1
 
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    report["count"] = punched
+    report["candidateFaces"] = len(candidates)
+    report["rejectedTooNarrow"] = rejected_width
+    report["rejectedTooElongated"] = rejected_aspect
+    if achieved_long:
+        ratios = [a / max(1e-9, b) for a, b in zip(achieved_long, achieved_short)]
+        report["pocketLongM"] = [round(float(np.percentile(achieved_long, 50)), 5),
+                                 round(float(max(achieved_long)), 5)]
+        report["pocketShortM"] = [round(float(np.percentile(achieved_short, 50)), 5),
+                                  round(float(max(achieved_short)), 5)]
+        report["pocketAspect"] = [round(float(np.percentile(ratios, 50)), 3),
+                                  round(float(max(ratios)), 3)]
+        report["pocketDepthM"] = [round(float(np.percentile(achieved_depth, 50)), 5),
+                                  round(float(max(achieved_depth)), 5)]
     blackbox.record("punch_vugs", vertex_count=len(bm.verts),
                     triangle_count=len(bm.faces),
-                    warning="" if punched else "no vug survived inset")
-    return punched
+                    warning="{n} vugs from {c} host faces; rejected {a} too elongated, "
+                            "{w} too narrow".format(n=punched, c=len(candidates),
+                                                    a=rejected_aspect, w=rejected_width),
+                    failure_code="" if punched else "VUG_NONE_SURVIVED_INSET")
+    return report
 
 
 # ---------------------------------------------------------------------------
@@ -3500,6 +3724,15 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # until they were invisible; with it, a cut face carries the bed contacts as steps and
     # the two features stop competing.
     imprint_bedding_on_cuts(bm, frame, strata, size, blackbox)
+    # `cut` and `fracture` are two markers around ONE stage on purpose. `fracture` used to be
+    # the only one, and it bundled the summit plane, the shear planes, the cut-face bedding
+    # imprint AND `erode_bedding_planes` -- four displacement mechanisms behind a single
+    # bisection step, which is not a bisection. Anything the ladder localised to `fracture`
+    # then needed a guess about which of the four did it, and this file's history is three
+    # rounds of exactly that guess being wrong.
+    if debug_stage == "cut":
+        return _debug_render(bm, name, size, proof_dir, preview_resolution,
+                             "cut", result)
     # Bedding relief arrives HERE, after the cuts, and that ordering is deliberate. Running it
     # on the raw lattice would let the summit and shear planes slice the relief back off;
     # running it after means a fracture facet -- which is bedding-perpendicular wherever the
@@ -3524,6 +3757,12 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
         return _debug_render(bm, name, size, proof_dir, preview_resolution,
                              "parting", result)
     veins = raise_mineral_seams(bm, frame, strata, size, rng, q, blackbox)
+    # `vein` splits what `vug` used to bundle: `raise_mineral_seams` is a positive-relief
+    # displacement and `punch_vugs` is a topology-adding inset, so a defect localised to
+    # "somewhere between parting and vug" is localised to nothing.
+    if debug_stage == "vein":
+        return _debug_render(bm, name, size, proof_dir, preview_resolution,
+                             "vein", result)
     vugs = punch_vugs(bm, size, rng, q, process, blackbox)
     mesh_ops.weld_and_clean(bm, blackbox=blackbox)
     open_edges = close_open_boundaries(bm, blackbox, "post_detail")
@@ -3598,7 +3837,11 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
         "fractureKinds": sorted({p.kind for p in fractures}),
         "beddingPartingGrooves": len(partings),
         "mineralVeins": len(veins),
-        "macroVugs": vugs,
+        "macroVugs": vugs.get("count", 0),
+        # The SHAPE, beside the count. A count of 101 was the only number this stage reported
+        # while every one of those 101 pockets was a 0.52 x 0.06 m slot, so the count was
+        # simultaneously true and the reason the defect survived a review.
+        "macroVugShape": vugs,
         "hardEdgesFound": chips.hard_edges,
         "edgesChipped": chips.beveled,
         "chipWidthsM": list(chips.widths_m),
@@ -4029,10 +4272,12 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # in silhouette". This is the alpha coverage mask plus outline statistics, and it runs on
     # the LOD0 object that will actually be exported.
     #
-    # Calibrated in-process against controls (`silhouette_probe --controls`):
-    #   smooth icosphere        turn concentration 0.094
-    #   displaced icosphere     0.137   <- the procedural-rock potato
-    #   random convex polytope  0.789   <- pure flat facets and sharp arrises
+    # Calibrated in-process against controls (`silhouette_probe --controls`), re-measured
+    # 2026-07-29 on Blender 4.5.9 at 640 px. The constants at the top of this file are the single
+    # source; these lines are the reading, not a second copy to drift from:
+    #   smooth icosphere        turn concentration 0.1085, total turning exactly 360.0 deg
+    #   displaced icosphere     0.1382, total turning exactly 360.0 deg  <- the procedural potato
+    #   random convex polytope  0.7841, total turning 385.7 / 381.2 deg  <- flat facets, arrises
     if want_preview:
         silhouette = silhouette_probe.render_silhouette(
             lods[0].obj, name=name, output_dir=proof_dir,
@@ -4127,11 +4372,15 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
 
 def _debug_render(bm: bmesh.types.BMesh, name: str, size: SizeClass, proof_dir: str,
                   resolution: int, stage: str, result: VariantResult) -> VariantResult:
-    """Commit a bmesh to a throwaway object and render it flat. Isolation instrument only.
+    """Commit a bmesh to a throwaway object and render it. Isolation instrument only.
 
     Deliberately skips UVs, bakes, LODs, colliders, validation and the manifest: the only
-    question it answers is what the silhouette looks like at this exact point in the stage
+    question it answers is what the SURFACE looks like at this exact point in the stage
     order, so anything that could itself alter the shape is left out.
+
+    Three pictures, because they answer three different questions: ``studio`` for specular
+    response (a raised patch one lattice quad wide only exists in the highlight), ``flat``
+    for shape without shading help, and the alpha silhouette for the outline.
     """
     mesh = bpy.data.meshes.new("DEBUG_{n}_{s}".format(n=name, s=stage))
     obj = bpy.data.objects.new(mesh.name, mesh)
@@ -4149,13 +4398,23 @@ def _debug_render(bm: bmesh.types.BMesh, name: str, size: SizeClass, proof_dir: 
         obj, smooth_angle_deg=law.smooth_angle_for(law.SurfaceClass.GEOLOGIC),
         weighted=True, keep_sharp=True)
 
-    spec = preview.PreviewSpec(
-        name="{n}_DEBUG_{s}".format(n=name, s=stage), output_dir=proof_dir,
-        resolution=resolution, mode="flat",
-        surface_class=law.SurfaceClass.GEOLOGIC,
-        views=("three_quarter", "front", "side", "low"))
-    sheet = preview.render_contact_sheet(obj, spec)
-    result.sheets["debug_" + stage] = sheet.sheet_path
+    # STUDIO AS WELL AS FLAT, and the reason is a defect this instrument could not see.
+    # `flat` is a 0.55 matte diffuse: it answers "what is the silhouette", which is what the
+    # bedding investigation needed. It does NOT answer "what does the specular response do to
+    # a small raised patch", and that is the whole read of the tick-mark artefact -- an isolated
+    # plateau one lattice quad wide is a highlight, not an outline event, so it is nearly
+    # invisible in matte and obvious in studio. The lead judges the studio sheet, so the
+    # isolation instrument has to render the same mode the verdict is made in or it is
+    # bisecting a different picture.
+    sheets = {}
+    for mode in ("studio", "flat"):
+        spec = preview.PreviewSpec(
+            name="{n}_DEBUG_{s}_{m}".format(n=name, s=stage, m=mode),
+            output_dir=proof_dir, resolution=resolution, mode=mode,
+            surface_class=law.SurfaceClass.GEOLOGIC,
+            views=("three_quarter", "front", "side", "low"))
+        sheets[mode] = preview.render_contact_sheet(obj, spec).sheet_path
+        result.sheets["debug_{s}_{m}".format(s=stage, m=mode)] = sheets[mode]
 
     # The silhouette test belongs in the isolation instrument too, and cheaply: this path
     # skips the AO bake, the unwrap, the LOD chain and validation, so it answers "did this
@@ -4169,8 +4428,12 @@ def _debug_render(bm: bmesh.types.BMesh, name: str, size: SizeClass, proof_dir: 
         "meanTurnTop10Fraction": round(silhouette.mean_top10, 4),
         "meanCornerCount": round(silhouette.mean_corners, 2),
         "meanConvexity": round(silhouette.mean_convexity, 4),
-        "controlSphereTop10": 0.094, "controlPotatoTop10": 0.137,
-        "controlPolytopeTop10": 0.789,
+        # The module constants, not a second literal copy. The debug path had its own hardcoded
+        # 0.094/0.137/0.789 triple, so re-measuring the controls fixed the production manifest and
+        # left the isolation instrument quoting the stale numbers.
+        "controlSphereTop10": SILHOUETTE_CONTROL_SPHERE,
+        "controlPotatoTop10": SILHOUETTE_CONTROL_POTATO,
+        "controlPolytopeTop10": SILHOUETTE_CONTROL_POLYTOPE,
     }
     print("[rock] DEBUG silhouette {s}: ".format(s=stage)
           + json.dumps(result.silhouette_summary))
@@ -4183,8 +4446,9 @@ def _debug_render(bm: bmesh.types.BMesh, name: str, size: SizeClass, proof_dir: 
                         "lawFamilyBudget": law.LOD_BUDGETS[law.Family.GEOLOGY].limit(0),
                         "geologySizeRowBudget": law.geology_budget_for(size.law_key).limit(0),
                         "effectiveBudget": size.budget(0)})
-    print("[rock] DEBUG stage={s} tris={t} sheet={p}".format(
-        s=stage, t=mesh_ops.triangle_count(obj.data), p=sheet.sheet_path))
+    print("[rock] DEBUG stage={s} tris={t} studio={p} flat={f}".format(
+        s=stage, t=mesh_ops.triangle_count(obj.data), p=sheets["studio"],
+        f=sheets["flat"]))
     return result
 
 
@@ -4877,7 +5141,8 @@ def parse_args(argv: list) -> argparse.Namespace:
     parser.add_argument("--preview-resolution", dest="preview_resolution", type=int,
                         default=640)
     parser.add_argument("--debug-stage", dest="debug_stage", default="",
-                        choices=("", "lattice", "fracture", "parting", "vug", "chip"),
+                        choices=("", "lattice", "cut", "fracture", "parting", "vein",
+                                 "vug", "chip"),
                         help="stop after this stage and render it; isolation only")
     return parser.parse_args(argv)
 

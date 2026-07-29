@@ -73,7 +73,7 @@
    "engine": "CYCLES",
    "hasContrast": true,
    "max": 1.0,
-   "mean": 0.868217,
+   "mean": 0.883042,
    "min": 0.0,
    "samples": 128,
    "target": "VERTEX_COLORS"
@@ -97,10 +97,10 @@
   "channelMeasurements": [
    {
     "channel": "R",
-    "coverageFraction": 0.20801,
+    "coverageFraction": 0.20803,
     "hasGradient": true,
-    "max": 1.0,
-    "mean": 0.26922,
+    "max": 0.97345,
+    "mean": 0.2541,
     "meaning": "edge_wear",
     "min": 0.0,
     "subjectVisible": true,
@@ -108,10 +108,10 @@
    },
    {
     "channel": "G",
-    "coverageFraction": 0.20801,
+    "coverageFraction": 0.20803,
     "hasGradient": true,
     "max": 1.0,
-    "mean": 0.43472,
+    "mean": 0.44958,
     "meaning": "oxidation",
     "min": 0.15593,
     "subjectVisible": true,
@@ -119,21 +119,21 @@
    },
    {
     "channel": "B",
-    "coverageFraction": 0.20801,
+    "coverageFraction": 0.20803,
     "hasGradient": true,
     "max": 1.0,
-    "mean": 0.94178,
+    "mean": 0.95046,
     "meaning": "baked_ao",
-    "min": 0.00061,
+    "min": 0.0003,
     "subjectVisible": true,
     "tile": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_chan_chan2_baked_ao.png"
    },
    {
     "channel": "A",
-    "coverageFraction": 0.20801,
+    "coverageFraction": 0.20803,
     "hasGradient": true,
     "max": 1.0,
-    "mean": 0.19787,
+    "mean": 0.19741,
     "meaning": "emission_mask",
     "min": 0.0,
     "subjectVisible": true,
@@ -262,23 +262,23 @@
     1
    ],
    "chipBucketSizes": [
-    591,
-    1182,
-    914
+    466,
+    932,
+    720
    ],
    "chipWidthsM": [
-    0.00942,
-    0.00518,
-    0.00235
+    0.00842,
+    0.00463,
+    0.00211
    ],
-   "edgesChipped": 1239,
+   "edgesChipped": 1068,
    "fractureKinds": [
     "bedding_parting",
     "conjugate_shear",
     "summit_truncation"
    ],
    "fracturePlanes": 5,
-   "hardEdgesFound": 2687,
+   "hardEdgesFound": 2118,
    "jointSet": {
     "conjugateSets": 2,
     "cornerAzimuthsDeg": [
@@ -315,7 +315,33 @@
     "note": "plan outline is the support function of this convex polygon; ring vertices land exactly on the corner azimuths so the arris is constructed, not sampled"
    },
    "landmarkBed": 10,
-   "macroVugs": 101,
+   "macroVugShape": {
+    "candidateFaces": 240,
+    "count": 13,
+    "declaredVugDiameterM": 0.12,
+    "pocketAspect": [
+     1.477,
+     2.298
+    ],
+    "pocketAspectCeiling": 1.6,
+    "pocketAspectCeilingAppliesTo": "the inset footprint before the in-plane jitter",
+    "pocketDepthM": [
+     0.03075,
+     0.03647
+    ],
+    "pocketLongM": [
+     0.10894,
+     0.20917
+    ],
+    "pocketShortM": [
+     0.08507,
+     0.11025
+    ],
+    "radiusOfShortExtent": 0.3,
+    "rejectedTooElongated": 1437,
+    "rejectedTooNarrow": 1591
+   },
+   "macroVugs": 13,
    "mineralVeins": 4,
    "summitTruncated": true
   },
@@ -323,71 +349,71 @@
   "fbxRoundTrip": {
    "meaning": "re-imported the written FBX and compared counts, uv layer order, vertex colour values, world positions, corner normals, landmark vertex, signed volume and raw FBX axis space against the scene. A failure DELETES the fbx and aborts the variant, so a manifest that exists always describes a file that passed.",
    "measurements": [
-    "wrote MESH_Geology_cliffchunk_sedimentary_s1713_q100.fbx (4512588 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+    "wrote MESH_Geology_cliffchunk_sedimentary_s1713_q100.fbx (4489484 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
     "COL_Geology_cliffchunk_sedimentary_s1713_q100: no material slot. 3dmodel.md section 6 declares slot 0 as the primary structural/tissue material; Unity will assign its default material to submesh 0.",
     "objects round-tripped: ['COL_Geology_cliffchunk_sedimentary_s1713_q100', 'MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0', 'MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1', 'MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2']",
     "COL_Geology_cliffchunk_sedimentary_s1713_q100: verts 94->94 loops 552->552 tris 184->184",
     "COL_Geology_cliffchunk_sedimentary_s1713_q100: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
     "COL_Geology_cliffchunk_sedimentary_s1713_q100: colour max delta 0.0000000 (tol 0.002)",
-    "COL_Geology_cliffchunk_sedimentary_s1713_q100: world position max delta 0.0000006 m (tol 0.0001)",
-    "COL_Geology_cliffchunk_sedimentary_s1713_q100: world corner-normal max delta 0.0000432 (tol 0.001), source has_custom_normals=True, reimport=True",
+    "COL_Geology_cliffchunk_sedimentary_s1713_q100: world position max delta 0.0000007 m (tol 0.0001)",
+    "COL_Geology_cliffchunk_sedimentary_s1713_q100: world corner-normal max delta 0.0000102 (tol 0.001), source has_custom_normals=True, reimport=True",
     "COL_Geology_cliffchunk_sedimentary_s1713_q100: uv0 max delta 0.00000000 (tol 1e-05)",
-    "COL_Geology_cliffchunk_sedimentary_s1713_q100: landmark (-0.27765, 2.7447, 0.42069) -> (-0.27765, 2.7447, 0.42069), delta 0.0000002 m, margin 0.13572 m",
-    "COL_Geology_cliffchunk_sedimentary_s1713_q100: signed volume +166.2541460 -> +166.2541341 (ratio +1.000000)",
+    "COL_Geology_cliffchunk_sedimentary_s1713_q100: landmark (-0.27802, 2.74388, 0.41798) -> (-0.27802, 2.74388, 0.41798), delta 0.0000002 m, margin 0.11952 m",
+    "COL_Geology_cliffchunk_sedimentary_s1713_q100: signed volume +166.2009105 -> +166.2009080 (ratio +1.000000)",
     "COL_Geology_cliffchunk_sedimentary_s1713_q100: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: verts 8110->8110 loops 48648->48648 tris 16216->16216",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: verts 8114->8114 loops 48672->48672 tris 16224->16224",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: colour max delta 0.0000000 (tol 0.002)",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: world position max delta 0.0000007 m (tol 0.0001)",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: world corner-normal max delta 0.0005465 (tol 0.001), source has_custom_normals=True, reimport=True",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: world corner-normal max delta 0.0005464 (tol 0.001), source has_custom_normals=True, reimport=True",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: uv0 max delta 0.00000000 (tol 1e-05)",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: landmark (-0.27757, 2.7439, 0.42096) -> (-0.27757, 2.7439, 0.42096), delta 0.0000002 m, margin 0.01948 m",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: signed volume +137.9400281 -> +137.9400115 (ratio +1.000000)",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: landmark (-0.27773, 2.74379, 0.42019) -> (-0.27773, 2.74379, 0.42019), delta 0.0000002 m, margin 0.01957 m",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: signed volume +138.2110506 -> +138.2110532 (ratio +1.000000)",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: verts 3358->3358 loops 20136->20136 tris 6712->6712",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: verts 3362->3362 loops 20160->20160 tris 6720->6720",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: colour max delta 0.0000000 (tol 0.002)",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: world position max delta 0.0000007 m (tol 0.0001)",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: world corner-normal max delta 0.0004905 (tol 0.001), source has_custom_normals=True, reimport=True",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: world corner-normal max delta 0.0004904 (tol 0.001), source has_custom_normals=True, reimport=True",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: landmark (-0.27545, 2.74274, 0.42175) -> (-0.27545, 2.74274, 0.42175), delta 0.0000002 m, margin 0.02831 m",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: signed volume +137.9406248 -> +137.9406176 (ratio +1.000000)",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: landmark (-0.27448, 2.74237, 0.42187) -> (-0.27448, 2.74237, 0.42187), delta 0.0000002 m, margin 0.02739 m",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: signed volume +138.2017573 -> +138.2017592 (ratio +1.000000)",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: verts 575->575 loops 3438->3438 tris 1146->1146",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: verts 578->578 loops 3456->3456 tris 1152->1152",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: colour max delta 0.0000000 (tol 0.002)",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: world position max delta 0.0000007 m (tol 0.0001)",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: world corner-normal max delta 0.0003103 (tol 0.001), source has_custom_normals=True, reimport=True",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: world corner-normal max delta 0.0004084 (tol 0.001), source has_custom_normals=True, reimport=True",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: uv0 max delta 0.00000000 (tol 1e-05)",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: landmark (-0.15852, 2.95318, 7.0508) -> (-0.15852, 2.95318, 7.0508), delta 0.0000005 m, margin 0.01433 m",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: signed volume +137.7584428 -> +137.7584351 (ratio +1.000000)",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: landmark (-0.31915, 2.70587, 0.40396) -> (-0.31915, 2.70587, 0.40396), delta 0.0000002 m, margin 0.04609 m",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: signed volume +138.1533862 -> +138.1533767 (ratio +1.000000)",
     "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-    "COL_Geology_cliffchunk_sedimentary_s1713_q100 [fbx-space]: landmark direction expected (-0.15062, -0.77179, -0.61779) measured (-0.15062, -0.77179, -0.61779) delta 0.000000",
-    "COL_Geology_cliffchunk_sedimentary_s1713_q100 [fbx-space]: Unity-space landmark offset will be (-0.80082, -4.1035, 3.28469) (Blender (-0.80082, 3.28469, -4.1035)); handedness flip is Unity's, winding is flipped to match",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0 [fbx-space]: landmark direction expected (-0.15239, -0.77354, -0.61515) measured (-0.15239, -0.77354, -0.61515) delta 0.000000",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0 [fbx-space]: Unity-space landmark offset will be (-0.69519, -3.5288, 2.80623) (Blender (-0.69519, 2.80623, -3.5288)); handedness flip is Unity's, winding is flipped to match",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1 [fbx-space]: landmark direction expected (-0.15046, -0.77489, -0.61393) measured (-0.15046, -0.77489, -0.61393) delta 0.000000",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1 [fbx-space]: Unity-space landmark offset will be (-0.68519, -3.52878, 2.79576) (Blender (-0.68519, 2.79576, -3.52878)); handedness flip is Unity's, winding is flipped to match",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2 [fbx-space]: landmark direction expected (-0.11725, 0.72765, -0.67585) measured (-0.11725, 0.72765, -0.67585) delta 0.000000",
-    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2 [fbx-space]: Unity-space landmark offset will be (-0.52207, 3.23995, 3.00931) (Blender (-0.52207, 3.00931, 3.23995)); handedness flip is Unity's, winding is flipped to match",
+    "COL_Geology_cliffchunk_sedimentary_s1713_q100 [fbx-space]: landmark direction expected (-0.14415, -0.77133, -0.6199) measured (-0.14415, -0.77133, -0.6199) delta 0.000000",
+    "COL_Geology_cliffchunk_sedimentary_s1713_q100 [fbx-space]: Unity-space landmark offset will be (-0.76235, -4.07936, 3.27847) (Blender (-0.76235, 3.27847, -4.07936)); handedness flip is Unity's, winding is flipped to match",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0 [fbx-space]: landmark direction expected (-0.14149, -0.78705, -0.60044) measured (-0.14149, -0.78705, -0.60044) delta 0.000000",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0 [fbx-space]: Unity-space landmark offset will be (-0.67533, -3.75656, 2.86585) (Blender (-0.67533, 2.86585, -3.75656)); handedness flip is Unity's, winding is flipped to match",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1 [fbx-space]: landmark direction expected (-0.14207, -0.78189, -0.60701) measured (-0.14207, -0.78189, -0.60701) delta 0.000000",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1 [fbx-space]: Unity-space landmark offset will be (-0.67291, -3.70345, 2.87511) (Blender (-0.67291, 2.87511, -3.70345)); handedness flip is Unity's, winding is flipped to match",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2 [fbx-space]: landmark direction expected (-0.14034, -0.78059, -0.60908) measured (-0.14034, -0.78059, -0.60908) delta 0.000000",
+    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2 [fbx-space]: Unity-space landmark offset will be (-0.66514, -3.6996, 2.88672) (Blender (-0.66514, 2.88672, -3.6996)); handedness flip is Unity's, winding is flipped to match",
     "roundtrip VERIFIED: axis map confirmed=True, chirality preserved=True",
-    "LOD0 MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: 16216 tris vs law budget 18000 -> within",
-    "LOD1 MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: 6712 tris vs law budget 7000 -> within",
-    "LOD2 MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: 1146 tris vs law budget 1200 -> within",
+    "LOD0 MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: 16224 tris vs law budget 18000 -> within",
+    "LOD1 MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: 6720 tris vs law budget 7000 -> within",
+    "LOD2 MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: 1152 tris vs law budget 1200 -> within",
     "collider COL_Geology_cliffchunk_sedimentary_s1713_q100: 184 tris vs law.COLLIDER_CONVEX_TRI_MAX 200 -> within",
     "Unity side must bind COL_Geology_cliffchunk_sedimentary_s1713_q100 to a MeshCollider with convex=true on a collider child, never to an LOD mesh (3dmodel.md section 9)",
     "Unity LODGroup: create it explicitly from the _LOD suffixed children rather than relying on importer auto-detection, then set screenRelativeTransitionHeight per level with a hysteresis band and fadeMode=CrossFade with animateCrossFading=false (dithered). 3dmodel.md section 7 bans alpha-blended cross-fade for dense flora/coral on the compact lane; dither is not alpha blend."
    ],
-   "summary": "MESH_Geology_cliffchunk_sedimentary_s1713_q100.fbx: 4 object(s) tris=24258 vcol=True customNormals=True tangents=True uv=['UVMap', 'UV1_Strata'] unitScale=100 roundtrip=VERIFIED",
+   "summary": "MESH_Geology_cliffchunk_sedimentary_s1713_q100.fbx: 4 object(s) tris=24280 vcol=True customNormals=True tangents=True uv=['UVMap', 'UV1_Strata'] unitScale=100 roundtrip=VERIFIED",
    "verified": true
   },
   "gates": [
-   "PASS LOD0 16216 tris vs budget 18000",
-   "PASS LOD1 6712 tris vs budget 7000",
-   "PASS LOD2 1146 tris vs budget 1200",
+   "PASS LOD0 16224 tris vs budget 18000",
+   "PASS LOD1 6720 tris vs budget 7000",
+   "PASS LOD2 1152 tris vs budget 1200",
    "PASS LOD chain strictly decreasing",
    "PASS collider 184 tris vs the 200 ceiling",
-   "PASS AO contrast 1.0000 (min=0.0000 max=1.0000 mean=0.8682)",
+   "PASS AO contrast 1.0000 (min=0.0000 max=1.0000 mean=0.8830)",
    "PASS zero degenerate faces",
    "PASS single connected island (got 1)",
    "PASS zero non-manifold edges (got 0)",
@@ -398,20 +424,20 @@
    "PASS fracture planes present (5)",
    "PASS mineral seams present (4)",
    "PASS strata beds >= 3 (got 21)",
-   "PASS hard edges chipped (1239)",
-   "PASS chip widths vary (not a uniform chamfer): [0.00942, 0.00518, 0.00235]",
-   "PASS widest chip 0.00942 m is a real chamfer vs nominal 0.00942 m",
-   "PASS chamfer reached 46 percent of the 2687 hard edges",
+   "PASS hard edges chipped (1068)",
+   "PASS chip widths vary (not a uniform chamfer): [0.00842, 0.00463, 0.00211]",
+   "PASS widest chip 0.00842 m is a real chamfer vs nominal 0.00842 m",
+   "PASS chamfer reached 50 percent of the 2118 hard edges",
    "PASS UV0 fallback unwrap present alongside triplanar route",
-   "PASS outward winding, signed volume 137.940028 m3",
+   "PASS outward winding, signed volume 138.211051 m3",
    "PASS every stored channel varies; flat channels: none",
-   "PASS silhouette turn concentration 0.3751 (potato control 0.137, polytope control 0.789, floor 0.2); mean 4.8 arrises per view",
+   "PASS silhouette turn concentration 0.3747 (potato control 0.1382, polytope control 0.7841, floor 0.2); mean 4.8 arrises per view",
    "PASS at least 3 outline arrises per view on average (4.8)",
-   "PASS LOD0 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 179.87 deg, 2819 sharp)",
-   "PASS LOD1 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 179.9 deg, 1654 sharp)",
-   "PASS LOD2 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 176.03 deg, 198 sharp)",
-   "PASS 16216 polygons marked smooth (not flat-shaded)",
-   "PASS 2819 edges split sharp above 32.0 deg (fracture planes stay crisp)",
+   "PASS LOD0 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 179.88 deg, 2301 sharp)",
+   "PASS LOD1 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 179.94 deg, 1263 sharp)",
+   "PASS LOD2 shading basis matches its own geometry: 0 edges above 46.0 deg still smooth (widest dihedral 177.64 deg, 231 sharp)",
+   "PASS 16224 polygons marked smooth (not flat-shaded)",
+   "PASS 2301 edges split sharp above 32.0 deg (fracture planes stay crisp)",
    "PASS weighted normals applied (FACE_AREA_WITH_ANGLE)"
   ],
   "geologicalProcessTag": "sedimentary",
@@ -430,9 +456,7 @@
    "subLatticeGrainRoute": "Detail below 0.406 m cannot be sampled by this lattice and is NOT in the mesh. 3DMODEL_GEOLOGY_ROCKS.md section 2 routes it to baked normal/depth support; the witness 0.075 m is a MATERIAL-space scale on this size class.",
    "witnessWavelengthM": 0.075
   },
-  "h8forgeValidatorFailures": [
-   "LOD0 tangent_length_out_of_range: tangent[17697] length=0.000000 outside 0.995..1.005"
-  ],
+  "h8forgeValidatorFailures": [],
   "h8forgeValidatorImported": true,
   "lods": [
    {
@@ -447,11 +471,11 @@
     "object": "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0",
     "shadingBasis": {
      "edgesAboveThresholdStillSmooth": 0,
-     "sharpEdges": 2819,
+     "sharpEdges": 2301,
      "thresholdDeg": 46.0,
-     "widestDihedralDeg": 179.87
+     "widestDihedralDeg": 179.88
     },
-    "triangles": 16216
+    "triangles": 16224
    },
    {
     "boundaryEdges": 0,
@@ -465,11 +489,11 @@
     "object": "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1",
     "shadingBasis": {
      "edgesAboveThresholdStillSmooth": 0,
-     "sharpEdges": 1654,
+     "sharpEdges": 1263,
      "thresholdDeg": 46.0,
-     "widestDihedralDeg": 179.9
+     "widestDihedralDeg": 179.94
     },
-    "triangles": 6712
+    "triangles": 6720
    },
    {
     "boundaryEdges": 0,
@@ -483,11 +507,11 @@
     "object": "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2",
     "shadingBasis": {
      "edgesAboveThresholdStillSmooth": 0,
-     "sharpEdges": 198,
+     "sharpEdges": 231,
      "thresholdDeg": 46.0,
-     "widestDihedralDeg": 176.03
+     "widestDihedralDeg": 177.64
     },
-    "triangles": 1146
+    "triangles": 1152
    }
   ],
   "materialFamily": [
@@ -504,12 +528,12 @@
   "postFractureCensus": {
    "boundaryEdges": 0,
    "components": 1,
-   "explainAgainstLod0Budget": "22374 tris vs 18000 budget; 1 disconnected components, 0 boundary edges, 7 non-manifold edges -> estimated irreducible floor ~4 tris",
+   "explainAgainstLod0Budget": "19900 tris vs 18000 budget; 1 disconnected components, 0 boundary edges, 4 non-manifold edges -> estimated irreducible floor ~4 tris",
    "irreducibleFloor": 4,
-   "largestComponent": 22374,
-   "nonManifoldEdges": 7,
-   "smallestComponent": 22374,
-   "triangles": 22374
+   "largestComponent": 19900,
+   "nonManifoldEdges": 4,
+   "smallestComponent": 19900,
+   "triangles": 19900
   },
   "profileParameters": {
    "achievedRingSpacingM": 0.16889,
@@ -539,7 +563,7 @@
     8
    ],
    "planTwistRad": 0.1824,
-   "sculptTrianglesBeforeReduction": 22374
+   "sculptTrianglesBeforeReduction": 19900
   },
   "proofArtifacts": {
    "channels": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_chan_SHEET_CHANNELS.png",
@@ -562,86 +586,86 @@
   },
   "shadingBasis": {
    "bibleRequirement": "3DMODEL_GEOLOGY_ROCKS.md s4: split normals above 45 deg; law.SMOOTH_ANGLE_DEG=32 is stricter, so all fracture edges split",
-   "sharpEdges": 2819,
+   "sharpEdges": 2301,
    "smoothAngleDeg": 32.0,
-   "smoothPolygons": 16216,
+   "smoothPolygons": 16224,
    "weightedNormalsApplied": true
   },
   "shadingBasisPerLod": {
    "LOD0": {
     "edgesAboveThresholdStillSmooth": 0,
-    "sharpEdges": 2819,
+    "sharpEdges": 2301,
     "thresholdDeg": 46.0,
-    "widestDihedralDeg": 179.87
+    "widestDihedralDeg": 179.88
    },
    "LOD1": {
     "edgesAboveThresholdStillSmooth": 0,
-    "sharpEdges": 1654,
+    "sharpEdges": 1263,
     "thresholdDeg": 46.0,
-    "widestDihedralDeg": 179.9
+    "widestDihedralDeg": 179.94
    },
    "LOD2": {
     "edgesAboveThresholdStillSmooth": 0,
-    "sharpEdges": 198,
+    "sharpEdges": 231,
     "thresholdDeg": 46.0,
-    "widestDihedralDeg": 176.03
+    "widestDihedralDeg": 177.64
    }
   },
   "silhouetteMetrics": [
    {
-    "complexity": 1.1694,
+    "complexity": 1.1698,
     "convexity": 0.953,
     "cornerCount": 5,
-    "coverageFraction": 0.17364,
-    "fuzzFraction": 0.1799,
-    "hullGapRms": 0.02673,
-    "perimeterPx": 1018.18,
-    "pixels": 71121,
+    "coverageFraction": 0.17368,
+    "fuzzFraction": 0.1703,
+    "hullGapRms": 0.02676,
+    "perimeterPx": 1018.46,
+    "pixels": 71141,
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_SIL_front.png",
-    "turnTop10Fraction": 0.3705,
-    "turnTotalDeg": 1012.2,
+    "turnTop10Fraction": 0.375,
+    "turnTotalDeg": 1009.5,
     "view": "front"
    },
    {
-    "complexity": 1.209,
+    "complexity": 1.2086,
     "convexity": 0.9552,
     "cornerCount": 4,
-    "coverageFraction": 0.18607,
-    "fuzzFraction": 0.3,
-    "hullGapRms": 0.02548,
-    "perimeterPx": 1071.39,
-    "pixels": 76213,
+    "coverageFraction": 0.18612,
+    "fuzzFraction": 0.3029,
+    "hullGapRms": 0.02547,
+    "perimeterPx": 1071.36,
+    "pixels": 76234,
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_SIL_side.png",
-    "turnTop10Fraction": 0.3475,
-    "turnTotalDeg": 734.1,
+    "turnTop10Fraction": 0.344,
+    "turnTotalDeg": 734.6,
     "view": "side"
    },
    {
-    "complexity": 1.1339,
-    "convexity": 0.9774,
+    "complexity": 1.1334,
+    "convexity": 0.9776,
     "cornerCount": 5,
-    "coverageFraction": 0.20801,
-    "fuzzFraction": 0.2759,
-    "hullGapRms": 0.01173,
-    "perimeterPx": 1097.44,
-    "pixels": 85201,
+    "coverageFraction": 0.20803,
+    "fuzzFraction": 0.2673,
+    "hullGapRms": 0.01167,
+    "perimeterPx": 1097.25,
+    "pixels": 85209,
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_SIL_three_quarter.png",
-    "turnTop10Fraction": 0.3354,
-    "turnTotalDeg": 812.6,
+    "turnTop10Fraction": 0.3343,
+    "turnTotalDeg": 806.7,
     "view": "three_quarter"
    },
    {
-    "complexity": 1.2332,
-    "convexity": 0.9482,
+    "complexity": 1.233,
+    "convexity": 0.9481,
     "cornerCount": 5,
-    "coverageFraction": 0.18375,
-    "fuzzFraction": 0.2044,
-    "hullGapRms": 0.02875,
-    "perimeterPx": 1075.54,
-    "pixels": 75262,
+    "coverageFraction": 0.18379,
+    "fuzzFraction": 0.2035,
+    "hullGapRms": 0.02877,
+    "perimeterPx": 1075.57,
+    "pixels": 75280,
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_SIL_low.png",
-    "turnTop10Fraction": 0.4469,
-    "turnTotalDeg": 1003.8,
+    "turnTop10Fraction": 0.4457,
+    "turnTotalDeg": 1005.6,
     "view": "low"
    }
   ],
@@ -649,23 +673,23 @@
    "LOD1": {
     "meanConvexity": 0.9584,
     "meanCornerCount": 4.5,
-    "meanTurnTop10Fraction": 0.3736,
-    "retainedFractionOfLod0": 0.9961
+    "meanTurnTop10Fraction": 0.3774,
+    "retainedFractionOfLod0": 1.0072
    },
    "LOD2": {
-    "meanConvexity": 0.9573,
-    "meanCornerCount": 4.75,
-    "meanTurnTop10Fraction": 0.3773,
-    "retainedFractionOfLod0": 1.006
+    "meanConvexity": 0.9586,
+    "meanCornerCount": 4.5,
+    "meanTurnTop10Fraction": 0.385,
+    "retainedFractionOfLod0": 1.0274
    }
   },
   "silhouetteSummary": {
-   "controlPolytopeTop10": 0.789,
-   "controlPotatoTop10": 0.137,
-   "controlSphereTop10": 0.094,
+   "controlPolytopeTop10": 0.7841,
+   "controlPotatoTop10": 0.1382,
+   "controlSphereTop10": 0.1085,
    "meanConvexity": 0.9585,
    "meanCornerCount": 4.75,
-   "meanTurnTop10Fraction": 0.3751,
+   "meanTurnTop10Fraction": 0.3747,
    "potatoFloor": 0.2,
    "targetFloor": 0.3
   },
@@ -686,7 +710,7 @@
    "manifoldClosedSolid": true,
    "nonManifoldEdges": 0,
    "outwardWinding": true,
-   "signedVolumeM3": 137.940028
+   "signedVolumeM3": 138.211051
   },
   "unityPrefabAssembly": "NOT PERFORMED. .prefab/.mat/.asset creation is Unity-only per AGENTS.md Evidence Law; this generator emits mesh + manifest for a Unity-side assembler.",
   "uvAndTriplanarReport": {
@@ -715,10 +739,10 @@
   },
   "vertexColorAreaWeighted": {
    "areaWeightedMean": [
-    0.26605,
-    0.48345,
-    0.92504,
-    0.20522
+    0.25807,
+    0.48948,
+    0.94622,
+    0.20345
    ],
    "attribute": "Col",
    "comparableWithRender": "min and max are weighting-independent; compare those. areaWeightedMean approximates a pixel average but is not identical to it, because a render also weights by visibility and projected foreshortening.",
@@ -761,17 +785,17 @@
    "rangeA": [
     0.0,
     1.0,
-    0.20466
+    0.18974
    ],
    "rangeG": [
     0.16,
     1.0,
-    0.47304
+    0.4642
    ],
    "rangeR": [
     0.0,
     1.0,
-    0.27013
+    0.25574
    ]
   }
  },
@@ -808,9 +832,9 @@
   ],
   "monotonic": true,
   "triangleCountsPerLod": {
-   "LOD0": 16216,
-   "LOD1": 6712,
-   "LOD2": 1146
+   "LOD0": 16224,
+   "LOD1": 6720,
+   "LOD2": 1152
   }
  },
  "manifestGaps": [
@@ -828,33 +852,31 @@
  "meshes": [
   {
    "boundsMax": [
-    4.104707717895508,
-    3.0999045372009277,
-    7.468493461608887
+    4.1037163734436035,
+    3.09969162940979,
+    7.467751502990723
    ],
    "boundsMin": [
-    -2.819108009338379,
-    -3.2859151363372803,
-    0.00038623809814453125
+    -2.818572521209717,
+    -3.2855184078216553,
+    0.0
    ],
    "colorLayers": [
     "Col"
    ],
-   "digest": "48d667832a6f64fa47ce9f94fcedfe17",
+   "digest": "c19a4d7021f7e4246f8b57fc361a166b",
    "hasTangentBasis": true,
    "lod": 0,
    "name": "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0",
    "submeshes": 3,
-   "triangles": 16216,
+   "triangles": 16224,
    "uvLayers": [
     "UVMap",
     "UV1_Strata"
    ],
    "validation": {
-    "failures": [
-     "tangent_length_out_of_range: tangent[17697] length=0.000000 outside 0.995..1.005"
-    ],
-    "passed": false,
+    "failures": [],
+    "passed": true,
     "warnings": [
      "zero_area_uv_triangle: not enforced: caller declared triplanar=True and UV0 is present",
      "uv_stretch_excessive: not enforced: caller declared triplanar=True and UV0 is present",
@@ -864,28 +886,28 @@
     ]
    },
    "validatorVersion": "1.0.0",
-   "vertices": 8110
+   "vertices": 8114
   },
   {
    "boundsMax": [
-    4.097393035888672,
-    3.098259449005127,
-    7.468493461608887
+    4.104054927825928,
+    3.098646402359009,
+    7.467884540557861
    ],
    "boundsMin": [
-    -2.818753719329834,
-    -3.2860095500946045,
-    0.00038623809814453125
+    -2.8190832138061523,
+    -3.2856147289276123,
+    0.0004070510622113943
    ],
    "colorLayers": [
     "Col"
    ],
-   "digest": "726155e91af7dd8f5aae16ee6d0135a4",
+   "digest": "c31e7fff327c74fb4a4c1b9ffff278ec",
    "hasTangentBasis": true,
    "lod": 1,
    "name": "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1",
    "submeshes": 3,
-   "triangles": 6712,
+   "triangles": 6720,
    "uvLayers": [
     "UVMap",
     "UV1_Strata"
@@ -902,28 +924,28 @@
     ]
    },
    "validatorVersion": "1.0.0",
-   "vertices": 3358
+   "vertices": 3362
   },
   {
    "boundsMax": [
-    4.068238735198975,
-    3.0655276775360107,
-    7.452671051025391
+    4.078452110290527,
+    3.0553135871887207,
+    7.455236911773682
    ],
    "boundsMin": [
-    -2.8114569187164307,
-    -3.2685840129852295,
-    0.010052680969238281
+    -2.79117488861084,
+    -3.267443895339966,
+    0.005782945081591606
    ],
    "colorLayers": [
     "Col"
    ],
-   "digest": "795fd4bd873c15254294116b26e7c8f3",
+   "digest": "60a7ee1e45471c9c04ca9d91cf623ee0",
    "hasTangentBasis": true,
    "lod": 2,
    "name": "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2",
    "submeshes": 3,
-   "triangles": 1146,
+   "triangles": 1152,
    "uvLayers": [
     "UVMap",
     "UV1_Strata"
@@ -940,7 +962,7 @@
     ]
    },
    "validatorVersion": "1.0.0",
-   "vertices": 575
+   "vertices": 578
   }
  ],
  "naming": {
@@ -964,57 +986,57 @@
    "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_studio_SHEET_studio.png"
   ],
   "roundtripNotes": [
-   "wrote MESH_Geology_cliffchunk_sedimentary_s1713_q100.fbx (4512588 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "wrote MESH_Geology_cliffchunk_sedimentary_s1713_q100.fbx (4489484 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
    "COL_Geology_cliffchunk_sedimentary_s1713_q100: no material slot. 3dmodel.md section 6 declares slot 0 as the primary structural/tissue material; Unity will assign its default material to submesh 0.",
    "objects round-tripped: ['COL_Geology_cliffchunk_sedimentary_s1713_q100', 'MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0', 'MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1', 'MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2']",
    "COL_Geology_cliffchunk_sedimentary_s1713_q100: verts 94->94 loops 552->552 tris 184->184",
    "COL_Geology_cliffchunk_sedimentary_s1713_q100: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "COL_Geology_cliffchunk_sedimentary_s1713_q100: colour max delta 0.0000000 (tol 0.002)",
-   "COL_Geology_cliffchunk_sedimentary_s1713_q100: world position max delta 0.0000006 m (tol 0.0001)",
-   "COL_Geology_cliffchunk_sedimentary_s1713_q100: world corner-normal max delta 0.0000432 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "COL_Geology_cliffchunk_sedimentary_s1713_q100: world position max delta 0.0000007 m (tol 0.0001)",
+   "COL_Geology_cliffchunk_sedimentary_s1713_q100: world corner-normal max delta 0.0000102 (tol 0.001), source has_custom_normals=True, reimport=True",
    "COL_Geology_cliffchunk_sedimentary_s1713_q100: uv0 max delta 0.00000000 (tol 1e-05)",
-   "COL_Geology_cliffchunk_sedimentary_s1713_q100: landmark (-0.27765, 2.7447, 0.42069) -> (-0.27765, 2.7447, 0.42069), delta 0.0000002 m, margin 0.13572 m",
-   "COL_Geology_cliffchunk_sedimentary_s1713_q100: signed volume +166.2541460 -> +166.2541341 (ratio +1.000000)",
+   "COL_Geology_cliffchunk_sedimentary_s1713_q100: landmark (-0.27802, 2.74388, 0.41798) -> (-0.27802, 2.74388, 0.41798), delta 0.0000002 m, margin 0.11952 m",
+   "COL_Geology_cliffchunk_sedimentary_s1713_q100: signed volume +166.2009105 -> +166.2009080 (ratio +1.000000)",
    "COL_Geology_cliffchunk_sedimentary_s1713_q100: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: verts 8110->8110 loops 48648->48648 tris 16216->16216",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: verts 8114->8114 loops 48672->48672 tris 16224->16224",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: colour max delta 0.0000000 (tol 0.002)",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: world position max delta 0.0000007 m (tol 0.0001)",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: world corner-normal max delta 0.0005465 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: world corner-normal max delta 0.0005464 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: uv0 max delta 0.00000000 (tol 1e-05)",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: landmark (-0.27757, 2.7439, 0.42096) -> (-0.27757, 2.7439, 0.42096), delta 0.0000002 m, margin 0.01948 m",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: signed volume +137.9400281 -> +137.9400115 (ratio +1.000000)",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: landmark (-0.27773, 2.74379, 0.42019) -> (-0.27773, 2.74379, 0.42019), delta 0.0000002 m, margin 0.01957 m",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: signed volume +138.2110506 -> +138.2110532 (ratio +1.000000)",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: verts 3358->3358 loops 20136->20136 tris 6712->6712",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: verts 3362->3362 loops 20160->20160 tris 6720->6720",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: colour max delta 0.0000000 (tol 0.002)",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: world position max delta 0.0000007 m (tol 0.0001)",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: world corner-normal max delta 0.0004905 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: world corner-normal max delta 0.0004904 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: landmark (-0.27545, 2.74274, 0.42175) -> (-0.27545, 2.74274, 0.42175), delta 0.0000002 m, margin 0.02831 m",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: signed volume +137.9406248 -> +137.9406176 (ratio +1.000000)",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: landmark (-0.27448, 2.74237, 0.42187) -> (-0.27448, 2.74237, 0.42187), delta 0.0000002 m, margin 0.02739 m",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: signed volume +138.2017573 -> +138.2017592 (ratio +1.000000)",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: verts 575->575 loops 3438->3438 tris 1146->1146",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: verts 578->578 loops 3456->3456 tris 1152->1152",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: colour max delta 0.0000000 (tol 0.002)",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: world position max delta 0.0000007 m (tol 0.0001)",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: world corner-normal max delta 0.0003103 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: world corner-normal max delta 0.0004084 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: uv0 max delta 0.00000000 (tol 1e-05)",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: landmark (-0.15852, 2.95318, 7.0508) -> (-0.15852, 2.95318, 7.0508), delta 0.0000005 m, margin 0.01433 m",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: signed volume +137.7584428 -> +137.7584351 (ratio +1.000000)",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: landmark (-0.31915, 2.70587, 0.40396) -> (-0.31915, 2.70587, 0.40396), delta 0.0000002 m, margin 0.04609 m",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: signed volume +138.1533862 -> +138.1533767 (ratio +1.000000)",
    "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-   "COL_Geology_cliffchunk_sedimentary_s1713_q100 [fbx-space]: landmark direction expected (-0.15062, -0.77179, -0.61779) measured (-0.15062, -0.77179, -0.61779) delta 0.000000",
-   "COL_Geology_cliffchunk_sedimentary_s1713_q100 [fbx-space]: Unity-space landmark offset will be (-0.80082, -4.1035, 3.28469) (Blender (-0.80082, 3.28469, -4.1035)); handedness flip is Unity's, winding is flipped to match",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0 [fbx-space]: landmark direction expected (-0.15239, -0.77354, -0.61515) measured (-0.15239, -0.77354, -0.61515) delta 0.000000",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0 [fbx-space]: Unity-space landmark offset will be (-0.69519, -3.5288, 2.80623) (Blender (-0.69519, 2.80623, -3.5288)); handedness flip is Unity's, winding is flipped to match",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1 [fbx-space]: landmark direction expected (-0.15046, -0.77489, -0.61393) measured (-0.15046, -0.77489, -0.61393) delta 0.000000",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1 [fbx-space]: Unity-space landmark offset will be (-0.68519, -3.52878, 2.79576) (Blender (-0.68519, 2.79576, -3.52878)); handedness flip is Unity's, winding is flipped to match",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2 [fbx-space]: landmark direction expected (-0.11725, 0.72765, -0.67585) measured (-0.11725, 0.72765, -0.67585) delta 0.000000",
-   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2 [fbx-space]: Unity-space landmark offset will be (-0.52207, 3.23995, 3.00931) (Blender (-0.52207, 3.00931, 3.23995)); handedness flip is Unity's, winding is flipped to match",
+   "COL_Geology_cliffchunk_sedimentary_s1713_q100 [fbx-space]: landmark direction expected (-0.14415, -0.77133, -0.6199) measured (-0.14415, -0.77133, -0.6199) delta 0.000000",
+   "COL_Geology_cliffchunk_sedimentary_s1713_q100 [fbx-space]: Unity-space landmark offset will be (-0.76235, -4.07936, 3.27847) (Blender (-0.76235, 3.27847, -4.07936)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0 [fbx-space]: landmark direction expected (-0.14149, -0.78705, -0.60044) measured (-0.14149, -0.78705, -0.60044) delta 0.000000",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0 [fbx-space]: Unity-space landmark offset will be (-0.67533, -3.75656, 2.86585) (Blender (-0.67533, 2.86585, -3.75656)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1 [fbx-space]: landmark direction expected (-0.14207, -0.78189, -0.60701) measured (-0.14207, -0.78189, -0.60701) delta 0.000000",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1 [fbx-space]: Unity-space landmark offset will be (-0.67291, -3.70345, 2.87511) (Blender (-0.67291, 2.87511, -3.70345)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2 [fbx-space]: landmark direction expected (-0.14034, -0.78059, -0.60908) measured (-0.14034, -0.78059, -0.60908) delta 0.000000",
+   "MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2 [fbx-space]: Unity-space landmark offset will be (-0.66514, -3.6996, 2.88672) (Blender (-0.66514, 2.88672, -3.6996)); handedness flip is Unity's, winding is flipped to match",
    "roundtrip VERIFIED: axis map confirmed=True, chirality preserved=True",
-   "LOD0 MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: 16216 tris vs law budget 18000 -> within",
-   "LOD1 MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: 6712 tris vs law budget 7000 -> within",
-   "LOD2 MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: 1146 tris vs law budget 1200 -> within",
+   "LOD0 MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0: 16224 tris vs law budget 18000 -> within",
+   "LOD1 MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1: 6720 tris vs law budget 7000 -> within",
+   "LOD2 MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2: 1152 tris vs law budget 1200 -> within",
    "collider COL_Geology_cliffchunk_sedimentary_s1713_q100: 184 tris vs law.COLLIDER_CONVEX_TRI_MAX 200 -> within",
    "Unity side must bind COL_Geology_cliffchunk_sedimentary_s1713_q100 to a MeshCollider with convex=true on a collider child, never to an LOD mesh (3dmodel.md section 9)",
    "Unity LODGroup: create it explicitly from the _LOD suffixed children rather than relying on importer auto-detection, then set screenRelativeTransitionHeight per level with a hysteresis band and fadeMode=CrossFade with animateCrossFading=false (dithered). 3dmodel.md section 7 bans alpha-blended cross-fade for dense flora/coral on the compact lane; dither is not alpha blend."
@@ -1224,12 +1246,12 @@
   }
  },
  "validation": {
-  "meshGateFailures": 1,
+  "meshGateFailures": 0,
   "note": "Mesh, LOD-chain and collider gates are owned by validate.py and must have run before this manifest was written (PROCEDURAL_ASSET_PIPELINE.md 'Validation Before Save'). This block reports their result; it does not re-run them.",
-  "passed": false,
+  "passed": true,
   "validatorVersion": "1.0.0"
  },
- "validationHash": "3fc2d4a64b1738fe434f23d1c8fe6f3b",
+ "validationHash": "6b0838596dfedd77f9452ffa5d484fd6",
  "validationHashAlgorithm": "blake2b-128 over the canonical JSON of every other field, sorted keys",
  "vertexColorContract": {
   "alphaMeaning": "material blend / ore-emission mask (3DMODEL_GEOLOGY_ROCKS.md section 4 vertex colour contract)",
