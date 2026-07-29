@@ -294,16 +294,49 @@ namespace Hecton8.EditorTools.Diagnostics
         /// the VerbSweep note above records that raising this total requires the probe to raise its gameplay
         /// window by the same amount (H8_HeadlessPlayModeProbe.cs), and getting that wrong pushes the run
         /// into a hard timeout that discards every verdict already produced. The principled repair is to add
-        /// headroom derived from the tolerance already justified - phase count x
-        /// PhaseBoxOvershootToleranceSeconds - rather than an invented number, and to verify the probe window
-        /// in the same change. An earlier revision of this comment asserted "the nine boxes sum to exactly
-        /// this number", which was wrong twice: there are ten terms and they sum to 69.0, not 63.0.
+        /// FIXED, by adding the headroom the boxes always needed. The number is DERIVED from the tolerance
+        /// this file already justifies rather than invented: <see cref="ScheduledPhaseCount"/> x
+        /// <see cref="PhaseBoxOvershootToleranceSeconds"/>. That is precisely the overshoot the file already
+        /// says is unavoidable - "the ceiling is only testable between pumped frames, so every phase
+        /// overshoots by up to one frame's cost as a matter of arithmetic" - so the schedule now tolerates
+        /// exactly the arithmetic it acknowledges, and no more. Compression still fires on a genuine
+        /// overrun, which is what it is for; it no longer fires on a healthy run.
+        ///
+        /// THE PROBE COUPLING IS AUTOMATIC, verified rather than assumed. H8_HeadlessPlayModeProbe reads
+        /// this constant and raises its own gameplay window to <c>TotalBudgetSeconds + 4.0</c>, logging the
+        /// raise (H8_HeadlessPlayModeProbe.cs:483-491). So this change propagates without a second edit.
+        /// The +4.0 there is deliberately a TICK margin and not a stall allowance, and its own comment
+        /// explains at length why it must not be raised to cover a stall - nothing here asks it to.
+        ///
+        /// WHAT THIS DOES NOT FIX, stated because it is adjacent and easy to assume away: the probe's HARD
+        /// TIMEOUT does not track either constant. <c>_hardTimeoutSeconds</c> is assigned once from
+        /// <c>-h8TimeoutSeconds</c> and never adjusted, and the probe already documents that with its
+        /// DEFAULTS (timeout 240, menu 300, settle 300) the timeout cannot contain even the menu wait. This
+        /// change adds 10.0s to a window that default configuration already could not contain. It does not
+        /// create that defect and deliberately does not paper over it, because the caller passed that
+        /// number on purpose - see the arithmetic block at H8_HeadlessPlayModeProbe.cs:494-500.
+        ///
+        /// An earlier revision of this comment asserted "the nine boxes sum to exactly this number", which
+        /// was wrong twice: there are ten terms and they summed to 69.0, not 63.0.
         /// </summary>
         internal const double TotalBudgetSeconds =
             SettleBudgetSeconds + SwimSurfaceBudgetSeconds + SwimDiveBudgetSeconds +
             ResourceTargetBudgetSeconds + ToolEquipBudgetSeconds + ToolUseBudgetSeconds +
             ResourceDepleteBudgetSeconds + ResourcePickupBudgetSeconds + CraftBudgetSeconds +
-            VerbSweepBudgetSeconds;
+            VerbSweepBudgetSeconds +
+            ScheduledPhaseCount * PhaseBoxOvershootToleranceSeconds;
+
+        /// <summary>
+        /// How many phase boxes <see cref="TotalBudgetSeconds"/> sums: 10. Settle, SwimSurface, SwimDive,
+        /// ResourceTarget, ToolEquip, ToolUse, ResourceDeplete, ResourcePickup, Craft, VerbSweep.
+        /// <para>
+        /// Kept next to that sum so the two cannot drift: adding an eleventh box without updating this
+        /// count would silently under-provision the headroom rather than fail, which is the failure style
+        /// this file exists to eliminate. SwimVerdict is deliberately NOT counted - it has a 0.0 box (it
+        /// holds no wall budget of its own) though it does burn one pumped frame via its tick floor.
+        /// </para>
+        /// </summary>
+        private const int ScheduledPhaseCount = 10;
 
         // ── tick floors ───────────────────────────────────────────────────────────────────────────
         // MEASURED, Logs/h8_playprobe_route.json phases[5] and Logs/omega_route28.log CLOCKS: the
