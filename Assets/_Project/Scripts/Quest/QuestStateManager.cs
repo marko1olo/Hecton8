@@ -43,6 +43,16 @@ namespace Hecton8.Quest
         private const uint DeadlockFlagSalt = 0xDEAD10CCu;
         private const int QuestTransitionAuditCapacity = QuestDagRuntimeConstants.TelemetryCapacity;
         private const string NativeMemoryOwner = nameof(QuestStateManager);
+        private const string QuestGateLogPrefix = "H8QUESTGATE ";
+
+        // 256 is a proven bound, not a guess. The longest line the gate diagnosis can emit is the census row:
+        // prefix 12 + stage tag 5 + fixed tokens 60 + two hex8 fields 16 + four ints at their int.MinValue
+        // width 44 + one signal-kind label 14 (closed switch over a byte enum, longest is "EclipseStarted")
+        // + one float at its widest TryFormat output 32 = 183. Every unchecked writer below - CopyString,
+        // WriteInt, WriteHex8 - therefore cannot run off the end, and WriteFloat is already self-limiting
+        // because TryFormat fails into a one-char fallback when the remaining span is too small.
+        private const int QuestGateLogBufferCapacity = 256;
+        private const int QuestGateSignalLogCap = 24;
 
         // Session, not Scene, and the DECLARATION was the defect - the buffers were never leaked.
         // These two lists are allocated from Initialize, which QuestManager reaches from Awake, and
@@ -81,6 +91,15 @@ namespace Hecton8.Quest
         private readonly List<QuestRuntimeResult> _runtimeResults = new List<QuestRuntimeResult>(32);
         private readonly QuestTransitionAuditEntry[] _transitionAuditRing = new QuestTransitionAuditEntry[QuestTransitionAuditCapacity]; // COLD ALLOC: QuestTransitionAuditEntry[300] - fixed dev transition ring, no file I/O in signal drain - owner: QuestStateManager
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // COLD ALLOC: char[QuestGateLogBufferCapacity] - development-only quest gate diagnosis line staging - owner: QuestStateManager
+        // Instance-scoped, not static: the cap counter beside it has to reset when a fresh QuestStateManager
+        // is built, and a static counter would silence the diagnosis on every play session after the first
+        // inside one editor process.
+        private readonly char[] _questGateLogBuffer = new char[QuestGateLogBufferCapacity];
+        private int _questGateSignalLogCount;
+#endif
+
         private NativeArray<uint> _globalPrerequisites;
         private NativeArray<uint> _validPackedWordMasks;
         private NativeArray<QuestNodeDescriptor> _nodes;
@@ -117,6 +136,32 @@ namespace Hecton8.Quest
         private int _transitionAuditCount;
         private bool _isInitialized;
         private ILocalizationTextReadModel _localizationManager;
+
+        // Diagnosis counters for the Mission row. Before these existed the only observable quest fact was
+        // "completions=0", which cannot distinguish the three states that produce it: no signal ever reached
+        // the graph, a signal reached it and matched no node, or a node matched and the transition was
+        // suppressed. _signalsEvaluated separates the first from the other two, _signalsMatchedNothing
+        // separates the second from the third, and the two transition counts are the graph's own output
+        // before QuestManager's telemetry sees it - so a disagreement between _graphCompletions here and
+        // QuestManager.QuestSpineCompletionCount localises the break to the flush side rather than the graph.
+        // Plain int increments on the signal path, no allocation, and they ship in release because they are
+        // the numeric evidence, not the log line.
+        private int _signalsEvaluated;
+        private int _signalsMatchedNothing;
+        private int _graphActivations;
+        private int _graphCompletions;
+
+        /// <summary>Signals handed to <see cref="EvaluateSignal"/> since the last initialize. Zero means the graph was never fed.</summary>
+        internal int SignalsEvaluated => _signalsEvaluated;
+
+        /// <summary>Signals that matched no node at all. Equal to <see cref="SignalsEvaluated"/> means every signal was irrelevant to the authored graph.</summary>
+        internal int SignalsMatchedNothing => _signalsMatchedNothing;
+
+        /// <summary>Activations the packed graph produced from signals, excluding the auto-activation pass.</summary>
+        internal int GraphActivations => _graphActivations;
+
+        /// <summary>Completions the packed graph produced. A nonzero value here with completions=0 upstream is a flush defect, not a graph defect.</summary>
+        internal int GraphCompletions => _graphCompletions;
 
         private struct QuestTransitionAuditEntry
         {
@@ -167,6 +212,12 @@ namespace Hecton8.Quest
             // is > 0 and only disposes a list when IsCreated, and it zeroes both on the way out, while every
             // H8Memory.Release below is IsCreated-guarded and nulls its handle. Nothing here logs on the
             // happy path.
+
+            // Census emitted before the releases because it reads _globalPrerequisites and _nodes. Guarded
+            // on _isInitialized inside, so the Dispose that Initialize calls on a cold state manager prints
+            // nothing, and a repeat Dispose after a successful one prints nothing either.
+            LogQuestGateCensus("WAIT");
+
             Exception firstReleaseException = null;
 
             try
@@ -242,6 +293,13 @@ namespace Hecton8.Quest
             _stateChecksum = 0u;
             _localizationManager = null;
             _isInitialized = false;
+            _signalsEvaluated = 0;
+            _signalsMatchedNothing = 0;
+            _graphActivations = 0;
+            _graphCompletions = 0;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _questGateSignalLogCount = 0;
+#endif
         }
 
         public bool Initialize(QuestData[] allQuests, ILocalizationTextReadModel localizationManager)
@@ -575,6 +633,11 @@ namespace Hecton8.Quest
             _depthThresholdFlags = CopyListToArray(depthFlags);
             _isInitialized = true;
             RefreshStateMetadata(resetVersion: true);
+
+            // The authored expectation, printed once at boot: which signal kind and which payload hash each
+            // of the authored quests is waiting for. Without this the log only proves 12 quests were loaded,
+            // not what any of them needs, so "authored=12 completions=0" was unreadable.
+            LogQuestGateCensus("ARMED");
             return !HasCompileErrors;
         }
 
@@ -1013,6 +1076,14 @@ namespace Hecton8.Quest
             job.Execute();
 
             bool graphMutation = _activatedQuestIndices.Length > 0 || _completedQuestIndices.Length > 0;
+            _signalsEvaluated++;
+            _graphActivations += _activatedQuestIndices.Length;
+            _graphCompletions += _completedQuestIndices.Length;
+            if (!graphMutation)
+                _signalsMatchedNothing++;
+
+            LogQuestGateSignal(signal, _activatedQuestIndices.Length, _completedQuestIndices.Length);
+
             for (int i = 0; i < _activatedQuestIndices.Length; i++)
             {
                 int questIndex = _activatedQuestIndices[i];
@@ -1846,6 +1917,218 @@ namespace Hecton8.Quest
                 _transitionAuditCount++;
 #endif
         }
+
+        /// <summary>
+        /// Emits one development-only line per signal the packed graph evaluated, naming the signal and the
+        /// transitions it produced, so a run can distinguish "no signal reached the quest graph" from
+        /// "signals reached it and matched no authored node".
+        /// </summary>
+        /// <remarks>
+        /// The two Conditional attributes delete the CALL SITE in a release player, which is what
+        /// AGENTS.md requires of a log on a signal path - a serialized bool would not, and this runs inside
+        /// the late-frame event drain. The one string per line is therefore editor/development only and is
+        /// additionally hard-capped at <see cref="QuestGateSignalLogCap"/> lines per state manager, matching
+        /// the cap discipline of QuestManager.LogQuestSpineTransition.
+        /// </remarks>
+        /// <param name="signal">Signal that was just evaluated.</param>
+        /// <param name="activatedCount">Quests the signal activated.</param>
+        /// <param name="completedCount">Quests the signal completed.</param>
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private void LogQuestGateSignal(QuestSignalPayload signal, int activatedCount, int completedCount)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_questGateSignalLogCount >= QuestGateSignalLogCap)
+                return;
+
+            _questGateSignalLogCount++;
+
+            Span<char> buffer = _questGateLogBuffer.AsSpan();
+            int length = CopyString(QuestGateLogPrefix, buffer, 0);
+            length = CopyString(activatedCount > 0 || completedCount > 0 ? "HIT kind=" : "MISS kind=", buffer, length);
+            length = CopyString(ResolveQuestSignalKindLabel((QuestSignalKind)signal.EventType), buffer, length);
+            length = CopyString(" hash=0x", buffer, length);
+            length = WriteHex8(signal.EntityHash, buffer, length);
+            length = CopyString(" value=", buffer, length);
+            length = WriteFloat(signal.NumericValue, buffer, length);
+            length = CopyString(" act=", buffer, length);
+            length = WriteInt(activatedCount, buffer, length);
+            length = CopyString(" comp=", buffer, length);
+            length = WriteInt(completedCount, buffer, length);
+            length = CopyString(" nodes=", buffer, length);
+            length = WriteInt(_nodes.IsCreated ? _nodes.Length : 0, buffer, length);
+
+            // COLD ALLOC: string[1] - one line per evaluated signal, capped at QuestGateSignalLogCap and deleted from a release player by the Conditional attributes - owner: QuestStateManager
+            Hecton8.Core.H8Debug.Log(new string(_questGateLogBuffer, 0, length));
+#endif
+        }
+
+        /// <summary>
+        /// Emits the quest gate census: one development-only line per authored quest naming the exact
+        /// condition that would advance it next, plus one summary line carrying the signal counters.
+        /// </summary>
+        /// <remarks>
+        /// This exists because <c>completions=0</c> is not a diagnosis. The census answers, per quest,
+        /// which signal kind and which payload hash the graph is waiting for, whether the quest is idle,
+        /// active or done, and whether its phase gate and prerequisite quests are already satisfied - so a
+        /// row that never completes names the blocking condition instead of a bare zero. Called from
+        /// Initialize (the authored expectation, before any signal) and from Dispose (the final waiting
+        /// state), both cold paths that run once per session.
+        /// </remarks>
+        /// <param name="stageLabel">Short stage tag written into the line, ARMED or WAIT.</param>
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private void LogQuestGateCensus(string stageLabel)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_isInitialized ||
+                _questHashesByQuestIndex == null ||
+                _activeAddressesByQuestIndex == null ||
+                _completedAddressesByQuestIndex == null)
+            {
+                return;
+            }
+
+            Span<char> buffer = _questGateLogBuffer.AsSpan();
+            int length = CopyString(QuestGateLogPrefix, buffer, 0);
+            length = CopyString(stageLabel, buffer, length);
+            length = CopyString(" SUMMARY authored=", buffer, length);
+            length = WriteInt(_authoredQuestCount, buffer, length);
+            length = CopyString(" nodes=", buffer, length);
+            length = WriteInt(_nodes.IsCreated ? _nodes.Length : 0, buffer, length);
+            length = CopyString(" signals=", buffer, length);
+            length = WriteInt(_signalsEvaluated, buffer, length);
+            length = CopyString(" unmatched=", buffer, length);
+            length = WriteInt(_signalsMatchedNothing, buffer, length);
+            length = CopyString(" graphAct=", buffer, length);
+            length = WriteInt(_graphActivations, buffer, length);
+            length = CopyString(" graphComp=", buffer, length);
+            length = WriteInt(_graphCompletions, buffer, length);
+
+            // COLD ALLOC: string[1] - one summary line per census, cold path - owner: QuestStateManager
+            Hecton8.Core.H8Debug.Log(new string(_questGateLogBuffer, 0, length));
+
+            for (int questIndex = 0; questIndex < _authoredQuestCount; questIndex++)
+                LogQuestGateCensusRow(stageLabel, questIndex);
+#endif
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// Emits one census row for a single authored quest.
+        /// </summary>
+        /// <param name="stageLabel">Short stage tag written into the line.</param>
+        /// <param name="questIndex">Authored quest slot to describe.</param>
+        private void LogQuestGateCensusRow(string stageLabel, int questIndex)
+        {
+            if ((uint)questIndex >= (uint)_questHashesByQuestIndex.Length)
+                return;
+
+            uint questHash = _questHashesByQuestIndex[questIndex];
+            if (questHash == 0u)
+                return;
+
+            bool completed = IsBitSet(_completedAddressesByQuestIndex[questIndex]);
+            bool active = !completed && IsBitSet(_activeAddressesByQuestIndex[questIndex]);
+
+            // Declared and seeded outside the guard on purpose: an `out` inside a short-circuiting `&&`
+            // leaves the local not-definitely-assigned on the false branch, which is CS0165 at the use site
+            // below.
+            QuestNodeDescriptor node = default;
+            bool hasNode = false;
+            if (!completed)
+            {
+                hasNode = TryFindQuestNode(
+                    questIndex,
+                    active ? QuestTransitionType.Complete : QuestTransitionType.Activate,
+                    out node);
+            }
+
+            Span<char> buffer = _questGateLogBuffer.AsSpan();
+            int length = CopyString(QuestGateLogPrefix, buffer, 0);
+            length = CopyString(stageLabel, buffer, length);
+            length = CopyString(" q=0x", buffer, length);
+            length = WriteHex8(questHash, buffer, length);
+            length = CopyString(" i=", buffer, length);
+            length = WriteInt(questIndex, buffer, length);
+            length = CopyString(" state=", buffer, length);
+            length = CopyString(completed ? "DONE" : active ? "ACTIVE" : "IDLE", buffer, length);
+            length = CopyString(" need=", buffer, length);
+
+            if (completed)
+            {
+                length = CopyString("none", buffer, length);
+            }
+            else if (!hasNode)
+            {
+                // No node of the wanted transition class exists. For an idle quest that is an authored
+                // Manual trigger, which no signal can ever satisfy; for an active quest it means the
+                // completion type mapped to QuestSignalKind.None, so nothing can ever close it.
+                length = CopyString(active ? "UNCLOSEABLE" : "Manual", buffer, length);
+            }
+            else
+            {
+                length = CopyString(ResolveQuestSignalKindLabel((QuestSignalKind)node.SignalKind), buffer, length);
+                length = CopyString(" hash=0x", buffer, length);
+                length = WriteHex8(node.PayloadHash, buffer, length);
+                length = CopyString(" value=", buffer, length);
+                length = WriteFloat(node.RequiredValue, buffer, length);
+                length = CopyString(" prereq=", buffer, length);
+                length = WriteInt(NodePrerequisitesSatisfied(node) ? 1 : 0, buffer, length);
+            }
+
+            length = CopyString(" phaseGate=", buffer, length);
+            length = WriteInt(PhaseGateSatisfied(questIndex) ? 1 : 0, buffer, length);
+
+            // COLD ALLOC: string[1] - one line per authored quest per census, cold path - owner: QuestStateManager
+            Hecton8.Core.H8Debug.Log(new string(_questGateLogBuffer, 0, length));
+        }
+
+        /// <summary>
+        /// Finds the compiled node that carries a given transition class for a quest slot.
+        /// </summary>
+        /// <param name="questIndex">Quest slot to search for.</param>
+        /// <param name="transitionType">Transition class the node must carry.</param>
+        /// <param name="node">Matching node when the search succeeds.</param>
+        /// <returns>True when a node exists.</returns>
+        private bool TryFindQuestNode(int questIndex, QuestTransitionType transitionType, out QuestNodeDescriptor node)
+        {
+            node = default;
+            if (!_nodes.IsCreated)
+                return false;
+
+            for (int nodeIndex = 0; nodeIndex < _nodes.Length; nodeIndex++)
+            {
+                QuestNodeDescriptor candidate = _nodes[nodeIndex];
+                if (candidate.QuestIndex != questIndex || candidate.TransitionType != (byte)transitionType)
+                    continue;
+
+                node = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Reports whether a node's prerequisites are already satisfied, using the evaluator's own predicate.
+        /// </summary>
+        /// <remarks>
+        /// Deliberately delegates to <see cref="EvaluateQuestSignalJob.PrerequisitesSatisfied"/> rather than
+        /// reimplementing the check. A second copy of the gate logic would drift from the one the graph
+        /// actually runs, and a diagnostic that disagrees with the evaluator is worse than none.
+        /// </remarks>
+        /// <param name="node">Node to test.</param>
+        /// <returns>True when the node's prerequisite gate is open.</returns>
+        private bool NodePrerequisitesSatisfied(in QuestNodeDescriptor node)
+        {
+            if (!_globalPrerequisites.IsCreated)
+                return false;
+
+            if (node.PrereqCount > 0 && !_prerequisites.IsCreated)
+                return false;
+
+            return EvaluateQuestSignalJob.PrerequisitesSatisfied(node, _prerequisites, _globalPrerequisites);
+        }
+#endif
 
         private bool TrySetResolvedBit(uint bitHash)
         {
