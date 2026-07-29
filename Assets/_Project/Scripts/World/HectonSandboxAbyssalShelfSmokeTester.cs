@@ -180,6 +180,8 @@ namespace Hecton8.World
                         _smokeFailureWarningHash,
                         _smokeContextHash,
                         _debugInvalidSampleCount);
+
+                    ReportUnsatisfiableThresholdsIfThatIsWhyItFailed();
                 }
 
                 if (_debugAupDeterminismDeltaMeters > AupDeterminismToleranceMeters)
@@ -327,6 +329,65 @@ namespace Hecton8.World
             _debugFarChunkInvalidSampleCount = summary.FarChunkInvalidSampleCount;
             _debugHighChunkAupDeltaMeters = summary.HighChunkAupDeltaMeters;
             _debugPassed = summary.Passed != 0;
+        }
+
+        /// <summary>
+        /// Distinguishes "the world is wrong" from "this test's thresholds are unreachable", which are the
+        /// same output today and mean opposite things.
+        /// <para>
+        /// WHY THIS EXISTS. <see cref="RequiredMinMeters"/> / <see cref="RequiredMaxMeters"/> assert a band
+        /// this generator provably cannot reach - see the block on those constants - so
+        /// <c>summary.Passed</c> is 0 for every seed, at every position, on every run. Until now the only
+        /// consequence was a telemetry warning, which means a reader of <see cref="LastRunPassed"/> sees a
+        /// permanently failing world smoke test and has no way to tell that the TEST is misconfigured
+        /// rather than the terrain. A check that can only ever fail, quietly, is the same false-evidence
+        /// class this instrument layer has been full of: it just fails in the pessimistic direction.
+        /// </para>
+        /// <para>
+        /// The test uses ONLY MEASURED DATA and introduces no new constant. If the measured extremes both
+        /// fall strictly inside the required band, the generator simply never travelled far enough to
+        /// satisfy either end - which is a statement about the thresholds, not about the terrain. Deriving
+        /// the generator's containment interval here instead would have created a fifth drifting copy of a
+        /// number owned by <c>WorldMacroGeologyFields</c>, which is exactly what
+        /// <c>WorldVerticalExtentMath</c> exists to prevent.
+        /// </para>
+        /// <para>
+        /// COLD PATH ONLY, so the interpolation is legal: this is reached from
+        /// <see cref="RunSmokeTest"/>, whose callers are <c>Start</c> (once, behind <c>runOnStart</c>) and a
+        /// ContextMenu item. It is not on any tick, update or job cadence. It is also conditional on the
+        /// failure already having happened, so a healthy run allocates nothing here.
+        /// </para>
+        /// <para>
+        /// Choosing the band that SHOULD be asserted is a vertical-extent decision and belongs to the
+        /// owner - either the normalisation window shrinks toward the geology envelope or
+        /// <c>HadalDepthMeters</c> grows toward the window. This method deliberately does not pick, and
+        /// does not change the thresholds. It only stops the failure being mute.
+        /// </para>
+        /// </summary>
+        private void ReportUnsatisfiableThresholdsIfThatIsWhyItFailed()
+        {
+            bool minUnreachable = _debugMinHeightMeters > RequiredMinMeters;
+            bool maxUnreachable = _debugMaxHeightMeters < RequiredMaxMeters;
+
+            if (!minUnreachable && !maxUnreachable)
+                return;
+
+            UnityEngine.Debug.LogError(
+                "[SandboxAbyssalShelfSmokeTest] THRESHOLDS UNSATISFIABLE BY THIS GENERATOR - this run says " +
+                "nothing about whether the world is correct. Measured Y span was [" +
+                _debugMinHeightMeters.ToString("F2") + ", " + _debugMaxHeightMeters.ToString("F2") +
+                "] m, while the test demands minHeight <= " + RequiredMinMeters.ToString("F2") +
+                " m and maxHeight >= " + RequiredMaxMeters.ToString("F2") + " m" +
+                (minUnreachable
+                    ? " (deep end short by " + (_debugMinHeightMeters - RequiredMinMeters).ToString("F2") + " m)"
+                    : string.Empty) +
+                (maxUnreachable
+                    ? " (high end short by " + (RequiredMaxMeters - _debugMaxHeightMeters).ToString("F2") + " m)"
+                    : string.Empty) +
+                ". The generator never reaches those extremes, so Passed=0 is a property of the thresholds, " +
+                "not a terrain defect. Fixing it is the owner's vertical-extent decision: shrink the " +
+                "normalisation window toward the geology envelope, or raise WorldMacroGeologyFields " +
+                "HadalDepthMeters toward the window. Until then treat this row as UNMEASURED.");
         }
 
         private void WriteDebugJson()
