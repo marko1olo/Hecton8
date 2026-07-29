@@ -1101,6 +1101,12 @@ namespace Hecton8.Construction
         private static IDataVault s_CachedDataVault;
         private static IVoxelSonarSdfReadLeaseModel s_CachedVoxelSdfReadLeaseModel;
         private static bool s_DockingSignalLanesConfigured;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // Latch for the DroneFleetMiningServiceSignal no-producer advisory in BuildHeadlessTaskMap. One bool
+        // read per fleet tick after the first announce; compiled out of release entirely. Reset in
+        // ResetStaticState so a domain reload re-announces.
+        private static bool s_UnpublishedMiningServiceLaneWarned;
+#endif
         private static bool s_HeadlessDriverRegistered;
         private static bool s_HeadlessUpdateRegistered;
         private static bool s_HeadlessLateFrameRegistered;
@@ -1294,6 +1300,9 @@ namespace Hecton8.Construction
             s_CachedDataVault = null;
             s_CachedVoxelSdfReadLeaseModel = null;
             s_DockingSignalLanesConfigured = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            s_UnpublishedMiningServiceLaneWarned = false;
+#endif
             s_HeadlessHotSwapRegistered = false;
             s_HeadlessJobScheduled = false;
             s_HeadlessSdfReadLease = default;
@@ -4997,6 +5006,28 @@ namespace Hecton8.Construction
             if (!droneStates.IsCreated || s_DroneSlotDroneIds == null)
                 return;
 
+            // VESTIGIAL LANE, NOT A BROKEN ONE. SignalBus<DockingRequestSignal> has no producer anywhere in
+            // Assets/_Project/Scripts: no "new DockingRequestSignal" and no Push/TryPush/TryPushTracked exists.
+            // Its only other occurrences are the struct (Core/Signals/GlobalSignalPayloads.CoreFoundation.cs:800),
+            // the lane registration and size check (Core/Signals/GlobalSignals.RuntimeLifecycle.cs:955 and :289),
+            // the reserved contract id HectonSignalLaneContract.cs:411, and the SanitizeDockingRequestSignal
+            // guard in Core/Signals/SignalBusRuntime.cs:4819. So this loop has never executed.
+            // Do NOT read that as "drones never dock" - docking is fully live on a DIRECT-CALL path that does not
+            // touch this lane:
+            //   - autonomous return-and-dock: DroneCognitionJob.cs:442-444 calls BeginDocking itself once a drone
+            //     in Return state is inside DockingStartDistanceSq (also DroneCognitionJob.cs:703).
+            //   - Return state is entered by ReturnDroneToHub, by DroneFleetNavigationKernel.cs:598, and by the
+            //     abort path here, which RepairDroneHub.cs:897 drives through AbortHeadlessDrone.
+            //   - the dock-pose retarget this handler performs (HomePosition/HomeAup/HomeRotation) is also done
+            //     internally by TryAttachToAlternateHub when a drone is orphaned.
+            //   - the ack half of the triad is live regardless: PublishDockingComplete/PublishDockingFailed fire
+            //     for autonomous docks too, carrying drone.DockingRequestId == 0, and Power/ShinobuLogisticsRouter.cs:1267
+            //     consumes both lanes (it filters SourceKind == VehicleDockingModule, so it ignores fleet acks).
+            // What this lane uniquely adds is an EXTERNAL command to dock a named drone at an ARBITRARY AUP pose
+            // with a correlated RequestId - a contracted extension point with sanitizer support and 52 bytes of
+            // ReservedTail, for which no caller has ever been written. Treat it as a dormant command entry point.
+            // Read is GetFrameSnapshot (non-destructive): a future producer can be added without disturbing this
+            // reader, and this reader does not consume signals out from under anyone else.
             System.ReadOnlySpan<DockingRequestSignal> requests = SignalBus<DockingRequestSignal>.GetFrameSnapshot();
             for (int i = 0; i < requests.Length; i++)
             {
@@ -6745,6 +6776,17 @@ namespace Hecton8.Construction
             float deltaTime,
             NativeArray<DroneAssignmentTaskDTO> assignmentTasks)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Announced ahead of the rebuild-timer and moduleCount guards on purpose: both can return for the
+            // whole session, and an advisory placed next to the SignalBus<DroneFleetMiningServiceSignal> read
+            // below would then be dead code itself. See the dead-lane block at that read site.
+            if (!s_UnpublishedMiningServiceLaneWarned)
+            {
+                s_UnpublishedMiningServiceLaneWarned = true;
+                H8Debug.LogWarning(
+                    "[DroneFleetManager] DEAD SIGNAL LANE: BuildHeadlessTaskMap drains SignalBus<DroneFleetMiningServiceSignal>, but nothing in Assets/_Project/Scripts ever constructs or pushes that signal - the type occurs only at this drain, at its struct declaration (Construction/DroneFleetNavigationKernel.cs:934), and in the EnsureDockingSignalLanes Configure/EnsureInitialized pair. The two sibling lanes configured in that same block ARE published by this very file (DroneFleetRepairServiceSignal from ApplyFriendlyRepairService, DroneFleetInventoryTransactionSignal from ApplyMiningService and DroneFleetManager_Transactions.cs:1302), so the asymmetry is a missing producer rather than a design choice. Consequence: AppendMiningServiceTasksForHub always returns on an empty span, so DroneFleetTaskKind.MineNode is never written - AppendHeadlessMiningServiceTask is its ONLY assignment site, and the managed launch path (TryAssignFleetTask) can only produce RepairModule or CutParasite. No drone slot ever reaches MineNode, ApplyMiningService and PrepareMiningTransaction (DroneFleetManager_Transactions.cs:995) never execute, and NO DRONE EVER MINES OR DEPOSITS ORE. Repair and CutParasite tasking are unaffected. Do NOT paper over this by publishing a synthetic signal: which system owns mining work orders (resource-node discovery vs. hub scan) is an owner decision. Note also that the drain sits after the moduleCount == 0 early return, so even with a producer, mining tasks would additionally require at least one spawned base module.");
+            }
+#endif
             s_HeadlessTaskRebuildTimer -= Mathf.Max(0f, deltaTime);
             if (s_HeadlessTaskRebuildTimer > 0f && s_HeadlessTaskCount > 0)
                 return;
@@ -6760,6 +6802,27 @@ namespace Hecton8.Construction
 
             int hubCount = Mathf.Min(RepairDroneHub.ActiveHubCount, MaxMainThreadHubScanCount);
             FloraInteractionManager floraInteractionManager = s_CachedFloraInteractionManager;
+            // DEAD LANE - THIS SNAPSHOT HAS ALWAYS BEEN EMPTY. SignalBus<DroneFleetMiningServiceSignal> has no
+            // producer anywhere in Assets/_Project/Scripts. Verified producers-of set is empty:
+            //   - no "new DroneFleetMiningServiceSignal" and no SignalBus<DroneFleetMiningServiceSignal>.Push/
+            //     TryPush/TryPushTracked exists in the tree; the type's only other occurrences are the struct
+            //     declaration (Construction/DroneFleetNavigationKernel.cs:934) and the Configure/
+            //     EnsureInitialized pair in EnsureDockingSignalLanes above.
+            //   - the lane is NOT registered in Core/Signals/GlobalSignals.RuntimeLifecycle.cs like the other
+            //     first-party lanes; it is configured locally here with a hand-written laneHash 0x44524D4E.
+            //   - both siblings configured beside it ARE pushed by this assembly: DroneFleetRepairServiceSignal
+            //     in ApplyFriendlyRepairService, DroneFleetInventoryTransactionSignal in ApplyMiningService and
+            //     in DroneFleetManager_Transactions.cs:1302. Only the mining work-order lane was never wired.
+            // This lane is the SOLE input to the fleet's mining capability, so the whole capability is inert:
+            // AppendHeadlessMiningServiceTask is the only site that ever assigns DroneFleetTaskKind.MineNode,
+            // and it is reachable only from this span. The managed launch path cannot substitute - the only
+            // RepairTaskCandidate.Kind literals in TryAssignFleetTask are RepairModule and CutParasite, so
+            // launch.Task.Kind in ApplyPendingLaunches can never be MineNode either. Net effect: ApplyMiningService,
+            // PrepareMiningTransaction (DroneFleetManager_Transactions.cs:995), the MineNode chassis spec with
+            // MiningHoldSeconds, the copper deposit path and the mining commit-failure latch are all fully
+            // implemented and completely unreachable. Nothing logs it; the drain below just early-returns.
+            // Read is GetFrameSnapshot (non-destructive), so a future producer can be added alongside this
+            // reader without stealing signals from another consumer. Adding that producer is an owner decision.
             System.ReadOnlySpan<DroneFleetMiningServiceSignal> miningSignals = SignalBus<DroneFleetMiningServiceSignal>.GetFrameSnapshot();
             int remainingModuleScans = MaxMainThreadTaskScanCount;
             for (int hubIndex = 0; hubIndex < hubCount; hubIndex++)
