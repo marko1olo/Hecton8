@@ -116,6 +116,7 @@ namespace Hecton8.QA.Headless
         private bool _ghostStepPending;
         private bool _ghostStateInitialized;
         private bool _ecologyReady;
+        private double _simulationStartRealtime;
         private bool _finished;
         private bool _runtimePolicyCaptured;
 
@@ -501,7 +502,32 @@ namespace Hecton8.QA.Headless
         private void TryMarkEcologyReady()
         {
             IEcosystemDirectorService ecosystem = GlobalRegistry.EcosystemDirector;
-            _ecologyReady = ecosystem != null && ecosystem.IsInitialized;
+            bool readyNow = ecosystem != null && ecosystem.IsInitialized;
+
+            // Stamp the wall clock the first time simulation actually starts advancing, so the result file can
+            // report the dilation it DELIVERED rather than the one it was configured with. Those two numbers
+            // are far apart and the gap is the single most useful thing this harness can tell its operator —
+            // see the deliveredTimeDilation note in WriteResult.
+            if (readyNow && !_ecologyReady)
+                _simulationStartRealtime = Time.realtimeSinceStartupAsDouble;
+
+            _ecologyReady = readyNow;
+        }
+
+        /// <summary>
+        /// Simulated seconds advanced per real second, measured rather than assumed. Zero until simulation
+        /// starts advancing.
+        /// </summary>
+        private double DeliveredTimeDilation
+        {
+            get
+            {
+                if (_simulationStartRealtime <= 0.0)
+                    return 0.0;
+
+                double elapsed = Time.realtimeSinceStartupAsDouble - _simulationStartRealtime;
+                return elapsed > 0.0 ? _simulatedSeconds / elapsed : 0.0;
+            }
         }
 
         private void DrainSignals()
@@ -1072,8 +1098,19 @@ namespace Hecton8.QA.Headless
                 WriteInvariant(writer, _targetDays);
                 writer.Write(",\"simulatedSeconds\":");
                 WriteInvariant(writer, _simulatedSeconds);
-                writer.Write(",\"timeDilation\":");
+                // Two dilations, and reporting only the first is how this harness lied about itself. The
+                // nominal scalar is what Time.timeScale was set to; the delivered one is what the dispatcher
+                // actually granted. SystemDispatcher.RunFastTick is a fixed-step substep loop capped at
+                // MaxCadenceSubstepsPerFrame = 4 calls of FastTick(1/60) per frame, DISCARDING the overflow
+                // (SystemDispatcher.cs:6245-6246), and this runner advances its day counter by that fixed
+                // 1/60. So delivered dilation is 4 * fps / 60 = fps / 15, and reaching a nominal 100 would
+                // need 1500 fps of full-world player loop. A reader who saw only "timeDilation": 100 would
+                // conclude a 100-day run costs an hour; at a realistic batchmode frame rate it costs 7 to 25.
+                // Compare the two fields to size the next run instead of trusting the configured one.
+                writer.Write(",\"timeDilationNominal\":");
                 WriteInvariant(writer, TimeDilationScalar);
+                writer.Write(",\"timeDilationDelivered\":");
+                WriteInvariant(writer, (float)DeliveredTimeDilation);
                 writer.Write(",\"progressionSignals\":");
                 WriteInvariant(writer, _progressionSignalCount);
                 writer.Write(",\"crashSignalsConsumed\":");

@@ -30,10 +30,43 @@ namespace Hecton8.QA.Headless.Editor
         // for 45 minutes with no result file, no CSV rows and no log line.
         //
         // HasTimedOut -> WriteFallbackResult(2, "BATCH_TIMEOUT") -> RequestStop(2, "timeout") was already
-        // written and is independent of the runtime runner. It just never got to run. Ten minutes covers a
-        // cold Bee compile plus a full 100-day run at the harness's own ~36 real seconds per simulated day,
-        // and guarantees an artifact from any future hang. Override per-run if a longer target is needed.
-        private const double TimeoutSeconds = 600.0;
+        // written and is independent of the runtime runner. It just never got to run.
+        //
+        // THE OLD CONSTANT COULD NOT PASS ITS OWN DEFAULT RUN, and that is very likely why this harness has
+        // never been run to completion. It was 600 s with a comment claiming ten minutes "covers a cold Bee
+        // compile plus a full 100-day run at ~36 real seconds per simulated day" — but 100 days x 36 s is
+        // 3600 s by that comment's own arithmetic, six times the budget it was justifying. A default run was
+        // therefore guaranteed to end in BATCH_TIMEOUT with roughly zero days simulated.
+        //
+        // The real delivered rate is worse again, and it is a dispatcher property rather than anything this
+        // file controls. SystemDispatcher.RunFastTick is a FIXED-STEP substep loop: it accumulates the dilated
+        // frame delta but calls FastTick(1.0/60.0) at most MaxCadenceSubstepsPerFrame = 4 times per frame and
+        // then DISCARDS the overflow (SystemDispatcher.cs:6245-6246 clamps the accumulator back to one
+        // interval). The runner advances its day counter by that fixed 1/60, so simulated seconds per real
+        // second is 4 * fps / 60 = fps / 15 — reaching the runner's nominal TimeDilationScalar of 100 would
+        // need 1500 fps of full-world player loop. At a realistic batchmode 60-200 fps the harness delivers
+        // 4x-13x, so the 100-day default is 7.5 to 25 hours of wall clock, not one.
+        //
+        // So the watchdog now DERIVES from the workload it is watching instead of asserting a number. A
+        // watchdog that does not know what it guards is not a safety net, it is a coin flip: too small and
+        // every honest run is killed, too large and a hang costs a night. The fixed part covers a cold Bee
+        // compile and play-mode entry; the variable part is the simulated span converted at a deliberately
+        // PESSIMISTIC 4x, because being killed at the finish line destroys the whole run while overshooting
+        // only costs idle minutes on a genuine hang.
+        //
+        // Practical consequence, worth stating because it is the difference between a useful first run and a
+        // no-op: pass -h8headlessDays 5 -h8headlessDaySeconds 60 for a smoke run. That is 300 simulated
+        // seconds, minutes rather than hours, and it exercises every lane the 100-day run does.
+        private const double TimeoutFixedSeconds = 420.0;
+        private const double PessimisticDilation = 4.0;
+        private const double TimeoutCeilingSeconds = 6.0 * 60.0 * 60.0;
+
+        private static double ResolveTimeoutSeconds()
+        {
+            double simulatedSpan = ReadSimulatedSpanSecondsFromArgs();
+            double budget = TimeoutFixedSeconds + (simulatedSpan / PessimisticDilation);
+            return budget > TimeoutCeilingSeconds ? TimeoutCeilingSeconds : budget;
+        }
         private const double PollIntervalSeconds = 0.25;
         private const int ResultReadBufferSize = 4096;
         // COLD ALLOC: byte[1] - batch flag file payload, editor-only setup path - owner: HeadlessSimulationBatchRunner
@@ -162,7 +195,46 @@ namespace Hecton8.QA.Headless.Editor
             if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out double startTime))
                 startTime = EditorApplication.timeSinceStartup;
 
-            return EditorApplication.timeSinceStartup - startTime > TimeoutSeconds;
+            return EditorApplication.timeSinceStartup - startTime > ResolveTimeoutSeconds();
+        }
+
+        /// <summary>
+        /// Simulated span the runtime runner was asked for, in simulated seconds, read from the same argv the
+        /// runner parses. Returns the default 100 x 3600 when the args are absent.
+        /// </summary>
+        /// <remarks>
+        /// Parsed here rather than read off the runner because this is the EDITOR side and it has to size its
+        /// watchdog before play mode exists, so there is no runner instance to ask. The defaults are duplicated
+        /// from HeadlessSimulationRunner.DefaultTargetDays / DefaultDaySeconds; if those change and this does
+        /// not, the watchdog under-sizes silently, which is the failure this whole block exists to remove. That
+        /// duplication is the cost of the editor/runtime split and is cheaper than a shared constants asset for
+        /// two numbers.
+        /// </remarks>
+        private static double ReadSimulatedSpanSecondsFromArgs()
+        {
+            const double defaultDays = 100.0;
+            const double defaultDaySeconds = 3600.0;
+            double days = defaultDays;
+            double daySeconds = defaultDaySeconds;
+
+            string[] args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (string.Equals(args[i], "-h8headlessDays", StringComparison.OrdinalIgnoreCase) &&
+                    double.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedDays) &&
+                    parsedDays >= 1.0)
+                {
+                    days = parsedDays;
+                }
+                else if (string.Equals(args[i], "-h8headlessDaySeconds", StringComparison.OrdinalIgnoreCase) &&
+                         double.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedDaySeconds) &&
+                         parsedDaySeconds >= 1.0)
+                {
+                    daySeconds = parsedDaySeconds;
+                }
+            }
+
+            return days * daySeconds;
         }
 
         private static void RequestStop(int exitCode, string status)
