@@ -14,21 +14,50 @@ namespace MapMagic.Editor.Diagnostics
 {
     public static class GeologyAtlasTask
     {
-        private const string OutDir =
-            @"C:\Users\Admin\.gemini\antigravity\brain\bdf7a07e-c29b-4dac-8a24-2f14ca51d3d2\atlas";
+        // Was C:\Users\Admin\.gemini\antigravity\brain\bdf7a07e-...\atlas - a SECOND foreign agent brain
+        // directory, distinct from the 7b5d06d2-... one the other diagnostics tasks used. Outside the repo,
+        // unversioned, and invisible to anyone auditing this project's geology evidence. `static readonly`
+        // rather than `const` because Path.Combine is not a compile-time constant.
+        private static readonly string OutDir =
+            Path.Combine(Directory.GetCurrentDirectory(), "Logs", "geology_atlas");
 
         private const int Res = 512;
 
         [MenuItem("Hecton8/Diagnostics/Geology Atlas")]
         public static void Run()
         {
+            // The atlas is a set of PNGs produced from generated matrices, so a null graphics device makes
+            // every tile in it zeros. C:\hades\.claude\rules\hecton8-shaders-compute.md:36-37 bans
+            // -nographics for exactly this, and Tools/BatchTasks passes it to this method.
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                Debug.LogError(
+                    "[GeologyAtlas] REFUSED: no GPU context (graphicsDeviceType == Null). Every atlas tile " +
+                    "would be zeros, which reads as flat geology rather than as a failed run. Remove " +
+                    "-nographics from the batch invocation and run again.");
+                EditorApplication.Exit(3);
+                return;
+            }
+
             try
             {
                 if (Directory.Exists(OutDir))
                 {
+                    // This deletes files. The old version swallowed every failure with an empty `catch { }`,
+                    // so a locked or read-only stale PNG survived into the new atlas and was read as fresh
+                    // output. Name what could not be removed instead.
                     foreach (string file in Directory.GetFiles(OutDir, "*.png"))
                     {
-                        try { File.Delete(file); } catch { }
+                        try
+                        {
+                            File.Delete(file);
+                        }
+                        catch (Exception deleteEx)
+                        {
+                            Debug.LogWarning(
+                                $"[GeologyAtlas] Could not delete stale atlas tile '{file}' - it will " +
+                                $"appear in this run's output as if it were fresh: {deleteEx.Message}");
+                        }
                     }
                 }
                 else
@@ -39,25 +68,54 @@ namespace MapMagic.Editor.Diagnostics
             }
             catch (Exception ex)
             {
-                File.WriteAllText(Path.Combine(OutDir, "atlas_error.txt"), ex.ToString());
-                Debug.LogError($"[GeologyAtlas] {ex}");
+                // Previously exited 0 from a finally block, so an atlas that was never generated reported
+                // success to whatever read the exit code.
+                Debug.LogError($"[GeologyAtlas] FAILED, the atlas is incomplete or absent: {ex}");
+                EditorApplication.Exit(2);
+                return;
             }
-            finally
-            {
-                EditorApplication.Exit(0);
-            }
+
+            Debug.Log($"[GeologyAtlas] Atlas written to {OutDir}");
+            EditorApplication.Exit(0);
         }
 
+        /// <summary>
+        /// Hijacks ANY batchmode Unity launch when a run.flag file is present, and Run() ends in
+        /// EditorApplication.Exit - so an unrelated batchmode job (a route probe, a compile check, a build)
+        /// can be killed by this diagnostic without anything naming it as the cause.
+        ///
+        /// The old version deleted the flag inside `try { ... } catch { }`. If the delete failed - file
+        /// locked, directory read-only - the flag survived and EVERY subsequent batchmode launch on this
+        /// machine was hijacked, permanently, silently. It now refuses to run in that case rather than
+        /// becoming a persistent trap, and it announces the hijack when it does take over.
+        /// </summary>
         [InitializeOnLoadMethod]
         private static void AutoRunOnBatch()
         {
             if (!Application.isBatchMode) return;
+
             string flag = Path.Combine(OutDir, "run.flag");
-            if (File.Exists(flag))
+            if (!File.Exists(flag))
+                return;
+
+            try
             {
-                try { File.Delete(flag); } catch { }
-                Run();
+                File.Delete(flag);
             }
+            catch (Exception deleteEx)
+            {
+                Debug.LogError(
+                    $"[GeologyAtlas] REFUSING to auto-run: could not delete the trigger flag '{flag}', so " +
+                    "running now would leave it in place and hijack every future batchmode launch on this " +
+                    $"machine. Delete it by hand. ({deleteEx.Message})");
+                return;
+            }
+
+            Debug.Log(
+                $"[GeologyAtlas] AUTO-RUN: '{flag}' was present, so this batchmode session is being taken " +
+                "over by the geology atlas and will exit when it finishes. If you launched Unity for " +
+                "something else, this is why it ended.");
+            Run();
         }
 
         private static void DoRun()
@@ -66,7 +124,14 @@ namespace MapMagic.Editor.Diagnostics
 
             WorldMacroGeologyParams p = WorldMacroGeologyParams.CreateDefault(
                 (uint)WorldMacroGeologyFields.DefaultAuthoringSeed);
-            p.WaterSurfaceY = 0f;
+
+            // WAS 0f, which is also what WorldMacroGeologyFields.CreateDefault leaves it at
+            // (WorldMacroGeologyFields.cs:48). Geology computes every height as `WaterSurfaceY - depth`
+            // (:1381), so a zero datum drew this whole atlas 14.02 m deeper than the world it claims to
+            // describe. The runtime path was corrected to the real datum in three sites in
+            // HectonSandboxAbyssalShelfJobs.cs (commit 34e4591ae); this diagnostic was the fourth site of
+            // the same defect and kept measuring against the old frame.
+            p.WaterSurfaceY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
 
             (float x, float z, string name)[] points = new (float, float, string)[]
             {
