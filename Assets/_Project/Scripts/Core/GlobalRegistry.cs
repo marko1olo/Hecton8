@@ -316,6 +316,26 @@ namespace Hecton8.Core
         private static readonly IVRSomaticProvider _noOpVRSomaticProvider = PcVRSomaticProvider.Shared;
         private static readonly uint _inputDependencyWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.Input"));
         private static readonly uint _serviceReboundOverflowWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.ServiceReboundOverflow"));
+        private static readonly uint _coldResolvedSubstituteWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.ColdResolvedSubstitute"));
+        // ---------------------------------------------------------------------------------------------
+        // Null-object substitution census.
+        //
+        // Exactly two slots hand out a NON-NULL substitute when they are read before they are filled:
+        // Input (_noOpInputService, from the Input getter :956 and from ResolveSafeFallbackService :7879)
+        // and VRSomaticProvider (_noOpVRSomaticProvider, from the VRSomatic getter :1921 and :7885). A
+        // consumer that cold-resolves inside that window caches an object whose null check PASSES and whose
+        // behaviour is nothing, so the failure surfaces later as "the feature is dead" with no error.
+        //
+        // Register/RegisterService only queue a rebound when the slot ALREADY held a service, so filling
+        // an empty slot notifies nobody and the cached substitute is permanent. These two fields are the
+        // evidence that the window was actually entered, so the first fill can report it and issue the
+        // rebound the notifier previously skipped.
+        //
+        // Written ONLY from the substitution branch of a getter - a branch that is unreachable once the
+        // slot holds a real service - and read only from registration, which is cold. A session that
+        // never hands out a substitute never writes them and pays one already-latched bool test.
+        private static object _inputNullObjectSubstitutionHandedOut;
+        private static object _vrSomaticNullObjectSubstitutionHandedOut;
         private static readonly uint _globalRegistryTelemetryContextHash = unchecked((uint)LocHash.Compute("GlobalRegistry"));
         private const int MaxPendingServiceRebounds = 64;
         private const uint PlayerResolutionMask =
@@ -1883,7 +1903,24 @@ namespace Hecton8.Core
         /// <summary>
         /// Registered VR somatic provider, or the PC/console dummy provider when no VR owner is active.
         /// </summary>
-        public static IVRSomaticProvider VRSomatic => _vrSomaticProvider ?? _noOpVRSomaticProvider;
+        public static IVRSomaticProvider VRSomatic
+        {
+            get
+            {
+                IVRSomaticProvider registered = _vrSomaticProvider;
+                if (registered != null)
+                    return registered;
+
+                // Deliberately silent. On a non-VR build this substitute is the permanent and CORRECT
+                // answer, so a log here would fire on every PC boot and train everyone to ignore it. What
+                // is NOT normal is a real VR provider registering AFTER this line ran - that transition is
+                // what ReportFirstFillAfterNullObjectSubstitution reports, and only then.
+                if (_vrSomaticNullObjectSubstitutionHandedOut == null)
+                    _vrSomaticNullObjectSubstitutionHandedOut = _noOpVRSomaticProvider;
+
+                return _noOpVRSomaticProvider;
+            }
+        }
 
         /// <summary>
         /// Raw registered VR somatic provider for bootstrap/service-owner validation.
@@ -2863,6 +2900,8 @@ namespace Hecton8.Core
             _hasHardwareProfile = false;
             _dispatcherRegistrationErrorLogged = false;
             _inputFallbackWarningPublished = false;
+            _inputNullObjectSubstitutionHandedOut = null;
+            _vrSomaticNullObjectSubstitutionHandedOut = null;
             DisposeServiceReboundQueuesForShutdown();
             _suppressServiceReboundQueueing = false;
             _resolutionMask = 0u;
@@ -7298,13 +7337,38 @@ namespace Hecton8.Core
             }
         }
 
+        /// <summary>
+        /// Reports the Input substitution window ONCE per session.
+        ///
+        /// The telemetry publish alone was not enough: it is a hashed event on a bus nobody watches during
+        /// a boot investigation, so a whole session ran on NoOpInputService while the route log cheerfully
+        /// reported inputServiceRegistered=True, inputEnabled=True, blockMask=0x00000000. The console line
+        /// below is the part that makes the window visible, and it is the only report that can fire when
+        /// the Input slot is never filled at all - in that case
+        /// ReportFirstFillAfterNullObjectSubstitution never runs, because there is no first fill.
+        ///
+        /// Cost: the existing `_inputFallbackWarningPublished` short-circuit already returns before any of
+        /// this on every read after the first, so the Input getter's fallback branch is unchanged per frame.
+        /// </summary>
         private static void PublishInputFallbackWarning()
         {
             if (_inputFallbackWarningPublished || !Application.isPlaying)
                 return;
 
             _inputFallbackWarningPublished = true;
+            _inputNullObjectSubstitutionHandedOut = _noOpInputService;
             GlobalTelemetryBus.PublishDependencyOrderWarning(_inputDependencyWarningHash, 0u);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError(
+                "[GlobalRegistry] Input slot READ BEFORE REGISTRATION. Handing out the non-null " +
+                "NoOpInputService null object, whose IsInitialized is a hardcoded false. Any consumer " +
+                "that caches this value keeps a dead input service, and its own null check will not catch " +
+                "it - GlobalRegistry.InputDeterminism is a direct alias of this property, so a cached " +
+                "IInputDeterminismService is the same dead object. If no follow-up GlobalRegistry line " +
+                "names the Input slot before gameplay starts, then either the slot was never filled or " +
+                "nobody was told the real service arrived, and every input override published this " +
+                "session went unconsumed.");
+#endif
         }
 
         private static void Register<T>(ref T slot, T instance) where T : class, ISystem
@@ -7350,7 +7414,12 @@ namespace Hecton8.Core
 
             MarkServiceRegistered(serviceSlot);
             if (previousService != null)
+            {
                 QueueServiceRebound(serviceSlot, previousService, instance);
+                return;
+            }
+
+            ReportFirstFillAfterNullObjectSubstitution(serviceSlot, instance);
         }
 
         private static void RegisterAllowSameInstance<T>(ref T slot, T instance) where T : class, ISystem
@@ -7405,7 +7474,12 @@ namespace Hecton8.Core
 
             MarkServiceRegistered(serviceSlot);
             if (previousService != null)
+            {
                 QueueServiceRebound(serviceSlot, previousService, instance);
+                return;
+            }
+
+            ReportFirstFillAfterNullObjectSubstitution(serviceSlot, instance);
         }
 
         [Preserve]
@@ -7437,6 +7511,13 @@ namespace Hecton8.Core
 
             Interlocked.Exchange(ref slot, instance);
             MarkServiceRegistered(serviceSlot);
+
+            // This path queues unconditionally, including for a null previousService, so a substitution
+            // window that ends here IS notified. Discharge the census entry so the first-fill report
+            // cannot fire later on a stale record and claim a miss that did not happen.
+            if (previousService == null)
+                ConsumeNullObjectSubstitutionRecord(serviceSlot);
+
             QueueServiceRebound(serviceSlot, previousService, instance);
             if (previousService != null && instance == null)
                 ReapMemoryForUnregisteredService(serviceSlot);
@@ -7793,11 +7874,120 @@ namespace Hecton8.Core
         {
             Type serviceType = typeof(T);
             if (serviceType == typeof(IInputService) || serviceType == typeof(IInputDeterminismService))
+            {
+                NoteNullObjectSubstitution(GlobalRegistryServiceSlot.Input, _noOpInputService);
                 return _noOpInputService as T;
+            }
+
             if (serviceType == typeof(IVRSomaticProvider))
+            {
+                NoteNullObjectSubstitution(GlobalRegistryServiceSlot.VRSomaticProvider, _noOpVRSomaticProvider);
                 return _noOpVRSomaticProvider as T;
+            }
 
             return null;
+        }
+
+        /// <summary>
+        /// Records that a read handed out a non-null null-object substitute for an EMPTY slot.
+        /// Called only from a substitution branch, which is unreachable once the slot is filled.
+        /// </summary>
+        private static void NoteNullObjectSubstitution(GlobalRegistryServiceSlot serviceSlot, object substitute)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Input:
+                    if (_inputNullObjectSubstitutionHandedOut == null)
+                        _inputNullObjectSubstitutionHandedOut = substitute;
+                    break;
+
+                case GlobalRegistryServiceSlot.VRSomaticProvider:
+                    if (_vrSomaticNullObjectSubstitutionHandedOut == null)
+                        _vrSomaticNullObjectSubstitutionHandedOut = substitute;
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Takes and clears the substitution record for a slot. Returns null for the 174 slots that have no
+        /// null-object substitute, which is every slot except Input and VRSomaticProvider.
+        /// </summary>
+        private static object ConsumeNullObjectSubstitutionRecord(GlobalRegistryServiceSlot serviceSlot)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Input:
+                {
+                    object substitute = _inputNullObjectSubstitutionHandedOut;
+                    _inputNullObjectSubstitutionHandedOut = null;
+                    return substitute;
+                }
+
+                case GlobalRegistryServiceSlot.VRSomaticProvider:
+                {
+                    object substitute = _vrSomaticNullObjectSubstitutionHandedOut;
+                    _vrSomaticNullObjectSubstitutionHandedOut = null;
+                    return substitute;
+                }
+
+                default:
+                    return null;
+            }
+        }
+
+        /// <summary>
+        /// Runs when a slot is filled for the FIRST time - the case where Register/RegisterService skip
+        /// QueueServiceRebound because previousService was null. Fills that hole for the only slots where a
+        /// cold resolve can have cached something non-null and dead.
+        ///
+        /// WHY THIS IS NOT A BLANKET WIDENING OF THE REBOUND GATE. Two reasons, both from the code:
+        ///
+        /// 1. Queue capacity. GlobalRegistryServiceSlot has ~176 real slots; MaxPendingServiceRebounds is
+        ///    64 and covers the pending and next-frame lanes together, and the drain is gated behind
+        ///    SystemDispatcher.TryConsumeLateFrameEventDispatch, so nothing dequeues until the dispatcher
+        ///    reaches its late-frame flush pass. Nothing in bootstrap throttles registrations to 64 slots
+        ///    per frame. Notifying on every first fill would therefore risk hitting the overflow branch,
+        ///    which DROPS payloads - including, on a bad frame, the Input notification this exists for.
+        ///    Trading a silent miss for a noisy miss is not a fix.
+        /// 2. Listener semantics. Several DataVault-slot listeners release handles from the vault they are
+        ///    currently holding when previousService is null: SystemDispatcher.cs:4384
+        ///    (`ReleaseSystemDispatcherVaultHandles(_dataVault ?? (previousService as IDataVault))`),
+        ///    FabricationAssemblerRuntime.cs:929, DataArchaeologyRuntime.cs:972, HomeostasisBrain.cs:1224,
+        ///    FluidPipeGraphRuntime.cs:200. A blanket null-previous first-fill rebound would hand those a
+        ///    release of the live vault. Scoping to Input/VRSomaticProvider keeps the blast radius on
+        ///    handlers that only reassign a cached field (SystemDispatcher.cs:4341-4343,
+        ///    HectonPlayerMovement.cs:4295-4297, PlayerTool.cs:1005-1007).
+        ///
+        /// previousService is reported as the SUBSTITUTE rather than null on purpose: that object is
+        /// literally what the consumers were holding, and it keeps any listener that assumes a non-null
+        /// previousService on a rebound satisfied. Rebounds carrying a null previousService already ship via
+        /// ReplaceService, so this shape is not new to the delivery path either.
+        /// </summary>
+        private static void ReportFirstFillAfterNullObjectSubstitution(
+            GlobalRegistryServiceSlot serviceSlot,
+            object instance)
+        {
+            object substitute = ConsumeNullObjectSubstitutionRecord(serviceSlot);
+            if (substitute == null || ReferenceEquals(substitute, instance))
+                return;
+
+            GlobalTelemetryBus.PublishDependencyOrderWarning(
+                _coldResolvedSubstituteWarningHash,
+                (uint)(byte)serviceSlot);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError(
+                "[GlobalRegistry] COLD-RESOLVED NULL OBJECT LEAKED PAST FIRST REGISTRATION. Slot " +
+                serviceSlot + " handed out the non-null " + substitute.GetType().Name +
+                " while it was empty, and is only being filled now by " + instance.GetType().Name +
+                ". Consumers that cached the substitute passed their null check and got a service that " +
+                "does nothing. A rebound is being queued for this first fill so " +
+                "IGlobalRegistryHotSwapListener consumers can re-resolve; anything that cached the " +
+                "substitute WITHOUT implementing that interface stays dead for the rest of the session " +
+                "and must re-read the property instead of caching it.");
+#endif
+
+            QueueServiceRebound(serviceSlot, substitute, instance);
         }
 
         internal static bool TryReplaceBootstrapServiceWithStableProxy(GlobalRegistryServiceSlot serviceSlot)
