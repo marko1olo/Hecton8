@@ -3,173 +3,540 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HECTON-8 — Submerge Submarine Noir Engine & NASA-Punk AR Interface</title>
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;700;900&display=swap" rel="stylesheet">
+    <title>Hecton8 - Deep Sea Noir / NASA-Punk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;700&family=Roboto+Mono:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #01070e; --panel-bg: rgba(4, 20, 36, 0.9); --sonar: #00ffcc; --cyan: #00dfd8; --alert: #ff3366; --text: #d0f0fd; --border: rgba(0,255,204,0.3); }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Share Tech Mono', monospace; min-height: 100vh; overflow-x: hidden; }
-        header { background: rgba(1, 10, 20, 0.95); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
-        .logo { font-family: 'Rajdhani', sans-serif; font-size: 2rem; font-weight: 900; color: #fff; letter-spacing: 3px; display: flex; align-items: center; gap: 10px; }
-        .logo span { color: var(--sonar); }
-        nav a { color: var(--text); text-decoration: none; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.3s; margin-left: 1rem; }
-        nav a:hover, nav a.active { background: rgba(0,255,204,0.15); color: var(--sonar); border: 1px solid var(--sonar); }
-        .hero { position: relative; padding: 3rem 2rem 1.5rem; text-align: center; background: radial-gradient(circle at 50% 30%, rgba(0,255,204,0.12) 0%, transparent 70%); }
-        h1 { font-family: 'Rajdhani', sans-serif; font-size: 4.5rem; font-weight: 900; color: #fff; letter-spacing: 6px; text-shadow: 0 0 30px var(--sonar); }
-        .tagline { color: var(--cyan); font-size: 1.2rem; margin-top: 0.5rem; text-transform: uppercase; letter-spacing: 2px; }
+        :root {
+            --bg-color: #030a11;
+            --sonar-cyan: #00ffcc;
+            --alert-red: #ff3366;
+            --glass-bg: rgba(4, 18, 30, 0.4);
+            --glass-border: rgba(0, 255, 204, 0.2);
+            --text-main: #e0fbfc;
+            --text-dim: #8a9ba8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Roboto Mono', monospace;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 255, 204, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(255, 51, 102, 0.05), transparent 25%);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        /* Ambient scanline overlay */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.1) 50%,
+                rgba(0,0,0,0.1)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        /* Layout */
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            grid-template-rows: auto 1fr;
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* Glassmorphism Panel Base */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--sonar-cyan), transparent);
+            opacity: 0.5;
+        }
+
+        /* Header */
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 1rem;
+            animation: slideDown 1s ease-out;
+        }
+
+        h1 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--sonar-cyan);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.4);
+            line-height: 1;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: var(--alert-red);
+            letter-spacing: 2px;
+            margin-top: 0.5rem;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .pulse {
+            width: 10px;
+            height: 10px;
+            background-color: var(--sonar-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--sonar-cyan);
+            animation: pulse-anim 2s infinite;
+        }
+
+        /* Sidebar */
+        aside {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            animation: slideRight 1s ease-out;
+        }
+
+        .data-block h3 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.5rem;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(224, 251, 252, 0.1);
+            padding-bottom: 0.5rem;
+        }
+
+        .data-block p, .data-block ul {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+            list-style: none;
+        }
+
+        .data-block ul li {
+            margin-bottom: 0.5rem;
+            position: relative;
+            padding-left: 1.2rem;
+        }
         
-        .interactive-section { max-width: 1280px; width: 100%; margin: 2rem auto; padding: 0 1.5rem; display: grid; grid-template-columns: 360px 1fr; gap: 2rem; }
-        .panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .data-block ul li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--sonar-cyan);
+        }
+
+        /* Main Content */
+        main {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            animation: fadeUp 1s ease-out 0.3s both;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+            padding: 0.8rem 1.5rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background: var(--sonar-cyan);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.4);
+            border-color: var(--sonar-cyan);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Feature Cards */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 8px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--sonar-cyan);
+            background: rgba(0, 255, 204, 0.05);
+        }
+
+        .feature-card h4 {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.4rem;
+            color: var(--sonar-cyan);
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        .tech-badge {
+            display: inline-block;
+            background: rgba(255, 51, 102, 0.15);
+            color: var(--alert-red);
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-top: 1rem;
+            border: 1px solid rgba(255, 51, 102, 0.3);
+        }
+
+        /* Visual Element - Sonar Canvas */
+        .visual-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            margin-bottom: 2rem;
+            background: #01060a;
+        }
+
+        canvas#sonar {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 10px; left: 10px;
+            font-size: 0.7rem;
+            color: var(--sonar-cyan);
+            pointer-events: none;
+        }
+
+        .hud-overlay p { margin-bottom: 3px; }
+
+        /* Animations */
+        @keyframes pulse-anim {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 204, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(0, 255, 204, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 255, 204, 0); }
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         
-        /* Canvas & Radar */
-        #sonarCanvas { width: 100%; height: 300px; background: #000; border: 2px solid var(--sonar); border-radius: 8px; box-shadow: inset 0 0 20px rgba(0,255,204,0.3); }
-        .btn-ping { width: 100%; margin-top: 1rem; padding: 0.9rem; background: var(--sonar); color: #000; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.2rem; border: none; border-radius: 4px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 25px var(--sonar); transition: all 0.2s; }
-        .btn-ping:hover { background: #fff; box-shadow: 0 0 40px #fff; }
-        
-        /* Dashboard Tabs */
-        .tab-btn { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 0.6rem 1.2rem; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1rem; cursor: pointer; border-radius: 4px; margin-right: 0.5rem; }
-        .tab-btn.active { background: var(--sonar); color: #000; }
-        .tab-content { display: none; margin-top: 1.5rem; line-height: 1.7; }
-        .tab-content.active { display: block; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        th, td { padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: left; }
-        th { color: var(--sonar); font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; }
-        .badge { background: rgba(0,255,204,0.1); border: 1px solid var(--sonar); color: var(--sonar); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideRight {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo">SUBMERGE // <span>HECTON-8</span></div>
-        <nav>
-            <a href="https://github.com/marko1olo/Hecton8" target="_blank" style="border:1px solid var(--sonar);color:var(--sonar);">GitHub Code Base 🚀</a>
-        </nav>
-    </header>
 
-    <div class="hero">
-        <h1>HECTON-8</h1>
-        <p class="tagline">AA Deep Sea Noir / NASA-Punk 3D Engine (Unity 6000.4 URP)</p>
-    </div>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Hecton8</h1>
+                <div class="subtitle">PROJECT: DEEP SEA NOIR / NASA-PUNK</div>
+            </div>
+            <div class="status-badge">
+                <span>HECTON-OS OFFLINE SYNC</span>
+                <div class="pulse"></div>
+            </div>
+        </header>
 
-    <div class="interactive-section">
-        <aside class="panel">
-            <h3 style="font-family:'Rajdhani',sans-serif;color:var(--sonar);font-size:1.4rem;margin-bottom:1rem;">📡 SONAR ACOUSTIC ARRAY</h3>
-            <canvas id="sonarCanvas"></canvas>
-            <button class="btn-ping" onclick="pingSonar()">🔊 TRANSMIT SONAR PING</button>
-            <div style="margin-top:1.5rem;font-size:0.9rem;line-height:1.8;">
-                <div>SUBMERSIBLE DEPTH: <span style="color:#fff;">-4,280 METERS</span></div>
-                <div>HYDRO-X PRESSURE: <span style="color:var(--alert);">42.8 MPa</span></div>
-                <div>VRAM ALLOCATION: <span style="color:var(--sonar);">1,420 MB / 2,048 MB</span></div>
-                <div>GC UPDATE LOOP: <span style="color:var(--sonar);">0 BYTES / FRAME</span></div>
+        <aside class="glass-panel">
+            <div class="data-block">
+                <h3>SYSTEM.INFO</h3>
+                <p>A hardcore sci-fi survival game set on an alien ocean exoplanet. Optimization and architecture designed for low-spec GPU workstations.</p>
+            </div>
+            <div class="data-block">
+                <h3>TECH.STACK</h3>
+                <ul>
+                    <li>Unity 6000 URP</li>
+                    <li>Crest Ocean System</li>
+                    <li>MapMagic 2 Chunking</li>
+                    <li>Burst Compiler / C# Jobs</li>
+                </ul>
+            </div>
+            <div class="data-block" style="margin-top: auto;">
+                <h3>VRAM.BUDGET</h3>
+                <div style="width: 100%; background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; margin-top: 5px;">
+                    <div style="width: 85%; background: var(--alert-red); height: 100%; border-radius: 4px; box-shadow: 0 0 8px var(--alert-red);"></div>
+                </div>
+                <p style="text-align: right; margin-top: 5px;">1.74 / 2.04 GB</p>
             </div>
         </aside>
 
-        <main class="panel">
-            <div>
-                <button class="tab-btn active" onclick="showTab('specs', event)">ENGINE SPECS</button>
-                <button class="tab-btn" onclick="showTab('hardware', event)">HARDWARE BUDGET</button>
-                <button class="tab-btn" onclick="showTab('architecture', event)">CODE NAMESPACES</button>
+        <main>
+            <div class="visual-container">
+                <canvas id="sonar"></canvas>
+                <div class="hud-overlay">
+                    <p>DEPTH: -4200M</p>
+                    <p>TEMP: 2.4°C</p>
+                    <p>PRESSURE: CRITICAL</p>
+                </div>
             </div>
 
-            <div id="tab-specs" class="tab-content active">
-                <h3 style="font-family:'Rajdhani',sans-serif;color:var(--sonar);font-size:1.6rem;margin-bottom:0.8rem;">⚙️ UNITY 6000 URP RENDERING ARCHITECTURE</h3>
-                <p>Engineered for low-spec GPU workstations (GeForce MX350, 2 GB VRAM) maintaining target 60 FPS under heavy ocean wave physics and cave marching cube mesh generation.</p>
-                <table>
-                    <thead><tr><th>MODULE</th><th>TECH STACK</th><th>BUDGET TARGET</th></tr></thead>
-                    <tbody>
-                        <tr><td>Ocean Simulation</td><td>Crest Ocean System URP v4.21</td><td><span class="badge">LOD 6 Base Mesh</span></td></tr>
-                        <tr><td>World Generator</td><td>MapMagic 2 Chunk Pooler</td><td><span class="badge">Zero GC Dynamic Loading</span></td></tr>
-                        <tr><td>Shader Pipeline</td><td>MicroSplat Triplanar Core</td><td><span class="badge">Parallax Banned (VRAM Safe)</span></td></tr>
-                        <tr><td>Vector HUD UI</td><td>Shapes Engine (Freya Holmér)</td><td><span class="badge">GPU Instancing</span></td></tr>
-                    </tbody>
-                </table>
-            </div>
+            <div class="glass-panel">
+                <div class="nav-tabs">
+                    <button class="tab-btn active" onclick="switchTab('core')">CORE SYSTEMS</button>
+                    <button class="tab-btn" onclick="switchTab('gameplay')">GAMEPLAY LOOPS</button>
+                    <button class="tab-btn" onclick="switchTab('architecture')">ARCHITECTURE</button>
+                </div>
 
-            <div id="tab-hardware" class="tab-content">
-                <h3 style="font-family:'Rajdhani',sans-serif;color:var(--sonar);font-size:1.6rem;margin-bottom:0.8rem;">⚡ HARDWARE CONSTRAINTS & PROFILING</h3>
-                <ul style="margin-left:1.5rem;line-height:2;">
-                    <li><strong>VRAM Limit:</strong> Strictly capped at 2,048 MB at 1080p rendering.</li>
-                    <li><strong>Texture Clamping:</strong> Max 2048 for world terrain, 1024 for interior props.</li>
-                    <li><strong>GC Allocations:</strong> 0 B/frame in Update/LateUpdate. Managed arrays pre-allocated at startup.</li>
-                </ul>
-            </div>
+                <div id="core" class="tab-content active">
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>The Wound (Voxel Engine)</h4>
+                            <p>3D cave generator utilizing Marching Cubes, Burst Compiler, and Spatial Hashing. Culls hidden geometry to save 60-80% mesh overhead for low-end GPUs.</p>
+                            <span class="tech-badge">Zero GC Alloc</span>
+                        </div>
+                        <div class="feature-card">
+                            <h4>Diegetic AR Interface</h4>
+                            <p>Hecton-OS projects directly onto the suit visor. Uses Screen Space Canvas with physical lag/sway to simulate helmet inertia. No floating 2D menus.</p>
+                            <span class="tech-badge">Shapes Vector UI</span>
+                        </div>
+                    </div>
+                </div>
 
-            <div id="tab-architecture" class="tab-content">
-                <h3 style="font-family:'Rajdhani',sans-serif;color:var(--sonar);font-size:1.6rem;margin-bottom:0.8rem;">🧬 CODE SYSTEM NAMESPACES</h3>
-                <pre style="background:rgba(0,0,0,0.6);padding:1rem;border-radius:6px;color:var(--cyan);line-height:1.8;">
-Hecton8.Interaction  -> Raycast Event Bus & MaterialPropertyBlock Highlighting
-Hecton8.Items        -> Data-driven ScriptableObject Inventory Items
-Hecton8.Survival     -> Math Engine (O2 Consumption, Pressure Integrity)
-Hecton8.Voxel        -> Marching Cubes Cave Generator (Burst Compiled C#)
-                </pre>
+                <div id="gameplay" class="tab-content">
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <h4>Spatial Inventory</h4>
+                            <p>Hardcore Tetris-style grid. Weight dynamically impacts suit servo battery consumption. Operates strictly on a 2D boolean array model.</p>
+                        </div>
+                        <div class="feature-card">
+                            <h4>Drone Barter Economy</h4>
+                            <p>Dead economy with zero NPCs. Deposit scrap into drop pods, request blueprints via AR, and automated delivery drones handle the rest.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="architecture" class="tab-content">
+                    <div class="feature-grid" style="grid-template-columns: 1fr;">
+                        <div class="feature-card">
+                            <h4>Strict MVC Modularity</h4>
+                            <p style="font-family: monospace; font-size: 0.9rem; color: var(--text-main);">
+                                Hecton8.Interaction -> Raycast Event Bus<br><br>
+                                Hecton8.Items -> ScriptableObject DB<br><br>
+                                Hecton8.Survival -> O2 / Pressure Math<br><br>
+                                Hecton8.Voxel -> Marching Cubes Engine
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
-        const canvas = document.getElementById('sonarCanvas');
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // Sonar Canvas Animation
+        const canvas = document.getElementById('sonar');
         const ctx = canvas.getContext('2d');
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
+        
+        function resize() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
         let angle = 0;
-        let pings = [{x: 0.6, y: 0.4, r: 4}, {x: 0.3, y: 0.7, r: 6}];
+        const blips = [
+            { distance: 0.4, angle: Math.PI / 4, age: 0 },
+            { distance: 0.7, angle: Math.PI * 1.2, age: 50 },
+            { distance: 0.2, angle: Math.PI * 1.8, age: 120 }
+        ];
 
-        function drawRadar() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        function drawSonar() {
+            ctx.fillStyle = 'rgba(1, 6, 10, 0.2)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            const cx = canvas.width / 2, cy = canvas.height / 2, r = Math.min(cx, cy) - 15;
 
-            // Grid circles
-            ctx.strokeStyle = 'rgba(0, 255, 204, 0.2)';
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const maxRadius = Math.min(cx, cy) - 20;
+
+            // Draw grid
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.1)';
             ctx.lineWidth = 1;
-            for (let i = 1; i <= 3; i++) {
+            for(let i = 1; i <= 4; i++) {
                 ctx.beginPath();
-                ctx.arc(cx, cy, (r / 3) * i, 0, Math.PI * 2);
+                ctx.arc(cx, cy, (maxRadius / 4) * i, 0, Math.PI * 2);
                 ctx.stroke();
             }
 
-            // Sweeping line
-            ctx.strokeStyle = '#00ffcc';
-            ctx.lineWidth = 2;
+            // Draw sweep
+            angle = (angle + 0.03) % (Math.PI * 2);
+            
             ctx.beginPath();
             ctx.moveTo(cx, cy);
-            ctx.lineTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle));
+            ctx.arc(cx, cy, maxRadius, angle, angle + 0.2);
+            ctx.lineTo(cx, cy);
+            
+            const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxRadius);
+            gradient.addColorStop(0, 'rgba(0, 255, 204, 0.8)');
+            gradient.addColorStop(1, 'rgba(0, 255, 204, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Draw sweep line
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(angle) * maxRadius, cy + Math.sin(angle) * maxRadius);
+            ctx.strokeStyle = '#00ffcc';
+            ctx.lineWidth = 2;
             ctx.stroke();
 
-            // Pings
-            pings.forEach(p => {
-                ctx.fillStyle = '#ff3366';
-                ctx.beginPath();
-                ctx.arc(cx + (p.x - 0.5) * r * 1.8, cy + (p.y - 0.5) * r * 1.8, p.r, 0, Math.PI * 2);
-                ctx.fill();
+            // Handle blips
+            blips.forEach(blip => {
+                // Check if sweep just passed the blip
+                const blipAngle = blip.angle;
+                let diff = angle - blipAngle;
+                if (diff < 0) diff += Math.PI * 2;
+                
+                if (diff < 0.1 && diff > 0) {
+                    blip.age = 0;
+                }
+
+                if (blip.age < 100) {
+                    const bx = cx + Math.cos(blip.angle) * (maxRadius * blip.distance);
+                    const by = cy + Math.sin(blip.angle) * (maxRadius * blip.distance);
+                    
+                    const opacity = 1 - (blip.age / 100);
+                    
+                    ctx.beginPath();
+                    ctx.arc(bx, by, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 51, 102, ${opacity})`;
+                    ctx.fill();
+                    
+                    // Ring
+                    ctx.beginPath();
+                    ctx.arc(bx, by, 4 + (blip.age / 5), 0, Math.PI * 2);
+                    ctx.strokeStyle = `rgba(255, 51, 102, ${opacity * 0.5})`;
+                    ctx.stroke();
+                }
+                blip.age++;
             });
 
-            angle += 0.03;
-            requestAnimationFrame(drawRadar);
-        }
-        drawRadar();
-
-        function pingSonar() {
-            try {
-                const actx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = actx.createOscillator();
-                const g = actx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(900, actx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(300, actx.currentTime + 0.9);
-                g.gain.setValueAtTime(0.3, actx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.9);
-                osc.connect(g); g.connect(actx.destination);
-                osc.start(); osc.stop(actx.currentTime + 0.9);
-            } catch(e){}
+            requestAnimationFrame(drawSonar);
         }
 
-        function showTab(id, e) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('tab-' + id).classList.add('active');
-            e.target.classList.add('active');
-        }
+        drawSonar();
     </script>
 </body>
 </html>
