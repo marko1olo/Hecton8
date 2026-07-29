@@ -541,6 +541,27 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 16f)] private float abyssalTransportTurbulenceYawDegrees = 5.5f;
         [Tooltip("How quickly abyssal turbulence steering offsets decay back to neutral once the seam hit passes.")]
         [SerializeField, Range(1f, 20f)] private float abyssalTransportTurbulenceRecoverySharpness = 8f;
+        [Header("Thermocline")]
+        // DEPTH DRIFT, RESOLVED TOWARD THE LIVE SYSTEM: HydrodynamicKccRuntime declares the band at 1100 m
+        // (DefaultThermoclineDepthMeters, :3065) while HectonFluidEngine - which actually runs - puts it at
+        // 120 m with an 8 m half-band (:10216-10217). The shipped number wins, because the two must describe
+        // the same water: the fluid engine attenuates the CURRENT's vertical component in that band, and this
+        // resists the player's own swim through it. Using 1100 here would put the player's thermocline a
+        // kilometre below the one the water simulates. The KCC host's 1100 m has never executed - it is on no
+        // prefab - so it is drift, not a second opinion. Kept serialized so the band stays tunable per suit
+        // route without another literal.
+        [Tooltip("Depth of the thermocline band centre. Matches HectonFluidEngine's live 120 m so player resistance and current attenuation describe the same layer.")]
+        [SerializeField, Range(20f, 3000f)] private float thermoclineDepthMeters = 120f;
+        [Tooltip("Full thickness of the thermocline band. Resistance falls off quadratically to zero at the band edges.")]
+        [SerializeField, Range(1f, 400f)] private float thermoclineThicknessMeters = 16f;
+        // NOT the source system's 0.35, and the difference is measured rather than taste. The calculator
+        // multiplies falloff * speed * force and clamps to 1, so 0.35 saturates at a crossing speed of only
+        // 1/0.35 = 2.86 m/s - below normal swim speed. Every dive through the band would therefore hit the
+        // clamp and produce an identical doubled drag, i.e. a binary wall whose strength no longer varies
+        // with how fast the player crosses it. At 0.08 the term stays inside the clamp to ~12.5 m/s, so the
+        // whole normal speed range maps to distinct resistance and the band reads as water rather than a gate.
+        [Tooltip("Scales thermocline resistance by crossing speed. Kept low enough that normal swim speeds stay below the calculator's clamp, so faster crossings feel distinctly heavier. 0 disables the band.")]
+        [SerializeField, Range(0f, 2f)] private float thermoclineResistanceForce = 0.08f;
         [Header("Crush Depth")]
         [Tooltip("Depth where hull stress starts accumulating from abyssal pressure and rapid depth changes.")]
         [SerializeField, Range(500f, 3000f)] private float crushDepthStart = 1000f;
@@ -1175,6 +1196,13 @@ namespace Hecton8.Gameplay
         private ResourceDistributionDirector _resourceDistributionRuntime;
         private IGasDynamicsSolver _gasDynamicsRuntime;
         private IFluidSurfaceCurrentReadModel _fluidSurfaceRuntime;
+        // Read only by ResolveThermoclineDragMultiplier. The thermocline band is the one medium force
+        // HydrodynamicKccRuntime models that this controller did not: that host is unattached to any prefab
+        // (verified by GUID sweep over 1000 scene/prefab files, including the nibble-swapped form in the four
+        // binary scenes), so its version has never executed at runtime. Its drag, buoyancy and crush terms are
+        // NOT ported - the equivalents here at CalculateSwimEffectiveDragCoefficient,
+        // UpdateShoreBuoyancyBlend and the hull-stress/implosion path already ship and are more complete.
+        private IWeatherService _weatherServiceRuntime;
         private ITerrainProvider _terrainProviderRuntime;
         private IAbyssalFlowGpuReadModel _abyssalFlowGpuRuntime;
         private IAmbientCurrentReadModel _ambientCurrentReadModel;
@@ -4216,6 +4244,7 @@ namespace Hecton8.Gameplay
             _voxelEngineRuntime = GlobalRegistry.VoxelEngine;
             WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDragRuntime);
             _thermodynamicsRuntime = GlobalRegistry.Thermodynamics;
+            _weatherServiceRuntime = GlobalRegistry.Weather;
             _suitUpgradeRuntime = GlobalRegistry.SuitUpgrades;
             _oceanKinematicsRuntime = GlobalRegistry.OceanKinematics;
             _playerSensoryRuntime = GlobalRegistry.PlayerSensory;
@@ -4309,6 +4338,9 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.SargassumDragRuntime:
                     _sargassumDragRuntime = currentService as SargassumGlobalDragManager;
                     WorldRuntimeReferenceUtility.TryResolveSargassumGlobalDragManager(ref _sargassumDragRuntime);
+                    break;
+                case GlobalRegistryServiceSlot.Weather:
+                    _weatherServiceRuntime = currentService as IWeatherService;
                     break;
                 case GlobalRegistryServiceSlot.ThermodynamicsRuntime:
                     _thermodynamicsRuntime = currentService as AbyssalThermalManager;
@@ -14110,8 +14142,67 @@ namespace Hecton8.Gameplay
             effectiveDragCoeff *= ResolveActiveTransportDragCoefficientMultiplier();
             effectiveDragCoeff *= math.lerp(1f, crushDepthDragMultiplier, _hullStressIntensity);
             effectiveDragCoeff *= ResolveEquipmentDragCoefficientMultiplier();
+            effectiveDragCoeff *= ResolveThermoclineDragMultiplier();
 
             return effectiveDragCoeff;
+        }
+
+        /// <summary>
+        /// Extra swim resistance while crossing the thermocline band, expressed as a drag multiplier.
+        /// <para>
+        /// WHY IT LIVES HERE. This is the one medium force <c>HydrodynamicKccRuntime</c> models that this
+        /// controller lacked. That host is attached to nothing - a GUID sweep over 1000 scene/prefab files,
+        /// including the nibble-swapped form used inside the four binary scenes, found zero references, and
+        /// its only consumers are <c>TryGetComponent</c> lookups on hosts that are themselves unattached - so
+        /// its whole medium-force block has never run. Attaching it was the other option and is worse: it
+        /// writes the transform directly (<c>_applyVisualToTransform</c> defaults true) while this controller
+        /// is Rigidbody-driven, which is two authorities fighting per tick. Its drag, buoyancy and crush
+        /// terms are deliberately NOT brought over - the equivalents here already ship and are more complete.
+        /// </para>
+        /// <para>
+        /// GATED ON WEATHER so the band is a described condition rather than a permanent invisible wall at a
+        /// fixed depth, matching the source system's <c>_requireThermoclineWeatherState</c> intent. A missing
+        /// or uninitialised weather service means no band, which is the safe direction: the player is never
+        /// slowed by a layer nothing announced.
+        /// </para>
+        /// <para>
+        /// Zero-GC and hot-path legal: called once per fixed tick from
+        /// <see cref="CalculateSwimEffectiveDragCoefficient"/>, reads a cached service interface, no
+        /// allocation, no scene search. Falls through on the first branch at every depth outside the band,
+        /// which is almost always.
+        /// </para>
+        /// <para>
+        /// Low/Middle/High/Ultra: identical. This is gameplay truth about the water, not presentation, so it
+        /// is not scaled by <c>GlobalQualityWeight</c> - scaling it would make the same dive play differently
+        /// per tier.
+        /// </para>
+        /// </summary>
+        private float ResolveThermoclineDragMultiplier()
+        {
+            if (_currentDepth <= 0f || thermoclineResistanceForce <= 0f || thermoclineThicknessMeters <= 0f)
+                return 1f;
+
+            IWeatherService weatherService = _weatherServiceRuntime;
+            if (weatherService == null ||
+                !weatherService.IsInitialized ||
+                ((uint)weatherService.CurrentWeatherState & (uint)WeatherState.ThermoclineActive) == 0u)
+            {
+                return 1f;
+            }
+
+            // Speed term is the crossing rate, so a stationary player is not held in place by the band -
+            // the layer resists transit through it, it is not glue.
+            float resistance01 = Hecton8.PureLogic.Kinematics.ThermoclineResistanceCalculator.Compute(
+                _currentDepth,
+                thermoclineDepthMeters,
+                thermoclineThicknessMeters,
+                _velocity.magnitude,
+                thermoclineResistanceForce);
+
+            if (!math.isfinite(resistance01) || resistance01 <= 0f)
+                return 1f;
+
+            return 1f + math.saturate(resistance01);
         }
 
         private void ApplyBurstScalarWaterDrag(float speedSq, float effectiveDragCoeff, float brineWaterDensityScale, float fixedDeltaTime)
