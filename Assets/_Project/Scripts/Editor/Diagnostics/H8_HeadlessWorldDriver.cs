@@ -47,10 +47,17 @@
 //   strings) is latched so it can never repeat per frame.
 //
 // SCHEDULE BUDGET — two units, and they are NOT convertible
-//   A driver tick is one pumped game frame, and on this harness a pumped game frame has cost anywhere
-//   from 0.23 s to 132 s inside a single run (Logs/h8_playprobe_route.json phases[5]: 124 game frames in
-//   165.186 wall seconds, 0.751 per wall second, one frame carrying about 132 of them). So the schedule
-//   is bounded on BOTH axes and each axis bounds a different failure:
+//   A driver tick is one pumped EDITOR tick. It is NOT reliably one pumped game frame, and this file used
+//   to assert that it was — the assumption that made a 60000-tick pot look infinite. Measured, same phase,
+//   two runs on disk:
+//     Logs/h8_worldsim_probe5.log:18872  SwimDive ticks=   35 wall=7.001s ->     5.0 ticks/wall second
+//     Logs/h8_probe7.log:22889           SwimDive ticks=25865 wall=7.000s ->  3695.0 ticks/wall second
+//     Logs/h8_probe7.log:22934           ToolEquip ticks=27180 wall=2.614s -> 10398.0 ticks/wall second
+//   probe5 ran its whole ten-phase schedule in 152 ticks; probe7 spent 60000 and never left ToolEquip.
+//   A pumped game frame is separately variable and has cost anywhere from 0.23 s to 132 s inside a single
+//   run (Logs/h8_playprobe_route.json phases[5]: 124 game frames in 165.186 wall seconds, 0.751 per wall
+//   second, one frame carrying about 132 of them). So the schedule is bounded on BOTH axes and each axis
+//   bounds a different failure:
 //     WALL SECONDS bound a phase that cannot succeed. Each phase gets an ABSOLUTE deadline equal to its
 //       OWN time box, so an overrun is charged to the phase that spent it. The old relative
 //       "PhaseElapsed < XBudgetSeconds" test charged it to nobody: ResourceDeplete reported 138.192 s
@@ -70,6 +77,27 @@
 //   window did, and it produced "driver ran out of budget in phase Craft ... and never reached this row"
 //   for a Craft phase that HAD been entered and was given zero ticks.
 //   Nothing here is a bigger budget. TotalBudgetSeconds and all nine phase constants are unchanged.
+//
+// NO PHASE MAY STARVE A SIBLING — the tick axis had to learn the wall axis's lesson twice over
+//   The wall axis got per-phase boxes, absolute deadlines and graceful compression. The tick axis got one
+//   global counter and a hard kill, and that asymmetry cost four Required Route rows on probe7:
+//     [H8_PLAYPROBE] WORLDDRIVER ticks=60000 phase=ToolEquip elapsed of 79s stopCause=OwnTickCeiling
+//     DRIVERPHASE Settle 1 | SwimSurface 6950 | SwimDive 25865 | SwimVerdict 1 | ResourceTarget 2 |
+//                 ToolEquip 27180   = 59999 ticks, then the cap fired at 16.266s and TERMINATED the run.
+//   ToolUse, ResourceDeplete, ResourcePickup, Craft and VerbSweep were never entered; Resource, Tool and
+//   CraftRepairBuild reported NOT_EXERCISED and read as missing world content. Not one phase had exceeded
+//   its wall box — SwimDive spent exactly its 7.000s grant, ToolEquip was killed at 2.614s of 6.000s — and
+//   the report still told every reader "a phase was spinning without advancing". Three changes fix that
+//   class of failure rather than that one run:
+//     1. PER-PHASE TICK BOX (MaxTicksFor). Each phase's own wall box valued at the fastest cadence ever
+//        measured here. MaxTotalTicks is DERIVED as their sum, so the phases partition the pot instead of
+//        racing for it and the arithmetic that let two holds take 55% of it cannot recur.
+//     2. TICK COMPRESSION instead of termination. Spending the pot now does what spending the wall total
+//        does: every remaining phase runs its tick floor, yields, and its row says UNMEASURED. Only a
+//        separate hard stop above the pot still ends a run.
+//     3. PRE-EMPTION (AdvancePhase). The yield no longer depends on each phase body remembering to ask.
+//   And every yield now carries WHAT the phase was waiting on (WaitReason), because a stop cause plus a
+//   tick count cannot distinguish four ToolEquip preconditions with four different owners.
 // ─────────────────────────────────────────────────────────────────────────────────────────────────
 
 using System.Globalization;
@@ -193,11 +221,124 @@ namespace Hecton8.EditorTools.Diagnostics
             /// <summary>The schedule's total tick cap fired.</summary>
             TickCeiling,
 
+            /// <summary>
+            /// The phase spent its OWN tick box - <see cref="MaxTicksFor"/> - with its work unfinished.
+            /// The tick-axis twin of <see cref="Timeboxed"/>, and like it, a CULPRIT label: this phase ran
+            /// more driver ticks than its wall box could contain at the fastest cadence ever measured on
+            /// this harness, so it was yielding to protect the phases after it. Its row is a real result
+            /// about a precondition that never became true, not an unmeasured one - read the WAITING-ON
+            /// clause for which precondition.
+            /// </summary>
+            PhaseTickCeiling,
+
+            /// <summary>
+            /// The schedule's whole tick pot - <see cref="MaxTotalTicks"/> - was already spent when this
+            /// phase ran, so it was compressed to its tick floor. The tick-axis twin of
+            /// <see cref="TotalCeiling"/> and a VICTIM label: the row is UNMEASURED and the defect belongs
+            /// to whichever phase ate the pot, which is why a phase that spent its own tick box is labelled
+            /// <see cref="PhaseTickCeiling"/> and never this.
+            /// <para>
+            /// This label is what probe7 should have produced instead of terminating. There, the pot ran
+            /// out at tick 60000 and the run STOPPED - ToolUse, ResourceDeplete, ResourcePickup, Craft and
+            /// VerbSweep were never entered and four rows printed NOT_EXERCISED, which reads as missing
+            /// world content and is not.
+            /// </para>
+            /// </summary>
+            TotalTickCeiling,
+
             /// <summary>The probe closed the gameplay window while this phase was in flight.</summary>
             ExternalStop,
 
             /// <summary>The driver threw inside this phase.</summary>
             Aborted,
+        }
+
+        /// <summary>
+        /// WHAT a phase is waiting for on the tick it could not advance. One byte, set by the phase body on
+        /// every tick it decides to wait, recorded into the ledger on phase close.
+        ///
+        /// WHY IT EXISTS. probe7 reported a stop phase, a stop cause and a tick count, and none of those
+        /// three says what the phase WANTED:
+        ///   "the schedule stopped in phase ToolEquip at 16.266s of its 79.000s budget, after 60000 driver
+        ///    ticks. Stop cause: OwnTickCeiling." (Logs/h8_probe7.log:23048)
+        /// A reader cannot act on that. ToolEquip has four completely different reasons to sit still - no
+        /// PlayerToolManager on the player context, no tool available in any slot, a lane that refuses the
+        /// ToolSlot push, or a swap the tool manager never confirms - with four different owners, and every
+        /// one of them produces that identical sentence. Worse, the same log records
+        /// <c>discreteSignals=0 discreteDropped=0</c> (:22845), which proves the phase never reached the
+        /// push at all, so two of the four were already excluded by evidence sitting in the same file that
+        /// the row did not print. Naming the predicate is the difference between a stop and a diagnosis.
+        ///
+        /// A byte enum rather than a string: this is assigned on a per-tick path, so it must not allocate.
+        /// The name and the explanation are resolved once per row, at report time, in
+        /// <see cref="AppendWaitReasonNote"/>.
+        /// </summary>
+        private enum WaitReason : byte
+        {
+            /// <summary>The phase is advancing normally, or has not yet decided to wait this tick.</summary>
+            None = 0,
+
+            /// <summary>Settle: <c>GlobalRegistry.RegisteredPlayer</c> has not published SurvivalSystem or
+            /// PlayerMovement yet.</summary>
+            PlayerOwnersNotRegistered,
+
+            /// <summary>Settle: the player owners exist but <c>GlobalRegistry.RegisteredInput</c> is still
+            /// the empty slot, which is GATE 1 and not an action-map problem.</summary>
+            InputServiceNotRegistered,
+
+            /// <summary>Both swim holds: nothing is wrong. The phase is holding its designed duration on
+            /// the wall clock and every tick past the second one is a sample, not an attempt.</summary>
+            LocomotionHoldInProgress,
+
+            /// <summary>ResourceTarget: no live, undepleted ResourceNode is within
+            /// <see cref="ExistingNodeMaxDistanceMeters"/> and inside the forward cone, and the populator
+            /// has not produced the driver's registered spawn point yet.</summary>
+            ResourceNodeNotAvailable,
+
+            /// <summary>ToolEquip: <c>IPlayerRuntimeContext.ToolManager</c> is null.</summary>
+            ToolManagerAbsent,
+
+            /// <summary>ToolEquip: <c>PlayerToolManager.IsToolAvailableInSlot</c> is false for every slot,
+            /// which is <c>prefab != null &amp;&amp; HasToolInInventory(prefab)</c> - so it is ALSO false for a
+            /// fully authored loadout whenever PlayerInventory switched itself off.</summary>
+            NoToolAvailableInAnySlot,
+
+            /// <summary>ToolEquip: a slot was chosen and
+            /// <c>SignalBus&lt;PlayerInputSignal&gt;.TryPush</c> refused the ToolSlot command.</summary>
+            ToolSlotCommandRefusedByLane,
+
+            /// <summary>ToolEquip: the command was published and <c>CurrentTool</c>/<c>CurrentSlotIndex</c>
+            /// have not confirmed the swap.</summary>
+            ToolSwapNotConfirmed,
+
+            /// <summary>ToolUse: holding PrimaryFire for its designed duration.</summary>
+            ToolPrimaryFireHoldInProgress,
+
+            /// <summary>ResourceDeplete: pulses are being applied and node integrity has not reached
+            /// zero.</summary>
+            NodeIntegrityNotDepleted,
+
+            /// <summary>ResourcePickup: PlayerInteraction has never hovered a PickupItem, so there is
+            /// nothing to press Interact on.</summary>
+            PickupNotHovered,
+
+            /// <summary>ResourcePickup: the pickup was hovered and Interact published, and no
+            /// <c>ItemAcquiredSignal(ManualPickup)</c> has arrived.</summary>
+            PickupAcquisitionNotPublished,
+
+            /// <summary>Craft: no live Fabricator has been found by scene search yet.</summary>
+            FabricatorAbsent,
+
+            /// <summary>Craft: the Fabricator is live and <c>CanCraft</c> is false for every visible
+            /// recipe.</summary>
+            NoCraftableRecipe,
+
+            /// <summary>Craft: StartCraft was accepted and no
+            /// <c>ItemAcquiredSignal(Fabricator)</c> has arrived.</summary>
+            CraftDeliveryNotPublished,
+
+            /// <summary>VerbSweep: stepping through its fixed 16-step handshake.</summary>
+            VerbSweepStepping,
         }
 
         /// <summary>
@@ -320,11 +461,22 @@ namespace Hecton8.EditorTools.Diagnostics
         /// was wrong twice: there are ten terms and they summed to 69.0, not 63.0.
         /// </summary>
         internal const double TotalBudgetSeconds =
+            AllPhaseBudgetSeconds +
+            ScheduledPhaseCount * PhaseBoxOvershootToleranceSeconds;
+
+        /// <summary>
+        /// The sum of the ten phase time boxes, 69.0s, WITHOUT the overshoot headroom.
+        ///
+        /// Factored out of <see cref="TotalBudgetSeconds"/> rather than written twice because the TICK
+        /// budget below is derived from the same figure, and two hand-maintained copies of "the schedule is
+        /// 69 wall seconds of phase boxes" is exactly the drift this file keeps paying for. Value-identical
+        /// to what <see cref="TotalBudgetSeconds"/> used to sum inline: 8+5+7+6+6+5+6+6+14+6.
+        /// </summary>
+        private const double AllPhaseBudgetSeconds =
             SettleBudgetSeconds + SwimSurfaceBudgetSeconds + SwimDiveBudgetSeconds +
             ResourceTargetBudgetSeconds + ToolEquipBudgetSeconds + ToolUseBudgetSeconds +
             ResourceDepleteBudgetSeconds + ResourcePickupBudgetSeconds + CraftBudgetSeconds +
-            VerbSweepBudgetSeconds +
-            ScheduledPhaseCount * PhaseBoxOvershootToleranceSeconds;
+            VerbSweepBudgetSeconds;
 
         /// <summary>
         /// How many phase boxes <see cref="TotalBudgetSeconds"/> sums: 10. Settle, SwimSurface, SwimDive,
@@ -375,14 +527,106 @@ namespace Hecton8.EditorTools.Diagnostics
         private const int MinTicksVerbSweep = VerbSweepStepCount;
 
         /// <summary>
-        /// Runaway backstop on the axis the wall clock cannot see. The probe's own clock table measured
-        /// 6170 editor ticks per wall second in LoadingMenu and 3242 in WaitingForSettle; only
-        /// GameplayWarmup happens to be one tick per game frame. If the driver ever rides a cheap tick
-        /// again, a wall-only ceiling would let one phase run tens of thousands of scene searches and
-        /// node damage pulses inside its 6 seconds. 60000 is ~1000s of 60 fps gameplay, so it cannot
-        /// bite a schedule whose wall total is 63s - it only stops a genuine runaway.
+        /// Sum of every tick floor the schedule can owe: 1+2+2+1+4+3+2+2+3+4+16 = 40. Both hold phases are
+        /// counted, and SwimVerdict is counted because it does burn a pumped frame even with a 0.0s box.
+        /// <para>
+        /// Load-bearing for two derivations below, so it lives here rather than being recomputed: the tick
+        /// pot must be able to pay every floor, and the hard stop must sit far enough above the pot that
+        /// tick-compression can actually finish paying them.
+        /// </para>
         /// </summary>
-        private const int MaxTotalTicks = 60000;
+        private const int AllPhaseTickFloorSum =
+            MinTicksSettle + MinTicksSwimHold + MinTicksSwimHold + MinTicksSwimVerdict +
+            MinTicksResourceTarget + MinTicksToolEquip + MinTicksToolUse + MinTicksResourceDeplete +
+            MinTicksResourcePickup + MinTicksCraft + MinTicksVerbSweep;
+
+        /// <summary>
+        /// The fastest driver-tick rate the schedule is sized to survive, in ticks per WALL SECOND, and it
+        /// is a measurement rather than a guess.
+        ///
+        /// WHY THIS CONSTANT EXISTS AT ALL. The file's own opening note says "a driver tick is one pumped
+        /// game frame". That is FALSE on this harness and the two logs on disk disagree with each other by
+        /// nearly three orders of magnitude for the same phase:
+        ///   Logs/h8_worldsim_probe5.log:18872  SwimDive  ticks=   35 wall=7.001s ->      5.0 ticks/s
+        ///   Logs/h8_probe7.log:22889           SwimDive  ticks=25865 wall=7.000s ->   3695.0 ticks/s
+        ///   Logs/h8_probe7.log:22934           ToolEquip ticks=27180 wall=2.614s ->  10398.0 ticks/s
+        /// The whole probe5 schedule - all ten phases, Settle through VerbSweep - cost 152 driver ticks.
+        /// probe7 spent 60000 and never left ToolEquip. Same code, same budgets; only the editor's tick
+        /// cadence changed.
+        ///
+        /// 12288 = 3 x 4096, chosen as the next round power-of-two multiple above the 10398 ticks/s
+        /// measured on probe7's fastest phase. It is deliberately NOT a per-phase tuning knob: one figure,
+        /// derived from the fastest regime ever observed, multiplied by each phase's OWN wall box, gives
+        /// every phase a tick box that cannot bite before its wall box in any regime measured so far -
+        /// which is the only way a tick ceiling stays a backstop instead of becoming the schedule's real
+        /// limit. If a future run measures a faster regime, this is the one number to raise, and the tick
+        /// boxes, the pot and the hard stop all follow from it.
+        /// </summary>
+        private const int DriverTicksPerWallSecondCeiling = 12288;
+
+        /// <summary>
+        /// The schedule's tick pot: what all ten phase tick boxes plus every tick floor sum to.
+        /// 40 + 69 x 12288 = 847,912.
+        ///
+        /// THE OLD VALUE WAS 60000 AND IT WAS THE DEFECT THAT COST FOUR ROWS. Its own comment justified
+        /// itself as "~1000s of 60 fps gameplay, so it cannot bite a schedule whose wall total is 63s - it
+        /// only stops a genuine runaway". Both halves of that were wrong on the measured harness:
+        ///   * The driver does not tick at 60 Hz. It ticked at 3695-10398 Hz in probe7, so 60000 ticks buys
+        ///     16.3 wall seconds of a 79.0 wall-second schedule. The pot could not contain a HEALTHY run.
+        ///   * It did not stop a runaway; it stopped the schedule. Logs/h8_probe7.log:22845-22934 -
+        ///     Settle 1 tick, SwimSurface 6950, SwimDive 25865, SwimVerdict 1, ResourceTarget 2,
+        ///     ToolEquip 27180 = 59999, then the cap fired at 16.266s and terminated the run in ToolEquip.
+        ///     ToolUse, ResourceDeplete, ResourcePickup, Craft and VerbSweep were NEVER ENTERED. Not one
+        ///     phase had exceeded its own wall box: SwimDive spent exactly its 7.000s grant and ToolEquip
+        ///     was killed at 2.614s of a 6.000s grant. The two timed HOLD phases burned 32815 of the 60000
+        ///     ticks doing precisely what they are designed to do - hold for wall seconds while sampling -
+        ///     and the report then told every reader "a phase was spinning without advancing".
+        ///   * Four Required Route rows (Resource, Tool, CraftRepairBuild, and the Mission row downstream
+        ///     of them) reported NOT_EXERCISED for a SCHEDULING reason and read as absent world content. A
+        ///     prior lane nearly shipped a Fabricator instance to fix a row that had never been tested.
+        /// The pot is now DERIVED from the per-phase boxes instead of being an independent magic number, so
+        /// a phase can no longer be starved by arithmetic: see <see cref="MaxTicksFor"/>.
+        /// </summary>
+        private const int MaxTotalTicks =
+            AllPhaseTickFloorSum +
+            (int)AllPhaseBudgetSeconds * DriverTicksPerWallSecondCeiling;
+
+        /// <summary>
+        /// Headroom between the pot and the hard stop, and the reason the pot no longer terminates the run.
+        ///
+        /// When the pot is spent the schedule COMPRESSES on the tick axis exactly as it already does on the
+        /// wall axis: every remaining phase runs its tick floor, yields, and says so in its row. That needs
+        /// ticks of its own to happen - at most floor+2 per remaining phase, 11 phases, 62 ticks worst case
+        /// (VerbSweep is the worst single case at 17: its 16 steps plus the step that closes it). 4 x the
+        /// total floor is 160, comfortably above that worst case, so the hard stop can only fire if
+        /// compression ITSELF failed to advance - which is a real runaway and the one thing this axis should
+        /// still kill.
+        /// </summary>
+        private const int HardStopTickAllowance = 4 * AllPhaseTickFloorSum;
+
+        /// <summary>
+        /// The only tick count that still TERMINATES the schedule. 847,912 + 160.
+        /// <para>
+        /// Reaching this means a phase body ignored both its wall deadline and its tick box AND the
+        /// pre-emption in <see cref="AdvancePhase"/> failed to move it, which no path in this file does
+        /// today. It is the backstop the old <see cref="MaxTotalTicks"/> claimed to be.
+        /// </para>
+        /// </summary>
+        private const int MaxTotalTicksHardStop = MaxTotalTicks + HardStopTickAllowance;
+
+        /// <summary>
+        /// How many ticks past its own tick box a phase may run before the schedule stops asking politely
+        /// and pre-empts it (see <see cref="AdvancePhase"/>).
+        ///
+        /// Every cooperative phase body reaches a <see cref="PhaseCeilingReached"/> test on the SAME tick
+        /// the box opens - verified path by path - so this grace is never consumed by correct code. It
+        /// exists because "the phase yields when it asks" is a property of eleven separate method bodies and
+        /// a twelfth added later could forget to ask, and a harness whose starvation guarantee depends on
+        /// every future phase remembering to call one method does not have a guarantee. 64 is small enough
+        /// that a forgetful phase costs the schedule nothing measurable and large enough that no legitimate
+        /// multi-tick handshake trips it.
+        /// </summary>
+        private const int PhaseTickBoxGraceTicks = 64;
 
         // ── acceptance thresholds ─────────────────────────────────────────────────────────────────
         private const float MinMovementIntent01 = 0.01f;
@@ -506,6 +750,32 @@ namespace Hecton8.EditorTools.Diagnostics
         private static int _phaseTicks;
         private static double _totalDeadline;
 
+        /// <summary>
+        /// Ticks this phase may run before it must yield: <see cref="MaxTicksFor"/>, cached on entry beside
+        /// the wall deadline it mirrors. Cached rather than recomputed because
+        /// <see cref="PhaseCeilingReached"/> is called up to three times per tick by a single phase body and
+        /// the derivation walks two switches.
+        /// </summary>
+        private static int _phaseTickBox;
+
+        /// <summary>
+        /// What the CURRENT phase is waiting for, as of the last tick that decided to wait. Written on a
+        /// per-tick path, so it is a byte store and never a string.
+        /// </summary>
+        private static WaitReason _waitReason;
+
+        /// <summary>
+        /// True once the schedule's tick POT is spent. The tick-axis twin of <c>_compressed</c>, and it
+        /// exists because the pot used to TERMINATE the run instead: probe7 died at tick 60000 in phase
+        /// ToolEquip with five phases never entered. Now every remaining phase runs its tick floor, yields,
+        /// and labels its row <see cref="PhaseYield.TotalTickCeiling"/> - UNMEASURED, which is a different
+        /// claim from NOT_EXERCISED and points at the schedule instead of at absent content.
+        /// </summary>
+        private static bool _tickCompressed;
+        private static DrivePhase _tickCompressedInPhase;
+        private static double _tickCompressedAt;
+        private static int _tickCompressedAtTick;
+
         /// <summary>True once the schedule's total wall budget is spent. Every phase after that point
         /// runs its tick floor and yields, so the remaining rows still produce a real verdict instead of
         /// four NOT_EXERCISED lines that look like missing content.</summary>
@@ -523,8 +793,25 @@ namespace Hecton8.EditorTools.Diagnostics
         private static readonly double[] _phaseGrant = new double[(int)DrivePhase.PhaseCount];
         private static readonly int[] _phaseTickLedger = new int[(int)DrivePhase.PhaseCount];
         private static readonly PhaseYield[] _phaseYield = new PhaseYield[(int)DrivePhase.PhaseCount];
+
+        // COLD ALLOC: WaitReason[13] - the last precondition each phase was waiting on when it closed,
+        // ~13 B - owner: H8_HeadlessWorldDriver
+        private static readonly WaitReason[] _phaseWaitReason = new WaitReason[(int)DrivePhase.PhaseCount];
         private static DrivePhase _worstPhase = DrivePhase.Idle;
         private static double _worstPhaseWall;
+
+        /// <summary>
+        /// The heaviest TICK consumer, tracked separately from the heaviest WALL consumer because they are
+        /// different phases and only one of them answers a tick-axis stop.
+        /// <para>
+        /// probe7 proves the distinction matters: the finalisation text named SwimDive as "the phase to fix"
+        /// because it held the most wall time - 7.000s - while SwimDive had spent EXACTLY its 7.000s grant
+        /// and behaved perfectly. On a run killed by the tick axis, pointing a reader at the phase that
+        /// filled its wall grant is pointing them at the wrong axis entirely.
+        /// </para>
+        /// </summary>
+        private static DrivePhase _worstTickPhase = DrivePhase.Idle;
+        private static int _worstPhaseTicks;
 
         private static bool _enabled;
         private static bool _stopped;
@@ -857,6 +1144,42 @@ namespace Hecton8.EditorTools.Diagnostics
                 : 0;
         }
 
+        /// <summary>
+        /// The phase's tick BOX, the companion of <see cref="GetPhaseMinimumTicks"/>. A phase whose ledger
+        /// ticks equal this spent its whole tick box; a phase far below it yielded for another reason.
+        /// </summary>
+        internal static int GetPhaseMaximumTicks(int phase)
+        {
+            return phase >= 0 && phase < (int)DrivePhase.PhaseCount
+                ? MaxTicksFor((DrivePhase)phase)
+                : 0;
+        }
+
+        /// <summary>
+        /// What this phase was last waiting on. Available to the probe so the DRIVERPHASE ledger line can
+        /// carry a <c>waiting=</c> column; the driver also folds it into every row detail it composes, so
+        /// the fact is not lost while the probe's own line is owned elsewhere.
+        /// </summary>
+        internal static string GetPhaseWaitReasonName(int phase)
+        {
+            return phase >= 0 && phase < _phaseWaitReason.Length
+                ? _phaseWaitReason[phase].ToString()
+                : string.Empty;
+        }
+
+        /// <summary>What the phase currently in flight is waiting on.</summary>
+        internal static string CurrentWaitReasonName => _waitReason.ToString();
+
+        /// <summary>Name of the phase that consumed the most driver TICKS - the phase to fix when the run
+        /// ends on the tick axis, which is a different question from <see cref="WorstPhaseName"/>.</summary>
+        internal static string WorstTickPhaseName => _worstTickPhase.ToString();
+
+        internal static int WorstPhaseTicks => _worstPhaseTicks;
+
+        /// <summary>True once the schedule's tick pot was spent and the remaining phases are running on
+        /// their tick floors. Distinct from <see cref="IsCompressed"/>, which is the wall axis.</summary>
+        internal static bool IsTickCompressed => _tickCompressed;
+
         internal static string GetPhaseYieldName(int phase)
         {
             return phase >= 0 && phase < _phaseYield.Length ? _phaseYield[phase].ToString() : string.Empty;
@@ -910,15 +1233,23 @@ namespace Hecton8.EditorTools.Diagnostics
             _phaseBoxExceeded = false;
             _phaseGranted = 0.0;
             _phaseTicks = 0;
+            _phaseTickBox = 0;
+            _waitReason = WaitReason.None;
             _totalDeadline = 0.0;
             _compressed = false;
             _compressedInPhase = DrivePhase.Idle;
             _compressedAt = 0.0;
+            _tickCompressed = false;
+            _tickCompressedInPhase = DrivePhase.Idle;
+            _tickCompressedAt = 0.0;
+            _tickCompressedAtTick = 0;
             _stopCause = StopCause.Unspecified;
             _stoppedInPhase = DrivePhase.Idle;
             _stoppedAtElapsed = 0.0;
             _worstPhase = DrivePhase.Idle;
             _worstPhaseWall = 0.0;
+            _worstTickPhase = DrivePhase.Idle;
+            _worstPhaseTicks = 0;
 
             for (int phase = 0; phase < (int)DrivePhase.PhaseCount; phase++)
             {
@@ -926,6 +1257,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 _phaseGrant[phase] = 0.0;
                 _phaseTickLedger[phase] = 0;
                 _phaseYield[phase] = PhaseYield.NotEntered;
+                _phaseWaitReason[phase] = WaitReason.None;
             }
 
             _enabled = false;
@@ -1183,7 +1515,25 @@ namespace Hecton8.EditorTools.Diagnostics
                 _compressedInPhase = _phase;
             }
 
-            if (_ticks >= MaxTotalTicks)
+            // THE TICK AXIS NOW COMPRESSES, and this is the fix probe7 asked for. Reaching the pot used to
+            // fall straight into the termination block below, which is why that run ended at 16.266s of a
+            // 79.000s schedule with ToolUse, ResourceDeplete, ResourcePickup, Craft and VerbSweep never
+            // entered and four rows printed NOT_EXERCISED. Nothing about that stop was a runaway: no phase
+            // had exceeded its own wall box, and the two timed HOLD phases had spent 32815 of the 60000
+            // ticks doing exactly what they are designed to do.
+            //
+            // Compression is the same remedy the wall axis already applies for the same reason, and it costs
+            // at most HardStopTickAllowance ticks: every remaining phase runs its floor, yields, and its row
+            // says UNMEASURED with the schedule named as the cause instead of the content.
+            if (!_tickCompressed && _ticks >= MaxTotalTicks)
+            {
+                _tickCompressed = true;
+                _tickCompressedAt = ElapsedSeconds;
+                _tickCompressedAtTick = _ticks;
+                _tickCompressedInPhase = _phase;
+            }
+
+            if (_ticks >= MaxTotalTicksHardStop)
             {
                 _intent = default;
                 CoreDeterminismSignals.ClearInputOverride();
@@ -1773,6 +2123,13 @@ namespace Hecton8.EditorTools.Diagnostics
             _phaseDeadline = now + granted;
             _phaseTicks = 0;
 
+            // The tick box is the second axis of the same box and is granted the same way: per phase, in
+            // full, never as a slice of what an earlier phase left. Both defects the wall box had to unlearn -
+            // a re-based relative test and a clamp by the shared remainder - are avoided here by construction
+            // rather than by comment, because the value depends only on the phase.
+            _phaseTickBox = MaxTicksFor(phase);
+            _waitReason = WaitReason.None;
+
             // Ordered after _phaseGranted/_phaseDeadline deliberately: PhaseExceededItsBox reads both, and
             // clearing the latch while they still describe the OUTGOING phase would re-derive the old
             // phase's answer on the next call.
@@ -1798,11 +2155,21 @@ namespace Hecton8.EditorTools.Diagnostics
             _phaseTickLedger[index] += _phaseTicks;
             _phaseGrant[index] = _phaseGranted;
             _phaseYield[index] = reason;
+            _phaseWaitReason[index] = _waitReason;
 
             if (_phaseWall[index] > _worstPhaseWall)
             {
                 _worstPhaseWall = _phaseWall[index];
                 _worstPhase = previous;
+            }
+
+            // Tracked alongside, never instead: a run that ends on the wall axis and a run that ends on the
+            // tick axis have different culprits, and probe7's finalisation text named the wall winner
+            // (SwimDive, which spent exactly its grant) for a stop the tick axis caused.
+            if (_phaseTickLedger[index] > _worstPhaseTicks)
+            {
+                _worstPhaseTicks = _phaseTickLedger[index];
+                _worstTickPhase = previous;
             }
         }
 
@@ -1831,10 +2198,32 @@ namespace Hecton8.EditorTools.Diagnostics
             if (_phaseTicks < MinTicksFor(_phase))
                 return false;
 
-            if (_compressed)
+            if (_compressed || _tickCompressed)
+                return true;
+
+            // CLAUSE 4, and it is the one probe7 needed. The wall clause below cannot see a phase that is
+            // burning the schedule's shared tick pot inside its own legitimate window: ToolEquip spent 27180
+            // ticks in 2.614s of a 6.000s box and every one of those ticks was charged to a 60000-tick pot
+            // that five later phases still needed. A phase's tick box is its OWN share of that pot - sized
+            // from its own wall box at the fastest cadence ever measured here - so spending it is the tick
+            // twin of reaching its wall deadline and yields the same way.
+            if (PhaseExceededItsTickBox())
                 return true;
 
             return EditorApplication.timeSinceStartup >= _phaseDeadline;
+        }
+
+        /// <summary>
+        /// Whether the phase in flight has spent its own tick box.
+        ///
+        /// Unlatched, unlike <see cref="PhaseExceededItsBox"/>, and for a reason worth stating: that method
+        /// has to latch because it re-reads the CLOCK and two readers microseconds apart could disagree.
+        /// <c>_phaseTicks</c> only increments, and never inside a comparison, so every reader on a given tick
+        /// gets the same answer with no latch and no window.
+        /// </summary>
+        private static bool PhaseExceededItsTickBox()
+        {
+            return _phaseTickBox > 0 && _phaseTicks >= _phaseTickBox;
         }
 
         /// <summary>Nominal wall budget for a phase, before the total-remaining clamp.</summary>
@@ -1934,6 +2323,36 @@ namespace Hecton8.EditorTools.Diagnostics
         }
 
         /// <summary>
+        /// The number of driver ticks a phase may spend before it must yield: its tick floor plus its own
+        /// wall box valued at the fastest cadence this harness has ever been measured at
+        /// (<see cref="DriverTicksPerWallSecondCeiling"/>).
+        ///
+        /// THE INVARIANT THAT MAKES STARVATION IMPOSSIBLE. <see cref="MaxTotalTicks"/> is DERIVED as the sum
+        /// of exactly these boxes, so the eleven driven phases partition the pot instead of racing for it. No
+        /// phase can consume a share another phase needs, whatever the cadence: the arithmetic that used to
+        /// let SwimSurface and SwimDive take 32815 ticks of a 60000-tick pot and leave five phases with none
+        /// (Logs/h8_probe7.log:22874-22934) cannot recur, because 60000 was an independent magic number and
+        /// this is not.
+        ///
+        /// THE BOX IS DELIBERATELY LOOSE, and that is not a contradiction. Valuing each wall second at 12288
+        /// ticks means a phase reaches its tick box before its wall deadline only when the cadence exceeds
+        /// the fastest ever recorded here - i.e. only when the tick axis has genuinely become the binding
+        /// one. In every regime already measured (5-10398 ticks/s) each phase still yields on its wall box
+        /// exactly as it does today, so this changes no measurement that currently works: probe5's whole
+        /// 152-tick schedule and probe7's per-phase wall yields both sit far inside their boxes. What changes
+        /// is that the schedule no longer dies when the pot is smaller than the run.
+        ///
+        /// Floor plus box, not the box alone, so the floor is always payable: a phase whose box rounded to
+        /// zero (SwimVerdict, 0.0s) still gets the one tick its handshake needs.
+        /// </summary>
+        private static int MaxTicksFor(DrivePhase phase)
+        {
+            // (int) truncation is exact for every phase budget - all ten are whole seconds - and BudgetFor
+            // returns 0.0 for SwimVerdict/Idle/Done, which is why the floor is added rather than multiplied.
+            return MinTicksFor(phase) + (int)BudgetFor(phase) * DriverTicksPerWallSecondCeiling;
+        }
+
+        /// <summary>
         /// Whether the phase currently in flight went PAST its box rather than merely reaching it.
         ///
         /// Called while <c>_phase</c> is still the outgoing phase - every caller runs before
@@ -1974,6 +2393,15 @@ namespace Hecton8.EditorTools.Diagnostics
             if (PhaseExceededItsBox())
                 return PhaseYield.Timeboxed;
 
+            // CULPRIT LABELS BEFORE VICTIM LABELS, on both axes, for the reason above. A phase that spent
+            // its own tick box is the tick-axis culprit and must not be filed as TotalTickCeiling, whose
+            // documented meaning is "an EARLIER phase ate the pot, read this row as UNMEASURED".
+            if (PhaseExceededItsTickBox())
+                return PhaseYield.PhaseTickCeiling;
+
+            if (_tickCompressed)
+                return PhaseYield.TotalTickCeiling;
+
             return _compressed ? PhaseYield.TotalCeiling : PhaseYield.WallCeiling;
         }
 
@@ -1991,12 +2419,33 @@ namespace Hecton8.EditorTools.Diagnostics
             if (PhaseExceededItsBox())
                 return PhaseYield.Timeboxed;
 
+            // A hold that ran out of TICKS is the third error and it is not Completed: it held for LESS wall
+            // time than designed because the cadence spent its share of the pot early, so a threshold it
+            // missed was never given the duration to be crossed. Filing that as Completed is how a depth span
+            // of 0.000m would read as a swimmer that never moved.
+            if (PhaseExceededItsTickBox())
+                return PhaseYield.PhaseTickCeiling;
+
+            if (_tickCompressed)
+                return PhaseYield.TotalTickCeiling;
+
             return _compressed ? PhaseYield.TotalCeiling : PhaseYield.Completed;
         }
 
         private static void AdvancePhase()
         {
             _phaseTicks++;
+
+            // PRE-EMPTION, and it is the guarantee rather than the mechanism. Every clause of
+            // PhaseCeilingReached is only as good as the phase body that ASKS it, and "each phase remembers
+            // to ask" is a property of eleven method bodies plus every one added later. This is the same
+            // discipline enforced from outside them, so a phase that never asks still cannot hold the
+            // schedule: it loses the phase, not the run, and its row says which precondition it died on.
+            if (_phaseTickBox > 0 && _phaseTicks > _phaseTickBox + PhaseTickBoxGraceTicks)
+            {
+                ForceYieldStalledPhase();
+                return;
+            }
 
             switch (_phase)
             {
@@ -2034,6 +2483,106 @@ namespace Hecton8.EditorTools.Diagnostics
                 case DrivePhase.VerbSweep:
                     TickVerbSweep();
                     break;
+            }
+        }
+
+        /// <summary>
+        /// Ends a phase that ran past its tick box WITHOUT asking <see cref="PhaseCeilingReached"/>, and
+        /// hands the schedule to that phase's own failure successor.
+        ///
+        /// It latches the phase's row rather than leaving it to <see cref="FinaliseUnlatchedRows"/> because
+        /// the two produce different claims and only one of them is true here. The finalisation text says
+        /// "the schedule stopped" - it did not; only this phase did, and the phases after it still ran their
+        /// floors. NOT_EXERCISED is still the verdict: a pre-empted phase measured nothing, and the named
+        /// precondition is what the reader needs, not a manufactured Fail.
+        /// </summary>
+        private static void ForceYieldStalledPhase()
+        {
+            DrivePhase stalled = _phase;
+            int row = RowOwnedBy(stalled);
+            if (row >= 0 && !_latched[row])
+            {
+                _detail.Clear();
+                _detail.Append("PHASE PRE-EMPTED: ").Append(stalled.ToString()).Append(" ran ")
+                    .Append(_phaseTicks)
+                    .Append(" driver ticks - past its ").Append(_phaseTickBox)
+                    .Append("-tick box plus ").Append(PhaseTickBoxGraceTicks)
+                    .Append(" ticks of grace - without ever reaching its own ceiling test, so the schedule ")
+                    .Append("pre-empted it and the phases after it still got their tick floors. This row is ")
+                    .Append("UNKNOWN, not negative, and the phase body is the defect: it has a path that ")
+                    .Append("returns without asking PhaseCeilingReached");
+                AppendWaitReasonNote();
+                AppendPhaseCeilingNote();
+                Latch(row, RowVerdict.NotExercised);
+            }
+
+            EnterPhase(CeilingSuccessorOf(stalled), PhaseYield.PhaseTickCeiling);
+        }
+
+        /// <summary>
+        /// Which phase a pre-empted phase hands off to: the successor that phase's OWN ceiling path uses,
+        /// not the next enum member.
+        ///
+        /// The two differ where it matters. ToolEquip's ceiling paths go to ResourceDeplete and skip ToolUse,
+        /// because ToolUse holds PrimaryFire for a tool that was never equipped and would spend its whole box
+        /// proving nothing; ResourceDeplete's ceiling path goes to Craft and skips ResourcePickup for the same
+        /// class of reason. Walking the enum instead would hand each pre-emption to a phase its predecessor
+        /// has already established cannot work.
+        /// </summary>
+        private static DrivePhase CeilingSuccessorOf(DrivePhase phase)
+        {
+            switch (phase)
+            {
+                case DrivePhase.Settle:
+                    return DrivePhase.ResourceTarget;
+                case DrivePhase.SwimSurface:
+                    return DrivePhase.SwimDive;
+                case DrivePhase.SwimDive:
+                    return DrivePhase.SwimVerdict;
+                case DrivePhase.SwimVerdict:
+                    return DrivePhase.ResourceTarget;
+                case DrivePhase.ResourceTarget:
+                    return DrivePhase.ToolEquip;
+                case DrivePhase.ToolEquip:
+                case DrivePhase.ToolUse:
+                    return DrivePhase.ResourceDeplete;
+                case DrivePhase.ResourceDeplete:
+                case DrivePhase.ResourcePickup:
+                    return DrivePhase.Craft;
+                case DrivePhase.Craft:
+                    return DrivePhase.VerbSweep;
+                default:
+                    return DrivePhase.Done;
+            }
+        }
+
+        /// <summary>
+        /// Which row a phase would have latched, or -1 for a phase that holds none. The inverse of
+        /// <see cref="TerminalPhaseFor"/> and deliberately NOT derived from it: several phases feed one row,
+        /// so the mapping is many-to-one in this direction and a reversed lookup table would have to pick a
+        /// winner. VerbSweep returns -1 by design - it runs after every row has latched and is forbidden to
+        /// reach a verdict.
+        /// </summary>
+        private static int RowOwnedBy(DrivePhase phase)
+        {
+            switch (phase)
+            {
+                case DrivePhase.Settle:
+                case DrivePhase.SwimSurface:
+                case DrivePhase.SwimDive:
+                case DrivePhase.SwimVerdict:
+                    return RowSwim;
+                case DrivePhase.ResourceTarget:
+                case DrivePhase.ResourceDeplete:
+                case DrivePhase.ResourcePickup:
+                    return RowResource;
+                case DrivePhase.ToolEquip:
+                case DrivePhase.ToolUse:
+                    return RowTool;
+                case DrivePhase.Craft:
+                    return RowCraft;
+                default:
+                    return -1;
             }
         }
 
@@ -2084,8 +2633,18 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             bool ready = _survival != null && _movement != null && input != null;
-            if (!ready && !PhaseCeilingReached())
-                return;
+            if (!ready)
+            {
+                // Named PER GATE rather than as one "not ready", for the same reason the three booleans this
+                // row used to print were replaced: an empty registry slot and an unassembled player root are
+                // different defects with different owners.
+                _waitReason = input == null
+                    ? WaitReason.InputServiceNotRegistered
+                    : WaitReason.PlayerOwnersNotRegistered;
+
+                if (!PhaseCeilingReached())
+                    return;
+            }
 
             if (!ready)
             {
@@ -2184,6 +2743,11 @@ namespace Hecton8.EditorTools.Diagnostics
             _intent.ActionsBitmask = 0u;
             _intent.CurrentInputSchemeHash = 0u;
 
+            // A hold is not blocked on anything, and saying so explicitly matters: without it a hold would
+            // report the previous phase's reason, and a reader would chase a precondition on a phase whose
+            // only job is to occupy wall time.
+            _waitReason = WaitReason.LocomotionHoldInProgress;
+
             if (PhaseCeilingReached())
                 EnterPhase(DrivePhase.SwimDive, HoldYield());
         }
@@ -2195,6 +2759,7 @@ namespace Hecton8.EditorTools.Diagnostics
             _intent.VerticalDelta = -1f;
             _intent.ActionsBitmask = (uint)PlayerInputAction.Sprint;
             _intent.CurrentInputSchemeHash = 0u;
+            _waitReason = WaitReason.LocomotionHoldInProgress;
 
             if (PhaseCeilingReached())
             {
@@ -2343,6 +2908,8 @@ namespace Hecton8.EditorTools.Diagnostics
                 EnterPhase(DrivePhase.ToolEquip, PhaseYield.Completed);
                 return;
             }
+
+            _waitReason = WaitReason.ResourceNodeNotAvailable;
 
             if (!_spawnPointRegistered)
             {
@@ -2497,12 +3064,15 @@ namespace Hecton8.EditorTools.Diagnostics
 
             if (manager == null)
             {
+                _waitReason = WaitReason.ToolManagerAbsent;
+
                 if (!PhaseCeilingReached())
                     return;
 
                 _detail.Clear();
                 _detail.Append("no PlayerToolManager published on the player runtime context, so no tool ")
                     .Append("slot can be selected");
+                AppendWaitReasonNote();
                 AppendPhaseCeilingNote();
                 Latch(RowTool, RowVerdict.Blocked);
                 EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
@@ -2526,6 +3096,13 @@ namespace Hecton8.EditorTools.Diagnostics
 
                 if (chosen < 0)
                 {
+                    // THE PRECONDITION probe7 SPENT 27180 TICKS ON AND NEVER NAMED. That run recorded
+                    // discreteSignals=0 dropped=0 (Logs/h8_probe7.log:22845), so PublishDiscreteCommand was
+                    // never called even once and the phase was sitting in exactly this branch - yet the row
+                    // it produced said only "the schedule stopped in phase ToolEquip ... Stop cause:
+                    // OwnTickCeiling", which is true of all four of this phase's waits.
+                    _waitReason = WaitReason.NoToolAvailableInAnySlot;
+
                     if (!PhaseCeilingReached())
                         return;
 
@@ -2541,6 +3118,7 @@ namespace Hecton8.EditorTools.Diagnostics
                         .Append(" and IsToolAvailableInSlot is false for every slot, so no tool could be ")
                         .Append("selected on this route");
                     AppendInventoryUpstreamNote();
+                    AppendWaitReasonNote();
                     AppendPhaseCeilingNote();
                     Latch(RowTool, RowVerdict.Blocked);
                     EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
@@ -2552,7 +3130,12 @@ namespace Hecton8.EditorTools.Diagnostics
                     PublishDiscreteCommand((byte)(PlayerInputSignalCommands.ToolSlot1 + chosen));
 
                 if (_toolSlotSignalPublished)
+                {
+                    _waitReason = WaitReason.ToolSwapNotConfirmed;
                     return;
+                }
+
+                _waitReason = WaitReason.ToolSlotCommandRefusedByLane;
 
                 // A DROPPED push is the one path in this phase that could loop forever: the flag stays
                 // false, the next tick re-enumerates the slots, chooses the same slot, and tries again
@@ -2589,6 +3172,7 @@ namespace Hecton8.EditorTools.Diagnostics
                     .Append(" toolSlotsWithAvailableTool=").Append(_availableToolSlots)
                     .Append(" - no consumer ever saw the command");
                 AppendDiscreteRefusalNote();
+                AppendWaitReasonNote();
                 AppendPhaseCeilingNote();
                 Latch(RowTool, RowVerdict.NotExercised);
                 EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
@@ -2606,6 +3190,8 @@ namespace Hecton8.EditorTools.Diagnostics
                 EnterPhase(DrivePhase.ToolUse, PhaseYield.Completed);
                 return;
             }
+
+            _waitReason = WaitReason.ToolSwapNotConfirmed;
 
             if (!PhaseCeilingReached())
                 return;
@@ -2637,6 +3223,7 @@ namespace Hecton8.EditorTools.Diagnostics
             {
                 _detail.Append(" - the command WAS visible in a flushed frame snapshot and the swap still ")
                     .Append("never completed, so this is PlayerToolManager's own state machine");
+                AppendWaitReasonNote();
                 AppendPhaseCeilingNote();
                 Latch(RowTool, RowVerdict.Fail);
                 EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
@@ -2648,6 +3235,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 .Append("measures DELIVERY, not the tool system. Owner is the PostSimulation flush of ")
                 .Append("SignalBus<PlayerInputSignal> (SystemDispatcher.cs:3036 -> ")
                 .Append("SignalCorridorRuntime.FlushPostSimulation -> SignalBusRuntime.cs:890)");
+            AppendWaitReasonNote();
             AppendPhaseCeilingNote();
             Latch(RowTool, RowVerdict.Blocked);
             EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
@@ -2669,6 +3257,7 @@ namespace Hecton8.EditorTools.Diagnostics
             _intent.VerticalDelta = 0f;
             _intent.ActionsBitmask = (uint)PlayerInputAction.PrimaryFire;
             _intent.CurrentInputSchemeHash = 0u;
+            _waitReason = WaitReason.ToolPrimaryFireHoldInProgress;
 
             if (!PhaseCeilingReached())
                 return;
@@ -2799,6 +3388,7 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             ApplyNodeDamagePulses(node);
+            _waitReason = WaitReason.NodeIntegrityNotDepleted;
 
             if (!PhaseCeilingReached())
                 return;
@@ -3182,6 +3772,11 @@ namespace Hecton8.EditorTools.Diagnostics
             if (_sawPickupHover && !_interactPublished)
                 _interactPublished = PublishDiscreteCommand(PlayerInputSignalCommands.Interact);
 
+            // Two waits, one phase, opposite owners: nothing to press versus pressed and nothing delivered.
+            _waitReason = _sawPickupHover
+                ? WaitReason.PickupAcquisitionNotPublished
+                : WaitReason.PickupNotHovered;
+
             if (!PhaseCeilingReached())
                 return;
 
@@ -3264,6 +3859,8 @@ namespace Hecton8.EditorTools.Diagnostics
             Hecton8.Crafting.Fabricator fabricator = _fabricator;
             if (fabricator == null)
             {
+                _waitReason = WaitReason.FabricatorAbsent;
+
                 if (!PhaseCeilingReached() &&
                     _fabricatorLookupAttempts < MaxFabricatorLookupAttempts)
                 {
@@ -3318,6 +3915,8 @@ namespace Hecton8.EditorTools.Diagnostics
 
                 if (chosen == null)
                 {
+                    _waitReason = WaitReason.NoCraftableRecipe;
+
                     if (!PhaseCeilingReached())
                         return;
 
@@ -3351,6 +3950,8 @@ namespace Hecton8.EditorTools.Diagnostics
 
                 return;
             }
+
+            _waitReason = WaitReason.CraftDeliveryNotPublished;
 
             if (!PhaseCeilingReached())
                 return;
@@ -3405,6 +4006,7 @@ namespace Hecton8.EditorTools.Diagnostics
             }
 
             SampleVerbSweepObservables();
+            _waitReason = WaitReason.VerbSweepStepping;
 
             int step = _verbSweepStep;
             _verbSweepStep = step + 1;
@@ -3942,10 +4544,12 @@ namespace Hecton8.EditorTools.Diagnostics
                 .Append(" wall=").Append(F(wall))
                 .Append("s ticks=").Append(_phaseTicks)
                 .Append(" tickFloor=").Append(MinTicksFor(_phase))
+                .Append(" tickBox=").Append(_phaseTickBox)
                 .Append(" granted=").Append(F(_phaseGranted))
                 .Append("s of a ").Append(F(BudgetFor(_phase)))
                 .Append("s nominal budget; run elapsed ").Append(F(ElapsedSeconds))
-                .Append("s of ").Append(F(TotalBudgetSeconds)).Append("s");
+                .Append("s of ").Append(F(TotalBudgetSeconds)).Append("s, tick ").Append(_ticks)
+                .Append(" of ").Append(MaxTotalTicks);
 
             // TIMEBOXED is tested BEFORE compression for the same reason CeilingYield tests it first: a
             // phase that blew its own box is the culprit, and printing the victim's paragraph over the
@@ -4000,12 +4604,164 @@ namespace Hecton8.EditorTools.Diagnostics
                     .Append("s. READ THIS ROW AS UNMEASURED, NOT AS A PRODUCT GAP - fix the heavy phase, ")
                     .Append("not this mechanic");
             }
+            else if (PhaseExceededItsTickBox())
+            {
+                // A CULPRIT paragraph, and the one probe7 had no way to print. This phase spent its whole
+                // share of the tick pot inside its wall window, which is the shape ToolEquip had there:
+                // 27180 ticks in 2.614s of a 6.000s box. The distinction from the wall case is that the row
+                // IS a result - the precondition above was re-tested thousands of times and never became
+                // true - while the schedule still owes nothing to the phases after it.
+                _detail.Append(" - PHASE TICK CEILING: spent its whole ").Append(_phaseTickBox)
+                    .Append("-tick box in ").Append(F(wall))
+                    .Append("s, i.e. about ")
+                    // Floored at a millisecond, not at zero: (int) of a double that overflows int is
+                    // unspecified in C#, and a phase whose wall read back as a few nanoseconds would put
+                    // 2.7e11 through this cast. A rate is meaningless below a millisecond anyway.
+                    .Append(wall >= 0.001 ? (int)(_phaseTicks / wall) : 0)
+                    .Append(" driver ticks per wall second, so it yielded on the TICK axis rather than the ")
+                    .Append("wall one. The box is this phase's own share of the schedule's ")
+                    .Append(MaxTotalTicks)
+                    .Append("-tick pot, so no later phase pays for it. The precondition named above was ")
+                    .Append("re-tested on every one of those ticks and never became true - that is a result ")
+                    .Append("about the precondition, not about the schedule");
+            }
+            else if (_tickCompressed)
+            {
+                // The VICTIM paragraph on the tick axis. Before tick-compression existed this run ENDED
+                // instead, and the rows after it printed NOT_EXERCISED with no way to tell a starved row from
+                // absent content - the exact confusion this whole ledger exists to remove.
+                _detail.Append(" - TICK-COMPRESSED: the schedule's ").Append(MaxTotalTicks)
+                    .Append("-tick pot was already spent at ").Append(F(_tickCompressedAt))
+                    .Append("s in phase ").Append(_tickCompressedInPhase.ToString())
+                    .Append(", so this phase ran its tick floor and yielded without spending the ")
+                    .Append(_phaseTickBox)
+                    .Append("-tick box it was granted. The heaviest tick consumer of the run so far was ")
+                    .Append(_worstTickPhase.ToString()).Append(" at ").Append(_worstPhaseTicks)
+                    .Append(" ticks. READ THIS ROW AS UNMEASURED, NOT AS A PRODUCT GAP");
+            }
             else
             {
                 _detail.Append(" - yielded on its own ceiling with work unfinished");
             }
 
             _detail.Append(']');
+        }
+
+        /// <summary>
+        /// Names the PRECONDITION the phase is waiting on, in one clause, with the predicate and its owner.
+        ///
+        /// This is the fact probe7 could not report. Its rows carried a stop phase, a stop cause and a tick
+        /// count and still could not distinguish four completely different ToolEquip waits with four different
+        /// owners - and the run's own <c>discreteSignals=0 dropped=0</c> had already excluded two of them. A
+        /// stop cause says the instrument gave up; this says what it was waiting for.
+        ///
+        /// Cold: one call per row latch at most, so <c>Enum.ToString</c> and the literal table are on the same
+        /// footing as <see cref="GetPhaseName"/>.
+        /// </summary>
+        private static void AppendWaitReasonNote()
+        {
+            _detail.Append(" [WAITING-ON ").Append(_waitReason.ToString()).Append(" - ")
+                .Append(WaitReasonExplanation(_waitReason)).Append(']');
+        }
+
+        /// <summary>
+        /// The acting sentence for a wait reason: the exact predicate that was false and where its owner
+        /// lives. Literals rather than composed text, because every one of them is a fixed fact about a
+        /// contract and a reader who has to guess which subsystem to open has not been given a diagnostic.
+        /// </summary>
+        private static string WaitReasonExplanation(WaitReason reason)
+        {
+            switch (reason)
+            {
+                case WaitReason.PlayerOwnersNotRegistered:
+                    return "GlobalRegistry.RegisteredPlayer had not published SurvivalSystem and " +
+                        "PlayerMovement, so there was nothing to measure locomotion against. Owner is the " +
+                        "player root's assembly order, not the input lane";
+
+                case WaitReason.InputServiceNotRegistered:
+                    return "the player owners existed but GlobalRegistry.RegisteredInput was the EMPTY slot " +
+                        "(GATE 1). That is not a closed action map and not a block mask - nothing had " +
+                        "registered an input service at all, so every consumer null-checks out before " +
+                        "reading anything";
+
+                case WaitReason.LocomotionHoldInProgress:
+                    return "nothing. This phase is a timed hold and its job is to occupy its wall box while " +
+                        "the depth/oxygen/pressure deltas accumulate, so its tick count is a sample count " +
+                        "and not a retry count";
+
+                case WaitReason.ResourceNodeNotAvailable:
+                    return "no live undepleted ResourceNode was inside the reach cone, and the driver's own " +
+                        "registered spawn point had not been instantiated by ScavengePopulator's " +
+                        "ProcessSpawnQueue yet. Owner is the populator's loot tables or its readiness, not " +
+                        "the tool route";
+
+                case WaitReason.ToolManagerAbsent:
+                    return "IPlayerRuntimeContext.ToolManager was null for the whole phase, so no slot could " +
+                        "be enumerated and no ToolSlot command was ever pressed. Owner is the player " +
+                        "context's publication of PlayerToolManager";
+
+                case WaitReason.NoToolAvailableInAnySlot:
+                    return "PlayerToolManager.IsToolAvailableInSlot was false for every slot, which is " +
+                        "'prefab != null && HasToolInInventory(prefab)' (PlayerToolManager.cs:927-933). It " +
+                        "is therefore ALSO false for a fully authored loadout whenever PlayerInventory " +
+                        "disabled itself, so read the INVENTORY clause in this row before concluding no tool " +
+                        "is authored. No PLIN push was attempted, which is why pushed=0 dropped=0 is the " +
+                        "expected reading and not a lane fault";
+
+                case WaitReason.ToolSlotCommandRefusedByLane:
+                    return "a slot WAS available and SignalBus<PlayerInputSignal>.TryPush refused the " +
+                        "ToolSlot command, so the phase never got past its own producer. Read the lane " +
+                        "forensics clause in this row for which of the four refusal paths fired";
+
+                case WaitReason.ToolSwapNotConfirmed:
+                    return "the ToolSlot command was published and PlayerToolManager.CurrentTool / " +
+                        "CurrentSlotIndex never confirmed the swap. Whether that is the tool manager or the " +
+                        "signal DELIVERY is decided by commandSeenInFlushedSnapshot in this row - a push " +
+                        "that entered the ring is not a push a consumer could read";
+
+                case WaitReason.ToolPrimaryFireHoldInProgress:
+                    return "nothing. PrimaryFire is held on the input snapshot for this phase's wall box " +
+                        "because PlayerToolManager polls the snapshot itself (PlayerToolManager.cs:418); the " +
+                        "tick count is a hold length, not a retry count";
+
+                case WaitReason.NodeIntegrityNotDepleted:
+                    return "tool pulses were landing and node integrity had not reached zero. Owner is the " +
+                        "node template's integrity/hardness against the pulse budget, and the pulses/landed " +
+                        "counts in this row say whether the capability gate refused them instead";
+
+                case WaitReason.PickupNotHovered:
+                    return "PlayerInteraction never hovered a PickupItem, so there was nothing for the " +
+                        "Interact command to act on. Either depletion produced no loot prefab or the drop is " +
+                        "out of reach / off the interactable layer mask - the driver cannot press its way " +
+                        "past this one";
+
+                case WaitReason.PickupAcquisitionNotPublished:
+                    return "the PickupItem was hovered and the real Interact command was published, and no " +
+                        "ItemAcquiredSignal with sourceKind=ManualPickup arrived. Owner is the pickup's own " +
+                        "acquisition path, which is downstream of everything this driver produces";
+
+                case WaitReason.FabricatorAbsent:
+                    return "no live Fabricator component was found by bounded scene search, so no recipe " +
+                        "could be started. Owner is scene content, not the crafting code";
+
+                case WaitReason.NoCraftableRecipe:
+                    return "the Fabricator was live and CanCraft was false for every visible recipe, which " +
+                        "is normally the RESOURCE leg upstream having delivered no ingredients rather than a " +
+                        "crafting defect. Check the Resource row's verdict before this one";
+
+                case WaitReason.CraftDeliveryNotPublished:
+                    return "StartCraft was accepted and no ItemAcquiredSignal with sourceKind=Fabricator " +
+                        "arrived, so the craft was consumed and never delivered. Owner is the Fabricator's " +
+                        "completion path";
+
+                case WaitReason.VerbSweepStepping:
+                    return "nothing. The sweep is a fixed 16-step handshake and each step needs its own tick " +
+                        "to produce a real 0-to-1 edge for the dispatcher's edge detector";
+
+                default:
+                    return "no wait was recorded for this phase, which means it advanced on its own success " +
+                        "path or was closed before any tick decided to wait";
+            }
         }
 
         /// <summary>
@@ -4026,10 +4782,25 @@ namespace Hecton8.EditorTools.Diagnostics
                 .Append(" wall=").Append(F(_phaseWall[index]))
                 .Append("s ticks=").Append(_phaseTickLedger[index])
                 .Append(" tickFloor=").Append(MinTicksFor(phase))
+                .Append(" tickBox=").Append(MaxTicksFor(phase))
                 .Append(" granted=").Append(F(_phaseGrant[index]))
-                .Append("s yield=").Append(_phaseYield[index].ToString());
+                .Append("s yield=").Append(_phaseYield[index].ToString())
+                .Append(" waitingOn=").Append(_phaseWaitReason[index].ToString());
 
-            if (_phaseYield[index] == PhaseYield.TotalCeiling)
+            if (_phaseYield[index] == PhaseYield.PhaseTickCeiling)
+                // The tick-axis twin of the TIMEBOXED clause below, and it reads the OPPOSITE way to
+                // TotalTickCeiling: this phase spent its own box, so a threshold it missed is a real miss
+                // measured over thousands of retries, and no later phase paid for it.
+                _detail.Append(" - PHASE TICK CEILING: this phase spent its whole ")
+                    .Append(MaxTicksFor(phase))
+                    .Append("-tick share of the schedule's pot inside its wall box, so it yielded on the ")
+                    .Append("tick axis. Its own share only - the phases after it kept theirs");
+            else if (_phaseYield[index] == PhaseYield.TotalTickCeiling)
+                _detail.Append(" - TICK-COMPRESSED to its tick floor because the schedule's ")
+                    .Append(MaxTotalTicks)
+                    .Append("-tick pot was already spent, so any threshold this row failed was never given ")
+                    .Append("the ticks to be crossed. UNMEASURED, not broken");
+            else if (_phaseYield[index] == PhaseYield.TotalCeiling)
                 _detail.Append(" - COMPRESSED to its tick floor because the schedule's ")
                     .Append(F(TotalBudgetSeconds))
                     .Append("s total was already spent, so any threshold this row failed was never given ")
@@ -4140,25 +4911,70 @@ namespace Hecton8.EditorTools.Diagnostics
                     .Append("-tick floor, wall=").Append(F(GetPhaseWallSeconds(terminalIndex)))
                     .Append("s)");
 
+                // WHAT THE STOP PHASE WANTED, and it is first because it is the only clause a reader can act
+                // on directly. probe7 printed the stop phase, the stop cause and the tick count and none of
+                // the three said which of ToolEquip's four preconditions was false.
+                int stoppedIndex = (int)_stoppedInPhase;
+                WaitReason stoppedWaiting =
+                    stoppedIndex >= 0 && stoppedIndex < _phaseWaitReason.Length
+                        ? _phaseWaitReason[stoppedIndex]
+                        : WaitReason.None;
+                if (stoppedWaiting == WaitReason.None)
+                    stoppedWaiting = _waitReason;
+
+                _detail.Append(". That phase was waiting on ").Append(stoppedWaiting.ToString())
+                    .Append(" - ").Append(WaitReasonExplanation(stoppedWaiting));
+
+                // WALL AND TICK CULPRITS ARE SEPARATE QUESTIONS. The previous version printed only the wall
+                // winner and called it "the phase to fix", which on a tick-axis stop is a manufactured
+                // accusation: probe7 named SwimDive, and SwimDive had spent EXACTLY its 7.000s grant.
                 if (_worstPhaseWall > 0.0)
-                    _detail.Append(". The phase that consumed the most wall time was ")
+                    _detail.Append(". Heaviest WALL phase: ")
                         .Append(_worstPhase.ToString()).Append(" at ").Append(F(_worstPhaseWall))
                         .Append("s over ").Append(GetPhaseTicks((int)_worstPhase))
                         .Append(" ticks against a ").Append(F(GetPhaseGrantedSeconds((int)_worstPhase)))
-                        .Append("s grant - that is the phase to fix, not this row");
+                        .Append("s grant");
+
+                if (_worstPhaseTicks > 0)
+                    _detail.Append(". Heaviest TICK phase: ").Append(_worstTickPhase.ToString())
+                        .Append(" at ").Append(_worstPhaseTicks)
+                        .Append(" ticks of a ").Append(MaxTicksFor(_worstTickPhase))
+                        .Append("-tick box. On a tick-axis stop this is the phase to look at, NOT the wall ")
+                        .Append("one - a phase that filled its wall grant exactly did nothing wrong");
 
                 if (_compressed)
-                    _detail.Append(". The total budget was already spent at ").Append(F(_compressedAt))
+                    _detail.Append(". The total WALL budget was already spent at ").Append(F(_compressedAt))
                         .Append("s in phase ").Append(_compressedInPhase.ToString());
+
+                if (_tickCompressed)
+                    _detail.Append(". The ").Append(MaxTotalTicks)
+                        .Append("-tick pot was already spent at tick ").Append(_tickCompressedAtTick)
+                        .Append(" / ").Append(F(_tickCompressedAt))
+                        .Append("s in phase ").Append(_tickCompressedInPhase.ToString())
+                        .Append(", so every phase after that ran only its tick floor - those rows are ")
+                        .Append("UNMEASURED, not empty");
 
                 if (_stopCause == StopCause.ProbeGameplayWindowClosed)
                     _detail.Append(". The stop was EXTERNAL: the probe's gameplay window closed while the ")
                         .Append("schedule was still running, so this row is a harness budget shortfall, ")
                         .Append("not a product gap - STARVED, not empty");
                 else if (_stopCause == StopCause.OwnTickCeiling)
-                    _detail.Append(". The stop was the driver's own ").Append(MaxTotalTicks)
-                        .Append("-tick runaway ceiling, which means a phase was spinning without ")
-                        .Append("advancing");
+                    // REWRITTEN. This clause used to assert "which means a phase was spinning without
+                    // advancing", and that inference was FALSE on the run that produced it: probe7's ledger
+                    // shows Settle 1 tick, SwimSurface 6950, SwimDive 25865, SwimVerdict 1, ResourceTarget 2,
+                    // ToolEquip 27180, with not one phase over its wall box. The two hold phases had taken
+                    // 32815 ticks doing exactly what they are designed to do, and the sentence sent a reader
+                    // hunting a spin that did not exist - it is the sentence that got the 60000 ticks
+                    // attributed to ToolEquip alone. The cap is now the hard stop ABOVE the pot, so reaching
+                    // it means tick-compression itself failed to advance, and even that is stated as a
+                    // possibility to check rather than a conclusion.
+                    _detail.Append(". The stop was the driver's own ").Append(MaxTotalTicksHardStop)
+                        .Append("-tick hard stop, which sits ").Append(HardStopTickAllowance)
+                        .Append(" ticks above the ").Append(MaxTotalTicks)
+                        .Append("-tick pot. Reaching it means tick-compression did not finish paying the ")
+                        .Append("remaining tick floors, so compare the per-phase tick counts against their ")
+                        .Append("boxes before concluding anything about content: a phase at its box yielded ")
+                        .Append("correctly, and only a phase far past its box was genuinely stuck");
 
                 _verdicts[row] = RowVerdict.NotExercised;
                 _details[row] = _detail.ToString();
