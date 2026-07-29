@@ -317,8 +317,46 @@ namespace Hecton8.Core.Determinism
         private const uint PlayerStateFlagNonFinite = 1u << 31;
         private const float DesyncGlitchIntensity01 = 1f;
         private const float DesyncGlitchDurationSeconds = 1f;
+        private const int MaxColdResidencyAttempts = 3;
+        private const int DeterministicSampleLadder0 = 60;
+        private const int DeterministicSampleLadder1 = 120;
+        private const int DeterministicSampleLadder2 = 240;
+        private const int DeterministicSampleLadder3 = 480;
+        private const int DeterministicSampleLadder4 = 960;
+        private const int MaxDeterministicSampleCadenceFrames = DeterministicSampleLadder4;
+        private const int HashBufferReasonNone = 0;
+        private const int HashBufferReasonVaultMissing = 1;
+        private const int HashBufferReasonVaultReferenceStale = 2;
+        private const int HashBufferReasonAllocationLocked = 3;
+        private const int HashBufferReasonCompactionFence = 4;
+        private const int HashBufferReasonHandleRefused = 5;
+        private const int HashBufferReasonLengthTooSmall = 6;
+        private const uint ReasonHashBufferUnavailableHash = 0x4E4F4258u;
+        private const uint ReasonOwnerLifetimeHash = 0x4F574C46u;
+        private const uint MarkerVaultMissingHash = 0x564D5347u;
+        private const uint MarkerVaultReferenceStaleHash = 0x56535441u;
+        private const uint MarkerAllocationLockedHash = 0x414C4F43u;
+        private const uint MarkerCompactionFenceHash = 0x434D5046u;
+        private const uint MarkerHandleRefusedHash = 0x48524546u;
+        private const uint MarkerLengthTooSmallHash = 0x4C454E53u;
+        private const uint MarkerDuplicateOwnerHash = 0x44555055u;
+        private const string HashBufferMessageVaultMissing =
+            "[LockstepStateValidator] BufferID.LockstepMasterStateHash was NOT allocated: no IDataVault is registered in GlobalRegistry, so no state hash can be produced in this run.";
+        private const string HashBufferMessageVaultReferenceStale =
+            "[LockstepStateValidator] BufferID.LockstepMasterStateHash was NOT allocated: GlobalRegistry has an IDataVault but this owner's cached reference is null, so the hot-swap rebind never reached it.";
+        private const string HashBufferMessageAllocationLocked =
+            "[LockstepStateValidator] BufferID.LockstepMasterStateHash was NOT allocated: the vault is allocation-locked, so no state hash can be produced until the lock clears.";
+        private const string HashBufferMessageCompactionFence =
+            "[LockstepStateValidator] BufferID.LockstepMasterStateHash was NOT allocated: the vault compaction fence is active, so no state hash can be produced until the fence clears.";
+        private const string HashBufferMessageHandleRefused =
+            "[LockstepStateValidator] BufferID.LockstepMasterStateHash was NOT allocated: the vault refused a generation handle for it after the cold retry budget was spent. Nothing was hashed.";
+        private const string HashBufferMessageLengthTooSmall =
+            "[LockstepStateValidator] BufferID.LockstepMasterStateHash resolved with fewer than one element, so no state hash can be written.";
+        private const string OwnerLifetimeMessageDuplicateSuppressed =
+            "[LockstepStateValidator] A second determinism owner was suppressed; one owner already holds the POST_SIMULATION registration and the lockstep vault buffers.";
 
         private static LockstepStateValidator _activeInstance;
+        private static int _sceneLoadReattachHookRegistered;
 
         private readonly byte[] _replayReadScratch = new byte[ReplayBlockBytes]; // COLD ALLOC: byte[14528] - replay block load buffer - owner: LockstepStateValidator
         private IDataVault _dataVault;
@@ -342,6 +380,9 @@ namespace Hecton8.Core.Determinism
         private int _ghostInputCount;
         private int _ghostExpectedBlockIndex;
         private uint _lastAppliedInputActions;
+        private int _duplicateSuppressed;
+        private int _coldResidencyAttempts;
+        private int _reportedHashBufferReason;
 
         /// <summary>
         /// Most recent 64-bit master simulation hash, or zero before the first sampled frame.
@@ -356,20 +397,154 @@ namespace Hecton8.Core.Determinism
             }
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void EnsureRuntimeInstance()
+        /// <summary>
+        /// Clears process-wide owner state before the first scene load of every play session.
+        /// </summary>
+        /// <remarks>
+        /// Unity 6 "enter play mode without domain reload" keeps statics alive between sessions, so a
+        /// second session would otherwise inherit a destroyed <c>_activeInstance</c> reference and a
+        /// duplicated <c>sceneLoaded</c> subscription. `RuntimeInitializeOnLoadMethod` still runs on every
+        /// session, which is why the reset lives here and not in a static constructor.
+        /// </remarks>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticOwnerState()
         {
-            if (!Application.isPlaying || _activeInstance != null)
-                return;
+            _activeInstance = null;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= HandleSceneLoadedReattach;
+            _sceneLoadReattachHookRegistered = 0;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void BootstrapRuntimeOwner()
+        {
+            RegisterSceneLoadReattachHook();
+            EnsureRuntimeInstance();
+        }
+
+        /// <summary>
+        /// Ensures exactly one live post-simulation determinism owner exists, parented to the project
+        /// persistent root so it survives `LoadSceneMode.Single` transitions.
+        /// </summary>
+        /// <returns>Live owner, or null when the session is not playing.</returns>
+        /// <remarks>
+        /// This is the install entry point `GameBootstrapper` can call directly; the
+        /// `RuntimeInitializeOnLoadMethod` above only covers scenes that boot with no bootstrapper
+        /// (isolated sandbox, render-test and determinism scenes). It is idempotent, so both callers may
+        /// run in the same session.
+        /// </remarks>
+        public static LockstepStateValidator EnsureRuntimeInstance()
+        {
+            if (!Application.isPlaying)
+                return null;
+
+            LockstepStateValidator instance = _activeInstance;
+            if (instance != null)
+            {
+                // Re-entry path for every later scene load. An owner created while 00_BOOTSTRAP was the
+                // active scene has no persistent parent if the bootstrapper had not registered yet, and
+                // the dispatcher/vault it needs may have been published after its OnEnable ran.
+                AttachToPersistentRoot(instance);
+                instance.RebindRuntimeDependenciesCold();
+                return instance;
+            }
 
             GameObject owner = new GameObject("Lockstep State Validator"); // COLD ALLOC: GameObject[1] - core determinism post-simulation owner - owner: LockstepStateValidator
             owner.hideFlags = HideFlags.HideInHierarchy;
-            owner.AddComponent<LockstepStateValidator>();
+
+            // Park under the project persistent root BEFORE AddComponent so OnEnable observes the final
+            // hierarchy. Left unparented, this object lands in whatever scene is active at creation time -
+            // 00_BOOTSTRAP - and the AGENTS.md:162 flow to 02_HECTON_WORLD loads Single and destroys it,
+            // which is how BufferID.LockstepMasterStateHash stayed unallocated for a whole 2490-frame run
+            // while the only world state worth hashing existed.
+            //
+            // Raw DontDestroyOnLoad is not the alternative: AGENTS.md:336 forbids it in first-party
+            // runtime, and GameBootstrapper.EnforceProjectPersistentRoot destroys every DontDestroyOnLoad
+            // root that is not the bootstrapper or a child of it - so a DDOL owner here would be created
+            // and then killed by the bootstrapper. Being a child of that single persistent root is the
+            // sanctioned survival route, same resolution as SceneRuntimeService.EnsureRuntimeInstance.
+            AttachToPersistentRoot(owner.transform);
+            return owner.AddComponent<LockstepStateValidator>();
+        }
+
+        /// <summary>
+        /// Subscribes the scene-load reattach hook exactly once per play session.
+        /// </summary>
+        /// <remarks>
+        /// The handler is static and captures no instance, so it cannot keep a destroyed owner alive. The
+        /// `-=` before the `+=` makes the subscription idempotent under no-domain-reload play mode, and
+        /// <see cref="ResetStaticOwnerState"/> removes it at the start of every session.
+        /// </remarks>
+        private static void RegisterSceneLoadReattachHook()
+        {
+            if (_sceneLoadReattachHookRegistered != 0)
+                return;
+
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded -= HandleSceneLoadedReattach;
+            UnityEngine.SceneManagement.SceneManager.sceneLoaded += HandleSceneLoadedReattach;
+            _sceneLoadReattachHookRegistered = 1;
+        }
+
+        private static void HandleSceneLoadedReattach(
+            UnityEngine.SceneManagement.Scene loadedScene,
+            UnityEngine.SceneManagement.LoadSceneMode loadSceneMode)
+        {
+            // Recreate the owner if a Single load destroyed it before it reached the persistent root, and
+            // otherwise re-bind services that were published after the owner enabled. Idempotent, so
+            // additive loads cost one null check.
+            EnsureRuntimeInstance();
+        }
+
+        private static void AttachToPersistentRoot(LockstepStateValidator instance)
+        {
+            if (instance == null)
+                return;
+
+            AttachToPersistentRoot(instance.transform);
+        }
+
+        private static void AttachToPersistentRoot(Transform ownerTransform)
+        {
+            if (ownerTransform == null)
+                return;
+
+            // A null owner is legitimate - isolated sandbox and render-test scenes run without a
+            // bootstrapper - so leave the object where it is rather than refusing to create it. The
+            // scene-load hook retries the parenting once a bootstrapper exists.
+            global::Hecton8.Bootstrap.GameBootstrapper persistentOwner = GlobalRegistry.BootstrapperRuntime;
+            if (persistentOwner == null)
+                return;
+
+            Transform persistentRoot = persistentOwner.transform;
+            if (ownerTransform == persistentRoot || ownerTransform.IsChildOf(persistentRoot))
+                return;
+
+            ownerTransform.SetParent(persistentRoot, false);
         }
 
         private void OnEnable()
         {
+            LockstepStateValidator activeOwner = _activeInstance;
+            if (activeOwner != null && !ReferenceEquals(activeOwner, this))
+            {
+                // A second owner would double-register on POST_SIMULATION and write the same vault
+                // buffers twice per frame. Destroy the component only, never the host GameObject, which
+                // may belong to a scene that owns other work. Destroy is deferred to end of frame, so the
+                // structural flag below is what actually keeps this instance inert.
+                _duplicateSuppressed = 1;
+                GlobalTelemetryBus.PublishModTelemetry(ReasonOwnerLifetimeHash, MarkerDuplicateOwnerHash, 0f);
+                LogDuplicateOwnerSuppressed();
+                UnityEngine.Object.Destroy(this);
+                return;
+            }
+
+            _duplicateSuppressed = 0;
+            _coldResidencyAttempts = 0;
+            _reportedHashBufferReason = HashBufferReasonNone;
             _activeInstance = this;
+
+            // Listener first, then sample: registering after the dependency read leaves a window where a
+            // service published between the two is never observed by either path.
+            TryRegisterHotSwapListener();
             RefreshDependenciesFromRegistry();
             ConfigureSignalLanes();
             _binaryLayoutInvalid = ValidateBinaryLayout() ? 0 : 1;
@@ -381,9 +556,44 @@ namespace Hecton8.Core.Determinism
             EnsurePostFixedMirrorState();
             RestoreTelemetryCursorFromVault();
             EnsureReplayWriterCold();
-            TryRegisterHotSwapListener();
+            TryEnsureHashBufferResidency();
             if (_dispatcher != null && GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Core))
                 _registeredPostFixed = 1;
+        }
+
+        /// <summary>
+        /// Cold re-bind after a scene load or a late service publication.
+        /// </summary>
+        /// <remarks>
+        /// Everything the tick path touches opens vault buffers with `allowColdInitialization: false`, so a
+        /// buffer that was never created cold can never be created from the tick. This is the repair point
+        /// for an owner that enabled before `GlobalDataVault` or `SystemDispatcher` existed.
+        /// </remarks>
+        private void RebindRuntimeDependenciesCold()
+        {
+            if (_duplicateSuppressed != 0 || !isActiveAndEnabled)
+                return;
+
+            TryRegisterHotSwapListener();
+            RefreshDependenciesFromRegistry();
+            _coldResidencyAttempts = 0;
+            EnsureNativeState();
+            EnsureHashNativeState();
+            EnsurePostFixedMirrorState();
+
+            // The cursor restore owns `_postSimulationFrame`, and during ghost replay that value is the
+            // replay header's start frame, not the telemetry ring's newest entry. Restoring it mid-replay
+            // would walk the ghost input cursor off its expected frame and report a false desync.
+            if (Volatile.Read(ref _ghostReplayActive) == 0)
+                RestoreTelemetryCursorFromVault();
+
+            TryEnsureHashBufferResidency();
+            if (_registeredPostFixed == 0 &&
+                _dispatcher != null &&
+                GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Core))
+            {
+                _registeredPostFixed = 1;
+            }
         }
 
         private void OnDisable()
@@ -423,10 +633,15 @@ namespace Hecton8.Core.Determinism
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     _dataVault = currentService as IDataVault;
+                    // A new vault means new generations for every buffer, so the cold retry budget and the
+                    // reported reason both reset - the previous verdict described a vault that is gone.
+                    _coldResidencyAttempts = 0;
+                    _reportedHashBufferReason = HashBufferReasonNone;
                     EnsureNativeState();
                     EnsureHashNativeState();
                     EnsurePostFixedMirrorState();
                     RestoreTelemetryCursorFromVault();
+                    TryEnsureHashBufferResidency();
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _player = currentService as IPlayerRuntimeContext;
@@ -447,6 +662,9 @@ namespace Hecton8.Core.Determinism
         /// </summary>
         public void PostFixedTick(float fixedDeltaTime)
         {
+            if (_duplicateSuppressed != 0)
+                return;
+
             uint frame = ++_postSimulationFrame;
             bool ghostReplayActive = Volatile.Read(ref _ghostReplayActive) != 0;
             uint flags = ghostReplayActive ? TelemetryFlagReplayMode : 0u;
@@ -487,6 +705,7 @@ namespace Hecton8.Core.Determinism
             }
 
             flags |= TelemetryFlagHashExecuted;
+            TryEnsureHashBufferResidency();
             MirrorPlayerStateToVault(frame, hasInputSignal, in inputSignal);
             bool roomWaterHadNonFinite = MirrorRoomWaterLevelsToVault();
             ExecuteHashJobs(frame, hashCadenceFrames, roomWaterHadNonFinite, ref flags);
@@ -606,7 +825,39 @@ namespace Hecton8.Core.Determinism
             float stressCurve01 = SmoothStep01(systemStress01);
             float qualityCadenceFrames = math.lerp(HashCadenceFrames, PrecisionHashCadenceFrames, qualityCurve01);
             float cadenceFrames = math.lerp(qualityCadenceFrames, HighStressHashCadenceFrames, stressCurve01);
-            return math.clamp((int)math.round(cadenceFrames), PrecisionHashCadenceFrames, HighStressHashCadenceFrames);
+            int adaptiveCadenceFrames = math.clamp(
+                (int)math.round(cadenceFrames),
+                PrecisionHashCadenceFrames,
+                HighStressHashCadenceFrames);
+            return SnapToDeterministicSampleLadder(adaptiveCadenceFrames);
+        }
+
+        /// <summary>
+        /// Snaps an adaptive cadence onto the fixed ladder 60/120/240/480/960 frames.
+        /// </summary>
+        /// <remarks>
+        /// The cadence is derived from `HomeostasisBrain.GlobalQualityWeight` and `SystemHealthIndex01`,
+        /// which react to wall-clock frame times, and <see cref="BuildMasterStateHashDirect"/> folds the
+        /// sampled frame into the master hash. Unsnapped, two runs of the same seed sample different frames
+        /// and produce different hashes from identical state, which makes the master hash useless as a
+        /// repeatability comparator - the exact caveat the headless probe has to print today.
+        /// Every ladder member divides <see cref="MaxDeterministicSampleCadenceFrames"/>, so whatever the
+        /// wall clock does, every run samples every frame that is a multiple of 960 and the two runs always
+        /// have comparable hash points. The ceiling drops from 1200 to 960 frames, which costs at most one
+        /// extra hash pass per 4800 frames under sustained stress.
+        /// </remarks>
+        private static int SnapToDeterministicSampleLadder(int cadenceFrames)
+        {
+            if (cadenceFrames >= DeterministicSampleLadder4)
+                return DeterministicSampleLadder4;
+            if (cadenceFrames >= DeterministicSampleLadder3)
+                return DeterministicSampleLadder3;
+            if (cadenceFrames >= DeterministicSampleLadder2)
+                return DeterministicSampleLadder2;
+            if (cadenceFrames >= DeterministicSampleLadder1)
+                return DeterministicSampleLadder1;
+
+            return DeterministicSampleLadder0;
         }
 
         private float RefreshCachedQualityWeight01()
@@ -1878,6 +2129,156 @@ namespace Hecton8.Core.Determinism
             where T : struct
         {
             return buffer.IsCreated && requiredLength >= 0 && buffer.Length >= requiredLength;
+        }
+
+        /// <summary>
+        /// Confirms the master-hash buffer is resident, repairs it within a hard attempt budget, and
+        /// reports the exact reason once when it is not.
+        /// </summary>
+        /// <returns>True when `BufferID.LockstepMasterStateHash` resolves with at least one element.</returns>
+        /// <remarks>
+        /// Nothing here caches a vault descriptor. Every check re-resolves the generation handle at the
+        /// point of use, because a cached descriptor is what let a stale generation silently resolve to
+        /// another buffer's payload; the ~20 runtime owners that resolve per use were unaffected by that
+        /// defect. The cold repair is bounded by <see cref="MaxColdResidencyAttempts"/> per owner per vault
+        /// because the tick path opens every buffer with `allowColdInitialization: false` and therefore can
+        /// never create one itself.
+        /// </remarks>
+        private bool TryEnsureHashBufferResidency()
+        {
+            if (IsHashBufferResident())
+            {
+                _reportedHashBufferReason = HashBufferReasonNone;
+                return true;
+            }
+
+            int reason = ResolveHashBufferUnavailableReason();
+            if ((reason == HashBufferReasonHandleRefused || reason == HashBufferReasonLengthTooSmall) &&
+                _coldResidencyAttempts < MaxColdResidencyAttempts)
+            {
+                _coldResidencyAttempts++;
+                EnsureNativeState();
+                EnsureHashNativeState();
+                EnsurePostFixedMirrorState();
+                if (IsHashBufferResident())
+                {
+                    _reportedHashBufferReason = HashBufferReasonNone;
+                    return true;
+                }
+
+                reason = ResolveHashBufferUnavailableReason();
+            }
+
+            ReportHashBufferUnavailable(reason);
+            return false;
+        }
+
+        private bool IsHashBufferResident()
+        {
+            return TryGetReadVaultBuffer<ulong>(BufferID.LockstepMasterStateHash, 1, out _);
+        }
+
+        private int ResolveHashBufferUnavailableReason()
+        {
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+            {
+                return GlobalRegistry.DataVault == null
+                    ? HashBufferReasonVaultMissing
+                    : HashBufferReasonVaultReferenceStale;
+            }
+
+            if (vault.IsAllocationLocked)
+                return HashBufferReasonAllocationLocked;
+
+            if (vault.IsCompactionFenceActive)
+                return HashBufferReasonCompactionFence;
+
+            if (!vault.TryGetGenerationHandle<ulong>(BufferID.LockstepMasterStateHash, out VaultGenerationHandle<ulong> handle) ||
+                !IsMatchingVaultHandle(in handle, BufferID.LockstepMasterStateHash))
+            {
+                return HashBufferReasonHandleRefused;
+            }
+
+            return TryReadVaultBuffer(vault, in handle, BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong>.ReadOnly masterHash) &&
+                masterHash.IsCreated
+                ? HashBufferReasonNone
+                : HashBufferReasonLengthTooSmall;
+        }
+
+        /// <summary>
+        /// Publishes the unavailability reason once per distinct cause.
+        /// </summary>
+        /// <remarks>
+        /// The telemetry publish ships in release builds and carries the numeric BufferID, so an absent
+        /// buffer is no longer something a downstream probe has to infer from a zero hash. The paired log is
+        /// editor/development only and uses literal messages: no interpolation, no concat, no `ToString`, so
+        /// the hash-cadence call site stays allocation free.
+        /// </remarks>
+        private void ReportHashBufferUnavailable(int reason)
+        {
+            if (reason == HashBufferReasonNone || _reportedHashBufferReason == reason)
+                return;
+
+            _reportedHashBufferReason = reason;
+            GlobalTelemetryBus.PublishModTelemetry(
+                ReasonHashBufferUnavailableHash,
+                ResolveHashBufferReasonMarker(reason),
+                (int)BufferID.LockstepMasterStateHash);
+            LogHashBufferUnavailable(reason);
+        }
+
+        private static uint ResolveHashBufferReasonMarker(int reason)
+        {
+            switch (reason)
+            {
+                case HashBufferReasonVaultMissing:
+                    return MarkerVaultMissingHash;
+                case HashBufferReasonVaultReferenceStale:
+                    return MarkerVaultReferenceStaleHash;
+                case HashBufferReasonAllocationLocked:
+                    return MarkerAllocationLockedHash;
+                case HashBufferReasonCompactionFence:
+                    return MarkerCompactionFenceHash;
+                case HashBufferReasonLengthTooSmall:
+                    return MarkerLengthTooSmallHash;
+                default:
+                    return MarkerHandleRefusedHash;
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogHashBufferUnavailable(int reason)
+        {
+            switch (reason)
+            {
+                case HashBufferReasonVaultMissing:
+                    Hecton8.Core.H8Debug.LogError(HashBufferMessageVaultMissing, this);
+                    break;
+                case HashBufferReasonVaultReferenceStale:
+                    Hecton8.Core.H8Debug.LogError(HashBufferMessageVaultReferenceStale, this);
+                    break;
+                case HashBufferReasonAllocationLocked:
+                    Hecton8.Core.H8Debug.LogError(HashBufferMessageAllocationLocked, this);
+                    break;
+                case HashBufferReasonCompactionFence:
+                    Hecton8.Core.H8Debug.LogError(HashBufferMessageCompactionFence, this);
+                    break;
+                case HashBufferReasonLengthTooSmall:
+                    Hecton8.Core.H8Debug.LogError(HashBufferMessageLengthTooSmall, this);
+                    break;
+                default:
+                    Hecton8.Core.H8Debug.LogError(HashBufferMessageHandleRefused, this);
+                    break;
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogDuplicateOwnerSuppressed()
+        {
+            Hecton8.Core.H8Debug.LogWarning(OwnerLifetimeMessageDuplicateSuppressed, this);
         }
 
         private void EnsureNativeState()
