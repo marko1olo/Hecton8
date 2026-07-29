@@ -44,16 +44,37 @@
 //     onto these prefabs would look correct and do literally nothing. That is
 //     why the vents below are Heat and the pockets are Toxicity/Biohazard.
 //
-//   • ThermalVentRuntime -> CONDITIONALLY attached, never blindly. It is
-//     presentation only: it drives Light.intensity/range and
-//     DecalProjector.fadeFactor. TryRegisterLateFrame (ThermalVentRuntime.cs:196-202)
-//     refuses to register unless HasPresentationTarget (:224-227) finds a Light
-//     or a DecalProjector. None of the four prefabs currently contains either
-//     (no !u!108 and no DecalProjector in their YAML), so attaching it today
-//     produces a component that can never tick. This tool searches the
-//     hierarchy including inactive objects, wires it through its public
-//     ConfigureForEditor when a target exists, and otherwise declines out loud.
-//     Re-run it after the art lane adds a vent light and it wires itself.
+//   • ThermalVentRuntime -> attached to the vents, and the presentation target
+//     it needs is now authored HERE rather than waited on. It is presentation
+//     only: it drives Light.intensity/range and DecalProjector.fadeFactor.
+//     TryRegisterLateFrame (ThermalVentRuntime.cs:196-202) refuses to register
+//     unless HasPresentationTarget (:224-227) finds a Light or a DecalProjector.
+//     Neither vent prefab contained either (no !u!108, no DecalProjector), which
+//     is why the previous run of this tool logged DECLINED-INERT twice. The tool
+//     now authors the vent glow Light itself (see VENT GLOW LIGHT below), so the
+//     runtime wires on the same pass instead of waiting for an art lane.
+//
+//   • LightCullingProxy -> NOT attached, and the decline is load-bearing rather
+//     than lazy. Its LateFrameTick computes
+//     `shouldEnable = quality > minimumQualityWeight && hasPlayer`
+//     (LightCullingProxy.cs:98-101), so an unresolved IPlayerRuntimeContext
+//     force-disables the Light forever. It also owns light.intensity/range when
+//     managePresentationScalars is true, which is the same pair ThermalVentRuntime
+//     writes - two ILateFrameTickables fighting over one Light. And
+//     ThermalVentRuntime deliberately stops enabling the Light at all once
+//     cullingProxy != null (:135-136), handing the enable decision to the proxy.
+//     Stacking it would put a second independently-inertable gate in front of a
+//     glow that has never once been visible. One presentation owner per Light,
+//     for the same reason as one emitter per object. Add it later, deliberately,
+//     against a measured GPU cost.
+//
+//   • HazardMetadata -> NOT attached. ThermalVentRuntime only uses it for
+//     ResolvePresentationPhase (:229-232), a `HazardHash & 3` frame-stagger, and
+//     Awake back-fills it when absent. Its real surface is a DamageRouter, a
+//     VfxAnchorBinding[] and an effectHash that has to match a VFX registry
+//     (HazardMetadata.cs:42-51). Attaching it with a zero hash and no router to
+//     buy one frame of stagger is exactly the "looks configured, does nothing"
+//     object this file exists to avoid. The cost is that both vents phase on 0.
 //
 //   • EnvironmentalHazard -> NOT ATTACHED. It is the self-contained variant:
 //     its own trigger collider, playerLayer/playerTag, UnityEvents and an
@@ -77,6 +98,111 @@
 //   (AbyssalThermalManager.cs:1634-1652), so a value of 45 is a thermal
 //   reading, not 4.5 damage/second. The Heat numbers below are degrees over an
 //   abyssal ambient of a few degrees; the pocket numbers below are damage.
+//
+// VENT GLOW LIGHT - WHY POINT, WHY WARM, WHY THESE NUMBERS
+//   Pipeline first: GraphicsSettings.m_CustomRenderPipeline resolves to
+//   Assets/_Project/Data/URP_Medium (PC_RPAsset).asset, so this is URP 17.5.0
+//   with m_AdditionalLightsRenderingMode: 1 (per pixel),
+//   m_AdditionalLightsPerObjectLimit: 2 and m_AdditionalLightShadowsSupported: 1.
+//   A realtime Point light therefore renders per pixel and, left on Auto, would
+//   claim an additional-light shadow slice. So the authored Light is Point,
+//   Realtime, shadows None, bounce 0. ThermalVentRuntime.EnforceLightPolicy
+//   (:190-194) also forces shadows off, but authoring it means the asset on disk
+//   is already correct and the editor preview never pays for a shadow map.
+//
+//   Intensity is in candela: every authored Light in this project serialises
+//   m_LightUnit: 1 (UnityEngine.LightUnit.Candela), which is the engine default
+//   here rather than a hand edit, so this tool does not touch the unit and only
+//   logs it back. The project's own calibration point is
+//   PFB_FieldBeacon_Runtime.prefab: a Point light at 1.6 candela, range 4, colour
+//   (0.25, 1, 0.95). A vent glow is brighter than a navigation marker but is not
+//   a floodlight, so the authored range is 1.6..3.2 candela across the heat span.
+//
+//   RANGE IS MEASURED, NOT COPIED FROM THE HAZARD RADIUS. The earlier revision
+//   passed plan.RadiusMeters straight through as baseLightRange. That is wrong
+//   twice over. First, ThermalVentRuntime multiplies it: at the default
+//   GlobalQualityWeight of 1f (HomeostasisBrain.ScalabilityDictator.cs:287) the
+//   quality curve is 1 and targetRange = baseLightRange * Mathf.Lerp(0.7, 1.2, 1)
+//   = baseLightRange * 1.2 (:142), so radius 12 would have produced a 14.4 m
+//   light. Second, the hazard radius is a DAMAGE volume; a glow that spans it
+//   reads as a debug sphere and floods the basin the vent is supposed to punctuate.
+//   The range here is derived from the prefab's own measured geometry instead, and
+//   deliberately lands well inside the damage radius so the light never
+//   impersonates the field.
+//
+//   The measurement is taken from MeshFilter.sharedMesh.bounds transformed into
+//   root space - not Renderer.bounds, which is unreliable for the inactive LOD1 and
+//   LOD2 renderers on the hero vent. The plume origin prefers the highest
+//   ParticleSystem in the hierarchy, because on the hero vent the tallest MESH is
+//   a decorative spine tip at ~2.6 m while VentBubbleColumn_Main marks the actual
+//   mouth at y 1.16. Where no ParticleSystem exists (the small vent) the mouth is
+//   the top of the mesh bounds, pulled slightly inside so the chimney lip is lit
+//   instead of open water.
+//
+//   Calibration check that this derivation is not arbitrary: the pulse it
+//   computes for the 25-magnitude small vent is 0.45 Hz at amplitude 0.18, which
+//   reproduces the two hand-tuned constants the previous revision hard-coded. The
+//   hero vent extrapolates to 0.41 Hz / 0.215 - a bigger vent breathing slower and
+//   deeper. Colour follows the same heat span, amber toward pale amber, because a
+//   hotter body reads whiter; it stays warm rather than the project's cyan beacon
+//   language, and it agrees with the Heat = Color.yellow gizmo this project
+//   already draws (HectonHazardSource.cs:319-325). Caveat worth stating: seawater
+//   absorbs long wavelengths fastest, so an amber source will read desaturated
+//   in-game at range. That is an argument for keeping it saturated at the source,
+//   which it is, not for making the vents blue.
+//
+// HAZARD ZONE PROFILES - TWO ASSETS, NOT FOUR, AND WHY THAT IS THE POINT
+//   The project owned zero HazardZoneProfile assets, so _profile was null on all
+//   four sources and ResolveHazardType fell back to the inline type. Creating
+//   profiles is not free of risk: ResolveHazardType (HectonHazardSource.cs:175-178)
+//   returns `_profile != null ? _profile.HazardType : _type`, so an assigned
+//   profile OVERRIDES the inline type - and HazardZoneProfile's own default for
+//   that field is HazardType.Radiation (HazardZoneProfile.cs:15), the one route in
+//   this project that reaches no consumer. A carelessly authored profile does not
+//   merely fail to help, it silently kills the hazard it is attached to. Every
+//   assignment below is therefore interlocked against the plan's type.
+//
+//   Only the POCKETS get a profile. The Heat branch
+//   (HectonHazardSource.cs:145-152) calls
+//   IThermodynamicsService.TryInjectTransientHeatSource(position, radius,
+//   intensity, sourceId) - the signature (GlobalRegistryContracts.cs:3621) takes
+//   no profile, no glitch bias and no curve. So on a vent, every profile field
+//   except HazardType is inert, and HazardType would only restate what _type
+//   already says while adding a second place it can drift to the dead Radiation
+//   default. A profile that changes nothing but looks configured is worse than
+//   none, so the vents get an explicit logged refusal instead.
+//
+//   What the pocket profiles actually change, field by field:
+//     • hazardType - decisive, consumed by ResolveHazardType. Authored to match
+//       the plan exactly, and verified again at assignment time.
+//     • intensityCurve / bakedIntensityLut - consumed. HazardZoneManager
+//       .WriteVolumeCurveLut (:2917-2939) copies the baked LUT into the job's
+//       native buffer and EvaluateAabbSphereContribution (:221-227) multiplies
+//       intensity by it. THE AXIS IS SQUARED AND THIS IS THE EASY BUG: the profile
+//       bakes lut[i] from curve.Evaluate(i / 63f) (HazardZoneProfile.cs:67-82),
+//       but the runtime indexes that same table by normalised distance SQUARED
+//       (HazardZoneManager.cs:230-254, fed from :221). Effective attenuation is
+//       therefore curve.Evaluate(d * d), so a knee wanted at d = 0.55 must be
+//       authored at x = 0.30. The engine's no-profile default is (1 - d²)²,
+//       i.e. curve(x) = (1 - x)²; both curves below are measured against that.
+//     • visorGlitchBias - consumed on the zone-manager path only. It rides
+//       HazardVolumeData.VisorGlitchBias at FieldOffset(40) into the exposure job
+//       and is max-folded per hazard type (HazardZoneManager.cs:127, :140).
+//       Clamped to 0..2 by ClampGlitchBias (:3253-3256).
+//     • acousticDreadID - DEAD. A whole-project search finds exactly one
+//       reference, its own getter (HazardZoneProfile.cs:41). It is left at 0 on
+//       purpose: writing a hand-picked id into a field nobody reads is the same
+//       fake configuration this section refuses elsewhere.
+//
+// TWO DIFFERENT WRITE RISK CLASSES, NAMED PER CASE
+//   • AssetDatabase.CreateAsset for the two profiles creates NEW files under
+//     Assets/_Project/Data/World/HazardZoneProfiles. It cannot overwrite or wipe
+//     anything: an existing asset at the same path is loaded and left untouched,
+//     never rewritten, so a designer's edits to a profile always win.
+//   • Assigning _profile, adding HectonHazardSource / ThermalVentRuntime and
+//     adding the glow Light child all REWRITE a shipped production prefab through
+//     LoadPrefabContents -> SaveAsPrefabAsset. That is the higher risk class and
+//     it is why the whole apply path sits behind the opt-in flag below.
 //
 // WHY THIS TOOL IS ALLOWED TO WRITE PREFABS
 //   AGENTS.md `Sandbox Firewall Rule` bans automated TEST runners and scripts
@@ -132,14 +258,64 @@ namespace Hecton8.EditorTools.Diagnostics
         private const string IsStaticPropertyName = "_isStatic";
         private const string ProfilePropertyName = "_profile";
 
-        // ThermalVentRuntime.ConfigureForEditor defaults (ThermalVentRuntime.cs:19-23).
-        // The pulse shape is already tuned, so only the light range is derived
-        // from the hazard, so that the visible glow matches the heat field
-        // instead of contradicting it.
-        private const float VentLightIntensity = 2.5f;
+        // Serialized backing field names on HazardZoneProfile.cs:15-26. Note the
+        // absence of the underscore prefix used by HectonHazardSource - these are
+        // two different authors' conventions in the same feature and mixing them
+        // up produces a null SerializedProperty, not a compile error.
+        private const string ProfileHazardTypePropertyName = "hazardType";
+        private const string ProfileIntensityCurvePropertyName = "intensityCurve";
+        private const string ProfileVisorGlitchBiasPropertyName = "visorGlitchBias";
+        private const string ProfileBakedLutPropertyName = "bakedIntensityLut";
+
+        private const string ProfileFolderParent = "Assets/_Project/Data/World";
+        private const string ProfileFolderName = "HazardZoneProfiles";
+        private const string ProfileFolder = ProfileFolderParent + "/" + ProfileFolderName;
+
+        // Naming follows the type's own CreateAssetMenu fileName hint,
+        // "HazardZoneProfile_" (HazardZoneProfile.cs:8), so a hand-created asset and
+        // a tool-created one are indistinguishable in the project window.
+        private const string ChemicalSeepProfilePath =
+            ProfileFolder + "/HazardZoneProfile_ChemicalSeep.asset";
+
+        private const string SporeNestProfilePath =
+            ProfileFolder + "/HazardZoneProfile_SporeNest.asset";
+
+        // ThermalVentRuntime.ConfigureForEditor (ThermalVentRuntime.cs:37-59).
+        // baseDecalFade is inert while no DecalProjector exists but is passed
+        // through anyway so a later decal lane inherits a sane value instead of 0.
         private const float VentDecalFade = 0.7f;
-        private const float VentPulseFrequencyHz = 0.45f;
-        private const float VentPulseAmplitude = 0.18f;
+
+        // Every light value below is derived, not typed in. These are the
+        // endpoints of the derivation and the reference magnitude it normalises
+        // against; see VENT GLOW LIGHT in the file header for the justification.
+        // 60 is the reference "black smoker" heat magnitude: the authored vents at
+        // 25 and 45 land at 0.42 and 0.75 of it, which is what makes them read as
+        // a warm chimney and a hard-venting hero rather than two of the same thing.
+        private const float VentHeatReferenceMagnitude = 60f;
+        private const float VentGlowMinIntensityCandela = 1.6f;
+        private const float VentGlowMaxIntensityCandela = 3.2f;
+        private const float VentPulseFrequencyHzCool = 0.5f;
+        private const float VentPulseFrequencyHzHot = 0.38f;
+        private const float VentPulseAmplitudeCool = 0.14f;
+        private const float VentPulseAmplitudeHot = 0.24f;
+
+        // ThermalVentRuntime.LateFrameTick:142 applies
+        // Mathf.Lerp(0.7f, 1.2f, curve) to baseLightRange, and the quality curve
+        // is 1 at the default GlobalQualityWeight of 1f. Divide the range the vent
+        // should actually project by this to get the value to author.
+        private const float VentRangeGainAtFullQuality = 1.2f;
+        private const float VentRuntimeRangeMinMeters = 3f;
+        private const float VentRuntimeRangeMaxMeters = 9f;
+        private const float VentMouthInsetMaxMeters = 0.35f;
+        private const float VentMouthInsetHeightFraction = 0.08f;
+
+        // Used only when a vent prefab contains no measurable mesh at all, so the
+        // fallback is visible in the log rather than silently indistinguishable
+        // from a measurement.
+        private const float VentFallbackStandingHeightMeters = 2f;
+        private const float VentFallbackHorizontalRadiusMeters = 0.5f;
+
+        private const string VentGlowLightObjectName = "VentGlow_Light";
 
         /// <summary>
         /// One authored hazard. Radius is metres. Intensity is damage-scale for
@@ -153,6 +329,14 @@ namespace Hecton8.EditorTools.Diagnostics
             public readonly float Intensity;
             public readonly float RadiusMeters;
             public readonly bool IsVent;
+
+            /// <summary>
+            /// Asset path of the profile this plan should own, or empty when a
+            /// profile is deliberately refused. Empty is a decision, not a gap -
+            /// see ProfileDeclineReason.
+            /// </summary>
+            public readonly string ProfileAssetPath;
+
             public readonly string Rationale;
 
             public HazardPlan(
@@ -161,6 +345,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 float intensity,
                 float radiusMeters,
                 bool isVent,
+                string profileAssetPath,
                 string rationale)
             {
                 PrefabPath = prefabPath;
@@ -168,6 +353,39 @@ namespace Hecton8.EditorTools.Diagnostics
                 Intensity = intensity;
                 RadiusMeters = radiusMeters;
                 IsVent = isVent;
+                ProfileAssetPath = profileAssetPath;
+                Rationale = rationale;
+            }
+        }
+
+        /// <summary>
+        /// One authored HazardZoneProfile asset. CurveTimes/CurveValues are a
+        /// polyline in the profile curve's own x space, which the runtime samples
+        /// at normalised-distance SQUARED - see the header. Keep them the same
+        /// length and strictly ascending in x.
+        /// </summary>
+        private readonly struct HazardProfilePlan
+        {
+            public readonly string AssetPath;
+            public readonly HazardType Type;
+            public readonly float VisorGlitchBias;
+            public readonly float[] CurveTimes;
+            public readonly float[] CurveValues;
+            public readonly string Rationale;
+
+            public HazardProfilePlan(
+                string assetPath,
+                HazardType type,
+                float visorGlitchBias,
+                float[] curveTimes,
+                float[] curveValues,
+                string rationale)
+            {
+                AssetPath = assetPath;
+                Type = type;
+                VisorGlitchBias = visorGlitchBias;
+                CurveTimes = curveTimes;
+                CurveValues = curveValues;
                 Rationale = rationale;
             }
         }
@@ -186,6 +404,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 30f,
                 6f,
                 false,
+                ChemicalSeepProfilePath,
                 "Single-mesh gas pocket, root localScale 1.8 x 1.2 x 1.8. Chemical " +
                 "seep, so Toxicity routes it to HazardZoneManager. ~3 damage/second " +
                 "over a plume about three times the source width - lethal to loiter " +
@@ -197,6 +416,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 20f,
                 5f,
                 false,
+                SporeNestProfilePath,
                 "Nest variant: three clustered cube bodies, largest localScale " +
                 "1.1 x 0.9 x 1.1, no scripts at all. Biological, so Biohazard - " +
                 "spores and pathogens, not chemistry. Weakest of the four (~2 " +
@@ -209,11 +429,18 @@ namespace Hecton8.EditorTools.Diagnostics
                 25f,
                 8f,
                 true,
-                "Vent variant: three cylinder chimneys, tallest at localScale y=1.02 " +
-                "on a 2-unit primitive, so roughly 2 m of standing chimney. Heat, " +
-                "which reaches the thermal grid rather than the damage registry. 25 " +
-                "is a temperature magnitude over abyssal ambient: a warm proxy " +
-                "chimney, not a black smoker."),
+                string.Empty,
+                "Vent variant: three cylinder segments, ALL siblings of the root " +
+                "(m_Father 8053698375052014182), stacked at localPosition y=1, 3.3 " +
+                "and 5.3 with localScale y=1.02, 0.78 and 0.57 on 2-unit primitives. " +
+                "That is a tapering spire reaching y~5.87, NOT the ~2 m this file " +
+                "claimed before - the earlier pass measured the tallest single " +
+                "segment and read it as the whole object. Heat, which reaches the " +
+                "thermal grid rather than the damage registry. 25 is a temperature " +
+                "magnitude over abyssal ambient: a warm proxy chimney, not a black " +
+                "smoker. Worth noting for a later lane: the hazard sphere is centred " +
+                "on the ROOT, so the plume mouth at y~5.87 sits at 73% of the 8 m " +
+                "radius where (1-d^2)^2 has already fallen to ~0.21 of peak."),
 
             new HazardPlan(
                 "Assets/_Project/Prefabs/WorldSupport/Final/PFB_Support_Pocket_Hazard.prefab",
@@ -221,11 +448,58 @@ namespace Hecton8.EditorTools.Diagnostics
                 45f,
                 12f,
                 true,
+                string.Empty,
                 "The hero vent - the only one of the four with a bubble-column " +
                 "ParticleSystem, an LOD group and 2 m spines around a VentMass at " +
                 "localScale 1.3 x 1.1 x 1.3. Hottest and widest of the set because " +
                 "the art already says it is venting hard, and the plume it draws " +
-                "should be backed by a field a player can measure."),
+                "should be backed by a field a player can measure. Unlike the small " +
+                "vent it is SQUAT: VentBubbleColumn_Main sits at y 1.16 and the " +
+                "tallest mesh is a decorative spine tip at ~2.6 m, so its glow is " +
+                "hotter and tighter rather than taller."),
+        };
+
+        /// <summary>
+        /// The two profile assets this tool owns. Both curves are authored in the
+        /// profile's own x space, which the runtime samples at normalised distance
+        /// SQUARED, so a knee wanted at distance d belongs at x = d * d. They are
+        /// deliberately OPPOSITE shapes: the seep is a plateau with a cliff, the
+        /// nest is a hot core that dies almost immediately.
+        /// </summary>
+        private static readonly HazardProfilePlan[] ProfilePlans =
+        {
+            new HazardProfilePlan(
+                ChemicalSeepProfilePath,
+                HazardType.Toxicity,
+                1.65f,
+                new[] { 0f, 0.30f, 0.70f, 1f },
+                new[] { 1f, 0.96f, 0.42f, 0f },
+                "Chemical seep: a dense cloud with an edge, not a point source. The " +
+                "plateau to x=0.30 is distance 0.55 of the radius, so the gas stays " +
+                "near full strength through the body of the plume and then falls off " +
+                "a shoulder to exactly 0 at the rim. Measured against the engine " +
+                "default of (1-x)^2 this roughly DOUBLES exposure mid-volume (0.96 vs " +
+                "0.49 at d=0.55) and is ~4.7x at d=0.84 (0.42 vs 0.09). That is what " +
+                "makes the authored '~3 damage/second, lethal to loiter in, " +
+                "survivable to cross' true: under the default falloff most of the " +
+                "6 m volume was harmless. VisorGlitchBias 1.65 of a possible 2 - " +
+                "chemical vapour etches and refracts across the faceplate, and this " +
+                "is the worst optical offender of the four."),
+
+            new HazardProfilePlan(
+                SporeNestProfilePath,
+                HazardType.Biohazard,
+                0.75f,
+                new[] { 0f, 0.12f, 0.36f, 1f },
+                new[] { 1f, 0.55f, 0.12f, 0f },
+                "Spore nest: the inverse shape on purpose. Full strength only where " +
+                "you are touching it, then gone - 0.55 at x=0.12 (distance 0.35) and " +
+                "0.12 at x=0.36 (distance 0.6), both BELOW the engine default of 0.77 " +
+                "and 0.41. At 3 m out that is ~0.24 damage/second instead of ~0.82, " +
+                "so the authored intent that 'a nest is something you are meant to be " +
+                "able to approach and salvage' becomes mechanically true, while the " +
+                "last metre still bites at ~1.6/second. VisorGlitchBias 0.75 - an " +
+                "organic film smears the visor, it does not corrupt the sensor."),
         };
 
         // ══════════════════════════════════════════════════════════
@@ -294,6 +568,12 @@ namespace Hecton8.EditorTools.Diagnostics
             int wrote = 0;
             int unchanged = 0;
             int declined = 0;
+
+            // Profile assets first, and outside the prefab loop: LoadPrefabContents
+            // opens a hidden preview scene, and creating assets while one is open is
+            // avoidable churn. This creates NEW files only - an existing asset is
+            // loaded and left byte-for-byte alone.
+            EnsureProfileAssets();
 
             for (int i = 0; i < Plans.Length; i++)
             {
