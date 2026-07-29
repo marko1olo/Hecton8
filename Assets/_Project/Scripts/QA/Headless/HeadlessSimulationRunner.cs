@@ -956,7 +956,23 @@ namespace Hecton8.QA.Headless
         /// </remarks>
         private static void LogRunnerLifecycle(string message)
         {
-            Debug.Log("[HEADLESS] " + message);
+            // LogWarning, not Log, and that is the whole point of this method existing.
+            // ForceHeadlessRuntimePolicy sets Debug.unityLogger.filterLogType = LogType.Warning (:483) so
+            // first-party Debug.Log spam cannot drown a 100-day batchmode log, and it is installed at :337
+            // the instant the dispatcher wait succeeds. Unity drops LogType.Log at the managed Logger
+            // BEFORE it reaches either the log file or Application.logMessageReceived - so that filter was
+            // also eating this method's own verdict line. In the 2026-07-29 run, FailAndQuit wrote
+            // [ECOLOGY_UNAVAILABLE] to the result JSON at :939 and logged it at :940; the JSON is on disk
+            // and the string "[HEADLESS] fail" appears zero times in all 27,107 log lines. Two separate
+            // investigations then read the resulting managed-log silence as a bootstrap deadlock and
+            // diagnosed the wrong subsystem entirely, because the last surviving managed line happened to
+            // be a GameBootstrapper node.
+            //
+            // A harness whose own verdict is filtered out by its own logging policy is worse than one that
+            // never logged: it produces confident wrong answers instead of no answer. Lifecycle events are
+            // cold (install, the pre-wait gate, and the two quit paths) so promoting them costs nothing at
+            // cadence, and Warning is the correct severity for a line whose whole job is to survive.
+            Debug.LogWarning("[HEADLESS] " + message);
         }
 
         private void PublishCrashSignal(int exitCode, uint reasonHash, byte severity)
