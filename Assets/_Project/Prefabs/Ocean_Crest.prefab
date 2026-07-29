@@ -101,7 +101,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2c5e624660e55f64da5c7e5b19f0dfcc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Crest::Crest.RegisterAlbedoInput
   _checkShaderName: 1
   _checkShaderPasses: 1
@@ -208,7 +208,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 26cbe8d1fc0a69249bc135d85739ad39, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Crest::Crest.RegisterAnimWavesInput
   _checkShaderName: 1
   _checkShaderPasses: 1
@@ -326,7 +326,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 66f48a8051df1bc4580cc98f58f1114b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Crest::Crest.RegisterFoamInput
   _checkShaderName: 1
   _checkShaderPasses: 1
@@ -379,7 +379,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5be4155a909a5ef47bdaaf1422602735, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Crest::Crest.OceanDepthCache
   _version: 0
   _type: 0
@@ -431,7 +431,7 @@ Transform:
   m_GameObject: {fileID: 5513631557248329811}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 14.02, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -451,7 +451,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dde37eff0f7685f41902f400d1de0c6c, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Crest::Crest.OceanRenderer
   _version: 0
   _globalWindSpeed: 30
@@ -463,7 +463,7 @@ MonoBehaviour:
   _searchForPrimaryLightOnStartup: 1
   _material: {fileID: 2100000, guid: 9def92ac79181fe41b238e91663f0fad, type: 2}
   _waterTilePrefab: {fileID: 0}
-  _layerName:
+  _layerName: 
   _layer: 4
   _overrideGravity: 1
   _gravity: -8.8
@@ -494,6 +494,7 @@ MonoBehaviour:
   _createAlbedoData: 0
   _settingsAlbedo: {fileID: 0}
   _surfaceSelfIntersectionFixMode: 2
+  _surfaceSelfIntersectionFixThreshold: 2
   _underwaterCullLimit: 0.001
   _verifyOpaqueAndDepthTexturesEnabled: 1
   _showOceanProxyPlane: 0
@@ -517,7 +518,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5ac91634ead74dee870905940cd8a94c, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.WorldWaterLevelCalibrationAuthoring
   authoringSeed: 880031
   runtimeSeed: 0
@@ -530,7 +531,7 @@ MonoBehaviour:
   applyOnEnable: 1
   applyInEditMode: 1
   _debugResolvedWaterLevelY: 14.02
-  _debugCalibrationFlags: 0
+  _debugCalibrationFlags: 3
 --- !u!114 &8503459892740325226
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -541,7 +542,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a57126133720c243a7af00a156c9ee8, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Crest::Crest.ShapeFFT
   _spectrum: {fileID: 11400000, guid: 607e7fb6e77257849a630c42b169a452, type: 2}
   _spectrumFixedAtRuntime: 1
@@ -579,7 +580,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 39b3c7c0989641240856225ecd4807ed, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.SargassumCrestDampingController
   dragManager: {fileID: 0}
   cutManager: {fileID: 0}
@@ -609,7 +610,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 324f9121423a1ad409a63674c3d213a9, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.SargassumMicroFaunaBoids
   boidCompute: {fileID: 7200000, guid: d03fb4ee2f5e49f6a4d12caa5eab4c33, type: 3}
   boidMesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
@@ -631,7 +632,7 @@ MonoBehaviour:
   biolumManager: {fileID: 0}
   viewCamera: {fileID: 0}
   playerTransform: {fileID: 0}
-  neutralAbyssalFlowTexture: {fileID: 11700000, guid: 5b18df2e53d2a3f4bbd9eba32746810b, type: 2}
+  neutralAbyssalFlowTexture: {fileID: 11700000, guid: 96c5d640ce176fc4d977ba5e0295999b, type: 2}
   boidCount: 128
   densityThreshold: 0.42
   windowThreshold: 0.32
@@ -785,7 +786,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 64660468a19de6246ba98d46adabdcc1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Physics.Crest4KinematicsAdapter
   crestOceanRenderer: {fileID: 1881482921440711839}
   burstDepthCullingThresholdMeters: 50
@@ -801,7 +802,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c8f54dfc1dc54c4da9a83c91f1c4b27a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.HectonCrestOceanDepthCacheBootstrap
   oceanRenderer: {fileID: 1881482921440711839}
   oceanDepthCache: {fileID: 1182089648734552004}
@@ -846,7 +847,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bb39863bb9d0457b93e91ab29b91da4d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.HectonCaveVoxelAmbientOcclusionController
   viewerTransform: {fileID: 0}
   viewerCamera: {fileID: 0}
