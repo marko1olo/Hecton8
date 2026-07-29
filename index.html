@@ -3,33 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hecton8 — Official Technical Showcase</title>
-    <meta name="description" content="Deep-sea voxel trench simulation with zero GC allocation and hydro-x Crest physics.">
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono:wght@400;700;900&display=swap" rel="stylesheet">
+    <title>HECTON-8 — Submerge Submarine Noir Engine & NASA-Punk AR Interface</title>
+    <meta name="description" content="Deep-sea voxel submarine simulation built on Unity 6000 URP, featuring Hydro-X ocean physics, MapMagic 2 chunk generation, and Zero-GC telemetry.">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;700;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg: #020b14; --accent: #00ffcc; }
+        :root { --bg: #01070e; --panel-bg: rgba(4, 20, 36, 0.85); --sonar: #00ffcc; --cyan: #00dfd8; --alert: #ff3366; --text: #d0f0fd; --border: rgba(0,255,204,0.25); }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: #f1f5f9; font-family: 'Share Tech Mono', sans-serif; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; overflow-x: hidden; }
-        .hero-box { max-width: 900px; width: 100%; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 3rem 2rem; backdrop-filter: blur(10px); box-shadow: 0 0 50px rgba(0,0,0,0.8), 0 0 30px var(--accent); }
-        h1 { font-size: 3.5rem; font-weight: 900; color: #fff; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem; text-shadow: 0 0 20px var(--accent); }
-        .tag { display: inline-block; background: rgba(255,255,255,0.05); border: 1px solid var(--accent); color: var(--accent); font-weight: 700; padding: 0.4rem 1.2rem; border-radius: 4px; font-size: 0.85rem; margin-bottom: 1.5rem; letter-spacing: 1px; }
-        p.desc { font-size: 1.2rem; color: #94a3b8; max-width: 700px; margin: 0 auto 2.5rem; line-height: 1.6; }
-        .btn-group { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-        .btn { padding: 1rem 2.2rem; background: var(--accent); color: #000; font-weight: 700; text-decoration: none; border-radius: 6px; font-size: 1rem; transition: all 0.3s; text-transform: uppercase; }
-        .btn:hover { background: #fff; box-shadow: 0 0 30px #fff; transform: translateY(-2px); }
-        .btn-sec { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.2); }
-        .btn-sec:hover { background: rgba(255,255,255,0.1); }
+        body { background: var(--bg); color: var(--text); font-family: 'Share Tech Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+        header { background: rgba(1, 10, 20, 0.95); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
+        .logo { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 900; color: #fff; letter-spacing: 3px; display: flex; align-items: center; gap: 10px; }
+        .logo span { color: var(--sonar); }
+        nav { display: flex; gap: 1.5rem; }
+        nav a { color: var(--text); text-decoration: none; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; padding: 0.4rem 0.8rem; border-radius: 4px; transition: all 0.3s; }
+        nav a:hover, nav a.active { background: rgba(0,255,204,0.15); color: var(--sonar); border: 1px solid var(--sonar); }
+        .hero { position: relative; padding: 4rem 2rem; display: flex; flex-direction: column; align-items: center; text-align: center; background: radial-gradient(circle at 50% 30%, rgba(0,255,204,0.1) 0%, transparent 70%); }
+        h1 { font-family: 'Rajdhani', sans-serif; font-size: 4rem; font-weight: 900; color: #fff; letter-spacing: 6px; text-shadow: 0 0 30px var(--sonar); margin-bottom: 0.5rem; }
+        .tagline { color: var(--cyan); font-size: 1.2rem; margin-bottom: 2rem; text-transform: uppercase; letter-spacing: 2px; }
+        .grid-container { max-width: 1200px; width: 100%; display: grid; grid-template-columns: 350px 1fr; gap: 2rem; margin: 0 auto; padding: 0 2rem 4rem; }
+        .radar-panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display: flex; flex-direction: column; align-items: center; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .radar-box { position: relative; width: 260px; height: 260px; border: 2px solid var(--sonar); border-radius: 50%; box-shadow: 0 0 30px rgba(0,255,204,0.2), inset 0 0 30px rgba(0,255,204,0.2); overflow: hidden; margin-bottom: 1.5rem; }
+        .radar-sweep { position: absolute; width: 100%; height: 100%; background: conic-gradient(from 0deg, rgba(0,255,204,0.4) 0deg, transparent 60deg); animation: sweep 3s linear infinite; transform-origin: center; }
+        @keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .ping { position: absolute; width: 8px; height: 8px; background: var(--alert); border-radius: 50%; box-shadow: 0 0 10px var(--alert); animation: blink 1s infinite alternate; }
+        @keyframes blink { from { opacity: 0.2; } to { opacity: 1; } }
+        .btn-ping { width: 100%; padding: 0.8rem; background: var(--sonar); color: #000; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.1rem; border: none; border-radius: 4px; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 20px var(--sonar); transition: all 0.2s; }
+        .btn-ping:hover { background: #fff; box-shadow: 0 0 35px #fff; }
+        .main-panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .spec-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .spec-table th, .spec-table td { padding: 0.8rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: left; }
+        .spec-table th { color: var(--sonar); font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; }
+        .stat-badge { background: rgba(0,255,204,0.1); border: 1px solid var(--sonar); color: var(--sonar); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
-    <div class="hero-box">
-        <h1>Hecton8</h1>
-        <div class="tag">UNITY 6000 URP // SUBMERGE SUBMARINE NOIR ENGINE</div>
-        <p class="desc">Deep-sea voxel trench simulation with zero GC allocation and hydro-x Crest physics.</p>
-        <div class="btn-group">
-            <a href="https://github.com/marko1olo/Hecton8" class="btn" target="_blank">🚀 Open GitHub Repo</a>
-            <a href="https://github.com/marko1olo/Hecton8#readme" class="btn btn-sec" target="_blank">📖 Read Spec</a>
-        </div>
+    <header>
+        <div class="logo">SUBMERGE // <span>HECTON-8</span></div>
+        <nav>
+            <a href="#cockpit" class="active" onclick="switchTab('cockpit')">Cockpit Radar</a>
+            <a href="#specs" onclick="switchTab('specs')">Hardware Specs</a>
+            <a href="#architecture" onclick="switchTab('architecture')">Code Systems</a>
+            <a href="https://github.com/marko1olo/Hecton8" target="_blank" style="border:1px solid var(--sonar);color:var(--sonar);">GitHub Repo 🚀</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>HECTON-8</h1>
+        <p class="tagline">AA Deep Sea Noir / NASA-Punk 3D Engine built on Unity 6000.4 URP</p>
+    </section>
+
+    <div class="grid-container">
+        <aside class="radar-panel">
+            <div class="radar-box">
+                <div class="radar-sweep"></div>
+                <div class="ping" style="top:35%;left:65%;"></div>
+                <div class="ping" style="top:70%;left:25%;"></div>
+                <div style="position:absolute;top:50%;left:50%;width:6px;height:6px;background:var(--sonar);border-radius:50%;transform:translate(-50%,-50%);"></div>
+            </div>
+            <button class="btn-ping" onclick="triggerSonarPing()">🔊 EMIT SONAR PING</button>
+            <div style="margin-top:1.5rem;width:100%;font-size:0.85rem;color:#6b8a99;">
+                <div>CURRENT DEPTH: <span style="color:#fff;">-4,280M</span></div>
+                <div>WATER PRESSURE: <span style="color:#fff;">42.8 MPa</span></div>
+                <div>OXYGEN RESERVES: <span style="color:var(--sonar);">94.2%</span></div>
+                <div>VRAM ALLOCATION: <span style="color:var(--sonar);">1,420 MB / 2,048 MB</span></div>
+            </div>
+        </aside>
+
+        <main class="main-panel">
+            <div id="tab-cockpit" class="tab-content active">
+                <h2 style="font-family:'Rajdhani',sans-serif;color:var(--sonar);font-size:1.8rem;margin-bottom:1rem;">🕹️ COCKPIT FLIGHT & HARDWARE BUDGET</h2>
+                <p style="margin-bottom:1.5rem;line-height:1.7;">HECTON-8 is engineered strictly for low-spec GPU constraints (NVIDIA GeForce MX350, 2 GB VRAM, target 60 FPS). All asset pipelines and memory allocations enforce a Zero-GC update loop.</p>
+                <table class="spec-table">
+                    <thead>
+                        <tr><th>SYSTEM MODULE</th><th>TECHNOLOGY STACK</th><th>MEMORY BUDGET</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Hydro-X Ocean</td><td>Crest Ocean System URP v4.21</td><td><span class="stat-badge">Base Mesh 128 (LOD 6)</span></td></tr>
+                        <tr><td>World Engine</td><td>MapMagic 2 Bundle Generator</td><td><span class="stat-badge">Dynamic Chunk Pooling</span></td></tr>
+                        <tr><td>Terrain Shader</td><td>MicroSplat Triplanar UV Core</td><td><span class="stat-badge">Parallax Banned (VRAM Safe)</span></td></tr>
+                        <tr><td>AR HUD Interface</td><td>Shapes Vector Engine (Freya Holmér)</td><td><span class="stat-badge">GPU Instancing</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="tab-specs" class="tab-content">
+                <h2 style="font-family:'Rajdhani',sans-serif;color:var(--sonar);font-size:1.8rem;margin-bottom:1rem;">⚡ TARGET HARDWARE SPECIFICATIONS</h2>
+                <p>Designed for mid-range and mobile workstation GPUs without memory spills:</p>
+                <ul style="margin:1.5rem;line-height:2;">
+                    <li><strong>VRAM Limit:</strong> Strictly locked below 2,048 MB VRAM at 1080p rendering resolution.</li>
+                    <li><strong>GC Allocations:</strong> 0 Bytes / frame in Update/LateUpdate loops.</li>
+                    <li><strong>Texture Clamping:</strong> Max Size 2048 for walls, 1024 for props.</li>
+                </ul>
+            </div>
+
+            <div id="tab-architecture" class="tab-content">
+                <h2 style="font-family:'Rajdhani',sans-serif;color:var(--sonar);font-size:1.8rem;margin-bottom:1rem;">🧬 CORE CODE NAMESPACES</h2>
+                <pre style="background:rgba(0,0,0,0.5);padding:1rem;border-radius:6px;color:var(--cyan);line-height:1.6;">
+Hecton8.Interaction  -> Raycast Event Bus & MaterialPropertyBlock Highlighting
+Hecton8.Items        -> Data-driven ScriptableObject Inventory Items
+Hecton8.Survival     -> Math Engine (O2 Consumption, Pressure Integrity)
+Hecton8.Celestial    -> Orbital Sun & Gas Giant Aegir Lighting Math
+Hecton8.Voxel        -> Marching Cubes Cave Generator (Burst Compiled)
+                </pre>
+            </div>
+        </main>
     </div>
+
+    <script>
+        function switchTab(name) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            event.target.classList.add('active');
+        }
+        function triggerSonarPing() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.8);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.8);
+            } catch(e){}
+        }
+    </script>
 </body>
 </html>
