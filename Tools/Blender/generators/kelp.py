@@ -166,7 +166,33 @@ STREAM_DETAIL = 71
 # come from MORE blades or a denser field -- a triangle-budget decision, not a grammar one.
 # Widening the blade is not available: 0.21-0.31 m is already at the top of the real
 # Macrocystis 0.10-0.22 m range.
-BLADE_TWIST_RAD = 1.45
+# Blade twist, RADIANS PER METRE of blade (iteration 10; was a flat per-blade angle).
+# Expressing it per metre is what makes the longest basal blades the slackest, which is
+# what a real plant does -- they are the oldest tissue. See the derivation in
+# _build_blades; the short version is that a flat per-blade angle gave a 4.2 m blade
+# 0.35 rad/m against a 1.2 m blade's 1.21 rad/m, i.e. exactly backwards.
+#
+# MEASURED at the old flat 1.45 rad/blade, seed 4021, LOD0, mean over four views:
+#   0.30 rad/blade  coverage 0.03452  convexity 0.4899  -- iteration 5, "bundle of cigars"
+#   0.95 rad/blade  coverage 0.03037  convexity 0.4542
+#   1.45 rad/blade  coverage 0.03028  convexity 0.4316
+# Twist measured OCCUPANCY-NEUTRAL across that range (0.95 vs 1.45 agree to 0.0001); an
+# earlier version of this comment claimed twist costs occupancy and that was wrong. The
+# coverage movement in those rows came from the sag and hang changes, not from twist.
+# Convexity does respond, because edge-on presentation empties the outline relative to its
+# own hull while covering the same pixels.
+#
+# 0.55 rad/m puts a 2.8 m blade at 1.54 rad, close to the accepted iteration-9 look, while
+# giving a 4.2 m basal blade 2.31 rad and a 1.2 m apical one 0.66 rad.
+BLADE_TWIST_RAD_PER_M = 0.55
+
+# Twist REVERSALS per metre. Scaling the period count by length keeps the reversal
+# wavelength constant in metres, so it cannot alias against a short blade's row count.
+BLADE_TWIST_REVERSALS_PER_M = 0.45
+
+# Azimuthal drift of a blade's hanging plane, RADIANS PER METRE. Same normalisation
+# argument as the twist: flat per-blade drift made long blades' helices slacker.
+BLADE_DRIFT_RAD_PER_M = 0.42
 
 CUT_HEIGHT_FRACTION = 0.11
 
@@ -1132,20 +1158,75 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         # u**0.34 -- so all 23 turned their elbow at the same place and the projection
         # combed them into ribs. Widening the band and randomising the exponent means some
         # blades hug the stipe and fall nearly vertically while others spring clear first.
-        reach = 0.07 + 0.20 * float(rng.uniform(0.0, 1.0))
-        reach_exp = float(rng.uniform(0.22, 0.85))
+        # ITERATION 10. THE APEX UMBRELLA, AND IT IS AN EXPONENT, NOT A PARAMETER RANGE.
+        # The lead ruled the parasol the single most distinguishing wrong feature and
+        # instructed: measure the apex blades' initial tangent before touching anything.
+        # Measured, on the iteration-9 formulas, as the angle of (d(radial)/du, d(vertical)/du)
+        # where 0 deg is horizontal-outward and -90 is straight down:
+        #
+        #   blade set   u=0.002   u=0.05   u=0.35
+        #   canopy        +0.8     -15.1    -68.8   (reach_exp 0.22)
+        #   canopy        -0.2     -16.7    -43.0   (reach_exp 0.55)
+        #   regular       +3.0     -69.6    -87.7   (reach_exp 0.22)
+        #
+        # EVERY blade left the stipe HORIZONTALLY, and the two lowest rows leave a hair
+        # UPWARD. That is structural, not a tuning miss: with reach_exp < 1, d(radial)/du
+        # goes to +infinity as u->0, while hang_exp > 1 sends d(vertical)/du to 0. The
+        # radial term therefore wins the limit at the attachment no matter what the
+        # coefficients are. The lift clamp pins absolute RISE and is doing its job -- it
+        # cannot fix a tangent.
+        #
+        # It reads as a parasol only on the canopy because those blades had large reach and
+        # small hang, so the horizontal phase persisted: at a third of the way along, canopy
+        # blades were still at -26..-43 deg while regular blades had already reached -78..-88.
+        #
+        # FIX: make the departure tangent DOWNWARD by construction, by guaranteeing
+        # hang_exp < reach_exp with reach_exp >= 1. Re-measured with the ranges below:
+        # -62 to -89 deg at every sample point for both blade sets. Reach also rises, because
+        # an exponent above 1 delays outward travel and iteration 1 already showed what
+        # happens when blades glue themselves to the stipe.
+        # ITERATION 11 narrows the exponent band to 1.02-1.35. At 1.75 the blade hugged the
+        # stipe through its first half and swung out only near the tip; 56 blades doing that
+        # formed downward-angled TIERS, which is the drooping-branch signature of a spruce.
+        # The departure tangent does not depend on the exponent margin anyway -- once the
+        # exponents are comparable it is set by the hang/reach RATIO, and hang (0.58-0.92)
+        # dominates reach (0.10-0.32) by 2-9x, so departure stays -72..-87 deg at 1.02.
+        reach = 0.10 + 0.22 * float(rng.uniform(0.0, 1.0))
+        reach_exp = float(rng.uniform(1.02, 1.35))
         # SLACK. This is the remaining half of the lead's "slack tissue" verdict and no
         # amount of section twist substitutes for it: iteration 6 twisted the cross-section
         # correctly while leaving every CENTRELINE a smooth monotone arc, so each blade was
         # still a straight tapered bar. Real waterlogged tissue sags under its own weight
         # between the float that holds its base and the tip that hangs free -- a catenary
         # bowed DOWNWARD through the middle, not a straight diagonal.
-        sag = float(rng.uniform(0.06, 0.20))
+        # Sag deepens with LENGTH, not just in proportion to it. As a pure fraction the
+        # catenary was self-similar, so every blade was a scaled copy of every other and the
+        # long basal ones showed no more slack than the short apical ones -- half of the
+        # lead's residual 3. A longer strap of the same waterlogged tissue sags
+        # proportionally deeper, so the fraction itself rises with length_fraction.
+        sag = float(rng.uniform(0.06, 0.20)) * (0.80 + 0.55 * length_fraction)
         # Hang range widened DOWNWARD (was 0.72-0.94). A blade that drops 0.9 of its own
         # 2.8 m length falls 2.5 m past an attachment spacing of 0.6 m, so eight nodes'
         # worth of sheet lands in the same lower metre and the column above it goes bare.
         # 0.58-0.92 keeps more of each blade near the height it grew at.
-        hang = 0.58 + 0.34 * float(rng.uniform(0.0, 1.0))
+        hang = 0.42 + 0.26 * float(rng.uniform(0.0, 1.0))
+        # ITERATION 12. Iteration 10 forced the downward departure by putting hang_exp BELOW
+        # 1, and that is what brought the conifer back -- worse than iteration 8's. Measured,
+        # fraction of total drop achieved by parametric position:
+        #   hang_exp 0.80  ->  0.158 by u=0.1, 0.574 by u=0.5   PLUNGE then FLATTEN
+        #   hang_exp 1.20  ->  0.063 by u=0.1, 0.435 by u=0.5   leave gently, keep falling
+        # Plunge-then-flatten is a conifer BRANCH profile: down off the trunk, then out along
+        # the bottom. Iteration 9, which the lead accepted as not-conifer, ran 0.88-1.34.
+        #
+        # The two requirements looked opposed -- a downward departure tangent needs the fall
+        # to dominate at u=0, and an exponent above 1 sends d(vertical)/du to 0 there -- but
+        # they are only opposed if the fall is a single power term. A small LINEAR term makes
+        # d(vertical)/du finite and negative at the attachment while the exponent above 1
+        # keeps the accepted iteration-9 curve shape for the rest of the blade. Measured with
+        # the values below: departure -62..-83 deg AND a drop profile of 0.066/0.193/0.438,
+        # which matches iteration 9's 0.063/0.189/0.435 to three decimals.
+        hang_early = 0.15 + 0.15 * float(rng.uniform(0.0, 1.0))
+        hang_exp = float(rng.uniform(1.10, 1.40))
         # LIFT IN METRES. This is the THIRD time this generator has expressed a fixed
         # anatomical length as a fraction of blade length, and the previous two are
         # documented above this function: `bladder_length_m` ("In METRES, not as a
@@ -1161,10 +1242,6 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         # Sideways travel widened (was +-0.16) so adjacent blades separate in plan instead
         # of hanging in the same radial plane.
         swing = float(rng.uniform(-0.30, 0.30))
-        # Per-blade fall SHAPE, not just fall scale. Every blade previously used u**1.05,
-        # so all 23 traced the same curve differing only by a scale factor -- which is
-        # precisely what makes a bundle of ribbons read as one manufactured object.
-        hang_exp = float(rng.uniform(0.88, 1.34))
         # AZIMUTHAL DRIFT: the blade's hanging plane rotates around the stipe as it
         # descends, so each blade is a shallow helix down the column rather than a bar in
         # a fixed radial plane. This is the lever that buys diagonal CROSSING, and it is
@@ -1173,7 +1250,10 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         # height -- "a bush that wide is a land plant whatever the blades do". Tangential
         # travel costs nothing in plan radius, which stays equal to `reach`, while making
         # every blade cross its neighbours diagonally.
-        drift = float(rng.uniform(-1.45, 1.45))
+        # PER METRE, not per blade -- the other half of the lead's residual 3. As a flat
+        # per-blade angle, a 4.2 m basal blade wrapped the same 1.45 rad as a 1.2 m apical
+        # one, so its helix was 3.5x slacker in curvature and it hung as a straight bar.
+        drift = float(rng.uniform(-1.0, 1.0)) * BLADE_DRIFT_RAD_PER_M * length
         # Per-blade deflection of the downstream sweep. `form.current` is ONE vector for
         # the whole plant, so every blade was pushed in an identical direction by an
         # identical profile: that shared term is the direct cause of the "too parallel"
@@ -1181,14 +1261,39 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         # local shear, so they trail in a spread, not a comb.
         flow_jitter = float(rng.uniform(-0.62, 0.62))
         if is_canopy:
-            # At the surface the canopy blades lie OVER, downstream. "Lie over" is a
-            # near-horizontal DRAPE and it must still never rise; the old numbers made it
-            # a fountain. Reach also comes down, because the lead's verdict was "up AND
-            # outward" and 0.46-0.72 of a 2.4 m blade is 1.1-1.7 m of pure outward spike.
-            reach = 0.34 + 0.20 * float(rng.uniform(0.0, 1.0))
-            hang = 0.26 + 0.20 * float(rng.uniform(0.0, 1.0))
-            lift_m = float(rng.uniform(0.0, 0.030))
-            drift *= 0.55
+            # APEX BLADES HANG, THEY DO NOT RADIATE. Macrocystis carries its apex blades
+            # hanging down from the apical split; the "lies over downstream at the surface"
+            # reading that justified reach 0.34-0.54 against hang 0.26-0.46 is what built
+            # the parasol, and there is no water surface in this asset for a canopy to lie
+            # on -- the plant is 8.5 m in an 80 m column. Reach collapses to below the
+            # regular band and hang rises above it, so the apex is the part of the plant
+            # that hangs MOST steeply rather than least.
+            #
+            # This also addresses the lead's residual 2: radiating apex blades project as
+            # short horizontal stubs, contributing almost nothing to the outline near the
+            # top, which is what made the profile narrow upward while being wide in fact.
+            # ITERATION 11: REACH GOES ABOVE THE REGULAR BAND, NOT BELOW IT.
+            #
+            # The lead hypothesised that residual 2 shared a cause with residual 1 -- that
+            # apex blades radiating made the top read narrow in outline while being wide in
+            # fact. MEASURED, AND IT IS THE OTHER WAY ROUND. Iteration 10 made apex blades
+            # hang steeply with reach 0.08-0.22, which killed the umbrella and turned the
+            # top into a SPRUCE POINT: apex/basal outward-extent ratio 0.35, coverage
+            # 0.03627 -> 0.03484, side view 0.02533 -> 0.01980.
+            #
+            # The control on column width is ABSOLUTE outward extent, reach * length -- not
+            # hang-versus-radiate. Apex blades carry a 0.62 length factor, so the SAME reach
+            # fraction buys them 0.26 m against a basal blade's 0.73 m, and the top is narrow
+            # for that reason alone.
+            #
+            # Departure angle and outward extent are INDEPENDENT controls: `reach_exp` versus
+            # `hang_exp` sets the tangent at the attachment, `reach` sets where the tip ends
+            # up. So the apex can depart steeply downward AND still reach wide. Measured with
+            # the values below: departure -60..-85 deg (no umbrella) and apex/basal extent
+            # ratio 0.97 (a column, not a cone).
+            reach = 0.30 + 0.25 * float(rng.uniform(0.0, 1.0))
+            hang = 0.46 + 0.20 * float(rng.uniform(0.0, 1.0))
+            lift_m = float(rng.uniform(0.0, 0.022))
         flow_c, flow_s = math.cos(flow_jitter), math.sin(flow_jitter)
         flow_dir = Vector((form.current.x * flow_c - form.current.y * flow_s,
                            form.current.x * flow_s + form.current.y * flow_c, 0.0))
@@ -1212,9 +1317,27 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         # helicoid is gentler than the old one despite being nearly five times the angle.
         # The gate that actually decides this is the FBX round trip plus the measured UV
         # distortion, not this estimate.
-        roll = float(rng.uniform(-BLADE_TWIST_RAD, BLADE_TWIST_RAD))
+        # ITERATION 10: TWIST IS NOW RAD PER METRE, not rad per blade. This is the lead's
+        # residual 3, and their hypothesis was right -- the randomisation was not
+        # length-normalised, so the longest blades got proportionally the least variation.
+        # Measured, at the old flat +-1.45 rad total:
+        #   length 1.2 m -> 1.21 rad/m      length 3.5 m -> 0.41 rad/m
+        #   length 1.7 m -> 0.85 rad/m      length 4.2 m -> 0.35 rad/m
+        # The basal blades -- the oldest and longest, the ones that should show the MOST
+        # slack -- were twisting 2.9x less per metre than the short apical ones, so over
+        # their visible span the twist was invisible and they hung as flat parallel bars.
+        # That is the broom the lead found at the base, and it is the same defect family as
+        # `lift`, `bladder_length_m` and `shoulder_length_m`: a per-blade quantity whose
+        # normalisation against blade length was never considered. Fourth instance.
+        #
+        # SAFETY IMPROVES rather than degrades. UV shear ~ half_width * d(theta)/ds, and a
+        # constant rad/m makes d(theta)/ds constant: 0.098 * 0.55 = 0.054 rad = 3.1 deg,
+        # against a worst case of 6.8 deg before (the 1.2 m blade at 1.21 rad/m). The
+        # reversal's period count is scaled by length too, so its wavelength in METRES is
+        # constant and it cannot alias against blade_rows on a short blade.
+        roll = float(rng.uniform(-1.0, 1.0)) * BLADE_TWIST_RAD_PER_M * length
         roll_reverse = float(rng.uniform(-0.45, 0.45))
-        roll_reverse_k = float(rng.uniform(1.1, 1.9))
+        roll_reverse_k = max(0.35, BLADE_TWIST_REVERSALS_PER_M * length)
         serr_phase_right = float(detail_rng.uniform(0.0, 1.0))
         serr_phase_left = float(detail_rng.uniform(0.0, 1.0))
         serr_amp = float(detail_rng.uniform(0.10, 0.19))
@@ -1311,7 +1434,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             # strap, and it also restores vertical extent -- iteration 6's diagonal
             # compressed each blade's height and cost occupancy.
             vertical = (lift_m * (u ** 0.30) * (1.0 - u) ** 1.6 -
-                        length * hang * (u ** hang_exp) -
+                        length * (hang_early * u + hang * (u ** hang_exp)) -
                         length * sag * math.sin(math.pi * (u ** 0.85)))
             # HARD GUARANTEE, not a tuning hope. A blade centreline may never rise above
             # its own attachment by more than the float that lifts it. "No upward-pointing
