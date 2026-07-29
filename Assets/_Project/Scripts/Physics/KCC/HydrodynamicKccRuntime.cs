@@ -1003,7 +1003,11 @@ namespace Hecton8.Physics.KCC
         // PressureCrushDamageModel) live in the Hecton8.PureLogic assembly, which is noEngineReferences and
         // built on System.Numerics.Vector3 + System.Math. They cannot be invoked from inside this
         // [BurstCompile] job, so only their already-reduced scalar/vector results cross the boundary.
-        /// <summary>Ocean-current drag force in Newtons, world space. Divided by safeMass here.</summary>
+        /// <summary>
+        /// Ocean-current drag force in Newtons, world space. Divided by safeMass here. Computed against the
+        /// same FlowField cell and the same CurrentAdvectionScalar this job advects with, in m/s; when it is
+        /// applied it REPLACES the raw `appliedFlow * dt` add so the current couples once, not twice.
+        /// </summary>
         public float3 MediumCurrentDragForce;
         /// <summary>Thermocline resistance scalar 0-1; folded into the drag denominator.</summary>
         public float MediumThermoclineResistance01;
@@ -1096,12 +1100,11 @@ namespace Hecton8.Physics.KCC
             uint sampleMode;
             float3 sampledFlow = SampleFlow(state.AUP_Position, environmentGrid, quality, out sampleMode);
             float3 appliedFlow = sampledFlow * math.max(0f, math.isfinite(environmentProfile.CurrentAdvectionScalar) ? environmentProfile.CurrentAdvectionScalar : 1f);
-            velocity += appliedFlow * dt;
 
             // OceanCurrentDragCalculator result. This is a FORCE, so it is summed into velocity here --
-            // after the kinematic advection term and before the drag solve at dragDenominator below.
-            // Applying it after integration would not be drag: it would be a post-hoc velocity edit that
-            // never passes through the resistive solve or the max-speed clamp.
+            // before the drag solve at dragDenominator below. Applying it after integration would not be
+            // drag: it would be a post-hoc velocity edit that never passes through the resistive solve or
+            // the max-speed clamp.
             // Scoped to index 0 for the same reason ExternalAcceleration above is: these three terms are
             // single job fields derived from entity 0's depth and velocity on the main thread. Entity N sits
             // at a different depth in a different part of the flow field, so reusing entity 0's buoyancy or
@@ -1120,6 +1123,21 @@ namespace Hecton8.Physics.KCC
                     mediumAppliedFlags |= HydrodynamicKccMath.FlagMediumCurrentDrag;
                 }
             }
+
+            // UNIT LAW FOR THE FLOW FIELD -- ONE COUPLING, NOT TWO.
+            // FlowField holds a water VELOCITY in m/s, not an acceleration. Three independent facts fix that:
+            // GenerateMockEnvironmentalForcesJob builds the magnitude as `speed = lerp(0.2, 1.9, quality)`;
+            // the drag path's declared fallback source is IHectonOceanKinematics.TrySampleWaterVelocity,
+            // documented as "one surface-velocity vector"; and IWeatherService.GlobalCurrentVector, the
+            // project's other current source, is likewise m/s. So `velocity += appliedFlow * dt` reads a m/s
+            // field as m/s^2, and once OceanCurrentDragCalculator feeds the SAME cell value in as
+            // oceanCurrentVelocity the current couples into the body twice over.
+            // Drag against the relative velocity IS the advection mechanism: it drives the body toward the
+            // water velocity and stops there. So the raw kinematic add survives only as the fallback for
+            // when no drag force was applied -- models disabled, flag clear, non-finite force, or a
+            // non-owner index whose depth-derived medium terms were never computed.
+            if ((mediumAppliedFlags & HydrodynamicKccMath.FlagMediumCurrentDrag) == 0u)
+                velocity += appliedFlow * dt;
 
             float waterSurfaceY = HydrodynamicKccMath.ResolveRuntimeWaterSurfaceY(Tuning.WaterSurfaceY);
             float depth = math.max(0f, waterSurfaceY - localPosition.y);
@@ -2999,13 +3017,40 @@ namespace Hecton8.Physics.KCC
         private const float DefaultCrushMaxDamageRatePerSecond = 4f;
         private const float DefaultCrushDamageExponent = 2f;
         private const float DefaultMediumDragCoefficient = 0.82f;
+        // _mediumDragCoefficient is [Min(0f)] with no upper bound, and the drag force is quadratic in the
+        // relative speed, so an out-of-range coefficient scales straight into the integrator. 2.0 is the
+        // bluff-body ceiling (flat plate is ~1.28, sphere ~0.47, a suited diver ~0.8-1.2); anything above it
+        // is authoring error, not physics.
+        private const float MaxMediumDragCoefficient = 2f;
+        // BuoyancyScalar > 0 lowers the effective body density (see UpdateDensityBuoyancy). As the scalar
+        // approaches 0 that division diverges: 0.05 already yields 21000 kg/m^3 and ~-19 g of sink. 0.5 is
+        // the real floor -- it maps to 2100 kg/m^3, a diver carrying ballast equal to their own displaced
+        // water mass, which lands at ~-1.02 g and therefore meets the BuoyancyScalar = 0 disable idiom
+        // (plain gravity, -1 g) continuously instead of exploding through it.
+        private const float MinBuoyancyTrimScalar = 0.5f;
+        // Outer safety net on the density model against pathological FluidDensity/mass data, expressed in
+        // gravities of NET force. The legacy scalar term spans -1 g (scalar 0) to +1.5 g (tuner slider max
+        // 2.5) at full submersion, so +-2 g covers the authored range it replaces and nothing wider.
+        private const float MaxDensityBuoyancyGravities = 2f;
         // PressureCrushDamageModel is evaluated every fixed tick but flushed to the combat damage queue on
         // this interval: CombatDamageRuntime.TryQueueDamage has a bounded queue and rejects when full, so a
         // 50 Hz ingress from one source would both spam it and starve other producers.
         private const float CrushDamageFlushIntervalSeconds = 0.5f;
-        // PressureCrushDamageModel returns float.MaxValue on internal overflow. Clamp per flush so an
-        // out-of-range depth cannot turn into a single unbounded lethal packet.
-        private const float MaxCrushDamagePerFlush = 250f;
+        // HARD per-second cap on crush damage. PressureCrushDamageModel.Evaluate returns
+        // (pow(depth/threshold, e) - 1) * maxDamageRate with rawDamage UNBOUNDED -- maxDamageRate is a
+        // SCALE, not a cap -- and it returns float.MaxValue on internal overflow. Uncapped, the authored
+        // defaults (1400 m / e=2 / 4) give 28.6 dmg/s at 4000 m and 74.5 dmg/s at 6200 m
+        // (ShinobuStormPropagationConstants.DefaultMaxDepthMeters) against HectonPlayerHealth's
+        // maxHealth = 100, i.e. death in 3.5 s and 1.3 s: an instakill, not a threat.
+        // 12 dmg/s is chosen against that health pool -- 100 / 12 = 8.3 s from full health -- and is not an
+        // arbitrary number: it is the model's own rate at exactly TWICE the suit crush rating
+        // ((2^2 - 1) * 4 = 12), so the curve is untouched from 1400 m to 2800 m and only saturates below
+        // double-rated depth. Resulting time-to-death from 100 HP, ignoring armour/status/regen:
+        // 2000 m -> 4.16 dmg/s -> 24.0 s; 2800 m -> 12 dmg/s -> 8.3 s; 4000 m and 6200 m -> capped 12 -> 8.3 s.
+        private const float MaxCrushDamagePerSecond = 12f;
+        // Derived, so the per-flush clamp actually BINDS. The previous literal 250f was 500 dmg/s across a
+        // 0.5 s flush -- five times the whole health pool -- so it could never fire and protected nothing.
+        private const float MaxCrushDamagePerFlush = MaxCrushDamagePerSecond * CrushDamageFlushIntervalSeconds;
 
         [SerializeField] private int _entityCapacity = DefaultCapacity;
         [SerializeField] private float _waterSurfaceY = DefaultWaterSurfaceY;
@@ -3306,7 +3351,7 @@ namespace Hecton8.Physics.KCC
 
             HydrodynamicKccTuningDTO tuning = UpdateTuningSnapshot(tuningBuffer);
             double3 sectorOrigin = ResolveSectorOriginAup();
-            UpdateEnvironmentProfileSnapshot(environmentProfile);
+            KccEnvironmentProfileDTO environmentProfileSnapshot = UpdateEnvironmentProfileSnapshot(environmentProfile);
             KccEnvironmentGridDTO gridSnapshot = UpdateEnvironmentGridSnapshot(environmentGrid, sectorOrigin);
             uint sectorGeneration = HydrodynamicKccMath.ComputeSectorGeneration(sectorOrigin);
             NativeArray<MetabolicStateDTO> environmentMetabolism = OpenPublishedMetabolismStateView(capacity, out NativeArray<MetabolicStateDTO> publishedMetabolism)
@@ -3348,7 +3393,7 @@ namespace Hecton8.Physics.KCC
             // integration job is scheduled. They cannot run inside ApplyEnvironmentalForcesJob (see the
             // MediumCurrentDragForce field comment), and this is the only point in the tick where the state
             // buffer is quiescent -- the same window SeedInitialStateIfNeeded and states[0] below already use.
-            UpdateWaterMediumForces(states, environmentFlow, gridSnapshot, tuning, sectorOrigin, fixedDeltaTime);
+            UpdateWaterMediumForces(states, environmentFlow, gridSnapshot, environmentProfileSnapshot, tuning, sectorOrigin, fixedDeltaTime);
             _simulationFrame++;
             float3 externalAcceleration = _queuedExternalAcceleration;
             float3 externalVelocityChange = _queuedExternalVelocityChange;
@@ -4061,6 +4106,18 @@ namespace Hecton8.Physics.KCC
             if (serviceSlot == GlobalRegistryServiceSlot.OceanKinematics)
             {
                 _oceanKinematicsService = currentService as IHectonOceanKinematicsService;
+                return;
+            }
+
+            // Weather was cold-cached in CacheOceanKinematicsRuntimeCold but had no rebind branch, so after a
+            // weather hot swap IsThermoclineWeatherActive kept reading the replaced director's last state mask
+            // for the rest of the session -- and with _requireThermoclineWeatherState defaulting to true, that
+            // silently disables the thermocline band instead of failing loudly.
+            if (serviceSlot == GlobalRegistryServiceSlot.Weather)
+            {
+                _weatherService = currentService as IWeatherService;
+                _mediumThermoclineResistance01 = 0f;
+                _mediumFlags &= ~HydrodynamicKccMath.FlagMediumThermocline;
             }
         }
 
@@ -5021,6 +5078,7 @@ namespace Hecton8.Physics.KCC
             NativeArray<KinematicStateDTO> states,
             NativeArray<float3> environmentFlow,
             KccEnvironmentGridDTO grid,
+            KccEnvironmentProfileDTO environmentProfile,
             HydrodynamicKccTuningDTO tuning,
             double3 sectorOrigin,
             float fixedDeltaTime)
@@ -5060,9 +5118,12 @@ namespace Hecton8.Physics.KCC
                 velocity,
                 environmentFlow,
                 grid,
+                environmentProfile,
                 tuning,
                 fluidDensityKgPerM3,
-                depthMeters);
+                depthMeters,
+                mass,
+                fixedDeltaTime);
             UpdateThermoclineResistance(depthMeters, speed);
             UpdateDensityBuoyancy(mass, fluidDensityKgPerM3, gravity, tuning);
             AdvanceCrushDamage(depthMeters, state.AUP_Position, fixedDeltaTime);
@@ -5070,6 +5131,9 @@ namespace Hecton8.Physics.KCC
 
         /// <summary>
         /// OceanCurrentDragCalculator: drag from the relative velocity between the water column and the body.
+        /// This is the ONLY ocean-current coupling for the owner entity -- ApplyEnvironmentalForcesJob drops
+        /// its raw <c>appliedFlow * dt</c> add whenever this force lands, so the cell value must be read as a
+        /// velocity in m/s and must carry the same <c>CurrentAdvectionScalar</c> the job would have applied.
         /// </summary>
         private void UpdateOceanCurrentDrag(
             double3 aupPosition,
@@ -5077,9 +5141,12 @@ namespace Hecton8.Physics.KCC
             float3 velocity,
             NativeArray<float3> environmentFlow,
             KccEnvironmentGridDTO grid,
+            KccEnvironmentProfileDTO environmentProfile,
             HydrodynamicKccTuningDTO tuning,
             float fluidDensityKgPerM3,
-            float depthMeters)
+            float depthMeters,
+            float mass,
+            float fixedDeltaTime)
         {
             if (depthMeters <= 0f || fluidDensityKgPerM3 <= 0f)
                 return;
@@ -5092,9 +5159,19 @@ namespace Hecton8.Physics.KCC
                 !TrySampleOceanCurrentVelocity(localPosition, out currentVelocity))
                 return;
 
+            // Byte-for-byte the job's own reading of the scalar (ApplyEnvironmentalForcesJob.Execute,
+            // `appliedFlow`). Without it the 0-8 designer knob would be dead for the owner entity -- setting
+            // it to 0 to switch the current off would leave full-strength drag against the raw field.
+            currentVelocity *= math.max(0f, math.isfinite(environmentProfile.CurrentAdvectionScalar) ? environmentProfile.CurrentAdvectionScalar : 1f);
+            if (!HydrodynamicKccMath.IsFinite(currentVelocity))
+                return;
+
             float radius = math.max(0.05f, math.isfinite(tuning.CapsuleRadius) ? tuning.CapsuleRadius : 0.35f);
             float crossSectionalArea = math.PI * radius * radius;
-            float dragCoefficient = math.max(0f, math.isfinite(_mediumDragCoefficient) ? _mediumDragCoefficient : DefaultMediumDragCoefficient);
+            float dragCoefficient = math.clamp(
+                math.isfinite(_mediumDragCoefficient) ? _mediumDragCoefficient : DefaultMediumDragCoefficient,
+                0f,
+                MaxMediumDragCoefficient);
 
             System.Numerics.Vector3 modelForce = Hecton8.PureLogic.Kinematics.OceanCurrentDragCalculator.Compute(
                 new System.Numerics.Vector3(currentVelocity.x, currentVelocity.y, currentVelocity.z),
@@ -5107,6 +5184,23 @@ namespace Hecton8.Physics.KCC
             float3 force = new float3(modelForce.X, modelForce.Y, modelForce.Z) * fluidDensityKgPerM3;
             if (!HydrodynamicKccMath.IsFinite(force) || math.lengthsq(force) <= 0.000001f)
                 return;
+
+            // NON-OVERSHOOT BOUND. The job integrates this force explicitly (velocity += F/safeMass * dt) and
+            // the force is quadratic in the relative speed, so above a critical relative speed one tick
+            // overshoots the water velocity and the sign of the drag flips -- the body oscillates instead of
+            // settling into the current. The physical fixed point is v == currentVelocity, so cap the impulse
+            // at exactly the relative momentum. mass (not mass + addedMass, which the job divides by) keeps
+            // the cap conservative.
+            float relativeSpeed = HydrodynamicKccMath.LengthSafe(currentVelocity - velocity);
+            float safeFixedDelta = math.isfinite(fixedDeltaTime) ? math.max(HydrodynamicKccMath.MinDenominator, fixedDeltaTime) : 0.02f;
+            float maxForceNewtons = mass * relativeSpeed * math.rcp(safeFixedDelta);
+            float forceMagnitude = HydrodynamicKccMath.LengthSafe(force);
+            if (forceMagnitude > maxForceNewtons)
+            {
+                force *= maxForceNewtons * math.rcp(math.max(HydrodynamicKccMath.MinDenominator, forceMagnitude));
+                if (!HydrodynamicKccMath.IsFinite(force) || math.lengthsq(force) <= 0.000001f)
+                    return;
+            }
 
             _mediumCurrentDragForce = force;
             _mediumFlags |= HydrodynamicKccMath.FlagMediumCurrentDrag;
@@ -5232,6 +5326,17 @@ namespace Hecton8.Physics.KCC
 
         /// <summary>
         /// BuoyancyDensityRatioMath: rise/sink follows the density ratio instead of a constant scalar.
+        ///
+        /// <c>BuoyancyScalar = 0</c> is the project's documented DISABLE-BUOYANCY idiom, not a trim value:
+        /// <c>ReplayDeterminismValidator1626.BuildTuning</c> sets it, <c>SanitizeTuning</c> explicitly permits
+        /// it through <c>math.max(0f, ...)</c>, and the tuner slider bottoms out there. Under the legacy
+        /// scalar term it means plain gravity -- <c>(0 * submersion * mass - mass) * gravity / safeMass</c>,
+        /// i.e. -1 g. This model divides BY the scalar, so it must not see 0: it is skipped instead, leaving
+        /// the job's legacy term to deliver exactly the old meaning. Floored-but-applied would be a silent
+        /// reinterpretation of a documented idiom, which is why the previous
+        /// <c>math.max(MinDenominator, ...)</c> was a defect and not a guard -- 0.0001 turned into
+        /// 1.05e7 kg/m^3 of body density, ~-7.8e6 N, about -98,000 m/s^2 of sink. The max-speed clamp then
+        /// hid the number while pinning the controller at full downward speed with no way to swim up.
         /// </summary>
         private void UpdateDensityBuoyancy(
             float mass,
@@ -5242,12 +5347,19 @@ namespace Hecton8.Physics.KCC
             if (fluidDensityKgPerM3 <= 0f || gravity <= 0f)
                 return;
 
+            // DISABLE IDIOM: fall through to the job's legacy plain-gravity term, do not set the flag.
+            // NaN is not the idiom -- it is corrupt data -- so it takes the authored default instead.
+            float authoredScalar = math.isfinite(tuning.BuoyancyScalar) ? tuning.BuoyancyScalar : 1.08f;
+            if (authoredScalar <= 0f)
+                return;
+
             // Displaced volume is derived from body density, not from the capsule collider -- see the
             // PlayerBodyDensityKgPerM3 comment for why the collider volume is the wrong input.
             float displacedVolume = mass * math.rcp(PlayerBodyDensityKgPerM3);
             // BuoyancyScalar keeps its existing meaning as a trim/ballast knob: >1 means positively buoyant,
-            // so it lowers the effective body density rather than scaling the force directly.
-            float buoyancyScalar = math.max(HydrodynamicKccMath.MinDenominator, math.isfinite(tuning.BuoyancyScalar) ? tuning.BuoyancyScalar : 1.08f);
+            // so it lowers the effective body density rather than scaling the force directly. The floor is a
+            // real physical bound on that division -- see MinBuoyancyTrimScalar.
+            float buoyancyScalar = math.max(MinBuoyancyTrimScalar, authoredScalar);
             float playerDensity = PlayerBodyDensityKgPerM3 * math.rcp(buoyancyScalar);
 
             float netNewtons = Hecton8.PureLogic.Kinematics.BuoyancyDensityRatioMath.Calculate(
@@ -5256,6 +5368,14 @@ namespace Hecton8.Physics.KCC
                 displacedVolume,
                 gravity);
 
+            if (!math.isfinite(netNewtons))
+                return;
+
+            // Outer bound in gravities of net force. FluidDensity and Mass are designer/runtime data on the
+            // same struct, and the job turns this straight into acceleration, so nothing upstream of here may
+            // be able to author a launch or a weld to the sea floor.
+            float maxNetNewtons = MaxDensityBuoyancyGravities * mass * gravity;
+            netNewtons = math.clamp(netNewtons, -maxNetNewtons, maxNetNewtons);
             if (!math.isfinite(netNewtons))
                 return;
 
@@ -5288,8 +5408,13 @@ namespace Hecton8.Physics.KCC
                 ? Hecton8.PureLogic.Kinematics.PressureCrushDamageModel.Evaluate(depthMeters, threshold, maxRate, exponent)
                 : 0f;
 
+            // Cap the RATE, not just the flush packet. The model is unbounded in depth and returns
+            // float.MaxValue on overflow, so clamping only at the flush would still let the accumulator carry
+            // an arbitrary figure across ticks and across a rejected-ingress requeue. Capping here makes
+            // MaxCrushDamagePerFlush a consistent consequence of MaxCrushDamagePerSecond rather than a second,
+            // looser opinion. See MaxCrushDamagePerSecond for the depth/time-to-death table.
             if (math.isfinite(damagePerSecond) && damagePerSecond > 0f)
-                _pendingCrushDamage += damagePerSecond * fdt;
+                _pendingCrushDamage += math.min(damagePerSecond, MaxCrushDamagePerSecond) * fdt;
 
             if (_pendingCrushDamage <= 0f)
             {
@@ -5312,8 +5437,7 @@ namespace Hecton8.Physics.KCC
 
         private void TryQueueCrushDamage(float amount, double3 impactAup)
         {
-            int targetId = _combatDamageTargetId;
-            if (targetId == 0)
+            if (!TryResolveRegisteredCrushDamageTarget(out int targetId))
                 return;
 
             // Routed through the project's existing damage ingress -- the same path EnvironmentalHazard uses
@@ -5355,13 +5479,62 @@ namespace Hecton8.Physics.KCC
                 GlobalTelemetryBus.PushEvent(KccCrushDamageEventHash, amount, unchecked((uint)targetId));
         }
 
+        /// <summary>
+        /// Resolves a combat target id that is proven REGISTERED before any crush damage is enqueued.
+        ///
+        /// Two separate defects live here. First, <c>CombatDamageRuntime.TryQueueDamage</c> rejects only
+        /// <c>TargetId == 0</c>, so an unregistered id is accepted, silently discarded inside the damage job,
+        /// and reported back as <c>true</c> -- the accumulator gets zeroed and a telemetry "success" is pushed
+        /// for damage that never landed. Every other producer in the project gates on
+        /// <c>IsTargetRegistered</c> first (EnvironmentalHazard, HectonPlayerHealth, HazardZoneManager,
+        /// RandomEventSystem, BioReactor, and the rest). Second, the cold cache resolved
+        /// <c>ResolveTargetId(gameObject)</c> on the KCC's OWN GameObject, while the cited precedent
+        /// (<c>EnvironmentalHazard.TryQueueCentralHazardDamage</c>) resolves it on
+        /// <c>playerHealth.gameObject</c>. <c>ResolveTargetId</c> returns nonzero for ANY non-null GameObject,
+        /// so hosting this controller anywhere other than the exact GameObject that registered with the combat
+        /// runtime yields a plausible-but-wrong id rather than 0 -- and with no registration gate that failure
+        /// is completely unobservable at runtime.
+        ///
+        /// <c>TryResolveRegisteredTarget</c> walks up to six parents and only returns ids that resolve in the
+        /// combat target lookup, so it fixes both: it finds the real damage receiver whether it sits on this
+        /// GameObject or on an ancestor, and it cannot return an unregistered id. Cost is one call per flush
+        /// (<see cref="CrushDamageFlushIntervalSeconds"/>), not per tick, and the cached id short-circuits the
+        /// walk while it stays valid.
+        /// </summary>
+        private bool TryResolveRegisteredCrushDamageTarget(out int targetId)
+        {
+            targetId = _combatDamageTargetId;
+            if (targetId != 0 && Hecton8.Gameplay.CombatDamageRuntime.IsTargetRegistered(targetId))
+                return true;
+
+            Transform host = _cachedTransform != null ? _cachedTransform : transform;
+            if (Hecton8.Gameplay.CombatDamageRuntime.TryResolveRegisteredTarget(host, out int resolvedId, out _) &&
+                resolvedId != 0)
+            {
+                _combatDamageTargetId = resolvedId;
+                targetId = resolvedId;
+                return true;
+            }
+
+            // No registered receiver: drop the packet rather than enqueue into a void. The caller has already
+            // zeroed the accumulator, so depth stops charging until a target registers again.
+            _combatDamageTargetId = 0;
+            targetId = 0;
+            return false;
+        }
+
         private void CacheOceanKinematicsRuntimeCold()
         {
             _oceanKinematicsService = GlobalRegistry.OceanKinematics;
-            // COLD RESOLVE: weather service + combat target id are resolved once here so the fixed-tick
-            // medium path never touches GlobalRegistry or GetEntityId per frame.
+            // COLD RESOLVE: the weather service is resolved once here so the fixed-tick medium path never
+            // touches GlobalRegistry per frame. Hot-swap rebind for it lives in
+            // OnGlobalRegistryServiceReplaced, GlobalRegistryServiceSlot.Weather.
             _weatherService = GlobalRegistry.Weather;
-            _combatDamageTargetId = Hecton8.Gameplay.CombatDamageRuntime.ResolveTargetId(gameObject);
+            // The combat target id is deliberately NOT resolved from this GameObject here. It is cleared and
+            // resolved lazily against the combat target lookup on the first crush flush -- see
+            // TryResolveRegisteredCrushDamageTarget for why an own-GameObject id is a silent wrong-target trap
+            // and why cold time is too early (combat registration order is not guaranteed relative to OnEnable).
+            _combatDamageTargetId = 0;
             ClearWaterMediumState();
         }
 
