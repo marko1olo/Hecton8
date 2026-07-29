@@ -48,6 +48,27 @@ namespace Hecton8.World
     /// them must point at <see cref="LiveWorldGraphSpanMeters"/>, never at
     /// <see cref="DefaultVerticalSpanMeters"/>.
     /// </para>
+    /// <para>
+    /// WHY THESE ARE <c>const</c> AND NOT <c>static readonly</c> - deliberate, and recorded here because it
+    /// looks like a defect and has already been queued as one. C# bakes a <c>const</c> into every CONSUMING
+    /// assembly at compile time, so in general .NET a consumer can hold a stale copy until rebuilt, and
+    /// <c>static readonly</c> is the usual remedy. That remedy buys nothing here: Unity's Bee build
+    /// recompiles the whole dependent assembly graph on any script change, so "consumer holding a stale copy
+    /// of one of these" is not a reachable state in this project.
+    /// </para>
+    /// <para>
+    /// Against that non-benefit, <c>const</c> is doing real work. <c>ErosionTestHarness</c> and
+    /// <c>HectonSandboxAbyssalShelfSmokeTester</c> each declare their own <c>const</c> aliases initialised
+    /// FROM these members, and a <c>const</c> cannot be initialised from a <c>static readonly</c> - so the
+    /// switch would cascade through both files rather than being one edit. Churn in the vertical-extent
+    /// numbers is exactly what this file exists to stop.
+    /// </para>
+    /// <para>
+    /// Burst is NOT a constraint, checked rather than assumed: the consumers read these on the MANAGED side
+    /// to populate job data structs (<c>HighWorldY = ShelfHighWorldY</c> and similar) before scheduling, so
+    /// no Burst-compiled code reads a static field and the Burst rule against that never applies. Recorded
+    /// so the next reader does not have to re-derive it in either direction.
+    /// </para>
     /// </summary>
     public static class WorldVerticalExtentMath
     {
