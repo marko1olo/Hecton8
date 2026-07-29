@@ -569,6 +569,32 @@ def forge_package_dir(family) -> str:
     return "{root}/{family}".format(root=FORGE_PACKAGE_ROOT, family=resolved.value)
 
 
+FORGE_PROOF_ROOT = "Docs/AgentLogs/Forge"
+
+
+def forge_proof_dir(family) -> str:
+    """Project-relative directory for PROOF artefacts, which is NOT the package dir.
+
+    THE PACKAGE AND THE PROOF ARE DIFFERENT THINGS AND THEY GO TO DIFFERENT PLACES.
+    A package is the FBX plus its sibling manifest: Unity must import those, so they
+    belong under ``Assets`` and ``forge_package_dir`` puts them there. A proof
+    artefact is a contact sheet, a silhouette mask, a channel tile - diagnostic
+    evidence for a human, which Unity has no business importing.
+
+    Learned by breaking it. When ``forge_package_dir`` landed, ``rock.py`` used one
+    directory for both, so a single boulder run dropped 20+ PNGs into the asset
+    database - every one of which Unity would import as a texture, with a ``.meta``,
+    a GUID and VRAM cost, for a diagnostic picture. Measured: 29 files in the Forge
+    tree after two runs, of which 2 were the actual package.
+
+    ``Docs/AgentLogs`` is gitignored (``.gitignore:201``), which is exactly right for
+    proof and exactly wrong for a package - the same property that made it the wrong
+    home for the FBX makes it the right home for a render.
+    """
+    resolved = family if isinstance(family, Family) else Family(family)
+    return "{root}{family}".format(root=FORGE_PROOF_ROOT, family=resolved.value)
+
+
 # ---------------------------------------------------------------------------
 # Black box  --  3dmodel.md section 11
 # ---------------------------------------------------------------------------
