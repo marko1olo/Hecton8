@@ -732,9 +732,45 @@ def _compare_a(before: dict, after: dict, report: RoundtripReport) -> None:
                 tag + "vertex count {0} -> {1}".format(src.vertex_count,
                                                        dst.vertex_count))
         if src.triangle_count != dst.triangle_count:
+            # Name the SHAPE of the loss, not just the delta. polygon_count and
+            # max_polygon_sides are already snapshotted on both sides and were never
+            # compared, so a triangle-count failure reported a number with no
+            # mechanism attached - and three separate hypotheses were measured and
+            # refuted against it before anyone read these two fields.
+            #
+            # The discriminator:
+            #   polygons SAME, tris down    -> an n-gon lost a side; a triangulation
+            #                                  or n-gon-support problem, not lost
+            #                                  geometry.
+            #   polygons DOWN, verts SAME   -> a whole FACE was dropped while its
+            #                                  vertices survived. That is a face the
+            #                                  writer or reader refused, and the
+            #                                  first candidate is a DUPLICATE FACE:
+            #                                  two faces on the same vertex set are
+            #                                  merged on import, and an isolated
+            #                                  duplicate PAIR is manifold by the
+            #                                  edge test - every edge has exactly
+            #                                  two faces - so a non-manifold-edge
+            #                                  repair cannot see it and neither can a
+            #                                  bowtie-vertex walk.
+            #   polygons DOWN, verts DOWN   -> geometry genuinely removed, e.g. a
+            #                                  degenerate face collapsed on import.
+            shape = ("polygons {0} -> {1}, maxSides {2} -> {3}, verts {4} -> {5}"
+                     .format(src.polygon_count, dst.polygon_count,
+                             src.max_polygon_sides, dst.max_polygon_sides,
+                             src.vertex_count, dst.vertex_count))
+            if src.polygon_count == dst.polygon_count:
+                mechanism = ("an n-gon lost a side, so this is triangulation or "
+                             "n-gon support, NOT lost geometry")
+            elif src.vertex_count == dst.vertex_count:
+                mechanism = ("a whole FACE was dropped with its vertices intact - "
+                             "check for a DUPLICATE FACE, which is invisible to both "
+                             "a non-manifold-edge query and a bowtie-vertex walk")
+            else:
+                mechanism = "geometry removed outright, verts fell too"
             report.failures.append(
-                tag + "triangle count {0} -> {1}".format(src.triangle_count,
-                                                         dst.triangle_count))
+                tag + "triangle count {0} -> {1} ({2}; {3})".format(
+                    src.triangle_count, dst.triangle_count, shape, mechanism))
         report.notes.append(
             tag + "verts {0}->{1} loops {2}->{3} tris {4}->{5}".format(
                 src.vertex_count, dst.vertex_count, src.loop_count,

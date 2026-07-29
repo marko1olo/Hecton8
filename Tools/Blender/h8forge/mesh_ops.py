@@ -608,6 +608,91 @@ def _split_uv_seams(obj: bpy.types.Object) -> int:
     return count
 
 
+def _weld_coincident(obj: bpy.types.Object, distance: float = 1e-6) -> dict:
+    """Re-join vertices this pipeline split apart, and nothing else.
+
+    WHY. ``_split_uv_seams`` converts seams, MATERIAL borders and every SHARP edge
+    into mesh boundaries so Decimate/COLLAPSE will not collapse across them. That
+    works, and on a faceted asset it is also catastrophic: ``apply_shading_basis``
+    marks an edge sharp wherever the dihedral angle exceeds the family threshold, so
+    a geology asset with hundreds of arrises gets hundreds of edges split and the
+    shell SHATTERS. Measured on rock: LOD2 came out with 4 to 118 components and 134
+    to 991 boundary edges, LOD1 with 1 to 79 non-manifold edges. Consequences, all
+    measured rather than predicted: ``recalc_face_normals`` cannot orient a shattered
+    shell so every config failed ``inconsistent_winding``, and the FBX round trip
+    rejected LOD1 and LOD2 outright, which means those levels were not shippable at
+    all. Coral hit the same wall from the other direction and three hypotheses were
+    measured and refuted against it before the cause was found in this function.
+
+    WHY A DISTANCE WELD IS THE RIGHT TOOL AND NOT A BLUNT ONE. The duplicates
+    ``split_edges`` creates are COINCIDENT - distance exactly 0. A genuine open rim,
+    a blade margin left uncapped on purpose, a card edge: none of those have a
+    coincident partner. So a weld at 1e-6 m recovers precisely the vertices this
+    pipeline split and cannot silently close a boundary the author wanted. That is
+    the whole reason the tolerance is 1e-6 and not the 1e-4 ``weld_and_clean`` uses
+    for authored geometry.
+
+    WHY IT DOES NOT UNDO THE SEAM WORK. The split exists to shape the DECIMATION, and
+    by the time this runs the decimation has already happened. Unity re-duplicates
+    seam vertices on export regardless, so the exported result is unchanged; what
+    changes is that the intermediate mesh is a closed shell again, which is what the
+    FBX round trip and the winding repair both need.
+
+    Custom split normals survive: they are per-LOOP, and merging two coincident
+    vertices does not merge the loops that reference them.
+    """
+    before_verts = len(obj.data.vertices)
+    bm = bmesh_from_object(obj)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=distance)
+
+    # DUPLICATE FACES, and this is the one that cost five hypotheses.
+    #
+    # Decimate/COLLAPSE can pull two triangles onto the SAME vertex triple. The
+    # result is a pair of coincident faces, and FBX cannot express it: the importer
+    # merges them, so the file comes back with exactly one face fewer, three corner
+    # normals fewer and its vertex count unchanged - which is precisely what the
+    # round-trip gate kept reporting on coral LOD2.
+    #
+    # MEASURED on coral LOD2, seed 1712: V=146 E=435 F=286, euler -3,
+    # duplicateFacePairs=1 - faces 118 and 239 both on vertex set (38, 39, 143).
+    #
+    # It is invisible to every check that was tried against it first, which is why it
+    # survived so long: nonManifoldEdges reads 0 because the pair's edges still have
+    # exactly two faces each; the faces have real area so a degenerate-area sweep
+    # passes; there is no bowtie vertex; and a boundary-edge count says nothing. Four
+    # measured hypotheses were refuted before this one, and each refutation only
+    # arrived because the number was checked instead of the mechanism being assumed.
+    #
+    # Keep the first of each pair and delete the rest: they are geometrically the same
+    # face, so nothing visible is lost, and the exported topology finally equals the
+    # measured topology.
+    seen = {}
+    doomed = []
+    for face in bm.faces:
+        key = tuple(sorted(vert.index for vert in face.verts))
+        if key in seen:
+            doomed.append(face)
+        else:
+            seen[key] = face
+    duplicate_faces = len(doomed)
+    if doomed:
+        bmesh.ops.delete(bm, geom=doomed, context="FACES_ONLY")
+
+    boundary = sum(1 for e in bm.edges if len(e.link_faces) == 1)
+    nonmanifold = sum(1 for e in bm.edges if len(e.link_faces) > 2)
+    after_verts = len(bm.verts)
+    bmesh_to_object(bm, obj)
+    return {
+        "vertsBefore": before_verts,
+        "vertsAfter": after_verts,
+        "merged": before_verts - after_verts,
+        "duplicateFacesRemoved": duplicate_faces,
+        "boundaryEdges": boundary,
+        "nonManifoldEdges": nonmanifold,
+        "distance": distance,
+    }
+
+
 def uv_stretch_stats(obj: bpy.types.Object) -> dict:
     """Area-weighted UV aspect-distortion summary for one object.
 
@@ -754,6 +839,28 @@ def build_lod_chain(
             _make_sole_active(clone)
             bpy.ops.object.modifier_apply(modifier=modifier.name)
             ratio_used *= ratio
+
+        # Put the shell back together. The seam split above did its job during the
+        # decimation and is pure damage afterwards - see _weld_coincident for the
+        # measured consequences of leaving it in place. Only runs when something was
+        # actually split, so an unsplit level is untouched.
+        weld_stats = None
+        if seams_split:
+            weld_stats = _weld_coincident(clone)
+            if blackbox is not None:
+                blackbox.record(
+                    "lod{i}_reweld".format(i=index),
+                    vertex_count=weld_stats["vertsAfter"],
+                    triangle_count=triangle_count(clone.data),
+                    warning="merged {m} coincident verts ({b} -> {a}), removed "
+                            "{d} duplicate faces; boundary now {be}, "
+                            "non-manifold {nm}".format(
+                                m=weld_stats["merged"],
+                                b=weld_stats["vertsBefore"],
+                                a=weld_stats["vertsAfter"],
+                                d=weld_stats["duplicateFacesRemoved"],
+                                be=weld_stats["boundaryEdges"],
+                                nm=weld_stats["nonManifoldEdges"]))
 
         final_tris = triangle_count(clone.data)
 
