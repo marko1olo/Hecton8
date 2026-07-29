@@ -308,7 +308,6 @@ namespace Hecton8.World
         private const float BiomassMacroCellSizeMeters = 50f;
         private const float InvBiomassMacroCellSizeMeters = 1f / BiomassMacroCellSizeMeters;
         private const float InvStableSectorRandomMask = 1f / 16777215f;
-        private const float InvFoodHeatmapByteMax = 1f / 255f;
         private const float OxygenDieOffThreshold01 = 0.35f;
         private const float InvOxygenDieOffThreshold01 = 1f / OxygenDieOffThreshold01;
         private const float InvAlgaeBloomPreyGrowthDivisor = 0.2f;
@@ -443,7 +442,6 @@ namespace Hecton8.World
             EcosystemVaultMutationGuardBit(BufferID.EcosystemSectorFrontStates) |
             EcosystemVaultMutationGuardBit(BufferID.EcosystemPreyFrontCounts) |
             EcosystemVaultMutationGuardBit(BufferID.EcosystemPredatorFrontCounts) |
-            EcosystemVaultMutationGuardBit(BufferID.EcosystemSectorFoodHeatmapR8) |
             EcosystemVaultMutationGuardBit(BufferID.EcosystemSectorBackStates) |
             EcosystemVaultMutationGuardBit(BufferID.EcosystemPreyBackCounts) |
             EcosystemVaultMutationGuardBit(BufferID.EcosystemPredatorBackCounts) |
@@ -1056,7 +1054,6 @@ namespace Hecton8.World
             [ReadOnly, NoAlias] public NativeArray<SectorPopulationState> FrontStates;
             [ReadOnly, NoAlias] public NativeArray<int> PreyCounts;
             [ReadOnly, NoAlias] public NativeArray<int> PredatorCounts;
-            [ReadOnly, NoAlias] public NativeArray<byte> FoodDensityHeatmapR8;
             [NoAlias] public NativeArray<SectorPopulationState> BackStates;
             [NoAlias] public NativeArray<int> PreyBackCounts;
             [NoAlias] public NativeArray<int> PredatorBackCounts;
@@ -1065,7 +1062,6 @@ namespace Hecton8.World
             [NoAlias] public NativeArray<byte> HeadlessHunger;
             [NoAlias] public NativeArray<int2> HeadlessSectorCoord;
             [NoAlias] public NativeArray<int> HeadlessSectorID;
-            public int2 FoodDensityHeatmapSize;
             public float DeltaSeconds;
             public float PreyBirthRate;
             public float PredationRate;
@@ -1089,9 +1085,7 @@ namespace Hecton8.World
                     state.SectorCoord,
                     state.BiomeId,
                     state.HarvestPressure,
-                    state.AlgaeBloom01,
-                    FoodDensityHeatmapR8,
-                    FoodDensityHeatmapSize);
+                    state.AlgaeBloom01);
                 float temperatureScore01 = state.TemperatureScore01;
                 float oxygen01 = state.Oxygen01 <= 0f ? 1f : math.saturate(state.Oxygen01);
                 float bloom01 = math.saturate(state.AlgaeBloom01);
@@ -1257,11 +1251,9 @@ namespace Hecton8.World
         private struct HeadlessThresholdMigrationJob : IJobParallelFor
         {
             [ReadOnly, NoAlias] public NativeArray<SectorPopulationState> States;
-            [ReadOnly, NoAlias] public NativeArray<byte> FoodDensityHeatmapR8;
             [NoAlias] public NativeArray<float3> Positions;
             [NoAlias] public NativeArray<int2> SectorCoord;
             [NoAlias] public NativeArray<int> SectorID;
-            public int2 FoodDensityHeatmapSize;
             public float MigrationFoodThreshold01;
             public int MigrationPredatorTolerance;
 
@@ -1281,37 +1273,32 @@ namespace Hecton8.World
                     state.FoodDensity01 < math.saturate(MigrationFoodThreshold01) ||
                     state.PredatorPopulationRounded > math.max(0, MigrationPredatorTolerance);
                 if (forcedMove)
-                    coord = ResolveBestFoodNeighbor(coord, FoodDensityHeatmapR8, FoodDensityHeatmapSize);
+                    coord = ResolveBestFoodNeighbor(coord);
 
                 SectorCoord[index] = coord;
                 SectorID[index] = ResolveSectorId(coord);
                 Positions[index] = ResolveSectorCenterPosition(coord);
             }
 
-            private static int2 ResolveBestFoodNeighbor(
-                int2 sectorCoord,
-                NativeArray<byte> foodDensityHeatmapR8,
-                int2 foodDensityHeatmapSize)
+            private static int2 ResolveBestFoodNeighbor(int2 sectorCoord)
             {
                 int2 bestCoord = sectorCoord;
-                float bestFoodScore = ResolveMigrationFoodScore(sectorCoord, foodDensityHeatmapR8, foodDensityHeatmapSize);
+                float bestFoodScore = ResolveMigrationFoodScore(sectorCoord);
                 int bestTieBucket = MigrationTieNoNeighborBucket;
-                EvaluateFoodCandidate(sectorCoord + new int2(1, 0), foodDensityHeatmapR8, foodDensityHeatmapSize, ref bestCoord, ref bestFoodScore, ref bestTieBucket);
-                EvaluateFoodCandidate(sectorCoord + new int2(-1, 0), foodDensityHeatmapR8, foodDensityHeatmapSize, ref bestCoord, ref bestFoodScore, ref bestTieBucket);
-                EvaluateFoodCandidate(sectorCoord + new int2(0, 1), foodDensityHeatmapR8, foodDensityHeatmapSize, ref bestCoord, ref bestFoodScore, ref bestTieBucket);
-                EvaluateFoodCandidate(sectorCoord + new int2(0, -1), foodDensityHeatmapR8, foodDensityHeatmapSize, ref bestCoord, ref bestFoodScore, ref bestTieBucket);
+                EvaluateFoodCandidate(sectorCoord + new int2(1, 0), ref bestCoord, ref bestFoodScore, ref bestTieBucket);
+                EvaluateFoodCandidate(sectorCoord + new int2(-1, 0), ref bestCoord, ref bestFoodScore, ref bestTieBucket);
+                EvaluateFoodCandidate(sectorCoord + new int2(0, 1), ref bestCoord, ref bestFoodScore, ref bestTieBucket);
+                EvaluateFoodCandidate(sectorCoord + new int2(0, -1), ref bestCoord, ref bestFoodScore, ref bestTieBucket);
                 return bestCoord;
             }
 
             private static void EvaluateFoodCandidate(
                 int2 candidateCoord,
-                NativeArray<byte> foodDensityHeatmapR8,
-                int2 foodDensityHeatmapSize,
                 ref int2 bestCoord,
                 ref float bestFoodScore,
                 ref int bestTieBucket)
             {
-                float foodScore = ResolveMigrationFoodScore(candidateCoord, foodDensityHeatmapR8, foodDensityHeatmapSize);
+                float foodScore = ResolveMigrationFoodScore(candidateCoord);
                 int candidateTieBucket = ResolveAupMigrationTieBucket(candidateCoord);
                 bool betterFood = foodScore > bestFoodScore + 0.0001f;
                 bool equalFood = math.abs(foodScore - bestFoodScore) <= 0.0001f;
@@ -1322,13 +1309,10 @@ namespace Hecton8.World
                 bestTieBucket = math.select(bestTieBucket, candidateTieBucket, takeCandidate);
             }
 
-            private static float ResolveMigrationFoodScore(
-                int2 sectorCoord,
-                NativeArray<byte> foodDensityHeatmapR8,
-                int2 foodDensityHeatmapSize)
+            private static float ResolveMigrationFoodScore(int2 sectorCoord)
             {
                 int biomeId = ResolveBiomeIdForSector(sectorCoord);
-                return ResolveSectorFoodDensity01(sectorCoord, biomeId, 0f, 0f, foodDensityHeatmapR8, foodDensityHeatmapSize);
+                return ResolveSectorFoodDensity01(sectorCoord, biomeId, 0f, 0f);
             }
 
             private static int ResolveAupMigrationTieBucket(int2 candidateCoord)
@@ -1567,13 +1551,9 @@ namespace Hecton8.World
         private VaultBufferView<EcosystemBiomassSaveRun> _saveSnapshotBiomassRuns;
         private VaultBufferView<EcosystemIndexEntry> _biomassIndexEntries;
         private HeadlessEntitySoA _headlessEntities;
-        private VaultBufferView<byte> _sectorFoodHeatmapR8;
 
-        /// <summary>
-        /// Latches the one-time unbound-heatmap warning below. Without it the report would repeat every
-        /// cold tick; with it the degradation is stated exactly once per session.
-        /// </summary>
-        private bool _sectorFoodHeatmapUnboundReported;
+        /// <summary>Latches the one-time hash-food honesty report.</summary>
+        private bool _sectorFoodIsHashReported;
 
         /// <summary>Latches the one-time unreachable-migration-threshold warning.</summary>
         private bool _migrationFoodThresholdFloorReported;
@@ -1596,10 +1576,17 @@ namespace Hecton8.World
         /// (<c>-0.35</c>) or an algae bloom (<c>-0.45</c>) can push food under it.
         /// </para>
         /// <para>
-        /// This tracks the HASH fallback, which is the only live path today (see the unbound-heatmap
-        /// warning). If <c>BindSectorFoodDensityHeatmap</c> is ever wired, the real floor drops to 0 and
-        /// this constant becomes wrong - update it in the same change, or food migration will switch on
-        /// abruptly across the whole world.
+        /// This tracks the coordinate HASH, which is now the only path there is. It used to read "the only
+        /// live path today ... if <c>BindSectorFoodDensityHeatmap</c> is ever wired, the real floor drops to
+        /// 0 and this constant becomes wrong". That binder had no caller anywhere in the project and has been
+        /// retired (see the retirement note where it used to be declared), so the floor is unconditional and
+        /// this constant cannot be invalidated by a heatmap appearing.
+        /// </para>
+        /// <para>
+        /// The warning that hazard implied is still worth keeping in mind for any future replacement: a food
+        /// field whose minimum is 0 rather than 0.38 switches starvation-driven migration on across the WHOLE
+        /// WORLD at once, because <c>migrationFoodThreshold01</c> is a single global scalar. Land any such
+        /// field and a threshold review in the same change.
         /// </para>
         /// </summary>
         private const float NaturalSectorFoodFloor01 = 0.38f;
@@ -1786,7 +1773,6 @@ namespace Hecton8.World
         private Vector3 _activeWhaleFallAcousticPosition;
         private float _activeWhaleFallAcousticUntilTime;
         private uint _activeWhaleFallAcousticUid;
-        private int2 _sectorFoodHeatmapSize;
 
         /// <summary>
         /// True once the runtime-native state is allocated and registered.
@@ -1827,78 +1813,35 @@ namespace Hecton8.World
         /// <inheritdoc />
         public int ActiveMacroSwarmCount => _activeMacroSwarmCount;
 
-        /// <summary>
-        /// Binds a non-owned R8 sector-food heatmap generated by the world geology pass.
-        /// </summary>
-        /// <param name="heatmapR8">One byte per sector sample, 0-255 normalized food capacity.</param>
-        /// <param name="width">Power-of-two heatmap width.</param>
-        /// <param name="height">Power-of-two heatmap height.</param>
-        /// <remarks>
-        /// Caller owns allocation and disposal. Power-of-two dimensions keep Burst sampling on bit masks instead of modulo.
-        /// </remarks>
-        public void BindSectorFoodDensityHeatmap(NativeArray<byte> heatmapR8, int width, int height)
-        {
-            if (!heatmapR8.IsCreated ||
-                width <= 0 ||
-                height <= 0 ||
-                !IsPowerOfTwo(width) ||
-                !IsPowerOfTwo(height))
-            {
-                _sectorFoodHeatmapR8 = default;
-                _sectorFoodHeatmapSize = default;
-                return;
-            }
-
-            long requiredLength = (long)width * height;
-            if (requiredLength <= 0L ||
-                requiredLength > int.MaxValue ||
-                heatmapR8.Length < requiredLength)
-            {
-                _sectorFoodHeatmapR8 = default;
-                _sectorFoodHeatmapSize = default;
-                return;
-            }
-
-            IDataVault vault = ResolveDataVaultCold();
-            if (vault == null)
-            {
-                _sectorFoodHeatmapR8 = default;
-                _sectorFoodHeatmapSize = default;
-                return;
-            }
-
-            VaultGenerationHandle<byte> heatmapHandle = vault.EnsureGenerationHandle<byte>(
-                BufferID.EcosystemSectorFoodHeatmapR8,
-                (int)requiredLength,
-                SystemID.AIEcology,
-                NativeArrayOptions.UninitializedMemory);
-            if (!vault.TryAcquireWriteLock(in heatmapHandle, SystemID.AIEcology, out NativeArray<byte> vaultHeatmap))
-            {
-                _sectorFoodHeatmapR8 = default;
-                _sectorFoodHeatmapSize = default;
-                return;
-            }
-
-            try
-            {
-                if (!vaultHeatmap.IsCreated || vaultHeatmap.Length < requiredLength)
-                {
-                    _sectorFoodHeatmapR8 = default;
-                    _sectorFoodHeatmapSize = default;
-                    return;
-                }
-
-                for (int i = 0; i < requiredLength; i++)
-                    vaultHeatmap[i] = heatmapR8[i];
-
-                _sectorFoodHeatmapR8 = VaultBufferView<byte>.Create(vault, heatmapHandle);
-                _sectorFoodHeatmapSize = new int2(width, height);
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in heatmapHandle, SystemID.AIEcology);
-            }
-        }
+        // RETIRED: BindSectorFoodDensityHeatmap(NativeArray<byte> heatmapR8, int width, int height).
+        //
+        // It bound a non-owned R8 sector-food heatmap "generated by the world geology pass". No such pass ever
+        // existed. The method had NO CALLER anywhere in the project, and BufferID.EcosystemSectorFoodHeatmapR8
+        // was referenced only from inside this file, so the buffer was never created in any build that ever
+        // ran and the sampled branch of ResolveSectorBaseFoodCapacity01 was unreachable dead code.
+        //
+        // Retired rather than wired, for three reasons that are worth keeping so this is not "fixed" back:
+        //
+        // 1. NO VIABLE PRODUCER. The only owner of real terrain data is WorldMacroGeologyFields, which is
+        //    NON-PERIODIC global fBm; the sampler here was a POWER-OF-TWO COORDINATE MASK
+        //    (sectorCoord.x & (width-1)). Any heatmap small enough to bake therefore tiles the world: at 1 km
+        //    sectors a 64x64 map repeats every 64 km across a ~777 km AUP range, so it would have matched the
+        //    real seafloor in one 64 km corner and contradicted it everywhere else. That is a periodic ecology
+        //    grid wearing the name of a gradient - strictly worse than an honest hash. A real terrain-driven
+        //    food field needs an ORIGIN-ANCHORED streaming window with bounds rejection, not a wrap mask, plus
+        //    incremental baking: WorldMacroGeologyFields.Evaluate costs five EvaluateHeightMeters calls
+        //    (WorldMacroGeologyFields.cs, EvaluateDifferentials) and cannot be bulk-baked on a cold tick.
+        // 2. IT WAS A HARD BLOCKER, NOT DEAD WEIGHT. HasSectorSolveJobViews required
+        //    IsAIEcologyBuffer(_sectorFoodHeatmapR8, ...) among its MANDATORY views. Because the view was
+        //    never created that predicate was permanently false, so TryLockSectorSolveJobBuffers always
+        //    failed and ScheduleSectorSolve returned before scheduling anything: the Lotka-Volterra solve,
+        //    the threshold migration job and the biomass solve could never run at all. An OPTIONAL,
+        //    caller-owned buffer must never appear in a mandatory job-view gate.
+        // 3. BINDING IT WOULD HAVE SILENTLY INVALIDATED NaturalSectorFoodFloor01, switching food-driven
+        //    migration on across the whole world at once. See that constant's remarks.
+        //
+        // Terrain still reaches food through the biome lane (ResolveGeologyBiomeIdForSector -> +0.12/-0.04
+        // bias). That link is real and is the one to widen if food should follow the seafloor.
 
         public FaunaLogicalLodTier ResolveLogicalLodTier(Vector3 observerPosition, Vector3 faunaPosition)
         {
@@ -5577,8 +5520,6 @@ namespace Hecton8.World
             _macroHydrationScratchCount = 0;
             _macroDehydrationScratchCount = 0;
             _headlessEntities = default;
-            _sectorFoodHeatmapR8 = default;
-            _sectorFoodHeatmapSize = default;
             _sectorIndexEntries = default;
             _apexTerritorySamples = default;
             _apexTerritoryOverlapResults = default;
@@ -6193,27 +6134,33 @@ namespace Hecton8.World
             if (_activeSectorCount <= 0 || _solveScheduled)
                 return;
 
-            if (!TryLockSectorSolveJobBuffers())
-                return;
+            // BOTH latched reports below are emitted BEFORE the buffer lock is attempted, and that placement
+            // is the fix for a self-cancelling diagnostic rather than a style preference.
+            //
+            // They used to sit after `if (!TryLockSectorSolveJobBuffers()) return;`. The heatmap report was
+            // therefore UNREACHABLE BY CONSTRUCTION: the unbound heatmap it existed to announce was itself an
+            // entry in HasSectorSolveJobViews, so the condition being reported was the same condition that
+            // failed the lock and returned before the report. The one line written to make this degradation
+            // visible could never print - it is absent from every probe log for exactly that reason, not
+            // because the state was healthy. A guard whose own subject blocks its emission reports nothing.
+            //
+            // Neither report reads a locked buffer - one reads a latch, the other a serialized field - so
+            // there is no ordering reason for them to be inside the lock. Cold path (one cold tick apart),
+            // latched, literal strings, so they cost nothing and cannot repeat.
 
-            bool keepLocksForScheduledJob = false;
-
-            // Says out loud that the ecosystem is running without a spatial food field.
-            // BindSectorFoodDensityHeatmap has no callers anywhere in the project, so this view is
-            // never created, the heatmap branch of ResolveSectorBaseFoodCapacity01 is unreachable, and
-            // sector base food is the coordinate-hash fallback 0.42 + roll01 * 0.46 on every path.
-            // Geology then reaches food only through the +/-0.12 biome bias and as a hash salt - a
-            // modest bias, not terrain-driven food distribution. That is invisible today: nothing
-            // errors, the numbers look like a populated field, and the vault plumbing reads as wired.
-            // Cold path (one cold tick apart) and latched, with a literal string, so this costs
-            // nothing and cannot repeat.
-            if (!_sectorFoodHeatmapUnboundReported && !_sectorFoodHeatmapR8.IsCreated)
+            // Says out loud that sector base food is a coordinate hash and not a spatial food field.
+            // ResolveSectorBaseFoodCapacity01 is 0.42 + roll01 * 0.46 on a hash of the sector coordinate;
+            // geology reaches food only through the +0.12/-0.04 biome-lane bias and as a hash salt. That is
+            // invisible otherwise: nothing errors and the numbers look like a populated field.
+            if (!_sectorFoodIsHashReported)
             {
-                _sectorFoodHeatmapUnboundReported = true;
+                _sectorFoodIsHashReported = true;
                 Hecton8.Core.H8Debug.LogWarning(
-                    "[EcosystemDirector] Sector food heatmap is unbound - BindSectorFoodDensityHeatmap " +
-                    "is never called, so sector base food capacity is a coordinate hash, not terrain. " +
-                    "Geology affects food only as a bias. Bind the heatmap or retire the API.",
+                    "[EcosystemDirector] Sector base food capacity is a COORDINATE HASH, not terrain: " +
+                    "0.42 + hash01 * 0.46, range 0.42-0.88. Geology reaches food only as the +0.12/-0.04 " +
+                    "biome-lane bias, so anything downstream that calls this a resource gradient - including " +
+                    "the grazer spawn weight - is scaling on map noise. The BindSectorFoodDensityHeatmap " +
+                    "surface that promised a terrain field is retired; it never had a producer.",
                     this);
             }
 
@@ -6234,6 +6181,11 @@ namespace Hecton8.World
                     this);
             }
 
+            if (!TryLockSectorSolveJobBuffers())
+                return;
+
+            bool keepLocksForScheduledJob = false;
+
             try
             {
                 var solveJob = new LotkaVolterraPopulationJob
@@ -6241,7 +6193,6 @@ namespace Hecton8.World
                     FrontStates = _sectorFrontStates,
                     PreyCounts = _preyFrontCounts,
                     PredatorCounts = _predatorFrontCounts,
-                    FoodDensityHeatmapR8 = _sectorFoodHeatmapR8,
                     BackStates = _sectorBackStates,
                     PreyBackCounts = _preyBackCounts,
                     PredatorBackCounts = _predatorBackCounts,
@@ -6250,7 +6201,6 @@ namespace Hecton8.World
                     HeadlessHunger = _headlessEntities.Hunger,
                     HeadlessSectorCoord = _headlessEntities.SectorCoord,
                     HeadlessSectorID = _headlessEntities.SectorID,
-                    FoodDensityHeatmapSize = _sectorFoodHeatmapSize,
                     DeltaSeconds = coldTickIntervalSeconds,
                     PreyBirthRate = preyBirthRatePerSecond,
                     PredationRate = predationRatePerSecond,
@@ -6271,11 +6221,9 @@ namespace Hecton8.World
                 var migrationJob = new HeadlessThresholdMigrationJob
                 {
                     States = _sectorBackStates,
-                    FoodDensityHeatmapR8 = _sectorFoodHeatmapR8,
                     Positions = _headlessEntities.Positions,
                     SectorCoord = _headlessEntities.SectorCoord,
                     SectorID = _headlessEntities.SectorID,
-                    FoodDensityHeatmapSize = _sectorFoodHeatmapSize,
                     MigrationFoodThreshold01 = migrationFoodThreshold01,
                     MigrationPredatorTolerance = migrationPredatorTolerance
                 };
@@ -6364,7 +6312,11 @@ namespace Hecton8.World
             return IsAIEcologyBuffer(_sectorFrontStates, BufferID.EcosystemSectorFrontStates) &&
                    IsAIEcologyBuffer(_preyFrontCounts, BufferID.EcosystemPreyFrontCounts) &&
                    IsAIEcologyBuffer(_predatorFrontCounts, BufferID.EcosystemPredatorFrontCounts) &&
-                   IsAIEcologyBuffer(_sectorFoodHeatmapR8, BufferID.EcosystemSectorFoodHeatmapR8) &&
+                   // NOTE: EcosystemSectorFoodHeatmapR8 was listed here and was the reason this predicate
+                   // could never return true. It was an OPTIONAL, caller-owned buffer with no producer, so
+                   // its view was never created, so every ScheduleSectorSolve bailed at
+                   // TryLockSectorSolveJobBuffers and the sector/migration/biomass jobs never ran. Do not
+                   // re-add an optional buffer to this list - every entry here is a job-mandatory view.
                    IsAIEcologyBuffer(_sectorBackStates, BufferID.EcosystemSectorBackStates) &&
                    IsAIEcologyBuffer(_preyBackCounts, BufferID.EcosystemPreyBackCounts) &&
                    IsAIEcologyBuffer(_predatorBackCounts, BufferID.EcosystemPredatorBackCounts) &&
@@ -9459,52 +9411,60 @@ namespace Hecton8.World
             predatorPopulation = math.max(0, leviathanPopulationPerSector) * spawnLeviathanMask;
         }
 
+        /// <summary>
+        /// Managed-path food density. Currently a pure passthrough to the static
+        /// <see cref="ResolveSectorFoodDensity01"/>; kept as a distinct seam ON PURPOSE.
+        /// </summary>
+        /// <remarks>
+        /// It stopped being a passthrough-with-extra-state when the sector food heatmap was retired, so it now
+        /// looks like a deletable no-op wrapper. It is not: this is the only food entry point that runs on the
+        /// MANAGED side, where the world seed, <see cref="ResolveGeologyBiomeIdForSector"/> and the whole macro
+        /// geology stack are reachable. The static overload is what the two Burst jobs call and it can reach
+        /// none of that. Any future terrain-driven food field has to diverge here, so collapsing the two names
+        /// into one would delete the seam the fix needs.
+        /// </remarks>
         private float ResolveRuntimeSectorFoodDensity01(int2 sectorCoord, int biomeId, float harvestPressure01, float algaeBloom01)
         {
-            return ResolveSectorFoodDensity01(
-                sectorCoord,
-                biomeId,
-                harvestPressure01,
-                algaeBloom01,
-                _sectorFoodHeatmapR8,
-                _sectorFoodHeatmapSize);
+            return ResolveSectorFoodDensity01(sectorCoord, biomeId, harvestPressure01, algaeBloom01);
         }
 
         private static float ResolveSectorFoodDensity01(int2 sectorCoord, int biomeId, float harvestPressure01, float algaeBloom01)
         {
-            return ResolveSectorFoodDensity01(sectorCoord, biomeId, harvestPressure01, algaeBloom01, default, default);
-        }
-
-        private static float ResolveSectorFoodDensity01(
-            int2 sectorCoord,
-            int biomeId,
-            float harvestPressure01,
-            float algaeBloom01,
-            NativeArray<byte> foodHeatmapR8,
-            int2 foodHeatmapSize)
-        {
-            float baseFood01 = ResolveSectorBaseFoodCapacity01(sectorCoord, biomeId, foodHeatmapR8, foodHeatmapSize);
+            float baseFood01 = ResolveSectorBaseFoodCapacity01(sectorCoord, biomeId);
             float biomeBias = (math.select(0f, 0.12f, biomeId == 1)) - (math.select(0f, 0.04f, biomeId == 2));
             return math.saturate(baseFood01 + biomeBias - (math.saturate(harvestPressure01) * 0.35f) - (math.saturate(algaeBloom01) * 0.45f));
         }
 
-        private static float ResolveSectorBaseFoodCapacity01(
-            int2 sectorCoord,
-            int biomeId,
-            NativeArray<byte> foodHeatmapR8,
-            int2 foodHeatmapSize)
+        /// <summary>
+        /// Sector base food capacity. THIS IS A COORDINATE HASH, NOT A TERRAIN GRADIENT - the only inputs are
+        /// the sector coordinate and the biome lane id.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Stated bluntly because the previous shape of this function actively misled readers. It opened with a
+        /// sampled R8 <c>NativeArray&lt;byte&gt;</c> heatmap branch and fell through to the hash, so it read as
+        /// "terrain field, with a fallback". That branch was unreachable in every build that ever ran: its only
+        /// producer was <c>BindSectorFoodDensityHeatmap</c>, which had no caller anywhere in the project, so
+        /// the sampled branch was dead code and the hash was the entire function. The heatmap surface is now
+        /// retired rather than left standing as a promise - see the retirement note on
+        /// <see cref="NaturalSectorFoodFloor01"/>.
+        /// </para>
+        /// <para>
+        /// Terrain does still reach food, but only through the biome lane: the caller
+        /// <see cref="ResolveSectorFoodDensity01"/> adds +0.12 for lane 1 and -0.04 for lane 2, and on managed
+        /// paths that lane comes from <see cref="ResolveGeologyBiomeIdForSector"/>, which samples the real
+        /// macro geology field. So geology's influence on food is a three-valued bias of amplitude 0.16 riding
+        /// on a hash of amplitude 0.46. Do not call the result a resource gradient.
+        /// </para>
+        /// <para>
+        /// The two Burst solve jobs are worse: they resolve the lane through
+        /// <see cref="ResolveBiomeIdForSector"/>, a second coordinate hash, so inside the jobs food is a hash
+        /// of a hash with no terrain input at all. That asymmetry is pre-existing and is documented on
+        /// <see cref="ResolveBiomeIdForSector"/>.
+        /// </para>
+        /// </remarks>
+        private static float ResolveSectorBaseFoodCapacity01(int2 sectorCoord, int biomeId)
         {
-            if (foodHeatmapR8.IsCreated &&
-                IsPowerOfTwo(foodHeatmapSize.x) &&
-                IsPowerOfTwo(foodHeatmapSize.y))
-            {
-                int heatmapX = sectorCoord.x & (foodHeatmapSize.x - 1);
-                int heatmapZ = sectorCoord.y & (foodHeatmapSize.y - 1);
-                int heatmapIndex = heatmapZ * foodHeatmapSize.x + heatmapX;
-                if ((uint)heatmapIndex < (uint)foodHeatmapR8.Length)
-                    return foodHeatmapR8[heatmapIndex] * InvFoodHeatmapByteMax;
-            }
-
             float roll01 = StableSectorRandom01(sectorCoord + new int2(17, -31), biomeId);
             return 0.42f + (roll01 * 0.46f);
         }
@@ -10039,9 +9999,9 @@ namespace Hecton8.World
         // `new byte[grid.Length]` on every invocation (2dGridHeatmapDecayCalculator.cs:34) and throws
         // ArgumentNullException on a null grid, despite a doc comment claiming it is "Fully stateless and
         // allocation-free". Decaying a heatmap in place needs an in-place overload that writes back into the
-        // caller's buffer; there is also no live heatmap to decay yet, since BindSectorFoodDensityHeatmap has
-        // no caller anywhere in the project (see the NaturalSectorFoodFloor01 remarks and the unbound-heatmap
-        // warning).
+        // caller's buffer; and there is now no sector heatmap to decay at all - BindSectorFoodDensityHeatmap
+        // never had a caller and has been retired, so this calculator has no candidate subject in this
+        // director whatsoever (see the NaturalSectorFoodFloor01 remarks and ResolveSectorBaseFoodCapacity01).
         #region JulesLink_BiomeDepthViabilityCurveCalculator
         private static void JulesLink_BiomeDepthViabilityCurveCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.BiomeDepthViabilityCurveCalculator); }
         #endregion
