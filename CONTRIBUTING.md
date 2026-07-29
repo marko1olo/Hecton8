@@ -102,6 +102,39 @@ Roughly 35 seconds for `Hecton8.Core`. Output goes to `Temp/CodexBuild/`.
 > an unbalanced `#if` that did not exist — the directives in that file are balanced, final depth 0. If the
 > sweep disagrees with a single-assembly run, distrust the sweep that came second, not the source.
 >
+> **`--all-runtime` sweeps the csprojs that exist on disk, and most assemblies do not have one.** The 56
+> `.csproj` files at the repo root are hand-written, not Unity-generated, and they are **gitignored**
+> (`.gitignore:68  *.csproj`) — so they exist only where somebody typed them, a fresh clone has none, and
+> nothing regenerates them. The scaffold is frozen `2026-06-12`. Measured 2026-07-29: **179 first-party
+> `Hecton8.*` assemblies in `Library/ScriptAssemblies`, 7 with a csproj.** Any asmdef newer than the
+> scaffold is invisible to both gates, permanently and silently. `Hecton8.Plugins` — which owns the
+> MapMagic terrain bridge, where a non-compiling change breaks world generation — was two days newer than
+> the scaffold and had never been compiled by any automated check in this repo.
+>
+> Generate a missing gate project from the asmdef:
+>
+> ```bash
+> python -B Tools/GenerateAssemblyCompileGateProject.py Hecton8.Plugins
+> python -B Tools/GenerateAssemblyCompileGateProject.py Hecton8.Plugins --print-build-command
+> ```
+>
+> The generator is the tracked artifact; the `.csproj` it emits is not, and that is deliberate given the
+> ignore rule. **Its reference set is the whole difficulty, so do not hand-narrow it.** A gate that
+> references MORE than Unity does invents errors: the first run against `Hecton8.Plugins` reported three
+> `CS0234` on `Time.time` in `MapMagicRuntimeBridge.cs` purely because the wildcard pulled in
+> `Hecton8.Core.Time.dll`, whose namespace `Hecton8.Core.Time` then shadows `UnityEngine.Time` for every
+> file inside a `Hecton8.*` namespace — the same family as `Hecton8.Environment` vs `System.Environment`.
+> Unity compiles that assembly cleanly *because* its asmdef does not reference it. A gate that references
+> LESS invents `CS0246` instead: excluding the asmdef's own `Den.Tools` and `MapMagic` produced **470**
+> of them. So the rule is vendor/package/Unity DLLs on the broad wildcard, first-party filtered to exactly
+> what the asmdef declares, and both sets derived from the asmdef rather than typed.
+>
+> Result on `Hecton8.Plugins`, 2026-07-29: `Ошибок: 0`, one pre-existing `CS0649` —
+> `MapMagicRuntimeBridge.distantTerrainShadowMaskOverride` (`MapMagicRuntimeBridge.cs:149`) is never
+> assigned, so it is always `null`; that is a real finding this gate surfaced on its first run. Dependencies
+> bind as prebuilt DLLs out of `Library/ScriptAssemblies`, so a generated gate is only as fresh as Unity's
+> last successful compile of those dependencies. That is a real limitation of this gate, not a hidden one.
+>
 > Fix by **moving the guard boundary**, not by guarding the call site — *unless the feature really is
 > editor-only*. Determining which requires reading what the code actually touches, not what it is
 > named. A worked example of the exception: `ShinobuFloraFaunaSymbiosisSolver
