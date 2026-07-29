@@ -203,7 +203,7 @@ Hard reject in every language:
 Locale-specific rejection notes:
 
 - `en_US`: reject essay scaffolding, trailer tags, "more than just", "not just X but Y", "the real horror", "without human categories", and abstract all-caps terminals.
-- `ru_RU`: reject "язык истцов", "конверсия истца", "служит напоминанием", "свидетельствует о", "в своей основе", "больше чем просто", "уникальное сочетание", "хрупкий баланс", "одно тело", "одна кожа", "коридор-кишка" unless literal and sourced.
+- `ru_RU`: reject "язык истцов", "конверсия истца", "служит напоминанием", "свидетельствует о", "в своей основе", "больше чем просто", "уникальное сочетание", "хрупкий баланс", "тонкий баланс", "в мире, где", "по-своему прекрасен и ужасен", "одно тело", "одна кожа", "коридор-кишка" unless literal and sourced.
 - `uk_UA`: reject "мова позивачів", "конверсія позивача", "слугує нагадуванням", "свідчення", "у своїй основі", "більше ніж просто", "одне тіло", "одна шкіра", and Russian-calque syntax.
 - `de_DE`: reject "mehr als nur", "im Kern", "in einer Welt, in der", "dient als Erinnerung", "Zeugnis", decorative compounds that do not map to a source object, and over-formal filler.
 - `es_ES`: reject "más que solo/simplemente", "en esencia", "en un mundo donde", "sirve como recordatorio", "testimonio", and inflated literary clauses where a field note should stay practical.
@@ -217,6 +217,24 @@ Locale-specific rejection notes:
 - `zh_CN`: reject "不仅仅是...而是", "从本质上", "在...世界", "提醒", "见证", "一个身体", "边界无效", and compact literary summaries that erase source limits.
 - `ar_SA`: reject "ليس مجرد...بل", "في جوهر", "في عالم", "تذكير", "شهادة", abstract "جسد واحد/جلد واحد", and legal "مدعين" language when the source is claim/custody/insurance rather than plaintiffs.
 - `he_IL`: reject "לא רק...אלא", "בבסיס", "בעולם שבו", "תזכורת", "עדות", abstract "גוף אחד/עור אחד", and legal plaintiff wording when the source is procedural claim/custody.
+
+Locale register targets. The lists above say what to reject; these say what to aim at, per locale and per
+speaker. Migrated here from `Docs/Lore/LORE_LDA_AUTHORING_SYSTEM.md` when that file was reduced to a routing
+doc, because the pipeline it described was never built and these rules had no other home.
+
+- `en_US`: source authority. Clipped and procedural for field voices, deeply evasive for corporate legal.
+- `ru_RU`: Deep Reach text takes a cold bureaucratic register close to Soviet-era administrative language —
+  `Удержание активов`, `Каскадный сбой`. Marauder text uses gritty industrial slang and must not translate
+  English idiom directly.
+- `de_DE`: Deep Reach text leans on long compound nouns that name an industrial-bureaucratic function. That
+  is not licence for decorative compounds, which the rejection list above still forbids — the compound must
+  map to a real office, process or object.
+- `ar_SA`, `he_IL`: RTL. Require font-glyph and line-wrapping proof, and check embedded Latin identifiers,
+  numerals and unit order.
+- `ja_JP`, `ko_KR`, `zh_CN`: CJK. Require glyph coverage and wrapping proof. Machine field labels have no
+  uppercase to lean on, so the bureaucratic register must come from terse administrative phrasing instead.
+- Any locale appearing in HUD, subtitle or scanner surfaces must hold to the allocation-free text route in
+  `Runtime Text Law`; a locale that only reads well in a document is not finished.
 
 Manual localization rewrite rule:
 

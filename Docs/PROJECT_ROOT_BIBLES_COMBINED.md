@@ -3279,7 +3279,7 @@ Hard reject in every language:
 Locale-specific rejection notes:
 
 - `en_US`: reject essay scaffolding, trailer tags, "more than just", "not just X but Y", "the real horror", "without human categories", and abstract all-caps terminals.
-- `ru_RU`: reject "язык истцов", "конверсия истца", "служит напоминанием", "свидетельствует о", "в своей основе", "больше чем просто", "уникальное сочетание", "хрупкий баланс", "одно тело", "одна кожа", "коридор-кишка" unless literal and sourced.
+- `ru_RU`: reject "язык истцов", "конверсия истца", "служит напоминанием", "свидетельствует о", "в своей основе", "больше чем просто", "уникальное сочетание", "хрупкий баланс", "тонкий баланс", "в мире, где", "по-своему прекрасен и ужасен", "одно тело", "одна кожа", "коридор-кишка" unless literal and sourced.
 - `uk_UA`: reject "мова позивачів", "конверсія позивача", "слугує нагадуванням", "свідчення", "у своїй основі", "більше ніж просто", "одне тіло", "одна шкіра", and Russian-calque syntax.
 - `de_DE`: reject "mehr als nur", "im Kern", "in einer Welt, in der", "dient als Erinnerung", "Zeugnis", decorative compounds that do not map to a source object, and over-formal filler.
 - `es_ES`: reject "más que solo/simplemente", "en esencia", "en un mundo donde", "sirve como recordatorio", "testimonio", and inflated literary clauses where a field note should stay practical.
@@ -3293,6 +3293,24 @@ Locale-specific rejection notes:
 - `zh_CN`: reject "不仅仅是...而是", "从本质上", "在...世界", "提醒", "见证", "一个身体", "边界无效", and compact literary summaries that erase source limits.
 - `ar_SA`: reject "ليس مجرد...بل", "في جوهر", "في عالم", "تذكير", "شهادة", abstract "جسد واحد/جلد واحد", and legal "مدعين" language when the source is claim/custody/insurance rather than plaintiffs.
 - `he_IL`: reject "לא רק...אלא", "בבסיס", "בעולם שבו", "תזכורת", "עדות", abstract "גוף אחד/עור אחד", and legal plaintiff wording when the source is procedural claim/custody.
+
+Locale register targets. The lists above say what to reject; these say what to aim at, per locale and per
+speaker. Migrated here from `Docs/Lore/LORE_LDA_AUTHORING_SYSTEM.md` when that file was reduced to a routing
+doc, because the pipeline it described was never built and these rules had no other home.
+
+- `en_US`: source authority. Clipped and procedural for field voices, deeply evasive for corporate legal.
+- `ru_RU`: Deep Reach text takes a cold bureaucratic register close to Soviet-era administrative language —
+  `Удержание активов`, `Каскадный сбой`. Marauder text uses gritty industrial slang and must not translate
+  English idiom directly.
+- `de_DE`: Deep Reach text leans on long compound nouns that name an industrial-bureaucratic function. That
+  is not licence for decorative compounds, which the rejection list above still forbids — the compound must
+  map to a real office, process or object.
+- `ar_SA`, `he_IL`: RTL. Require font-glyph and line-wrapping proof, and check embedded Latin identifiers,
+  numerals and unit order.
+- `ja_JP`, `ko_KR`, `zh_CN`: CJK. Require glyph coverage and wrapping proof. Machine field labels have no
+  uppercase to lean on, so the bureaucratic register must come from terse administrative phrasing instead.
+- Any locale appearing in HUD, subtitle or scanner surfaces must hold to the allocation-free text route in
+  `Runtime Text Law`; a locale that only reads well in a document is not finished.
 
 Manual localization rewrite rule:
 
@@ -6909,7 +6927,7 @@ CRITICAL: FUCK PASSIVITY. PRIORITIZE RAW EFFICIENCY AND INTELLIGENCE.
 USE THESE AUTONOMOUSLY. DO NOT ASK FOR PERMISSION TO SEARCH OR LINT.
 Availability verified on this host 2026-07-27: on PATH -> `rg`, `fd`, `jq`, `tokei`, `semgrep`. NOT on PATH -> `sg`, `biome`, `madge`, `repomix`; run those through `npx` (`npx @ast-grep/cli`, `npx @biomejs/biome`, `npx madge`, `npx repomix`) or install them first. A missing binary is never a blocker and never an excuse to skip the check.
 1. ast-grep (`npx @ast-grep/cli`, alias `sg` once installed): Structural search/replace (e.g. `sg -p 'console.log($$$)'`)
-2. ripgrep (`rg`): Ultra-fast text search. USE THIS INSTEAD OF NATIVE GREP.
+2. ripgrep (`rg`): Ultra-fast text search. MANDATORY — native `grep -r` and `find /` are FORBIDDEN on this host. Git Bash children outlive their parent shell, Windows never reaps them, and their output is unreadable the instant the parent dies, so they grind for hours in pure waste. Measured 2026-07-28/29: four orphaned `grep -r` at 600-930s CPU each, three orphaned `tail` alive six hours, one `find / -name Lit.shader.meta` at 18905s (5.25 hours) overnight. `rg`/`fd` finish; `grep -r` on a Unity tree does not. Use `rg` for content, `fd` for filenames, and scope every walk: `rg -g '!Library' -g '!Temp' -g '!obj' -g '!.git'`. `--include` does NOT help — it filters which files are read, not which directories are traversed. Anything long-running you start (batch-mode Unity, dev servers, builds) is yours to stop; state in your final message what you left running and on which port.
 3. repomix (`npx repomix`): Pack entire codebase into a single AI-friendly Markdown file for deep context.
 4. semgrep (`semgrep scan`): Deep bug hunting and static analysis.
 5. biome (`biome check --write .`): Instant JS/TS formatting.
