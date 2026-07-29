@@ -77,6 +77,63 @@ def has_scene_prefab_instance(scene_text: str, prefab_guid: str) -> bool:
     return re.search(pattern, scene_text) is not None
 
 
+# ---------------------------------------------------------------------------
+# Binary-scene awareness.
+#
+# 02_HECTON_WORLD.unity is a BINARY scene: no `%YAML` header, and the string
+# `m_Script` occurs in it zero times. Every check below used to run against
+# `read_text(..., errors="replace")` of that file, which turns the bytes into
+# U+FFFD replacement characters - so a hex-GUID substring test could not match
+# whatever the scene actually contained. All five scene GUID tests were
+# structurally incapable of returning true, and this tool therefore emitted
+# `scene-missing-production-prefab-guid` unconditionally.
+#
+# That is not hypothetical. It manufactured the claim at
+# Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md:238 that
+# Player.prefab is absent from the world scene. The claim stood for seven weeks
+# and was used to declare visor polish, cinematic camera work and surface
+# screenshots invalid. Player.prefab is in fact PRESENT - one FileIdentifier
+# external-reference entry at offset 566551, type 3, nibble-swapped.
+#
+# A binary scene stores a GUID as raw bytes in NIBBLE-SWAPPED order, which is
+# why a plain byte search for the hex digits fails too. The byte-order helper is
+# imported from Tools/SceneGuidReachability.py rather than re-derived here: that
+# tool self-tests the swap against a control GUID, and sharing one definition
+# stops the two from drifting into disagreeing about what "present" means.
+# ---------------------------------------------------------------------------
+
+try:  # pragma: no cover - taken whenever the sibling tool is on disk
+    if str(TOOLS_ROOT) not in sys.path:
+        sys.path.insert(0, str(TOOLS_ROOT))
+    from SceneGuidReachability import nibble_swap as _nibble_swap
+except ImportError:  # sibling tool is the source of truth; this is only a last resort
+    def _nibble_swap(raw: bytes) -> bytes:
+        return bytes(((b & 0x0F) << 4) | (b >> 4) for b in raw)
+
+
+def is_binary_scene(scene_bytes: bytes) -> bool:
+    """The `%YAML` header test - the only reliable discriminator.
+
+    Not the extension and not the size: `.unity` covers both encodings, and four
+    scenes in this project are binary while 995 other scene/prefab files are not.
+    """
+    return bool(scene_bytes) and scene_bytes.lstrip()[:5] != b"%YAML"
+
+
+def scene_guid_present(guid: str, scene_text: str, scene_bytes: bytes) -> bool:
+    """Is this GUID referenced by the scene, in whichever encoding the scene uses?
+
+    Text scenes carry the GUID as hex. Binary scenes carry it as raw bytes,
+    nibble-swapped; both byte orders are tested, because the swap is a property
+    of the serialiser rather than of the GUID - so a future Unity version
+    changing it should surface as a hit, not as a silent false negative.
+    """
+    if is_binary_scene(scene_bytes):
+        raw = bytes.fromhex(guid)
+        return _nibble_swap(raw) in scene_bytes or raw in scene_bytes
+    return guid in scene_text or guid.upper() in scene_text
+
+
 def has_production_player_prefab_source_route(text: str) -> bool:
     prefab_field = re.search(r"\b(?:GameObject|AssetReferenceGameObject)\s+productionPlayerPrefab\b", text) is not None
     prefab_instantiate = re.search(r"\bInstantiate\s*\(\s*productionPlayerPrefab\b", text) is not None
@@ -156,16 +213,32 @@ def classify(
     player_prefab_text: str = "",
     hud_internal_prefab_text: str = "",
     suit_hud_canvas_prefab_text: str = "",
+    scene_bytes: bytes = b"",
 ) -> PlayerRouteEvidence:
     blockers: list[str] = []
     notes: list[str] = []
 
-    scene_has_guid = PLAYER_PREFAB_GUID in scene_text
-    scene_has_player_prefab_instance = has_scene_prefab_instance(scene_text, PLAYER_PREFAB_GUID)
-    scene_has_hud_internal_guid = HUD_INTERNAL_PREFAB_GUID in scene_text
-    scene_has_suit_hud_guid = SUIT_HUD_CANVAS_PREFAB_GUID in scene_text
-    scene_has_movement_guid = HECTON_PLAYER_MOVEMENT_GUID in scene_text
-    scene_has_interaction_guid = PLAYER_INTERACTION_GUID in scene_text
+    # `scene_bytes` is keyword-with-default so existing positional callers
+    # (Tools/RunAssetStaticValidators.py, Tools/ValidateAssetFrontFileMap.py)
+    # keep working. When it is empty the scene is treated as text, which is the
+    # old behaviour - correct for the 995 text scene/prefab files, and the reason
+    # main() now always passes the bytes for the four binary ones.
+    scene_is_binary = is_binary_scene(scene_bytes)
+
+    scene_has_guid = scene_guid_present(PLAYER_PREFAB_GUID, scene_text, scene_bytes)
+    scene_has_hud_internal_guid = scene_guid_present(HUD_INTERNAL_PREFAB_GUID, scene_text, scene_bytes)
+    scene_has_suit_hud_guid = scene_guid_present(SUIT_HUD_CANVAS_PREFAB_GUID, scene_text, scene_bytes)
+    scene_has_movement_guid = scene_guid_present(HECTON_PLAYER_MOVEMENT_GUID, scene_text, scene_bytes)
+    scene_has_interaction_guid = scene_guid_present(PLAYER_INTERACTION_GUID, scene_text, scene_bytes)
+
+    # Two questions below are answered by YAML text markers and are genuinely
+    # UNDECIDABLE against a binary scene. `None` means "not answered", which is
+    # deliberately distinct from `False` - reporting an unearned negative is the
+    # exact failure this tool committed for seven weeks, and a validator that
+    # cannot answer must say so rather than emit a blocker or a clean bill.
+    scene_has_player_prefab_instance = (
+        None if scene_is_binary else has_scene_prefab_instance(scene_text, PLAYER_PREFAB_GUID)
+    )
     bootstrap_has_prefab_route = has_production_player_prefab_source_route(bootstrap_text)
     spawner_has_prefab_route = has_production_player_prefab_source_route(spawner_text)
     runtime_has_guid = bootstrap_has_prefab_route or spawner_has_prefab_route
@@ -178,9 +251,20 @@ def classify(
     bootstrap_uses_production_guard = "TryAcceptProductionPlayerAuthority" in bootstrap_text and "IsProductionPlayerAuthorityObject" in bootstrap_text
     gate_uses_production_guard = "MarkPlayerInstantiated" in scene_gate_text and "IsProductionPlayerAuthorityObject" in scene_gate_text
     spawner_uses_production_guard = "TryAcceptProductionPlayerRigidbody" in spawner_text and "IsProductionPlayerAuthorityObject" in spawner_text
-    shell_player = has_scene_local_shell_player(scene_text)
+    shell_player = None if scene_is_binary else has_scene_local_shell_player(scene_text)
 
-    if shell_player:
+    if scene_is_binary:
+        notes.append(
+            "scene-encoding: BINARY - GUID presence answered by byte search in both orders; "
+            "YAML-marker questions below are reported UNDECIDABLE rather than negative"
+        )
+
+    if shell_player is None:
+        notes.append(
+            "scene-shell-player: UNDECIDABLE - needs m_Name/m_TagString/m_PrefabAsset YAML markers "
+            "that a binary scene does not carry as text. Not a clean bill."
+        )
+    elif shell_player:
         blockers.append("scene-shell-player: 02_HECTON_WORLD contains scene-local Player shell markers")
     else:
         notes.append("scene-shell-player: not detected by static marker scan")
@@ -190,7 +274,14 @@ def classify(
     else:
         notes.append("scene-production-prefab-guid: present")
 
-    if not scene_has_player_prefab_instance:
+    if scene_has_player_prefab_instance is None:
+        notes.append(
+            "scene-production-prefab-instance-exact: UNDECIDABLE - a binary scene stores no "
+            "m_SourcePrefab text. The GUID hit above proves the scene REFERENCES Player.prefab; it "
+            "does not distinguish a PrefabInstance binding from a serialized field pointing at the "
+            "asset. Unity readback is the only way to settle it."
+        )
+    elif not scene_has_player_prefab_instance:
         blockers.append("scene-production-prefab-instance-exact: production Player.prefab m_SourcePrefab binding not found")
     else:
         notes.append("scene-production-prefab-instance-exact: present")
@@ -378,7 +469,6 @@ def main(argv: list[str] | None = None) -> int:
         args.spawner,
         args.player_movement,
         args.player_interaction,
-        args.world_shell,
         args.player_prefab,
         args.hud_internal_prefab,
         args.suit_hud_canvas_prefab,
@@ -390,6 +480,24 @@ def main(argv: list[str] | None = None) -> int:
             print(f"- missing-file: {rel(path)}")
         return 0 if args.no_fail else (2 if args.require_production_static else 0)
 
+    # HectonWorldShellController1428.cs is deliberately OPTIONAL, and this is the
+    # second independent reason this tool had stopped working. It was deleted on
+    # 2026-06-15 by 621403ad5 ("1428 file cleanup"), and because it sat in
+    # required_paths every invocation since then printed
+    # `PLAYER_ROUTE_STATIC_EVIDENCE_REJECTED blockers=1 / missing-file` and
+    # returned before classify() ever ran. Six weeks of a validator that could
+    # not reach its own logic, exiting 0 so nothing noticed.
+    #
+    # Its absence is the CORRECT post-cleanup state rather than a defect: the
+    # legacy world shell it implemented is gone. Verified at the same time -
+    # `IBootstrapLegacyWorldShellOwner` now appears only in its own declaration
+    # in BootstrapState.cs and has ZERO implementers anywhere in Assets, and
+    # every reader of `IsLegacyWorldShellOwned` is inside that same file. So the
+    # scene-local shell Player this tool exists to reject is not merely absent,
+    # it is unconstructable. That is worth stating in the output rather than
+    # inferring from a silent pass.
+    world_shell_text = read_text(args.world_shell) if args.world_shell.exists() else ""
+
     evidence = classify(
         read_text(args.scene),
         read_text(args.bootstrap),
@@ -398,10 +506,14 @@ def main(argv: list[str] | None = None) -> int:
         read_text(args.bootstrap_state),
         read_text(args.player_movement),
         read_text(args.player_interaction),
-        read_text(args.world_shell),
+        world_shell_text,
         read_text(args.player_prefab),
         read_text(args.hud_internal_prefab),
         read_text(args.suit_hud_canvas_prefab),
+        # The raw bytes, because read_text() above destroys them: it decodes with
+        # errors="replace", so every non-UTF8 byte of a binary scene becomes
+        # U+FFFD and no GUID can ever be found in the result.
+        scene_bytes=args.scene.read_bytes(),
     )
     print(f"{evidence.status} blockers={len(evidence.blockers)} notes={len(evidence.notes)}")
     for blocker in evidence.blockers:
