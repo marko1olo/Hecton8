@@ -43,6 +43,13 @@ namespace Hecton8.Modding
         private static readonly float _stopwatchTicksToMilliseconds = (float)(1000.0d / Stopwatch.Frequency);
         // COLD ALLOC: ModEventProjectionBridge[1] - registry-owned mod event projection service - owner: ModEventProjectionBridge, lazy so envelope-only UGC does not instantiate the bridge.
         private static ModEventProjectionBridge _globalBridge;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // One-shot latch for the dead WeatherChangedSignal lane advisory in ProjectPostSimulation. That method
+        // runs on the dispatcher post-simulation phase every frame (Core/SystemDispatcher.cs:5330), so after the
+        // first fire the advisory must cost one static bool read and must never build a string.
+        // Reset per play session by ResetStaticState.
+        private static bool s_deadWeatherChangedSignalLaneWarned;
+#endif
 
         // COLD ALLOC: List<SubscriptionEntry>[16] - mod projected-event delegate registry - owner: ModEventProjectionBridge
         private readonly List<SubscriptionEntry> _subscriptions = new List<SubscriptionEntry>(16);
@@ -69,6 +76,11 @@ namespace Hecton8.Modding
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Before the _globalBridge null bail below on purpose: the latch is instance-independent, and the
+            // bridge is created lazily, so a return here would leave the advisory suppressed for the next session.
+            s_deadWeatherChangedSignalLaneWarned = false;
+#endif
             if (_globalBridge == null)
                 return;
 
@@ -325,9 +337,32 @@ namespace Hecton8.Modding
                 return;
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Announced here - after the guard above, before the count folds below - on purpose. Above the guard
+            // there is no subscriber to harm and the bridge may not even be installed; below the folds the
+            // "damageCount <= 0 && weatherCount <= 0" bail would tie this advisory to combat traffic and could
+            // suppress it for a whole session in a peaceful scene. Full evidence at the weather read further down.
+            if (!s_deadWeatherChangedSignalLaneWarned)
+            {
+                s_deadWeatherChangedSignalLaneWarned = true;
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[ModEventProjectionBridge] DEAD SIGNAL LANE: ProjectPostSimulation sizes ProjectWeatherChangedSignalsJob from SignalBus<WeatherChangedSignal>.SnapshotCount and reads GetFrameSnapshotArray, but WeatherChangedSignal has no producer anywhere in the scripts tree. The only code that ever constructs one is GlobalSignals.Publish(in WeatherStrengthSignal) (Core/Signals/GlobalSignals.LegacyFacade.cs:835-843), and that facade carries [Obsolete(\"Legacy publish facade is retired...\", true)] so calling it is a compile error. The frame snapshot is therefore permanently empty, weatherCount is always 0, ProjectWeatherChangedSignalsJob is never scheduled, and NO mod that subscribed through SubscribeProjected has ever received a ModEventKind.WeatherChanged / ModEventDto.WeatherChangedEventHash (WEAT) event. This is a first-party gap, not a modding extension point: the bridge direction is first-party-out (it reads first-party lanes and invokes mod Action<ModEventDto> handlers), Docs/Modding/Signal_Audit_Matrix.md:37 classifies the lane ALLOWED_READ_ONLY_PROJECTION with no weather authority mutation exposed to mods, and Docs/Modding/Runtime_Verification_Playbook.md:635 requires the source WeatherChangedSignal be forced through a first-party owner. For contrast the bridge's other lane is live - CombatDamageSignal is pushed by Fauna/FaunaBrain.cs:2203 and :4145 and Gameplay/Combat/BallisticsRuntime.cs:726 - so exactly half of the advertised projection surface is dead. Weather itself is NOT broken: the live broadcast is a different bus, WeatherEvents.TryRaiseSnapshotUpdated (Environment/WeatherEvents.cs:291) called from GlobalWeatherDirector.PublishWeatherEventIfChanged (Environment/GlobalWeatherDirector.cs:836), an IWeatherEventListener registry rather than a SignalBus lane. Do not wire this without an owner decision on the field mapping: that publish point already owns the change edge and the previous state (_lastWeatherEventStateMask), but WeatherRuntimeSnapshot (Core/GlobalRegistryContracts.cs:629) carries only StateMask, WeatherIntensity, current/wind vectors and Gerstner waves - it has no WeatherHash, no PreviousWeatherHash, no Frame and no FlowFieldScale - so the WeatherState-mask-to-uint-hash convention and the FlowFieldScale source both need naming by the weather owner.");
+            }
+#endif
+
             int projectionCap = ResolveProjectionCap();
             int damageCount = math.min(SignalBus<CombatDamageSignal>.SnapshotCount, projectionCap);
             int remaining = projectionCap - damageCount;
+            // DEAD LANE - weatherCount IS ALWAYS 0. SignalBus<WeatherChangedSignal> has no producer anywhere in
+            // the scripts tree; the sole constructor of the payload is the compile-dead
+            // GlobalSignals.Publish(in WeatherStrengthSignal) (Core/Signals/GlobalSignals.LegacyFacade.cs:835-843,
+            // [Obsolete(..., error: true)]). Consequence: ProjectWeatherChangedSignalsJob below is guarded by
+            // "if (weatherCount > 0)" and has never been scheduled, so this costs one SnapshotCount read per
+            // post-simulation phase rather than a zero-length job schedule - the damage is to the mod contract,
+            // not to the frame budget. Both reads here are NON-DESTRUCTIVE (SnapshotCount at
+            // Core/Signals/SignalBusRuntime.cs:447 and GetFrameSnapshotArray at :792 take no cursor, unlike
+            // TryConsumeFrame at :806), so a first-party producer can be added alongside this reader without
+            // starving any other consumer of the lane. See the one-shot advisory above for the full evidence.
             int weatherCount = remaining > 0
                 ? math.min(SignalBus<WeatherChangedSignal>.SnapshotCount, remaining)
                 : 0;
