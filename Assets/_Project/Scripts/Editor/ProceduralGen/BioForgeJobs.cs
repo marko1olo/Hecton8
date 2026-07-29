@@ -405,13 +405,24 @@ namespace Hecton8.Editor.ProceduralGen
             float height = math.max(0.001f, BoundsMax.y - BoundsMin.y);
             float height01 = math.saturate((p.y - BoundsMin.y) * math.rcp(height));
             float2 uv = new float2(ComputeCylindricalU(p), height01);
+            float cavityAo = ResolveSdfAmbientOcclusion(p, normal);
 
             Vertices[index] = new BioForgeMeshVertex
             {
                 Position = p,
                 Normal = normal,
                 Uv = uv,
-                Color = new float4(height01, 0f, 0f, 1f)
+                // Vertex colour channel contract, 3DMODEL_FLORA_CORAL.md section 2 and
+                // 3DMODEL_GEOLOGY_ROCKS.md section 4: R = sway amplitude, G = bioluminescence mask
+                // (0 is the contract's explicit value for non-emissive tissue, so it is a real
+                // answer here and not a placeholder), B = baked ambient occlusion / cavity
+                // darkness, A = family-specific mask.
+                //
+                // B used to be a hardcoded 0f, which is the MAXIMALLY occluded value: every vertex
+                // this job emitted claimed to sit in a sealed crevice. It stayed invisible because
+                // the only consumer read occlusion out of COLOR.a instead, so correcting that
+                // reader would have turned this constant into a flat 28% darkening of the mesh.
+                Color = new float4(height01, 0f, cavityAo, 1f)
             };
         }
 
@@ -421,6 +432,72 @@ namespace Hecton8.Editor.ProceduralGen
             float cz = (BoundsMin.z + BoundsMax.z) * 0.5f;
             float angle = global::Hecton8.Core.MathLodApproximation.ApproxAtan2Fast(p.z - cz, p.x - cx);
             return angle * 0.15915494309189535f + 0.5f;
+        }
+
+        /// <summary>
+        /// Baked ambient occlusion / cavity darkness for vertex colour channel B, per
+        /// 3DMODEL_FLORA_CORAL.md section 2 -- "Use low values in crevices, under plates, root
+        /// clusters, and branch intersections".
+        ///
+        /// This is the standard signed-distance-field occlusion march, and it is a real measurement
+        /// of this mesh's own geometry rather than a curvature heuristic. Step outward along the
+        /// surface normal and compare the distance marched against the field's own distance to the
+        /// nearest surface: on an exposed convex tip the field keeps pace with the march and nothing
+        /// accumulates, while inside a crevice, under a plate, or at a branch intersection a
+        /// neighbouring surface holds the field below the step distance and occlusion accumulates.
+        /// The distinction matters because h8forge/vertexcolor.py's curvature_edge_wear is explicit
+        /// that a curvature estimate is honest for wear and is NOT honest for occlusion; this reads
+        /// the actual field the mesh was built from, which is the same quantity a bake integrates.
+        ///
+        /// The march is deliberately bounded to a few grid cells, for the same reason the Blender
+        /// lane bounds its bake distance to 0.35 m: unbounded rays turn local cavity contrast into a
+        /// global sky-occlusion term and bury exactly the crevice detail the contract asks for.
+        ///
+        /// Each sample is normalised by its own march distance, so the result is scale-invariant and
+        /// needs no tuned gain constant. Sign convention is the one this file's marching cubes uses
+        /// at the cube classification (<c>d &lt; 0f</c> is inside solid, isosurface at 0).
+        /// </summary>
+        private float ResolveSdfAmbientOcclusion(float3 p, float3 outwardNormal)
+        {
+            // No field to measure. 1 = fully unoccluded, never invented darkness: a darkening
+            // default would bake fake shadow into every asset whose occlusion source was missing,
+            // which is the failure h8forge/vertexcolor.py write_organic_channels calls out.
+            if (PointResolution < 3 || Density.Length == 0)
+                return 1f;
+
+            float3 cellVector = math.rcp(math.max(math.abs(InvStep), new float3(1e-6f, 1e-6f, 1e-6f)));
+            float cell = math.csum(cellVector) * (1f / 3f);
+            if (!math.isfinite(cell) || cell <= 1e-6f)
+                return 1f;
+
+            const int MarchSteps = 5;
+            float occlusion = 0f;
+            float weight = 1f;
+            float weightSum = 0f;
+            for (int step = 1; step <= MarchSteps; step++)
+            {
+                float march = cell * step;
+                float field = SampleDensityNearest(p + outwardNormal * march);
+                // (march - field) is how much closer the nearest surface is than the free-space
+                // distance this step assumed. Saturating bounds each term to 0..1 and also handles
+                // a negative field, which happens when the march re-enters solid in a concavity.
+                occlusion += math.saturate((march - field) * math.rcp(march)) * weight;
+                weightSum += weight;
+                weight *= 0.5f;
+            }
+
+            occlusion = weightSum > 1e-6f ? occlusion * math.rcp(weightSum) : 0f;
+            return math.saturate(1f - occlusion);
+        }
+
+        private float SampleDensityNearest(float3 world)
+        {
+            float3 grid = (world - BoundsMin) * InvStep;
+            int max = PointResolution - 1;
+            int x = math.clamp((int)math.round(grid.x), 0, max);
+            int y = math.clamp((int)math.round(grid.y), 0, max);
+            int z = math.clamp((int)math.round(grid.z), 0, max);
+            return Density[Index(x, y, z)];
         }
 
         private float3 ResolveSdfNormal(float3 p, float3 fallback)

@@ -1521,8 +1521,18 @@ namespace Hecton8.EditorTools.Generators.Flora
                     float3 position = center + side * (edgeSign * halfWidth) + normal * edgeWave;
                     float leverage01 = math.saturate(rootDistance / maxRootDistance);
                     byte sway = ResolveSwayByte(Genome.PresetKind, leverage01);
-                    byte phase = HashToByte(end.PhaseHash, (uint)sideIndex, (uint)(branchDepth + LodLevel));
-                    byte glow = (byte)math.clamp((int)math.round(ResolveGlow(position, Genome.GlowWeight) * 255f), 0, 255);
+                    // Channel G carries the bioluminescence MASK, which is what ResolveGlow returns.
+                    // It used to carry HashToByte(...) as a "phase" instead, and that was wrong on
+                    // two counts the contract states outright: 3DMODEL_FLORA_CORAL.md section 2
+                    // requires "Non-emissive tissue = 0" and an FNV hash is never 0 for non-emissive
+                    // families, and the hash is uncorrelated between adjacent vertices so it is not
+                    // a usable phase field in the first place. It also mixed LodLevel into its input,
+                    // so the same vertex changed value per LOD, against section 6's requirement that
+                    // LOD2 "Keep vertex color R/G/B semantics". The consumers never wanted an
+                    // authored phase: Hecton_CoralMaster.shader synthesises phase spatially from
+                    // biolumLocalAupCoord, and Hecton_KelpMaster.shader reads COLOR.g as
+                    // bakedBiolumMask, which is exactly this quantity.
+                    byte biolumMask = (byte)math.clamp((int)math.round(ResolveGlow(position, Genome.GlowWeight) * 255f), 0, 255);
 
                     Vertices[counters.VertexCount] = new FloraVertexData
                     {
@@ -1536,7 +1546,7 @@ namespace Hecton8.EditorTools.Generators.Flora
                         // player-interaction term by, and the uv.y = [0=root, 1=tip] input that
                         // REND_Instanced_Flora_Physics.txt section III.C requires.
                         UVMask = new float2(sideIndex, leverage01),
-                        PackedColor = PackColor(sway, phase, glow, 255),
+                        PackedColor = PackColor(sway, biolumMask, NoBakedOcclusion, FamilySpecificMask),
                         Pad0 = 0u
                     };
 
@@ -1609,8 +1619,18 @@ namespace Hecton8.EditorTools.Generators.Flora
                     float3 tangent4 = math.normalizesafe(-side * sin + binormal * cos, binormal);
                     float leverage01 = math.saturate(rootDistance / maxRootDistance);
                     byte sway = ResolveSwayByte(Genome.PresetKind, leverage01);
-                    byte phase = HashToByte(end.PhaseHash, (uint)sideIndex, (uint)(branchDepth + LodLevel));
-                    byte glow = (byte)math.clamp((int)math.round(ResolveGlow(position, Genome.GlowWeight) * 255f), 0, 255);
+                    // Channel G carries the bioluminescence MASK, which is what ResolveGlow returns.
+                    // It used to carry HashToByte(...) as a "phase" instead, and that was wrong on
+                    // two counts the contract states outright: 3DMODEL_FLORA_CORAL.md section 2
+                    // requires "Non-emissive tissue = 0" and an FNV hash is never 0 for non-emissive
+                    // families, and the hash is uncorrelated between adjacent vertices so it is not
+                    // a usable phase field in the first place. It also mixed LodLevel into its input,
+                    // so the same vertex changed value per LOD, against section 6's requirement that
+                    // LOD2 "Keep vertex color R/G/B semantics". The consumers never wanted an
+                    // authored phase: Hecton_CoralMaster.shader synthesises phase spatially from
+                    // biolumLocalAupCoord, and Hecton_KelpMaster.shader reads COLOR.g as
+                    // bakedBiolumMask, which is exactly this quantity.
+                    byte biolumMask = (byte)math.clamp((int)math.round(ResolveGlow(position, Genome.GlowWeight) * 255f), 0, 255);
 
                     Vertices[counters.VertexCount] = new FloraVertexData
                     {
@@ -1623,7 +1643,7 @@ namespace Hecton8.EditorTools.Generators.Flora
                         // the same V semantics as the ribbon family so one mask contract covers
                         // every preset and no consumer has to branch on preset kind.
                         UVMask = new float2(u, leverage01),
-                        PackedColor = PackColor(sway, phase, glow, 255),
+                        PackedColor = PackColor(sway, biolumMask, NoBakedOcclusion, FamilySpecificMask),
                         Pad0 = 0u
                     };
 
@@ -1745,6 +1765,40 @@ namespace Hecton8.EditorTools.Generators.Flora
             float amplitude01 = math.saturate(math.pow(safeLeverage, stiffnessExponent) * amplitudeCeiling);
             return (byte)math.clamp((int)math.round(amplitude01 * 255f), 0, 255);
         }
+
+        /// <summary>
+        /// Vertex colour channel B is baked ambient occlusion in every family contract
+        /// (3DMODEL_FLORA_CORAL.md section 2, 3dmodel.md sections 4 and 5). There is no ambient
+        /// occlusion to put in B here, and that is a statement about this generator's inputs rather
+        /// than a shortcut: AddRibbon and AddTube emit one ring at a time from a local start/end
+        /// node pair and never see the rest of the colony, so nothing at the emission site can
+        /// measure how enclosed a vertex is. Real occlusion needs either the whole branch set plus a
+        /// spatial query, or a ray-traced bake.
+        ///
+        /// B previously carried the emissive glow value, which is a different physical quantity and
+        /// arrived at the shader as inverted occlusion -- glowing tissue read as unoccluded and dark
+        /// tissue as fully occluded.
+        ///
+        /// 255 is "fully unoccluded" and is the same missing-AO default the compliant Blender lane
+        /// uses, for the reason it states in h8forge/vertexcolor.py write_organic_channels: "a
+        /// darkening default would bake fake shadow into every asset whose AO bake failed". A
+        /// curvature or root-distance proxy is deliberately NOT substituted, because
+        /// vertexcolor.py curvature_edge_wear is explicit that a geometric estimate is honest for
+        /// wear and is NOT honest for occlusion. The real value has to come from the Cycles bake in
+        /// the forge lane (Tools/Blender/h8forge/vertexcolor.py bake_ambient_occlusion) or from an
+        /// offline post-pass over the finished mesh.
+        /// </summary>
+        private const byte NoBakedOcclusion = 255;
+
+        /// <summary>
+        /// Vertex colour channel A is the family-specific mask -- "thickness, damage eligibility,
+        /// harvest mask, or wetness" -- and 3DMODEL_FLORA_CORAL.md section 2 requires that the chosen
+        /// meaning be written into the asset manifest. This generator authors no thickness, damage,
+        /// harvest or wetness field, so the channel stays fully open rather than being filled with a
+        /// an invented gradient. Named rather than a bare 255 so the channel's role is legible at the
+        /// pack site and so a future real mask has one place to land.
+        /// </summary>
+        private const byte FamilySpecificMask = 255;
 
         private static uint PackColor(byte r, byte g, byte b, byte a)
         {
