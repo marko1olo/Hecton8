@@ -348,6 +348,8 @@
    "nonmanifold_edges_before": 0,
    "nonmanifold_edges_after": 0,
    "interior_faces_deleted": 0,
+   "interior_edges_forced_by_area": 0,
+   "windings_flipped": 0,
    "boundary_loops_filled": 0,
    "boundary_edges_after": 368
   },
@@ -1222,5 +1224,5 @@
   "firstInvalidStage": null
  },
  "prefabBoundary": "PF_/GEN_ prefab, LODGroup and Unity import are NOT produced here: only Unity may author .prefab assets (AGENTS.md Evidence Law). This package is the FBX + manifest the Unity-side assembler consumes.",
- "generationSeconds": 52.89
+ "generationSeconds": 25.25
 }

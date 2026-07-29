@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Rare Earth Dust Bed
   toolResistance: 0.92
   harvestDurationSeconds: 1.2
-  requiredToolClass: 4
+  requiredToolClass: 0
   maxIntegrity: 94
   defaultLootCount: 1
   minimumDepthMeters: 420

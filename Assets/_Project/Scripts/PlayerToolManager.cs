@@ -139,6 +139,30 @@ namespace Hecton8.Gameplay
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
         private bool _assignedPoolsWarmed;
         private bool _runtimeStartToolGrantCompleted;
+        private int _runtimeStartToolGrantRetryAttempts;
+        private bool _runtimeStartToolGrantGiveUpAnnounced;
+        private bool _runtimeStartToolGrantRefusedAtLeastOnce;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private bool _runtimeStartToolGrantDeferralAnnounced;
+        private uint _lastRuntimeStartToolGrantRefusalMask;
+        private int _lastRuntimeStartToolGrantRefusedSlot = -1;
+        private int _lastRuntimeStartToolGrantRefusedItemHash;
+#endif
+        // Tick-lane retry budget for the starter grant. ~10 s at 60 Hz: long enough to outlast any
+        // bootstrap step that could still be holding the inventory's vault lanes (arena growth, a raised
+        // compaction fence), short enough that a genuinely dead inventory reports a verdict inside one
+        // headless drive phase instead of retrying for the whole run.
+        private const int RuntimeStartToolGrantMaxRetryAttempts = 600;
+        // Consecutive-tick attempts before the strides take over. Sized for the headless route, whose whole
+        // drive schedule is measured in dispatcher TICKS (ToolEquip's floor is 3) rather than in seconds:
+        // a stride-only retry would never fire before the Tool row latched its verdict.
+        private const int RuntimeStartToolGrantEagerAttempts = 16;
+        // Cold storage repair is ~54 vault lane binds. Asking more often than this does not make a dead
+        // inventory live; it only burns the tick lane.
+        private const int RuntimeStartToolGrantRecoveryStride = 60;
+        // Storage live but the add still refused: re-ask 4x/second, not 60x. TryAddItem's preflight copies
+        // the whole stack lane and the occupancy mask, which is cheap but not free.
+        private const int RuntimeStartToolGrantRefusalStride = 15;
         private bool _handlingEquippedToolBreak;
         private bool _registeredToTick;
         private bool _registeredToLateFrame;
@@ -348,6 +372,11 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Tick(float deltaTime)
         {
+            // FIRST, and outside every early-out below. The starter grant is what makes a quick slot
+            // selectable at all (IsToolAvailableInSlot -> HasToolInInventory -> CountAvailableTotal), so it
+            // must not be starved by an external tool dock, a transport block or a battery lockout - all of
+            // which return from this method before ProcessSlotInput. Single bool read once the grant lands.
+            RetryRuntimeStartToolGrantIfPending();
             ConsumeToolSlotInputSignals();
             if (ConsumeInventoryChangedSignals())
                 HandleInventoryChanged();
@@ -1228,19 +1257,25 @@ namespace Hecton8.Gameplay
         /// the next activation or player-context rebind retries, instead of reporting a completed grant that
         /// added nothing and leaving all four slots unavailable for the rest of the session.
         ///
-        /// MEASURED LIMIT OF THAT RETRY (headless route, boot reaching activationStep='Complete'): there are
-        /// exactly two callers - <c>OnEnable</c> and <see cref="RebindRuntimeContextFromPlayerService"/> - and
-        /// the route hits <c>OnEnable</c> twice, once inside <c>HectonPlayerSpawner</c>'s cold
-        /// <c>Instantiate</c> of Player.prefab and once from <c>GameBootstrapper.ActivatePlayer</c>'s
+        /// WHY THE OLD "leaves the latch clear so the next activation retries" WAS NOT A RETRY. Before this
+        /// change there were exactly two callers - <c>OnEnable</c> and
+        /// <see cref="RebindRuntimeContextFromPlayerService"/> - and on the headless route (boot reaching
+        /// activationStep='Complete') <c>OnEnable</c> is hit twice: once inside <c>HectonPlayerSpawner</c>'s
+        /// cold <c>Instantiate</c> of Player.prefab, once from <c>GameBootstrapper.ActivatePlayer</c>'s
         /// <c>SetActive(true)</c>. The player-context path cannot add a third: <c>ActivatePlayer</c> calls
         /// <c>PublishPlayerRuntimeReference()</c> one line BEFORE <c>SetActive(true)</c>, and at that moment
         /// this manager sits on a deactivated object and has already dropped its hot-swap listener in
         /// <c>OnDisable</c>, so the Player-slot notification that drives the rebind retry never reaches it -
-        /// and nothing publishes that slot again afterwards. So <c>SetActive(true)</c> is the LAST chance, and
-        /// it re-runs at the same point of this object's own lifecycle as the first attempt: no step in
-        /// between can make the inventory ready. Keeping the latch clear is still correct, but do not read a
-        /// repeated deferral as "it will converge later" - see the refusalMask in the warning below, whose
-        /// bits 0-4 are session-permanent by construction.
+        /// and nothing publishes that slot again afterwards. So the grant got exactly two shots, BOTH at the
+        /// same point of this object's own lifecycle, and then never ran again for the rest of the session.
+        /// That is the whole reason the Tool row stayed blocked with <c>STARTERGRANT deferred</c> logged
+        /// exactly twice: not two retries of a converging condition, but the total number of attempts the
+        /// design allowed.
+        ///
+        /// The real retry now lives on <see cref="RetryRuntimeStartToolGrantIfPending"/>, driven from
+        /// <see cref="Tick"/> - the one lane that keeps running after boot - and it is gated on
+        /// <c>PlayerInventory.CanServiceItemAdds()</c> so it costs a handful of field reads per frame while
+        /// the grant is open and nothing at all once it closes.
         /// </summary>
         private void TryGrantAssignedToolItemsOnRuntimeStart()
         {
@@ -1296,8 +1331,14 @@ namespace Hecton8.Gameplay
                     // returns 0 unconditionally when PlayerInventory's stack lane is not live - so one dead lane
                     // presents as "the grant was refused" AND "no tool is available in any slot" at once, and
                     // without the mask the two are impossible to tell apart from a deferred authoring gap.
+                    //
+                    // DescribeAddRefusalMask runs the full physical-capacity fold and its own doc comment
+                    // bans it from tick cadence - and this method IS now reachable from Tick through
+                    // RetryRuntimeStartToolGrantIfPending. The deferral latch is therefore part of the gate,
+                    // not just of the logging: the mask is folded once, on the first refusal of the session,
+                    // and every retry after that pays only the TryAddItem it was going to pay anyway.
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    if (refused == 0)
+                    if (refused == 0 && !_runtimeStartToolGrantDeferralAnnounced)
                     {
                         firstRefusedSlot = i;
                         firstRefusedItemHash = itemHash;
@@ -1316,6 +1357,8 @@ namespace Hecton8.Gameplay
 
             _debugRuntimeStartToolGrants += granted;
             _runtimeStartToolGrantCompleted = refused == 0;
+            if (refused > 0)
+                _runtimeStartToolGrantRefusedAtLeastOnce = true;
 
             if (granted > 0)
                 PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
@@ -1323,9 +1366,20 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (refused > 0)
             {
+                // ONCE, not once per attempt. RetryRuntimeStartToolGrantIfPending now calls this method from
+                // the tick lane, so an unlatched warning here would print hundreds of identical lines and
+                // bury the give-up diagnosis. The retry budget's expiry is what reports the final verdict.
+                if (_runtimeStartToolGrantDeferralAnnounced)
+                    return;
+
+                _runtimeStartToolGrantDeferralAnnounced = true;
+                _lastRuntimeStartToolGrantRefusalMask = firstRefusalMask;
+                _lastRuntimeStartToolGrantRefusedSlot = firstRefusedSlot;
+                _lastRuntimeStartToolGrantRefusedItemHash = firstRefusedItemHash;
                 Hecton8.Core.H8Debug.LogWarning(
                     "[PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one " +
-                    "assigned quick-slot tool item, so the grant stays open for the next player activation. " +
+                    "assigned quick-slot tool item. The grant is now retried from the tick lane until the " +
+                    "inventory can accept, so this line is printed once. " +
                     "refused=" + refused.ToString() +
                     " granted=" + granted.ToString() +
                     " firstSlot=" + firstRefusedSlot.ToString() +
@@ -1333,14 +1387,13 @@ namespace Hecton8.Gameplay
                     " refusalMask=0x" + firstRefusalMask.ToString("X") +
                     " (bit0 componentDisabled, bit1 gridMissing, bit2 stackLaneDead, bit3 simStackLaneDead, " +
                     "bit4 simOccupancyLaneDead, bit5 catalogMissing, bit6 hashZero, bit7 descriptorMissing, " +
-                    "bit8 physicalCapacity, bit9 gridPlacement). Bits 0-4 are PERMANENT for this session: " +
-                    "PlayerInventory binds those lanes once in Awake, and neither SetActive(true) nor a " +
-                    "DataVault hot-swap re-allocates them, so a further deferral cannot converge.");
+                    "bit8 physicalCapacity, bit9 gridPlacement).");
             }
             else if (granted > 0)
             {
                 Hecton8.Core.H8Debug.Log(
-                    "[PlayerToolManager] STARTERGRANT applied - the assigned quick-slot tool items are owned.");
+                    "[PlayerToolManager] STARTERGRANT applied - the assigned quick-slot tool items are owned." +
+                    " retryAttempts=" + _runtimeStartToolGrantRetryAttempts.ToString());
             }
             else
             {
@@ -1348,6 +1401,135 @@ namespace Hecton8.Gameplay
                     "[PlayerToolManager] STARTERGRANT satisfied - every assigned quick-slot tool item was " +
                     "already owned.");
             }
+#endif
+        }
+
+        /// <summary>
+        /// Retries the starter grant on the ONE lane that keeps running after boot.
+        ///
+        /// The grant's original two attempts both sat inside <c>OnEnable</c>, which on the headless route
+        /// runs at the same point of this object's lifecycle twice and never again - see
+        /// <see cref="TryGrantAssignedToolItemsOnRuntimeStart"/>. So any inventory condition that was not
+        /// already satisfied at <c>Instantiate</c> time could never be picked up, and the four quick slots
+        /// stayed unavailable for the whole session even after the inventory became usable. This closes that:
+        /// the grant keeps its own budget and converges the moment
+        /// <c>PlayerInventory.CanServiceItemAdds()</c> reports the add lane live.
+        ///
+        /// HOT-PATH COST. Once <c>_runtimeStartToolGrantCompleted</c> latches, this is a single bool read.
+        /// While the grant is open it is a handful of field reads plus three vault-lane resolves - no
+        /// allocation, no cell fold. The heavy repair (<c>TryRecoverRuntimeStorageCold</c>, ~54 lane binds)
+        /// is strided, never per frame, because it is only reachable when storage is dead and a dead
+        /// inventory does not become live by being asked more often.
+        /// </summary>
+        private void RetryRuntimeStartToolGrantIfPending()
+        {
+            if (_runtimeStartToolGrantCompleted ||
+                !grantAssignedToolItemsOnRuntimeStart ||
+                playerInventory == null)
+            {
+                return;
+            }
+
+            if (_runtimeStartToolGrantRetryAttempts >= RuntimeStartToolGrantMaxRetryAttempts)
+            {
+                AnnounceRuntimeStartToolGrantGiveUpOnce();
+                return;
+            }
+
+            _runtimeStartToolGrantRetryAttempts++;
+
+            // THE EAGER WINDOW IS NOT AN OPTIMISATION, IT IS THE ONLY WINDOW THAT EXISTS ON THE HEADLESS
+            // ROUTE. H8_HeadlessWorldDriver's ToolEquip phase has a tick FLOOR of 3
+            // (H8_HeadlessWorldDriver.cs:276 MinTicksToolEquip) and its 6 s wall ceiling never fires
+            // beneath that floor, while a pumped batch-mode frame has been measured at ~132 s - so the whole
+            // run reads IsToolAvailableInSlot after roughly a dozen dispatcher ticks, not a dozen seconds. A
+            // stride-only retry (every 60th tick) would therefore never fire once before the Tool row
+            // latched Blocked, and this fix would be inert exactly where it is needed. So the first
+            // attempts run on consecutive ticks, and the strides only take over afterwards for a long
+            // interactive session.
+            bool eager = _runtimeStartToolGrantRetryAttempts <= RuntimeStartToolGrantEagerAttempts;
+
+            if (!playerInventory.CanServiceItemAdds())
+            {
+                if (!eager && (_runtimeStartToolGrantRetryAttempts % RuntimeStartToolGrantRecoveryStride) != 0)
+                    return;
+
+                // PlayerInventory cannot repair itself: a failed bind in its Awake sets enabled = false,
+                // which means its OnEnable never ran, which means its hot-swap listener was never
+                // registered, so no DataVault notification can ever reach it. Recovery has to be driven by
+                // the consumer that noticed the refusal.
+                if (!playerInventory.TryRecoverRuntimeStorageCold())
+                    return;
+            }
+            else if (!eager &&
+                     _runtimeStartToolGrantRefusedAtLeastOnce &&
+                     (_runtimeStartToolGrantRetryAttempts % RuntimeStartToolGrantRefusalStride) != 0)
+            {
+                // Storage is live and the inventory still refused, so the block is about this item or this
+                // grid (mask bits 6-9), not about readiness. Re-asking every frame cannot change that, but a
+                // freed cell or a released weight budget can, so keep asking on a stride rather than never.
+                return;
+            }
+
+            TryGrantAssignedToolItemsOnRuntimeStart();
+        }
+
+        /// <summary>
+        /// Reports, once, that the starter grant exhausted its retry budget, and names the refusal that
+        /// blocked it. A precise negative beats a silent empty tool bar.
+        ///
+        /// The mask is re-folded HERE rather than reused from the first deferral. The first refusal of a
+        /// session happens inside <c>OnEnable</c> during <c>Instantiate</c>, where "not ready yet" and
+        /// "never going to be ready" look identical; the mask that matters is the one still true after the
+        /// retries gave up. <c>DescribeAddRefusalMask</c> runs a full capacity fold and is banned from tick
+        /// cadence - the give-up latch is what makes this call legal, so it must stay above the fold.
+        /// </summary>
+        private void AnnounceRuntimeStartToolGrantGiveUpOnce()
+        {
+            if (_runtimeStartToolGrantGiveUpAnnounced)
+                return;
+
+            _runtimeStartToolGrantGiveUpAnnounced = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            int probedSlot = -1;
+            int probedItemHash = 0;
+            uint probedMask = 0u;
+            if (playerInventory != null && toolPrefabs != null)
+            {
+                for (int i = 0; i < toolPrefabs.Length; i++)
+                {
+                    GameObject prefab = toolPrefabs[i];
+                    if (prefab == null || !TryGetCachedToolForPrefab(prefab, out PlayerTool tool))
+                        continue;
+
+                    int itemHash = ItemData.ResolvePersistentHashId(tool.ToolData);
+                    if (itemHash == 0)
+                        continue;
+
+                    probedSlot = i;
+                    probedItemHash = itemHash;
+                    probedMask = playerInventory.DescribeAddRefusalMask(itemHash);
+                    break;
+                }
+            }
+
+            Hecton8.Core.H8Debug.LogError(
+                "[PlayerToolManager] STARTERGRANT ABANDONED - the player inventory refused every assigned " +
+                "quick-slot tool item for " + RuntimeStartToolGrantMaxRetryAttempts.ToString() +
+                " dispatcher ticks, so IsToolAvailableInSlot stays false for every slot and the player has " +
+                "no tools. currentSlot=" + probedSlot.ToString() +
+                " currentItemHash=" + probedItemHash.ToString() +
+                " currentRefusalMask=0x" + probedMask.ToString("X") +
+                " firstRefusedSlot=" + _lastRuntimeStartToolGrantRefusedSlot.ToString() +
+                " firstRefusalMask=0x" + _lastRuntimeStartToolGrantRefusalMask.ToString("X") +
+                " inventoryCanServiceAdds=" + (playerInventory != null && playerInventory.CanServiceItemAdds()
+                    ? "yes"
+                    : "no") +
+                " assignedSlotsWithNoToolComponentOrItemData=" + (probedSlot < 0 ? "ALL" : "none") +
+                ". Bits 0-5 point at PlayerInventory storage - look for the [PlayerInventory] STORAGE " +
+                "UNAVAILABLE error naming the failing step. Bits 6-7 point at the tool prefab's ItemData or " +
+                "its ItemCatalog entry. Bits 8-9 mean the grid genuinely refused the footprint. A mask of 0 " +
+                "with a refusal means TryAddItem's placement disagrees with its own preflight.");
 #endif
         }
 

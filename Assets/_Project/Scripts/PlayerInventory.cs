@@ -1372,33 +1372,24 @@ namespace Hecton8.Inventory
             }
 #endif
             _grid = new InventoryGrid(columns, rows);
-            CacheRegistryServicesCold();
-            int cellCount = columns * rows;
-            if (!BindPlayerInventoryVaultBuffers(cellCount))
+
+            // The lane bind and the cold scratch allocation live in TryBindRuntimeStorageCold so the SAME
+            // sequence can be re-run later. Both of the bailouts that used to sit inline here were silent
+            // `enabled = false; return;` - and because Awake disabling the component also means OnEnable
+            // never runs, the hot-swap listener was never registered either, so nothing could ever drive a
+            // retry. A vault refusal that was only ever momentary (raised compaction fence, arena or key
+            // table briefly exhausted) therefore became permanent for the session, with no log line naming
+            // it: every TryAddItem false and every CountAvailableTotal zero, which downstream reads as an
+            // empty inventory rather than a broken one. TryBindRuntimeStorageCold now names the failing step
+            // once, and TryRecoverRuntimeStorageCold lets the consumer that noticed re-arm it.
+            if (!TryBindRuntimeStorageCold())
             {
                 enabled = false;
                 return;
             }
 
-            if (!AllocateSalinityCorrosionScratchCold(cellCount))
-            {
-                ReleasePlayerInventoryVaultBuffers();
-                enabled = false;
-                return;
-            }
-
-            ClearPlayerInventoryVaultBuffersCold();
-            RegisterNativeMemorySentinel();
-            _sortBuffer = new ItemPlacement[columns * rows];
-            // COLD ALLOC: ushort[cellCount] - bulk transfer merge-cap scratch - owner: PlayerInventory
-            _bulkCompactionMaxStackBuffer = new ushort[cellCount];
-            // COLD ALLOC: ItemAcquiredSignal[ItemAcquiredSignal.ExpectedCapacity] - late-frame to slow-tick scavenging ingress - owner: PlayerInventory
-            _pendingScavengingItemSignals = new ItemAcquiredSignal[PendingScavengingItemSignalCapacity];
-            // COLD ALLOC: PendingInventoryCommand[16] - late-frame to slow-tick command ingress - owner: PlayerInventory
-            _pendingInventoryCommands = new PendingInventoryCommand[PendingInventoryCommandSignalCapacity];
             if (_traumaDispatcher == null)
                 TryGetComponent(out _traumaDispatcher);
-            InitializeSoaQueryEngine(cellCount);
         }
 
         private void OnEnable()
@@ -2125,6 +2116,154 @@ namespace Hecton8.Inventory
                 mask |= AddRefusalGridPlacement;
 
             return mask;
+        }
+
+        /// <summary>
+        /// O(1) probe naming whether <see cref="TryAddItem"/> can do anything at all right now. These are
+        /// exactly the item-independent preconditions <c>CanAcceptQuantity</c> gates on before it touches a
+        /// single grid cell, plus the two that make a refusal indistinguishable from "the grid is full":
+        /// <c>enabled</c> (<see cref="AddRefusalComponentDisabled"/>) and <c>itemCatalog</c>
+        /// (<see cref="AddRefusalCatalogMissing"/>).
+        ///
+        /// Safe to call from a tick: no allocation and no fold over cells, unlike
+        /// <see cref="DescribeAddRefusalMask"/>. Note that <c>IsCreated</c> on a vault lane re-resolves
+        /// through the vault instead of reading a cached flag - that is the point. A raised
+        /// <c>GlobalDataVault</c> compaction fence makes <c>TryResolveHandle</c> refuse, which flips these
+        /// to false and later back to true with no callback firing anywhere, so the only honest way to know
+        /// is to ask at the moment of use.
+        /// </summary>
+        internal bool CanServiceItemAdds()
+        {
+            return enabled &&
+                   _grid != null &&
+                   itemCatalog != null &&
+                   _stackCounts.IsCreated &&
+                   _scavengeSimStackCounts.IsCreated &&
+                   _simulationOccupiedCells.IsCreated;
+        }
+
+        /// <summary>
+        /// COLD. Ensures inventory storage is live, re-arming the vault bind if it is not, and returns
+        /// whether <see cref="TryAddItem"/> can now do work. Cheap no-op when storage is already live, so a
+        /// caller may treat this as "ensure storage" rather than "repair storage". Never call it from a
+        /// per-frame path without a stride - it re-binds ~54 vault lanes.
+        ///
+        /// WHY THIS HAS TO BE DRIVEN FROM OUTSIDE. <c>Awake</c> binds these lanes exactly once and sets
+        /// <c>enabled = false</c> on any refusal. That also guarantees <c>OnEnable</c> never runs, so
+        /// <c>TryRegisterHotSwapListener</c> never runs, so the
+        /// <c>GlobalRegistryServiceSlot.DataVault</c> notification that would drive a rebind can never
+        /// reach this component - and the DataVault case only calls <c>RebindPlayerInventoryVaultReferences</c>
+        /// anyway, which re-points at a vault without re-allocating anything. So a bind refusal that was
+        /// only ever transient (raised compaction fence, key table or arena momentarily exhausted) became
+        /// permanent for the session: every <c>TryAddItem</c> false, every <c>CountAvailableTotal</c> zero.
+        /// Recovery therefore belongs to whoever noticed the refusal; <c>PlayerToolManager</c>'s starter
+        /// grant is the first consumer to do so.
+        ///
+        /// Re-enabling the component is deliberate, not a side effect: it is what finally registers the save
+        /// participant, the slow/late-frame ticks, the physics-impact listener and the hot-swap listener
+        /// that the failed <c>Awake</c> skipped.
+        ///
+        /// A DTO layout-sovereignty failure is NOT recoverable and is refused without retrying. It is
+        /// detectable here without a second latch: that branch is the only one that returns from
+        /// <c>Awake</c> before <c>_grid</c> is constructed.
+        /// </summary>
+        internal bool TryRecoverRuntimeStorageCold()
+        {
+            if (CanServiceItemAdds())
+                return true;
+
+            // _grid == null means Awake bailed on the editor-only DTO layout guard. Do not build the grid
+            // here: InventoryGrid's constructor THROWS on allocation failure, and this method is reachable
+            // from a dispatcher tick, where an escaping throw would amputate the caller's whole lane.
+            if (_grid == null)
+                return false;
+
+            if (!TryBindRuntimeStorageCold())
+                return false;
+
+            if (!enabled)
+                enabled = true;
+
+            return CanServiceItemAdds();
+        }
+
+        /// <summary>
+        /// Binds every vault-backed lane and allocates the managed cold scratch this inventory needs.
+        /// Idempotent and re-entrant: the single owner of this sequence, called by <c>Awake</c> for the first
+        /// bind and by <see cref="TryRecoverRuntimeStorageCold"/> for every re-arm after that.
+        /// </summary>
+        private bool TryBindRuntimeStorageCold()
+        {
+            if (_grid == null)
+                return false;
+
+            CacheRegistryServicesCold();
+            int cellCount = columns * rows;
+            if (cellCount <= 0)
+            {
+                AnnounceRuntimeStorageFailureOnce("grid sizing");
+                return false;
+            }
+
+            if (!BindPlayerInventoryVaultBuffers(cellCount))
+            {
+                AnnounceRuntimeStorageFailureOnce("GlobalDataVault lane binding");
+                return false;
+            }
+
+            if (!AllocateSalinityCorrosionScratchCold(cellCount))
+            {
+                ReleasePlayerInventoryVaultBuffers();
+                AnnounceRuntimeStorageFailureOnce("salinity-corrosion scratch validation");
+                return false;
+            }
+
+            ClearPlayerInventoryVaultBuffersCold();
+            RegisterNativeMemorySentinel();
+            if (_sortBuffer == null || _sortBuffer.Length != cellCount)
+                _sortBuffer = new ItemPlacement[cellCount];
+            // COLD ALLOC: ushort[cellCount] - bulk transfer merge-cap scratch - owner: PlayerInventory
+            if (_bulkCompactionMaxStackBuffer == null || _bulkCompactionMaxStackBuffer.Length != cellCount)
+                _bulkCompactionMaxStackBuffer = new ushort[cellCount];
+            // COLD ALLOC: ItemAcquiredSignal[ItemAcquiredSignal.ExpectedCapacity] - late-frame to slow-tick scavenging ingress - owner: PlayerInventory
+            if (_pendingScavengingItemSignals == null)
+                _pendingScavengingItemSignals = new ItemAcquiredSignal[PendingScavengingItemSignalCapacity];
+            // COLD ALLOC: PendingInventoryCommand[16] - late-frame to slow-tick command ingress - owner: PlayerInventory
+            if (_pendingInventoryCommands == null)
+                _pendingInventoryCommands = new PendingInventoryCommand[PendingInventoryCommandSignalCapacity];
+            InitializeSoaQueryEngine(cellCount);
+            return true;
+        }
+
+        private bool _runtimeStorageFailureAnnounced;
+
+        /// <summary>
+        /// Names the failing storage step ONCE per component. Cold: string building and Unity object context
+        /// are fine here, and the latch is what keeps a strided retry from turning this into log spam.
+        ///
+        /// The two vault-bind bailouts in <c>Awake</c> are still silent. Until they route through here, a
+        /// bind failure is only visible through a downstream consumer's refusal - which is exactly how the
+        /// blocked starter-tool grant presented: four assigned prefabs, four valid catalog entries, and no
+        /// inventory to grant into.
+        /// </summary>
+        private void AnnounceRuntimeStorageFailureOnce(string failedStep)
+        {
+            if (_runtimeStorageFailureAnnounced)
+                return;
+
+            _runtimeStorageFailureAnnounced = true;
+            Hecton8.Core.H8Debug.LogError(
+                "[PlayerInventory] STORAGE UNAVAILABLE - " + failedStep + " failed, so this inventory " +
+                "cannot store or report ANY item: every TryAddItem returns false and every " +
+                "CountAvailableTotal returns 0 until it binds. object='" + name +
+                "' columns=" + columns.ToString() +
+                " rows=" + rows.ToString() +
+                " cells=" + (columns * rows).ToString() +
+                " dataVault=" + (_cachedDataVault != null ? "present" : "NULL") +
+                " itemCatalog=" + (itemCatalog != null ? itemCatalog.name : "NULL") +
+                " vaultBufferBase=" + _vaultBufferBase.ToString() +
+                " gridAllocated=" + (_grid != null ? "yes" : "no") + ".",
+                this);
         }
 
         /// <summary>

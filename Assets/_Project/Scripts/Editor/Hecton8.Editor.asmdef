@@ -13,6 +13,7 @@
         "Hecton8.Graphics.Scalability",
         "Hecton8.Graphics.Materials",
         "Hecton8.Bootstrap.Contracts",
+        "Hecton8.World.Contracts",
         "Hecton8.Plugins",
         "Hecton8.Dev.SpaceEngine098",
         "UnityEngine.TestRunner",

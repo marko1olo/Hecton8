@@ -222,6 +222,7 @@ namespace Hecton8.UI
         private int _resolvedSummaryHexLength;
         private float _hologramAnimationTime;
         private Material _resolvedHologramMaterial;
+        private bool _missingHologramMaterialAnnounced;
         private uint _latestSimulationLogHash;
         private float _latestSimulationLogTimestamp;
         private uint _observedPdaLogVersion;
@@ -2408,13 +2409,43 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Resolves the authored lore hologram material, or reports the gap once without throwing.
+        /// </summary>
+        /// <remarks>
+        /// The <c>UnityEngine.Assertions.Assert.IsNotNull</c> removed from here THREW - nothing under Assets sets
+        /// <c>Assert.raiseExceptions = false</c> - and the only caller is <see cref="Awake"/> (:361), which reaches
+        /// it before <see cref="RebuildLoreBindingCache"/> (:362). One unassigned inspector slot therefore threw
+        /// out of Awake and left the lore binding cache unbuilt.
+        ///
+        /// The assert guarded nothing: a null <c>_resolvedHologramMaterial</c> is the designed idle state and
+        /// <see cref="RenderSelectedLoreHologram"/> already returns on it (:2425), alongside its null/empty checks
+        /// on <c>hologramProxyMeshes</c>. The data log list, playback and localization are all independent of this
+        /// material, so only the 3D lore hologram preview is lost.
+        /// </remarks>
         private void EnsureHologramMaterial()
         {
             if (_resolvedHologramMaterial != null)
                 return;
 
-            UnityEngine.Assertions.Assert.IsNotNull(hologramMaterial, "Fatal: PDADataLogTab requires an authored hologram material.");
             _resolvedHologramMaterial = hologramMaterial;
+            if (_resolvedHologramMaterial != null || _missingHologramMaterialAnnounced)
+                return;
+
+            // Report LAST. Awake continues to RebuildLoreBindingCache after this returns, so a future
+            // re-introduced throw here can no longer leave the lore binding cache unbuilt.
+            _missingHologramMaterialAnnounced = true;
+            LogMissingLoreHologramMaterial();
+        }
+
+        /// <summary>
+        /// One-shot report of the unassigned authored lore hologram material. The latch guarantees single emission
+        /// and the method takes no arguments, so no string work or allocation reaches a tick cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingLoreHologramMaterial()
+        {
+            Hecton8.Core.H8Debug.LogError("PDADataLogTab: serialized field 'hologramMaterial' is unassigned, so the 3D lore hologram preview never renders this session - RenderSelectedLoreHologram returns on the null material. The data log list, audio log playback, PDA events and localization are unaffected. Runtime material generation is forbidden: assign the authored PDA hologram material in the inspector.");
         }
 
         private void RenderSelectedLoreHologram(float deltaTime)

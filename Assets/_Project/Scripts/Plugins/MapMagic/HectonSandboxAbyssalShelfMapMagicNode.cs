@@ -39,8 +39,13 @@ namespace MapMagic.Nodes.MatrixGenerators
         /// </summary>
         private static int _heightMismatchReportKey;
 
-        [Den.Tools.GUI.ValAttribute("High Y m")] public float highWorldY = 2000f;
-        [Den.Tools.GUI.ValAttribute("Low Y m")] public float lowWorldY = -5000f;
+        // Vertical extent lives in ONE place: WorldVerticalExtentMath
+        // (Scripts/World/WorldVerticalExtentContracts.cs). These initialisers were the de facto source of
+        // vertical truth and had been hand-copied into ErosionTestHarness, HectonSandboxAbyssalShelfSmokeTester
+        // and ProceduralWreckGenerator. Same numbers, one owner - no generated geometry changed, and the
+        // serialised values already in HECTON_PROCEDURAL_GEOLOGY_GRAPH.asset are untouched either way.
+        [Den.Tools.GUI.ValAttribute("High Y m")] public float highWorldY = WorldVerticalExtentMath.DefaultHighWorldY;
+        [Den.Tools.GUI.ValAttribute("Low Y m")] public float lowWorldY = WorldVerticalExtentMath.DefaultLowWorldY;
         [Den.Tools.GUI.ValAttribute("Descent Radius m")] public float descentRadiusMeters = 15000f;
         [Den.Tools.GUI.ValAttribute("Exponential Falloff")] public float macroExponentialFalloff = 3.1f;
         [Den.Tools.GUI.ValAttribute("Shelf Run m")] public float shelfRunMeters = 15000f;
@@ -118,10 +123,21 @@ namespace MapMagic.Nodes.MatrixGenerators
                 // Keyed on the VALUE PAIR rather than a one-shot bool on purpose. A bool would report the
                 // first mismatch and then stay permanently silent, so if someone later fixed the height
                 // and broke it again to a different value, the project would never hear about it - and
-                // this warning is currently the only signal that authored relief of 12000m is being
-                // rendered into 250m of terrain, a 48x vertical collapse of every slope, cliff,
-                // shelf-break and trench in the world. Keying on the values means each DISTINCT mismatch
-                // reports exactly once and a genuine later change still speaks up.
+                // this warning is the only signal that authored relief is being rendered into a smaller
+                // terrain box, which collapses every slope, cliff, shelf-break and trench in the world by
+                // the ratio of the two numbers. Keying on the values means each DISTINCT mismatch reports
+                // exactly once and a genuine later change still speaks up.
+                //
+                // NUMBERS, kept current on purpose - the two quoted here when this guard was written
+                // (12000m authored relief into 250m of terrain, a 48x collapse) are both historical and no
+                // longer describe the tree. Authored window is now
+                // WorldVerticalExtentMath.DefaultVerticalSpanMeters = 7000m
+                // (Scripts/World/WorldVerticalExtentContracts.cs). MapMagic's own untouched default for
+                // globals.height is 250m (Assets/MapMagic/Core/MapMagicObject.cs:512), and the shipped
+                // sandbox scene builder writes 4000m
+                // (WorldVerticalExtentMath.SandboxV2AuthoredTerrainHeightMeters, from
+                // Scripts/Editor/CreateSandboxV2.cs) - so 020_RENDER_SANDBOX_V2 trips this warning at a
+                // 1.75x collapse, and any scene left on the MapMagic default trips it at 28x.
                 //
                 // Interlocked, not a plain field: this executes on MapMagic worker threads, and several
                 // tiles hit it concurrently. The golden-ratio multiply is the usual 32-bit mix; unchecked

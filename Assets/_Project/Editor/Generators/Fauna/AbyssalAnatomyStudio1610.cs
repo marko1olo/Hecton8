@@ -287,6 +287,77 @@ namespace Hecton8.EditorTools.Generators.Fauna
         }
     }
 
+    /// <summary>
+    /// Single owner of the swarm swim-wave field, shared by the position and normal VAT jobs so the two
+    /// textures can never describe different deformations. The field is a pure lateral shear along
+    /// <c>side</c> whose magnitude depends only on normalised axial coordinate <c>t</c> and normalised
+    /// frame time <c>frame01</c>, which is what makes the analytic normal below exact rather than sampled.
+    /// </summary>
+    internal static class FaunaSwarmWaveField1610
+    {
+        /// <summary>Central-difference step in normalised axial coordinate for the shear gradient.</summary>
+        public const float GradientStepT = 1f / 512f;
+
+        public static float Smooth01(float value)
+        {
+            float x = math.saturate(value);
+            return x * x * (3f - 2f * x);
+        }
+
+        public static float3 Sanitize(float3 value)
+        {
+            return math.all(math.isfinite(value)) ? value : float3.zero;
+        }
+
+        /// <summary>
+        /// Signed lateral displacement in meters at axial coordinate <paramref name="t"/>. The
+        /// <c>max(0, envelope)</c> clamp pins head and tail tips, which is why the gradient below is taken
+        /// as a central difference instead of an analytic derivative: the envelope is not differentiable at
+        /// the two tips and a closed-form derivative there would emit a normal the position bake disagrees
+        /// with.
+        /// </summary>
+        public static float EvaluateLateralMeters(float t, float frame01, float amplitudeMeters, float waveCycles, float quality01)
+        {
+            float clampedT = math.saturate(t);
+            float envelope = math.max(0f, math.sin(clampedT * math.PI));
+            float phase = frame01 * math.PI * 2f - clampedT * math.PI * 2f * math.max(0.25f, waveCycles);
+            float primary = math.sin(phase);
+            float harmonic = math.sin(phase * 2.13f + clampedT * 1.91f) * (0.18f * quality01);
+            float amplitude = math.max(0f, amplitudeMeters) * envelope * math.lerp(0.55f, 1.15f, quality01);
+            float value = (primary + harmonic) * amplitude;
+            return math.select(0f, value, math.isfinite(value));
+        }
+
+        /// <summary>
+        /// d(lateral meters)/d(meters along axis). Feeds the rank-one shear Jacobian used for the normal.
+        /// </summary>
+        public static float EvaluateLateralGradientPerMeter(float t, float frame01, float amplitudeMeters, float waveCycles, float quality01, float lengthMeters)
+        {
+            float safeLength = math.max(0.0001f, lengthMeters);
+            float ahead = EvaluateLateralMeters(t + GradientStepT, frame01, amplitudeMeters, waveCycles, quality01);
+            float behind = EvaluateLateralMeters(t - GradientStepT, frame01, amplitudeMeters, waveCycles, quality01);
+            float gradient = (ahead - behind) * math.rcp(2f * GradientStepT * safeLength);
+            return math.select(0f, gradient, math.isfinite(gradient));
+        }
+
+        /// <summary>
+        /// Exact transformed normal for the shear <c>p' = p + side * f(t)</c>. With <c>J = I + k*(side*axis^T)</c>
+        /// and <c>dot(side, axis) == 0</c>, Sherman-Morrison collapses to <c>J^-T = I - k*(axis*side^T)</c>, so
+        /// <c>n' = n - k*dot(side, n)*axis</c>. No inverse-transpose matrix is built.
+        /// </summary>
+        public static float3 ShearNormal(float3 normal, float3 side, float3 axis, float gradientPerMeter)
+        {
+            float3 sheared = normal - axis * (gradientPerMeter * math.dot(side, normal));
+            return math.normalizesafe(sheared, math.normalizesafe(normal, new float3(0f, 1f, 0f)));
+        }
+
+        /// <summary>Axial coordinate of a vertex, normalised over the body length.</summary>
+        public static float ResolveAxialT(float3 vertex, float3 axisStart, float3 axis, float lengthMeters)
+        {
+            return math.saturate(math.dot(vertex - axisStart, axis) * math.rcp(math.max(0.0001f, lengthMeters)));
+        }
+    }
+
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
     internal struct BakeSwarmVatJob1610 : IJobParallelFor
     {
@@ -312,28 +383,78 @@ namespace Hecton8.EditorTools.Generators.Fauna
             float3 vertex = Vertices[vertexIndex];
             float length = math.max(0.0001f, LengthMeters);
             float3 axis = math.normalizesafe(AxisDirection, new float3(0f, 0f, 1f));
-            float t = math.saturate(math.dot(vertex - AxisStart, axis) * math.rcp(length));
+            float t = FaunaSwarmWaveField1610.ResolveAxialT(vertex, AxisStart, axis, length);
             float frame01 = (frameIndex + 0.5f) * math.rcp(math.max(1, FrameCount));
-            float quality = Smooth01(math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight))));
-            float envelope = math.sin(t * math.PI);
-            float phase = frame01 * math.PI * 2f - t * math.PI * 2f * math.max(0.25f, WaveCycles);
-            float primary = math.sin(phase);
-            float harmonic = math.sin(phase * 2.13f + t * 1.91f) * (0.18f * quality);
-            float amplitude = math.max(0f, AmplitudeMeters) * math.max(0f, envelope) * math.lerp(0.55f, 1.15f, quality);
+            float quality = FaunaSwarmWaveField1610.Smooth01(math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight))));
             float3 side = math.normalizesafe(SideDirection, new float3(1f, 0f, 0f));
-            float3 offset = side * ((primary + harmonic) * amplitude);
-            OutputPixels[index] = new float4(Sanitize(offset), 1f);
-        }
+            float lateral = FaunaSwarmWaveField1610.EvaluateLateralMeters(t, frame01, AmplitudeMeters, WaveCycles, quality);
 
-        private static float Smooth01(float value)
-        {
-            float x = math.saturate(value);
-            return x * x * (3f - 2f * x);
+            // ABSOLUTE object-space position, not a delta. REND_GPU_Driven_Animation_VAT.txt:105-108 defines
+            // the consumer as `v.vertex.xyz = instance.Position + rotatedOffset` with no base vertex term,
+            // and the live consumer Assets/_Project/Scripts/BoidFishInstanced.shader:504 reads
+            // `localPos += (vatPosition - localPos) * amplitude`, which is a lerp toward an absolute pose.
+            // Writing the bare shear here collapsed every body toward the axis plane at full amplitude.
+            float3 deformed = vertex + side * lateral;
+            OutputPixels[index] = new float4(FaunaSwarmWaveField1610.Sanitize(deformed), 1f);
         }
+    }
 
-        private static float3 Sanitize(float3 value)
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
+    internal struct BakeSwarmVatNormalJob1610 : IJobParallelFor
+    {
+        [ReadOnly, NoAlias] public NativeArray<float3> Vertices;
+        [ReadOnly, NoAlias] public NativeArray<float3> Normals;
+        [NoAlias] public NativeArray<float4> OutputPixels;
+        public int VertexCount;
+        public int FrameCount;
+        public float3 AxisStart;
+        public float3 AxisDirection;
+        public float3 SideDirection;
+        public float LengthMeters;
+        public float AmplitudeMeters;
+        public float WaveCycles;
+        public float GlobalQualityWeight;
+
+        public void Execute(int index)
         {
-            return math.all(math.isfinite(value)) ? value : float3.zero;
+            if (!Vertices.IsCreated || !Normals.IsCreated || !OutputPixels.IsCreated ||
+                VertexCount <= 0 || FrameCount <= 0 || (uint)index >= (uint)OutputPixels.Length)
+                return;
+
+            int vertexIndex = index % VertexCount;
+            int frameIndex = index / VertexCount;
+            if ((uint)vertexIndex >= (uint)Normals.Length)
+                return;
+
+            float3 vertex = Vertices[vertexIndex];
+            float3 normal = Normals[vertexIndex];
+            float length = math.max(0.0001f, LengthMeters);
+            float3 axis = math.normalizesafe(AxisDirection, new float3(0f, 0f, 1f));
+            float t = FaunaSwarmWaveField1610.ResolveAxialT(vertex, AxisStart, axis, length);
+            float frame01 = (frameIndex + 0.5f) * math.rcp(math.max(1, FrameCount));
+            float quality = FaunaSwarmWaveField1610.Smooth01(math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight))));
+            float3 side = math.normalizesafe(SideDirection, new float3(1f, 0f, 0f));
+            float gradient = FaunaSwarmWaveField1610.EvaluateLateralGradientPerMeter(t, frame01, AmplitudeMeters, WaveCycles, quality, length);
+
+            // Consumer decode is `sample.xyz * 2 - 1` at BoidFishInstanced.shader:393, so a unit normal is
+            // stored biased into 0..1.
+            //
+            // The no-source-normal case is the dangerous one and is handled explicitly. If the mesh carried
+            // no normal stream, ShearNormal would return its own (0,1,0) guard, encode to a VALID unit
+            // vector, and the shader's `step(0.0001, dot(encodedNormal, encodedNormal))` test at :394 would
+            // TRUST it - lighting the entire swarm as if every facet pointed up. Writing exactly 0.5 decodes
+            // to a zero-length vector instead, which makes that same step() return 0 and keeps the mesh
+            // normal. Silent-degeneracy class: a page full of plausible normals is indistinguishable from a
+            // correct one in any capture.
+            bool hasSourceNormal = math.lengthsq(normal) > 1e-8f;
+            float3 encoded = new float3(0.5f, 0.5f, 0.5f);
+            if (hasSourceNormal)
+            {
+                float3 sheared = FaunaSwarmWaveField1610.ShearNormal(normal, side, axis, gradient);
+                encoded = FaunaSwarmWaveField1610.Sanitize(sheared * 0.5f + 0.5f);
+            }
+
+            OutputPixels[index] = new float4(encoded, 1f);
         }
     }
 
@@ -371,7 +492,29 @@ namespace Hecton8.EditorTools.Generators.Fauna
         private const int GeneratedRigHeaderBytes = 16;
         private const int GeneratedRigRowBytes = 16;
         private const int VatBytesPerPixel = 16;
+
+        /// <summary>
+        /// Position page plus normal page. Both are mandatory: the live consumer gate at
+        /// <c>SargassumMicroFaunaBoids.cs:8914-8916</c> refuses to raise <c>_VatEnabled</c> unless both are
+        /// bound, so the 32 MB compact ceiling from <c>REND_GPU_Driven_Animation_VAT.txt</c> Section5.1 must
+        /// be charged for both pages, not one.
+        /// </summary>
+        private const int VatTexturesPerSwarmBake = 2;
         private const int MaxCompactVatBytes = 32 * 1024 * 1024;
+        /// <summary>
+        /// Exact, case-sensitive shader property name declared at
+        /// <c>Assets/_Project/Scripts/BoidFishInstanced.shader:59</c> and cached for the runtime path at
+        /// <c>SargassumMicroFaunaBoids.cs:924</c>. Do not spell it <c>_VATPositionTex</c>.
+        /// </summary>
+        internal const string VatPositionTexProperty = "_VatPositionTex";
+
+        /// <summary>
+        /// Exact, case-sensitive shader property name declared at
+        /// <c>Assets/_Project/Scripts/BoidFishInstanced.shader:60</c> and cached at
+        /// <c>SargassumMicroFaunaBoids.cs:925</c>.
+        /// </summary>
+        internal const string VatNormalTexProperty = "_VatNormalTex";
+
         private const int MinRuntimeSpineIkSegments = 8;
         private const int MaxRuntimeLeviathanIkSegments = 20;
         private const int MaxSmallFishBones = 4;
@@ -821,12 +964,17 @@ namespace Hecton8.EditorTools.Generators.Fauna
                 return false;
             }
 
+            // Two textures now leave this bake, not one. The live runtime gate
+            // Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:8914-8916 requires
+            // boidVatPositionTexture != null AND boidVatNormalTexture != null AND boidVatFrameCount > 1
+            // before it sets _VatEnabled, so a position-only bake can never switch the VAT branch on.
             long vatPixelCount = (long)vertexCount * safeFrameCount;
-            long vatBytes = vatPixelCount * VatBytesPerPixel;
+            long vatBytes = vatPixelCount * VatBytesPerPixel * VatTexturesPerSwarmBake;
             if (vatPixelCount > int.MaxValue || vatBytes > MaxCompactVatBytes)
             {
                 Debug.LogError("[FaunaRigger1610] VAT bake rejected. pixels=" +
                                vatPixelCount.ToString(CultureInfo.InvariantCulture) +
+                               " textures=" + VatTexturesPerSwarmBake.ToString(CultureInfo.InvariantCulture) +
                                " bytes=" + vatBytes.ToString(CultureInfo.InvariantCulture) +
                                " budgetBytes=" + MaxCompactVatBytes.ToString(CultureInfo.InvariantCulture) +
                                ". Reduce swarm vertex count, frame count, or split the school into LOD lanes.");
@@ -837,16 +985,24 @@ namespace Hecton8.EditorTools.Generators.Fauna
             float3 side = StablePerpendicular(axis.Axis);
 
             NativeArray<float3> vertices = default;
+            NativeArray<float3> normals = default;
             NativeArray<float4> pixels = default;
+            NativeArray<float4> normalPixels = default;
             Texture2D vatTexture = null;
+            Texture2D vatNormalTexture = null;
             Mesh vatMesh = null;
             GameObject root = null;
             try
             {
-                CopyMeshVerticesToNative(sourceMesh, Allocator.TempJob, out vertices);
+                CopyMeshVerticesAndNormalsToNative(sourceMesh, Allocator.TempJob, out vertices, out normals);
                 vertexCount = vertices.Length;
 
+                float3 axisStart = axis.Center - axis.Axis * axis.Length * 0.5f;
+                float amplitudeMeters = math.max(0.01f, axis.Length * 0.035f);
+                float waveCycles = math.lerp(1.25f, 2.75f, math.saturate(globalQualityWeight));
+
                 pixels = new NativeArray<float4>(vertexCount * safeFrameCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                normalPixels = new NativeArray<float4>(vertexCount * safeFrameCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 Stopwatch vatStopwatch = Stopwatch.StartNew();
                 JobHandle handle = new BakeSwarmVatJob1610
                 {
@@ -854,14 +1010,29 @@ namespace Hecton8.EditorTools.Generators.Fauna
                     OutputPixels = pixels,
                     VertexCount = vertexCount,
                     FrameCount = safeFrameCount,
-                    AxisStart = axis.Center - axis.Axis * axis.Length * 0.5f,
+                    AxisStart = axisStart,
                     AxisDirection = axis.Axis,
                     SideDirection = side,
                     LengthMeters = axis.Length,
-                    AmplitudeMeters = math.max(0.01f, axis.Length * 0.035f),
-                    WaveCycles = math.lerp(1.25f, 2.75f, math.saturate(globalQualityWeight)),
+                    AmplitudeMeters = amplitudeMeters,
+                    WaveCycles = waveCycles,
                     GlobalQualityWeight = globalQualityWeight
                 }.Schedule(pixels.Length, 128);
+                handle = new BakeSwarmVatNormalJob1610
+                {
+                    Vertices = vertices,
+                    Normals = normals,
+                    OutputPixels = normalPixels,
+                    VertexCount = vertexCount,
+                    FrameCount = safeFrameCount,
+                    AxisStart = axisStart,
+                    AxisDirection = axis.Axis,
+                    SideDirection = side,
+                    LengthMeters = axis.Length,
+                    AmplitudeMeters = amplitudeMeters,
+                    WaveCycles = waveCycles,
+                    GlobalQualityWeight = globalQualityWeight
+                }.Schedule(normalPixels.Length, 128, handle);
                 CompleteEditorBakeJobCold(ref handle);
                 vatStopwatch.Stop();
 
@@ -869,9 +1040,26 @@ namespace Hecton8.EditorTools.Generators.Fauna
                 vatTexture.name = "GEN_FaunaVAT1610_" + safeToken + "_Position";
                 vatTexture.SetPixelData(pixels, 0);
                 vatTexture.Apply(false, false);
+                float measuredPrecisionError = MeasureVatRoundTripError(vatTexture, pixels);
                 string vatPath = VatOutputRoot + "/" + vatTexture.name + ".asset";
                 Texture2D vatAsset = CreateOrUpdateTextureAsset(vatPath, vatTexture);
                 vatTexture = null;
+
+                vatNormalTexture = new Texture2D(vertexCount, safeFrameCount, TextureFormat.RGBAFloat, false, true);
+                vatNormalTexture.name = "GEN_FaunaVAT1610_" + safeToken + "_Normal";
+                vatNormalTexture.SetPixelData(normalPixels, 0);
+                vatNormalTexture.Apply(false, false);
+                measuredPrecisionError = math.max(measuredPrecisionError, MeasureVatRoundTripError(vatNormalTexture, normalPixels));
+                string vatNormalPath = VatOutputRoot + "/" + vatNormalTexture.name + ".asset";
+                Texture2D vatNormalAsset = CreateOrUpdateTextureAsset(vatNormalPath, vatNormalTexture);
+                vatNormalTexture = null;
+
+                if (vatAsset == null || vatNormalAsset == null)
+                {
+                    Debug.LogError("[FaunaRigger1610] VAT bake rejected. Position or normal texture asset did not persist. positionPath=" +
+                                   vatPath + " normalPath=" + vatNormalPath);
+                    return false;
+                }
 
                 vatMesh = Object.Instantiate(sourceMesh);
                 Mesh meshAsset = CreateOrUpdateMeshAsset(MeshOutputRoot + "/" + "GEN_FaunaVAT1610_" + safeToken + "_Mesh.asset", vatMesh);
@@ -880,11 +1068,11 @@ namespace Hecton8.EditorTools.Generators.Fauna
                 MeshFilter filter = root.AddComponent<MeshFilter>();
                 filter.sharedMesh = meshAsset;
                 MeshRenderer renderer = root.AddComponent<MeshRenderer>();
-                Material material = CreateVatMaterial(sourceMaterial, safeToken, vatAsset, vertexCount, safeFrameCount, globalQualityWeight);
+                Material material = CreateVatMaterial(sourceMaterial, safeToken, vatAsset, vatNormalAsset, vertexCount, safeFrameCount, globalQualityWeight);
                 if (material != null)
                     renderer.sharedMaterial = material;
 
-                WriteVatMetadata(vertexCount, safeFrameCount, axis, globalQualityWeight, vatStopwatch.Elapsed.TotalMilliseconds);
+                WriteVatMetadata(vertexCount, safeFrameCount, axis, globalQualityWeight, vatStopwatch.Elapsed.TotalMilliseconds, measuredPrecisionError, vatNormalPath);
                 string prefabPath = PrefabOutputRoot + "/" + "GEN_FaunaVAT1610_" + safeToken + ".prefab";
                 GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 if (prefab == null)
@@ -902,23 +1090,55 @@ namespace Hecton8.EditorTools.Generators.Fauna
                 metrics.VatFrameCount = safeFrameCount;
                 metrics.VatMilliseconds = vatStopwatch.Elapsed.TotalMilliseconds;
                 metrics.TotalMilliseconds = totalStopwatch.Elapsed.TotalMilliseconds;
-                metrics.MaxVatPrecisionError = 0f;
+                metrics.MaxVatPrecisionError = measuredPrecisionError;
                 metrics.MeshHash = ComputeMeshHash(meshAsset);
                 metrics.VatHash = ComputeVatHash(pixels);
-                output = new FaunaRigOutput1610(meshAsset != null ? AssetDatabase.GetAssetPath(meshAsset) : string.Empty, vatPath, prefabPath, string.Empty, metrics);
+                output = new FaunaRigOutput1610(meshAsset != null ? AssetDatabase.GetAssetPath(meshAsset) : string.Empty, vatPath, prefabPath, vatNormalPath, metrics);
                 LogFinalMetricSummary(in output);
                 return true;
             }
             finally
             {
+                if (normalPixels.IsCreated) normalPixels.Dispose();
                 if (pixels.IsCreated) pixels.Dispose();
+                if (normals.IsCreated) normals.Dispose();
                 if (vertices.IsCreated) vertices.Dispose();
                 if (root != null) Object.DestroyImmediate(root);
                 if (vatTexture != null && string.IsNullOrEmpty(AssetDatabase.GetAssetPath(vatTexture)))
                     Object.DestroyImmediate(vatTexture);
+                if (vatNormalTexture != null && string.IsNullOrEmpty(AssetDatabase.GetAssetPath(vatNormalTexture)))
+                    Object.DestroyImmediate(vatNormalTexture);
                 if (vatMesh != null && string.IsNullOrEmpty(AssetDatabase.GetAssetPath(vatMesh)))
                     Object.DestroyImmediate(vatMesh);
             }
+        }
+
+        /// <summary>
+        /// Measures the real encode/decode error of a baked VAT page by reading the applied texture back and
+        /// comparing it to the source pixels. Replaces the hardcoded <c>MaxVatPrecisionError = 0f</c> that
+        /// previously reported a number nothing had measured, which <c>AGENTS.md</c> `Evidence Law`
+        /// rejects as a fake metric.
+        /// </summary>
+        private static float MeasureVatRoundTripError(Texture2D texture, NativeArray<float4> sourcePixels)
+        {
+            if (texture == null || !sourcePixels.IsCreated || sourcePixels.Length == 0)
+                return float.PositiveInfinity;
+
+            NativeArray<float4> decoded = texture.GetPixelData<float4>(0);
+            if (!decoded.IsCreated || decoded.Length != sourcePixels.Length)
+                return float.PositiveInfinity;
+
+            float worst = 0f;
+            for (int i = 0; i < sourcePixels.Length; i++)
+            {
+                float4 delta = math.abs(decoded[i] - sourcePixels[i]);
+                float channelWorst = math.max(math.max(delta.x, delta.y), math.max(delta.z, delta.w));
+                worst = math.isfinite(channelWorst) ? math.max(worst, channelWorst) : float.PositiveInfinity;
+                if (!math.isfinite(worst))
+                    return float.PositiveInfinity;
+            }
+
+            return worst;
         }
 
         private static Transform[] CreateBoneHierarchy(
@@ -1037,6 +1257,63 @@ namespace Hecton8.EditorTools.Generators.Fauna
             finally
             {
                 meshDataArray.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Copies positions and normals in one <c>AcquireReadOnlyMeshData</c> window. A mesh with no normal
+        /// stream is rejected rather than defaulted, because a fabricated normal would bake a normal VAT the
+        /// shader trusts (<c>BoidFishInstanced.shader:393-395</c> blends toward it) and light the swarm wrong.
+        /// </summary>
+        private static void CopyMeshVerticesAndNormalsToNative(
+            Mesh sourceMesh,
+            Allocator allocator,
+            out NativeArray<float3> vertices,
+            out NativeArray<float3> normals)
+        {
+            vertices = default;
+            normals = default;
+            Mesh.MeshDataArray meshDataArray = Mesh.AcquireReadOnlyMeshData(sourceMesh);
+            try
+            {
+                Mesh.MeshData meshData = meshDataArray[0];
+                vertices = new NativeArray<float3>(meshData.vertexCount, allocator, NativeArrayOptions.UninitializedMemory);
+                CopyMeshDataPositions(meshData, vertices);
+                normals = new NativeArray<float3>(meshData.vertexCount, allocator, NativeArrayOptions.UninitializedMemory);
+                if (meshData.HasVertexAttribute(VertexAttribute.Normal))
+                {
+                    CopyMeshDataNormals(meshData, normals);
+                }
+                else
+                {
+                    for (int i = 0; i < normals.Length; i++)
+                        normals[i] = float3.zero;
+                    Debug.LogWarning("[FaunaRigger1610] Source mesh has no normal stream. Normal VAT rows encode as flat, " +
+                                     "and BoidFishInstanced.shader:393 will fall back to the mesh normal per vertex. " +
+                                     "Import the mesh with normals to get lit deformation. mesh=" + sourceMesh.name);
+                }
+            }
+            finally
+            {
+                meshDataArray.Dispose();
+            }
+        }
+
+        private static void CopyMeshDataNormals(Mesh.MeshData meshData, NativeArray<float3> normals)
+        {
+            NativeArray<Vector3> sourceNormals = default;
+            try
+            {
+                sourceNormals = new NativeArray<Vector3>(meshData.vertexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                meshData.GetNormals(sourceNormals);
+                int count = math.min(normals.Length, sourceNormals.Length);
+                for (int i = 0; i < count; i++)
+                    normals[i] = (float3)sourceNormals[i];
+            }
+            finally
+            {
+                if (sourceNormals.IsCreated)
+                    sourceNormals.Dispose();
             }
         }
 
@@ -1212,13 +1489,23 @@ namespace Hecton8.EditorTools.Generators.Fauna
             return assetPath;
         }
 
-        private static void WriteVatMetadata(int vertexCount, int frameCount, FaunaMeshAxisDTO1610 axis, float quality, double milliseconds)
+        private static void WriteVatMetadata(
+            int vertexCount,
+            int frameCount,
+            FaunaMeshAxisDTO1610 axis,
+            float quality,
+            double milliseconds,
+            float measuredPrecisionError,
+            string normalPagePath)
         {
             Debug.Log("[FaunaRigger1610] VAT metadata. format=RGBAFloat width=" +
                       vertexCount.ToString(CultureInfo.InvariantCulture) +
                       " height=" + frameCount.ToString(CultureInfo.InvariantCulture) +
+                      " pages=2 encoding=ABSOLUTE_OBJECT_SPACE_POSITION" +
+                      " normalPage=" + (string.IsNullOrEmpty(normalPagePath) ? "<none>" : normalPagePath) +
                       " quality=" + math.saturate(quality).ToString("F3", CultureInfo.InvariantCulture) +
                       " axisLength=" + axis.Length.ToString("F3", CultureInfo.InvariantCulture) +
+                      " measuredRoundTripError=" + measuredPrecisionError.ToString("F6", CultureInfo.InvariantCulture) +
                       " bakeMs=" + milliseconds.ToString("F3", CultureInfo.InvariantCulture));
         }
 
@@ -1569,7 +1856,28 @@ namespace Hecton8.EditorTools.Generators.Fauna
             return texture;
         }
 
-        private static Material CreateVatMaterial(Material sourceMaterial, string safeToken, Texture2D vatTexture, int vertexCount, int frameCount, float globalQualityWeight)
+        /// <summary>
+        /// Writes the baked pages onto a clone of the source material using the property names the live
+        /// consumer actually declares.
+        /// </summary>
+        /// <remarks>
+        /// The previous version wrote <c>_VATPositionTex</c> and <c>_H8VatPositionTex</c>. Unity shader
+        /// property names are case-sensitive and neither string exists in any shader in this project; the
+        /// only declaring shader is <c>Assets/_Project/Scripts/BoidFishInstanced.shader:59-60</c>
+        /// (<c>_VatPositionTex</c>, <c>_VatNormalTex</c>), matching the runtime IDs cached at
+        /// <c>SargassumMicroFaunaBoids.cs:924-925</c>. Because every write was wrapped in
+        /// <c>HasProperty</c>, both sets silently no-opped and the bake reported success with no texture
+        /// bound. The <c>HasProperty</c> guards are kept, but a miss on the position page is now a hard
+        /// failure instead of silence.
+        /// </remarks>
+        private static Material CreateVatMaterial(
+            Material sourceMaterial,
+            string safeToken,
+            Texture2D vatTexture,
+            Texture2D vatNormalTexture,
+            int vertexCount,
+            int frameCount,
+            float globalQualityWeight)
         {
             if (sourceMaterial == null)
                 return null;
@@ -1577,12 +1885,25 @@ namespace Hecton8.EditorTools.Generators.Fauna
             Material material = Object.Instantiate(sourceMaterial);
             material.name = "MAT_FaunaVAT1610_" + safeToken;
             float quality = math.saturate(math.select(1f, globalQualityWeight, math.isfinite(globalQualityWeight)));
+            if (!material.HasProperty(VatPositionTexProperty))
+            {
+                Debug.LogError("[FaunaRigger1610] Source material's shader does not declare " + VatPositionTexProperty +
+                               ". A VAT material that cannot receive the position page is worse than none, because the" +
+                               " bake would report success with nothing bound. shader=" +
+                               (material.shader != null ? material.shader.name : "<null>") +
+                               " Expected declaration: Assets/_Project/Scripts/BoidFishInstanced.shader:59.");
+                Object.DestroyImmediate(material);
+                return null;
+            }
+
+            material.SetTexture(VatPositionTexProperty, vatTexture);
+            if (material.HasProperty(VatNormalTexProperty))
+                material.SetTexture(VatNormalTexProperty, vatNormalTexture);
+            else
+                Debug.LogWarning("[FaunaRigger1610] Source material's shader does not declare " + VatNormalTexProperty +
+                                 ". Normal page baked to disk but not bound on this material.");
             if (material.HasProperty("_VatEnabled"))
                 material.SetFloat("_VatEnabled", 1f);
-            if (material.HasProperty("_VATPositionTex"))
-                material.SetTexture("_VATPositionTex", vatTexture);
-            if (material.HasProperty("_H8VatPositionTex"))
-                material.SetTexture("_H8VatPositionTex", vatTexture);
             if (material.HasProperty("_VatFrameCount"))
                 material.SetFloat("_VatFrameCount", math.max(1, frameCount));
             if (material.HasProperty("_VatVertexCount"))
@@ -1790,6 +2111,308 @@ namespace Hecton8.EditorTools.Generators.Fauna
             EnsureFolder(parent);
             if (!AssetDatabase.IsValidFolder(assetPath))
                 AssetDatabase.CreateFolder(parent, folder);
+        }
+    }
+
+    /// <summary>
+    /// Batchmode entry points for the fauna rig/VAT studio.
+    /// </summary>
+    /// <remarks>
+    /// WHY THIS EXISTS. Before this class the only route to <see cref="FaunaOfflineRigger1610.TryRigAndBakeMesh"/>
+    /// was <c>AbyssalAnatomyStudioWindow1610.RigSelectedMesh</c>, which reads a <c>Mesh</c> and a
+    /// <c>Material</c> out of two <c>EditorGUILayout.ObjectField</c> widgets. Unity's <c>-executeMethod</c>
+    /// only invokes a parameterless static method, so the production bake had NO headless route at all: the
+    /// four existing <c>[MenuItem]</c> methods run a raw-folder scan, a synthetic weight fuzzer, a 1x1
+    /// texture precision assertion and an audit of already-generated prefabs. None of them produce a
+    /// creature. That is why this generator has never emitted an artifact.
+    ///
+    /// GRAPHICS CONTEXT IS MANDATORY. <c>AGENTS.md</c> `MapMagic &amp; Batchmode Graphics Protocol` bans
+    /// <c>-nographics</c> for GPU-touching bakes, and this bake needs it for real:
+    /// <c>SystemInfo.SupportsTextureFormat</c> and <c>Texture2D.Apply</c> have no meaning without a device.
+    /// <see cref="RequireGraphicsDevice"/> refuses to run rather than writing a zeroed VAT page.
+    ///
+    /// Arguments come from the process command line because <c>-executeMethod</c> cannot pass parameters.
+    /// </remarks>
+    public static class FaunaHeadlessBake1610
+    {
+        private const string Marker = "[H8_FAUNA_HEADLESS_1610]";
+        private const string MeshArgument = "-h8FaunaMesh";
+        private const string MaterialArgument = "-h8FaunaMaterial";
+        private const string PresetArgument = "-h8FaunaPreset";
+        private const string BonesArgument = "-h8FaunaBones";
+        private const string VatFramesArgument = "-h8FaunaVatFrames";
+        private const string QualityArgument = "-h8FaunaQuality";
+        private const string TokenArgument = "-h8FaunaToken";
+
+        /// <summary>
+        /// Bakes one mesh named on the command line. Exits non-zero on any rejection.
+        /// </summary>
+        /// <remarks>
+        /// Exact invocation:
+        /// <code>
+        /// Unity.exe -batchmode -quit -projectPath C:\hades\Hecton8 ^
+        ///   -executeMethod Hecton8.EditorTools.Generators.Fauna.FaunaHeadlessBake1610.BakeFromCommandLine ^
+        ///   -h8FaunaMesh "Assets/.../SomeFish.fbx" ^
+        ///   -h8FaunaMaterial "Assets/.../MAT_BoidFish.mat" ^
+        ///   -h8FaunaPreset VatSwarm -h8FaunaVatFrames 30 -h8FaunaQuality 0.75 -logFile -
+        /// </code>
+        /// Do not add <c>-nographics</c>.
+        /// </remarks>
+        public static void BakeFromCommandLine()
+        {
+            EditorApplication.Exit(ExecuteCommandLineBake() ? 0 : 1);
+        }
+
+        /// <summary>
+        /// Bakes every readable mesh under <see cref="FaunaOfflineRigger1610.RawInputFolder"/>. Exits
+        /// non-zero when the folder is missing or holds no mesh, so an empty content lane fails loudly
+        /// instead of reporting a successful zero-item run.
+        /// </summary>
+        public static void BakeAllRawFauna()
+        {
+            EditorApplication.Exit(ExecuteRawFolderBake() ? 0 : 1);
+        }
+
+        /// <summary>
+        /// Runs the three existing static gates in one headless pass: the 1M-vertex weight fuzzer, the VAT
+        /// precision assertion and the generated bone-limit audit. Exits non-zero if any gate fails.
+        /// </summary>
+        public static void RunAllGates()
+        {
+            bool ok = RequireGraphicsDevice();
+            ok &= FaunaOfflineRigger1610.RunMockMillionVertexSkinningFuzzer();
+            ok &= FaunaOfflineRigger1610.RunVatPrecisionAssertion();
+            ok &= FaunaOfflineRigger1610.RunBoneLimitComplianceAudit();
+            Debug.Log(Marker + " gate sweep complete. result=" + (ok ? "PASS" : "FAIL") +
+                      " STATUS=PENDING UNITY IMPORT VERIFICATION until the batchmode log is read.");
+            EditorApplication.Exit(ok ? 0 : 1);
+        }
+
+        private static bool ExecuteCommandLineBake()
+        {
+            if (!RequireGraphicsDevice())
+                return false;
+
+            string meshPath = ReadArgument(MeshArgument);
+            if (string.IsNullOrEmpty(meshPath))
+            {
+                Debug.LogError(Marker + " ABORT - " + MeshArgument + " <assetPath> is required. " +
+                               "Unity -executeMethod cannot pass parameters, so the source mesh must come from the command line.");
+                return false;
+            }
+
+            Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+            if (mesh == null)
+            {
+                Debug.LogError(Marker + " ABORT - no Mesh at '" + meshPath +
+                               "'. For an .fbx, pass the sub-asset path or a Mesh .asset; LoadAssetAtPath<Mesh> " +
+                               "returns null for a model root whose main asset is a GameObject.");
+                return false;
+            }
+
+            string materialPath = ReadArgument(MaterialArgument);
+            Material material = string.IsNullOrEmpty(materialPath)
+                ? null
+                : AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (!string.IsNullOrEmpty(materialPath) && material == null)
+            {
+                Debug.LogError(Marker + " ABORT - no Material at '" + materialPath + "'.");
+                return false;
+            }
+
+            FaunaRigPreset1610 preset = ParsePreset(ReadArgument(PresetArgument), FaunaRigPreset1610.VatSwarm);
+            if (preset == FaunaRigPreset1610.VatSwarm && material == null)
+            {
+                Debug.LogError(Marker + " ABORT - the VatSwarm preset needs " + MaterialArgument +
+                               " because the VAT pages are bound onto a clone of that material. " +
+                               "Pass a material whose shader declares " + FaunaOfflineRigger1610.VatPositionTexProperty + ".");
+                return false;
+            }
+
+            int bones = ReadIntArgument(BonesArgument, 0);
+            int vatFrames = ReadIntArgument(VatFramesArgument, 30);
+            float quality = ReadFloatArgument(QualityArgument, 0.75f);
+            string token = ReadArgument(TokenArgument);
+
+            return RunBake(mesh, material, preset, bones, quality, vatFrames, token, meshPath);
+        }
+
+        private static bool ExecuteRawFolderBake()
+        {
+            if (!RequireGraphicsDevice())
+                return false;
+
+            string materialPath = ReadArgument(MaterialArgument);
+            Material material = string.IsNullOrEmpty(materialPath)
+                ? null
+                : AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+            if (!string.IsNullOrEmpty(materialPath) && material == null)
+            {
+                Debug.LogError(Marker + " ABORT - no Material at '" + materialPath + "'.");
+                return false;
+            }
+
+            FaunaRigPreset1610 preset = ParsePreset(ReadArgument(PresetArgument), FaunaRigPreset1610.VatSwarm);
+            int bones = ReadIntArgument(BonesArgument, 0);
+            int vatFrames = ReadIntArgument(VatFramesArgument, 30);
+            float quality = ReadFloatArgument(QualityArgument, 0.75f);
+
+            if (!AssetDatabase.IsValidFolder(FaunaOfflineRigger1610.RawInputFolder))
+            {
+                Debug.LogError(Marker + " ABORT - raw input folder '" + FaunaOfflineRigger1610.RawInputFolder +
+                               "' does not exist. There is no fauna source geometry in this project, so no bake " +
+                               "is possible and no artifact can be claimed. This is a CONTENT blocker, not a code blocker.");
+                return false;
+            }
+
+            // COLD ALLOC: string[] - one AssetDatabase model census for a headless bake sweep - owner: FaunaHeadlessBake1610
+            string[] guids = AssetDatabase.FindAssets("t:Mesh", new[] { FaunaOfflineRigger1610.RawInputFolder });
+            int baked = 0;
+            int rejected = 0;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(guids[i]);
+                Mesh mesh = AssetDatabase.LoadAssetAtPath<Mesh>(assetPath);
+                if (mesh == null)
+                    continue;
+
+                if (RunBake(mesh, material, preset, bones, quality, vatFrames, mesh.name, assetPath))
+                    baked++;
+                else
+                    rejected++;
+            }
+
+            if (baked == 0)
+            {
+                Debug.LogError(Marker + " ABORT - folder '" + FaunaOfflineRigger1610.RawInputFolder +
+                               "' produced zero baked artifacts. meshCandidates=" +
+                               guids.Length.ToString(CultureInfo.InvariantCulture) +
+                               " rejected=" + rejected.ToString(CultureInfo.InvariantCulture) + ".");
+                return false;
+            }
+
+            Debug.Log(Marker + " raw folder sweep complete. baked=" + baked.ToString(CultureInfo.InvariantCulture) +
+                      " rejected=" + rejected.ToString(CultureInfo.InvariantCulture) +
+                      " STATUS=PENDING UNITY IMPORT VERIFICATION.");
+            return rejected == 0;
+        }
+
+        private static bool RunBake(
+            Mesh mesh,
+            Material material,
+            FaunaRigPreset1610 preset,
+            int bones,
+            float quality,
+            int vatFrames,
+            string token,
+            string sourcePath)
+        {
+            if (!FaunaOfflineRigger1610.TryRigAndBakeMesh(
+                    mesh,
+                    material,
+                    preset,
+                    bones,
+                    quality,
+                    vatFrames,
+                    string.IsNullOrEmpty(token) ? mesh.name : token,
+                    out FaunaRigOutput1610 output))
+            {
+                Debug.LogError(Marker + " REJECTED '" + sourcePath + "' preset=" + preset +
+                               ". The fail-closed reason is the [FaunaRigger1610] error immediately above this line.");
+                return false;
+            }
+
+            Debug.Log(Marker + " BAKED '" + sourcePath + "' preset=" + preset +
+                      " prefab=" + output.PrefabPath +
+                      " mesh=" + output.MeshAssetPath +
+                      " vatPosition=" + (string.IsNullOrEmpty(output.VatAssetPath) ? "<none>" : output.VatAssetPath) +
+                      " vatNormalOrRig=" + (string.IsNullOrEmpty(output.MetadataPath) ? "<none>" : output.MetadataPath) +
+                      " measuredVatRoundTripError=" + output.Metrics.MaxVatPrecisionError.ToString("F6", CultureInfo.InvariantCulture));
+            return true;
+        }
+
+        /// <summary>
+        /// Refuses to bake without a graphics device. A <c>-nographics</c> run would let
+        /// <c>SystemInfo.SupportsTextureFormat</c> and <c>Texture2D.Apply</c> report nonsense and persist a
+        /// VAT asset full of zeros that looks like a successful bake on disk.
+        /// </summary>
+        private static bool RequireGraphicsDevice()
+        {
+            if (SystemInfo.graphicsDeviceType != GraphicsDeviceType.Null)
+                return true;
+
+            Debug.LogError(Marker + " ABORT - graphicsDeviceType is Null, which means this Unity was launched " +
+                           "with -nographics. AGENTS.md `MapMagic & Batchmode Graphics Protocol` bans that for " +
+                           "GPU-touching bakes. Relaunch batchmode without -nographics.");
+            return false;
+        }
+
+        /// <summary>
+        /// Explicit string mapping rather than <c>Enum.Parse</c>, which the mandate registry rejects as an
+        /// active runtime example and which would throw on a typo instead of naming the valid set.
+        /// </summary>
+        private static FaunaRigPreset1610 ParsePreset(string value, FaunaRigPreset1610 fallback)
+        {
+            if (string.IsNullOrEmpty(value))
+                return fallback;
+
+            if (string.Equals(value, "SmallFish", StringComparison.OrdinalIgnoreCase))
+                return FaunaRigPreset1610.SmallFish;
+            if (string.Equals(value, "MediumPredator", StringComparison.OrdinalIgnoreCase))
+                return FaunaRigPreset1610.MediumPredator;
+            if (string.Equals(value, "Leviathan", StringComparison.OrdinalIgnoreCase))
+                return FaunaRigPreset1610.Leviathan;
+            if (string.Equals(value, "VatSwarm", StringComparison.OrdinalIgnoreCase))
+                return FaunaRigPreset1610.VatSwarm;
+
+            Debug.LogWarning(Marker + " unknown " + PresetArgument + " '" + value +
+                             "'. Valid: SmallFish, MediumPredator, Leviathan, VatSwarm. Falling back to " + fallback + ".");
+            return fallback;
+        }
+
+        private static string ReadArgument(string switchName)
+        {
+            // global:: qualified because `Hecton8.Environment` shadows `System.Environment` inside any
+            // `Hecton8.*` namespace and a bare `Environment` fails CS0234 here.
+            string[] args = global::System.Environment.GetCommandLineArgs();
+            if (args == null)
+                return null;
+
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (string.Equals(args[i], switchName, StringComparison.OrdinalIgnoreCase))
+                    return args[i + 1];
+            }
+
+            return null;
+        }
+
+        private static int ReadIntArgument(string switchName, int fallback)
+        {
+            string raw = ReadArgument(switchName);
+            if (string.IsNullOrEmpty(raw))
+                return fallback;
+
+            if (int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed))
+                return parsed;
+
+            Debug.LogWarning(Marker + " could not parse " + switchName + " '" + raw + "' as int. Using " +
+                             fallback.ToString(CultureInfo.InvariantCulture) + ".");
+            return fallback;
+        }
+
+        private static float ReadFloatArgument(string switchName, float fallback)
+        {
+            string raw = ReadArgument(switchName);
+            if (string.IsNullOrEmpty(raw))
+                return fallback;
+
+            if (float.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed) && math.isfinite(parsed))
+                return parsed;
+
+            Debug.LogWarning(Marker + " could not parse " + switchName + " '" + raw + "' as float. Using " +
+                             fallback.ToString("F3", CultureInfo.InvariantCulture) + ".");
+            return fallback;
         }
     }
 

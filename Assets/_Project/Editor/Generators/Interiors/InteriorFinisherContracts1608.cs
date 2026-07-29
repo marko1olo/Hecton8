@@ -30,6 +30,20 @@ namespace Hecton8.Editor.Interiors
         public const uint FaultNonFinite = 1u << 3;
         public const uint FaultAtlasOverflow = 1u << 4;
         public const uint FaultInvalidMesh = 1u << 5;
+
+        // Provenance faults. FaultNoSockets and FaultNoRules can never fire from the real
+        // pipeline: InteriorInstrumentLibraryBuilder1608.Build substitutes six procedural
+        // boxes when the instrument folder is missing, and InteriorSocketParser1608
+        // .CollectSockets substitutes a bounding-box socket grid when the module prefab
+        // carries no Socket_* / DecorativeSocket markers. Both arrays are therefore always
+        // non-empty by the time a job sees them, so an unfed bake used to report success.
+        // These two bits carry that fact out of the pipeline instead.
+        // PROCEDURAL_ASSET_PIPELINE.md Rejection List rejects "primitive spheres, boxes,
+        // cylinders, tubes, ribbons, or blobs sold as final visuals";
+        // 3DMODEL_HARD_SURFACE_MODULES.md section 1 rejects "a plain cube with material
+        // color ... even if it satisfies collision and socket math".
+        public const uint FaultFallbackInstrumentKit = 1u << 6;
+        public const uint FaultFallbackSocketLayout = 1u << 7;
         public const uint InstrumentMovableFlag = 1u << 0;
         public const uint InstrumentStaticBaseFlag = 1u << 1;
         public const uint InstrumentMicroStampFlag = 1u << 2;

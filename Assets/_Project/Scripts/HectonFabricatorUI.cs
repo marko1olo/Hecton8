@@ -157,6 +157,8 @@ namespace Hecton8.UI
         private MaterialPropertyBlock _hologramProperties;
         private Material _resolvedHologramMaterial;
         private Mesh _resolvedHologramMesh;
+        private bool _missingHologramMeshAnnounced;
+        private bool _missingHologramMaterialAnnounced;
         private bool _hologramHasBaseColor;
         private bool _hologramHasColor;
         private bool _hologramHasCraftProgress;
@@ -1226,34 +1228,62 @@ namespace Hecton8.UI
             return result;
         }
 
+        /// <summary>
+        /// Resolves the authored hologram mesh/material pair, or reports the gap once without throwing.
+        /// </summary>
+        /// <remarks>
+        /// The three <c>UnityEngine.Assertions.Assert</c> calls removed from this method THREW - nothing under
+        /// Assets sets <c>Assert.raiseExceptions = false</c> - and each one sat directly above the graceful path
+        /// that was written to handle the very same condition, making that path dead code: the
+        /// <c>if (_resolvedHologramMaterial == null) return;</c> below the material assert and the
+        /// <c>_resolvedHologramMaterial = null; return;</c> below the instancing assert could never be reached.
+        ///
+        /// The only caller is <see cref="Awake"/> (:257), which reaches this before <c>EnsureRecipeListPool()</c>
+        /// (:258). An unassigned inspector slot therefore threw out of Awake and left the fabricator with no
+        /// recipe list pool at all, so the crafting menu had no rows to show - a failure that looks nothing like
+        /// "the hologram is missing" and sent debugging in the wrong direction.
+        ///
+        /// The asserts guarded nothing beyond that dead code: all three draw/update sites already null-check the
+        /// resolved pair (:970, :1007, :1081).
+        /// </remarks>
         private void EnsureHologramResources()
         {
             EnsureHologramPropertyBlockCold();
 
             if (_resolvedHologramMesh == null)
             {
-                UnityEngine.Assertions.Assert.IsNotNull(
-                    hologramMesh,
-                    "Fatal: HectonFabricatorUI requires an authored hologram mesh. Runtime mesh generation is forbidden.");
                 _resolvedHologramMesh = hologramMesh;
+                if (_resolvedHologramMesh == null && !_missingHologramMeshAnnounced)
+                {
+                    _missingHologramMeshAnnounced = true;
+                    LogMissingFabricatorHologramMesh();
+                }
             }
 
             if (_resolvedHologramMaterial == null)
             {
-                UnityEngine.Assertions.Assert.IsNotNull(
-                    hologramMaterial,
-                    "Fatal: HectonFabricatorUI requires an authored hologram material. Runtime material generation is forbidden.");
                 _resolvedHologramMaterial = hologramMaterial;
                 if (_resolvedHologramMaterial == null)
+                {
+                    if (!_missingHologramMaterialAnnounced)
+                    {
+                        _missingHologramMaterialAnnounced = true;
+                        LogMissingFabricatorHologramMaterial();
+                    }
+
                     return;
+                }
 
                 bool authoredMaterialValid = _resolvedHologramMaterial.enableInstancing;
-                UnityEngine.Assertions.Assert.IsTrue(
-                    authoredMaterialValid,
-                    "Fatal: HectonFabricatorUI hologram material must enable instancing in the authored asset.");
                 if (!authoredMaterialValid)
                 {
                     _resolvedHologramMaterial = null;
+                    if (!_missingHologramMaterialAnnounced)
+                    {
+                        _missingHologramMaterialAnnounced = true;
+                        LogFabricatorHologramMaterialNotInstanced();
+                    }
+
                     return;
                 }
 
@@ -1270,6 +1300,36 @@ namespace Hecton8.UI
 
                 ApplyHologramMaterialStaticState();
             }
+        }
+
+        /// <summary>
+        /// One-shot report of the unassigned authored fabricator hologram mesh. Latched by the caller, and no
+        /// arguments means no string work or allocation on any tick cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingFabricatorHologramMesh()
+        {
+            Hecton8.Core.H8Debug.LogError("HectonFabricatorUI: serialized field 'hologramMesh' is unassigned, so the fabricator preview hologram never renders this session - all three draw sites null-guard the resolved pair and skip. The crafting menu, recipe list, input and telemetry are unaffected. Runtime mesh generation is forbidden: assign the authored hologram mesh in the inspector.");
+        }
+
+        /// <summary>
+        /// One-shot report of the unassigned authored fabricator hologram material. Latched by the caller, and no
+        /// arguments means no string work or allocation on any tick cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingFabricatorHologramMaterial()
+        {
+            Hecton8.Core.H8Debug.LogError("HectonFabricatorUI: serialized field 'hologramMaterial' is unassigned, so the fabricator preview hologram never renders this session - all three draw sites null-guard the resolved pair and skip. The crafting menu, recipe list, input and telemetry are unaffected. Runtime material generation is forbidden: assign the authored hologram material in the inspector.");
+        }
+
+        /// <summary>
+        /// One-shot report of an authored fabricator hologram material that has GPU instancing disabled. Latched by
+        /// the caller, and no arguments means no string work or allocation on any tick cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogFabricatorHologramMaterialNotInstanced()
+        {
+            Hecton8.Core.H8Debug.LogError("HectonFabricatorUI: the material assigned to 'hologramMaterial' has Enable GPU Instancing OFF, which the instanced hologram draw requires, so the resolved material is dropped and the fabricator preview hologram never renders this session. The crafting menu and recipe list are unaffected. Tick 'Enable GPU Instancing' on that material asset.");
         }
 
         private void EnsureHologramPropertyBlockCold()

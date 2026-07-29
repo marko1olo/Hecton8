@@ -26,6 +26,13 @@ namespace Hecton8.Editor.Interiors
         public float DensityWeight;
         public int TextureSize;
 
+        /// <summary>
+        /// Opt-in for a diagnostic bake that accepts the procedural fallback instrument kit
+        /// and/or the bounding-box socket grid. Default false, so an unfed bake fails closed
+        /// with the exact missing input instead of writing box art into the project.
+        /// </summary>
+        public bool AllowFallbackKit;
+
         public static InteriorFinisherSettings1608 Default
         {
             get
@@ -58,6 +65,19 @@ namespace Hecton8.Editor.Interiors
         public int SocketCount;
         public int MicroSocketCount;
         public float AtlasEfficiency01;
+
+        /// <summary>
+        /// True when the instrument library came from the six procedural boxes in
+        /// AppendFallbackRules instead of authored prefabs. Bible-rejected as final visuals.
+        /// </summary>
+        public bool UsedFallbackInstrumentKit;
+
+        /// <summary>
+        /// True when the socket layout came from AppendFallbackSockets - a grid derived from
+        /// the module renderer AABB - instead of authored Socket_* / DecorativeSocket markers.
+        /// The AABB grid ignores doorways, wall thickness, and frames.
+        /// </summary>
+        public bool UsedFallbackSocketLayout;
     }
 
     internal enum InteriorTextureRole1608
@@ -79,6 +99,12 @@ namespace Hecton8.Editor.Interiors
         public int MaxStaticVertices;
         public int MaxStaticIndices;
         public int MovableRuleCount;
+
+        /// <summary>
+        /// True when Build could not read a single authored instrument prefab and substituted
+        /// the six procedural boxes from AppendFallbackRules.
+        /// </summary>
+        public bool UsedFallbackKit;
 
         public void Dispose()
         {
@@ -138,7 +164,8 @@ namespace Hecton8.Editor.Interiors
                 }
             }
 
-            if (rules.Count == 0)
+            bool usedFallbackKit = rules.Count == 0;
+            if (usedFallbackKit)
                 AppendFallbackRules(rules, vertices, triangles, names, paths, texturePaths, bounds);
 
             var library = new InteriorInstrumentLibrary1608
@@ -149,7 +176,8 @@ namespace Hecton8.Editor.Interiors
                 Names = names.ToArray(),
                 Paths = paths.ToArray(),
                 TexturePaths = texturePaths.ToArray(),
-                Bounds = bounds.ToArray()
+                Bounds = bounds.ToArray(),
+                UsedFallbackKit = usedFallbackKit
             };
 
             ResolveCapacityStats(library);
@@ -772,12 +800,19 @@ namespace Hecton8.Editor.Interiors
         // COLD ALLOC: List<Transform>[128] - editor-only socket marker scan scratch - owner: InteriorSocketParser1608
         private static readonly List<Transform> s_transformScratch = new List<Transform>(128);
 
-        public static void CollectSockets(GameObject prefab, List<InteriorSocketDTO1608> sockets, List<InteriorSocketDTO1608> microSockets)
+        /// <summary>
+        /// Collects authored decorative sockets from the module prefab.
+        /// Returns true when at least one authored Socket_* / DecorativeSocket marker was
+        /// parsed, false when the bounding-box fallback grid was substituted instead. The
+        /// return value is the only signal that separates an authored interior from an
+        /// AABB guess - the socket list is non-empty either way.
+        /// </summary>
+        public static bool CollectSockets(GameObject prefab, List<InteriorSocketDTO1608> sockets, List<InteriorSocketDTO1608> microSockets)
         {
             sockets.Clear();
             microSockets.Clear();
             if (prefab == null)
-                return;
+                return false;
 
             s_transformScratch.Clear();
             prefab.GetComponentsInChildren(true, s_transformScratch);
@@ -806,8 +841,11 @@ namespace Hecton8.Editor.Interiors
                 s_transformScratch.Clear();
             }
 
-            if (sockets.Count == 0)
-                AppendFallbackSockets(prefab, sockets, microSockets);
+            if (sockets.Count > 0)
+                return true;
+
+            AppendFallbackSockets(prefab, sockets, microSockets);
+            return false;
         }
 
         private static bool IsSocketName(string name)
@@ -1109,14 +1147,25 @@ namespace Hecton8.Editor.Interiors
 
                 var socketList = new List<InteriorSocketDTO1608>(128);
                 var microSocketList = new List<InteriorSocketDTO1608>(256);
-                InteriorSocketParser1608.CollectSockets(settings.ModulePrefab, socketList, microSocketList);
+                bool authoredSockets = InteriorSocketParser1608.CollectSockets(settings.ModulePrefab, socketList, microSocketList);
                 if (socketList.Count == 0)
                     throw new InvalidOperationException("Interior Finisher found zero decorative sockets.");
+
+                result.UsedFallbackInstrumentKit = library.UsedFallbackKit;
+                result.UsedFallbackSocketLayout = !authoredSockets;
 
                 sockets = ToNative(socketList, Allocator.TempJob);
                 microSockets = ToNative(microSocketList, Allocator.TempJob);
                 placements = new NativeArray<InstrumentPlacementDTO1608>(socketList.Count, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 counters = new NativeArray<InteriorBakeCountersDTO1608>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+
+                InteriorBakeCountersDTO1608 provenance = counters[0];
+                if (library.UsedFallbackKit)
+                    provenance.FaultFlags |= InteriorFinisherConstants1608.FaultFallbackInstrumentKit;
+                if (!authoredSockets)
+                    provenance.FaultFlags |= InteriorFinisherConstants1608.FaultFallbackSocketLayout;
+                counters[0] = provenance;
+                FailClosedOnFallbackKit(settings, library, authoredSockets);
 
                 Stopwatch watch = Stopwatch.StartNew();
                 new PopulateSocketsJob1608
@@ -1208,6 +1257,16 @@ namespace Hecton8.Editor.Interiors
 
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
+
+                // PopulateSocketsJob1608.Execute clears FaultFlags on entry, so the provenance
+                // bits set before the jobs do not survive into the counters the caller reads.
+                // Re-apply them here so a diagnostic bake carries its own rejection reason.
+                counterValue = counters[0];
+                if (result.UsedFallbackInstrumentKit)
+                    counterValue.FaultFlags |= InteriorFinisherConstants1608.FaultFallbackInstrumentKit;
+                if (result.UsedFallbackSocketLayout)
+                    counterValue.FaultFlags |= InteriorFinisherConstants1608.FaultFallbackSocketLayout;
+                counters[0] = counterValue;
 
                 result.Success = true;
                 result.PrefabPath = prefabPath;
@@ -1540,6 +1599,36 @@ namespace Hecton8.Editor.Interiors
             for (int i = 0; i < values.Count; i++)
                 native[i] = values[i];
             return native;
+        }
+
+        /// <summary>
+        /// Fails the bake before any asset is written when the pipeline had no authored input
+        /// and would emit the procedural box kit and/or an AABB socket grid. Opt out only with
+        /// <see cref="InteriorFinisherSettings1608.AllowFallbackKit"/>, which marks the bake as
+        /// diagnostic. Without this gate an unfed bake reported Success with cardboard, because
+        /// FaultNoRules and FaultNoSockets are structurally unreachable once the fallbacks fill
+        /// the arrays.
+        /// </summary>
+        private static void FailClosedOnFallbackKit(InteriorFinisherSettings1608 settings, InteriorInstrumentLibrary1608 library, bool authoredSockets)
+        {
+            if (settings.AllowFallbackKit)
+                return;
+            if (!library.UsedFallbackKit && authoredSockets)
+                return;
+
+            string modulePrefabName = settings.ModulePrefab != null ? settings.ModulePrefab.name : "<null>";
+            string kitReason = library.UsedFallbackKit
+                ? " No authored instrument prefab was readable under '" + settings.InstrumentPrefabFolder +
+                  "', so the six procedural boxes in AppendFallbackRules would have been baked as final visuals."
+                : string.Empty;
+            string socketReason = authoredSockets
+                ? string.Empty
+                : " Module prefab '" + modulePrefabName +
+                  "' carries no child named DecorativeSocket* or Socket_*, so an axis-aligned bounding-box socket grid would have been substituted for authored placement.";
+
+            throw new InvalidOperationException(
+                "Interior Finisher refused to bake fallback content." + kitReason + socketReason +
+                " Author the missing input, or set AllowFallbackKit for an explicitly diagnostic bake.");
         }
 
         private static void FailClosedIfRequired(InteriorBakeCountersDTO1608 counters, string stage)
@@ -2510,6 +2599,7 @@ namespace Hecton8.Editor.Interiors
         private Slider _qualityField;
         private Slider _densityField;
         private SliderInt _textureSizeField;
+        private Toggle _allowFallbackKitField;
         private Label _lastResultLabel;
         private Label _metricsLabel;
         private InteriorFinisherResult1608 _lastResult;
@@ -2541,6 +2631,12 @@ namespace Hecton8.Editor.Interiors
             _qualityField = new Slider("Global Quality Weight", 0f, 1f) { value = defaults.GlobalQualityWeight, showInputField = true };
             _densityField = new Slider("Density", 0f, 1f) { value = defaults.DensityWeight, showInputField = true };
             _textureSizeField = new SliderInt("Texture Size", 256, InteriorFinisherConstants1608.MaxAtlasSize) { value = defaults.TextureSize, showInputField = true };
+            _allowFallbackKitField = new Toggle("Allow Fallback Kit (DIAGNOSTIC)") { value = defaults.AllowFallbackKit };
+            _allowFallbackKitField.tooltip =
+                "Off: the bake fails closed when the instrument folder has no authored prefab or the module " +
+                "carries no Socket_* / DecorativeSocket markers. On: bakes the procedural box kit and/or an " +
+                "AABB socket grid, which PROCEDURAL_ASSET_PIPELINE.md rejects as final visuals. Use a separate " +
+                "output folder for a diagnostic bake.";
             root.Add(_modulePrefabField);
             root.Add(_instrumentFolderField);
             root.Add(_outputFolderField);
@@ -2549,6 +2645,7 @@ namespace Hecton8.Editor.Interiors
             root.Add(_qualityField);
             root.Add(_densityField);
             root.Add(_textureSizeField);
+            root.Add(_allowFallbackKitField);
 
             Button run = new Button(RunFromUi) { text = "Finish Interior" };
             run.style.height = 32f;
@@ -2573,14 +2670,20 @@ namespace Hecton8.Editor.Interiors
                 Seed = (uint)Mathf.Max(1, _seedField.value),
                 GlobalQualityWeight = _qualityField.value,
                 DensityWeight = _densityField.value,
-                TextureSize = _textureSizeField.value
+                TextureSize = _textureSizeField.value,
+                AllowFallbackKit = _allowFallbackKitField.value
             };
 
             InteriorFinisherPipeline1608.FinishInterior(settings, out _lastResult);
             _lastResultLabel.text = _lastResult.Success ? _lastResult.PrefabPath : _lastResult.FailureReason;
+            string provenance = _lastResult.UsedFallbackInstrumentKit || _lastResult.UsedFallbackSocketLayout
+                ? " | SOURCE: DIAGNOSTIC FALLBACK, kit=" + _lastResult.UsedFallbackInstrumentKit +
+                  " aabbSockets=" + _lastResult.UsedFallbackSocketLayout
+                : " | SOURCE: authored";
             _metricsLabel.text = "Placement: " + _lastResult.Counters.PlacementMilliseconds.ToString("F2") +
                                  " ms | Atlas: " + (_lastResult.AtlasEfficiency01 * 100f).ToString("F1") +
-                                 "% | Removed: " + _lastResult.Counters.GameObjectsEliminated;
+                                 "% | Removed: " + _lastResult.Counters.GameObjectsEliminated +
+                                 provenance;
         }
     }
 }

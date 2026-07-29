@@ -64,6 +64,14 @@ namespace Hecton8.EditorTools.Generators.Flora
         private const float DegenerateTriangleAreaThreshold = 0.00001f;
         private const float NormalLengthSqTolerance = 0.06f;
         private const float BoundsExtentEpsilonSq = 0.000001f;
+        private const float AnchorPinnedMaskEpsilon = 0.02f;
+
+        // Span, not an absolute tip value. The L-system truncates against MaxNodeCount whenever a
+        // preset's child fan-out outruns its capacity, and for the coral presets that is the normal
+        // case, so a stunted plant's geodesic maximum sits well below 1. A span gate still catches
+        // the failure that matters -- a constant V, which zeroes every shader sway term -- without
+        // turning a capacity limit into a hard bake failure.
+        private const float MinimumMaskGradientSpan = 0.05f;
 
         [MenuItem("Hecton8/Authoring/Flora Topology 1711/Open Studio", priority = 191)]
         public static void OpenStudio()
@@ -74,8 +82,19 @@ namespace Hecton8.EditorTools.Generators.Flora
         [MenuItem("Hecton8/Authoring/Flora Topology 1711/Generate Static Seed Pack", priority = 192)]
         public static void GenerateStaticSeedPack()
         {
+            TryGenerateStaticSeedPack();
+        }
+
+        /// <summary>
+        /// Runs the full static seed pack and reports whether every entry survived its contract
+        /// gates. This is the single owner of the preset/seed/tier roster: the menu command and the
+        /// headless batchmode gate both route through it so a batch run and a human click can never
+        /// bake a different set of assets.
+        /// </summary>
+        internal static bool TryGenerateStaticSeedPack()
+        {
             if (!ValidateUnmanagedLayouts())
-                return;
+                return false;
 
             bool ok = true;
             ok &= GenerateAndSave(FloraTopologyPreset.KelpForestFrond, 17110042u, ResolveProfile(FloraBakeTier1711.High), false);
@@ -88,10 +107,11 @@ namespace Hecton8.EditorTools.Generators.Flora
             if (!ok)
             {
                 Debug.LogError("[FloraTopology1711] Seed pack generation failed. Missing authored output must be fixed before player build.");
-                return;
+                return false;
             }
 
             Debug.Log("[FloraTopology1711] Static seed pack generated under Topology1711.");
+            return true;
         }
 
         [MenuItem("Hecton8/Authoring/Flora Topology 1711/Run Dry Verification", priority = 193)]
@@ -244,21 +264,25 @@ namespace Hecton8.EditorTools.Generators.Flora
                 {
                     using Mesh.MeshDataArray readOnlyMeshData = Mesh.AcquireReadOnlyMeshData(mesh);
                     Mesh.MeshData meshData = readOnlyMeshData[0];
-                    if (!TryResolveMeshStreams(meshData, mesh.name, out int positionStream, out int normalStream, out colorStream))
+                    if (!TryResolveMeshStreams(meshData, mesh.name, out int positionStream, out int normalStream, out colorStream, out int maskStream))
                         return false;
 
                     int vertexCount = meshData.vertexCount;
                     NativeArray<float3> positions = meshData.GetVertexData<float3>(positionStream);
                     NativeArray<float3> normals = meshData.GetVertexData<float3>(normalStream);
                     NativeArray<Color32> sourceColors = meshData.GetVertexData<Color32>(colorStream);
-                    if (positions.Length < vertexCount || normals.Length < vertexCount || sourceColors.Length < vertexCount)
+                    NativeArray<FloraInterleavedStream2Vertex> maskVertices = meshData.GetVertexData<FloraInterleavedStream2Vertex>(maskStream);
+                    if (positions.Length < vertexCount || normals.Length < vertexCount || sourceColors.Length < vertexCount || maskVertices.Length < vertexCount)
                     {
                         Debug.LogError("[FloraTopology1711] MeshData stream length mismatch on " + mesh.name);
                         return false;
                     }
 
+                    if (!ValidateGeodesicMaskGradient(mesh.name, maskVertices, vertexCount, out float minMaskV, out float maxMaskV))
+                        return false;
+
                     remappedColors = new NativeArray<Color32>(vertexCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    if (!RemapAndValidateSemanticColors(mesh.name, positions, normals, sourceColors, remappedColors, vertexCount))
+                    if (!RemapAndValidateSemanticColors(mesh.name, positions, normals, sourceColors, maskVertices, remappedColors, vertexCount, minMaskV, maxMaskV))
                         return false;
 
                     if (!ValidateTriangleTopology(mesh.name, meshData, positions))
@@ -302,13 +326,104 @@ namespace Hecton8.EditorTools.Generators.Flora
             string label,
             out int positionStream,
             out int normalStream,
-            out int colorStream)
+            out int colorStream,
+            out int maskStream)
         {
             bool ok = true;
             ok &= TryResolveExactMeshAttribute(meshData, label, VertexAttribute.Position, VertexAttributeFormat.Float32, 3, UnsafeUtility.SizeOf<float3>(), out positionStream);
             ok &= TryResolveExactMeshAttribute(meshData, label, VertexAttribute.Normal, VertexAttributeFormat.Float32, 3, UnsafeUtility.SizeOf<float3>(), out normalStream);
             ok &= TryResolveExactMeshAttribute(meshData, label, VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4, UnsafeUtility.SizeOf<Color32>(), out colorStream);
+            ok &= TryResolveMaskStream(meshData, label, out maskStream);
             return ok;
+        }
+
+        /// <summary>
+        /// Resolves the interleaved stream that carries Tangent, TexCoord0 and TexCoord1. TexCoord1
+        /// is the shader-side "UVMask" set: Hecton_KelpMaster.shader binds it as
+        /// <c>Attributes.uvMask : TEXCOORD1</c> and multiplies every sway, prop-wash, submarine-wash
+        /// and player-interaction displacement term by a height mask derived from its V component.
+        /// A mesh without TexCoord1 does not fail to render; Unity feeds the missing stream as zero
+        /// and every one of those terms silently becomes exactly zero, which is the "Root vertices
+        /// sway as much as tips" inversion of the 3DMODEL_FLORA_CORAL.md section 8 rejection gate.
+        /// Fail closed here instead.
+        /// </summary>
+        private static bool TryResolveMaskStream(Mesh.MeshData meshData, string label, out int maskStream)
+        {
+            maskStream = -1;
+            if (!meshData.HasVertexAttribute(VertexAttribute.TexCoord1) ||
+                meshData.GetVertexAttributeFormat(VertexAttribute.TexCoord1) != VertexAttributeFormat.Float32 ||
+                meshData.GetVertexAttributeDimension(VertexAttribute.TexCoord1) != 2)
+            {
+                Debug.LogError("[FloraTopology1711] Missing or incompatible TexCoord1 UVMask stream on " + label
+                    + ". Every shader sway term reads zero without it.");
+                return false;
+            }
+
+            int stream = meshData.GetVertexAttributeStream(VertexAttribute.TexCoord1);
+            if (stream < 0)
+            {
+                Debug.LogError("[FloraTopology1711] TexCoord1 UVMask stream unresolved on " + label);
+                return false;
+            }
+
+            int expectedStride = UnsafeUtility.SizeOf<FloraInterleavedStream2Vertex>();
+            int stride = meshData.GetVertexBufferStride(stream);
+            int tangentOffset = meshData.GetVertexAttributeOffset(VertexAttribute.Tangent);
+            int uv0Offset = meshData.GetVertexAttributeOffset(VertexAttribute.TexCoord0);
+            int maskOffset = meshData.GetVertexAttributeOffset(VertexAttribute.TexCoord1);
+            if (stride != expectedStride ||
+                meshData.GetVertexAttributeStream(VertexAttribute.Tangent) != stream ||
+                meshData.GetVertexAttributeStream(VertexAttribute.TexCoord0) != stream ||
+                tangentOffset != 0 ||
+                uv0Offset != 16 ||
+                maskOffset != 24)
+            {
+                Debug.LogError("[FloraTopology1711] UVMask stream layout drift on " + label
+                    + ". stride=" + stride + " expected=" + expectedStride
+                    + " tangentOffset=" + tangentOffset + " uv0Offset=" + uv0Offset + " maskOffset=" + maskOffset);
+                return false;
+            }
+
+            maskStream = stream;
+            return true;
+        }
+
+        /// <summary>
+        /// Fails loudly when the geodesic root-to-tip mask has collapsed. A constant V is the
+        /// dominant silent-degeneracy mode for this pipeline: nothing throws, the plant simply stops
+        /// moving and the holdfast stops being pinned.
+        /// </summary>
+        private static bool ValidateGeodesicMaskGradient(
+            string label,
+            NativeArray<FloraInterleavedStream2Vertex> maskVertices,
+            int vertexCount,
+            out float minV,
+            out float maxV)
+        {
+            minV = float.MaxValue;
+            maxV = float.MinValue;
+            for (int i = 0; i < vertexCount; i++)
+            {
+                float v = maskVertices[i].UVMask.y;
+                if (!math.isfinite(v) || v < 0f || v > 1f)
+                {
+                    Debug.LogError("[FloraTopology1711] Non-finite or out-of-range UVMask V on " + label + " vertex=" + i + " v=" + v);
+                    return false;
+                }
+
+                minV = math.min(minV, v);
+                maxV = math.max(maxV, v);
+            }
+
+            if (minV <= AnchorPinnedMaskEpsilon && (maxV - minV) >= MinimumMaskGradientSpan)
+                return true;
+
+            Debug.LogError("[FloraTopology1711] UVMask V gradient collapsed on " + label
+                + ". minV=" + minV.ToString("F4") + " maxV=" + maxV.ToString("F4")
+                + " span=" + (maxV - minV).ToString("F4")
+                + ". The anchor must be pinned at 0 and V must carry a real root-to-tip gradient,"
+                + " otherwise every shader sway, prop-wash and player-interaction term reads zero.");
+            return false;
         }
 
         private static bool TryResolveExactMeshAttribute(
@@ -346,9 +461,21 @@ namespace Hecton8.EditorTools.Generators.Flora
             NativeArray<float3> positions,
             NativeArray<float3> normals,
             NativeArray<Color32> sourceColors,
+            NativeArray<FloraInterleavedStream2Vertex> maskVertices,
             NativeArray<Color32> remappedColors,
-            int vertexCount)
+            int vertexCount,
+            float minMaskV,
+            float maxMaskV)
         {
+            // Normalise the geodesic mask against the extent this organism actually reached. The
+            // absolute 0.62 cut below means "the distal 38 percent of the body", and the L-system
+            // truncates against MaxNodeCount often enough on the coral presets that an absolute cut
+            // against the estimated maximum length would place every vertex below it and hand the
+            // whole family a zero bioluminescence mask, which the contract check then rejects.
+            // A stunted coral still has terminal polyps.
+            float maskSpan = math.max(maxMaskV - minMaskV, 0.0001f);
+            float inverseMaskSpan = math.rcp(maskSpan);
+
             bool hasSway = false;
             bool hasBio = false;
             bool hasAo = false;
@@ -367,14 +494,19 @@ namespace Hecton8.EditorTools.Generators.Flora
                 }
 
                 Color32 source = sourceColors[i];
-                float leverage01 = source.r * (1f / 255f);
+                // Terminal bloom, occlusion depth and wear are all functions of how far a vertex sits
+                // from the anchor, which is the geodesic UVMask V, NOT the source red channel. Red is
+                // the family-scaled sway AMPLITUDE: 3DMODEL_FLORA_CORAL.md section 2 caps rigid
+                // mineralized coral at 32/255, so deriving these from red made every mineralized
+                // family read as if its whole body were rooted and silently zeroed its emission.
+                float geodesic01 = math.saturate((maskVertices[i].UVMask.y - minMaskV) * inverseMaskSpan);
                 float phase01 = source.g * (1f / 255f);
                 float normalExposure01 = math.saturate(math.abs(normal.y));
-                float terminalBloom01 = math.saturate((leverage01 - 0.62f) * 2.65f);
+                float terminalBloom01 = math.saturate((geodesic01 - 0.62f) * 2.65f);
                 byte sway = source.r;
                 byte bioluminescence = (byte)math.clamp((int)math.round(source.b * terminalBloom01), 0, 255);
-                byte ambientOcclusion = (byte)math.clamp((int)math.round(math.saturate(0.18f + leverage01 * 0.54f + normalExposure01 * 0.28f) * 255f), 1, 255);
-                byte wear = (byte)math.clamp((int)math.round(math.saturate(0.16f + leverage01 * 0.58f + phase01 * 0.26f) * 255f), 1, 255);
+                byte ambientOcclusion = (byte)math.clamp((int)math.round(math.saturate(0.18f + geodesic01 * 0.54f + normalExposure01 * 0.28f) * 255f), 1, 255);
+                byte wear = (byte)math.clamp((int)math.round(math.saturate(0.16f + geodesic01 * 0.58f + phase01 * 0.26f) * 255f), 1, 255);
                 remappedColors[i] = new Color32(sway, bioluminescence, ambientOcclusion, wear);
                 hasSway |= sway > 0;
                 hasBio |= bioluminescence > 0;
@@ -610,6 +742,14 @@ namespace Hecton8.EditorTools.Generators.Flora
             return renderer;
         }
 
+        /// <summary>
+        /// Resolves the family material and fails closed when its shader cannot read the vertex-colour
+        /// contract this studio bakes. Loading the material without checking the shader was the silent
+        /// failure: a flora material sitting on URP Lit reads none of R sway, G bioluminescence or
+        /// B ambient occlusion and has no vertex sway pass at all, so the pack would write a
+        /// contract-correct mesh into a prefab that renders as a static untextured mass and report
+        /// success.
+        /// </summary>
         private static Material ResolveMaterial(FloraTopologyPreset preset)
         {
             string path = preset switch
@@ -619,7 +759,21 @@ namespace Hecton8.EditorTools.Generators.Flora
                 _ => CoralMaterialPath
             };
 
-            return AssetDatabase.LoadAssetAtPath<Material>(path);
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                Debug.LogError("[FloraTopology1711] Required flora material missing. path=" + path);
+                return null;
+            }
+
+            if (FloraTopologyGenerator1604.IsExpectedFloraShader(preset, material.shader))
+                return material;
+
+            Debug.LogError("[FloraTopology1711] Flora material does not use a Hecton8 flora master shader, so it cannot"
+                + " consume the baked vertex-colour contract. path=" + path
+                + " shader=" + (material.shader != null ? material.shader.name : "<null>")
+                + " preset=" + preset);
+            return null;
         }
 
         private static bool RunDeterministicProbe(FloraBakeTier1711 tier)

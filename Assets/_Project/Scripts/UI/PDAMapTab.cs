@@ -172,6 +172,7 @@ namespace Hecton8.UI
         private int _packedUploadCountdown;
         private bool _cartographySectorBufferUploaded;
         private bool _pointCloudAssetLookupAttempted;
+        private bool _missingSonarPointCloudAssetsAnnounced;
         private bool _pointCloudMapReady;
         private uint _uploadedHlodImpostorVersion = uint.MaxValue;
         private int _uploadedHlodImpostorCount = -1;
@@ -805,6 +806,36 @@ namespace Hecton8.UI
                 _sonarComputeKernelRepairRequested = sonarMapCompute != null && _coldSupportsComputeShaders;
         }
 
+        /// <summary>
+        /// Resolves the authored sonar point-cloud material/compute pair, or reports the gap once without
+        /// throwing.
+        /// </summary>
+        /// <remarks>
+        /// This was the worst-placed assert triplet in the PDA route. <c>UnityEngine.Assertions.Assert</c> THROWS
+        /// in this project - nothing under Assets sets <c>Assert.raiseExceptions = false</c> - and this method is
+        /// reached from THREE places, one of which is a dispatcher tick lane:
+        ///
+        /// 1. <see cref="Awake"/> (:198) via <see cref="EnsureBuilt"/> (:463) and
+        ///    <see cref="EnsurePointCloudResources"/> (:768).
+        /// 2. <see cref="OnEnable"/> (:204) by the same route, BEFORE <c>CacheRegistryServicesCold</c>,
+        ///    <c>TryRegisterHotSwapListener</c>, <c>TryAcquireStatusBuffer</c>, <c>TryRegisterPDAEvents</c>,
+        ///    <c>RegisterToTickManager</c> and <c>RefreshMapSource</c> (:205-211). A throw here left the map tab
+        ///    with no PDA event subscription and no late-frame or slow-tick registration for the session.
+        /// 3. <see cref="SlowTick"/> (:253) via <see cref="FlushSonarComputeKernelRepairSlow"/> (:798). This is
+        ///    the catastrophic path: <c>SystemDispatcher.RunSlowTick</c> has no try/catch around
+        ///    <c>tickable.SlowTick()</c>, so the throw unwound the entire 10 Hz substep and silently killed
+        ///    every unrelated slow-tick system downstream of this component.
+        ///
+        /// The <c>_pointCloudAssetLookupAttempted</c> latch did not contain that, because
+        /// <see cref="ConfigurePointCloudAssets"/> clears it on every asset rebind (:314, :321, :330) and
+        /// <c>ReleaseResources</c> clears it too (:2341) - each clear re-armed the throw for the next SlowTick.
+        ///
+        /// The asserts guarded nothing: this method returns a bool that both callers already handle. :798
+        /// re-queues the repair, :769 returns early on a null resolved material, and
+        /// <see cref="RenderPointCloud"/> re-checks <c>sonarMapCompute</c> at :1189. The announce latch below is
+        /// deliberately separate from <c>_pointCloudAssetLookupAttempted</c> so that a rebind cannot re-arm the
+        /// log on the slow-tick lane either.
+        /// </remarks>
         private bool TryResolvePointCloudAssets()
         {
             if (_pointCloudAssetLookupAttempted)
@@ -812,16 +843,49 @@ namespace Hecton8.UI
 
             _pointCloudAssetLookupAttempted = true;
 
-            UnityEngine.Assertions.Assert.IsNotNull(sonarPointCloudMaterial, "Fatal: Missing Authored PDA Sonar Point Cloud Material.");
-            UnityEngine.Assertions.Assert.IsNotNull(sonarMapCompute, "Fatal: Missing Authored PDA Sonar Map Compute Shader.");
-
-            bool authoredMaterialValid = sonarPointCloudMaterial != null && sonarPointCloudMaterial.enableInstancing;
-            UnityEngine.Assertions.Assert.IsTrue(authoredMaterialValid, "Fatal: PDA Sonar Point Cloud Material must have Enable GPU Instancing authored.");
+            bool materialAssigned = sonarPointCloudMaterial != null;
+            bool computeAssigned = sonarMapCompute != null;
+            bool authoredMaterialValid = materialAssigned && sonarPointCloudMaterial.enableInstancing;
 
             _resolvedPointCloudMaterial = authoredMaterialValid ? sonarPointCloudMaterial : null;
             _resolvedHologramMapMaterial = hologramMapMaterial;
 
-            return _resolvedPointCloudMaterial != null && sonarMapCompute != null;
+            bool resolved = _resolvedPointCloudMaterial != null && computeAssigned;
+
+            // Report LAST and once per session. Every caller consumes the return value below, so a future
+            // re-introduced throw here can no longer unwind the dispatcher slow-tick lane.
+            if (!resolved && !_missingSonarPointCloudAssetsAnnounced)
+            {
+                _missingSonarPointCloudAssetsAnnounced = true;
+                LogInvalidSonarPointCloudAssets(materialAssigned, authoredMaterialValid, computeAssigned);
+            }
+
+            return resolved;
+        }
+
+        /// <summary>
+        /// One-shot report of an unusable authored sonar point-cloud pair. The latch guarantees single emission
+        /// and every parameter is a primitive, so no string work reaches the slow-tick or late-frame cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidSonarPointCloudAssets(
+            bool materialAssigned,
+            bool authoredMaterialValid,
+            bool computeAssigned)
+        {
+            if (!materialAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("PDAMapTab: serialized field 'sonarPointCloudMaterial' is unassigned. The PDA sonar point cloud renders nothing this session - RenderPointCloud bails on the null resolved material - but the map tab still ticks, still receives PDA marker events and still draws the hologram map and markers. Runtime material generation is forbidden: assign the authored sonar point cloud material in the inspector, or call ConfigurePointCloudAssets.");
+            }
+            else if (!authoredMaterialValid)
+            {
+                Hecton8.Core.H8Debug.LogError("PDAMapTab: the material assigned to 'sonarPointCloudMaterial' has Enable GPU Instancing OFF, which the indirect point-cloud draw requires. The PDA sonar point cloud renders nothing this session. Tick 'Enable GPU Instancing' on that material asset.");
+            }
+
+            if (!computeAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("PDAMapTab: serialized field 'sonarMapCompute' is unassigned, so the CSClearArgs/CSBuildMapPoints kernels can never resolve and the PDA sonar point cloud renders nothing this session. The map tab keeps ticking and the kernel repair stays queued. Assign the authored PDA sonar map compute shader in the inspector, or call ConfigurePointCloudAssets.");
+            }
         }
 
         private bool TryResolveSonarComputeKernels()

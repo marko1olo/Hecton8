@@ -231,7 +231,7 @@
   "areaWeightedMean": [
    0.31443,
    0.54001,
-   0.89623,
+   0.89598,
    0.12601
   ],
   "min": [
@@ -255,7 +255,7 @@
   "baked": true,
   "min": 0.0,
   "max": 1.0,
-  "mean": 0.8214,
+  "mean": 0.821213,
   "hasContrast": true
  },
  "uvAndTriplanarReport": {
@@ -383,7 +383,7 @@
   "PASS LOD2 236 tris vs budget 250",
   "PASS LOD chain strictly decreasing",
   "PASS collider 184 tris vs the 200 ceiling",
-  "PASS AO contrast 1.0000 (min=0.0000 max=1.0000 mean=0.8214)",
+  "PASS AO contrast 1.0000 (min=0.0000 max=1.0000 mean=0.8212)",
   "PASS zero degenerate faces",
   "PASS single connected island (got 1)",
   "PASS zero non-manifold edges (got 0)",
@@ -413,19 +413,19 @@
  "h8forgeValidatorFailures": [],
  "h8forgeValidatorImported": true,
  "proofArtifacts": {
-  "silhouette": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\boulder_sedimentary_s1713_q100_SHEET_SILHOUETTE.png",
-  "silhouette_lod1": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\boulder_sedimentary_s1713_q100_LOD1_SHEET_SILHOUETTE.png",
-  "silhouette_lod2": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\boulder_sedimentary_s1713_q100_LOD2_SHEET_SILHOUETTE.png",
-  "studio": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\boulder_sedimentary_s1713_q100_studio_SHEET_studio.png",
-  "flat": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\boulder_sedimentary_s1713_q100_flat_SHEET_flat.png",
-  "material": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\boulder_sedimentary_s1713_q100_material_SHEET_material.png",
-  "channels": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\boulder_sedimentary_s1713_q100_chan_SHEET_CHANNELS.png"
+  "silhouette": "Docs/AgentLogs/ForgeGeology/boulder_sedimentary_s1713_q100_SHEET_SILHOUETTE.png",
+  "silhouette_lod1": "Docs/AgentLogs/ForgeGeology/boulder_sedimentary_s1713_q100_LOD1_SHEET_SILHOUETTE.png",
+  "silhouette_lod2": "Docs/AgentLogs/ForgeGeology/boulder_sedimentary_s1713_q100_LOD2_SHEET_SILHOUETTE.png",
+  "studio": "Docs/AgentLogs/ForgeGeology/boulder_sedimentary_s1713_q100_studio_SHEET_studio.png",
+  "flat": "Docs/AgentLogs/ForgeGeology/boulder_sedimentary_s1713_q100_flat_SHEET_flat.png",
+  "material": "Docs/AgentLogs/ForgeGeology/boulder_sedimentary_s1713_q100_material_SHEET_material.png",
+  "channels": "Docs/AgentLogs/ForgeGeology/boulder_sedimentary_s1713_q100_chan_SHEET_CHANNELS.png"
  },
  "channelMeasurements": [
   {
    "channel": "R",
    "meaning": "edge_wear",
-   "tile": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\boulder_sedimentary_s1713_q100_chan_chan0_edge_wear.png",
+   "tile": "Docs/AgentLogs/ForgeGeology/boulder_sedimentary_s1713_q100_chan_chan0_edge_wear.png",
    "min": 0.0,
    "max": 1.0,
    "mean": 0.37723,
@@ -436,7 +436,7 @@
   {
    "channel": "G",
    "meaning": "oxidation",
-   "tile": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\boulder_sedimentary_s1713_q100_chan_chan1_oxidation.png",
+   "tile": "Docs/AgentLogs/ForgeGeology/boulder_sedimentary_s1713_q100_chan_chan1_oxidation.png",
    "min": 0.30054,
    "max": 1.0,
    "mean": 0.54634,
@@ -447,10 +447,10 @@
   {
    "channel": "B",
    "meaning": "baked_ao",
-   "tile": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\boulder_sedimentary_s1713_q100_chan_chan2_baked_ao.png",
+   "tile": "Docs/AgentLogs/ForgeGeology/boulder_sedimentary_s1713_q100_chan_chan2_baked_ao.png",
    "min": 0.0,
    "max": 1.0,
-   "mean": 0.90344,
+   "mean": 0.90322,
    "coverageFraction": 0.17017,
    "subjectVisible": true,
    "hasGradient": true
@@ -458,7 +458,7 @@
   {
    "channel": "A",
    "meaning": "emission_mask",
-   "tile": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\boulder_sedimentary_s1713_q100_chan_chan3_emission_mask.png",
+   "tile": "Docs/AgentLogs/ForgeGeology/boulder_sedimentary_s1713_q100_chan_chan3_emission_mask.png",
    "min": 0.0,
    "max": 0.98225,
    "mean": 0.09402,
@@ -537,10 +537,10 @@
  },
  "silhouettePerFarLod": {
   "LOD1": {
-   "meanTurnTop10Fraction": 0.3319,
+   "meanTurnTop10Fraction": 0.332,
    "meanCornerCount": 9.75,
    "meanConvexity": 0.9285,
-   "retainedFractionOfLod0": 1.0595
+   "retainedFractionOfLod0": 1.0599
   },
   "LOD2": {
    "meanTurnTop10Fraction": 0.3772,
@@ -549,12 +549,12 @@
    "retainedFractionOfLod0": 1.2042
   }
  },
- "fbx": "C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Generated\\Forge\\Geology\\MESH_Geology_boulder_sedimentary_s1713_q100.fbx",
+ "fbx": "Assets/_Project/Art/Generated/Forge/Geology/MESH_Geology_boulder_sedimentary_s1713_q100.fbx",
  "fbxRoundTrip": {
   "verified": true,
   "summary": "MESH_Geology_boulder_sedimentary_s1713_q100.fbx: 4 object(s) tris=5132 vcol=True customNormals=True tangents=True uv=['UVMap', 'UV1_Strata'] unitScale=100 roundtrip=VERIFIED",
   "measurements": [
-   "wrote MESH_Geology_boulder_sedimentary_s1713_q100.fbx (927948 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "wrote MESH_Geology_boulder_sedimentary_s1713_q100.fbx (925836 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
    "COL_Geology_boulder_sedimentary_s1713_q100: no material slot. 3dmodel.md section 6 declares slot 0 as the primary structural/tissue material; Unity will assign its default material to submesh 0.",
    "objects round-tripped: ['COL_Geology_boulder_sedimentary_s1713_q100', 'MESH_Geology_boulder_sedimentary_s1713_q100_LOD0', 'MESH_Geology_boulder_sedimentary_s1713_q100_LOD1', 'MESH_Geology_boulder_sedimentary_s1713_q100_LOD2']",
    "COL_Geology_boulder_sedimentary_s1713_q100: verts 94->94 loops 552->552 tris 184->184",
@@ -583,7 +583,7 @@
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1: world corner-normal max delta 0.0004058 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1: landmark (0.47486, -0.31162, 0.19269) -> (0.47486, -0.31162, 0.19269), delta 0.0000000 m, margin 0.00264 m",
-   "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1: signed volume +0.1958722 -> +0.1958722 (ratio +1.000000)",
+   "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1: signed volume +0.1958709 -> +0.1958709 (ratio +1.000000)",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD2: verts 120->120 loops 708->708 tris 236->236",
    "MESH_Geology_boulder_sedimentary_s1713_q100_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",

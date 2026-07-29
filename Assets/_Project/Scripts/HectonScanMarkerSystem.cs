@@ -66,6 +66,7 @@ namespace Hecton8.Gameplay
         private bool _registeredHotSwapListener;
         private bool _dispatcherAvailable;
         private bool _markerResourcesConfigured;
+        private bool _invalidMarkerResourcesAnnounced;
 
         public void Initialize(Mesh meshOverride, Material materialOverride)
         {
@@ -418,23 +419,51 @@ namespace Hecton8.Gameplay
             return hudCamera != null && _playerTransform != null;
         }
 
+        /// <summary>
+        /// Resolves the authored marker draw pair, or reports a half-authored one once without throwing.
+        /// </summary>
+        /// <remarks>
+        /// The two <c>UnityEngine.Assertions.Assert.IsTrue</c> calls removed from the invalid-resources branch
+        /// THREW - nothing under Assets sets <c>Assert.raiseExceptions = false</c>. The
+        /// <c>shouldReportInvalidResources</c> gate limited WHEN they fired (a component with both slots empty and
+        /// no <see cref="Initialize"/> call stayed silent) but not what they destroyed when they did fire:
+        /// <see cref="OnEnable"/> reaches this method at :96, before <c>TryRegisterHotSwapListener()</c>,
+        /// <c>ScanEvents.Register(this)</c>, <c>RegisterTick()</c> and <c>RegisterLateFrameTick()</c> (:97-100).
+        /// A half-authored inspector pair - mesh assigned but material missing, or a material with GPU instancing
+        /// off - therefore killed the whole scan marker system for the session: no scan event subscription, no
+        /// update tick, no late-frame tick, and no way to recover once the asset was fixed.
+        /// <see cref="Initialize"/> (:78) threw back into its caller for the same reason.
+        ///
+        /// The asserts guarded nothing: nulling the runtime pair on this branch is the designed idle state and
+        /// <see cref="AreRuntimeResourcesReady"/> (:449) is the gate every draw path already consults.
+        /// </remarks>
         private void EnsureRuntimeResources()
         {
-            bool authoredMeshValid = markerMesh != null && markerMesh.subMeshCount > 0 && markerMesh.GetIndexCount(0) > 0u;
-            bool authoredMaterialValid = markerMaterial != null &&
+            bool meshAssigned = markerMesh != null;
+            bool materialAssigned = markerMaterial != null;
+            bool authoredMeshValid = meshAssigned && markerMesh.subMeshCount > 0 && markerMesh.GetIndexCount(0) > 0u;
+            bool authoredMaterialValid = materialAssigned &&
                                          markerMaterial.shader != null &&
                                          markerMaterial.enableInstancing;
-            bool shouldReportInvalidResources = _markerResourcesConfigured || markerMesh != null || markerMaterial != null;
+            bool shouldReportInvalidResources = _markerResourcesConfigured || meshAssigned || materialAssigned;
             if (!authoredMeshValid || !authoredMaterialValid)
             {
-                if (shouldReportInvalidResources)
-                {
-                    UnityEngine.Assertions.Assert.IsTrue(authoredMeshValid, "Fatal: HectonScanMarkerSystem requires an authored indexed marker mesh.");
-                    UnityEngine.Assertions.Assert.IsTrue(authoredMaterialValid, "Fatal: HectonScanMarkerSystem requires an authored GPU-instanced marker material.");
-                }
-
                 _runtimeMarkerMesh = null;
                 _runtimeMarkerMaterial = null;
+
+                // Report LAST and once. OnEnable continues to its four registration calls after this returns, so
+                // a future re-introduced throw here can no longer unsubscribe the scan marker system.
+                if (shouldReportInvalidResources && !_invalidMarkerResourcesAnnounced)
+                {
+                    _invalidMarkerResourcesAnnounced = true;
+                    LogInvalidScanMarkerResources(
+                        meshAssigned,
+                        authoredMeshValid,
+                        materialAssigned,
+                        materialAssigned && markerMaterial.shader != null,
+                        authoredMaterialValid);
+                }
+
                 return;
             }
 
@@ -444,6 +473,45 @@ namespace Hecton8.Gameplay
             if (!ReferenceEquals(_runtimeMarkerMaterial, markerMaterial))
                 _runtimeMarkerMaterial = markerMaterial;
 
+        }
+
+        /// <summary>
+        /// One-shot report of a half-authored scan marker draw pair. The latch guarantees single emission and every
+        /// parameter is a primitive, so no string work and no allocation reaches a tick cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidScanMarkerResources(
+            bool meshAssigned,
+            bool authoredMeshValid,
+            bool materialAssigned,
+            bool materialHasShader,
+            bool authoredMaterialValid)
+        {
+            if (!meshAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("HectonScanMarkerSystem: serialized field 'markerMesh' is unassigned while 'markerMaterial' or Initialize supplied the other half of the pair. No scan marker renders this session - AreRuntimeResourcesReady stays false. Scan events, the update tick and the late-frame tick all stay registered. Assign the authored marker quad mesh in the inspector or pass it to Initialize.");
+            }
+            else if (!authoredMeshValid)
+            {
+                Hecton8.Core.H8Debug.LogError("HectonScanMarkerSystem: the mesh assigned to 'markerMesh' has no indexed submesh 0 (subMeshCount is 0 or GetIndexCount(0) is 0), so the instanced marker draw would submit no triangles. No scan marker renders this session. Reimport or replace that mesh asset with one that carries an index buffer.");
+            }
+
+            if (!materialAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("HectonScanMarkerSystem: serialized field 'markerMaterial' is unassigned while 'markerMesh' or Initialize supplied the other half of the pair. No scan marker renders this session - AreRuntimeResourcesReady stays false. Every registration stays live. Runtime material generation is forbidden: assign the authored marker material in the inspector or pass it to Initialize.");
+                return;
+            }
+
+            if (!materialHasShader)
+            {
+                Hecton8.Core.H8Debug.LogError("HectonScanMarkerSystem: the material assigned to 'markerMaterial' has a null shader - the shader asset it referenced is missing or failed to compile. No scan marker renders this session. Repair that material's shader reference.");
+                return;
+            }
+
+            if (!authoredMaterialValid)
+            {
+                Hecton8.Core.H8Debug.LogError("HectonScanMarkerSystem: the material assigned to 'markerMaterial' has Enable GPU Instancing OFF, which the instanced marker draw requires. No scan marker renders this session. Tick 'Enable GPU Instancing' on that material asset.");
+            }
         }
 
         private bool AreRuntimeResourcesReady()

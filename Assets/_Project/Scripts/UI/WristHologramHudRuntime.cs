@@ -383,6 +383,7 @@ namespace Hecton8.UI
         private Material _runtimeMaterial;
         private MaterialPropertyBlock _materialProperties;
         private Mesh _runtimeQuadMesh;
+        private bool _missingHudDrawAssetsAnnounced;
         private DateTime _lastCsvWriteUtc;
         private float _csvPollTimer;
         private float _globalSystemPressure01;
@@ -857,14 +858,36 @@ namespace Hecton8.UI
                    handle.Generation != 0u;
         }
 
+        /// <summary>
+        /// Builds the quad GPU buffers and resolves the authored draw pair, or reports the gap once without
+        /// throwing.
+        /// </summary>
+        /// <remarks>
+        /// The two <c>UnityEngine.Assertions.Assert</c> calls that used to sit at the TOP of this method THREW -
+        /// nothing under Assets sets <c>Assert.raiseExceptions = false</c> - and they were positioned so that an
+        /// unassigned inspector slot destroyed far more than the draw. Everything below them in this method was
+        /// unreachable: the two quad <c>GraphicsBuffer</c>s were never created, <c>_activeQuadGpuBuffer</c> stayed
+        /// null, and the <c>MaterialPropertyBlock</c> was never allocated.
+        ///
+        /// It also escaped all three callers mid-sequence. <see cref="OnEnable"/> (:544) never reached
+        /// <c>SeedInitialState()</c>, <c>PdaProjectorOnEnable()</c> or <c>TryRegisterTickLanes()</c> (:545-547),
+        /// so the wrist HUD never joined a tick lane and could not recover once an asset was assigned;
+        /// <see cref="Start"/> (:555) never reached its own <c>TryRegisterTickLanes()</c> (:556); and the
+        /// <c>GlobalRegistry</c> hot-swap callback at :2416 threw inside a shared notification loop on every
+        /// DataVault rebind.
+        ///
+        /// The asserts guarded nothing. Leaving <c>_runtimeQuadMesh</c>/<c>_runtimeMaterial</c> null is the
+        /// designed degradation path and it is already handled: the draw site null-checks both at :1479-1480 and
+        /// <see cref="ApplyMaterialColdState"/> returns on a null material (:894).
+        /// </remarks>
         private void EnsureGraphicsResources()
         {
-            bool authoredMeshValid = quadMesh != null && quadMesh.subMeshCount > 0 && quadMesh.GetIndexCount(0) > 0u;
-            bool authoredMaterialValid = sdfMaterial != null &&
+            bool meshAssigned = quadMesh != null;
+            bool materialAssigned = sdfMaterial != null;
+            bool authoredMeshValid = meshAssigned && quadMesh.subMeshCount > 0 && quadMesh.GetIndexCount(0) > 0u;
+            bool authoredMaterialValid = materialAssigned &&
                                          sdfMaterial.shader != null &&
                                          sdfMaterial.enableInstancing;
-            UnityEngine.Assertions.Assert.IsTrue(authoredMeshValid, "Fatal: WristHologramHudRuntime requires an authored indexed quad mesh.");
-            UnityEngine.Assertions.Assert.IsTrue(authoredMaterialValid, "Fatal: WristHologramHudRuntime requires an authored GPU-instanced SDF material.");
             _runtimeQuadMesh = authoredMeshValid && authoredMaterialValid ? quadMesh : null;
             _runtimeMaterial = authoredMeshValid && authoredMaterialValid ? sdfMaterial : null;
 
@@ -878,6 +901,59 @@ namespace Hecton8.UI
                 _materialProperties = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - instanced UI shader payload - owner: WristHologramHudRuntime
 
             ApplyMaterialColdState();
+
+            // Report LAST and once. Every buffer this component owns is built above and each caller continues to
+            // its own registration work after this returns, so a future re-introduced throw here can no longer
+            // strand the tick lanes or the GPU buffers.
+            if ((authoredMeshValid && authoredMaterialValid) || _missingHudDrawAssetsAnnounced)
+                return;
+
+            _missingHudDrawAssetsAnnounced = true;
+            LogInvalidWristHudDrawAssets(
+                meshAssigned,
+                authoredMeshValid,
+                materialAssigned,
+                sdfMaterial != null && sdfMaterial.shader != null,
+                authoredMaterialValid);
+        }
+
+        /// <summary>
+        /// One-shot report of an unusable authored wrist-HUD draw pair. The latch guarantees single emission and
+        /// every parameter is a primitive, so no string work and no allocation reaches a tick cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidWristHudDrawAssets(
+            bool meshAssigned,
+            bool authoredMeshValid,
+            bool materialAssigned,
+            bool materialHasShader,
+            bool authoredMaterialValid)
+        {
+            if (!meshAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("WristHologramHudRuntime: serialized field 'quadMesh' is unassigned. The entire wrist hologram HUD renders nothing this session - no vitals, no O2, no toxicity readout - because the instanced quad draw is null-guarded and skipped. The quad GPU buffers, native buffers and every tick lane stay live. Assign the authored HUD quad mesh in the inspector.");
+            }
+            else if (!authoredMeshValid)
+            {
+                Hecton8.Core.H8Debug.LogError("WristHologramHudRuntime: the mesh assigned to 'quadMesh' has no indexed submesh 0 (subMeshCount is 0 or GetIndexCount(0) is 0), so the instanced HUD draw would submit no triangles. The entire wrist hologram HUD renders nothing this session. Reimport or replace that mesh asset with one that carries an index buffer.");
+            }
+
+            if (!materialAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("WristHologramHudRuntime: serialized field 'sdfMaterial' is unassigned. The entire wrist hologram HUD renders nothing this session - no vitals, no O2, no toxicity readout. Every tick lane and GPU buffer stays live. Runtime material generation is forbidden: assign the authored SDF glyph material in the inspector.");
+                return;
+            }
+
+            if (!materialHasShader)
+            {
+                Hecton8.Core.H8Debug.LogError("WristHologramHudRuntime: the material assigned to 'sdfMaterial' has a null shader - the shader asset it referenced is missing or failed to compile. The entire wrist hologram HUD renders nothing this session. Repair that material's shader reference.");
+                return;
+            }
+
+            if (!authoredMaterialValid)
+            {
+                Hecton8.Core.H8Debug.LogError("WristHologramHudRuntime: the material assigned to 'sdfMaterial' has Enable GPU Instancing OFF, which the instanced SDF glyph draw requires. The entire wrist hologram HUD renders nothing this session. Tick 'Enable GPU Instancing' on that material asset.");
+            }
         }
 
         private void ReleaseGraphicsResources()

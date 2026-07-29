@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -41,6 +42,20 @@ namespace Hecton8.Editor.Generators.Geology
         private const int EdgeCollapseCandidateStrideBytes = 32;
         private const int MaxQemCollapsePasses = 8;
         private const float AtlasUvBleedGuard01 = 0.0078125f;
+        private const int MaxBatchVariants = 64;
+        private const int MaxBatchAssetIdStemLength = 56;
+        private const float BatchVariantSilhouetteSpread01 = 0.22f;
+        private const float BatchVariantStrataSpread01 = 0.35f;
+        private const string AssetIdArgument = "-h8RockAssetId";
+        private const string VariantsArgument = "-h8RockVariants";
+        private const string SeedArgument = "-h8RockSeed";
+        private const string ResolutionArgument = "-h8RockResolution";
+        private const string RadiusArgument = "-h8RockRadius";
+        private const string HeightArgument = "-h8RockHeight";
+        private const string NoiseAmplitudeArgument = "-h8RockNoiseAmplitude";
+        private const string StrataFrequencyArgument = "-h8RockStrataFrequency";
+        private const string QualityArgument = "-h8RockQuality";
+        private const string MaterialArgument = "-h8RockMaterial";
         private const StaticEditorFlags GeneratedRockRootStaticFlags =
             StaticEditorFlags.BatchingStatic |
             StaticEditorFlags.OccludeeStatic;
@@ -72,6 +87,207 @@ namespace Hecton8.Editor.Generators.Geology
             GetWindow<RockSculptorEngine1713>("Rock Sculptor 1713");
         }
 
+        /// <summary>
+        /// Batchmode bake entry point. Wrapper, not a second pipeline: it builds one
+        /// <see cref="SculptSettings"/> per variant through the same static
+        /// <c>BuildSettings</c> overload the window uses, then calls the same
+        /// <see cref="Bake"/> body the "Bake Static Rock Prefab" button calls.
+        /// <para>
+        /// <see cref="Open"/> is itself reachable by <c>-executeMethod</c> - it is public, static and
+        /// parameterless - but it bakes nothing, because the only call to <see cref="BakeSelected"/>
+        /// is the GUI button inside <see cref="OnGUI"/>, and OnGUI never repaints under
+        /// <c>-batchmode</c>. That is why this method exists.
+        /// </para>
+        /// </summary>
+        /// <remarks>
+        /// Unity.exe -projectPath &lt;project&gt; -batchmode -quit
+        ///   -executeMethod Hecton8.Editor.Generators.Geology.RockSculptorEngine1713.BakeFromCommandLine
+        ///   [-h8RockAssetId id] [-h8RockVariants 1..64] [-h8RockSeed uint]
+        ///   [-h8RockResolution 12..48] [-h8RockRadius m] [-h8RockHeight m]
+        ///   [-h8RockNoiseAmplitude m] [-h8RockStrataFrequency v] [-h8RockQuality 0..1]
+        ///   [-h8RockMaterial Assets/.../MAT_Something.mat]
+        /// <para>
+        /// The sculpt path is Burst/CPU only - no compute shader, no Graphics.Blit, no RenderTexture -
+        /// so it does not hit the zero-return trap that makes the MapMagic batchmode protocol ban
+        /// <c>-nographics</c>. Prefab save and convex MeshCollider cooking are both CPU work too.
+        /// </para>
+        /// <para>
+        /// A malformed argument throws instead of silently falling back to the default, and any failed
+        /// variant makes the whole call throw after the summary, so the run exits non-zero rather than
+        /// reporting a silent success with no assets on disk.
+        /// </para>
+        /// </remarks>
+        public static void BakeFromCommandLine()
+        {
+            string assetIdStem = SanitizeBatchAssetIdStem(ReadStringArgument(AssetIdArgument, "1713"));
+            int variants = math.clamp(ReadIntArgument(VariantsArgument, 1), 1, MaxBatchVariants);
+            uint seed = ReadSeedArgument(SeedArgument, 1713u);
+            int resolution = ReadIntArgument(ResolutionArgument, DefaultResolution);
+            float radiusMeters = ReadFloatArgument(RadiusArgument, 8f);
+            float heightMeters = ReadFloatArgument(HeightArgument, 13f);
+            float noiseAmplitudeMeters = ReadFloatArgument(NoiseAmplitudeArgument, 1.4f);
+            float strataFrequency = ReadFloatArgument(StrataFrequencyArgument, 11f);
+            float globalQualityWeight = ReadFloatArgument(QualityArgument, 0.6f);
+            Material material = ResolveBatchMaterial(ReadStringArgument(MaterialArgument, string.Empty));
+
+            int bakedCount = 0;
+            int failedCount = 0;
+            for (int variant = 0; variant < variants; variant++)
+            {
+                // Variation is a named seed, not hidden chance (PROCEDURAL_ASSET_PIPELINE.md
+                // "Deterministic Source Contract"). Variant 0 reproduces the requested parameters
+                // exactly so a single-variant batch bake equals a single window bake.
+                float silhouetteScale = ResolveVariantScale(seed, variant, BatchVariantSilhouetteSpread01);
+                float strataScale = ResolveVariantScale(seed ^ 0x85EBCA6Bu, variant, BatchVariantStrataSpread01);
+                SculptSettings settings = BuildSettings(
+                    variants > 1 ? assetIdStem + "_v" + variant.ToString(CultureInfo.InvariantCulture) : assetIdStem,
+                    resolution,
+                    radiusMeters * silhouetteScale,
+                    heightMeters * silhouetteScale,
+                    noiseAmplitudeMeters,
+                    strataFrequency * strataScale,
+                    unchecked(seed + ((uint)variant * 0x9E3779B9u)),
+                    globalQualityWeight,
+                    material);
+
+                try
+                {
+                    Bake(settings);
+                    bakedCount++;
+                }
+                catch (Exception ex)
+                {
+                    failedCount++;
+                    Debug.LogError(string.Format(
+                        CultureInfo.InvariantCulture,
+                        "[H8_ROCK1713] variant={0} assetId={1} seed={2} failed: {3}",
+                        variant,
+                        settings.AssetId,
+                        settings.Seed,
+                        ex.Message));
+                }
+            }
+
+            Debug.Log(string.Format(
+                CultureInfo.InvariantCulture,
+                "[H8_ROCK1713] batch bake finished baked={0} failed={1} requested={2} seed={3} resolution={4} quality={5:F3} meshFolder={6} prefabFolder={7} material={8}",
+                bakedCount,
+                failedCount,
+                variants,
+                seed,
+                resolution,
+                globalQualityWeight,
+                MeshOutputFolder,
+                PrefabOutputFolder,
+                material != null ? material.name : "NONE_DEFAULT_MATERIAL_FALLBACK"));
+
+            if (failedCount > 0)
+                throw new InvalidOperationException(string.Format(
+                    CultureInfo.InvariantCulture,
+                    "RockSculptorEngine1713 batch bake failed for {0} of {1} variants.",
+                    failedCount,
+                    variants));
+        }
+
+        private static Material ResolveBatchMaterial(string materialAssetPath)
+        {
+            if (!string.IsNullOrWhiteSpace(materialAssetPath))
+            {
+                Material requested = AssetDatabase.LoadAssetAtPath<Material>(materialAssetPath);
+                if (requested == null)
+                    throw new InvalidOperationException("Rock material asset not found: " + materialAssetPath);
+
+                return requested;
+            }
+
+            Debug.LogWarning(
+                "[H8_ROCK1713] no " + MaterialArgument + " argument, so LOD renderers fall back to Unity Default-Material. " +
+                "That is a Built-in RP material and is not a valid URP triplanar rock surface under 3DMODEL_TEXTURES_MATERIALS.md. " +
+                "The mesh/LOD/collider package is still produced; its visual state stays PENDING VERIFICATION until a triplanar material is bound.");
+            return null;
+        }
+
+        private static string SanitizeBatchAssetIdStem(string assetId)
+        {
+            string sanitized = SanitizeAssetId(assetId);
+            if (sanitized.Length <= MaxBatchAssetIdStemLength)
+                return sanitized;
+
+            // SanitizeAssetId caps ids at 64 chars, so the stem is truncated here to leave room for the
+            // "_v<index>" suffix. Without this, two long ids would sanitize to the same name and the
+            // second variant would silently overwrite the first.
+            return SanitizeAssetId(sanitized.Substring(0, MaxBatchAssetIdStemLength));
+        }
+
+        private static float ResolveVariantScale(uint seed, int variant, float spread01)
+        {
+            if (variant <= 0)
+                return 1f;
+
+            uint hash = math.hash(new uint2(seed, (uint)variant));
+            float unit = (hash & 0xFFFFu) * (1f / 65535f);
+            return 1f + (((unit * 2f) - 1f) * spread01);
+        }
+
+        private static bool TryReadArgumentValue(string argumentName, out string value)
+        {
+            // Fully qualified: this file sits under the Hecton8 namespace root, which contains a
+            // Hecton8.Environment namespace that shadows System.Environment during name lookup.
+            // A bare `Environment` here is CS0234.
+            string[] arguments = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < arguments.Length - 1; i++)
+            {
+                if (!string.Equals(arguments[i], argumentName, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                value = arguments[i + 1];
+                return !string.IsNullOrWhiteSpace(value);
+            }
+
+            value = string.Empty;
+            return false;
+        }
+
+        private static string ReadStringArgument(string argumentName, string fallbackValue)
+        {
+            return TryReadArgumentValue(argumentName, out string value) ? value.Trim() : fallbackValue;
+        }
+
+        private static int ReadIntArgument(string argumentName, int fallbackValue)
+        {
+            if (!TryReadArgumentValue(argumentName, out string value))
+                return fallbackValue;
+
+            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed))
+                return parsed;
+
+            throw new InvalidOperationException("Rock sculptor argument " + argumentName + " is not an integer: " + value);
+        }
+
+        private static float ReadFloatArgument(string argumentName, float fallbackValue)
+        {
+            if (!TryReadArgumentValue(argumentName, out string value))
+                return fallbackValue;
+
+            // InvariantCulture is mandatory: this workstation runs a comma-decimal locale, and a
+            // culture-sensitive parse would reject "0.6" and silently bake the default quality.
+            if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float parsed) && float.IsFinite(parsed))
+                return parsed;
+
+            throw new InvalidOperationException("Rock sculptor argument " + argumentName + " is not a finite number: " + value);
+        }
+
+        private static uint ReadSeedArgument(string argumentName, uint fallbackValue)
+        {
+            if (!TryReadArgumentValue(argumentName, out string value))
+                return fallbackValue;
+
+            if (uint.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out uint parsed))
+                return math.max(1u, parsed);
+
+            throw new InvalidOperationException("Rock sculptor argument " + argumentName + " is not an unsigned integer: " + value);
+        }
+
         private void OnGUI()
         {
             _assetId = EditorGUILayout.TextField("Asset ID", _assetId);
@@ -90,8 +306,12 @@ namespace Hecton8.Editor.Generators.Geology
 
         private void BakeSelected()
         {
+            Bake(BuildSettings());
+        }
+
+        private static void Bake(SculptSettings settings)
+        {
             ValidateUnmanagedLayouts();
-            SculptSettings settings = BuildSettings();
             NativeArray<float> sdf = default;
             NativeArray<float> erodedSdf = default;
             NativeArray<RockVertex> vertices = default;
@@ -167,20 +387,48 @@ namespace Hecton8.Editor.Generators.Geology
 
         private SculptSettings BuildSettings()
         {
-            float q = math.saturate(float.IsFinite(_globalQualityWeight) ? _globalQualityWeight : 0f);
+            return BuildSettings(
+                _assetId,
+                _resolution,
+                _radiusMeters,
+                _heightMeters,
+                _noiseAmplitudeMeters,
+                _strataFrequency,
+                _seed,
+                _globalQualityWeight,
+                _triplanarMaterial);
+        }
+
+        /// <summary>
+        /// Single owner of the clamp/derive rules for a sculpt request. The window's serialized fields
+        /// and the batchmode command line both route through here, so neither can drift into a
+        /// different budget, seed floor, or erosion-drop curve.
+        /// </summary>
+        private static SculptSettings BuildSettings(
+            string assetId,
+            int resolution,
+            float radiusMeters,
+            float heightMeters,
+            float noiseAmplitudeMeters,
+            float strataFrequency,
+            uint seed,
+            float globalQualityWeight,
+            Material material)
+        {
+            float q = math.saturate(float.IsFinite(globalQualityWeight) ? globalQualityWeight : 0f);
             int drops = Mathf.RoundToInt(Mathf.Lerp(500f, 50000f, q * q * (3f - 2f * q)));
             return new SculptSettings
             {
-                AssetId = SanitizeAssetId(_assetId),
-                Resolution = Mathf.Clamp(_resolution, MinimumResolution, MaximumResolution),
-                RadiusMeters = Mathf.Max(0.5f, _radiusMeters),
-                HeightMeters = Mathf.Max(0.5f, _heightMeters),
-                NoiseAmplitudeMeters = Mathf.Max(0f, _noiseAmplitudeMeters),
-                StrataFrequency = Mathf.Max(0.01f, _strataFrequency),
-                Seed = math.max(1u, _seed),
+                AssetId = SanitizeAssetId(assetId),
+                Resolution = Mathf.Clamp(resolution, MinimumResolution, MaximumResolution),
+                RadiusMeters = Mathf.Max(0.5f, radiusMeters),
+                HeightMeters = Mathf.Max(0.5f, heightMeters),
+                NoiseAmplitudeMeters = Mathf.Max(0f, noiseAmplitudeMeters),
+                StrataFrequency = Mathf.Max(0.01f, strataFrequency),
+                Seed = math.max(1u, seed),
                 GlobalQualityWeight = q,
                 ErosionDrops = drops,
-                Material = _triplanarMaterial
+                Material = material
             };
         }
 

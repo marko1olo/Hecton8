@@ -67,6 +67,7 @@ namespace Hecton8.UI
         private float _activeUpdateIntervalSeconds = MinimumQualityUpdateIntervalSeconds;
         private int _activeGridCells = -1;
         private int _activeIndexCount;
+        private bool _missingSonarMapMaterialAnnounced;
 
         private void OnEnable()
         {
@@ -391,11 +392,34 @@ namespace Hecton8.UI
             _cachedQualityWeight01 = math.saturate(math.select(_cachedQualityWeight01, value, math.isfinite(value)));
         }
 
+        /// <summary>
+        /// Builds the runtime line mesh, or reports the missing authored material once without throwing.
+        /// </summary>
+        /// <remarks>
+        /// The <c>UnityEngine.Assertions.Assert.IsNotNull(sonarMapMaterial, ...)</c> that used to sit near the end
+        /// of this method (just before <see cref="ApplyMaterialPropertiesIfNeeded"/>) was a TAUTOLOGY, not a
+        /// guard: the <c>sonarMapMaterial == null</c> branch below returns before it, and nothing between the two
+        /// points can destroy the material. It could therefore never fire, while still carrying the project's
+        /// throwing-assert hazard for any future edit that moved it above the early return - both callers reach
+        /// this method before <see cref="TryRegisterTick"/> (<see cref="OnEnable"/> :75, <see cref="Start"/> :83),
+        /// so a throw there would have left the holo map permanently off the tick lane.
+        ///
+        /// The real defect was the opposite one: the null branch was completely SILENT. It tore down the runtime
+        /// resources and returned with no diagnosis anywhere, and the draw sites at :107 and :140 then skipped
+        /// quietly forever. The one-shot report below makes that authoring gap visible without throwing.
+        /// </remarks>
         private void EnsureResources()
         {
             if (sonarMapMaterial == null)
             {
                 DestroyRuntimeResources();
+
+                if (!_missingSonarMapMaterialAnnounced)
+                {
+                    _missingSonarMapMaterialAnnounced = true;
+                    LogMissingSonarMapMaterial();
+                }
+
                 return;
             }
 
@@ -421,8 +445,19 @@ namespace Hecton8.UI
                 RebuildLineIndices(ResolveGridCells(_cachedQualityWeight01));
             }
 
-            UnityEngine.Assertions.Assert.IsNotNull(sonarMapMaterial, "Fatal: Missing Authored Submarine Sonar Holo Map Material.");
+            // No null re-check needed: the sonarMapMaterial == null early return at the top of this method is the
+            // only reachable path for a missing material, and ApplyMaterialPropertiesIfNeeded null-guards it again.
             ApplyMaterialPropertiesIfNeeded();
+        }
+
+        /// <summary>
+        /// One-shot report of the unassigned authored sonar map material. The latch guarantees single emission and
+        /// the method takes no arguments, so no string work or allocation reaches any tick cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingSonarMapMaterial()
+        {
+            Hecton8.Core.H8Debug.LogError("SubmarineSonarHoloMapRenderer: serialized field 'sonarMapMaterial' is unassigned, so the submarine sonar holo map draws nothing this session - the runtime line mesh is torn down and both draw sites skip on the null material. The component still ticks and still tracks player visibility. Runtime material generation is forbidden: assign the authored sonar holo map material in the inspector.");
         }
 
         private void EnsureMaterialPropertiesCold()

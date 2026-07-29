@@ -11,10 +11,18 @@ namespace Hecton8.Editor
         [MenuItem("Hecton8/Bake Ecosystem Meshes")]
         public static void BakeAll()
         {
+            TryBakeAll();
+        }
+
+        public static bool TryBakeAll()
+        {
             string exportDir = "Assets/_Project/Prefabs/GeneratedEcosystem";
             if (!AssetDatabase.IsValidFolder(exportDir))
             {
                 Directory.CreateDirectory(exportDir);
+                // A folder made behind the AssetDatabase's back is not importable until refreshed,
+                // and CreateAsset into it silently fails on a first run.
+                AssetDatabase.Refresh();
             }
 
             Material coralMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/_Project/Art/Materials/Terrain/MAT_ProceduralCoral.mat");
@@ -77,8 +85,19 @@ namespace Hecton8.Editor
                 {
                     mesh.RecalculateNormals();
                     mesh.RecalculateTangents();
-                    System.IO.File.AppendAllText("C:/Users/danat/.gemini/antigravity/brain/9412af70-ebf5-491e-80e6-e0b2fcde1017/RenderLog.txt", $"[BAKE] Coral {token} vertexCount: {mesh.vertexCount}\n");
-                    bakedCorals.Add(SavePrefab(mesh, token, coralMat, exportDir));
+                    if (mesh.vertexCount == 0)
+                    {
+                        Debug.LogError($"[BAKE] Coral {token} built an EMPTY mesh (0 vertices). Not saving a hollow prefab.");
+                        Object.DestroyImmediate(mesh);
+                        continue;
+                    }
+                    Debug.Log($"[BAKE] Coral {token} vertexCount: {mesh.vertexCount}");
+                    GameObject baked = SavePrefab(mesh, token, coralMat, exportDir);
+                    if (baked != null) bakedCorals.Add(baked);
+                }
+                else
+                {
+                    Debug.LogError($"[BAKE] WorldProceduralCoralMeshBuilder.TryBuild returned false for token '{token}'. Variant spec missing.");
                 }
             }
 
@@ -95,12 +114,38 @@ namespace Hecton8.Editor
                 {
                     mesh.RecalculateNormals();
                     mesh.RecalculateTangents();
-                    System.IO.File.AppendAllText("C:/Users/danat/.gemini/antigravity/brain/9412af70-ebf5-491e-80e6-e0b2fcde1017/RenderLog.txt", $"[BAKE] Kelp {token} vertexCount: {mesh.vertexCount}\n");
-                    bakedKelp.Add(SavePrefab(mesh, token, kelpMat, exportDir));
+                    if (mesh.vertexCount == 0)
+                    {
+                        Debug.LogError($"[BAKE] Kelp {token} built an EMPTY mesh (0 vertices). Not saving a hollow prefab.");
+                        Object.DestroyImmediate(mesh);
+                        continue;
+                    }
+                    Debug.Log($"[BAKE] Kelp {token} vertexCount: {mesh.vertexCount}");
+                    GameObject baked = SavePrefab(mesh, token, kelpMat, exportDir);
+                    if (baked != null) bakedKelp.Add(baked);
+                }
+                else
+                {
+                    Debug.LogError($"[BAKE] WorldProceduralSeaweedMeshBuilder.TryBuild returned false for token '{token}'. Variant spec missing.");
                 }
             }
 
-            Debug.Log($"[BAKE] Successfully baked {bakedCorals.Count} corals and {bakedKelp.Count} kelps.");
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            bool complete = bakedCorals.Count == coralTokens.Length && bakedKelp.Count == seaweedTokens.Length;
+            if (complete)
+            {
+                Debug.Log($"[BAKE] Baked {bakedCorals.Count}/{coralTokens.Length} corals and {bakedKelp.Count}/{seaweedTokens.Length} kelps into {exportDir}.");
+            }
+            else
+            {
+                Debug.LogError($"[BAKE] INCOMPLETE: baked {bakedCorals.Count}/{coralTokens.Length} corals and " +
+                               $"{bakedKelp.Count}/{seaweedTokens.Length} kelps. The GeneratedEcosystem set is partial; " +
+                               "any consumer indexing the full token list will miss prefabs.");
+            }
+
+            return complete;
         }
 
         private static GameObject SavePrefab(Mesh mesh, string token, Material mat, string exportDir)
@@ -115,16 +160,28 @@ namespace Hecton8.Editor
             mr.sharedMaterial = mat;
 
             string prefabPath = $"{exportDir}/{token}_Prefab.prefab";
-            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(go, prefabPath, out bool saved);
             Object.DestroyImmediate(go);
+
+            if (!saved || prefab == null)
+            {
+                Debug.LogError($"[BAKE] PrefabUtility.SaveAsPrefabAsset failed for '{prefabPath}'. " +
+                               "Verify the export folder is imported and writable.");
+                return null;
+            }
+
             return prefab;
         }
 
-        // We can also have an execute method for batch mode
+        /// <summary>
+        /// Batchmode entry point. Exits non-zero when the token set did not bake completely, so a
+        /// headless run cannot report success over a partial GeneratedEcosystem folder.
+        /// Unity.exe -batchmode -quit -projectPath &lt;proj&gt; -executeMethod Hecton8.Editor.BakeEcosystemMeshes.ExecuteBatch
+        /// </summary>
         public static void ExecuteBatch()
         {
-            BakeAll();
-            EditorApplication.Exit(0);
+            bool ok = TryBakeAll();
+            EditorApplication.Exit(ok ? 0 : 1);
         }
     }
 }

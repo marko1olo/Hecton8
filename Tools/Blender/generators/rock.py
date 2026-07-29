@@ -120,6 +120,21 @@ SIZE_CLASSES = {
                              "3DMODEL_GEOLOGY_ROCKS.md s7 large vent/cliff chunk"),
 }
 
+# The dashless spelling is accepted for every class, because ``law.py`` keys its geology
+# budget rows that way -- ``law.GEOLOGY_SIZE_LOD_BUDGETS["cliffchunk"]``, reached through
+# ``SizeClass.law_key`` -- while this CLI spelled the same class ``cliff-chunk``. One name
+# for one thing would be better, but the display name is already in manifests, object names
+# and file names, so the alias is the non-destructive half of the fix: ``--size cliffchunk``
+# and ``--size cliff-chunk`` both resolve, and a genuinely wrong name is still rejected by
+# argparse rather than silently falling back to a default class.
+SIZE_CLASS_ALIASES = {key.replace("-", ""): key for key in SIZE_CLASSES
+                      if key.replace("-", "") != key}
+
+
+def resolve_size_class(name: str) -> str:
+    """Canonical ``SIZE_CLASSES`` key for a user-supplied class name."""
+    return SIZE_CLASS_ALIASES.get(name, name)
+
 # Chip width as a FRACTION of the asset's longest extent. law.BEVEL_RANGES has no
 # Family.GEOLOGY entry (only SMALL_PROP / BASE_MODULE / WRECKAGE), so there is no
 # constant to import -- reported as a law gap rather than hardcoded silently. The
@@ -2264,6 +2279,13 @@ def build_uvs(obj: bpy.types.Object, frame: BeddingFrame, size: SizeClass,
     while mesh.uv_layers:
         mesh.uv_layers.remove(mesh.uv_layers[0])
     uv0 = mesh.uv_layers.new(name="UVMap")
+    # Capture the NAME now, as a Python string. `mesh.uv_layers.new` below reallocates the
+    # CustomData layer array, and a `bpy_prop` wrapper obtained before that points into the
+    # old allocation. Reading `uv0.name` after UV1 exists is a dangling read: it returned
+    # garbage bytes and raised `UnicodeDecodeError: 'utf-8' codec can't decode byte 0xb3 in
+    # position 2` from the manifest builder, which is undefined behaviour that depends on
+    # the allocator, so it fires at random rather than every run.
+    uv0_name = str(uv0.name)
     mesh.uv_layers.active = uv0
 
     atlas_size = 2048 if quality >= 0.6 else 1024
@@ -2326,7 +2348,7 @@ def build_uvs(obj: bpy.types.Object, frame: BeddingFrame, size: SizeClass,
         "triplanarMetresPerTile": TRIPLANAR_METRES_PER_TILE,
         "triplanarScaleIdenticalAcrossLods": True,
         "triplanarScaleSource": "object-space position, not UV area",
-        "uv0": {"name": uv0.name, "route": "smart_project_angle_based_fallback",
+        "uv0": {"name": uv0_name, "route": "smart_project_angle_based_fallback",
                 "angleLimitDeg": 66.0, "atlasSize": atlas_size,
                 "islandMarginUv": round(island_margin, 6),
                 "paddingPx": padding_px, "purpose": "decals, masks, manifest coords",
@@ -2590,6 +2612,11 @@ def inspect_topology(mesh: bpy.types.Mesh) -> dict:
     return {
         "boundaryEdges": boundary,
         "nonManifoldEdges": non_manifold,
+        # Not derivable from the three counts above, and that is the whole point: a
+        # duplicate-face pair keeps every edge at exactly two faces, so it is manifold by
+        # the edge test, has real area, and has no boundary. Only the FBX round trip saw it,
+        # and only as lost geometry after the file was written.
+        "duplicateFaces": duplicate_face_count(mesh),
         "degenerateFaces": degenerate,
         "looseVerts": loose,
         "islands": islands,
@@ -2597,6 +2624,161 @@ def inspect_topology(mesh: bpy.types.Mesh) -> dict:
         "signedVolumeM3": round(volume, 6),
         "outwardWinding": volume > 0.0,
     }
+
+
+def dedupe_faces_bm(bm: bmesh.types.BMesh) -> int:
+    """Delete every face after the first on any given vertex set. Returns how many went.
+
+    A duplicate face is the one topology defect in this generator that NOTHING local can
+    see, and the FBX exporter is the only stage that reports it -- as lost geometry, after
+    the fact. ``inspect_topology`` reads zero non-manifold edges, because both faces of the
+    pair contribute to the same edges and every edge still has exactly two of them;
+    ``collapse_slivers`` passes, because both faces have real area; there is no bowtie vertex
+    and no boundary edge. FBX cannot express the pair at all, so the importer merges it and
+    the file comes back with fewer faces, fewer corner normals and fewer colour elements than
+    the mesh that was measured. Measured on the cliff chunk: LOD0 16210 -> 16206 triangles,
+    colour elements 194496 -> 194472, corner normals 48624 -> 48618, and the same at LOD1 and
+    LOD2 -- a whole package rejected with no local symptom to chase.
+
+    Sources here are the repair passes themselves: ``holes_fill`` can bridge a rim that
+    already carried a face, and ``bmesh.ops.collapse`` can pull two triangles onto the same
+    triple. Both are legitimate operations with this as a side effect, so the answer is to
+    measure and remove, not to stop repairing.
+
+    Keyed on the SORTED vertex-index tuple, so winding cannot hide a duplicate: two faces on
+    the same three vertices are the same face whichever way they are wound, and a
+    back-to-back pair is exactly the 180-degree fold that also ruins the normal fan.
+
+    DELETE IS NOT ALWAYS THE RIGHT REPAIR, and assuming it was cost a run. Two different
+    topologies produce a duplicate key:
+
+      - A genuine duplicate riding on top of shell geometry. Every edge of the doomed face
+        then has THREE or more faces, so deleting it drops each back to two and the shell
+        stays closed. This is the case ``mesh_ops._weld_coincident`` was written for.
+      - A FLAP: ``holes_fill`` bridged a rim with a quad whose triangulation reproduces a
+        triangle that already exists. Measured on the cliff chunk LOD0, seed 1713: quads
+        [7349, 7350, 803, 827] and [333, 7796, 7795, 334], each splitting into one triangle
+        that collides with an existing vertex set -- 16206 distinct loop-triangle vertex sets
+        out of 16208. Here the flap's outer edges carry only the flap and one neighbour, so
+        deleting it leaves those edges with a single face: the repair trades an invisible
+        duplicate for a visible hole, and the closed-shell gate then fails instead.
+
+    So the rule is measured per face rather than assumed: delete when every edge can afford
+    to lose it, otherwise COLLAPSE the shortest edge, which removes the face without ever
+    opening a boundary. That is the same reasoning ``collapse_slivers`` documents for
+    degenerate faces, applied to a defect that has real area and is therefore invisible to
+    it.
+    """
+    seen = set()
+    doomed = []
+    for face in bm.faces:
+        key = tuple(sorted(vert.index for vert in face.verts))
+        if key in seen:
+            doomed.append(face)
+        else:
+            seen.add(key)
+    if not doomed:
+        return 0
+    deletable = [f for f in doomed
+                 if all(len(e.link_faces) >= 3 for e in f.edges)]
+    folds = [f for f in doomed if f not in deletable]
+    removed = len(doomed)
+    if deletable:
+        bmesh.ops.delete(bm, geom=deletable, context="FACES_ONLY")
+    if folds:
+        # Identity, not ``edge.index``. bmesh does not renumber after a topology change, so
+        # every index here can be stale or -1 once the deletions above have run -- and an
+        # index-keyed set would then treat unrelated edges as the same one and silently drop
+        # all but the first collapse. ``bmesh.ops.delete`` also rejects a list that names one
+        # element twice, so the de-duplication has to be real.
+        edges = []
+        for face in folds:
+            if not face.is_valid:
+                continue
+            candidates = [e for e in face.edges if e.is_valid]
+            if not candidates:
+                continue
+            shortest = min(candidates, key=lambda e: e.calc_length())
+            if any(shortest is existing for existing in edges):
+                continue
+            edges.append(shortest)
+        if edges:
+            bmesh.ops.collapse(bm, edges=edges, uvs=True)
+    return removed
+
+
+def remove_duplicate_faces(obj: bpy.types.Object, blackbox: BlackBox,
+                           stage: str) -> int:
+    """``dedupe_faces_bm`` on an object, recorded in the black box."""
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    try:
+        removed = dedupe_faces_bm(bm)
+        if removed:
+            bm.to_mesh(obj.data)
+            obj.data.update()
+    finally:
+        bm.free()
+    blackbox.record("dedupe_faces:" + stage,
+                    triangle_count=mesh_ops.triangle_count(obj.data),
+                    vertex_count=len(obj.data.vertices),
+                    warning="" if not removed else
+                    "removed {n} duplicate faces".format(n=removed))
+    return removed
+
+
+def duplicate_face_count(mesh: bpy.types.Mesh) -> int:
+    """Faces sharing a vertex set with an earlier face. Zero is the only passing value."""
+    seen = set()
+    duplicates = 0
+    for polygon in mesh.polygons:
+        key = tuple(sorted(polygon.vertices))
+        if key in seen:
+            duplicates += 1
+        else:
+            seen.add(key)
+    return duplicates
+
+
+def stale_smooth_census(obj: bpy.types.Object, threshold_deg: float) -> dict:
+    """Edges above the split threshold that are still flagged SMOOTH, plus the widest fan.
+
+    A probe that fails loudly, for a stage that used to fail silently. Decimation carries
+    the previous level's sharp-edge flags forward unchanged, so a far LOD can be shaded for
+    geometry that no longer exists: measured 304 such edges at LOD1 and 98 at LOD2 on the
+    boulder before the per-level basis was re-derived, the widest at 178-180 degrees.
+
+    Two separate things go wrong when this number is above zero, and neither raises:
+      - ``3DMODEL_GEOLOGY_ROCKS.md`` section 4 is violated outright. Every one of those
+        edges is a fracture plane above 45 degrees being smoothed into a blob.
+      - the custom split normals become unencodable. Blender stores them per fan in a polar
+        frame whose quantisation step scales with the fan's angular spread, so a smooth fan
+        spanning 180 degrees loses ~1e-3 on a unit normal -- which is the exporter's whole
+        round-trip tolerance, spent on shading that is wrong anyway.
+    """
+    limit = math.radians(threshold_deg)
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    try:
+        stale = 0
+        widest = 0.0
+        sharp = 0
+        for edge in bm.edges:
+            if not edge.smooth:
+                sharp += 1
+            if len(edge.link_faces) != 2:
+                continue
+            angle = edge.calc_face_angle()
+            if angle > widest:
+                widest = angle
+            if angle > limit and edge.smooth:
+                stale += 1
+        return {"thresholdDeg": round(threshold_deg, 3),
+                "edgesAboveThresholdStillSmooth": stale,
+                "sharpEdges": sharp,
+                "widestDihedralDeg": round(math.degrees(widest), 2)}
+    finally:
+        bm.free()
 
 
 # ---------------------------------------------------------------------------
@@ -2661,12 +2843,27 @@ class VariantResult:
     channel_area_stats: dict = field(default_factory=dict)
     silhouette: list = field(default_factory=list)
     silhouette_summary: dict = field(default_factory=dict)
+    roundtrip_notes: list = field(default_factory=list)
+    roundtrip_verified: bool = False
+    export_summary: str = ""
+    lod_shading: list = field(default_factory=list)
+    stale_smooth_edges: dict = field(default_factory=dict)
+    lod_silhouette: dict = field(default_factory=dict)
 
 
 def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str,
-                     out_dir: str, want_preview: bool, want_fbx: bool,
-                     preview_resolution: int, debug_stage: str = "") -> VariantResult:
-    """Full stage order from ``PROCEDURAL_ASSET_PIPELINE.md`` "Generation Order"."""
+                     package_dir: str, proof_dir: str, want_preview: bool,
+                     want_fbx: bool, preview_resolution: int,
+                     debug_stage: str = "") -> VariantResult:
+    """Full stage order from ``PROCEDURAL_ASSET_PIPELINE.md`` "Generation Order".
+
+    TWO destinations, not one, and the split is not cosmetic. ``package_dir`` holds the
+    FBX and its sibling manifest and lives under ``Assets``, so Unity imports it.
+    ``proof_dir`` holds contact sheets, silhouette masks and channel tiles and lives
+    under gitignored ``Docs/AgentLogs``, because Unity has no business importing a
+    diagnostic picture as a texture with its own ``.meta``, GUID and VRAM cost. One
+    directory for both put 27 PNGs into the asset database for every 2 package files.
+    """
     q = law.saturate(quality)
     name = "{cls}_{proc}_s{seed}_q{q:03d}".format(
         cls=size.name.replace("-", ""), proc=process, seed=seed, q=int(round(q * 100)))
@@ -2698,7 +2895,7 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # the silhouette. Three rounds of guessing which stage flattens them was already spent;
     # this bisects it instead.
     if debug_stage == "lattice":
-        return _debug_render(bm, name, size, out_dir, preview_resolution,
+        return _debug_render(bm, name, size, proof_dir, preview_resolution,
                              "lattice", result)
 
     # Stage 4: family topology rules. Summit truncation FIRST, because it removes the
@@ -2730,22 +2927,22 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # silhouettes.
     collapse_thin_wedges(bm, blackbox, "post_fracture")
     if debug_stage == "fracture":
-        return _debug_render(bm, name, size, out_dir, preview_resolution,
+        return _debug_render(bm, name, size, proof_dir, preview_resolution,
                              "fracture", result)
     partings = carve_partings(bm, frame, strata, size, rng, q, blackbox)
     if debug_stage == "parting":
-        return _debug_render(bm, name, size, out_dir, preview_resolution,
+        return _debug_render(bm, name, size, proof_dir, preview_resolution,
                              "parting", result)
     veins = raise_mineral_seams(bm, frame, strata, size, rng, q, blackbox)
     vugs = punch_vugs(bm, size, rng, q, process, blackbox)
     mesh_ops.weld_and_clean(bm, blackbox=blackbox)
     open_edges = close_open_boundaries(bm, blackbox, "post_detail")
     if debug_stage == "vug":
-        return _debug_render(bm, name, size, out_dir, preview_resolution,
+        return _debug_render(bm, name, size, proof_dir, preview_resolution,
                              "vug", result)
     chips = chip_edges(bm, size, rng, q, process, blackbox)
     if debug_stage == "chip":
-        return _debug_render(bm, name, size, out_dir, preview_resolution,
+        return _debug_render(bm, name, size, proof_dir, preview_resolution,
                              "chip", result)
     # COLLAPSE the chip slivers BEFORE the cleaner gets to delete them. Measured on the basalt
     # outcrop, which uses a 0.72x narrower nominal chip on a fine lattice: `weld_and_clean`
@@ -2933,8 +3130,51 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     vertexcolor.remove_scratch_attributes(obj.data)
 
     # Stage 8: LOD chain.
+    #
+    # preserve_seams=FALSE FOR GEOLOGY, and this is the measured fix for the FBX round
+    # trip, not a shortcut. Everything below is a number off this generator.
+    #
+    # WHAT THE SPLIT DOES HERE. `mesh_ops._split_uv_seams` converts every UV seam, every
+    # MATERIAL border and every SHARP edge into a mesh boundary so Decimate/COLLAPSE will
+    # not collapse across it. LOD0 is a closed manifold solid with 811 sharp edges, a
+    # smart-project unwrap and three material slots, so the split cuts the shell into
+    # ribbons. Measured on the boulder, seed 1713: LOD0 components 1 / boundary 0 /
+    # non-manifold 0 becomes LOD1 boundary 12-19 with 2-3 non-manifold, and LOD2
+    # **7-8 components, 137-156 boundary edges, 5-9 non-manifold edges**. The decimator
+    # then moves the duplicated seam vertices apart, so `_weld_coincident` -- which only
+    # rejoins vertices that are still coincident -- can no longer put the shell back
+    # together. `3dmodel.md` section 7 opens that same sentence with "Decimation must
+    # preserve BOUNDARY EDGES": a solid with zero boundary edges decimated into one with
+    # 147 has violated the requirement the split exists to satisfy.
+    #
+    # WHY IT BREAKS THE NORMALS, measured rather than reasoned. Blender encodes custom
+    # split normals per fan in a polar (alpha, beta) frame around the fan's own averaged
+    # normal, and the quantisation step scales with the fan's angular spread. A vertex on
+    # an open rim has an open fan spanning the whole gap, so the step is coarse there.
+    # Isolated with no FBX involved at all -- re-applying a mesh's OWN corner normals back
+    # onto itself with `normals_split_custom_set` -- the loss was LOD0 4.7e-4, LOD1 4.4e-4,
+    # LOD2 **9.4e-4** against the exporter's 1.0e-3 tolerance, and the worst loop was at a
+    # boundary vertex with a 179.8-degree fold in its fan every single time. So the FBX was
+    # never the problem, the tolerance is not being misapplied to a healthy mesh, and LOD2
+    # was sitting inside 6% of the ceiling by construction. Which side of it a given run
+    # landed on was decided by decimation noise: three identical invocations of the same
+    # seed measured 5.9e-5, 3.4e-4 and 1.816e-3 -- the third aborted.
+    #
+    # WHAT IS GIVEN UP, honestly. UV0 precision and material-border precision at LOD1/LOD2.
+    # Both were already nominal rather than real: `tighten_to_target(allow_weld=True)` welds
+    # the split seam vertices back at exactly these levels, so the preservation was undone a
+    # few lines later, and the manifest's "preservesUvSeams: true" was describing an
+    # intention. `3DMODEL_GEOLOGY_ROCKS.md` section 5 makes triplanar object-space
+    # projection the primary material route for irregular geology with UV0 as the
+    # "decal/manifest coordinates or a fallback unwrap", and section 7 accepts a "proxy
+    # shell" at the coarse level, so far-LOD UV0 precision is explicitly secondary. The
+    # authored seams that a unique bake would use live on LOD0, which is never decimated.
+    #
+    # Retrying the split-and-weld route with different distances would be the same-failure
+    # escalation `AGENTS.md` forbids. Removing the constraint that shatters the shell is the
+    # strategy change it demands.
     lods = mesh_ops.build_lod_chain(obj, family=law.Family.GEOLOGY, name=name,
-                                    quality_weight=q, levels=3, preserve_seams=True,
+                                    quality_weight=q, levels=3, preserve_seams=False,
                                     blackbox=blackbox)
     for level in lods:
         target = int(size.budget(level.index))
@@ -2955,10 +3195,47 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
             if mesh_ops.triangle_count(level.obj.data) > target:
                 tighten_to_target(level.obj, target, blackbox,
                                   "lod{i}_size_row".format(i=level.index))
+            # Duplicate faces, LAST thing after the decimation that can create them.
+            # `mesh_ops._weld_coincident` used to do this, but it only runs when seams were
+            # split, so turning seam splitting off for geology took the duplicate-face
+            # removal with it -- and the cliff chunk then failed the round trip at all three
+            # levels. Removing a face cannot raise the triangle count, so this cannot
+            # breach the budget that was just met.
+            remove_duplicate_faces(level.obj, blackbox,
+                                   "lod{i}".format(i=level.index))
         # Every LOD passes through weld_and_clean/_split_uv_seams, each of which calls
         # recalc_face_normals, so each level needs its own winding check.
         ensure_outward_winding(level.obj, blackbox,
                                "lod{i}".format(i=level.index))
+        if level.index > 0:
+            # RE-DERIVE THE SHADING BASIS FROM THIS LEVEL'S OWN GEOMETRY.
+            #
+            # Quadric Edge Collapse has no normal term. It drags LOD0's per-loop custom
+            # normals and LOD0's sharp-edge flags through the collapse unchanged, so a far
+            # LOD ends up shaded for a mesh that no longer exists. Measured on the boulder:
+            # after decimation **304 edges at LOD1 and 98 at LOD2 had a dihedral angle above
+            # the 46-degree split threshold while still flagged SMOOTH**, with the widest at
+            # 178-180 degrees. `3DMODEL_GEOLOGY_ROCKS.md` section 4 is explicit -- "Split
+            # normals at sharp fracture edges above 45 degrees. Do not smooth a chipped
+            # plane into a soft blob" -- and every one of those 402 edges was a chipped
+            # plane smoothed into a blob. That is a visual defect at LOD1, which is a
+            # mid-distance level, not just a round-trip statistic.
+            #
+            # It is also what makes the corner normals unencodable. A smooth fan spanning
+            # 180 degrees gives the clnor polar encoding a range that wide to quantise
+            # into a short, and re-deriving the sharp set narrows every fan back down.
+            # Measured re-encode loss: LOD1 4.447e-4 -> 3.302e-4, LOD2 4.043e-4 -> 2.440e-4.
+            #
+            # `3dmodel.md` section 7's "Decimation must preserve ... hard normals" is
+            # satisfied by re-deriving them at the SAME threshold on the decimated faces,
+            # which is strictly stronger than carrying flags that measurably no longer
+            # describe the surface. Runs after `ensure_outward_winding` on purpose: that
+            # function reverses faces when the signed volume is negative, which inverts
+            # every corner normal, so a basis applied before it would be thrown away.
+            result.lod_shading.append(mesh_ops.apply_shading_basis(
+                level.obj, smooth_angle_deg=law.smooth_angle_for(
+                    law.SurfaceClass.GEOLOGIC),
+                weighted=True, keep_sharp=True, blackbox=blackbox))
         # Per-LOD census, so a far-LOD validator failure reports a CAUSE instead of a symptom.
         # `h8forge.validate` reports `inconsistent_winding` on LOD1/LOD2 and
         # `recalc_face_normals` cannot fix it, which means the geometry is locally
@@ -2967,6 +3244,9 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
         # index; the forge rule file's standing lesson is that reasoning from a plausible
         # mechanism instead of reading the number survived two commits once already.
         census_lod = mesh_ops.topology_report(level.obj)
+        shading_census = stale_smooth_census(
+            level.obj, law.smooth_angle_for(law.SurfaceClass.GEOLOGIC))
+        result.stale_smooth_edges["LOD{i}".format(i=level.index)] = shading_census
         result.lods.append({
             "index": level.index,
             "object": level.obj.name,
@@ -2974,6 +3254,8 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
             "components": census_lod.components,
             "boundaryEdges": census_lod.boundary_edges,
             "nonManifoldEdges": census_lod.nonmanifold_edges,
+            "duplicateFaces": duplicate_face_count(level.obj.data),
+            "shadingBasis": shading_census,
             "lawFamilyBudget": law.LOD_BUDGETS[law.Family.GEOLOGY].limit(level.index),
             "geologySizeRowBudget": law.geology_budget_for(size.law_key).limit(level.index),
             "effectiveBudget": target,
@@ -2999,9 +3281,25 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     # condition rather than on a pass count.
     lod0_bm = bmesh.new()
     lod0_bm.from_mesh(lods[0].obj.data)
-    bmesh.ops.triangulate(lod0_bm, faces=lod0_bm.faces[:])
     bmesh.ops.recalc_face_normals(lod0_bm, faces=lod0_bm.faces[:])
     for attempt in range(6):
+        # TRIANGULATION IS PART OF THE FIXED POINT, not a one-shot before it. It used to run
+        # once above this loop, and then `weld_and_clean`'s `holes_fill` put n-gons straight
+        # back -- so the mesh that got measured, validated and manifested was NOT the mesh
+        # the FBX carried. Measured on the cliff chunk: LOD0 ended with three QUADS, and the
+        # round trip reported 16208 -> 16205 triangles with the polygon count unchanged at
+        # 16205 and maxSides 4 -> 3, i.e. each quad came back as a triangle: 3 triangles and
+        # exactly 3 loops lost (colour elements 194472 -> 194460). The exporter's own
+        # discriminator called it -- "an n-gon lost a side, so this is triangulation or n-gon
+        # support, NOT lost geometry" -- and it was right.
+        #
+        # Triangulating inside the loop also lets `collapse_slivers` see what the
+        # triangulation exposes: a quad with one near-collinear corner has a healthy area but
+        # splits into one healthy triangle and one sliver, which is the degenerate the
+        # exporter drops.
+        ngons = [f for f in lod0_bm.faces if len(f.verts) > 3]
+        if ngons:
+            bmesh.ops.triangulate(lod0_bm, faces=ngons)
         # Tiny merge distance: this is a topology repair, not a decimation, and the authored
         # features here are millimetre-scale chamfers.
         mesh_ops.weld_and_clean(lod0_bm, merge_distance=1e-5, blackbox=blackbox)
@@ -3010,13 +3308,69 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
         boundary_left = close_open_boundaries(lod0_bm, blackbox,
                                              "lod0_final_{a}".format(a=attempt))
         nonmanifold_left = sum(1 for e in lod0_bm.edges if len(e.link_faces) > 2)
-        if slivers_left == 0 and boundary_left == 0 and nonmanifold_left == 0:
+        # FOURTH symptom of the same cycle, and the one that was missing. `holes_fill` can
+        # bridge a rim that already had a face and `bmesh.ops.collapse` can pull two
+        # triangles onto one triple, so the sliver/rim/non-manifold fixed point could
+        # converge while leaving a duplicate face behind -- invisible to all three of the
+        # conditions below and fatal to the FBX round trip. Measured on the cliff chunk:
+        # LOD0 lost 4 triangles and 6 corner normals on re-import with every one of those
+        # three counts already at zero.
+        duplicates_left = dedupe_faces_bm(lod0_bm)
+        ngons_left = sum(1 for f in lod0_bm.faces if len(f.verts) > 3)
+        if (slivers_left == 0 and boundary_left == 0 and nonmanifold_left == 0
+                and duplicates_left == 0 and ngons_left == 0):
             break
+    # TERMINAL PASS, and it deliberately does NOT fill. Hole filling is what produces both
+    # the n-gons and the flaps, so as long as it is the last thing to run the loop can exit
+    # on its attempt cap with three quads still present -- which is exactly what the cliff
+    # chunk did, and the export then triangulated them into duplicate triangles that the FBX
+    # merged away. Measured before this pass: LOD0 sides={3: 16202, 4: 3} with 16206 distinct
+    # loop-triangle vertex sets out of 16208.
+    #
+    # Order matters. Triangulate first, because a flap is only visible as a duplicate once
+    # the quad is split. Collapse slivers next, because the split can expose one. Repair
+    # folds last, so nothing after it can create another.
+    terminal_ngons = [f for f in lod0_bm.faces if len(f.verts) > 3]
+    if terminal_ngons:
+        bmesh.ops.triangulate(lod0_bm, faces=terminal_ngons)
+    collapse_slivers(lod0_bm, blackbox, "lod0_terminal")
+    terminal_folds = dedupe_faces_bm(lod0_bm)
+    bmesh.ops.recalc_face_normals(lod0_bm, faces=lod0_bm.faces[:])
+    blackbox.record("lod0_terminal", triangle_count=len(lod0_bm.faces),
+                    vertex_count=len(lod0_bm.verts),
+                    warning="triangulated {n} n-gons, repaired {f} coincident "
+                            "faces".format(n=len(terminal_ngons), f=terminal_folds))
     lod0_bm.to_mesh(lods[0].obj.data)
     lods[0].obj.data.update()
     lod0_bm.free()
     ensure_outward_winding(lods[0].obj, blackbox, "lod0_final")
-    result.lods[0]["triangles"] = mesh_ops.triangle_count(lods[0].obj.data)
+    # LOD0's SHADING BASIS IS RE-DERIVED HERE TOO, for the same reason the far LODs get one:
+    # it must describe the mesh that is exported, and the repair loop above runs after the
+    # stage-4 basis. Caught by the new gate rather than by inspection -- 2 edges at 179.98
+    # degrees were left flagged smooth on the cliff chunk, i.e. two folds shaded as if they
+    # were continuous surface. The stage-4 pass still has to happen where it is, because the
+    # Cycles AO bake and the channel composition read the shading; this is the second half of
+    # the same requirement, applied to the final topology.
+    result.shading = mesh_ops.apply_shading_basis(
+        lods[0].obj, smooth_angle_deg=law.smooth_angle_for(law.SurfaceClass.GEOLOGIC),
+        weighted=True, keep_sharp=True, blackbox=blackbox)
+    # REFRESH THE WHOLE LOD0 ROW, not just the triangle count. The per-level census above
+    # ran before this repair loop, so every other field in it -- components, boundary edges,
+    # non-manifold edges, duplicate faces, shading basis -- described the mesh as it was
+    # before the fixed point converged. One refreshed field beside five stale ones is worse
+    # than none, because the row reads as current.
+    lod0_census = mesh_ops.topology_report(lods[0].obj)
+    lod0_shading = stale_smooth_census(
+        lods[0].obj, law.smooth_angle_for(law.SurfaceClass.GEOLOGIC))
+    result.stale_smooth_edges["LOD0"] = lod0_shading
+    result.lods[0].update({
+        "triangles": mesh_ops.triangle_count(lods[0].obj.data),
+        "components": lod0_census.components,
+        "boundaryEdges": lod0_census.boundary_edges,
+        "nonManifoldEdges": lod0_census.nonmanifold_edges,
+        "duplicateFaces": duplicate_face_count(lods[0].obj.data),
+        "shadingBasis": lod0_shading,
+    })
 
     # Topology census AFTER the LOD chain, measured on the LOD0 object that will actually be
     # exported. It used to run before `build_lod_chain`, and that is a stale measurement: the
@@ -3062,7 +3416,7 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
     #   random convex polytope  0.789   <- pure flat facets and sharp arrises
     if want_preview:
         silhouette = silhouette_probe.render_silhouette(
-            lods[0].obj, name=name, output_dir=out_dir,
+            lods[0].obj, name=name, output_dir=proof_dir,
             resolution=preview_resolution,
             views=("front", "side", "three_quarter", "low"))
         result.sheets["silhouette"] = silhouette.sheet_path
@@ -3077,6 +3431,30 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
             "potatoFloor": SILHOUETTE_POTATO_FLOOR,
             "targetFloor": SILHOUETTE_TARGET_FLOOR,
         }
+
+        # THE FAR LODS GET THE SAME INSTRUMENT, because section 9's rejection gate
+        # "LOD1/LOD2 destroys ore/vent gameplay readability" and section 7's forbidden
+        # "Smoothing away all fracture planes" are about the DECIMATED levels, and nothing
+        # here had ever measured or looked at them -- every proof render in this generator
+        # was LOD0. That was tolerable while the far LODs were an afterthought and is not
+        # now that the decimation route has changed: the whole point of dropping seam
+        # splitting is that the quadric metric, not a boundary lock, keeps the silhouette.
+        # Reported as measurements rather than as a pass/fail, because the bible sets no
+        # numeric floor for a 236-triangle proxy and inventing one would be a fabricated
+        # threshold. The number triages; the image decides.
+        for level in lods[1:]:
+            far = silhouette_probe.render_silhouette(
+                level.obj, name="{n}_LOD{i}".format(n=name, i=level.index),
+                output_dir=proof_dir, resolution=preview_resolution,
+                views=("front", "side", "three_quarter", "low"))
+            result.sheets["silhouette_lod{i}".format(i=level.index)] = far.sheet_path
+            result.lod_silhouette["LOD{i}".format(i=level.index)] = {
+                "meanTurnTop10Fraction": round(far.mean_top10, 4),
+                "meanCornerCount": round(far.mean_corners, 2),
+                "meanConvexity": round(far.mean_convexity, 4),
+                "retainedFractionOfLod0": round(
+                    far.mean_top10 / max(1e-6, silhouette.mean_top10), 4),
+            }
 
     # Stage 11: validation BEFORE save.
     result.gates = hard_gates(result, size)
@@ -3111,16 +3489,22 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
         raise GenerationAborted("rock gates failed for " + name, dump, blocking)
 
     # Stage 12/13: save + proof.
-    os.makedirs(out_dir, exist_ok=True)
+    os.makedirs(package_dir, exist_ok=True)
     if want_fbx:
-        result.fbx_path = export_package(lods, collider, out_dir, name)
+        result.fbx_path = export_package(lods, collider, package_dir, name,
+                                         result, blackbox)
     if want_preview:
-        render_proof(lods[0].obj, name, out_dir, preview_resolution, result)
-    result.manifest_path = write_manifest(result, size, frame, strata, out_dir)
+        render_proof(lods[0].obj, name, proof_dir, preview_resolution, result)
+    # The manifest is a SIBLING of the FBX and cannot move.
+    # `HectonFBXPostprocessor.TryResolveForgeManifestPath` derives the manifest path from
+    # the imported mesh path, and that lookup is what gates the import carve-out
+    # preserving these authored normals. A manifest in the proof directory would be a
+    # manifest Unity never finds.
+    result.manifest_path = write_manifest(result, size, frame, strata, package_dir)
     return result
 
 
-def _debug_render(bm: bmesh.types.BMesh, name: str, size: SizeClass, out_dir: str,
+def _debug_render(bm: bmesh.types.BMesh, name: str, size: SizeClass, proof_dir: str,
                   resolution: int, stage: str, result: VariantResult) -> VariantResult:
     """Commit a bmesh to a throwaway object and render it flat. Isolation instrument only.
 
@@ -3145,7 +3529,7 @@ def _debug_render(bm: bmesh.types.BMesh, name: str, size: SizeClass, out_dir: st
         weighted=True, keep_sharp=True)
 
     spec = preview.PreviewSpec(
-        name="{n}_DEBUG_{s}".format(n=name, s=stage), output_dir=out_dir,
+        name="{n}_DEBUG_{s}".format(n=name, s=stage), output_dir=proof_dir,
         resolution=resolution, mode="flat",
         surface_class=law.SurfaceClass.GEOLOGIC,
         views=("three_quarter", "front", "side", "low"))
@@ -3156,7 +3540,7 @@ def _debug_render(bm: bmesh.types.BMesh, name: str, size: SizeClass, out_dir: st
     # skips the AO bake, the unwrap, the LOD chain and validation, so it answers "did this
     # stage change the OUTLINE" in seconds instead of minutes.
     silhouette = silhouette_probe.render_silhouette(
-        obj, name="{n}_DEBUG_{s}".format(n=name, s=stage), output_dir=out_dir,
+        obj, name="{n}_DEBUG_{s}".format(n=name, s=stage), output_dir=proof_dir,
         resolution=resolution, views=("front", "side", "three_quarter", "low"))
     result.sheets["debug_silhouette_" + stage] = silhouette.sheet_path
     result.silhouette = [m.as_dict() for m in silhouette.metrics]
@@ -3268,7 +3652,19 @@ def clean_object(obj: bpy.types.Object, blackbox: BlackBox, stage: str,
     # was hardcoded to 1e-4 while callers passed 2e-3 for the far LODs and reasonably assumed
     # it took effect. A parameter accepted and dropped is the same defect class as a gate that
     # cannot fire, and it is why the far-LOD weld never did what its call site claimed.
-    stats = mesh_ops.weld_and_clean(bm, merge_distance=merge_distance, blackbox=blackbox)
+    #
+    # `fill_boundary_loops` is tied to `close`, because it is the SAME decision expressed
+    # in the core's cleaner. It defaults to True there, so a call site that passed
+    # `close=False` -- meaning "do not close holes at this level, the budget is a hard
+    # ceiling" -- still got holes closed, by the weld, one line before its own closer was
+    # skipped. That is how a far LOD gained fill triangles after the decimator had finished
+    # and after the last measurement, which is the failure the call site's own comment
+    # describes. It also makes the level NON-DETERMINISTIC: the core discovers boundary
+    # loops by popping an arbitrary element off a Python set of BMesh edges, whose iteration
+    # order is address-derived and therefore different in every process, so which rims get
+    # filled and in what order changes run to run.
+    stats = mesh_ops.weld_and_clean(bm, merge_distance=merge_distance,
+                                    fill_boundary_loops=close, blackbox=blackbox)
     stats["degenerate_left"] = collapse_slivers(bm, blackbox, stage)
     if close:
         stats["boundary_edges_left"] = close_open_boundaries(
@@ -3377,6 +3773,12 @@ def hard_gates(result: VariantResult, size: SizeClass) -> list:
     lines.append(("PASS" if topology.get("nonManifoldEdges", 1) == 0 else "FAIL")
                  + " zero non-manifold edges (got {n})".format(
                      n=topology.get("nonManifoldEdges")))
+    # FBX merges coincident faces on import, so a duplicate pair is silent data loss that
+    # only the round trip reports -- and it reports it as an aborted save.
+    for level in result.lods:
+        duplicates = level.get("duplicateFaces", 0)
+        lines.append("{v} LOD{i} zero duplicate faces (got {n})".format(
+            v="PASS" if duplicates == 0 else "FAIL", i=level["index"], n=duplicates))
     # Section 2 requires a manifold solid; an open shell also defeats
     # recalc_face_normals and lets AO rays into the interior.
     lines.append(("PASS" if topology.get("boundaryEdges", 1) == 0 else "FAIL")
@@ -3460,6 +3862,19 @@ def hard_gates(result: VariantResult, size: SizeClass) -> list:
                      + " at least 3 outline arrises per view on average ({c:.1f})".format(
                          c=corners))
 
+    # Every LOD must be shaded for ITS OWN geometry. Decimation carries the previous
+    # level's sharp flags forward, so this is zero only because the basis is re-derived per
+    # level; it read 304 at LOD1 and 98 at LOD2 before that, in violation of
+    # 3DMODEL_GEOLOGY_ROCKS.md section 4, with nothing raising.
+    for key in sorted(result.stale_smooth_edges):
+        census = result.stale_smooth_edges[key]
+        stale = census["edgesAboveThresholdStillSmooth"]
+        lines.append("{v} {k} shading basis matches its own geometry: {n} edges above "
+                     "{t} deg still smooth (widest dihedral {w} deg, {s} sharp)".format(
+                         v="PASS" if stale == 0 else "FAIL", k=key, n=stale,
+                         t=census["thresholdDeg"], w=census["widestDihedralDeg"],
+                         s=census["sharpEdges"]))
+
     shading = result.shading
     if shading is None:
         lines.append("FAIL shading basis never ran")
@@ -3479,8 +3894,28 @@ def hard_gates(result: VariantResult, size: SizeClass) -> list:
 # Package: manifest + FBX
 # ---------------------------------------------------------------------------
 
+def project_relative(path: str) -> str:
+    """Forward-slashed path relative to the repo root, for anything durable.
+
+    ``AGENTS.md`` ``[RULE] Relative Path Requirement`` bans hardcoded absolute developer
+    paths, and ``law.forge_package_dir``'s own docstring names this artefact as the reason:
+    "never absolute ... a manifest records this path". The manifest was recording
+    ``C:\\hades\\Hecton8\\Assets\\...`` for the FBX and for every proof sheet, which leaks a
+    developer layout into a file that is meant to be portable evidence. Console output stays
+    absolute on purpose -- that one is for a human to paste into a viewer, not to keep.
+    """
+    if not path:
+        return path
+    try:
+        return os.path.relpath(path, law.project_root()).replace("\\", "/")
+    except ValueError:
+        # Different drive: no relative path exists. Keep the basename rather than the
+        # absolute path, so the artefact still names the file without the developer tree.
+        return os.path.basename(path)
+
+
 def write_manifest(result: VariantResult, size: SizeClass, frame: BeddingFrame,
-                   strata: Stratigraphy, out_dir: str) -> str:
+                   strata: Stratigraphy, package_dir: str) -> str:
     """Every proof artifact ``3DMODEL_GEOLOGY_ROCKS.md`` section 10 enumerates."""
     identity = law.GeneratorIdentity(
         generator=GENERATOR_NAME, generator_version=GENERATOR_VERSION,
@@ -3566,13 +4001,33 @@ def write_manifest(result: VariantResult, size: SizeClass, frame: BeddingFrame,
         "decimation": {
             "algorithm": "Quadric Edge Collapse (Blender DECIMATE/COLLAPSE)",
             "preservesBoundaryEdges": True,
-            "preservesUvSeams": True,
+            "preservesUvSeams": False,
             "preservesSharpNormals": True,
-            "preservesMaterialBorders": True,
-            "mechanism": "mesh_ops._split_uv_seams converts seam/sharp/material-border "
-                         "edges into mesh boundaries, which COLLAPSE preserves",
+            "preservesMaterialBorders": False,
+            "mechanism": "seam splitting is OFF for geology (preserve_seams=False). "
+                         "mesh_ops._split_uv_seams turns every UV seam, material border "
+                         "and sharp edge into a mesh boundary, and on a rock with 811 "
+                         "sharp edges that shattered the shell: measured LOD2 at 7-8 "
+                         "components / 137-156 boundary edges / 5-9 non-manifold edges "
+                         "from a LOD0 with 1 / 0 / 0. Decimating a closed solid into an "
+                         "open one breaks the same section 7 sentence's 'preserve "
+                         "boundary edges' clause, and the open fans made the custom "
+                         "split normals unencodable, which failed the FBX round trip. "
+                         "Hard normals are instead RE-DERIVED per level from that "
+                         "level's own faces at the same threshold, which is stronger "
+                         "than carrying flags the decimated surface has outgrown.",
+            "seamPreservationTradeoff": "UV0 and material-border precision at LOD1/LOD2. "
+                                        "3DMODEL_GEOLOGY_ROCKS.md section 5 makes "
+                                        "triplanar object-space projection the primary "
+                                        "material route and UV0 the decal/manifest "
+                                        "fallback, and section 7 accepts a proxy shell at "
+                                        "the coarse level. The authored seams a unique "
+                                        "bake would use live on LOD0, which is never "
+                                        "decimated.",
+            "perLevelShadingBasisReDerived": True,
             "uniformVertexSkipping": False,
         },
+        "shadingBasisPerLod": result.stale_smooth_edges,
         "collider": {
             "kind": result.collider_kind,
             "triangles": result.collider_triangles,
@@ -3584,23 +4039,35 @@ def write_manifest(result: VariantResult, size: SizeClass, frame: BeddingFrame,
         "gates": result.gates,
         "h8forgeValidatorFailures": result.validator_failures,
         "h8forgeValidatorImported": h8validate is not None,
-        "proofArtifacts": result.sheets,
+        "proofArtifacts": {k: project_relative(v) for k, v in result.sheets.items()},
         "channelMeasurements": result.channel_stats,
         "silhouetteMetrics": result.silhouette,
         "silhouetteSummary": result.silhouette_summary,
-        "fbx": result.fbx_path,
+        "silhouettePerFarLod": result.lod_silhouette,
+        "fbx": project_relative(result.fbx_path),
+        "fbxRoundTrip": {
+            "verified": result.roundtrip_verified,
+            "summary": result.export_summary,
+            "measurements": result.roundtrip_notes,
+            "meaning": "re-imported the written FBX and compared counts, uv layer order, "
+                       "vertex colour values, world positions, corner normals, landmark "
+                       "vertex, signed volume and raw FBX axis space against the scene. A "
+                       "failure DELETES the fbx and aborts the variant, so a manifest that "
+                       "exists always describes a file that passed.",
+        },
         "unityPrefabAssembly": "NOT PERFORMED. .prefab/.mat/.asset creation is Unity-only "
                                "per AGENTS.md Evidence Law; this generator emits mesh + "
                                "manifest for a Unity-side assembler.",
     }
-    path = os.path.join(out_dir, law.NAME_MANIFEST.format(
+    path = os.path.join(package_dir, law.NAME_MANIFEST.format(
         family=law.Family.GEOLOGY.value, name=result.name) + ".json")
     with open(path, "w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=1, sort_keys=False)
     return path
 
 
-def export_package(lods: list, collider, out_dir: str, name: str) -> str:
+def export_package(lods: list, collider, package_dir: str, name: str,
+                   result: VariantResult, blackbox: BlackBox) -> str:
     """Delegate the FBX to ``h8forge.export_unity``, which now exists.
 
     The local ``bpy.ops.export_scene.fbx`` shim that used to live here was written because
@@ -3609,25 +4076,49 @@ def export_package(lods: list, collider, out_dir: str, name: str) -> str:
     conversion, the tangent basis, the ``_LOD0``/``_LOD1``/``_LOD2`` naming Unity keys its
     automatic LODGroup off, the ``COL_`` collider node, and a round-trip verification the
     shim never did.
+
+    THREE THINGS THIS FUNCTION USED TO GET WRONG, all of the same class -- evidence
+    produced and then discarded:
+
+    1.  ``except Exception: return "EXPORT_FAILED: " + str(error)`` turned an aborted save
+        into a STRING, which then travelled into the manifest's ``fbx`` field while
+        ``main`` printed it and returned exit code 0. A round-trip rejection deletes the
+        FBX (``export_unity`` does that deliberately), so the run left a manifest
+        describing a file that does not exist and reported success. ``3dmodel.md``
+        section 10 makes validation failure abort the save, and
+        ``AGENTS.md`` ``[FORBID] Paper-success loops`` covers the rest: the abort is now
+        re-raised so ``main`` counts it and exits non-zero, and the manifest is never
+        written for a package that has no mesh.
+    2.  No ``blackbox`` was passed, so ``export_fbx``'s ``blackbox.dump`` on round-trip
+        failure could not fire. The measured per-object deltas -- position, colour, uv,
+        corner normal, each printed with its tolerance -- existed inside
+        ``RoundtripReport.notes`` and were dropped on the floor. A single-line failure
+        message with no numbers behind it is how "corner normals changed by 0.001443"
+        arrived with no way to tell whether that was 1.4x the tolerance or 27x the
+        measured noise floor.
+    3.  ``getattr(result, "path", path)``: ``ExportResult`` has no ``path`` attribute, so
+        the default was ALWAYS taken and the exporter's own absolute, normalised path was
+        never read back.
     """
-    path = os.path.join(out_dir, "MESH_{f}_{n}.fbx".format(
+    path = os.path.join(package_dir, "MESH_{f}_{n}.fbx".format(
         f=law.Family.GEOLOGY.value, n=name))
     identity = law.GeneratorIdentity(
         generator=GENERATOR_NAME, generator_version=GENERATOR_VERSION,
         seed=0, quality_weight=0.0, family=law.Family.GEOLOGY,
         scale_meters=0.0, camera_distance_class="", platform_lane="windows_copper_wire")
-    try:
-        result = export_unity.export_lod_group(lods, collider, path, identity=identity)
-    except Exception as error:                                  # pragma: no cover
-        return "EXPORT_FAILED: " + str(error)
-    return getattr(result, "path", path)
+    export = export_unity.export_lod_group(lods, collider, path, identity=identity,
+                                           blackbox=blackbox)
+    result.roundtrip_notes = list(export.roundtrip_notes)
+    result.roundtrip_verified = bool(export.roundtrip_verified)
+    result.export_summary = export.summary()
+    return export.fbx_path
 
 
 # ---------------------------------------------------------------------------
 # Proof renders
 # ---------------------------------------------------------------------------
 
-def render_proof(obj: bpy.types.Object, name: str, out_dir: str, resolution: int,
+def render_proof(obj: bpy.types.Object, name: str, proof_dir: str, resolution: int,
                  result: VariantResult) -> None:
     """Studio + flat contact sheets and the four-channel sheet, then MEASURE the pixels.
 
@@ -3637,7 +4128,7 @@ def render_proof(obj: bpy.types.Object, name: str, out_dir: str, resolution: int
     proves nothing, so every channel tile is sampled through
     ``preview.measure_channel_png``.
     """
-    base = dict(output_dir=out_dir, resolution=resolution,
+    base = dict(output_dir=proof_dir, resolution=resolution,
                 surface_class=law.SurfaceClass.GEOLOGIC,
                 views=("three_quarter", "front", "side", "low"))
     # Each mode gets its OWN asset name. preview.clear_render_dir deletes by name
@@ -3658,7 +4149,7 @@ def render_proof(obj: bpy.types.Object, name: str, out_dir: str, resolution: int
         result.channel_stats.append({
             "channel": "RGBA"[index],
             "meaning": labels[index],
-            "tile": tile,
+            "tile": project_relative(tile),
             "min": round(stats.min_value, 5),
             "max": round(stats.max_value, 5),
             "mean": round(stats.mean_value, 5),
@@ -3680,7 +4171,8 @@ def parse_args(argv: list) -> argparse.Namespace:
                         help="GlobalQualityWeight, continuous 0..1")
     parser.add_argument("--variants", type=int, default=1)
     parser.add_argument("--size-class", dest="size_class", default="outcrop",
-                        choices=sorted(SIZE_CLASSES) + ["all"])
+                        choices=sorted(set(SIZE_CLASSES) | set(SIZE_CLASS_ALIASES))
+                        + ["all"])
     parser.add_argument("--process", default="sedimentary",
                         choices=("sedimentary", "basalt"))
     parser.add_argument("--out", default="")
@@ -3694,31 +4186,44 @@ def parse_args(argv: list) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def resolve_out_dir(requested: str) -> str:
-    """Relative to the repo root. AGENTS.md bans hardcoded absolute developer paths.
+def resolve_out_dirs(requested: str) -> tuple:
+    """``(package_dir, proof_dir)``, both absolute, relative to the repo root.
 
-    The default moved out of ``Docs/AgentLogs/ForgeRock`` on 2026-07-29:
-    ``.gitignore:201`` ignores that tree wholesale and it is outside ``Assets``, so
-    every package this generator wrote was invisible to both Unity and git.
-    ``law.forge_package_dir`` carries the source proof for the destination.
-    An explicit ``--out`` still wins, which is what an iteration loop should pass so
-    it does not trigger a Unity import on every run.
+    AGENTS.md ``[RULE] Relative Path Requirement`` bans hardcoded absolute developer
+    paths, so both come from ``law.project_root()`` plus a law-owned relative subpath.
+
+    Two directories because they are two different KINDS of artefact. The package -- FBX
+    plus its sibling manifest -- must be under ``Assets`` for Unity to import it
+    (``law.forge_package_dir``). The proof -- contact sheets, silhouette masks, channel
+    tiles -- must NOT be, because Unity would import every PNG as a texture with a
+    ``.meta``, a GUID and VRAM cost, for a diagnostic picture; ``law.forge_proof_dir``
+    puts those in gitignored ``Docs/AgentLogs``. Writing both to
+    ``law.forge_package_dir`` measured 27 stray PNGs against 2 real package files.
+
+    ``--out`` overrides BOTH, deliberately. Its documented purpose is an iteration loop
+    that must not touch the asset database at all, and a switch that redirected only half
+    the output would still trigger a Unity import on every run -- which is the exact thing
+    the flag exists to avoid. One flag, one scratch directory, nothing under ``Assets``.
     """
     if requested:
-        return requested if os.path.isabs(requested) else os.path.join(
-            law.project_root(), requested)
-    return os.path.join(law.project_root(),
-                        *law.forge_package_dir(law.Family.GEOLOGY).split("/"))
+        scratch = (requested if os.path.isabs(requested)
+                   else os.path.join(law.project_root(), requested))
+        return scratch, scratch
+    root = law.project_root()
+    return (os.path.join(root, *law.forge_package_dir(law.Family.GEOLOGY).split("/")),
+            os.path.join(root, *law.forge_proof_dir(law.Family.GEOLOGY).split("/")))
 
 
 def main(argv: list) -> int:
     args = parse_args(argv)
-    out_dir = resolve_out_dir(args.out)
-    os.makedirs(out_dir, exist_ok=True)
+    package_dir, proof_dir = resolve_out_dirs(args.out)
+    os.makedirs(package_dir, exist_ok=True)
+    os.makedirs(proof_dir, exist_ok=True)
 
-    classes = sorted(SIZE_CLASSES) if args.size_class == "all" else [args.size_class]
-    print("[rock] forge {fv} generator {gv} out={out}".format(
-        fv=law.FORGE_VERSION, gv=GENERATOR_VERSION, out=out_dir))
+    classes = (sorted(SIZE_CLASSES) if args.size_class == "all"
+               else [resolve_size_class(args.size_class)])
+    print("[rock] forge {fv} generator {gv} package={p} proof={r}".format(
+        fv=law.FORGE_VERSION, gv=GENERATOR_VERSION, p=package_dir, r=proof_dir))
     if h8validate is None:
         print("[rock] WARNING h8forge.validate not importable: " + _VALIDATE_IMPORT_NOTE)
 
@@ -3731,7 +4236,8 @@ def main(argv: list) -> int:
             try:
                 result = generate_variant(
                     seed=seed, quality=args.quality, size=size, process=args.process,
-                    out_dir=out_dir, want_preview=args.preview, want_fbx=args.fbx,
+                    package_dir=package_dir, proof_dir=proof_dir,
+                    want_preview=args.preview, want_fbx=args.fbx,
                     preview_resolution=args.preview_resolution,
                     debug_stage=args.debug_stage)
             except GenerationAborted as error:
@@ -3807,6 +4313,8 @@ def main(argv: list) -> int:
                           hi=entry["max"], me=entry["mean"],
                           cv=entry["coverageFraction"], g=entry["hasGradient"],
                           s=entry["subjectVisible"]))
+            if result.lod_silhouette:
+                print("[rock] far-LOD silhouette: " + json.dumps(result.lod_silhouette))
             if result.silhouette_summary:
                 print("[rock] silhouette: " + json.dumps(result.silhouette_summary))
                 for entry in result.silhouette:
@@ -3826,6 +4334,15 @@ def main(argv: list) -> int:
                       else "[rock] VALIDATOR skipped (module unavailable)")
             for key, path in sorted(result.sheets.items()):
                 print("[rock] PNG {k}: {p}".format(k=key, p=path))
+            # The round trip is the only measurement that says the FILE holds what the
+            # scene holds, and it was being computed and thrown away. Every line carries a
+            # measured delta next to its tolerance, so a near-miss is visible BEFORE it
+            # becomes an abort -- which is the difference between "corner normals changed
+            # by 0.001443" as a mystery and as a trend.
+            for line in result.roundtrip_notes:
+                print("[rock] RT " + line)
+            if result.export_summary:
+                print("[rock] EXPORT " + result.export_summary)
             print("[rock] MANIFEST " + result.manifest_path)
             if result.fbx_path:
                 print("[rock] FBX " + result.fbx_path)

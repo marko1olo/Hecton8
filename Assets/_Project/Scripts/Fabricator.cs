@@ -570,9 +570,6 @@ namespace Hecton8.Crafting
             _activeCraftPowerMultiplier = 1f;
             _sparkProxyLightKey = unchecked((int)EntityId.ToULong(GetEntityId()) ^ 0x4641424C);
             _errorFeedbackBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - fabricator error emission property staging - owner: Fabricator
-            UnityEngine.Assertions.Assert.IsNotNull(
-                assemblyFallbackMesh,
-                "Fatal: Fabricator requires an authored assembly fallback mesh. Runtime mesh generation is forbidden.");
             FlushEndAssemblyVisual();
             ToolHapticsRuntime.EnsureRuntimeInstance();
             CacheThermalHostModule();
@@ -580,6 +577,24 @@ namespace Hecton8.Crafting
             RebuildAssemblySourceCacheCold();
             EnsureRecipeCache();
             CacheFabricatorAup();
+
+            // Report LAST, and only through the latch that ResolveAssemblyFallbackMesh (:3285) already owns, so a
+            // craft that later reaches the headless-preview path cannot log the same gap twice.
+            //
+            // A second UnityEngine.Assertions.Assert.IsNotNull(assemblyFallbackMesh, ...) used to sit ABOVE
+            // FlushEndAssemblyVisual in this method. Assert THROWS in this project - nothing under Assets sets
+            // Assert.raiseExceptions = false - so one unassigned mesh amputated the whole remainder of Awake:
+            // FlushEndAssemblyVisual, ToolHapticsRuntime.EnsureRuntimeInstance, CacheThermalHostModule,
+            // EnsureCraftingScratchCold, RebuildAssemblySourceCacheCold, EnsureRecipeCache and CacheFabricatorAup
+            // all never ran, leaving the fabricator with no crafting scratch buffers, no recipe cache, no cached
+            // thermal host and no cached AUP. It also contradicted construction.md 8A, which makes the missing
+            // preview mesh a supported headless presentation mode rather than a fatal condition - the same
+            // reasoning already documented on ResolveAssemblyFallbackMesh.
+            if (assemblyFallbackMesh == null && !_assemblyFallbackMeshMissingAnnounced)
+            {
+                _assemblyFallbackMeshMissingAnnounced = true;
+                LogMissingAssemblyFallbackMesh();
+            }
         }
 
         private void Start()

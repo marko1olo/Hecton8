@@ -410,19 +410,68 @@ namespace Hecton8.World.SeedShipAnomaly
             return true;
         }
 
+        /// <summary>
+        /// Publishes a core-hack result onto the <see cref="CoreHackedSignal"/> lane.
+        /// </summary>
+        /// <remarks>
+        /// The two <c>UnityEngine.Assertions.Assert.IsTrue</c> calls that used to open this method THREW - nothing
+        /// under Assets sets <c>Assert.raiseExceptions = false</c>. This is a public entry point on a component
+        /// registered as IColdTickable, IUpdatable, ILateFrameTickable AND ISlowTickable, so a throw here would
+        /// have escaped into whatever endgame caller invoked it rather than being contained.
+        ///
+        /// The two arguments are NOT the same class of problem, so they are not treated the same way:
+        ///
+        /// - <c>validity01</c> had a reachable fallback already inline: the payload assignment below sanitized it
+        ///   with <c>math.saturate</c>, so the assert only converted an already-handled out-of-range value into a
+        ///   crash. It is now clamped and reported instead. Non-finite input is also handled, which
+        ///   <c>math.saturate</c> alone does not do reliably - NaN would have propagated into the DTO.
+        /// - <c>codeHash == 0</c> has NO safe continuation. Zero is the sentinel for "no code" across the hash
+        ///   lanes, so pushing it would put a permanently unmatchable CoreHackedSignal into the bus and corrupt
+        ///   the endgame hack state. That check is kept as a hard reject with a loud error and an early return,
+        ///   per the non-throwing-guard rule.
+        ///
+        /// Both reports use literal strings through the Conditional-stripped H8Debug facade, so there is no
+        /// allocation and no per-call string work; they are intentionally NOT latched, because repeated caller
+        /// misuse of a public API must stay visible.
+        /// </remarks>
         public void InjectCoreHack(uint codeHash, float validity01)
         {
-            UnityEngine.Assertions.Assert.IsTrue(codeHash != 0, "codeHash must not be 0.");
-            UnityEngine.Assertions.Assert.IsTrue(validity01 >= 0f && validity01 <= 1f, "validity01 must be between 0 and 1.");
+            if (codeHash == 0u)
+            {
+                LogRejectedCoreHackCodeHash();
+                return;
+            }
+
+            float sanitizedValidity01 = math.isfinite(validity01) ? math.saturate(validity01) : 0f;
+            if (sanitizedValidity01 != validity01)
+                LogClampedCoreHackValidity();
 
             SignalBus<CoreHackedSignal>.TryPushTracked(new CoreHackedSignal
             {
                 Frame = _simulationFrameCounter,
                 SourceHash = SeedShipAnomalyConstants.SourceHash,
                 CodeHash = codeHash,
-                Validity01 = math.saturate(validity01),
+                Validity01 = sanitizedValidity01,
                 Flags = 1
             }, ref _signalPushDropCount);
+        }
+
+        /// <summary>
+        /// Reports a rejected zero <c>codeHash</c>. Literal message, so no allocation on any cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogRejectedCoreHackCodeHash()
+        {
+            Hecton8.Core.H8Debug.LogError("SeedShipAnomalyRuntime.InjectCoreHack: codeHash was 0, which is the 'no code' sentinel across the hash lanes. The CoreHackedSignal was REJECTED rather than published, because a zero code hash can never be matched by any consumer and would leave the endgame hack state permanently ambiguous. Pass the real authored code hash of the hacked core.");
+        }
+
+        /// <summary>
+        /// Reports a clamped or non-finite <c>validity01</c>. Literal message, so no allocation on any cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogClampedCoreHackValidity()
+        {
+            Hecton8.Core.H8Debug.LogWarning("SeedShipAnomalyRuntime.InjectCoreHack: validity01 was outside the 0..1 contract or non-finite. It has been clamped (non-finite becomes 0) and the CoreHackedSignal was still published, matching the math.saturate this method already applied. Fix the caller to pass a normalized 0..1 validity.");
         }
 
         private void RebindColdServices()

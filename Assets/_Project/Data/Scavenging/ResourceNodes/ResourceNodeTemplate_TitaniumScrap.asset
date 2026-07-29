@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Titanium Scrap Field
   toolResistance: 0.75
   harvestDurationSeconds: 0.9
-  requiredToolClass: 4
+  requiredToolClass: 3
   maxIntegrity: 80
   defaultLootCount: 2
   lootPickupPrefab: {fileID: 131972386016503839, guid: cc05a4753de6c1f48b51d49126443a9c, type: 3}

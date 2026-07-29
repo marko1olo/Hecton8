@@ -51,11 +51,15 @@
 //   from 0.23 s to 132 s inside a single run (Logs/h8_playprobe_route.json phases[5]: 124 game frames in
 //   165.186 wall seconds, 0.751 per wall second, one frame carrying about 132 of them). So the schedule
 //   is bounded on BOTH axes and each axis bounds a different failure:
-//     WALL SECONDS bound a phase that cannot succeed. Each phase gets an ABSOLUTE deadline clamped by
-//       what is left of TotalBudgetSeconds, so an overrun is charged to the total instead of being
-//       forgiven at the next transition. The old relative "PhaseElapsed < XBudgetSeconds" test forgave
-//       it: ResourceDeplete reported 138.192 s against a 6.0 s budget and the three phases after it were
-//       still handed their full windows on top of a total that was already spent.
+//     WALL SECONDS bound a phase that cannot succeed. Each phase gets an ABSOLUTE deadline equal to its
+//       OWN time box, so an overrun is charged to the phase that spent it. The old relative
+//       "PhaseElapsed < XBudgetSeconds" test charged it to nobody: ResourceDeplete reported 138.192 s
+//       against a 6.0 s budget and the three phases after it were still handed their full windows on top
+//       of a total that was already spent. Clamping the box by the REMAINING TOTAL instead charged it to
+//       the wrong phases: the same overrun emptied the total, so ResourcePickup and Craft were entered
+//       with granted=0.000 s and ran their tick floors - one phase still ate the run, and the theft was
+//       labelled COMPRESSED rather than stopped. A phase that blows its box now yields as TIMEBOXED and
+//       the next phase is entered with its own full box.
 //     TICKS bound the reverse failure, which is the one that actually cost a row. A phase's handshake
 //       needs a fixed number of ticks — publish on one, read the owner's answer on the next — and a
 //       wall-only ceiling in a slow-frame regime grants one. MinTicksFor names the floor per phase and
@@ -155,9 +159,21 @@ namespace Hecton8.EditorTools.Diagnostics
             /// "stuck phase yields to the next" case and it is a real, reportable outcome.</summary>
             WallCeiling,
 
+            /// <summary>
+            /// The phase EXCEEDED its own time box rather than merely reaching it: it was still inside
+            /// one pumped frame when its deadline passed, so it yielded at the first tick boundary after
+            /// the box had already been blown. This is the culprit label. It is distinct from
+            /// <see cref="WallCeiling"/> because "spent its 6.0 s window and failed" and "spent 138.192 s
+            /// against a 6.0 s window" are different facts about the harness, and the second one is the
+            /// one that used to be invisible. The excess is charged to THIS phase: the next phase is
+            /// entered with its own full box, not with what is left of a total this phase already spent.
+            /// </summary>
+            Timeboxed,
+
             /// <summary>The schedule's whole <see cref="TotalBudgetSeconds"/> was already spent when
             /// this phase ran, so it was compressed to its tick floor. The row is UNMEASURED and the
-            /// defect belongs to whichever phase ate the total, not to this one.</summary>
+            /// defect belongs to whichever phase ate the total, not to this one - which is why a phase
+            /// that blew its own box is labelled <see cref="Timeboxed"/> and never this.</summary>
             TotalCeiling,
 
             /// <summary>The schedule's total tick cap fired.</summary>
@@ -194,9 +210,10 @@ namespace Hecton8.EditorTools.Diagnostics
         // same lesson TickWaitingForSettle already learned the hard way.
         //
         // EVERY NUMBER BELOW IS UNCHANGED from the run that produced the CraftRepairBuild NOT_EXERCISED
-        // row. Nothing here was raised. What changed is that they are now ENFORCED as absolute deadlines
-        // clamped by the total, instead of being relative "PhaseElapsed < X" tests that let one phase
-        // spend the whole schedule - see PhaseCeilingReached.
+        // row. Nothing here was raised. What changed is that each one is now a PER-PHASE TIME BOX enforced
+        // as an absolute deadline, instead of a relative "PhaseElapsed < X" test that let one phase spend
+        // the whole schedule - see PhaseCeilingReached - and that a phase which blows its box is charged
+        // for the excess itself instead of confiscating its successors' boxes - see EnterPhase.
         private const double SettleBudgetSeconds = 8.0;
         private const double SwimSurfaceBudgetSeconds = 5.0;
         private const double SwimDiveBudgetSeconds = 7.0;
@@ -209,6 +226,17 @@ namespace Hecton8.EditorTools.Diagnostics
         private const double CraftEvaluationIntervalSeconds = 0.5;
 
         /// <summary>
+        /// How far past its box a phase may land before it is called TIMEBOXED rather than "yielded on its
+        /// own ceiling". The ceiling is only testable between pumped frames, so every phase overshoots by
+        /// up to one frame's cost as a matter of arithmetic; 123 of the 124 measured frames cost about
+        /// 0.23 s each, so 1.0 s is comfortably above the normal-regime frame and far below the 132 s frame
+        /// this label exists to name. Shared by <see cref="PhaseExceededItsBox"/> so the ledger's yield and
+        /// the row's prose cannot disagree about whether a phase blew its box - two independent thresholds
+        /// for one question is how a report ends up contradicting itself.
+        /// </summary>
+        private const double PhaseBoxOvershootToleranceSeconds = 1.0;
+
+        /// <summary>
         /// Total wall time the schedule can consume. 63.0s, unchanged.
         ///
         /// It used to be a LABEL rather than a limit: this file read it at exactly zero places, and
@@ -216,7 +244,9 @@ namespace Hecton8.EditorTools.Diagnostics
         /// printed an elapsed for a stop it had no code to cause. The only thing that ever ended the
         /// schedule was the probe closing its gameplay window
         /// (H8_HeadlessPlayModeProbe.cs:495), which is why a run reported 160.430s against this 63.0s.
-        /// It is now the clamp on every phase ceiling and the trigger for compression.
+        /// It is now the trigger for compression. It is NOT a clamp on the phase boxes: the nine boxes sum
+        /// to exactly this number, so clamping each box by what the total had left meant an overrunning
+        /// phase confiscated every later phase's window - see EnterPhase.
         /// </summary>
         internal const double TotalBudgetSeconds =
             SettleBudgetSeconds + SwimSurfaceBudgetSeconds + SwimDiveBudgetSeconds +
@@ -321,14 +351,21 @@ namespace Hecton8.EditorTools.Diagnostics
         private static double _phaseStartedAt;
         private static double _startedAt;
 
-        /// <summary>Absolute wall time this phase must yield at, already clamped by what is left of
-        /// <see cref="TotalBudgetSeconds"/>. Absolute, not relative: a phase that overran cannot push
-        /// the next phase's deadline out by the amount it overran.</summary>
+        /// <summary>Absolute wall time this phase must yield at: its entry time plus its own time box.
+        /// Absolute, not relative: a phase that overran cannot push the next phase's deadline out by the
+        /// amount it overran.</summary>
         private static double _phaseDeadline;
 
-        /// <summary>Seconds this phase was actually granted, which is <c>min(own budget, total
-        /// remaining)</c> and therefore not the same as its constant. Reported per row so a compressed
-        /// phase does not look like a phase that had its full window and failed.</summary>
+        /// <summary>Latch for <see cref="PhaseExceededItsBox"/>, cleared on every phase entry. Kept beside
+        /// the deadline it is derived from rather than next to the method, because forgetting to clear it
+        /// in <see cref="EnterPhase"/> would mark every subsequent phase TIMEBOXED.</summary>
+        private static bool _phaseBoxExceeded;
+
+        /// <summary>Seconds this phase was granted, which is its OWN nominal box - it is deliberately no
+        /// longer <c>min(own budget, total remaining)</c>, because that form let one overrunning phase
+        /// hand its successors <c>granted = 0.000s</c> and then reported the zero as if the driver had
+        /// decided the phase deserved nothing. Reported per row beside the measured wall so a TIMEBOXED
+        /// phase and a compressed one cannot read alike.</summary>
         private static double _phaseGranted;
         private static int _phaseTicks;
         private static double _totalDeadline;
@@ -607,6 +644,7 @@ namespace Hecton8.EditorTools.Diagnostics
             _phaseStartedAt = 0.0;
             _startedAt = 0.0;
             _phaseDeadline = 0.0;
+            _phaseBoxExceeded = false;
             _phaseGranted = 0.0;
             _phaseTicks = 0;
             _totalDeadline = 0.0;
@@ -992,35 +1030,49 @@ namespace Hecton8.EditorTools.Diagnostics
         // ─────────────────────────────────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Closes the outgoing phase's ledger row and opens the next one with an ABSOLUTE deadline that
-        /// is clamped by what is left of <see cref="TotalBudgetSeconds"/>.
+        /// Closes the outgoing phase's ledger row and opens the next one with its OWN full time box as an
+        /// ABSOLUTE deadline.
         ///
-        /// The clamp is the per-phase ceiling this front is about. Before it, every phase compared
-        /// <c>PhaseElapsed</c> against its own constant, which means the schedule's start time was
-        /// re-based on every transition and an overrun was simply forgiven: ResourceDeplete overshot its
-        /// 6.0s by 132s, and ToolEquip, ResourcePickup and Craft were all still granted their full
-        /// budgets on top of a total that was already three times spent. Now a phase can be granted at
-        /// most its own budget AND at most what the schedule still has, so one stuck phase can no longer
-        /// spend another phase's window.
+        /// THE BOX IS PER PHASE AND IT IS NOT A SLICE OF A SHARED POT. Two different failures had to be
+        /// fixed here and only one of them was:
+        ///   1. The original file compared <c>PhaseElapsed</c> against its own constant, so the schedule's
+        ///      start time was re-based on every transition and an overrun was simply forgiven -
+        ///      ResourceDeplete overshot its 6.0s by 132s and every later phase was still handed its full
+        ///      window on top of a total that was already three times spent. An absolute deadline fixes
+        ///      that, and it is what makes a stuck phase yield instead of run.
+        ///   2. Clamping that deadline by <c>_totalDeadline - now</c> then overcorrected into the mirror
+        ///      defect: ResourceDeplete's overrun emptied the total, so ResourcePickup and Craft were
+        ///      entered with <c>granted = 0.000s</c> and ran their tick floors. One phase still ate the
+        ///      whole run; the theft was labelled COMPRESSED rather than stopped, and the Craft row was
+        ///      still starved. A moderate overrun did the same thing quietly - a 20s overshoot silently
+        ///      shaved Craft's 14.0s box down to 12.0s and the row's "granted" figure never said why.
+        /// So the excess is charged to the phase that spent it and to nothing else: the successor gets its
+        /// own full nominal box, and the phase that blew its box is recorded as
+        /// <see cref="PhaseYield.Timeboxed"/>.
+        ///
+        /// <see cref="TotalBudgetSeconds"/> is still a real limit; it is just no longer collected from the
+        /// wrong phase. It stays the compression trigger in <see cref="EvaluateScheduleCeilings"/>, and
+        /// because the nine boxes sum to exactly that total, compression can now only fire when the boxes
+        /// are genuinely all spent - which on this harness means an unpreemptable frame, not a schedule
+        /// that overspent.
         /// </summary>
         private static void EnterPhase(DrivePhase phase, PhaseYield reasonForLeavingCurrent)
         {
             CloseCurrentPhase(reasonForLeavingCurrent);
 
             double now = EditorApplication.timeSinceStartup;
-            double remainingTotal = _totalDeadline - now;
-            if (remainingTotal < 0.0)
-                remainingTotal = 0.0;
-
             double granted = BudgetFor(phase);
-            if (granted > remainingTotal)
-                granted = remainingTotal;
 
             _phase = phase;
             _phaseStartedAt = now;
             _phaseGranted = granted;
             _phaseDeadline = now + granted;
             _phaseTicks = 0;
+
+            // Ordered after _phaseGranted/_phaseDeadline deliberately: PhaseExceededItsBox reads both, and
+            // clearing the latch while they still describe the OUTGOING phase would re-derive the old
+            // phase's answer on the next call.
+            _phaseBoxExceeded = false;
         }
 
         /// <summary>
@@ -1060,13 +1112,15 @@ namespace Hecton8.EditorTools.Diagnostics
         ///      needs does not bound a stall, it converts a stall into four unmeasured rows. The floors
         ///      are named per phase in <see cref="MinTicksFor"/>.
         ///   2. COMPRESSION. Once the schedule's total is spent, a phase runs its floor and yields. It
-        ///      does NOT get its own budget on top of a total that no longer exists.
-        ///   3. ABSOLUTE WALL DEADLINE, already clamped by the total in <see cref="EnterPhase"/>.
+        ///      does NOT sit out its box on a total that no longer exists.
+        ///   3. ABSOLUTE WALL DEADLINE, which is the phase's OWN box as granted in
+        ///      <see cref="EnterPhase"/> - not a slice of what an earlier phase left behind.
         ///
         /// The wall clause is still only testable at tick boundaries, so a single 132-second pumped frame
         /// can still overshoot it - nothing inside an editor tick can preempt the engine. What changed is
-        /// that the overshoot is now CONTAINED: it is charged to the total, the phases after it are
-        /// compressed instead of being handed fresh windows, and every affected row says so.
+        /// that the overshoot is now ATTRIBUTED: the phase that blew its box yields as
+        /// <see cref="PhaseYield.Timeboxed"/> and says by how much, the next phase is entered with its own
+        /// full box, and no later row is starved to pay for it.
         /// </summary>
         private static bool PhaseCeilingReached()
         {
@@ -1167,22 +1221,63 @@ namespace Hecton8.EditorTools.Diagnostics
         }
 
         /// <summary>
-        /// The reason to record when a WORK phase yields on its ceiling: it had unfinished business
-        /// either way, and the only question is whether it spent its own budget or was compressed
-        /// because an earlier phase spent the schedule's.
+        /// Whether the phase currently in flight went PAST its box rather than merely reaching it.
+        ///
+        /// Called while <c>_phase</c> is still the outgoing phase - every caller runs before
+        /// <see cref="CloseCurrentPhase"/> re-bases <c>_phaseStartedAt</c> - so <see cref="PhaseElapsed"/>
+        /// and <c>_phaseGranted</c> both still describe that phase. A phase with no box (SwimVerdict,
+        /// Idle, Done) cannot exceed one and is excluded rather than being labelled by a slow single tick.
+        ///
+        /// LATCHED once true, and that is not an optimisation. The answer is asked twice per phase close -
+        /// once by AppendPhaseCeilingNote composing the row's prose, once by CeilingYield writing the
+        /// ledger - and each ask re-read the clock, so a phase ending within microseconds of
+        /// <c>box + tolerance</c> could have printed TIMEBOXED in the row and recorded WallCeiling in the
+        /// ledger. Elapsed time only grows inside a phase, so latching cannot change the answer; it only
+        /// removes the window where the two readers disagree.
+        /// </summary>
+        private static bool PhaseExceededItsBox()
+        {
+            if (_phaseBoxExceeded)
+                return true;
+
+            _phaseBoxExceeded = _phaseGranted > 0.0 &&
+                PhaseElapsed > _phaseGranted + PhaseBoxOvershootToleranceSeconds;
+            return _phaseBoxExceeded;
+        }
+
+        /// <summary>
+        /// The reason to record when a WORK phase yields on its ceiling. Three distinguishable outcomes,
+        /// and the ORDER of the tests is the point:
+        ///
+        /// A phase that blew its OWN box is the culprit and is labelled TIMEBOXED even when that same
+        /// overshoot is what spent the schedule's total on the same tick. Testing <c>_compressed</c> first
+        /// would label the 138.192s ResourceDeplete phase TotalCeiling - whose documented meaning is
+        /// "compressed by an EARLIER phase's overrun, read this row as UNMEASURED" - and send every reader
+        /// looking at the phase before the one that actually ate the clock. That is the same
+        /// blame-the-wrong-phase mistake the whole per-phase ledger exists to stop making.
         /// </summary>
         private static PhaseYield CeilingYield()
         {
+            if (PhaseExceededItsBox())
+                return PhaseYield.Timeboxed;
+
             return _compressed ? PhaseYield.TotalCeiling : PhaseYield.WallCeiling;
         }
 
         /// <summary>
         /// The reason to record when a TIMED HOLD phase yields. Reaching the wall ceiling is that
-        /// phase's designed completion, so it is not a failure - unless the schedule was compressed, in
-        /// which case the hold never happened for its intended duration and the row must say so.
+        /// phase's designed completion, so it is not a failure - with two exceptions that are opposite
+        /// errors and must not share a label:
+        ///   TIMEBOXED, the hold ran far LONGER than designed, so any threshold the row met may have been
+        ///     met by an accident of duration and the schedule paid for it.
+        ///   TotalCeiling, the hold ran SHORTER than designed because the schedule's total was already
+        ///     spent, so any threshold the row missed was never given the time to be crossed.
         /// </summary>
         private static PhaseYield HoldYield()
         {
+            if (PhaseExceededItsBox())
+                return PhaseYield.Timeboxed;
+
             return _compressed ? PhaseYield.TotalCeiling : PhaseYield.Completed;
         }
 
@@ -2529,8 +2624,15 @@ namespace Hecton8.EditorTools.Diagnostics
         /// the first one for both cases.
         ///
         /// Answers three questions a reader of a red row actually has: how long and how many ticks the
-        /// phase got, how much it was granted, and whether it was compressed by an earlier phase's
-        /// overrun. The last one is the starved-versus-empty distinction.
+        /// phase got, how much it was granted, and which of the three ceiling outcomes it hit - TIMEBOXED
+        /// (this phase blew its own box and owes the reader a frame-cost investigation), COMPRESSED (an
+        /// earlier phase spent the schedule's total, so this row is UNMEASURED rather than negative), or a
+        /// clean yield on its own box (a real result). The middle one is the starved-versus-empty
+        /// distinction and the first one names who did the starving.
+        ///
+        /// The granted figure is printed beside the nominal budget even though they are now always equal.
+        /// That equality IS the fix - a divergence would mean something reintroduced a clamp on the box -
+        /// and a row whose two numbers disagree is the fastest way to see it.
         /// </summary>
         private static void AppendPhaseCeilingNote()
         {
@@ -2545,7 +2647,28 @@ namespace Hecton8.EditorTools.Diagnostics
                 .Append("s nominal budget; run elapsed ").Append(F(ElapsedSeconds))
                 .Append("s of ").Append(F(TotalBudgetSeconds)).Append("s");
 
-            if (_compressed)
+            // TIMEBOXED is tested BEFORE compression for the same reason CeilingYield tests it first: a
+            // phase that blew its own box is the culprit, and printing the victim's paragraph over the
+            // culprit's row is what made the 138.192s phase unfindable from the row it starved.
+            if (PhaseExceededItsBox())
+            {
+                // The ceiling is only testable at tick boundaries, so a single expensive pumped frame can
+                // land entirely outside it. Saying so is the difference between a reader believing the
+                // instrument measured this long and knowing the engine was inside one frame.
+                _detail.Append(" - TIMEBOXED: exceeded its ").Append(F(_phaseGranted))
+                    .Append("s box by ").Append(F(wall - _phaseGranted))
+                    .Append("s across ").Append(_phaseTicks)
+                    .Append(" ticks. The box is only testable between pumped frames, so one expensive ")
+                    .Append("frame lands entirely outside it. The excess is charged to THIS phase and to ")
+                    .Append("nothing else: the next phase is entered with its own full nominal box, so no ")
+                    .Append("later row is starved by this overrun. Fix the frame cost here");
+
+                if (_compressed)
+                    _detail.Append(" - and note the schedule's ").Append(F(TotalBudgetSeconds))
+                        .Append("s total went with it at ").Append(F(_compressedAt))
+                        .Append("s, so the rows after this one run their tick floors and say UNMEASURED");
+            }
+            else if (_compressed)
             {
                 // The heaviest-phase fields are only written by CloseCurrentPhase, which has not run yet
                 // for the phase composing this note - so the in-flight phase has to be folded in here or a
@@ -2558,23 +2681,13 @@ namespace Hecton8.EditorTools.Diagnostics
                 _detail.Append(" - COMPRESSED: the schedule's total was already spent at ")
                     .Append(F(_compressedAt)).Append("s, in phase ")
                     .Append(_compressedInPhase.ToString())
-                    .Append(", so this phase ran its tick floor and yielded instead of getting its own ")
-                    .Append("window. The heaviest phase of the run so far was ")
+                    .Append(", so this phase ran its tick floor and yielded without spending the ")
+                    .Append(F(_phaseGranted))
+                    .Append("s box it was granted. The heaviest phase of the run so far was ")
                     .Append(heaviest.ToString())
                     .Append(" at ").Append(F(heaviestWall))
                     .Append("s. READ THIS ROW AS UNMEASURED, NOT AS A PRODUCT GAP - fix the heavy phase, ")
                     .Append("not this mechanic");
-            }
-            else if (wall > _phaseGranted + 1.0)
-            {
-                // The ceiling is only testable at tick boundaries, so a single expensive pumped frame can
-                // still blow past it. Saying so is the difference between a reader believing the
-                // instrument measured this long and knowing the engine was inside one frame.
-                _detail.Append(" - OVERSHOT its ceiling by ").Append(F(wall - _phaseGranted))
-                    .Append("s across ").Append(_phaseTicks)
-                    .Append(" ticks: the ceiling is only testable between pumped frames, so one expensive ")
-                    .Append("frame lands entirely outside it. The overshoot is charged to the schedule ")
-                    .Append("total, so later phases are compressed rather than given fresh windows");
             }
             else
             {
@@ -2610,6 +2723,14 @@ namespace Hecton8.EditorTools.Diagnostics
                     .Append(F(TotalBudgetSeconds))
                     .Append("s total was already spent, so any threshold this row failed was never given ")
                     .Append("the time to be crossed. UNMEASURED, not broken");
+            else if (_phaseYield[index] == PhaseYield.Timeboxed)
+                // The opposite reading to TotalCeiling, and the Swim row is the one that needs the
+                // distinction: a hold that overran held LONGER than designed, so a threshold it failed
+                // failed on the mechanic, not on the clock, and a threshold it met may have been met only
+                // because one pumped frame gave it 132 seconds it was never meant to have.
+                _detail.Append(" - TIMEBOXED: this phase ran PAST its box, so it held longer than ")
+                    .Append("designed rather than shorter. A threshold missed here is a real miss; a ")
+                    .Append("threshold met here was met on an unintended duration");
 
             _detail.Append(']');
         }

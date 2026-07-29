@@ -216,6 +216,90 @@ def folded_plate(name, faces):
     return mesh
 
 
+def mobius_band(name, segments=8, radius=1.0, width=0.35):
+    """A triangulated Moebius band: a 2-manifold that is NON-ORIENTABLE.
+
+    The reject case the winding diagnosis exists for, and the reason it is built
+    here rather than asserted about in prose. Every edge carries one or two
+    triangles, so a non-manifold census reads a clean zero, yet no assignment of
+    per-triangle winding makes every shared edge agree -- which is exactly the
+    state ``bmesh.ops.recalc_face_normals`` cannot repair. Measured on coral LOD0
+    in this shape: 53 occurrences, ``nonmanifold=0``, and recalc moving it to 39
+    rather than to 0.
+
+    The twist lives in the closing quad, whose two far corners are taken in
+    swapped order. UVs are per-face cells so the twist cannot leak into the UV
+    gates and confuse what the case is testing.
+    """
+    verts = []
+    for i in range(segments):
+        angle = 2.0 * math.pi * i / float(segments)
+        half = 0.5 * angle
+        for side in (-1.0, 1.0):
+            offset = side * 0.5 * width
+            reach = radius + offset * math.cos(half)
+            verts.append((reach * math.cos(angle), reach * math.sin(angle),
+                          offset * math.sin(half)))
+    faces = []
+    for i in range(segments):
+        j = (i + 1) % segments
+        inner_i, outer_i = 2 * i, 2 * i + 1
+        if j == 0:
+            # THE TWIST. Joining the last rung to the first with the two sides
+            # exchanged is what makes the strip one-sided.
+            inner_j, outer_j = 2 * j + 1, 2 * j
+        else:
+            inner_j, outer_j = 2 * j, 2 * j + 1
+        faces.append((inner_i, outer_i, outer_j))
+        faces.append((inner_i, outer_j, inner_j))
+    mesh = new_mesh(name, verts, faces)
+
+    # One padded UV cell per quad, corners assigned by position in the face
+    # rather than by vertex identity. Cell aspect matches the world aspect of a
+    # rung, so aspect distortion stays at zero and only winding is under test.
+    segment_world = 2.0 * math.pi * radius / float(segments)
+    cell_v = 0.03
+    cell_u = cell_v * (segment_world / width)
+    per_loop = [None] * (len(faces) * 3)
+    for face_index in range(len(faces)):
+        cell = face_index // 2
+        u0 = _UV_ORIGIN + cell * cell_u
+        v0 = _UV_ORIGIN
+        corners = (((u0, v0), (u0, v0 + cell_v), (u0 + cell_u, v0 + cell_v))
+                   if face_index % 2 == 0 else
+                   ((u0, v0), (u0 + cell_u, v0 + cell_v), (u0 + cell_u, v0)))
+        for k in range(3):
+            per_loop[face_index * 3 + k] = corners[k]
+    add_uv(mesh, per_loop)
+    add_color(mesh, "edge_wear", [(0.0, 0.2, 0.6, 1.0)] * len(verts))
+    mesh.materials.append(None)
+    return mesh
+
+
+def three_faces_on_one_edge(name):
+    """Three triangles sharing edge 0-1: a non-manifold fan.
+
+    Among three faces on one edge two must traverse it the same way, so the
+    winding gate CANNOT stay silent here however the faces are wound. The point
+    of the case is that the detail must say so instead of sending the reader to
+    ``recalc_face_normals``, which has nothing to fix.
+    """
+    verts = [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0),
+             (0.5, 1.0, 0.0), (0.5, -0.6, 0.4), (0.5, 0.2, -0.7)]
+    faces = [(0, 1, 2), (0, 1, 3), (0, 1, 4)]
+    mesh = new_mesh(name, verts, faces)
+    per_loop = []
+    cell = 0.22
+    for polygon in mesh.polygons:
+        u0 = _UV_ORIGIN + polygon.index * (cell + 0.02)
+        per_loop.extend([(u0, _UV_ORIGIN), (u0 + cell, _UV_ORIGIN),
+                         (u0 + 0.5 * cell, _UV_ORIGIN + cell)])
+    add_uv(mesh, per_loop)
+    add_color(mesh, "edge_wear", [(0.0, 0.2, 0.6, 1.0)] * len(verts))
+    mesh.materials.append(None)
+    return mesh
+
+
 def dome_grid(name, cells):
     """``cells`` x ``cells`` quads with a shallow dome, UV-mapped in one island.
 
@@ -511,6 +595,92 @@ def case_winding():
     H.check(V.GATE_INCONSISTENT_WINDING not in gates_of(declared.failures),
             "double_sided=True must convert the winding gate into a recorded "
             "exemption")
+    # The symptom alone is not actionable, and the project paid for that: recalc
+    # was added for this gate, measured at 53 -> 39 on coral LOD0, and removed
+    # again after it broke the authored normal basis on rock. A repairable case
+    # must SAY it is repairable.
+    found = detail_of(report.failures, V.GATE_INCONSISTENT_WINDING)
+    H.check(found is not None
+            and "directed edge (1 -> 2)" in found.detail
+            and "IS orientable" in found.detail
+            and "1 triangle(s)" in found.detail,
+            "a flipped face on an orientable surface must be diagnosed as "
+            "orientable and countable, got " + (found.detail if found
+                                                else "<none>"))
+    repairable = V.orientation_analysis(V.extract_mesh_data(bad))
+    H.check(repairable.orientable and repairable.backwards_triangles == 1
+            and not repairable.over_shared_edges,
+            "orientation_analysis on a single flipped face: expected "
+            "orientable/1 backwards/0 over-shared, got "
+            + str(repairable))
+    clean = V.orientation_analysis(V.extract_mesh_data(good))
+    H.check(clean.orientable and clean.backwards_triangles == 0
+            and not clean.conflict_edges,
+            "orientation_analysis must stay silent on a consistently wound "
+            "plate, got " + str(clean))
+
+
+def case_winding_non_orientable():
+    H.case("non-orientable surface: winding fires and recalc cannot fix it")
+    mesh = mobius_band("MESH_SmallProp_Mobius_LOD0")
+    report = validate_clean(mesh)
+    # A Moebius band welds a sheet to itself, so the averaged vertex normal at the
+    # seam can collapse; that gate is collateral here exactly as it is in
+    # case_winding.
+    expect("winding_non_orientable", report.failures,
+           must=(V.GATE_INCONSISTENT_WINDING,),
+           allow=(V.GATE_NORMAL_LENGTH_OUT_OF_RANGE,
+                  V.GATE_UV_STRETCH_EXCESSIVE))
+    found = detail_of(report.failures, V.GATE_INCONSISTENT_WINDING)
+    H.check(found is not None and "NON-ORIENTABLE" in found.detail
+            and "recalc_face_normals cannot repair that" in found.detail
+            and "1 of 1 connected face region(s)" in found.detail,
+            "a non-orientable surface must be named as such, must warn off "
+            "recalc and must quote the invariant region count, got "
+            + (found.detail if found else "<none>"))
+    diagnosis = V.orientation_analysis(V.extract_mesh_data(mesh))
+    H.check(not diagnosis.orientable and len(diagnosis.conflict_edges) >= 1
+            and diagnosis.regions == 1 and diagnosis.twisted_regions == 1,
+            "orientation_analysis must prove the Moebius band non-orientable, "
+            "got " + str(diagnosis))
+    # The edge SET is traversal dependent and the docstring says so, so nothing
+    # asserts a count for it. The region verdict is the invariant, and a twisted
+    # region must not also report a backwards-triangle repair that cannot work.
+    H.check(diagnosis.backwards_triangles == 0,
+            "a twisted region must not offer a flip count as its repair, got "
+            + str(diagnosis.backwards_triangles))
+    # THE POINT OF THE WHOLE CASE. Every edge carries at most two triangles, so a
+    # non-manifold census reads clean while the winding gate fires -- the exact
+    # combination that read as a contradiction on coral (nonmanifold=0 next to
+    # inconsistent_winding x53).
+    incident = V._triangle_adjacency(V.extract_mesh_data(mesh))
+    worst = max(len(users) for users in incident.values())
+    H.check(worst == 2 and not diagnosis.over_shared_edges,
+            "the Moebius band must be manifold (max 2 triangles per edge), got "
+            "max " + str(worst) + " and over_shared="
+            + str(diagnosis.over_shared_edges))
+
+
+def case_winding_non_manifold_forced():
+    H.case("edge shared by three triangles forces a repeated directed edge")
+    mesh = three_faces_on_one_edge("MESH_SmallProp_ThreeFan_LOD0")
+    report = validate_clean(mesh)
+    expect("winding_non_manifold_forced", report.failures,
+           must=(V.GATE_INCONSISTENT_WINDING,),
+           allow=(V.GATE_NORMAL_LENGTH_OUT_OF_RANGE,
+                  V.GATE_UV_STRETCH_EXCESSIVE))
+    found = detail_of(report.failures, V.GATE_INCONSISTENT_WINDING)
+    H.check(found is not None
+            and "carry 3 or more triangles" in found.detail
+            and "non-manifold defect" in found.detail,
+            "a three-face edge must be diagnosed as non-manifold rather than as "
+            "an orientation problem, got " + (found.detail if found
+                                              else "<none>"))
+    diagnosis = V.orientation_analysis(V.extract_mesh_data(mesh))
+    H.check(len(diagnosis.over_shared_edges) == 1
+            and diagnosis.over_shared_edges[0][1] == 3,
+            "orientation_analysis must report exactly one edge with three "
+            "triangles, got " + str(diagnosis.over_shared_edges))
 
 
 def case_material_slots_missing():
@@ -1064,6 +1234,8 @@ def main():
     case_uv_island_too_small()
     case_uv_atlas_padding()
     case_winding()
+    case_winding_non_orientable()
+    case_winding_non_manifold_forced()
     case_material_slots_missing()
     case_submesh_empty_slot()
     case_material_slot_count()

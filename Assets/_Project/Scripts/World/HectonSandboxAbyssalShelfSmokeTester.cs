@@ -18,10 +18,32 @@ namespace Hecton8.World
         private const int SampleCount = 16;
         private const int JsonBufferLength = 1536;
         private const double SlopeProbeMeters = 64.0;
-        private const float HighWorldY = 2000f;
-        private const float LowWorldY = -5000f;
+        // Vertical extent has ONE owner: WorldVerticalExtentMath
+        // (Scripts/World/WorldVerticalExtentContracts.cs). These were hand-copied duplicates of the
+        // HectonSandboxAbyssalShelfMapMagicNode field initialisers; identical values, identical smoke result.
+        private const float HighWorldY = WorldVerticalExtentMath.DefaultHighWorldY;
+        private const float LowWorldY = WorldVerticalExtentMath.DefaultLowWorldY;
         private const float ShelfRunMeters = 15000f;
         private const float ShelfTargetSlopeDegrees = 30f;
+
+        // THIS SMOKE TEST CANNOT PASS, AND THESE TWO CONSTANTS ARE WHY. Deliberately left as literals
+        // rather than re-derived from WorldVerticalExtentMath: they are the (LowWorldY + 100) /
+        // (HighWorldY - 100) margin band, and re-deriving them from the canonical window would make a
+        // provably wrong derivation look sanctioned.
+        //
+        // HectonSandboxAbyssalShelfJobs.cs:1174-1175 requires minHeight <= RequiredMinMeters AND
+        // maxHeight >= RequiredMaxMeters. The generator's containment interval is Y in
+        // [-4655.98, +704.02] (derivation and citations: <remarks> on
+        // WorldVerticalExtentMath.DefaultVerticalSpanMeters), so:
+        //   min side: -4900 is 244.02 m BELOW the deepest Y the generator can emit -> unsatisfiable.
+        //   max side: +1900 is 1195.98 m ABOVE the highest Y the generator can emit -> unsatisfiable.
+        // Both conditions are false for every seed, at every position, so Passed is always 0 and this
+        // component's only outputs are the failure/coverage telemetry warnings below. It is asserting
+        // against a normalisation WINDOW (7000 m) instead of the geology ENVELOPE (5360 m).
+        //
+        // NOT FIXED HERE ON PURPOSE: choosing the band that should be asserted is a vertical-extent
+        // decision (either the window shrinks toward the envelope, or HadalDepthMeters grows toward the
+        // window), and that call belongs to the owner. See the backlog note in the consolidation report.
         private const float RequiredMinMeters = -4900f;
         private const float RequiredMaxMeters = 1900f;
         private const float MaxAllowedSlopeDegrees = 85f;

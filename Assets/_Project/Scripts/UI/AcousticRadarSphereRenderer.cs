@@ -63,6 +63,7 @@ namespace Hecton8.UI
         private bool _materialHasBaseColor;
         private bool _materialHasPulseIntensity;
         private int _qualityMatrixCapacity = MaxBlips;
+        private bool _missingDrawAssetsAnnounced;
 
         private void OnEnable()
         {
@@ -442,19 +443,48 @@ namespace Hecton8.UI
             return _viewCamera != null ? _viewCamera.transform : transform;
         }
 
+        /// <summary>
+        /// Resolves the authored draw pair, or reports the authoring gap once without throwing.
+        /// </summary>
+        /// <remarks>
+        /// The four <c>UnityEngine.Assertions.Assert</c> calls that used to open this method THREW - nothing
+        /// under Assets sets <c>Assert.raiseExceptions = false</c> - and both callers reach this method BEFORE
+        /// they register the component: <see cref="OnEnable"/> at line 71 and <see cref="Start"/> at line 78
+        /// each call <c>EnsureResources()</c> and only then <see cref="TryRegisterTickManager"/>. So an
+        /// unassigned inspector slot did not merely skip a draw - it threw out of the Unity message, skipped
+        /// <c>SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI)</c>, and left the radar
+        /// permanently off the UI late-frame lane. Assigning the material later in play-mode could not recover
+        /// it, because nothing calls EnsureResources again.
+        ///
+        /// The asserts guarded nothing. The <c>return</c> below them was already the complete degradation
+        /// path, and it is triple-covered downstream: <see cref="RefreshMatricesForLateFrame"/> returns early
+        /// on a null resolved pair (:106) and <see cref="LateFrameTick"/> re-checks both before
+        /// <c>DrawMeshInstanced</c> (:387). An unregistered tick lane, by contrast, had no recovery at all.
+        /// </remarks>
         private void EnsureResources()
         {
             EnsureMaterialPropertiesCold();
-            UnityEngine.Assertions.Assert.IsNotNull(voxelMaterial, "Fatal: Missing Authored Acoustic Radar Voxel Material.");
-            UnityEngine.Assertions.Assert.IsNotNull(voxelMesh, "Fatal: Missing Authored Acoustic Radar Voxel Mesh.");
-            bool authoredMaterialValid = voxelMaterial != null && voxelMaterial.enableInstancing;
-            bool authoredMeshValid = voxelMesh != null && voxelMesh.subMeshCount > 0 && voxelMesh.GetIndexCount(0) > 0u;
-            UnityEngine.Assertions.Assert.IsTrue(authoredMaterialValid, "Fatal: Acoustic Radar Voxel Material must have Enable GPU Instancing authored.");
-            UnityEngine.Assertions.Assert.IsTrue(authoredMeshValid, "Fatal: Acoustic Radar Voxel Mesh must provide indexed submesh 0.");
+            bool materialAssigned = voxelMaterial != null;
+            bool meshAssigned = voxelMesh != null;
+            bool authoredMaterialValid = materialAssigned && voxelMaterial.enableInstancing;
+            bool authoredMeshValid = meshAssigned && voxelMesh.subMeshCount > 0 && voxelMesh.GetIndexCount(0) > 0u;
             if (!authoredMaterialValid || !authoredMeshValid)
             {
                 _resolvedMaterial = null;
                 _resolvedVoxelMesh = null;
+
+                // Report LAST and once. The caller continues to TryRegisterTickManager after this returns, so
+                // a future re-introduced throw here can no longer strand the UI late-frame registration.
+                if (!_missingDrawAssetsAnnounced)
+                {
+                    _missingDrawAssetsAnnounced = true;
+                    LogInvalidAcousticRadarDrawAssets(
+                        materialAssigned,
+                        authoredMaterialValid,
+                        meshAssigned,
+                        authoredMeshValid);
+                }
+
                 return;
             }
 
@@ -469,6 +499,38 @@ namespace Hecton8.UI
             _resolvedVoxelMesh = voxelMesh;
 
             ApplyMaterialPropertiesIfNeeded();
+        }
+
+        /// <summary>
+        /// One-shot report of an unusable authored draw pair. The latch guarantees single emission and every
+        /// parameter is a primitive, so no string work and no allocation reaches any tick cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidAcousticRadarDrawAssets(
+            bool materialAssigned,
+            bool authoredMaterialValid,
+            bool meshAssigned,
+            bool authoredMeshValid)
+        {
+            if (!materialAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("AcousticRadarSphereRenderer: serialized field 'voxelMaterial' is unassigned. The acoustic contact sphere draws no blips this session - LateFrameTick null-guards the pair and skips DrawMeshInstanced. Every registration stays live. Runtime material generation is forbidden: assign the authored acoustic radar voxel material in the inspector.");
+            }
+            else if (!authoredMaterialValid)
+            {
+                Hecton8.Core.H8Debug.LogError("AcousticRadarSphereRenderer: the material assigned to 'voxelMaterial' has Enable GPU Instancing OFF. Graphics.DrawMeshInstanced requires it, so the acoustic contact sphere draws no blips this session. Tick 'Enable GPU Instancing' on that material asset.");
+            }
+
+            if (!meshAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("AcousticRadarSphereRenderer: serialized field 'voxelMesh' is unassigned. The acoustic contact sphere draws no blips this session - LateFrameTick null-guards the pair and skips DrawMeshInstanced. Every registration stays live. Assign the authored voxel mesh in the inspector.");
+                return;
+            }
+
+            if (!authoredMeshValid)
+            {
+                Hecton8.Core.H8Debug.LogError("AcousticRadarSphereRenderer: the mesh assigned to 'voxelMesh' has no indexed submesh 0 (subMeshCount is 0 or GetIndexCount(0) is 0), so DrawMeshInstanced would submit an empty draw. The acoustic contact sphere shows no blips this session. Reimport or replace that mesh asset with one that carries an index buffer.");
+            }
         }
 
         private void EnsureMaterialPropertiesCold()

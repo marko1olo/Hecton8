@@ -12,6 +12,56 @@
 //   ClearApplied()    → main thread, unregisters chunk
 //
 // ZERO GAMEOBJECTS: All rendering via GPU Instancer, physics via ProximityColliderSystem.
+//
+// ---------------------------------------------------------------------------
+// WIRING STATUS (audited 2026-07-29): THIS NODE IS PRESENT IN ZERO GRAPHS.
+//   MapMagic graph assets store each node as a literal assembly-qualified type
+//   string (see "type: MapMagic.Nodes.ObjectsGenerators.ObjectsOutput, MapMagic"
+//   at Assets/MapMagic/Map_Graph/Old tries/Terrain.asset:4041). A repo-wide
+//   search for "HectonRockOutput" matches only .cs files - no .asset. So
+//   Generate/Finalize/Apply below are unreachable, and HectonRockManager
+//   .RegisterChunk (HectonRockManager.cs:354) has no live producer: this file
+//   is its ONLY caller. Do not assume rocks render because this compiles.
+//
+//   WHY it is in no graph: the node cannot be added from the graph editor's
+//   "Add (Create)" menu. CreateRightClick.cs:58 calls
+//   typeof(Generator).Subtypes(), whose allAssemblies defaults to false
+//   (Tools/Extensions/Reflection.cs:174), so Reflection.cs:180 scans ONLY the
+//   assembly declaring Generator - i.e. MapMagic. This file compiles into
+//   Hecton8.Plugins (Assets/_Project/Scripts/Plugins/Hecton8.Plugins.asmdef),
+//   so it is invisible to that scan. Outer-assembly nodes must self-register
+//   into CreateRightClick.generatorTypes (CreateRightClick.cs:20, "adding
+//   outer-assembly types via their initialize" at line 62); tree-wide the only
+//   type that does is the vendor MicroSplat shim (MicroSplatEditor.cs:31).
+//   TO WIRE THIS: either add an editor-only [InitializeOnLoad] that registers
+//   typeof(HectonRockOutput) into CreateRightClick.generatorTypes, then place
+//   the node by hand; or inject it programmatically the way the live sibling
+//   nodes were - Generator.Create(typeof(T)) + graph.Add(gen), as in
+//   Assets/_Project/Editor/AsymmetricContinentalDivideGraphBuilder.cs:640.
+//
+//   Five siblings in THIS folder are live in
+//   Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH
+//   .asset (refIds 560/563/569/578/596): BiomeMatrixPostProcess, HydraulicErosion,
+//   TerrainSplatmap, TerrainSurfaceMaterial, SandboxAbyssalShelf. The four in
+//   this folder that are in NO graph are HectonRockOutput, HectonScatterOutput,
+//   HectonAnomalyMapMagicNode and HectonSpaceEngine098MapMagicNodes.
+//
+// SERIALIZATION / UAC1002: the warning that base MapMagic.Nodes.OutputGenerator
+//   (Assets/MapMagic/Nodes/Generator.cs:100) lacks [Serializable] is COSMETIC
+//   here - Unity's serializer never walks this type. Graph.cs:22 declares
+//   [NonSerialized] public Generator[] generators; Graph is an
+//   ISerializationCallbackReceiver (Graph.cs:20) that persists nodes through
+//   GraphSerializer.cs:25 (Serializer.Object[] serializedData), and
+//   Den.Tools.Serializer walks fields by reflection
+//   (Tools/Serializer.cs:384) skipping only IsLiteral / IsPointer /
+//   IsNotSerialized (Serializer.cs:395-397) - it never consults
+//   SerializableAttribute. Proof it round-trips: the ObjectsOutput block at
+//   Terrain.asset:4045-4071 persists its own outputLevel plus base-class
+//   enabled/id/version/guiPosition/guiSize over the same attribute-less base.
+//   [System.Serializable] below matches the vendor idiom (ObjectsOut.cs:46,
+//   HeightOut.cs:23, GrassOut.cs:14, HolesOut.cs:23, SplinesOut.cs:17).
+//   Do NOT add a #pragma suppression and do NOT restructure fields to "fix" it.
+// ---------------------------------------------------------------------------
 // ============================================================================
 
 using System;

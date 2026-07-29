@@ -74,6 +74,18 @@ namespace Hecton8.Core
         private const double ColdTickIntervalSeconds = 1.0;
         private const double FrostTickIntervalSeconds = 5.0;
         private const int MaxCadenceSubstepsPerFrame = 4;
+
+        // Largest fixed step a step-bounded headless run can take without any cadence lane clamping.
+        // The binding lane is the FAST lane at 1/60 s, NOT the slow lane at 0.1 s: four substeps of
+        // 1/60 s is 0.0667 s, while the slow lane tolerates 0.4 s and the cold lane 4.0 s. A caller who
+        // sizes a headless step against the slow interval - the lane the discard counters made visible -
+        // still silently drops fast-lane simulation time. Sized off the constants so a cadence change
+        // cannot leave this stale.
+        private const double MaxStepBoundedDeltaSeconds = FastTickIntervalSeconds * MaxCadenceSubstepsPerFrame;
+        private const byte StepBoundedClampLaneFast = 1 << 0;
+        private const byte StepBoundedClampLaneUnscaledFast = 1 << 1;
+        private const byte StepBoundedClampLaneSlow = 1 << 2;
+        private const byte StepBoundedClampLaneCold = 1 << 3;
         private const float TimeDilationMinimumScalar = 0f;
         private const float TimeDilationMaximumScalar = 4f;
         private const float HeadlessTimeDilationMaximumScalar = 100f;
@@ -202,6 +214,11 @@ namespace Hecton8.Core
         private const uint _HeapLockGuardHash = 0x51D10002u;
         private const uint _AupNanInquisitorHash = 0x51D10003u;
         private const uint _DispatcherBlackBoxFaultHash = 0x51D10004u;
+        // A cadence lane clamped while step-bounded headless time was active - the one thing that mode
+        // exists to make impossible, so it is reported rather than absorbed.
+        private const uint _StepBoundedTimeClampHash = 0x51D10005u;
+        // A step-bounded step size was accepted that cannot be clamp-free.
+        private const uint _StepBoundedTimeConfigHash = 0x51D10006u;
         private const uint _BaseStressCascadeBreakerHash = 3838237614u;
         private const uint _SimulationBucketContextHash = 0x53424B54u; // SBKT
         private const uint _FramePacingWarningHash = 0x4650574Eu; // FPWN
@@ -538,6 +555,36 @@ namespace Hecton8.Core
         private static bool _dispatcherPlayerLoopInstalled;
         private static IDataVault _cachedDispatcherDataVault;
         private static ICameraJuiceSystem _cachedCameraJuiceSystem;
+
+        // --- Step-bounded headless time source ---------------------------------------------------------
+        // Default is WallClock, so a player build is bit-identical to before: every read below is guarded
+        // by a single static byte compare that is false in a player, and none of them sit inside a
+        // per-item or per-substep loop - the three wall-clock reads this replaces were already once per
+        // dispatcher frame. Never flipped by runtime code; only an explicit driver call flips it.
+        private static HeadlessTimeMode _headlessTimeMode = HeadlessTimeMode.WallClock;
+        private static float _stepBoundedDeltaSeconds;
+        private static double _stepBoundedElapsedSeconds;
+        private static long _stepBoundedStepIndex;
+        private static byte _stepBoundedClampReportedLanes;
+
+        /// <summary>
+        /// Where the dispatcher gets the delta it advances the simulation by.
+        /// </summary>
+        internal enum HeadlessTimeMode : byte
+        {
+            /// <summary>
+            /// Wall clock (<c>Time.unscaledDeltaTime</c> / <c>Time.smoothDeltaTime</c> under XR). The only
+            /// mode a player build ever runs, and the default.
+            /// </summary>
+            WallClock = 0,
+
+            /// <summary>
+            /// A fixed step supplied by the caller. Wall clock is never read for simulation advance, so the
+            /// same seed plus the same step count reaches the same state by construction rather than by
+            /// luck of machine load.
+            /// </summary>
+            StepBounded = 1,
+        }
 
         public static float CurrentFrameDeltaTime { get; private set; }
 
@@ -7137,46 +7184,4 @@ namespace Hecton8.Core
                 double elapsedMs = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
                 if (elapsedMs <= 0d)
                     return 0f;
-                return elapsedMs > float.MaxValue ? float.MaxValue : (float)elapsedMs;
-            }
-        }
-
-        public static float RemainingMs => math.max(0f, _budgetMs - ConsumedMs);
-
-        public static void BeginFrame(float globalQualityWeight, uint frameId)
-        {
-            _frameId = frameId;
-            _frameStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            _budgetMs = ResolveBudgetMs(globalQualityWeight);
-        }
-
-        public static bool HasBudgetRemaining(float estimatedCostMs = 0f)
-        {
-            float cost = SanitizeNonNegative(estimatedCostMs);
-            return ConsumedMs + cost <= _budgetMs;
-        }
-
-        public static bool TryConsume(float estimatedCostMs)
-        {
-            return HasBudgetRemaining(estimatedCostMs);
-        }
-
-        private static float ResolveBudgetMs(float globalQualityWeight)
-        {
-            float quality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
-            float curved = quality * quality * (3f - 2f * quality);
-            if (curved < 0.33333334f)
-                return math.lerp(MinimumBudgetMs, MiddleBudgetMs, curved * 3f);
-            if (curved < 0.6666667f)
-                return math.lerp(MiddleBudgetMs, HighBudgetMs, (curved - 0.33333334f) * 3f);
-            return math.lerp(HighBudgetMs, UltraBudgetMs, (curved - 0.6666667f) * 3f);
-        }
-
-        private static float SanitizeNonNegative(float value)
-        {
-            if (!math.isfinite(value) || value <= 0f)
-                return 0f;
-            return value;
-        }
-    }
-}
+                re

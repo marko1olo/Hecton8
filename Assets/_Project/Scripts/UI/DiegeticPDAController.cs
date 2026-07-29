@@ -119,6 +119,7 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private int _pointerTargetCount;
         private int _acceptedPanelId = 1;
+        private bool _missingTabletScreenMaterialAnnounced;
         private IPlayerRuntimeContext _cachedPlayerContext;
 
         private void Awake()
@@ -1247,12 +1248,44 @@ namespace Hecton8.UI
             _pointerEventData.dragging = false;
         }
 
+        /// <summary>
+        /// Returns the authored tablet screen material, reporting an unassigned slot once without throwing.
+        /// </summary>
+        /// <remarks>
+        /// The <c>UnityEngine.Assertions.Assert.IsNotNull</c> removed from here THREW - nothing under Assets sets
+        /// <c>Assert.raiseExceptions = false</c> - and it fired from an argument position inside
+        /// <see cref="ConfigureDiegeticPdaShell"/> (:439), which made it unusually destructive:
+        ///
+        /// - <c>_uiConfigured = true</c> (:445) was never reached, so the shell was never marked configured and
+        ///   every later call re-entered and re-threw instead of short-circuiting at :423.
+        /// - <see cref="Awake"/> (:130) never reached <c>ApplyPresentationState(PlayerPDA.IsOpen, force: true)</c>.
+        /// - <see cref="OnEnable"/> (:138) never reached <c>TryRegisterHotSwapListener()</c> or
+        ///   <c>RegisterToTickManager()</c> (:139-140), so the diegetic PDA never ticked: no pointer routing, no
+        ///   presentation cull state, no hover/press/drag forwarding for the entire session.
+        /// - The registry hot-swap callback at :307 re-threw on every Player service rebind.
+        ///
+        /// The assert guarded nothing. <c>DiegeticPanelController.OverridePanelPresentation</c> already null-guards
+        /// this argument (DiegeticPanelController.cs:980) and keeps its previously authored
+        /// <c>panelOutputMaterial</c>, so passing null is a supported no-op on that field.
+        /// </remarks>
         private Material ResolveTabletScreenMaterial()
         {
-            UnityEngine.Assertions.Assert.IsNotNull(
-                tabletScreenUnlitMaterial,
-                "Fatal: DiegeticPDAController requires an authored tablet screen material. Runtime material creation is forbidden.");
-            return tabletScreenUnlitMaterial;
+            if (tabletScreenUnlitMaterial != null || _missingTabletScreenMaterialAnnounced)
+                return tabletScreenUnlitMaterial;
+
+            _missingTabletScreenMaterialAnnounced = true;
+            LogMissingTabletScreenMaterial();
+            return null;
+        }
+
+        /// <summary>
+        /// One-shot report of the unassigned authored tablet screen material. The latch guarantees single emission
+        /// and the method takes no arguments, so no string work or allocation reaches a tick cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingTabletScreenMaterial()
+        {
+            Hecton8.Core.H8Debug.LogError("DiegeticPDAController: serialized field 'tabletScreenUnlitMaterial' is unassigned. DiegeticPanelController.OverridePanelPresentation ignores the null and keeps whatever panelOutputMaterial was authored on the panel, so the tablet screen shows the panel's own material instead of the intended unlit PDA screen material. The PDA shell, pointer routing, tick registration and hot-swap listener all stay live. Runtime material creation is forbidden: assign the authored tablet screen unlit material in the inspector.");
         }
 
         private static Vector2Int SanitizeTabletResolution(Vector2Int resolution)

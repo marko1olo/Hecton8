@@ -75,6 +75,7 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private bool _radarCullScheduled;
         private bool _radarBlipMaterialPropertiesDirty = true;
+        private bool _missingBlipDrawAssetsAnnounced;
         private int _scheduledCandidateCount;
         private int _scheduledBlipCapacity = MaxBlips;
         private int _qualityBlipCapacity = MaxBlips;
@@ -843,19 +844,76 @@ namespace Hecton8.UI
                    (!requireHudLayer || (candidate.cullingMask & (1 << HudInternalLayerIndex)) != 0);
         }
 
+        /// <summary>
+        /// Resolves the authored blip draw pair, or reports the authoring gap once without throwing.
+        /// </summary>
+        /// <remarks>
+        /// The three <c>UnityEngine.Assertions.Assert</c> calls removed from this method THREW - nothing under
+        /// Assets sets <c>Assert.raiseExceptions = false</c> - and both callers reach here BEFORE they register
+        /// anything: <see cref="OnEnable"/> (:159) and <see cref="Start"/> (:169) each call this and only then
+        /// <see cref="TryRegisterScanEvents"/> and <see cref="TryRegister"/>. An unassigned inspector slot
+        /// therefore cost far more than a skipped draw - it threw out of the Unity message and skipped
+        /// <c>ScanEvents.Register(this)</c>, <c>SystemDispatcher.Register((ILateFrameTickable)this,
+        /// PriorityLayer.UI)</c> and <c>GlobalRegistry.Renderables.TryRegister(this)</c>. The controller never
+        /// received a scan event and never ticked again for the session, so assigning the asset later in
+        /// play-mode could not recover it.
+        ///
+        /// The asserts guarded nothing: <c>_radarBlipMesh</c> is deliberately left null on an invalid pair and
+        /// <see cref="AdvanceRadarPresentation"/> already treats that as "clear the handoff and return"
+        /// (:203-208), as does the second guard at :287.
+        /// </remarks>
         private void EnsureRuntimeResources()
         {
             if (!Application.isPlaying)
                 return;
 
             EnsureRadarBlipPropertiesCold();
-            bool authoredMeshValid = radarBlipMesh != null && radarBlipMesh.subMeshCount > 0 && radarBlipMesh.GetIndexCount(0) > 0u;
-            UnityEngine.Assertions.Assert.IsNotNull(radarBlipMaterial, "Fatal: Missing Authored Fake Radar Blip Material.");
-            bool authoredMaterialValid = radarBlipMaterial != null && radarBlipMaterial.enableInstancing;
-            UnityEngine.Assertions.Assert.IsTrue(authoredMeshValid, "Fatal: Fake Radar Blip Mesh must be authored and indexed.");
-            UnityEngine.Assertions.Assert.IsTrue(authoredMaterialValid, "Fatal: Fake Radar Blip Material must have Enable GPU Instancing authored.");
+            bool meshAssigned = radarBlipMesh != null;
+            bool materialAssigned = radarBlipMaterial != null;
+            bool authoredMeshValid = meshAssigned && radarBlipMesh.subMeshCount > 0 && radarBlipMesh.GetIndexCount(0) > 0u;
+            bool authoredMaterialValid = materialAssigned && radarBlipMaterial.enableInstancing;
             _radarBlipMesh = authoredMeshValid && authoredMaterialValid ? radarBlipMesh : null;
             _radarBlipMaterialPropertiesDirty = true;
+
+            // Report LAST and once. Both callers continue to their registration calls after this returns, so a
+            // future re-introduced throw here can no longer strand scan events or the UI late-frame lane.
+            if ((authoredMeshValid && authoredMaterialValid) || _missingBlipDrawAssetsAnnounced)
+                return;
+
+            _missingBlipDrawAssetsAnnounced = true;
+            LogInvalidRadarBlipDrawAssets(meshAssigned, authoredMeshValid, materialAssigned, authoredMaterialValid);
+        }
+
+        /// <summary>
+        /// One-shot report of an unusable authored blip pair. The latch guarantees single emission and every
+        /// parameter is a primitive, so no string work and no allocation reaches the late-frame cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidRadarBlipDrawAssets(
+            bool meshAssigned,
+            bool authoredMeshValid,
+            bool materialAssigned,
+            bool authoredMaterialValid)
+        {
+            if (!meshAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("FakeRadarBlipController: serialized field 'radarBlipMesh' is unassigned. No radar blip renders this session - AdvanceRadarPresentation clears the visible-blip handoff and returns. Scan events, the UI late-frame tick and the renderable registration all stay live. Assign the authored blip quad mesh in the inspector.");
+            }
+            else if (!authoredMeshValid)
+            {
+                Hecton8.Core.H8Debug.LogError("FakeRadarBlipController: the mesh assigned to 'radarBlipMesh' has no indexed submesh 0 (subMeshCount is 0 or GetIndexCount(0) is 0), so the instanced blip draw would submit no triangles. No radar blip renders this session. Reimport or replace that mesh asset with one that carries an index buffer.");
+            }
+
+            if (!materialAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("FakeRadarBlipController: serialized field 'radarBlipMaterial' is unassigned. No radar blip renders this session - AdvanceRadarPresentation clears the visible-blip handoff and returns. Runtime material generation is forbidden: assign the authored radar blip material in the inspector.");
+                return;
+            }
+
+            if (!authoredMaterialValid)
+            {
+                Hecton8.Core.H8Debug.LogError("FakeRadarBlipController: the material assigned to 'radarBlipMaterial' has Enable GPU Instancing OFF, which the instanced blip draw requires. No radar blip renders this session. Tick 'Enable GPU Instancing' on that material asset.");
+            }
         }
 
         private void EnsureRadarBlipPropertiesCold()

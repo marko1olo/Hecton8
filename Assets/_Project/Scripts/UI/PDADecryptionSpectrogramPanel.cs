@@ -114,6 +114,7 @@ namespace Hecton8.UI
         private bool _waveResultDirty;
         private bool _nativeResourcesDirty;
         private bool _graphicsResourcesDirty;
+        private bool _missingWaveDrawAssetsAnnounced;
         private float _cachedQualityWeight01 = 1f;
         private float _cachedVideoMemoryQualityClamp01 = 1f;
 
@@ -456,6 +457,23 @@ namespace Hecton8.UI
                 telemetryRing[i] = default;
         }
 
+        /// <summary>
+        /// Brings the indirect-draw lane up, or reports the authoring gap once without throwing.
+        /// </summary>
+        /// <remarks>
+        /// The four <c>UnityEngine.Assertions.Assert</c> calls removed from the middle of this method THREW -
+        /// nothing under Assets sets <c>Assert.raiseExceptions = false</c> - and the only caller reaches here
+        /// mid-<see cref="OnEnable"/> (:134), before <see cref="ResetRuntimeState"/> (:135) and
+        /// <see cref="TryRegisterTickHandlers"/> (:136). An unassigned inspector slot therefore threw out of the
+        /// Unity message and left the decryption panel with un-reset runtime state and no late-frame or slow
+        /// tick registration at all, so the whole frequency-tuning minigame was inert for the session rather
+        /// than merely unrendered.
+        ///
+        /// The asserts guarded nothing the surrounding code did not already handle: <c>_graphicsReady</c> stays
+        /// false on this branch and both tick entry points bail on it -
+        /// <see cref="AdvanceDecryptionPresentationState"/> at :176-179 and <see cref="LateFrameTick"/> at
+        /// :210-217 - which is the complete degradation path the throw made unreachable.
+        /// </remarks>
         private void EnsureGraphicsResources()
         {
             EnsureWaveMaterialPropertiesCold();
@@ -468,17 +486,28 @@ namespace Hecton8.UI
                 return;
             }
 
-            UnityEngine.Assertions.Assert.IsNotNull(waveMaterial, "Fatal: Missing Authored PDA Frequency Tuning Wave Material.");
-            UnityEngine.Assertions.Assert.IsNotNull(waveMesh, "Fatal: Missing Authored PDA Frequency Tuning Wave Mesh.");
-            bool authoredMaterialValid = waveMaterial != null && waveMaterial.enableInstancing;
-            bool authoredMeshValid = waveMesh != null && waveMesh.subMeshCount > 0 && waveMesh.GetIndexCount(0) > 0u;
-            UnityEngine.Assertions.Assert.IsTrue(authoredMaterialValid, "Fatal: PDA Frequency Tuning Wave Material must have Enable GPU Instancing authored.");
-            UnityEngine.Assertions.Assert.IsTrue(authoredMeshValid, "Fatal: PDA Frequency Tuning Wave Mesh must provide indexed submesh 0.");
+            bool materialAssigned = waveMaterial != null;
+            bool meshAssigned = waveMesh != null;
+            bool authoredMaterialValid = materialAssigned && waveMaterial.enableInstancing;
+            bool authoredMeshValid = meshAssigned && waveMesh.subMeshCount > 0 && waveMesh.GetIndexCount(0) > 0u;
             if (!authoredMaterialValid || !authoredMeshValid)
             {
                 _resolvedMaterial = null;
                 _resolvedMesh = null;
                 _graphicsReady = false;
+
+                // Report LAST and once. OnEnable continues to ResetRuntimeState and TryRegisterTickHandlers
+                // after this returns, so a future re-introduced throw here can no longer strand the panel.
+                if (!_missingWaveDrawAssetsAnnounced)
+                {
+                    _missingWaveDrawAssetsAnnounced = true;
+                    LogInvalidWaveDrawAssets(
+                        materialAssigned,
+                        authoredMaterialValid,
+                        meshAssigned,
+                        authoredMeshValid);
+                }
+
                 return;
             }
 
@@ -495,6 +524,38 @@ namespace Hecton8.UI
                 _argsBuffer = _argsBufferA;
             UpdateDrawArgs(_gpuSegmentCapacity);
             _graphicsReady = _resolvedMaterial != null && _resolvedMesh != null && _argsBufferA != null && _argsBufferB != null;
+        }
+
+        /// <summary>
+        /// One-shot report of an unusable authored wave draw pair. The latch guarantees single emission and
+        /// every parameter is a primitive, so no string work and no allocation reaches a tick cadence.
+        /// </summary>
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInvalidWaveDrawAssets(
+            bool materialAssigned,
+            bool authoredMaterialValid,
+            bool meshAssigned,
+            bool authoredMeshValid)
+        {
+            if (!materialAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("PDADecryptionSpectrogramPanel: serialized field 'waveMaterial' is unassigned. The frequency-tuning wave renders nothing this session - LateFrameTick bails on !_graphicsReady - but the panel still ticks, still drains scanner signals and still tracks tuning state. Runtime material generation is forbidden: assign the authored PDA frequency tuning wave material in the inspector.");
+            }
+            else if (!authoredMaterialValid)
+            {
+                Hecton8.Core.H8Debug.LogError("PDADecryptionSpectrogramPanel: the material assigned to 'waveMaterial' has Enable GPU Instancing OFF, which the indirect wave draw requires. The frequency-tuning wave renders nothing this session. Tick 'Enable GPU Instancing' on that material asset.");
+            }
+
+            if (!meshAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("PDADecryptionSpectrogramPanel: serialized field 'waveMesh' is unassigned. The frequency-tuning wave renders nothing this session - LateFrameTick bails on !_graphicsReady - but the panel still ticks and still tracks tuning state. Assign the authored wave segment mesh in the inspector.");
+                return;
+            }
+
+            if (!authoredMeshValid)
+            {
+                Hecton8.Core.H8Debug.LogError("PDADecryptionSpectrogramPanel: the mesh assigned to 'waveMesh' has no indexed submesh 0 (subMeshCount is 0 or GetIndexCount(0) is 0), which DrawMeshInstancedIndirect requires for its index count. The frequency-tuning wave renders nothing this session. Reimport or replace that mesh asset with one that carries an index buffer.");
+            }
         }
 
         private void EnsureWaveMaterialPropertiesCold()

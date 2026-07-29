@@ -37,8 +37,12 @@ namespace Hecton8.Editor
         private const double ShelfPreviewOriginMeters = -16000.0;
         private const double ShelfPreviewCellSizeMeters = 64.0;
         private const double ShelfAupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
-        private const float ShelfHighWorldY = 2000f;
-        private const float ShelfLowWorldY = -5000f;
+        // Vertical extent has ONE owner: WorldVerticalExtentMath
+        // (Scripts/World/WorldVerticalExtentContracts.cs). These were hand-copied duplicates of the
+        // HectonSandboxAbyssalShelfMapMagicNode field initialisers; same values, so the PNG/normal-map
+        // artifacts this harness writes are byte-identical.
+        private const float ShelfHighWorldY = WorldVerticalExtentMath.DefaultHighWorldY;
+        private const float ShelfLowWorldY = WorldVerticalExtentMath.DefaultLowWorldY;
         private const float ErosionHeightScaleMeters = 160f;
         private const int ErosionSubGridSize = 32;
         private const float ErosionInertia = 0.86f;
@@ -341,7 +345,9 @@ namespace Hecton8.Editor
                 WriteNormalPng(
                     quantized,
                     Path.Combine(folder, "ErosionTestHarness_MacroShelf_Normal.png"),
-                    ShelfHighWorldY - ShelfLowWorldY,
+                    // Identical to the former (ShelfHighWorldY - ShelfLowWorldY): the span const is
+                    // defined as DefaultHighWorldY - DefaultLowWorldY, so this is the same 7000f.
+                    WorldVerticalExtentMath.DefaultVerticalSpanMeters,
                     (float)ShelfPreviewCellSizeMeters);
             }
             finally

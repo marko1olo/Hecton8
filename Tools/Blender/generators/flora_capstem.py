@@ -213,6 +213,58 @@ class _Accum:
              uvs: Sequence[Tuple[int, float, float]]) -> None:
         self.face((a, b, c, d), material, uvs)
 
+    def triangulate(self) -> int:
+        """Fan every quad into triangles here, at authoring time. Returns faces added.
+
+        NOT cosmetic, and not something the exporter can be left to do. ``export_unity``
+        writes the FBX with ``use_triangles=True`` and it has to: ``use_tspace``
+        SILENTLY refuses to build a tangent basis on a mesh containing an n-gon, and
+        ``3dmodel.md`` section 3 makes Tangent a required stream. So the file always
+        holds triangles. ``verify_fbx_roundtrip`` then compares data that is indexed
+        PER CORNER (``mesh.corner_normals``, the colour attribute), and a quad source
+        can never match a triangulated re-import: measured on this asset, 2580 quads +
+        360 triangles = 11400 corners against 16560 coming back, so the round trip
+        rejected the package and the exporter deleted the FBX it had just written.
+        Nothing about the geometry was wrong; the two sides were counting different
+        topologies.
+
+        Doing it HERE rather than after the LOD chain buys three things:
+          1. the mesh that is validated, baked, previewed and measured is the mesh that
+             ships, so the manifest's triangle counts and UV statistics describe the
+             exported topology instead of a quad cage Blender would re-cut later;
+          2. the diagonal is chosen once, deterministically, by this generator -- a
+             non-planar quad has two different surfaces depending on its diagonal, and
+             ``3dmodel.md`` section 10 validates the one we pick;
+          3. ``face_material``, ``face_uv`` and ``face_region`` are rebuilt in lockstep,
+             so the per-face structural labels the UV diagnostic reads stay aligned by
+             CONSTRUCTION rather than by trusting a bmesh operator to preserve order.
+        ``rock.py`` reached the same conclusion from the other end and triangulates after
+        its chain; the accumulator is simply the earliest point where it is free.
+
+        Vertex order is untouched, which is the constraint that matters most here: the
+        authored per-vertex geodesic/harvest/thickness arrays are index-aligned to build
+        order and a re-indexing pass would silently desynchronise the sway field.
+        """
+        faces: List[Tuple[int, ...]] = []
+        materials: List[int] = []
+        uvs: List[List[Tuple[int, float, float]]] = []
+        regions: List[str] = []
+        for index, corners in enumerate(self.faces):
+            material = self.face_material[index]
+            corner_uv = self.face_uv[index]
+            region = self.face_region[index]
+            for k in range(1, len(corners) - 1):
+                faces.append((corners[0], corners[k], corners[k + 1]))
+                materials.append(material)
+                uvs.append([corner_uv[0], corner_uv[k], corner_uv[k + 1]])
+                regions.append(region)
+        added = len(faces) - len(self.faces)
+        self.faces = faces
+        self.face_material = materials
+        self.face_uv = uvs
+        self.face_region = regions
+        return added
+
 
 # ---------------------------------------------------------------------------
 # Material slots  --  3dmodel.md section 6
@@ -1497,15 +1549,136 @@ def build_materials() -> List[bpy.types.Material]:
 # LOD re-unwrap
 # ---------------------------------------------------------------------------
 
+def _settle_topology(obj: bpy.types.Object, *, fill_cracks: bool):
+    """Weld, dissolve, purge, and leave the mesh TRIANGLES ONLY with no duplicate faces.
+
+    ORDER IS THE WHOLE POINT AND THE OBVIOUS ORDER IS WRONG. ``weld_and_clean`` ends its
+    repair with ``holes_fill``, which emits one N-GON per closed loop, and
+    ``dissolve_degenerate`` MERGES adjacent triangles into quads and n-gons -- so any pass
+    that triangulates before dissolving hands back a mesh that is not triangulated.
+    Measured on seed 1811 q0.35 after exactly that mistake: the level reported 1687
+    triangles from 1678 polygons, i.e. nine surviving quads, and one of them split into a
+    triangle of cross length 2.94e-08 against ``law.DEGENERATE_TRIANGLE_AREA_EPS`` 1e-07.
+    Triangulation is therefore LAST, after every operator that can fuse faces.
+
+    Four gate failures across the seed/quality sweep had this single cause and every one
+    of them named a different gate, which is why they read as four bugs:
+
+    *   seed 1811 q0.00 -- FBX round trip, ``corner normal count 2543 -> 2547``: surviving
+        non-triangles, the same per-corner mismatch a quad LOD0 produces.
+    *   seed 1811 q0.35 -- ``GATE_DEGENERATE_TRIANGLE``, the sliver above.
+    *   seeds 3301 and 7 -- ``GATE_TANGENT_LENGTH_OUT_OF_RANGE``, tangent length exactly
+        0.0, which is what a sliver's zero-area UV footprint yields.
+    *   seed 3301 -- FBX round trip, ``triangle count 1618 -> 1617 ... check for a
+        DUPLICATE FACE``: Quadric Edge Collapse can pull two triangles onto the same vertex
+        triple, FBX merges the pair on import, and the round trip then rejects the package
+        for losing one triangle. Invisible to a non-manifold-edge query, so it is purged
+        here by vertex-triple identity.
+
+    Blender also cannot build a tangent basis on an n-gon at all -- ``calc_tangents``
+    raises "tris/quads" and the validator then records all three tangent gates as NOT
+    ENFORCED rather than failed -- so leaving triangles is required regardless of the FBX.
+
+    ``fill_cracks`` is False on the second call: closing rims again after the budget refit
+    would re-inflate the triangle count and put the level straight back on the seam-drop
+    path this hook exists to keep it off.
+    """
+    bm = mesh_ops.bmesh_from_object(obj)
+    stats = mesh_ops.weld_and_clean(bm, merge_distance=1e-4,
+                                    fill_boundary_loops=fill_cracks)
+    bmesh.ops.dissolve_degenerate(bm, dist=1e-4, edges=bm.edges[:])
+
+    fused = [face for face in bm.faces if len(face.verts) > 3]
+    if fused:
+        bmesh.ops.triangulate(bm, faces=fused, quad_method="BEAUTY",
+                              ngon_method="BEAUTY")
+
+    slivers = [face for face in bm.faces
+               if face.calc_area() <= law.DEGENERATE_TRIANGLE_AREA_EPS]
+    if slivers:
+        bmesh.ops.delete(bm, geom=slivers, context="FACES")
+
+    bm.verts.index_update()
+    seen = set()
+    duplicates = []
+    for face in bm.faces:
+        key = tuple(sorted(vert.index for vert in face.verts))
+        if key in seen:
+            duplicates.append(face)
+        else:
+            seen.add(key)
+    if duplicates:
+        bmesh.ops.delete(bm, geom=duplicates, context="FACES")
+
+    orphans = [vert for vert in bm.verts if not vert.link_faces]
+    if orphans:
+        bmesh.ops.delete(bm, geom=orphans, context="VERTS")
+
+    non_triangles = sum(1 for face in bm.faces if len(face.verts) != 3)
+    mesh_ops.bmesh_to_object(bm, obj)
+    if non_triangles:
+        raise GenerationAborted(
+            "_settle_topology left {0} non-triangular faces on {1}; the FBX round trip "
+            "compares per-corner data against a triangulated re-import and would reject "
+            "the package".format(non_triangles, obj.name))
+    return stats, ("triangulated {0} fused faces, purged {1} slivers and {2} duplicate "
+                   "faces".format(len(fused), len(slivers), len(duplicates)))
+
+
+# Projection angle limit for the LOD re-solve, DERIVED from the gate rather than picked.
+#
+# ``smart_project`` is a planar-projection unwrapper: it clusters faces into groups and
+# flattens each group along one axis. A face whose normal sits ``theta`` away from its
+# group axis is therefore compressed by ``cos(theta)`` in one direction and not at all in
+# the other, so the parameterisation carries a BUILT-IN aspect distortion of
+# ``1/cos(theta) - 1`` before any geometry is at fault. ``angle_limit`` is the largest
+# ``theta`` a group will accept, so it IS the worst-case distortion the solver is allowed
+# to introduce -- and at the 66 degrees this generator used to pass, that is
+# ``1/cos(66) - 1 = 1.46``, i.e. 2.7x ``law.UV_STRETCH_MAX_BY_SURFACE[ORGANIC]``. A solver
+# configured to exceed the gate by construction is not a tuning problem.
+#
+# Inverting the relation ties the two numbers together permanently: the widest projection
+# angle whose own compression still fits the organic limit. Measured on this asset at
+# LOD1, on the seam-preserved mesh: 66 degrees gave 2.9% of area over the limit with a
+# worst triangle of 0.993, the derived angle gave 0.0% and 0.348.
+UV_PROJECTION_ANGLE_DEG = math.degrees(
+    math.acos(1.0 / (1.0 + law.UV_STRETCH_MAX_BY_SURFACE[SURFACE])))
+
+
 def _make_reunwrap(atlas_size: int, notes: List[str]):
-    """Re-solve UVs after decimation, then rescale into the atlas border reserve.
+    """Close the collapse cracks, refit the budget, THEN re-solve UVs and pack.
 
     Decimate/COLLAPSE has no UV term in its collapse cost, so a radial cap layout is
     destroyed by reduction while the triangle budget still reads as met (measured on
     kelp: LOD0 p95 0.98, LOD1 worst 7610). The analytic parametrisation cannot be
     reapplied once the topology has changed, so LOD1/LOD2 get an angle-based solve.
 
-    The rescale afterwards matters: ``smart_project`` packs to the full 0..1 square and
+    THE ORDER IS THE FIX, and getting it wrong cost this asset both coarse LODs.
+    ``build_lod_chain`` splits UV seams into mesh boundaries before decimating, and the
+    collapse then moves one side of a split seam without the other, so ``_weld_coincident``
+    leaves genuine CRACKS -- measured 636 boundary edges at LOD1 and 330 at LOD2 in a
+    clump that is built as four closed manifolds. ``weld_and_clean`` closes them, which is
+    what ``3dmodel.md`` section 5 requires ("all sheet borders must be capped, thickened,
+    or tagged as non-collision render-only"), and closing them costs TRIANGLES:
+    ``holes_fill`` emits an n-gon per loop, measured 1728 -> 2093 at LOD1 against an 1800
+    budget and 288 -> 421 at LOD2 against 300.
+
+    That overshoot is what actually broke the asset. ``build_lod_chain`` reads the count
+    after this hook returns, and an over-budget level makes it DISCARD the whole level and
+    rebuild it from LOD0 with the seam splitting turned off -- legal only at LOD2, where
+    ``3DMODEL_FLORA_CORAL.md`` section 6 permits "simplified shells or cards", and taken
+    at BOTH levels here. Worse, for as long as that branch re-ran neither the weld nor
+    this hook, the shipped LOD1/LOD2 carried LOD0's analytic UVs dragged through a
+    collapse: measured 14.0% of LOD1 area and 14.9% of LOD2 area over the organic limit
+    with worst triangles of 90.89 and 190.95 against a 3.30 outlier ceiling. The evidence
+    was actively misleading, because the black box held the clean numbers this hook had
+    measured on the mesh that was then deleted.
+
+    So: fill the cracks, refit the budget with one more collapse, and only then solve the
+    parameterisation. The unwrap has to be LAST or the decimation undoes it, and the
+    budget has to be met before returning or the level is thrown away.
+
+    The rescale afterwards matters too: ``smart_project`` packs to the full 0..1 square and
     touches the border, which is exactly ``GATE_UV_ATLAS_PADDING_VIOLATION``. Squeezing
     into the reserve keeps that gate ENFORCED at every level instead of being skipped
     for the coarse ones.
@@ -1520,16 +1693,83 @@ def _make_reunwrap(atlas_size: int, notes: List[str]):
         # around it. Safe at LOD1/LOD2 only, which is why it lives here and not in the
         # LOD0 path: LOD0's per-vertex sway/harvest arrays are index-aligned and a merge
         # there would desynchronise them.
-        bm = mesh_ops.bmesh_from_object(obj)
-        mesh_ops.weld_and_clean(bm, merge_distance=1e-4)
-        mesh_ops.bmesh_to_object(bm, obj)
+        before_tris = mesh_ops.triangle_count(obj.data)
+        clean, settle = _settle_topology(obj, fill_cracks=True)
+
+        # Refit the budget the crack repair just broke. Without this the level is
+        # discarded and rebuilt without seam preservation -- see the docstring.
+        # reduce_to_budget targets budget * 0.94, so the headroom it leaves cannot be
+        # eaten by the n-gon triangulation the fill introduced.
+        budget = law.LOD_BUDGETS[FAMILY].limit(lod_index)
+        filled_tris = mesh_ops.triangle_count(obj.data)
+        refitted = filled_tris
+        repair = None
+        resettle = None
+        if filled_tris > budget:
+            mesh_ops.reduce_to_budget(obj, family=FAMILY, lod_index=lod_index)
+            # That extra collapse has to be cleaned after itself, and NOT with the
+            # hole filling on. Quadric Edge Collapse pulls faces onto shared edges:
+            # measured here, the refit left 6 edges carrying 3-4 triangles at LOD1 and
+            # 5 at LOD2, which forces a repeated directed edge that no winding choice
+            # can resolve -- 12 GATE_INCONSISTENT_WINDING occurrences. weld_and_clean's
+            # non-manifold repair (keep the two largest faces at such an edge, drop the
+            # buried interior sheets) is the owner of that defect. Filling again here
+            # would re-inflate past the budget and put the level straight back on the
+            # seam-drop path, so this pass repairs without adding geometry.
+            repair, resettle = _settle_topology(obj, fill_cracks=False)
+            refitted = mesh_ops.triangle_count(obj.data)
+        notes.append(
+            "LOD{0} crack repair: {1} -> {2} tris closing {3} boundary loops "
+            "({4} boundary edges left), {7}, refitted to {5} against the {6} budget"
+            .format(lod_index, before_tris, filled_tris,
+                    clean["boundary_loops_filled"], clean["boundary_edges_after"],
+                    refitted, budget, settle)
+            + ("" if repair is None else
+               "; post-refit repair removed {0} interior faces at non-manifold edges "
+               "({1} -> {2}), leaving {3} boundary edges, then {4}"
+               .format(repair["interior_faces_deleted"],
+                       repair["nonmanifold_edges_before"],
+                       repair["nonmanifold_edges_after"],
+                       repair["boundary_edges_after"], resettle)))
+
+        # RE-DERIVE THE SHADING BASIS, because every step above invalidated the one this
+        # level inherited. LOD1/LOD2 start as copies of LOD0 and therefore carry LOD0's
+        # custom split normals interpolated across a collapse, and `weld_and_clean` ends
+        # with `recalc_face_normals`, which puts face normals out of agreement with that
+        # inherited basis. Measured consequence: `verify_fbx_roundtrip` rejected the
+        # package with "LOD2: corner normals changed by 0.001828; the authored
+        # weighted/split normal basis did not survive" -- 34x TOL_NORMAL, whose measured
+        # worst case for genuine INT16 custom normals is 5.34e-5, so that delta is a
+        # broken basis and not export precision. `rock.py` recorded the same failure at
+        # 0.001859 from the same cause.
+        #
+        # Re-deriving is also the correct answer rather than merely the working one.
+        # `3dmodel.md` section 7 requires decimation to preserve "hard normals", and at
+        # LOD2 the surface LOD0's normals described no longer exists; what preserves the
+        # requirement is re-applying the same rule -- the organic dihedral threshold from
+        # `law.smooth_angle_for` plus FACE_AREA_WITH_ANGLE weighting -- to the topology
+        # that actually ships.
+        relit = mesh_ops.apply_shading_basis(
+            obj, smooth_angle_deg=law.smooth_angle_for(SURFACE), weighted=True,
+            keep_sharp=True)
+        if relit.smooth_polygons <= 0 or not relit.weighted_applied:
+            notes.append(
+                "LOD{0} shading basis NOT re-derived (smooth_polygons={1} "
+                "weighted={2}); the level would ship with LOD0's stale normals"
+                .format(lod_index, relit.smooth_polygons, relit.weighted_applied))
+        else:
+            notes.append(
+                "LOD{0} shading basis re-derived at {1:.0f} deg: smooth_polygons={2} "
+                "sharp_edges={3} weighted=True".format(
+                    lod_index, law.smooth_angle_for(SURFACE),
+                    relit.smooth_polygons, relit.sharp_edges))
 
         mesh_ops._make_sole_active(obj)
         bpy.ops.object.mode_set(mode="EDIT")
         try:
             bpy.ops.mesh.select_all(action="SELECT")
             result = bpy.ops.uv.smart_project(
-                angle_limit=math.radians(66.0),
+                angle_limit=math.radians(UV_PROJECTION_ANGLE_DEG),
                 island_margin=padding,
                 area_weight=0.0,
                 correct_aspect=True,
@@ -1564,9 +1804,12 @@ def _make_reunwrap(atlas_size: int, notes: List[str]):
             buffer[i * 2 + 1] = padding + (buffer[i * 2 + 1] - lo_v) * factor
         layer.data.foreach_set("uv", buffer)
         obj.data.update()
-        notes.append("LOD{0} re-unwrapped (smart_project, angle 66 deg) and rescaled "
-                     "into the {1} px border reserve by x{2:.4f}".format(
-                         lod_index, law.atlas_padding_for(atlas_size), factor))
+        notes.append("LOD{0} re-unwrapped (smart_project, angle {1:.1f} deg derived "
+                     "from the {2} organic aspect limit) and rescaled into the {3} px "
+                     "border reserve by x{4:.4f}".format(
+                         lod_index, UV_PROJECTION_ANGLE_DEG,
+                         law.UV_STRETCH_MAX_BY_SURFACE[SURFACE],
+                         law.atlas_padding_for(atlas_size), factor))
 
     return reunwrap
 
@@ -1738,9 +1981,19 @@ def generate_variant(*, seed: int, quality: float, cap_radius: float, height: fl
     stem_reports = []
     for index, stem in enumerate(clump.stems):
         stem_reports.append(_build_stem(accum, stem, clump, rng, island_base=index * 5))
+    quads = len(accum.faces)
+    added = accum.triangulate()
     blackbox.record("geometry", vertex_count=len(accum.positions),
-                    triangle_count=-1,
-                    warning="faces={0}".format(len(accum.faces)))
+                    triangle_count=len(accum.faces),
+                    warning="faces={0} (fanned {1} authored polygons into {2} "
+                            "triangles, +{3})".format(
+                                len(accum.faces), quads, len(accum.faces), added))
+    notes.append(
+        "authored {0} polygons fanned into {1} triangles before UV packing, so the "
+        "validated topology is the exported topology: export_unity writes "
+        "use_triangles=True (mandatory -- use_tspace drops tangents silently on "
+        "n-gons) and verify_fbx_roundtrip compares PER-CORNER data, which a quad "
+        "source can never match".format(quads, len(accum.faces)))
 
     # --- 5. UVs and material IDs ------------------------------------------
     uv_summary = pack_islands(accum, atlas_size=atlas_size,

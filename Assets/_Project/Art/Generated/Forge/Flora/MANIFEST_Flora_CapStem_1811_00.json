@@ -1,0 +1,756 @@
+{
+ "colliderSummary": {
+  "allWithinBudget": null,
+  "count": 0,
+  "triangleBudget": 200,
+  "types": []
+ },
+ "colliders": [],
+ "export": {
+  "fbx": "Assets/_Project/Art/Generated/Forge/Flora/MESH_Flora_CapStem_1811_00.fbx",
+  "hasCustomNormals": true,
+  "hasTangents": true,
+  "hasVertexColors": true,
+  "objectNames": [
+   "MESH_Flora_CapStem_1811_00_LOD0",
+   "MESH_Flora_CapStem_1811_00_LOD1",
+   "MESH_Flora_CapStem_1811_00_LOD2"
+  ],
+  "roundtripVerified": true,
+  "settings": {
+   "apply_scale_options": "FBX_SCALE_NONE",
+   "apply_unit_scale": true,
+   "axis_forward": "-Z",
+   "axis_up": "Y",
+   "bake_anim": false,
+   "bake_space_transform": true,
+   "blenderToFbxAxes": "(x, y, z) -> (x, z, -y)",
+   "blenderToUnityAxes": "(x, y, z) -> (x, z, y)",
+   "colors_type": "LINEAR",
+   "embed_textures": false,
+   "fbxHeaderUnitScaleFactor": 1.0,
+   "fbxUnitsPerMetre": 100.0,
+   "global_scale": 1.0,
+   "mesh_smooth_type": "EDGE",
+   "object_types": [
+    "MESH"
+   ],
+   "path_mode": "STRIP",
+   "prioritize_active_color": true,
+   "use_custom_props": false,
+   "use_mesh_edges": false,
+   "use_mesh_modifiers": true,
+   "use_metadata": true,
+   "use_selection": true,
+   "use_space_transform": true,
+   "use_subsurf": false,
+   "use_triangles": true,
+   "use_tspace": true,
+   "use_visible": false
+  },
+  "unitScaleFbxUnitsPerMetre": 100.00000223517424,
+  "uvLayerNames": [
+   "UVMap"
+  ]
+ },
+ "exporterVersion": "1.0.0",
+ "extra": {
+  "aoBake": {
+   "baked": true,
+   "hasContrast": true,
+   "max": 1.0,
+   "mean": 0.63952,
+   "min": 0.0,
+   "samples": 64
+  },
+  "biolum": "channel G is 0 across the whole asset: no flora in nice_biome.webp, beauty.webp or shallows.webp is emissive, and 3DMODEL_FLORA_CORAL.md section 2 fixes non-emissive tissue at 0.",
+  "biomeRoute": "photic shallows, 0-100 m; reference nice_biome.webp",
+  "channelMeasurements": [
+   {
+    "channel": "sway_amplitude",
+    "coverage": 0.12243,
+    "hasGradient": true,
+    "max": 1.0,
+    "mean": 0.53846,
+    "min": 0.0,
+    "subjectVisible": true,
+    "tile": "CapStem_1811_00_chan0_sway_amplitude.png"
+   },
+   {
+    "channel": "biolum_phase",
+    "coverage": 0.12243,
+    "hasGradient": true,
+    "max": 0.0003,
+    "mean": 2e-05,
+    "min": 0.0,
+    "subjectVisible": true,
+    "tile": "CapStem_1811_00_chan1_biolum_phase.png"
+   },
+   {
+    "channel": "baked_ao",
+    "coverage": 0.12243,
+    "hasGradient": true,
+    "max": 1.0,
+    "mean": 0.86097,
+    "min": 0.05286,
+    "subjectVisible": true,
+    "tile": "CapStem_1811_00_chan2_baked_ao.png"
+   },
+   {
+    "channel": "family_specific",
+    "coverage": 0.12243,
+    "hasGradient": true,
+    "max": 1.0,
+    "mean": 0.67852,
+    "min": 0.0,
+    "subjectVisible": true,
+    "tile": "CapStem_1811_00_chan3_family_specific.png"
+   }
+  ],
+  "generatorNotes": [
+   "authored 2940 polygons fanned into 5520 triangles before UV packing, so the validated topology is the exported topology: export_unity writes use_triangles=True (mandatory -- use_tspace drops tangents silently on n-gons) and verify_fbx_roundtrip compares PER-CORNER data, which a quad source can never match",
+   "stage order deviation: shared MAT_* materials are built at stage 5 instead of stage 7 because bpy.ops.object.bake refuses an object with no material slot, and stage 6 needs the bake. No other stage moved.",
+   "AO bake distance 0.172 m (cap radius 0.150 m), 64 samples",
+   "LOD1 crack repair: 1728 -> 2066 tris closing 53 boundary loops (31 boundary edges left), triangulated 81 fused faces, purged 1 slivers and 4 duplicate faces, refitted to 1620 against the 1800 budget; post-refit repair removed 4 interior faces at non-manifold edges (4 -> 0), leaving 42 boundary edges, then triangulated 0 fused faces, purged 0 slivers and 0 duplicate faces",
+   "LOD1 shading basis re-derived at 68 deg: smooth_polygons=1620 sharp_edges=314 weighted=True",
+   "LOD1 re-unwrapped (smart_project, angle 49.8 deg derived from the 0.55 organic aspect limit) and rescaled into the 16 px border reserve by x0.9973",
+   "LOD2 crack repair: 287 -> 432 tris closing 43 boundary loops (135 boundary edges left), triangulated 14 fused faces, purged 0 slivers and 5 duplicate faces, refitted to 264 against the 300 budget; post-refit repair removed 5 interior faces at non-manifold edges (5 -> 0), leaving 132 boundary edges, then triangulated 0 fused faces, purged 0 slivers and 0 duplicate faces",
+   "LOD2 shading basis re-derived at 68 deg: smooth_polygons=264 sharp_edges=106 weighted=True",
+   "LOD2 re-unwrapped (smart_project, angle 49.8 deg derived from the 0.55 organic aspect limit) and rescaled into the 16 px border reserve by x0.9933",
+   "LOD0 uv edge-ratio: worst=1.1207 p95=0.3065 mean=0.0618 over 5520 triangles; validator sigma-ratio per slot: {'CapTissue': {'triangles': 2700, 'worst': 1.236, 'worstTriangle': 3302, 'worstRegion': 'cap_underside', 'worstWorldEdgesM': [0.006487, 0.018208, 0.023559], 'worstUvEdges': [0.001651, 0.004552, 0.005155], 'stretchedAreaFraction': 0.0078, 'overLimitByRegion': {'cap_top': 0.0008, 'cap_underside': 0.007}}, 'TornEdge': {'triangles': 720, 'worst': 2.027, 'worstTriangle': 4092, 'worstRegion': 'rim', 'worstWorldEdgesM': [0.006709, 0.03403, 0.03956], 'worstUvEdges': [0.001677, 0.008559, 0.008674], 'stretchedAreaFraction': 0.2038, 'overLimitByRegion': {'rim': 0.2038}}, 'StemHoldfast': {'triangles': 2100, 'worst': 3.471, 'worstTriangle': 4660, 'worstRegion': 'stem_band_16', 'worstWorldEdgesM': [0.003611, 0.003408, 0.006681], 'worstUvEdges': [0.001548, 0.000635, 0.00167], 'stretchedAreaFraction': 0.1069, 'overLimitByRegion': {'stem_band_00': 0.0503, 'stem_band_01': 0.0433, 'stem_band_02': 0.0032, 'stem_band_16': 0.01}}}",
+   "LOD1 uv edge-ratio: worst=0.4382 p95=0.1314 mean=0.0346 over 1620 triangles; validator sigma-ratio per slot: {'CapTissue': {'triangles': 790, 'worst': 0.458, 'worstTriangle': 1377, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.023727, 0.008551, 0.020329], 'worstUvEdges': [0.017769, 0.006505, 0.013515], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}, 'TornEdge': {'triangles': 436, 'worst': 0.471, 'worstTriangle': 1167, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.053329, 0.051688, 0.008731], 'worstUvEdges': [0.029524, 0.029753, 0.006709], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}, 'StemHoldfast': {'triangles': 394, 'worst': 0.375, 'worstTriangle': 102, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.012709, 0.028696, 0.026868], 'worstUvEdges': [0.008426, 0.022798, 0.019453], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}}",
+   "LOD2 uv edge-ratio: worst=0.1733 p95=0.1028 mean=0.0165 over 264 triangles; validator sigma-ratio per slot: {'CapTissue': {'triangles': 167, 'worst': 0.309, 'worstTriangle': 56, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.049293, 0.063953, 0.104727], 'worstUvEdges': [0.038142, 0.040834, 0.072671], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}, 'TornEdge': {'triangles': 21, 'worst': 0.273, 'worstTriangle': 164, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.091479, 0.062587, 0.036867], 'worstUvEdges': [0.072817, 0.047371, 0.029639], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}, 'StemHoldfast': {'triangles': 76, 'worst': 0.195, 'worstTriangle': 16, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.036775, 0.323522, 0.325764], 'worstUvEdges': [0.025123, 0.261132, 0.260867], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}}"
+  ],
+  "growthAlgorithm": "parametric cap-and-stem clump: quadratic downstream stem bend, lobed non-circular cross-section with lengthwise ridges, flared finger holdfast, rib-driven cap (top relief, lobed outline and underside gills from one term), torn edge sectors, thick rounded rim band. Stem last ring IS the cap hub ring, so the union is welded rather than intersected.",
+  "interaction": {
+   "anchors": {
+    "ANCHOR_Loot": [
+     0.0,
+     0.0,
+     0.06
+    ],
+    "ANCHOR_Scan": [
+     0.0,
+     0.0,
+     0.3864
+    ]
+   },
+   "collision": "none",
+   "collisionJustification": "flora/coral default collision is none per 3DMODEL_FLORA_CORAL.md section 7",
+   "harvestProxy": {
+    "anchor": "ANCHOR_Loot",
+    "centerLocal": [
+     0.0,
+     0.0,
+     0.06
+    ],
+    "isTrigger": true,
+    "layer": "Flora_NonColliding",
+    "radiusM": 0.12764,
+    "type": "sphere"
+   }
+  },
+  "materialFamily": "flora_plate_amber",
+  "materialSlotMap": {
+   "0": "CapTissue (cap top + underside)",
+   "1": "TornEdge (torn rim band)",
+   "2": "StemHoldfast (stem + holdfast foot)"
+  },
+  "shading": {
+   "sharpEdges": 255,
+   "smoothAngleDeg": 68.0,
+   "smoothPolygons": 5520,
+   "weightedNormalsApplied": true
+  },
+  "stems": [
+   {
+    "capOffsetFractionOfRadius": 0.0326,
+    "capProfile": "cupped",
+    "capRadius": 0.14589,
+    "capSurfaceArcM": 0.1816,
+    "capTiltDeg": 24.82,
+    "height": 0.41776,
+    "islands": {
+     "capTop": 4,
+     "capUndersideAndRim": 2,
+     "foot": 1,
+     "stem": 0
+    },
+    "juvenile": false,
+    "ribCount": 10,
+    "rimThicknessM": [
+     0.0123,
+     0.01361
+    ],
+    "stemArcLengthM": 0.41868,
+    "stemRadius": 0.01913,
+    "tearSectors": 2,
+    "unusedIslandSlot": 3
+   },
+   {
+    "capOffsetFractionOfRadius": 0.0438,
+    "capProfile": "cupped",
+    "capRadius": 0.12444,
+    "capSurfaceArcM": 0.14912,
+    "capTiltDeg": 21.69,
+    "height": 0.40899,
+    "islands": {
+     "capTop": 9,
+     "capUndersideAndRim": 7,
+     "foot": 6,
+     "stem": 5
+    },
+    "juvenile": false,
+    "ribCount": 10,
+    "rimThicknessM": [
+     0.01235,
+     0.01349
+    ],
+    "stemArcLengthM": 0.41088,
+    "stemRadius": 0.02263,
+    "tearSectors": 1,
+    "unusedIslandSlot": 8
+   },
+   {
+    "capOffsetFractionOfRadius": 0.0572,
+    "capProfile": "cupped",
+    "capRadius": 0.12215,
+    "capSurfaceArcM": 0.15092,
+    "capTiltDeg": 22.75,
+    "height": 0.41872,
+    "islands": {
+     "capTop": 14,
+     "capUndersideAndRim": 12,
+     "foot": 11,
+     "stem": 10
+    },
+    "juvenile": false,
+    "ribCount": 10,
+    "rimThicknessM": [
+     0.01258,
+     0.01364
+    ],
+    "stemArcLengthM": 0.41915,
+    "stemRadius": 0.02255,
+    "tearSectors": 2,
+    "unusedIslandSlot": 13
+   },
+   {
+    "capOffsetFractionOfRadius": 0.0322,
+    "capProfile": "domed",
+    "capRadius": 0.06082,
+    "capSurfaceArcM": 0.07277,
+    "capTiltDeg": 19.9,
+    "height": 0.1194,
+    "islands": {
+     "capTop": 19,
+     "capUndersideAndRim": 17,
+     "foot": 16,
+     "stem": 15
+    },
+    "juvenile": true,
+    "ribCount": 10,
+    "rimThicknessM": [
+     0.01022,
+     0.01082
+    ],
+    "stemArcLengthM": 0.11961,
+    "stemRadius": 0.00563,
+    "tearSectors": 0,
+    "unusedIslandSlot": 18
+   }
+  ],
+  "sway": {
+   "distanceMetric": "geodesic along stem arc then cap surface arc from the hub",
+   "max": 1.0,
+   "min": 0.0,
+   "relativeSpread": 1.0,
+   "stiffnessExponent": 1.25,
+   "uniform": false
+  },
+  "topology": {
+   "boundaryEdges": 0,
+   "components": 4,
+   "irreducibleFloor": 16,
+   "nonManifoldEdges": 0,
+   "triangles": 5520
+  },
+  "vertexColorChannels": {
+   "alphaMeaning": "harvest_mask: 1.0 on cap tissue that a harvest tool removes (top surface, underside gills and rim), ramping to 0.0 down the neck and 0.0 across the holdfast/foot. A cut at 0.0 yields nothing and kills the plant, so the interaction proxy is a root sphere and the shader/tool reads this mask to decide which tissue detaches.",
+   "alphaWritten": true,
+   "aoWritten": true,
+   "attribute": "Col",
+   "biolumWritten": true,
+   "contract": [
+    "sway_amplitude",
+    "biolum_phase",
+    "baked_ao",
+    "family_specific"
+   ],
+   "swayMax": 1.0,
+   "swayMin": 0.0,
+   "swayStiffnessExponent": 1.25,
+   "swayUniform": false
+  },
+  "vertexColorDirectReadback": {
+   "attribute": "Col",
+   "baked_ao": {
+    "areaWeightedMean": 0.65705,
+    "max": 1.0,
+    "min": 0.0
+   },
+   "biolum_phase": {
+    "areaWeightedMean": 0.0,
+    "max": 0.0,
+    "min": 0.0
+   },
+   "domain": "CORNER",
+   "family_specific": {
+    "areaWeightedMean": 0.72039,
+    "max": 1.0,
+    "min": 0.0
+   },
+   "present": true,
+   "sway_amplitude": {
+    "areaWeightedMean": 0.57124,
+    "max": 1.0,
+    "min": 0.0
+   }
+  }
+ },
+ "forgeVersion": "1.0.0",
+ "identity": {
+  "cameraDistanceClass": "near_interaction",
+  "family": "Flora",
+  "forgeVersion": "1.0.0",
+  "generator": "flora_capstem.py",
+  "generatorVersion": "1.0.0",
+  "platformLane": "compact_to_ultra",
+  "qualityWeight": 1.0,
+  "scaleMeters": 0.50172,
+  "seed": 1811,
+  "sourceReferences": [
+   "Docs/mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)/nice_biome.webp",
+   "Docs/mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)/beauty.webp",
+   "Docs/mandatory if you work on systems that user sees (water, terrain, sky, flora, ui) - read this and all images inside (references)/shallows.webp"
+  ]
+ },
+ "lod": {
+  "budgets": {
+   "impostorMax": 80,
+   "impostorMin": 2,
+   "lod0": 6500,
+   "lod1": 1800,
+   "lod2": 300
+  },
+  "exempt": false,
+  "levels": [
+   0,
+   1,
+   2
+  ],
+  "monotonic": true,
+  "triangleCountsPerLod": {
+   "LOD0": 5520,
+   "LOD1": 1620,
+   "LOD2": 264
+  }
+ },
+ "manifestGaps": [
+  "textures (TX_<Family>_<Set>_<Role>; 3DMODEL_TEXTURES_MATERIALS.md section 2: 'Missing texture is fatal unless the generator is explicitly producing a placeholder diagnostic asset')"
+ ],
+ "materialSlotContract": {
+  "maxSlots": 4,
+  "slot0": "primary structural/tissue",
+  "slot1": "exposed cut, bevel, edge, scar, fracture",
+  "slot2": "secondary trim, gasket, barnacle, mineral vein, growth plate",
+  "slot3": "emissive/bioluminescent/details"
+ },
+ "materials": [
+  {
+   "name": "MAT_Flora_CapTissue"
+  },
+  {
+   "name": "MAT_Flora_TornEdge"
+  },
+  {
+   "name": "MAT_Flora_StemHoldfast"
+  }
+ ],
+ "meshes": [
+  {
+   "boundsMax": [
+    0.21718639135360718,
+    0.21875594556331635,
+    0.5016242265701294
+   ],
+   "boundsMin": [
+    -0.19455799460411072,
+    -0.17841081321239471,
+    -9.881828009383753e-05
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "0faecfd059bb6d83b20a14c4aa677020",
+   "hasTangentBasis": true,
+   "lod": 0,
+   "name": "MESH_Flora_CapStem_1811_00_LOD0",
+   "submeshes": 3,
+   "triangles": 5520,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [],
+    "passed": true,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 522 of 5520 triangles below the sliver floor 1.055e-05 m2 (0.1x mean triangle area 1.055e-04 m2); the area-weighted population test still covered all of them"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 2768
+  },
+  {
+   "boundsMax": [
+    0.21747681498527527,
+    0.2194797247648239,
+    0.5021034479141235
+   ],
+   "boundsMin": [
+    -0.1946411281824112,
+    -0.1786348670721054,
+    -0.000199260757653974
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "90d2e843a7fde16700bd25bc294628b9",
+   "hasTangentBasis": true,
+   "lod": 1,
+   "name": "MESH_Flora_CapStem_1811_00_LOD1",
+   "submeshes": 3,
+   "triangles": 1620,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [],
+    "passed": true,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 39 of 1620 triangles below the sliver floor 3.641e-05 m2 (0.1x mean triangle area 3.641e-04 m2); the area-weighted population test still covered all of them",
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 833
+  },
+  {
+   "boundsMax": [
+    0.1987306922674179,
+    0.2167956829071045,
+    0.4961312711238861
+   ],
+   "boundsMin": [
+    -0.18180418014526367,
+    -0.17628446221351624,
+    -0.0021102090831846
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "5cb3ef3e712b26e1cc6711c8b35a7db8",
+   "hasTangentBasis": true,
+   "lod": 2,
+   "name": "MESH_Flora_CapStem_1811_00_LOD2",
+   "submeshes": 3,
+   "triangles": 264,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [],
+    "passed": true,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 20 of 264 triangles below the sliver floor 2.881e-04 m2 (0.1x mean triangle area 2.881e-03 m2); the area-weighted population test still covered all of them",
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 240
+  }
+ ],
+ "naming": {
+  "collider": "COL_{family}_{name}",
+  "manifest": "MANIFEST_{family}_{name}",
+  "material": "MAT_{family}_{role}",
+  "mesh": "MESH_{family}_{name}_LOD{lod}",
+  "namingNote": "Templates come from law.py, which follows AGENTS.md 'Project Shape' (generated prefabs GEN_*, textures TX_*). PROCEDURAL_ASSET_PIPELINE.md 'Required Output Package' spells the same two artefacts PF_<Family>_<Name>.prefab and TEX_<Family>_<AtlasOrUnique>_<Role>.png; root AGENTS.md outranks it per the authority spine, so GEN_ and TX_ are used. Flagged for the lead rather than resolved here.",
+  "prefab": "GEN_{family}_{name}",
+  "texture": "TX_{family}_{set}_{role}"
+ },
+ "productionReady": false,
+ "proof": {
+  "paths": [
+   "Docs/AgentLogs/ForgePreviews/CapStem_1811_00_SHEET_flat.png",
+   "Docs/AgentLogs/ForgePreviews/CapStem_1811_00_SHEET_studio.png",
+   "Docs/AgentLogs/ForgePreviews/CapStem_1811_00_SHEET_material.png",
+   "Docs/AgentLogs/ForgePreviews/CapStem_1811_00_SHEET_CHANNELS.png"
+  ],
+  "roundtripNotes": [
+   "wrote MESH_Flora_CapStem_1811_00.fbx (551932 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "MESH_Flora_CapStem_1811_00_LOD0: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "MESH_Flora_CapStem_1811_00_LOD1: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "MESH_Flora_CapStem_1811_00_LOD2: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "objects round-tripped: ['MESH_Flora_CapStem_1811_00_LOD0', 'MESH_Flora_CapStem_1811_00_LOD1', 'MESH_Flora_CapStem_1811_00_LOD2']",
+   "MESH_Flora_CapStem_1811_00_LOD0: verts 2768->2768 loops 16560->16560 tris 5520->5520",
+   "MESH_Flora_CapStem_1811_00_LOD0: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "MESH_Flora_CapStem_1811_00_LOD0: colour max delta 0.0000000 (tol 0.002)",
+   "MESH_Flora_CapStem_1811_00_LOD0: world position max delta 0.0000001 m (tol 0.0001)",
+   "MESH_Flora_CapStem_1811_00_LOD0: world corner-normal max delta 0.0006843 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Flora_CapStem_1811_00_LOD0: uv0 max delta 0.00000000 (tol 1e-05)",
+   "MESH_Flora_CapStem_1811_00_LOD0: landmark (0.21606, -0.02214, 0.49346) -> (0.21606, -0.02214, 0.49346), delta 0.0000000 m, margin 0.00167 m",
+   "MESH_Flora_CapStem_1811_00_LOD0: signed volume +0.0039459 -> +0.0039459 (ratio +1.000000)",
+   "MESH_Flora_CapStem_1811_00_LOD0: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "MESH_Flora_CapStem_1811_00_LOD1: verts 833->833 loops 4860->4860 tris 1620->1620",
+   "MESH_Flora_CapStem_1811_00_LOD1: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "MESH_Flora_CapStem_1811_00_LOD1: colour max delta 0.0000000 (tol 0.002)",
+   "MESH_Flora_CapStem_1811_00_LOD1: world position max delta 0.0000001 m (tol 0.0001)",
+   "MESH_Flora_CapStem_1811_00_LOD1: world corner-normal max delta 0.0003895 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Flora_CapStem_1811_00_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
+   "MESH_Flora_CapStem_1811_00_LOD1: landmark (-0.08457, 0.01519, -2e-05) -> (-0.08457, 0.01519, -2e-05), delta 0.0000000 m, margin 0.00007 m",
+   "MESH_Flora_CapStem_1811_00_LOD1: landmark margin below 0.001 m: this mesh is near-symmetric at its extreme vertex, so the landmark test is not decisive",
+   "MESH_Flora_CapStem_1811_00_LOD1: signed volume +0.0015236 -> +0.0015236 (ratio +1.000001)",
+   "MESH_Flora_CapStem_1811_00_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "MESH_Flora_CapStem_1811_00_LOD2: verts 240->240 loops 792->792 tris 264->264",
+   "MESH_Flora_CapStem_1811_00_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "MESH_Flora_CapStem_1811_00_LOD2: colour max delta 0.0000000 (tol 0.002)",
+   "MESH_Flora_CapStem_1811_00_LOD2: world position max delta 0.0000001 m (tol 0.0001)",
+   "MESH_Flora_CapStem_1811_00_LOD2: world corner-normal max delta 0.0000936 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Flora_CapStem_1811_00_LOD2: uv0 max delta 0.00000000 (tol 1e-05)",
+   "MESH_Flora_CapStem_1811_00_LOD2: landmark (-0.08069, 0.01468, -2e-05) -> (-0.08069, 0.01468, -2e-05), delta 0.0000000 m, margin 0.00031 m",
+   "MESH_Flora_CapStem_1811_00_LOD2: landmark margin below 0.001 m: this mesh is near-symmetric at its extreme vertex, so the landmark test is not decisive",
+   "MESH_Flora_CapStem_1811_00_LOD2: signed volume +0.0034238 -> +0.0034238 (ratio +1.000000)",
+   "MESH_Flora_CapStem_1811_00_LOD2: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "MESH_Flora_CapStem_1811_00_LOD0 [fbx-space]: landmark direction expected (0.68256, 0.72462, 0.09505) measured (0.68256, 0.72462, 0.09505) delta 0.000000",
+   "MESH_Flora_CapStem_1811_00_LOD0 [fbx-space]: Unity-space landmark offset will be (0.20855, 0.2214, -0.02904) (Blender (0.20855, -0.02904, 0.2214)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Flora_CapStem_1811_00_LOD1 [fbx-space]: skipped: near-symmetric extreme vertex",
+   "MESH_Flora_CapStem_1811_00_LOD2 [fbx-space]: skipped: near-symmetric extreme vertex",
+   "roundtrip VERIFIED: axis map confirmed=True, chirality preserved=True",
+   "no collision proxy in this package. 3DMODEL_FLORA_CORAL.md section 7 allows this for flora/coral only; every other family needs a COL_ proxy.",
+   "Unity LODGroup: create it explicitly from the _LOD suffixed children rather than relying on importer auto-detection, then set screenRelativeTransitionHeight per level with a hysteresis band and fadeMode=CrossFade with animateCrossFading=false (dithered). 3dmodel.md section 7 bans alpha-blended cross-fade for dense flora/coral on the compact lane; dither is not alpha blend."
+  ],
+  "status": "PENDING UNITY/PROFILER VERIFICATION",
+  "statusNote": "Static and Blender-side evidence only. No Unity import log, Console output, Frame Debugger capture, profiler capture or in-engine screenshot exists for this package."
+ },
+ "schema": "h8forge.manifest/1",
+ "surfaceClass": "Organic",
+ "textures": [],
+ "unityImport": {
+  "collider": {
+   "convexTriangleMax": 200,
+   "defaultCollision": "none",
+   "interactionAnchorNote": "PROCEDURAL_ASSET_PIPELINE.md 'Collision And Interaction Package': anchors must be serialised, never discovered by runtime scene search.",
+   "interactionAnchors": [
+    "ANCHOR_Scan",
+    "ANCHOR_Cut",
+    "ANCHOR_Weld",
+    "ANCHOR_Loot",
+    "ANCHOR_Pry",
+    "ANCHOR_Open",
+    "ANCHOR_Repair"
+   ],
+   "meshColliderConvex": true,
+   "meshColliderOnLod0": false,
+   "physicsLayer": "Flora_NonColliding",
+   "physicsLayerNote": "Layer name read from ProjectSettings/TagManager.asset. AGENTS.md forbids changing Tags/Layers without explicit instruction, so the authoring script must resolve it by name and fail loudly if absent -- it must not create one. COMMON_SENSE.md rule 2 additionally requires every raycast against these colliders to pass an explicit LayerMask.GetMask(...) plus QueryTriggerInteraction.Ignore.",
+   "proxyNamePrefix": "COL_",
+   "visualNamePrefixes": [
+    "VIS_",
+    "LOD_"
+   ]
+  },
+  "exportSettingsUsed": {
+   "apply_scale_options": "FBX_SCALE_NONE",
+   "apply_unit_scale": true,
+   "axis_forward": "-Z",
+   "axis_up": "Y",
+   "bake_anim": false,
+   "bake_space_transform": true,
+   "blenderToFbxAxes": "(x, y, z) -> (x, z, -y)",
+   "blenderToUnityAxes": "(x, y, z) -> (x, z, y)",
+   "colors_type": "LINEAR",
+   "embed_textures": false,
+   "fbxHeaderUnitScaleFactor": 1.0,
+   "fbxUnitsPerMetre": 100.0,
+   "global_scale": 1.0,
+   "mesh_smooth_type": "EDGE",
+   "object_types": [
+    "MESH"
+   ],
+   "path_mode": "STRIP",
+   "prioritize_active_color": true,
+   "use_custom_props": false,
+   "use_mesh_edges": false,
+   "use_mesh_modifiers": true,
+   "use_metadata": true,
+   "use_selection": true,
+   "use_space_transform": true,
+   "use_subsurf": false,
+   "use_triangles": true,
+   "use_tspace": true,
+   "use_visible": false
+  },
+  "family": "Flora",
+  "knownProjectConflicts": [
+   "RESOLVED: the importNormals=Calculate clobber no longer applies to forge packages. HectonFBXPostprocessor.cs:401-429 sets importNormals=Import when the sibling manifest declares h8forge.manifest/1 with unityImport.modelImporter.importNormals == 'Import'. Requires the manifest to sit in the SAME directory named MANIFEST_<stem>.json and the mesh file to start with upper-case 'MESH_' (TryResolveForgeManifestPath, :702-736). Both hold by construction from law.NAME_MESH and law.NAME_MANIFEST.",
+   "STILL TRUE, and it does not apply to Assets/ScifiFacility, which TryResolveForgeManifestPath excludes at :715 so a manifest cannot weaken third-party quarantine policy.",
+   "The postprocessor forces materialLocation=ModelImporterMaterialLocation.InPrefab, which conflicts with materialImportMode=None and the shared MAT_* policy.",
+   "HectonBakeryUvAudit.RunAudit() enables generateSecondaryUV and reimports, which overwrites authored UV1. Now sharper than when it was written: Hecton_KelpMaster reads its height and width masks from UV1 as of 2026-07-29, so this audit does not merely overwrite a lightmap set, it would overwrite the sway parameterisation.",
+   "HectonFBXPostprocessor.OnPostprocessModel builds a fallback LODGroup with its own decimation above 2000 triangles when no LODGroup is present. Mitigated for forge packages by the :181-196 branch, which logs the manifest path instead - but only when the manifest parses."
+  ],
+  "lodGroup": {
+   "animateCrossFading": false,
+   "budgets": {
+    "impostorMax": 80,
+    "impostorMin": 2,
+    "lod0": 6500,
+    "lod1": 1800,
+    "lod2": 300
+   },
+   "childSuffixPattern": "_LOD<n>",
+   "createLodGroupExplicitly": true,
+   "fadeMode": "CrossFade",
+   "nameTemplate": "MESH_{family}_{name}_LOD{lod}",
+   "requiredLevels": [
+    0,
+    1,
+    2
+   ],
+   "why": "3dmodel.md section 7 requires a complete LOD0/LOD1/LOD2 chain and 'LOD switching must use hysteresis and dithered cross-fade where the renderer supports it. Alpha-blended cross-fade is forbidden for dense flora/coral on MX350 because it creates overdraw.' CrossFade with animateCrossFading=false is the dithered path, not alpha blend. AGENTS.md requires a 3-5 m or 2-3 s hysteresis band on any LOD switch. Build the LODGroup explicitly: relying on importer auto-detection risks HectonFBXPostprocessor generating its own __AUTO_LOD1/__AUTO_LOD2 above 2000 triangles."
+  },
+  "modelImporter": {
+   "addCollider": false,
+   "animationType": "None",
+   "bakeAxisConversion": false,
+   "generateSecondaryUV": false,
+   "globalScale": 1.0,
+   "importAnimation": false,
+   "importBlendShapeNormals": "None",
+   "importBlendShapes": false,
+   "importCameras": false,
+   "importColors": true,
+   "importConstraints": false,
+   "importLights": false,
+   "importNormals": "Import",
+   "importTangents": "CalculateMikk",
+   "importVisibility": false,
+   "indexFormat": "Auto",
+   "isReadable": false,
+   "keepQuads": false,
+   "materialImportMode": "None",
+   "meshCompression": "Off",
+   "meshOptimizationFlags": "PolygonOrder",
+   "normalSmoothingAngle": 32.0,
+   "optimizeMeshPolygons": true,
+   "optimizeMeshVertices": false,
+   "preserveHierarchy": true,
+   "sortHierarchyByName": false,
+   "useFileScale": true,
+   "weldVertices": false
+  },
+  "proofStatus": "PENDING UNITY/PROFILER VERIFICATION",
+  "proofStatusNote": "Every value above is derived from the bibles and from measured FBX content. None of it has been applied in Unity by this module: no Unity import log, no Console output and no visual capture exists for it.",
+  "surfaceClass": "Organic",
+  "textureImport": {
+   "albedo": {
+    "compression": "BC7",
+    "mips": true,
+    "sRGB": true
+   },
+   "mrao": {
+    "channels": "R=Metallic G=Roughness-or-Smoothness B=AO A=Emission",
+    "compression": "BC7",
+    "mips": true,
+    "sRGB": false
+   },
+   "namePrefix": "TX_{family}_{set}_{role}",
+   "normal": {
+    "compression": "BC5",
+    "mips": true,
+    "sRGB": false,
+    "textureType": "NormalMap"
+   },
+   "why": "AGENTS.md Visual And Asset Discipline: 'Textures default to BC7 for albedo/roughness/AO and BC5 for normals where applicable.' 3DMODEL_TEXTURES_MATERIALS.md section 3 and section 8: albedo sRGB true, normal NormalMap type with sRGB false, masks sRGB false, mips enabled for world textures, and the manifest must state whether G is roughness or smoothness rather than guessing."
+  },
+  "vertexColorContract": [
+   "sway_amplitude",
+   "biolum_phase",
+   "baked_ao",
+   "family_specific"
+  ],
+  "why": {
+   "addCollider": "3dmodel.md section 9: 'LOD0 visual meshes must never be assigned directly to production MeshCollider components.' Generate Colliders does exactly that. Collision comes from the COL_ proxy in the same FBX.",
+   "animationType": "Static geometry. An Animator on a generated prop would also breach the Zero-GC Scatter protocol.",
+   "bakeAxisConversion": "bake_space_transform=True already baked the axis conversion into the vertex data on the Blender side, so the FBX node transform is identity and Unity has nothing left to bake. Enabling it too would apply a second conversion.",
+   "generateSecondaryUV": "MUST stay off. Unity's secondary-UV generator OVERWRITES UV1, and 3dmodel.md section 3 makes TexCoord1 an authored stream: 'Lightmap, detail, atlas remap, or packed baked masks when required.' Note HectonBakeryUvAudit.RunAudit() sets generateSecondaryUV=true and reimports for models under its managed roots -- a generated package placed there loses its authored UV1.",
+   "globalScale": "The FBX already carries real-world size. law.py expresses every dimension in metres (BEVEL_RANGES, MIN_BOUNDS_EXTENT_M); any scale factor other than 1.0 would silently rescale those budgets.",
+   "importAnimation": "Exported with bake_anim=False; there is no animation data.",
+   "importBlendShapeNormals": "There are no blend shapes: the exporter runs with bake_anim=False and object_types={'MESH'}.",
+   "importBlendShapes": "None present; matches the existing project importer policy.",
+   "importCameras": "preview.py builds a camera into the same scene. object_types={'MESH'} already excludes it, and this is the second gate.",
+   "importColors": "The colour stream is data, not decoration: law.VCOL_CONTRACT for Organic is ['sway_amplitude', 'biolum_phase', 'baked_ao', 'family_specific'] (3dmodel.md sections 4 and 5). Section 8: 'Missing tangents, colors, UVs, or masks are validation failures when the material reads them.' Exported with colors_type='LINEAR' so the numbers arrive unwarped by an sRGB transfer curve.",
+   "importConstraints": "No rigging in a generated static package.",
+   "importLights": "Same reason as cameras: preview.py builds lights.",
+   "importNormals": "3dmodel.md section 3: 'RecalculateNormals, RecalculateTangents, and RecalculateBounds are allowed only as editor fallback after a documented failure, never as the default strategy. A generator owns normals, tangents, UVs, and bounds because it owns the geometry.' mesh_ops.apply_shading_basis bakes the section 4 weighted-normal formula into custom split normals; Calculate throws that away and re-derives from an angle, which is the bevel shading work lost.",
+   "importTangents": "3dmodel.md section 3 requires 'Tangent | Float32 x4 ... MikkTSpace-compatible. w is handedness.' Under MikkTSpace the tangent is fully determined by position, normal and UV0, and all three are measured to survive this export exactly, so CalculateMikk reproduces the same basis expressed in Unity's own left-handed frame. The FBX does carry tangent and binormal layers (use_tspace=True, verified present in the file), so 'Import' is available -- but Blender's importer discards tangents, so no round trip inside Blender can prove the w sign survives Unity's handedness flip. Switching to 'Import' needs a Unity-side normal-map A/B capture first. Matches the existing project policy in HectonFBXPostprocessor.ApplyImporterPolicy.",
+   "importVisibility": "Blender visibility flags are authoring state, not runtime truth; matches the existing project importer policy.",
+   "indexFormat": "Auto picks 16-bit under 65k vertices. law.LOD_BUDGETS tops out at a 35 000 triangle fauna body, so most assets stay 16-bit.",
+   "isReadable": "AGENTS.md Runtime Hot-Path Law forbids mesh.vertices, mesh.normals and mesh.triangles in hot paths, and 3dmodel.md section 0A forbids runtime mutation of vertex buffers, so nothing needs the CPU copy. Read/Write on doubles mesh memory against the compact-lane 1800 MB VRAM ceiling. Colliders do not need it: PhysX cooks at import, and runtime collider cooking is rejected anyway.",
+   "keepQuads": "The FBX is already triangulated (use_triangles=True), so this is moot; leaving it off keeps the imported topology identical to the measured one.",
+   "materialImportMode": "3dmodel.md section 0 requires 'Static material references named MAT_*, never runtime material clones', and PROCEDURAL_ASSET_PIPELINE.md requires shared MAT_<Family>_<SurfaceRole> assets. Letting Unity build materials from the FBX creates per-model materials and breaks the SRP Batcher and atlas policy. The exporter ships nothing to import: path_mode='STRIP' and embed_textures=False. Note the existing project policy forces materialLocation=InPrefab for its managed roots.",
+   "meshCompression": "Compression quantises positions, normals, tangents and UVs. 3dmodel.md section 10 gates 'Normals normalized within 0.995 to 1.005 length' and section 3 fixes a stable Float32 layout; quantised normals fail the first and quantised vertex colours corrupt the AO and sway masks. Note the existing project policy sets Medium for Assets/ScifiFacility third-party models only.",
+   "meshOptimizationFlags": "PolygonOrder only, for the VAT vertex-id reason above.",
+   "normalSmoothingAngle": "law.SMOOTH_ANGLE_DEG, the same value mesh_ops used for shade_auto_smooth. Inert while importNormals=Import, but it means a forced fallback to Calculate reproduces the authored split instead of a different one.",
+   "optimizeMeshPolygons": "Triangle-order optimisation touches no per-vertex identity, so it is safe even on VAT families.",
+   "optimizeMeshVertices": "Off for Flora: this family renders through a baked VAT, which indexes per-vertex animation by vertex id. Reordering vertices desynchronises the texture from the mesh and the asset animates as noise.",
+   "preserveHierarchy": "The _LOD0/_LOD1/_LOD2 and COL_ nodes must stay separate children for the LODGroup and the collider binding to work.",
+   "sortHierarchyByName": "Off: the authored node order already reflects LOD order, and resorting would make the imported hierarchy depend on naming rather than on the manifest.",
+   "useFileScale": "Measured: the exporter writes geometry in centimetres and leaves the header UnitScaleFactor at 1, so Convert Units is what turns 175.0 back into 1.75 m. Off by mistake and the asset arrives 100x too large.",
+   "weldVertices": "Off for Flora: welding changes the vertex count and therefore the VAT row mapping."
+  }
+ },
+ "uvSummary": {
+  "achievedTexelDensityPxPerM": 512.0,
+  "atlasSize": 2048,
+  "boundingBoxUtilisation": 0.0467,
+  "densityScaleApplied": 1.0,
+  "islandCount": 20,
+  "paddingPx": 16,
+  "requestedTexelDensityPxPerM": 512,
+  "route": "authored analytic UVs: cylindrical for the stem with the seam at the rear (theta=pi), geodesic polar for the cap top, cap underside and foot, arc-length strip for the rim band. Coordinates are real surface metres scaled to the target texel density, which is why aspect distortion is near zero by construction rather than solved for.",
+  "usedHeightUv": 0.12739,
+  "usedWidthUv": 0.89721
+ },
+ "validation": {
+  "meshGateFailures": 0,
+  "note": "Mesh, LOD-chain and collider gates are owned by validate.py and must have run before this manifest was written (PROCEDURAL_ASSET_PIPELINE.md 'Validation Before Save'). This block reports their result; it does not re-run them.",
+  "passed": true,
+  "validatorVersion": "1.0.0"
+ },
+ "validationHash": "9b7a74c0a0d07b86826a0d17f108bee5",
+ "validationHashAlgorithm": "blake2b-128 over the canonical JSON of every other field, sorted keys",
+ "vertexColorContract": {
+  "alphaMeaning": "harvest_mask: 1.0 on cap tissue that a harvest tool removes (top surface, underside gills and rim), ramping to 0.0 down the neck and 0.0 across the holdfast/foot. A cut at 0.0 yields nothing and kills the plant, so the interaction proxy is a root sphere and the shader/tool reads this mask to decide which tissue detaches.",
+  "channels": [
+   "sway_amplitude",
+   "biolum_phase",
+   "baked_ao",
+   "family_specific"
+  ],
+  "exportedColorSpace": "LINEAR",
+  "note": "Exported with colors_type='LINEAR'. Measured in the written file: an authored linear 0.25 is stored as 0.25016 with LINEAR and as 0.53725 with SRGB. Unity copies the raw FBX float into Mesh.colors32 without a colour conversion, so SRGB would gamma warp every mask channel."
+ }
+}

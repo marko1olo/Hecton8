@@ -3358,17 +3358,22 @@ namespace Hecton8.Environment
 
             if (emptyCaveSdfTexture3D == null || emptyAbyssalFlowTexture3D == null)
             {
-                // LEAVE THE LANE FIRST. UnityEngine.Assertions.Assert.IsNotNull THROWS here - the project
-                // does not set Assert.raiseExceptions false - so anything placed AFTER these two calls is
-                // unreachable. Two previous attempts at this defect put the unregister and then the
-                // permanent-failure latch below them and neither ever executed, which is why the assertion
-                // count did not fall: 48 occurrences, then 69, then 67, then 60. That sequence was never
-                // instance count either. It is simply how many seconds the gameplay phase ran, because
-                // ColdTick polls at 1 Hz and each poll re-entered this branch.
+                // LEAVE THE LANE FIRST. This branch used to end with two
+                // UnityEngine.Assertions.Assert.IsNotNull calls, which THROW here - the project does not set
+                // Assert.raiseExceptions false - so anything placed AFTER them was unreachable. Two previous
+                // attempts at this defect put the unregister and then the permanent-failure latch below them and
+                // neither ever executed, which is why the assertion count did not fall: 48 occurrences, then 69,
+                // then 67, then 60. That sequence was never instance count either. It is simply how many seconds
+                // the gameplay phase ran, because ColdTick polls at 1 Hz and each poll re-entered this branch.
+                //
+                // A third attempt moved DisableAfterUnrecoverableSetupFailure() above the asserts but LEFT THEM
+                // IN, so the latch finally ran and then the method still threw out of ColdTick. The asserts are
+                // now replaced outright, matching every sibling branch below (missing CSMain, InitializeParticles,
+                // ClearVisibleParticles, auxiliary, propwash and thread-group contract), each of which reports
+                // through a Conditional-stripped log and returns. _setupPermanentlyFailed bounds the reporting to
+                // one emission because TryRegisterColdTick refuses to re-register on it (:3288).
                 DisableAfterUnrecoverableSetupFailure();
-
-                UnityEngine.Assertions.Assert.IsNotNull(emptyCaveSdfTexture3D, "Fatal: Missing authored neutral MarineSnow cave SDF Texture3D.");
-                UnityEngine.Assertions.Assert.IsNotNull(emptyAbyssalFlowTexture3D, "Fatal: Missing authored neutral MarineSnow abyssal flow Texture3D.");
+                LogMissingNeutralVolumeTextures(emptyCaveSdfTexture3D != null, emptyAbyssalFlowTexture3D != null);
                 return;
             }
 
@@ -3500,6 +3505,26 @@ namespace Hecton8.Environment
             ResetGpuBindingCaches();
             _staticBindingsDirty = true;
             _externalGpuBindingsDirty = true;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingNeutralVolumeTextures(bool caveSdfAssigned, bool abyssalFlowAssigned)
+        {
+#if UNITY_EDITOR
+            if (!caveSdfAssigned && !abyssalFlowAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: serialized fields 'emptyCaveSdfTexture3D' and 'emptyAbyssalFlowTexture3D' are both unassigned, so the GPU marine snow lane is latched off for this session - no marine snow particles, no sonar glow accumulation, no fog density. Runtime Texture3D synthesis is forbidden: author 1x1x1 neutral Texture3D assets and assign both in the inspector, or use the MarineSnowNeutralVolumeAuthoring tool. Disabling compute marine snow.");
+                return;
+            }
+
+            if (!caveSdfAssigned)
+            {
+                Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: serialized field 'emptyCaveSdfTexture3D' is unassigned, so the GPU marine snow lane is latched off for this session - no marine snow particles, no sonar glow accumulation, no fog density. Runtime Texture3D synthesis is forbidden: author a 1x1x1 neutral cave SDF Texture3D and assign it in the inspector. Disabling compute marine snow.");
+                return;
+            }
+
+            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: serialized field 'emptyAbyssalFlowTexture3D' is unassigned, so the GPU marine snow lane is latched off for this session - no marine snow particles, no sonar glow accumulation, no fog density. Runtime Texture3D synthesis is forbidden: author a 1x1x1 neutral abyssal flow Texture3D and assign it in the inspector. Disabling compute marine snow.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]

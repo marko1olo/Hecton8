@@ -77,8 +77,24 @@ namespace Hecton8.EditorTools.Generators.Flora
         public float3 Normal;
         public float4 Tangent;
         public float2 UV;
+        public float2 UVMask;
         public uint PackedColor;
         public uint Pad0;
+    }
+
+    /// <summary>
+    /// Interleaved payload for vertex stream 2. Unity supports a maximum of four vertex streams
+    /// (0..3), and inside one stream it lays attributes out in <see cref="VertexAttribute"/> enum
+    /// order, so Tangent, TexCoord0 and TexCoord1 occupy offsets 0, 16 and 24 of a 32-byte stride.
+    /// Streams 0, 1 and 3 stay single-attribute because <c>FloraTopologyStudio1711</c> validates
+    /// Position, Normal and Color as dedicated streams with attribute offset 0.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct FloraInterleavedStream2Vertex
+    {
+        public float4 Tangent;
+        public float2 UV0;
+        public float2 UVMask;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -614,30 +630,40 @@ namespace Hecton8.EditorTools.Generators.Flora
             try
             {
                 Mesh.MeshData meshData = meshDataArray[0];
+                // Stream budget: Unity supports exactly four vertex streams (0..3). TexCoord0 used
+                // to be declared on stream 4, which is outside that range, so no LOD mesh could
+                // ever be built. Tangent/TexCoord0/TexCoord1 now share stream 2 and Position,
+                // Normal and Color keep the dedicated streams FloraTopologyStudio1711 validates.
+                // TexCoord1 is the shader-side "UVMask" set required by Hecton_KelpMaster.shader
+                // (Attributes.uvMask : TEXCOORD1) and by 3dmodel.md section 3.
                 meshData.SetVertexBufferParams(
                     vertexCount,
                     new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3, 0),
                     new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3, 1),
                     new VertexAttributeDescriptor(VertexAttribute.Tangent, VertexAttributeFormat.Float32, 4, 2),
                     new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4, 3),
-                    new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2, 4));
+                    new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2, 2),
+                    new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.Float32, 2, 2));
 
                 meshData.SetIndexBufferParams(indexCount, IndexFormat.UInt32);
 
                 NativeArray<float3> positions = meshData.GetVertexData<float3>(0);
                 NativeArray<float3> normals = meshData.GetVertexData<float3>(1);
-                NativeArray<float4> tangents = meshData.GetVertexData<float4>(2);
+                NativeArray<FloraInterleavedStream2Vertex> stream2 = meshData.GetVertexData<FloraInterleavedStream2Vertex>(2);
                 NativeArray<Color32> colors = meshData.GetVertexData<Color32>(3);
-                NativeArray<float2> uv0 = meshData.GetVertexData<float2>(4);
 
                 for (int i = 0; i < vertexCount; i++)
                 {
                     FloraVertexData vertex = vertices[i];
                     positions[i] = vertex.Position;
                     normals[i] = vertex.Normal;
-                    tangents[i] = vertex.Tangent;
+                    stream2[i] = new FloraInterleavedStream2Vertex
+                    {
+                        Tangent = vertex.Tangent,
+                        UV0 = vertex.UV,
+                        UVMask = vertex.UVMask
+                    };
                     colors[i] = UnpackColor(vertex.PackedColor);
-                    uv0[i] = vertex.UV;
                 }
 
                 NativeArray<uint> indexData = meshData.GetIndexData<uint>();
@@ -883,7 +909,7 @@ namespace Hecton8.EditorTools.Generators.Flora
             return false;
         }
 
-        private static bool IsExpectedFloraShader(FloraTopologyPreset preset, Shader shader)
+        internal static bool IsExpectedFloraShader(FloraTopologyPreset preset, Shader shader)
         {
             if (shader == null)
                 return false;
@@ -1031,9 +1057,24 @@ namespace Hecton8.EditorTools.Generators.Flora
 
             valid &= ValidateSize<FloraNode>("FloraNode", 40);
             valid &= ValidateSize<FloraEdge>("FloraEdge", 16);
-            valid &= ValidateSize<FloraVertexData>("FloraVertexData", 56);
+            valid &= ValidateSize<FloraVertexData>("FloraVertexData", 64);
+            valid &= ValidateOffset<FloraVertexData>(nameof(FloraVertexData.Position), 0);
+            valid &= ValidateOffset<FloraVertexData>(nameof(FloraVertexData.Normal), 12);
+            valid &= ValidateOffset<FloraVertexData>(nameof(FloraVertexData.Tangent), 24);
+            valid &= ValidateOffset<FloraVertexData>(nameof(FloraVertexData.UV), 40);
+            valid &= ValidateOffset<FloraVertexData>(nameof(FloraVertexData.UVMask), 48);
+            valid &= ValidateOffset<FloraVertexData>(nameof(FloraVertexData.PackedColor), 56);
+            valid &= ValidateOffset<FloraVertexData>("Pad0", 60);
             valid &= ValidateSize<FloraBoundsDTO>("FloraBoundsDTO", 24);
             valid &= ValidateSize<FloraGenerationCounters>("FloraGenerationCounters", 32);
+
+            // These three offsets are the contract with Unity's in-stream attribute packing for
+            // vertex stream 2. If they drift, TexCoord1 stops landing where the shader's TEXCOORD1
+            // binding expects it and every sway term silently collapses to zero.
+            valid &= ValidateSize<FloraInterleavedStream2Vertex>("FloraInterleavedStream2Vertex", 32);
+            valid &= ValidateOffset<FloraInterleavedStream2Vertex>(nameof(FloraInterleavedStream2Vertex.Tangent), 0);
+            valid &= ValidateOffset<FloraInterleavedStream2Vertex>(nameof(FloraInterleavedStream2Vertex.UV0), 16);
+            valid &= ValidateOffset<FloraInterleavedStream2Vertex>(nameof(FloraInterleavedStream2Vertex.UVMask), 24);
             return valid;
         }
 
@@ -1478,7 +1519,8 @@ namespace Hecton8.EditorTools.Generators.Flora
                     float edgeSign = sideIndex == 0 ? -1f : 1f;
                     float edgeWave = math.sin(rootDistance * 13.1f + sideIndex * 2.31f + branchDepth * 0.73f) * halfWidth * 0.10f * lodWidthScale;
                     float3 position = center + side * (edgeSign * halfWidth) + normal * edgeWave;
-                    byte sway = (byte)math.clamp((int)math.round(math.saturate(rootDistance / maxRootDistance) * 255f), 0, 255);
+                    float leverage01 = math.saturate(rootDistance / maxRootDistance);
+                    byte sway = ResolveSwayByte(Genome.PresetKind, leverage01);
                     byte phase = HashToByte(end.PhaseHash, (uint)sideIndex, (uint)(branchDepth + LodLevel));
                     byte glow = (byte)math.clamp((int)math.round(ResolveGlow(position, Genome.GlowWeight) * 255f), 0, 255);
 
@@ -1487,7 +1529,13 @@ namespace Hecton8.EditorTools.Generators.Flora
                         Position = position,
                         Normal = normal,
                         Tangent = new float4(side, 1f),
-                        UV = new float2(sideIndex, math.saturate(rootDistance / maxRootDistance)),
+                        UV = new float2(sideIndex, leverage01),
+                        // UVMask (TEXCOORD1): U is 0 and 1 at the blade margins, V is the geodesic
+                        // root-to-tip distance with the holdfast pinned at 0. This is the mask set
+                        // Hecton_KelpMaster.shader binds and multiplies every sway, prop-wash and
+                        // player-interaction term by, and the uv.y = [0=root, 1=tip] input that
+                        // REND_Instanced_Flora_Physics.txt section III.C requires.
+                        UVMask = new float2(sideIndex, leverage01),
                         PackedColor = PackColor(sway, phase, glow, 255),
                         Pad0 = 0u
                     };
@@ -1559,7 +1607,8 @@ namespace Hecton8.EditorTools.Generators.Flora
                     float radius = math.max(0.0025f, baseRadius * ResolveSurfaceRadiusScale(Genome.PresetKind, center, rootDistance, sideIndex, ring, branchDepth, LodLevel));
                     float3 position = center + normal * radius;
                     float3 tangent4 = math.normalizesafe(-side * sin + binormal * cos, binormal);
-                    byte sway = (byte)math.clamp((int)math.round(math.saturate(rootDistance / maxRootDistance) * 255f), 0, 255);
+                    float leverage01 = math.saturate(rootDistance / maxRootDistance);
+                    byte sway = ResolveSwayByte(Genome.PresetKind, leverage01);
                     byte phase = HashToByte(end.PhaseHash, (uint)sideIndex, (uint)(branchDepth + LodLevel));
                     byte glow = (byte)math.clamp((int)math.round(ResolveGlow(position, Genome.GlowWeight) * 255f), 0, 255);
 
@@ -1568,7 +1617,12 @@ namespace Hecton8.EditorTools.Generators.Flora
                         Position = position,
                         Normal = normal,
                         Tangent = new float4(tangent4, 1f),
-                        UV = new float2(u, math.saturate(rootDistance / maxRootDistance)),
+                        UV = new float2(u, leverage01),
+                        // UVMask (TEXCOORD1): U is the circumferential parameter, V is the geodesic
+                        // root-to-tip distance with the anchor ring pinned at 0. Tube families keep
+                        // the same V semantics as the ribbon family so one mask contract covers
+                        // every preset and no consumer has to branch on preset kind.
+                        UVMask = new float2(u, leverage01),
                         PackedColor = PackColor(sway, phase, glow, 255),
                         Pad0 = 0u
                     };
@@ -1658,6 +1712,38 @@ namespace Hecton8.EditorTools.Generators.Flora
         {
             float wave = math.sin(position.x * 3.17f + position.y * 2.11f + position.z * 4.03f);
             return math.saturate((0.5f + wave * 0.5f) * glowWeight);
+        }
+
+        /// <summary>
+        /// Bakes vertex-colour R, the water-current sway amplitude, per
+        /// 3DMODEL_FLORA_CORAL.md section 2: <c>sway = saturate(distanceFromAnchor /
+        /// maxFlexibleLength) ^ stiffnessExponent</c>, with "Anchor/root = 0", "Rigid mineralized
+        /// coral = 0 to 32" and "Flexible frond tips = 192 to 255". The per-family exponent and
+        /// amplitude ceiling are baked here because Hecton_KelpMaster.shader consumes R directly as
+        /// an amplitude and states that the generator owns the stiffness curve, so a rigid
+        /// mineralized organism and a flexible frond must not leave this writer sharing one ramp.
+        /// </summary>
+        private static byte ResolveSwayByte(int presetKind, float leverage01)
+        {
+            float safeLeverage = math.saturate(math.select(0f, leverage01, math.isfinite(leverage01)));
+
+            // AbyssalBrainCoral is mineralized skeleton. Section 2 caps its band at 32/255, so the
+            // ceiling is the contract and not a taste choice.
+            float stiffnessExponent = 1f;
+            float amplitudeCeiling = 1f;
+            if (presetKind == (int)FloraTopologyPreset.AbyssalBrainCoral)
+            {
+                amplitudeCeiling = 32f / 255f;
+            }
+            else if (presetKind == (int)FloraTopologyPreset.ThermalTubeWorm)
+            {
+                // Chitinous tube at the base, soft plume at the distal end: the amplitude stays
+                // near zero along the tube and only the plume reaches the flexible band.
+                stiffnessExponent = 2.2f;
+            }
+
+            float amplitude01 = math.saturate(math.pow(safeLeverage, stiffnessExponent) * amplitudeCeiling);
+            return (byte)math.clamp((int)math.round(amplitude01 * 255f), 0, 255);
         }
 
         private static uint PackColor(byte r, byte g, byte b, byte a)

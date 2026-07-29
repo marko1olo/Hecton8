@@ -306,9 +306,9 @@
   "attribute": "Col",
   "domain": "CORNER",
   "areaWeightedMean": [
-   0.32677,
+   0.32679,
    0.42856,
-   0.76826,
+   0.76837,
    0.10023
   ],
   "min": [
@@ -332,7 +332,7 @@
   "baked": true,
   "min": 0.0,
   "max": 1.0,
-  "mean": 0.71842,
+  "mean": 0.718487,
   "hasContrast": true
  },
  "uvAndTriplanarReport": {
@@ -460,7 +460,7 @@
   "PASS LOD2 1142 tris vs budget 1200",
   "PASS LOD chain strictly decreasing",
   "PASS collider 184 tris vs the 200 ceiling",
-  "PASS AO contrast 1.0000 (min=0.0000 max=1.0000 mean=0.7184)",
+  "PASS AO contrast 1.0000 (min=0.0000 max=1.0000 mean=0.7185)",
   "PASS zero degenerate faces",
   "PASS single connected island (got 1)",
   "PASS zero non-manifold edges (got 0)",
@@ -488,26 +488,26 @@
   "PASS weighted normals applied (FACE_AREA_WITH_ANGLE)"
  ],
  "h8forgeValidatorFailures": [
-  "LOD0 tangent_length_out_of_range: tangent[13284] length=0.000000 outside 0.995..1.005"
+  "LOD0 tangent_length_out_of_range: tangent[14634] length=0.000000 outside 0.995..1.005"
  ],
  "h8forgeValidatorImported": true,
  "proofArtifacts": {
-  "silhouette": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_SHEET_SILHOUETTE.png",
-  "silhouette_lod1": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_LOD1_SHEET_SILHOUETTE.png",
-  "silhouette_lod2": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_LOD2_SHEET_SILHOUETTE.png",
-  "studio": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_studio_SHEET_studio.png",
-  "flat": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_flat_SHEET_flat.png",
-  "material": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_material_SHEET_material.png",
-  "channels": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_chan_SHEET_CHANNELS.png"
+  "silhouette": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_SHEET_SILHOUETTE.png",
+  "silhouette_lod1": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_LOD1_SHEET_SILHOUETTE.png",
+  "silhouette_lod2": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_LOD2_SHEET_SILHOUETTE.png",
+  "studio": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_studio_SHEET_studio.png",
+  "flat": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_flat_SHEET_flat.png",
+  "material": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_material_SHEET_material.png",
+  "channels": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_chan_SHEET_CHANNELS.png"
  },
  "channelMeasurements": [
   {
    "channel": "R",
    "meaning": "edge_wear",
-   "tile": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_chan_chan0_edge_wear.png",
+   "tile": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_chan_chan0_edge_wear.png",
    "min": 0.0,
    "max": 1.0,
-   "mean": 0.34427,
+   "mean": 0.34435,
    "coverageFraction": 0.18837,
    "subjectVisible": true,
    "hasGradient": true
@@ -515,7 +515,7 @@
   {
    "channel": "G",
    "meaning": "oxidation",
-   "tile": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_chan_chan1_oxidation.png",
+   "tile": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_chan_chan1_oxidation.png",
    "min": 0.15593,
    "max": 1.0,
    "mean": 0.35126,
@@ -526,10 +526,10 @@
   {
    "channel": "B",
    "meaning": "baked_ao",
-   "tile": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_chan_chan2_baked_ao.png",
+   "tile": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_chan_chan2_baked_ao.png",
    "min": 0.0,
    "max": 1.0,
-   "mean": 0.83951,
+   "mean": 0.8402,
    "coverageFraction": 0.18837,
    "subjectVisible": true,
    "hasGradient": true
@@ -537,7 +537,7 @@
   {
    "channel": "A",
    "meaning": "emission_mask",
-   "tile": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgeGeology\\cliffchunk_sedimentary_s1713_q100_chan_chan3_emission_mask.png",
+   "tile": "Docs/AgentLogs/ForgeGeology/cliffchunk_sedimentary_s1713_q100_chan_chan3_emission_mask.png",
    "min": 0.0,
    "max": 0.94731,
    "mean": 0.07441,
@@ -628,12 +628,12 @@
    "retainedFractionOfLod0": 0.7908
   }
  },
- "fbx": "C:\\hades\\Hecton8\\Assets\\_Project\\Art\\Generated\\Forge\\Geology\\MESH_Geology_cliffchunk_sedimentary_s1713_q100.fbx",
+ "fbx": "Assets/_Project/Art/Generated/Forge/Geology/MESH_Geology_cliffchunk_sedimentary_s1713_q100.fbx",
  "fbxRoundTrip": {
   "verified": true,
   "summary": "MESH_Geology_cliffchunk_sedimentary_s1713_q100.fbx: 4 object(s) tris=24234 vcol=True customNormals=True tangents=True uv=['UVMap', 'UV1_Strata'] unitScale=100 roundtrip=VERIFIED",
   "measurements": [
-   "wrote MESH_Geology_cliffchunk_sedimentary_s1713_q100.fbx (4804092 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "wrote MESH_Geology_cliffchunk_sedimentary_s1713_q100.fbx (4829100 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
    "COL_Geology_cliffchunk_sedimentary_s1713_q100: no material slot. 3dmodel.md section 6 declares slot 0 as the primary structural/tissue material; Unity will assign its default material to submesh 0.",
    "objects round-tripped: ['COL_Geology_cliffchunk_sedimentary_s1713_q100', 'MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD0', 'MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD1', 'MESH_Geology_cliffchunk_sedimentary_s1713_q100_LOD2']",
    "COL_Geology_cliffchunk_sedimentary_s1713_q100: verts 94->94 loops 552->552 tris 184->184",

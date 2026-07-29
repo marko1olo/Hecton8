@@ -573,6 +573,23 @@ namespace Hecton8.Quest
         {
             questIndex = -1;
             activatedNow = false;
+
+            // _runtimeResults describes the outcome of THIS call and nothing else. Every other producer
+            // clears it on entry - ApplyAutoActivationFlags, EvaluateSignal and TryRevertCriticalItem all
+            // do - and QuestManager.FlushRuntimeResults replays the whole list, so this was the one
+            // producer that let a previous call's results be emitted a second time. Concretely: Start()
+            // leaves two Activate results here after ApplyAutoActivationFlags, and a signal-driven
+            // EvaluateSignal leaves its Complete results here; the next activating upsert from
+            // ResourceScarcityDirector then re-emitted them, adding a duplicate QuestEvents.TryRaiseCompleted,
+            // a duplicate objective notification, a second Zeigarnik injection attempt, and a second
+            // Completed=1 record in the quest spine ring - which is a fabricated completion in the probe's
+            // Mission row rather than a real one. ResourceScarcityDirector loops over every cached
+            // directive in one pass, so the duplication compounded within a single pass. Cleared before the
+            // guards, like the two producers above, so a rejected upsert also cannot leave stale results
+            // behind for a later flush. List<T>.Clear on this unmanaged struct element type allocates
+            // nothing.
+            _runtimeResults.Clear();
+
             if (!_isInitialized ||
                 questHash == 0u ||
                 completionItemHash == 0u ||

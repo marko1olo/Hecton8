@@ -50,7 +50,15 @@ namespace Hecton8.Editor.Generators.World
             }
 
             EditorGUILayout.Space(12f);
-            EditorGUILayout.LabelField("Source Scan", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Source Scan (inventory only)", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "These counts are an inventory readout and are NOT bake input. Polish and Bake generates " +
+                "synthetic instances (GenerateMockScatterInputJob / GenerateMockTerrainNormalsJob) around " +
+                "the fixed sector origin in AbyssalScatterPolisherPipeline.DefaultConfig; it reads none of " +
+                "the scanned rules, prefabs or MapMagic assets, and it does not sample real terrain. A " +
+                "successful bake here is an ABI and throughput proof, not world content - do not report it " +
+                "as placed scatter.",
+                MessageType.Warning);
             if (!_hasScan)
             {
                 EditorGUILayout.HelpBox("No 1614 source scan executed in this window session.", MessageType.Info);
