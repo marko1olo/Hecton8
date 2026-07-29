@@ -43,7 +43,35 @@ namespace Hecton8.Quest
         private const uint DeadlockFlagSalt = 0xDEAD10CCu;
         private const int QuestTransitionAuditCapacity = QuestDagRuntimeConstants.TelemetryCapacity;
         private const string NativeMemoryOwner = nameof(QuestStateManager);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+
+        // Session, not Scene, and the DECLARATION was the defect - the buffers were never leaked.
+        // These two lists are allocated from Initialize, which QuestManager reaches from Awake, and
+        // QuestManager lives in 02_HECTON_WORLD (guid 118b59a08371522459b4d4f62de86712 is present in
+        // 02_HECTON_WORLD.unity and 010_TEST.unity and in no other live scene or prefab; it is not in
+        // 01_MAIN_MENU). HECTON-8 loads 02_HECTON_WORLD ADDITIVELY over the menu, so at that Awake
+        // SceneManager.GetActiveScene() is still 01_MAIN_MENU. The collection registrars take no explicit
+        // Scene - only the private RegisterPointer overload does - so a Scene declaration left
+        // NativeMemorySentinel to infer the owner scene through ResolveCurrentSceneIdentity
+        // (NativeMemorySentinel.cs:2179) and it stamped both records sceneBuildIndex=1
+        // sceneScope=active-scene-at-alloc. UnloadSceneAsync(01_MAIN_MENU) then found them alive and raised
+        // two CRITICAL_MEMORY_VIOLATION scene-leak errors plus a FatalMemoryLeakException -
+        // Logs/h8_worldsim_probe5.log:8427, :8442 and :8577 (context=01_MAIN_MENU active=10) - against
+        // buffers belonging to a scene that had not unloaded. Nothing in Dispose was broken: QuestManager
+        // OnDestroy calls Dispose (QuestManager.cs:305-309), Initialize calls it before reallocating
+        // (:178), and ReleaseNativeList unregisters the sentinel id before disposing the list.
+        // Session is the honest declaration because this owner provably outlives the scene that was active
+        // when it allocated, and it is the sibling declaration: QuestGraphEvaluator (:71),
+        // QuestDagResolverRuntime (:608) and QuestEvents (:349) - constructed and disposed by the same
+        // QuestManager instance, on the same OnDestroy - already declare Session, and this class's own four
+        // NativeArrays go through H8Memory.Allocate with Allocator.Persistent, which H8Memory classifies as
+        // Session (H8Memory.cs:5878-5879). This was the only Scene declaration left in the quest domain,
+        // which is why only these two of its six native buffers were ever reported.
+        // Tracking is not weakened: Session still counts as persistent (NativeMemorySentinel.cs:2626-2631),
+        // both ids are still unregistered in Dispose, and a genuine leak by this owner is still fatal at
+        // AssertNoAllocationsAfterServiceShutdown (NativeMemorySentinel.cs:1749), which
+        // GlobalRegistry.ResetStaticState calls (GlobalRegistry.cs:2883) over every tracked record
+        // regardless of lifetime.
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const Allocator DataVaultExemptQuestStateAllocator = Allocator.Persistent;
         private const SystemID NativeArrayOwnerSystem = SystemID.QuestDag;
         private static readonly uint _abyssalPhaseFlagHash = QuestFlagHashKernel.ComputeStableHash("phase.abyssal");
@@ -126,8 +154,39 @@ namespace Hecton8.Quest
 
         public void Dispose()
         {
-            ReleaseNativeList(ref _activatedQuestIndices, ref _activatedQuestIndicesSentinelId);
-            ReleaseNativeList(ref _completedQuestIndices, ref _completedQuestIndicesSentinelId);
+            // Every release below runs even when an earlier one fails. ReleaseNativeList rethrows whatever
+            // NativeMemorySentinel.Unregister or NativeList.Dispose threw, and letting that escape from here
+            // abandoned the four H8Memory-tracked NativeArrays underneath it - turning one failed unregister
+            // into five surviving buffers, all of which then die together at
+            // NativeMemorySentinel.AssertNoAllocationsAfterServiceShutdown with the wrong owner story.
+            // The first failure is still rethrown after the sweep, so the existing contract is unchanged:
+            // Initialize re-checks HasLiveNativeState, which reads the real IsCreated flags rather than the
+            // exception, and refuses to overwrite state that survived a failed Dispose.
+            //
+            // Repeat Dispose is a no-op by construction: ReleaseNativeList only touches a sentinel id when it
+            // is > 0 and only disposes a list when IsCreated, and it zeroes both on the way out, while every
+            // H8Memory.Release below is IsCreated-guarded and nulls its handle. Nothing here logs on the
+            // happy path.
+            Exception firstReleaseException = null;
+
+            try
+            {
+                ReleaseNativeList(ref _activatedQuestIndices, ref _activatedQuestIndicesSentinelId);
+            }
+            catch (Exception exception)
+            {
+                firstReleaseException = exception;
+            }
+
+            try
+            {
+                ReleaseNativeList(ref _completedQuestIndices, ref _completedQuestIndicesSentinelId);
+            }
+            catch (Exception exception)
+            {
+                if (firstReleaseException == null)
+                    firstReleaseException = exception;
+            }
 
             if (_nodes.IsCreated)
                 H8Memory.Release(ref _nodes, NativeArrayOwnerSystem);
@@ -140,6 +199,18 @@ namespace Hecton8.Quest
 
             if (_globalPrerequisites.IsCreated)
                 H8Memory.Release(ref _globalPrerequisites, NativeArrayOwnerSystem);
+
+            if (firstReleaseException != null)
+            {
+                // Cold path - quest teardown, never a tick - and silent unless a release actually failed.
+                // H8Debug carries [Conditional("UNITY_EDITOR")] + [Conditional("DEVELOPMENT_BUILD")], so the
+                // compiler deletes this call from a release player instead of a runtime flag skipping it.
+                // Logged as well as rethrown because the rethrow alone is not diagnosable: any caller that
+                // swallows Dispose would leave no record at all of which release refused, and the surviving
+                // sentinel record then only surfaces much later as an anonymous shutdown-time leak count.
+                Hecton8.Core.H8Debug.LogException(firstReleaseException);
+                throw firstReleaseException;
+            }
 
             if (HasLiveNativeState)
                 return;
@@ -175,7 +246,22 @@ namespace Hecton8.Quest
 
         public bool Initialize(QuestData[] allQuests, ILocalizationTextReadModel localizationManager)
         {
-            Dispose();
+            // Caught, not propagated. Dispose rethrows a release failure, and an exception escaping here
+            // escaped QuestManager.InitializeStateGraph out of Awake, skipping the branch that exists for
+            // exactly this outcome - it logs and sets enabled = false (QuestManager.cs:912-919) - and leaving
+            // a half-built owner registered instead. Returning false takes that branch. The
+            // HasLiveNativeState guard below still stands on its own for the case where Dispose reported
+            // nothing but left a buffer created.
+            try
+            {
+                Dispose();
+            }
+            catch (Exception exception)
+            {
+                Hecton8.Core.H8Debug.LogException(exception);
+                return false;
+            }
+
             if (HasLiveNativeState)
                 return false;
 
