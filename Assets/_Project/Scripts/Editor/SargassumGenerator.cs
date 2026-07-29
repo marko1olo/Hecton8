@@ -417,7 +417,14 @@ namespace Hecton8.Editor
                 Vector3 normal = (builder.Vertices[start + i] - center).normalized;
                 builder.Normals.Add(normal);
                 builder.Colors.Add(vertexColor);
-                builder.Uvs.Add(new Vector2(normal.x * 0.5f + 0.5f, normal.y * 0.5f + 0.5f));
+                // UV0 is a control channel here, not a texture coordinate: Hecton_SargassumMaster samples no
+                // albedo/normal map at all (its only TEXTURE2Ds are the world-space buoyancy and cut RTs), and it
+                // reads uv.y as heightMask - the anchor-distance leverage behind sway, prop wash, pulsation and
+                // cut warp. The previous normal projection put the octahedron equator at uv.y 0.5 and the poles at
+                // 0 and 1, so the equator pumped radially while both poles stayed pinned. Gas bladders are the
+                // rigid class in 3DMODEL_FLORA_CORAL.md line 24, so leverage is 0. uv.x sits at the centre of the
+                // EvaluateLeafMask band; bladder alpha is forced to 1 by the isBubble branch regardless.
+                builder.Uvs.Add(new Vector2(0.5f, 0f));
             }
 
             builder.AddTriangle(start + 0, start + 2, start + 4);
@@ -457,10 +464,29 @@ namespace Hecton8.Editor
                 builder.Colors.Add(vertexColor);
             }
 
-            builder.Uvs.Add(new Vector2(0.5f, 1f));
-            builder.Uvs.Add(new Vector2(1f, 0.5f));
-            builder.Uvs.Add(new Vector2(0.5f, 0f));
-            builder.Uvs.Add(new Vector2(0f, 0.5f));
+            // Diamond corner coordinates are not valid UV0 for this shader. Two separate contracts apply:
+            //  - uv.x feeds EvaluateLeafMask, which fades out on abs(uv.x * 2 - 1) and is then alpha-clipped at
+            //    _AlphaClip 0.36. Corner values of 0f and 1f put the card's own left and right points at
+            //    leafMask 0, so the impostor lost roughly a quarter of its authored width - a silhouette/mass
+            //    loss at the one LOD where mass is all that survives (3DMODEL_FLORA_CORAL.md line 99). Ribbons
+            //    can afford edge values of 0 and 1 because their quad deliberately overshoots the visible blade;
+            //    an impostor card has no such margin, its geometry IS the intended silhouette. Keeping the
+            //    corners inside the surviving band leaves a faint serrated fade instead of a cut.
+            //  - uv.y feeds heightMask, the sway/pulsation leverage, so it must track real vertical extent rather
+            //    than a corner index. The second card authored below lies flat at a single Y yet previously got a
+            //    full 0..1 leverage sweep across a level plate.
+            const float cardEdgeU = 0.24f;
+            float topY = (center + halfUp).y;
+            float rightY = (center + halfRight).y;
+            float bottomY = (center - halfUp).y;
+            float leftY = (center - halfRight).y;
+            float minY = Mathf.Min(Mathf.Min(topY, rightY), Mathf.Min(bottomY, leftY));
+            float spanY = Mathf.Max(Mathf.Max(topY, rightY), Mathf.Max(bottomY, leftY)) - minY;
+            float invSpanY = spanY > 0.0001f ? 1f / spanY : 0f;
+            builder.Uvs.Add(new Vector2(0.5f, (topY - minY) * invSpanY));
+            builder.Uvs.Add(new Vector2(0.5f + cardEdgeU, (rightY - minY) * invSpanY));
+            builder.Uvs.Add(new Vector2(0.5f, (bottomY - minY) * invSpanY));
+            builder.Uvs.Add(new Vector2(0.5f - cardEdgeU, (leftY - minY) * invSpanY));
 
             builder.AddTriangle(start + 0, start + 1, start + 3);
             builder.AddTriangle(start + 1, start + 2, start + 3);

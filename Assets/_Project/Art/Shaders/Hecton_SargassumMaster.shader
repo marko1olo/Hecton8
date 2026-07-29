@@ -396,7 +396,18 @@ Shader "Hecton8/Flora/SargassumMaster"
                 float3 positionOS = SargassumFiniteOr(input.positionOS.xyz, float3(0.0, 0.0, 0.0));
                 half phase = vertexColor.b;
                 half rigidity = saturate(vertexColor.a);
-                half heightMask = saturate((half)uv.y);
+                // heightMask is anchor-distance leverage: it scales sway, prop wash, pulsation and cut warp.
+                // Gas bladders are the rigid class in 3DMODEL_FLORA_CORAL.md line 24 (sway amplitude 0), and the
+                // octasphere writer path bakes a normal projection into uv.y, so on bladder vertices uv.y is not
+                // an anchor distance at all - the equator lands on 0.5 while the two poles land on 0 and 1. Left
+                // ungated that drove a radial equator pump of |normal.xz| * sway * 0.5 with both poles pinned:
+                // measured 0.0423 object units against baked bladder radii of 0.031..0.0985, up to 136% of the
+                // radius, which turns the smallest bladders inside out. Gating with the same bubble rule the
+                // fragment stage uses keeps bladders rigid for the meshes already baked on disk and for any
+                // future re-bake, so writer and shader agree either way. Bladders still travel with the clump:
+                // drift offset and buoyancy sink are applied per-vertex in world space, below.
+                half isBubble = step(0.85h, saturate(vertexColor.g));
+                half heightMask = saturate((half)uv.y) * (1.0h - isBubble);
                 half swingScale = lerp((half)SargassumFiniteOr((float)_BeardSwingMultiplier, 0.68), 0.68h, rigidity);
                 half sway = SargassumTriangleSigned(timeSeconds * SargassumFiniteOr((float)_SwaySpeed, 0.0) + phase * SargassumFiniteOr((float)_PhaseScale, 0.0) + positionOS.y * SargassumFiniteOr((float)_SwayFrequency, 0.0)) * (half)max(0.0, SargassumFiniteOr((float)_SwayAmplitude, 0.0)) * swingScale;
                 positionOS.xz += normalOS.xz * (sway * heightMask);
@@ -756,7 +767,10 @@ Shader "Hecton8/Flora/SargassumMaster"
                 float3 positionOS = SargassumFiniteOr(input.positionOS.xyz, float3(0.0, 0.0, 0.0));
                 half phase = vertexColor.b;
                 half rigidity = saturate(vertexColor.a);
-                half heightMask = saturate((half)uv.y);
+                // Same bladder-rigidity gate as the ForwardLit pass. It has to be duplicated here or the shadow
+                // silhouette keeps pumping while the lit geometry stands still, which reads as a detached shadow.
+                half isBubble = step(0.85h, saturate(vertexColor.g));
+                half heightMask = saturate((half)uv.y) * (1.0h - isBubble);
                 half swingScale = lerp((half)SargassumFiniteOr((float)_BeardSwingMultiplier, 0.68), 0.68h, rigidity);
                 half sway = SargassumTriangleSigned(timeSeconds * SargassumFiniteOr((float)_SwaySpeed, 0.0) + phase * SargassumFiniteOr((float)_PhaseScale, 0.0) + positionOS.y * SargassumFiniteOr((float)_SwayFrequency, 0.0)) * (half)max(0.0, SargassumFiniteOr((float)_SwayAmplitude, 0.0)) * swingScale;
                 positionOS.xz += normalOS.xz * (sway * heightMask);
