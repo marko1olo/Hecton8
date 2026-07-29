@@ -81,8 +81,80 @@ namespace Hecton8.QA.Headless.Editor
                 Attach();
         }
 
+        /// <summary>
+        /// True when `-h8headless` (or `-headless`) is on this process's command line, which is the ONLY
+        /// thing that puts GameBootstrapper into headless boot mode.
+        /// </summary>
+        /// <remarks>
+        /// The two sides of this harness read DIFFERENT triggers, and the asymmetry silently produced a
+        /// 45-minute no-op run. HeadlessSimulationRunner.ShouldRunStatic accepts argv OR the
+        /// H8_HEADLESS_SIMULATION env var OR the Temp flag file this class writes. But
+        /// GameBootstrapper._headlessBootMode comes only from IsHeadlessBootRequested()
+        /// (GameBootstrapper.cs:6647, assigned :2585), which is argv-ONLY. So calling Run() without
+        /// `-h8headless` on the command line installs the runtime runner while the bootstrapper boots as a
+        /// full PLAYER: it keeps the audio listener, initialises SpatialAudioManager, RenderDispatcher and
+        /// ConnectionSplineBatchRenderer for real, falls past the headless early-out at
+        /// GameBootstrapper.cs:3120-3123 and LOADS 01_MAIN_MENU. That is precisely the symptom the comment
+        /// above this class describes: "play mode simply carried on running the main menu for 45 minutes
+        /// with no result file, no CSV rows and no log line."
+        ///
+        /// WHY THE REFUSAL LIVES HERE RATHER THAN WIDENING THE BOOTSTRAPPER'S TRIGGER. Teaching
+        /// IsHeadlessBootRequested to also accept the env var and the flag file would "fix" this too, and it
+        /// would be the more dangerous repair: a stale Temp flag file left behind by a killed run would then
+        /// put a developer's ordinary editor session into headless boot mode, with the audio listener
+        /// stripped and the main menu never loaded, and nothing on screen explaining why. That is not
+        /// hypothetical in this project - a leftover `run.flag` from the geology atlas task hijacked EVERY
+        /// batchmode launch on this machine, permanently and silently, until it was found by hand
+        /// (fixed in 105d27df6). Narrowing the caller cannot be defeated by a file on disk; widening the
+        /// bootstrapper can.
+        ///
+        /// System.Environment is fully qualified deliberately: Hecton8.Environment shadows
+        /// System.Environment for any file inside the Hecton8.* namespace root, and a bare `Environment`
+        /// here fails CS0234. CONTRIBUTING.md records that trap.
+        /// </remarks>
+        private static bool HasHeadlessCommandLineArg()
+        {
+            string[] args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (string.Equals(args[i], "-h8headless", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(args[i], "-headless", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public static void Run()
         {
+            // Refuse rather than produce a run that measures a main menu. Checked BEFORE any state is
+            // written - no SessionState, no flag file, no deleted artifacts - so a refused invocation leaves
+            // the project exactly as it found it and cannot arm the Tick loop it never intends to use.
+            if (!HasHeadlessCommandLineArg())
+            {
+                Debug.LogError(
+                    "[HeadlessSimulationBatchRunner] REFUSED: -h8headless is absent from the command line. " +
+                    "The flag file this class writes starts the runtime runner, but only argv puts " +
+                    "GameBootstrapper into headless boot mode - so this run would boot a full player and " +
+                    "load 01_MAIN_MENU, then sit there until the watchdog fired, with no result file and no " +
+                    "CSV rows. Relaunch as: Unity.exe -batchmode -h8headless -h8headlessDays 5 " +
+                    "-h8headlessDaySeconds 60 -executeMethod " +
+                    "Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner.Run, with the working " +
+                    "directory set to the project root.");
+
+                // Exit only in batchmode. There a nonzero code is the only thing the host job can read, and
+                // silently returning would hand it a green run that measured nothing. Interactively,
+                // killing a developer's editor over a bad argument is not a proportionate response - the
+                // LogError above is already in the Console. Run() is public static and currently reachable
+                // only through -executeMethod, but that is a fact about today's callers, not a guarantee.
+                if (Application.isBatchMode)
+                    EditorApplication.Exit(2);
+
+                return;
+            }
+
             SessionState.SetBool(ActiveKey, true);
             SessionState.SetBool(ExitRequestedKey, false);
             SessionState.SetString(StartTimeKey, EditorApplication.timeSinceStartup.ToString("R", CultureInfo.InvariantCulture));
