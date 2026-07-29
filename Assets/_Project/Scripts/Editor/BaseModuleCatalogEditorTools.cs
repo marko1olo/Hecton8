@@ -89,7 +89,31 @@ namespace Hecton8.Editor
     {
         private const string NativeMemoryOwner = nameof(BaseModuleCatalogEditorWindow);
         private const string CsvCostsLabel = "csvCosts";
-        private const string DefaultBinaryPath = "Assets/_Project/Data/Construction/BaseModuleCatalog.h8bin";
+        /// <summary>
+        /// The ONE path literal for the baked catalog, held in the same StreamingAssets-relative form the Data
+        /// Monolith uses (<c>H8DataLayoutConstants.DefaultStreamingAssetsRelativePath</c>, declared at
+        /// Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs:24 and consumed at
+        /// Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:171-174).
+        ///
+        /// StreamingAssets is the only route by which a shipped player can read these bytes by path. There is no
+        /// ScriptedImporter for .h8bin in this project, so a .h8bin anywhere else under Assets/ imports as a
+        /// DefaultAsset and cannot be loaded as bytes at runtime at all; and every other .h8bin route here
+        /// resolves through <c>Application.dataPath + ".."</c>, which only reaches the repo root inside the
+        /// editor. The previous target, Assets/_Project/Data/Construction/, was reachable by neither.
+        ///
+        /// When the runtime reader is wired, this literal must MOVE to runtime code beside the other catalog
+        /// constants and this const must become a reference to it, so the path keeps existing in exactly one
+        /// place. Do not satisfy a reader-side path by adding a second literal here.
+        /// </summary>
+        internal const string CatalogStreamingAssetsRelativePath = "Hecton8/Construction/BaseModuleCatalog.h8bin";
+
+        /// <summary>
+        /// Editor write target, derived from <see cref="CatalogStreamingAssetsRelativePath"/> rather than restated.
+        /// This is deliberately stricter than the Data Monolith precedent, which does keep two literals in two
+        /// forms (H8DataMonolithTypes.cs:24 and H8DataMonolithCompiler.cs:32).
+        /// </summary>
+        private const string DefaultBinaryPath = "Assets/StreamingAssets/" + CatalogStreamingAssetsRelativePath;
+
         private const string DefaultCsvPath = "Data/module_build_costs.csv";
         private readonly List<BaseModuleTemplate> _templates = new List<BaseModuleTemplate>(128);
         private ScrollView _scroll;
