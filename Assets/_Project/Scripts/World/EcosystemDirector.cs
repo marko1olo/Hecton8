@@ -226,7 +226,43 @@ namespace Hecton8.World
         }
 #endif
 
-        private const float DefaultSlowTickIntervalSeconds = 0.5f;
+        /// <summary>
+        /// Nominal slow-tick spacing used ONLY as the first-call bootstrap and as the lower clamp for
+        /// <see cref="ResolveSlowTickDeltaSeconds"/>.
+        /// </summary>
+        /// <remarks>
+        /// This constant was 0.5f and was passed directly as the delta for every slow-tick consumer, which
+        /// was wrong by a factor of five. <c>SystemDispatcher.SlowTickIntervalSeconds</c> is 0.1
+        /// (SystemDispatcher.cs:72) and <c>RunSlowTick</c> invokes every plain <c>ISlowTickable</c> once per
+        /// 0.1 s substep (SystemDispatcher.cs:6425-6461), so a 0.5 credit per invocation advanced this
+        /// director's clock 5x faster than wall time in the editor. The blast radius was the whole
+        /// slow lane of this file: spawn-credit regeneration, eclipse migration, campaign toxicity, and -
+        /// worst - <c>_coldTickAccumulator</c>, which gates the Lotka-Volterra sector solve. That gate
+        /// tripped every 10 invocations (5.0 / 0.5) and then handed the job <c>DeltaSeconds =
+        /// coldTickIntervalSeconds</c> = 5 s (:5407, :5448), i.e. 5 s of population integration per 1 s of
+        /// real time. Headless differs again rather than agreeing: at the measured dt of roughly 1.33 s per
+        /// frame only 4 of the 13 needed substeps run (the deliberate MaxCadenceSubstepsPerFrame clamp at
+        /// SystemDispatcher.cs:6425/6471), giving about 3 invocations per second, so the same gate ran the
+        /// solve 1.5x too fast instead of 5x. Two different wrong rates is the reason an editor session and
+        /// a headless session were never comparable ecologies.
+        /// </remarks>
+        private const float DefaultSlowTickIntervalSeconds = 0.1f;
+
+        /// <summary>
+        /// Upper clamp for a measured slow-tick delta, matching
+        /// <c>SystemDispatcher.HomeostasisEmergencySlowTickIntervalSeconds</c> (SystemDispatcher.cs:161),
+        /// the slowest cadence the dispatcher will ever run this lane at.
+        /// </summary>
+        /// <remarks>
+        /// The clamp is what keeps the measured delta from re-injecting the surplus that
+        /// <c>MaxCadenceSubstepsPerFrame</c> deliberately discards. Crediting real elapsed time without a
+        /// ceiling would undo the anti-death-spiral guard the dispatcher documents at
+        /// SystemDispatcher.cs:6471-6484; crediting a fixed constant ignores that the dispatcher's interval
+        /// is itself dynamic across 0.1 / 0.2 / 1.0 s (<c>ResolveSlowTickIntervalSeconds</c> :6765-6786).
+        /// Bounded measurement is the only option that is correct under both.
+        /// </remarks>
+        private const float MaxSlowTickDeltaSeconds = 1f;
+
         private const float FrostTickIntervalSeconds = 5f;
         private const float DefaultWaterSurfaceLevelY = 14.02f;
         private const float DefaultFloraGrazingSearchRadiusMeters = 2.75f;
@@ -1319,6 +1355,26 @@ namespace Hecton8.World
         [SerializeField] private float _debugFloraOvergrowth01;
         [SerializeField] private int _debugBiomassCellCount;
 
+        [Header("Live Heartbeat")]
+        [Tooltip("Seconds of measured simulation time between ecosystem liveness heartbeats. 0 disables the heartbeat.")]
+        [SerializeField, Min(0f)] private float heartbeatIntervalSeconds = 10f;
+        [SerializeField] private int _debugHeartbeatPreyTotal;
+        [SerializeField] private int _debugHeartbeatPredatorTotal;
+
+        [Header("Algae Bloom Trigger")]
+        [Tooltip("Normalized nutrient carrying capacity a macro-cell must reach before an algae bloom can start. 0 disables the trigger.")]
+        [SerializeField, Range(0f, 1f)] private float bloomNutrientThreshold01 = 0.55f;
+        [Tooltip("Minimum normalized light exposure required for photosynthetic bloom onset.")]
+        [SerializeField, Range(0f, 1f)] private float bloomLightThreshold01 = 0.35f;
+        [Tooltip("Coldest water temperature that still permits a bloom, in Celsius.")]
+        [SerializeField] private float bloomTemperatureMinCelsius = 12f;
+        [Tooltip("Warmest water temperature that still permits a bloom, in Celsius.")]
+        [SerializeField] private float bloomTemperatureMaxCelsius = 30f;
+        [Tooltip("Normalized bloom intensity gained per second while trigger conditions hold.")]
+        [SerializeField, Min(0f)] private float bloomRampPerSecond = 0.08f;
+        [SerializeField] private float _debugBloomIntensity01;
+        [SerializeField] private int _debugBloomTriggerCount;
+
         [Header("Threshold Migration")]
         [SerializeField, Range(0f, 1f)] private float migrationFoodThreshold01 = 0.38f;
         [SerializeField, Min(0)] private int migrationPredatorTolerance = 1;
@@ -1340,6 +1396,11 @@ namespace Hecton8.World
         [SerializeField, Range(0.001f, 0.2f)] private float hostilityDecayPerSlowTick = 0.015f;
         [Tooltip("Minimum director peak-hold duration injected when hostility is elevated.")]
         [SerializeField, Min(0f)] private float hostilityPeakHoldSeconds = DefaultHostilityPeakHoldSeconds;
+
+        [Header("Predator Spawn Ratio Gate")]
+        [Tooltip("Scales starvationComfortPreyPerPredator into the minimum prey-per-predator ratio a sector must hold before another predator may spawn. 0 disables the gate.")]
+        [SerializeField, Range(0f, 2f)] private float predatorSpawnRatioGateScale = 1f;
+        [SerializeField] private int _debugPredatorRatioGateDenials;
 
         [Header("Predator Starvation")]
         [Tooltip("Comfort prey-per-predator ratio. Values below this drive desperation pressure upward.")]
@@ -1483,6 +1544,22 @@ namespace Hecton8.World
         private int _floraPredatorAupUploadIndex;
         private byte _apexSpawnGateCachedBlocked;
         private float _coldTickAccumulator;
+
+        /// <summary>
+        /// Dispatcher dilated-clock reading captured at the previous <see cref="SlowTick"/>, or 0 before the
+        /// first one. Drives <see cref="ResolveSlowTickDeltaSeconds"/>.
+        /// </summary>
+        private float _lastSlowTickTimeSeconds;
+
+        /// <summary>Last delta handed to slow-tick consumers. Observability only; see <see cref="EcosystemLiveHeartbeat"/>.</summary>
+        [SerializeField] private float _debugSlowTickDeltaSeconds;
+
+        /// <summary>Measured simulation seconds accumulated toward the next <see cref="EcosystemLiveHeartbeat"/> emission.</summary>
+        private float _heartbeatAccumulator;
+
+        /// <summary>Set once the first heartbeat has captured a population baseline to difference against.</summary>
+        private bool _heartbeatHasBaseline;
+
         private int _activeSectorCount;
         private int _activeBiomassCellCount;
         private int _pendingBiomassImpactCount;
@@ -1794,6 +1871,9 @@ namespace Hecton8.World
                 return false;
             }
 
+            if (IsPredatorOrApex(archetype) && !PassesPreyPredatorRatioGate(worldPosition))
+                return false;
+
             TryBuildEnvelope(worldPosition, out EcosystemEnvelope envelope);
             float playerStress01 = _playerStress01;
             if (RequiresThermalEnvelope(archetype) &&
@@ -1903,7 +1983,124 @@ namespace Hecton8.World
                 return math.max(0.05f, predatorBiomass01);
 
             float preyWeight = math.max(0.05f, preyBiomass01);
-            return preyBiomass01 > 0.9f ? preyWeight * 2f : preyWeight;
+            preyWeight = preyBiomass01 > 0.9f ? preyWeight * 2f : preyWeight;
+
+            // Food gradient is applied to grazers only, and deliberately not to predators or apexes. A
+            // predator's food is the prey population, which the two branches above already weight through
+            // predatorBiomass01; multiplying it by plant food density as well would double-count the same
+            // scarcity and push predators toward algae rather than toward prey.
+            return ResolveFoodGradientSpawnWeight(worldPosition, preyWeight);
+        }
+
+        /// <summary>
+        /// Denies a predator spawn while the containing sector's prey-per-predator ratio sits below the
+        /// scaled starvation comfort ratio.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This is the only place the prey:predator ratio gates anything. The ratio was already computed in
+        /// two places before this - <see cref="RefreshStarvationPressure"/> (:4207-4221) turns it into
+        /// director hostility, and <c>SectorPopulationSolveJob.Execute</c> (:1075-1086) packs it into
+        /// headless hunger - but neither feeds back into whether another predator may appear, so predator
+        /// density could only ever drift upward. <see cref="CanSupportPredatorSpawn"/> is not this check: it
+        /// asks whether any diet-compatible prey contact exists within 500 m, which one surviving grazer
+        /// satisfies no matter how many predators already share the sector.
+        /// </para>
+        /// <para>
+        /// Rate handling: none needed and none applied. The model is a pure ratio comparison over two
+        /// integer populations, so it carries no delta and is invariant to how often the slow lane runs.
+        /// It is also not on a tick path - this runs from the spawn selection path
+        /// (<see cref="TryResolveSpawnWeightMultiplier"/>), which the spawn actuator calls per spawn
+        /// candidate, not per frame.
+        /// </para>
+        /// <para>
+        /// Fails OPEN in every unresolvable case. <see cref="TryGetSectorPopulation"/> returns false while a
+        /// solve job is in flight (:2816-2817), and treating that as a denial would convert a normal
+        /// job-safety window into a silent spawn freeze whose cause is invisible from the outside.
+        /// </para>
+        /// </remarks>
+        private bool PassesPreyPredatorRatioGate(Vector3 worldPosition)
+        {
+            float gateScale = predatorSpawnRatioGateScale;
+            if (!(gateScale > 0f))
+                return true;
+
+            if (!TryGetSectorPopulation(worldPosition, out EcosystemSectorPopulationSample sample))
+                return true;
+
+            float optimalRatio = math.max(0f, starvationComfortPreyPerPredator * gateScale);
+
+            bool allowed = Hecton8.PureLogic.Ecosystem.PreytopredatorSpawnBalancerCalculator.Compute(
+                sample.PreyPopulation,
+                sample.PredatorPopulation,
+                optimalRatio);
+
+            if (!allowed)
+                _debugPredatorRatioGateDenials++;
+
+            return allowed;
+        }
+
+        /// <summary>
+        /// Folds the containing sector's food density into a spawn selection weight, so species accumulate
+        /// where there is food instead of uniformly across the map.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Rate handling: none needed and none applied. The model is a ratio of a sampled food density to an
+        /// authored threshold multiplied into a caller-supplied base weight - no integration, no delta, so
+        /// the slow-lane cadence cannot skew it. Not on a tick path; it runs per spawn candidate.
+        /// </para>
+        /// <para>
+        /// <c>migrationFoodThreshold01</c> is reused as the reference point rather than a new number so the
+        /// spawn gradient and starvation-driven migration read the same authored threshold. Sector food
+        /// density from terrain and biome alone sits just above it (see
+        /// <see cref="NaturalSectorFoodFloor01"/>), so an untouched sector lands near 1.0x and the weight
+        /// only moves meaningfully once harvest pressure or an algae bloom has pushed food down, or a
+        /// bloom-fed sector has pushed it up. That is deliberate: a multiplier that swings hard on a
+        /// resting world would relocate every spawn on map noise.
+        /// </para>
+        /// </remarks>
+        private float ResolveFoodGradientSpawnWeight(Vector3 worldPosition, float baseWeight)
+        {
+            if (!TryGetSectorFoodDensity01(worldPosition, out float foodDensity01))
+                return baseWeight;
+
+            return Hecton8.PureLogic.Ecosystem.BiomassResourceGradientWeightCalculator.Compute(
+                foodDensity01,
+                math.max(0.0001f, migrationFoodThreshold01),
+                baseWeight);
+        }
+
+        /// <summary>
+        /// Reads the solved food density for the sector containing <paramref name="worldPosition"/>.
+        /// </summary>
+        /// <remarks>
+        /// Mirrors the guard order of <see cref="TryGetSectorPopulation"/> exactly, including the
+        /// <see cref="HasPendingSimulationJob"/> bail: <c>_sectorFrontStates</c> is one of the buffers the
+        /// scheduled solve holds a write lock on, so reading it while that job is in flight is the
+        /// job-safety violation the rest of this file is careful to avoid.
+        /// </remarks>
+        private bool TryGetSectorFoodDensity01(Vector3 worldPosition, out float foodDensity01)
+        {
+            foodDensity01 = 0f;
+            if (!IsInitialized || HasPendingSimulationJob())
+                return false;
+
+            if (!TryQuantizeSector(worldPosition, out int2 sectorCoord))
+                return false;
+
+            if (!TryResolveSectorSlotReadOnly(sectorCoord, out int slotIndex))
+                return false;
+
+            if (!_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates) ||
+                (uint)slotIndex >= (uint)sectorFrontStates.Length)
+            {
+                return false;
+            }
+
+            foodDensity01 = math.saturate(sectorFrontStates[slotIndex].FoodDensity01);
+            return true;
         }
 
         private float ResolveBiomeGradientSpawnWeight(CreatureArchetypeData archetype)
@@ -2642,6 +2839,67 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Measures the real interval since the previous <see cref="SlowTick"/> from the dispatcher's
+        /// dilated clock, bounded to the dispatcher's own cadence range.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Rate correctness on this lane cannot come from a constant. <c>ISlowTickable.SlowTick()</c> takes
+        /// no delta on purpose ("Delta time is intentionally not passed", ITickable.cs:118) and the
+        /// dispatcher's interval is not fixed - <c>ResolveSlowTickIntervalSeconds</c>
+        /// (SystemDispatcher.cs:6765-6786) returns 1.0 s under homeostasis emergency, 0.2 s under thermal
+        /// throttle, up to 0.2 s under quality survival pressure, and 0.1 s otherwise. The dispatcher hands
+        /// that live value to <c>WorldSpatialHashGrid.SlowTickMaintenance</c> and
+        /// <c>CombatDamageRuntime.SlowTick</c> (:6465-6467) but there is no accessor for an
+        /// <c>ISlowTickable</c> to read it, so this director measures it instead.
+        /// </para>
+        /// <para>
+        /// Clamped low at <see cref="DefaultSlowTickIntervalSeconds"/> and high at
+        /// <see cref="MaxSlowTickDeltaSeconds"/>. The high clamp is load-bearing: several substeps can run
+        /// inside one frame, and every substep after the first reads an unchanged
+        /// <c>DilatedTimeSeconds</c>, so the raw measurement is 0 for those and the frame's full delta for
+        /// the first. Bounding at the dispatcher's slowest cadence keeps a late frame from crediting
+        /// unbounded catch-up time, which is the surplus <c>MaxCadenceSubstepsPerFrame</c> intentionally
+        /// throws away (SystemDispatcher.cs:6471-6484). The low clamp keeps the zero-delta substeps from
+        /// stalling accumulators outright, which would trade a 5x-too-fast ecology for a frozen one.
+        /// </para>
+        /// <para>
+        /// Not <c>Time.deltaTime</c>: hot-path law forbids reading it inside owner tick logic, and the
+        /// dilated clock is also the correct clock here because it already carries pause and time dilation.
+        /// </para>
+        /// </remarks>
+        private float ResolveSlowTickDeltaSeconds()
+        {
+            float nowSeconds = ReadDispatcherTimeSeconds();
+
+            // A zero reading means no dispatcher instance resolved (ReadDispatcherTimeSeconds :3227-3235
+            // returns 0 for null, non-finite and non-positive alike). Fall back to nominal rather than
+            // crediting a garbage delta, and do not latch the clock.
+            if (nowSeconds <= 0f)
+            {
+                _debugSlowTickDeltaSeconds = DefaultSlowTickIntervalSeconds;
+                return DefaultSlowTickIntervalSeconds;
+            }
+
+            float previousSeconds = _lastSlowTickTimeSeconds;
+            _lastSlowTickTimeSeconds = nowSeconds;
+
+            // First tick after init or after a clock reset has no previous sample to difference against.
+            if (previousSeconds <= 0f || nowSeconds < previousSeconds)
+            {
+                _debugSlowTickDeltaSeconds = DefaultSlowTickIntervalSeconds;
+                return DefaultSlowTickIntervalSeconds;
+            }
+
+            float deltaSeconds = math.clamp(
+                nowSeconds - previousSeconds,
+                DefaultSlowTickIntervalSeconds,
+                MaxSlowTickDeltaSeconds);
+            _debugSlowTickDeltaSeconds = deltaSeconds;
+            return deltaSeconds;
+        }
+
+        /// <summary>
         /// Advances the sector population solve at 0.1 Hz using a Burst job.
         /// </summary>
         public void SlowTick()
@@ -2649,15 +2907,19 @@ namespace Hecton8.World
             if (!IsInitialized)
                 return;
 
+            float slowTickDeltaSeconds = ResolveSlowTickDeltaSeconds();
+
             RefreshMacroSwarmScalabilityCache();
             RefreshMacroEcosystemVaultHandlesCold(ResolveDataVault());
             DrainBiomeGradientSignal();
             DecayBiomeHostility();
-            UpdateSpawnCreditBudget(DefaultSlowTickIntervalSeconds);
+            UpdateSpawnCreditBudget(slowTickDeltaSeconds);
             SyncPendingHibernatedFaunaPopulationRecords();
             EnsurePlayerSectorRegistered();
-            TickEclipsePredatorShallowMigration(DefaultSlowTickIntervalSeconds);
-            TickCampaignToxicityPressure(DefaultSlowTickIntervalSeconds);
+            TickEclipsePredatorShallowMigration(slowTickDeltaSeconds);
+            TickCampaignToxicityPressure(slowTickDeltaSeconds);
+            EvaluateAlgaeBloomTrigger(slowTickDeltaSeconds);
+            EcosystemLiveHeartbeat(slowTickDeltaSeconds);
             if (TryResolvePlayerRuntimePosition(out Vector3 playerPosition))
             {
                 PublishFloraPredatorAupBuffer(playerPosition);
@@ -2670,7 +2932,12 @@ namespace Hecton8.World
                 PublishApexPresenceFake(false);
             }
 
-            _coldTickAccumulator += DefaultSlowTickIntervalSeconds;
+            // Was DefaultSlowTickIntervalSeconds when that constant was 0.5f, which is what made the
+            // Lotka-Volterra sector solve run five times too fast: the gate below tripped every 10
+            // invocations and then handed SectorPopulationSolveJob DeltaSeconds = coldTickIntervalSeconds
+            // (5 s, :5407/:5448) for one real second of elapsed time. Feeding the measured delta makes the
+            // trip rate track wall time, so the 5 s the job integrates corresponds to 5 s that happened.
+            _coldTickAccumulator += slowTickDeltaSeconds;
             if (_coldTickAccumulator >= coldTickIntervalSeconds)
             {
                 if (HasPendingSimulationJob())
@@ -2773,6 +3040,219 @@ namespace Hecton8.World
             signal.Channel = AcousticPingSignal.ChannelLeviathanRoar;
             signal.Flags = AcousticPingSignal.FlagLeviathanRoar;
             SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
+        }
+
+        /// <summary>
+        /// Emits a recurring ecosystem liveness reading - populations, net population change, bloom activity
+        /// and the measured slow-tick delta - on a fixed interval of measured simulation time.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <see cref="ReportFaunaRecordCensusOnce"/> is latched to exactly one emission per process, which
+        /// proves the ecology was seeded but cannot prove it is still evolving. A single census line is
+        /// identical whether the sector solve ran once and froze or ran for the whole session, so a headless
+        /// run could report a populated world that had been static since its first cold tick. This emits
+        /// repeatedly and includes the deltas, so a run where populations never move is visibly distinct
+        /// from a run where they do.
+        /// </para>
+        /// <para>
+        /// Rate handling: the interval is accumulated from the measured slow-tick delta, not from a tick
+        /// count, so the heartbeat spacing is wall-clock stable across the editor and headless even though
+        /// their slow-tick frequencies differ by roughly 3x. A tick-count cadence would have made headless
+        /// heartbeats about 3x further apart and skewed any rate a reader tried to derive from them.
+        /// </para>
+        /// <para>
+        /// The population deltas are reported as NET change and labelled that way. They are the difference
+        /// of two totals, so a sector that gained three prey and lost three prey inside one interval reads
+        /// as zero. Gross births and deaths are not available here: they exist only as the <c>dxdt</c>/
+        /// <c>dydt</c> terms inside <c>SectorPopulationSolveJob.Execute</c> (:1028-1031) and would have to be
+        /// exported from that job to be reported honestly. Calling a net rise "births" would overstate what
+        /// this measures.
+        /// </para>
+        /// <para>
+        /// Allocation: the message is built only inside the diagnostic guard, matching the reasoning already
+        /// documented on <see cref="ReportFaunaRecordCensusOnce"/> - <c>H8Debug</c> is
+        /// <c>[Conditional]</c>, so without the guard a player build would keep the concatenation and
+        /// discard the call. It allocates one string per interval, not per tick, and nothing in a player
+        /// build.
+        /// </para>
+        /// </remarks>
+        private void EcosystemLiveHeartbeat(float deltaSeconds)
+        {
+            if (!(heartbeatIntervalSeconds > 0f))
+                return;
+
+            _heartbeatAccumulator += math.max(0f, deltaSeconds);
+            if (_heartbeatAccumulator < heartbeatIntervalSeconds)
+                return;
+
+            _heartbeatAccumulator = 0f;
+
+            // Emitted even while a solve job is in flight, with sectorCount -1 standing for "buffer not
+            // readable this interval". Skipping the emission instead would make a contended interval and a
+            // dead director produce the same silence, which is the failure ReportFaunaRecordCensusOnce
+            // already calls out.
+            int sectorCount = -1;
+            int preyTotal = 0;
+            int predatorTotal = 0;
+            int populatedSectors = 0;
+
+            if (!HasPendingSimulationJob() &&
+                _sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates))
+            {
+                sectorCount = math.min(_activeSectorCount, sectorFrontStates.Length);
+                for (int i = 0; i < sectorCount; i++)
+                {
+                    SectorPopulationState state = sectorFrontStates[i];
+                    int prey = math.max(0, state.PreyPopulationRounded);
+                    int predator = math.max(0, state.PredatorPopulationRounded);
+                    preyTotal += prey;
+                    predatorTotal += predator;
+                    if (prey > 0 || predator > 0)
+                        populatedSectors++;
+                }
+            }
+
+            // Deltas are only meaningful when this interval actually read the buffer AND a previous reading
+            // exists to difference against.
+            //
+            // Both guards matter. The first emission has no baseline, and reporting one would show the
+            // seeded world as a mass birth event that a reader diffing heartbeats would then count twice.
+            // An unreadable interval (sectorCount -1, solve job in flight) has totals of 0 that mean
+            // "not sampled", not "everything died" - differencing against those would print a mass die-off
+            // followed by an equal mass birth on the next interval, inventing two population events out of
+            // one contended read. The baseline is therefore left untouched unless it was really measured.
+            bool sampled = sectorCount >= 0;
+            bool canDiff = sampled && _heartbeatHasBaseline;
+            int netPrey = canDiff ? preyTotal - _debugHeartbeatPreyTotal : 0;
+            int netPredator = canDiff ? predatorTotal - _debugHeartbeatPredatorTotal : 0;
+            if (sampled)
+            {
+                _heartbeatHasBaseline = true;
+                _debugHeartbeatPreyTotal = preyTotal;
+                _debugHeartbeatPredatorTotal = predatorTotal;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // COLD ALLOC: string[1] per heartbeat interval - ecosystem liveness readout - owner: EcosystemDirector
+            Hecton8.Core.H8Debug.Log(
+                "[ECOHEARTBEAT] sectors=" + sectorCount +
+                " populated=" + populatedSectors +
+                " prey=" + preyTotal +
+                " predators=" + predatorTotal +
+                " netPrey=" + netPrey +
+                " netPredators=" + netPredator +
+                " biomassCells=" + _activeBiomassCellCount +
+                " bloomIntensity01=" + _debugBloomIntensity01 +
+                " bloomTriggers=" + _debugBloomTriggerCount +
+                " ratioGateDenials=" + _debugPredatorRatioGateDenials +
+                " slowDt=" + _debugSlowTickDeltaSeconds,
+                this);
+#endif
+        }
+
+        /// <summary>
+        /// Evaluates nutrient/light/temperature bloom onset for the player's sector and ramps that sector's
+        /// algae bloom toward the triggered intensity.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Before this, <c>AlgaeBloom01</c> could only be raised by prey overpopulation inside
+        /// <c>SectorPopulationSolveJob.Execute</c> (:1044-1048, <c>prey &gt; PreyCapacity</c>), so a bloom was
+        /// strictly a symptom of too many grazers and nothing environmental could start one. Nutrients,
+        /// light and temperature were all available and none of them were consulted. The field is not
+        /// decorative: the solve reads it into food density (:1015-1021), it suppresses oxygen (:1047), and
+        /// <see cref="RefreshStarvationPressure"/> reads it as a hostility source when a sector has no
+        /// predators (:4213), so this closes a loop that was already wired on the consuming side.
+        /// </para>
+        /// <para>
+        /// Rate handling: the model itself is a pure threshold test and returns no rate, so
+        /// <paramref name="deltaSeconds"/> is applied to the RAMP rather than to the trigger. The measured
+        /// slow-tick delta from <see cref="ResolveSlowTickDeltaSeconds"/> is multiplied by
+        /// <c>bloomRampPerSecond</c>, which is why a bloom takes the same wall-clock time to build in the
+        /// editor and in headless even though the number of slow ticks per second differs by roughly 3x.
+        /// Ramping by a per-tick constant instead would have made blooms about 3x slower in headless.
+        /// </para>
+        /// <para>
+        /// The intensity is a ceiling, not an assignment: the ramp only ever moves bloom upward here and
+        /// never pulls it down to the model's value, because the solve owns bloom decay (:1051) and
+        /// overwriting that would let this method cancel an overpopulation bloom the solve is holding.
+        /// </para>
+        /// <para>
+        /// KNOWN GAP, stated rather than hidden: this evaluates the PLAYER's sector, so it does not run in a
+        /// headless session at all. <c>TryResolvePlayerRuntimePosition</c> resolves through
+        /// <c>TryResolvePlayerAup</c>, and GameBootstrapper skips the player phase under <c>-h8headless</c>,
+        /// which is the same dependency documented at length on <see cref="TryResolveSeedObserverAup"/>.
+        /// Environmental blooms are therefore an editor/player behaviour today. Extending them to headless
+        /// means evaluating registered sectors against a sampled envelope instead of the observer's sector,
+        /// which needs a per-sector temperature and light sample the sector state does not carry yet
+        /// (<c>TemperatureScore01</c> is a score, not a temperature), so it is a separate change rather than
+        /// a wider guard here.
+        /// </para>
+        /// </remarks>
+        private void EvaluateAlgaeBloomTrigger(float deltaSeconds)
+        {
+            if (!(bloomNutrientThreshold01 > 0f) || !(bloomRampPerSecond > 0f))
+                return;
+
+            // Mirrors ReportPredation's guard order (:4079-4086): never touch the sector buffers while the
+            // solve job owns them.
+            if (HasPendingSimulationJob())
+                return;
+
+            if (!TryResolvePlayerRuntimePosition(out Vector3 playerPosition))
+                return;
+
+            if (!TryQuantizeSector(playerPosition, out int2 sectorCoord))
+                return;
+
+            if (!TryBuildEnvelope(playerPosition, out EcosystemEnvelope envelope))
+                return;
+
+            // Carrying capacity is the nutrient budget of the macro-cell, so it is the honest nutrient input
+            // here; prey/predator biomass are consumers of that budget, not the budget itself.
+            if (!TryGetBiomassAvailability(playerPosition, out _, out _, out float carryingCapacity01))
+                return;
+
+            (bool bloomTriggered, float bloomIntensity01) = Hecton8.PureLogic.Ecosystem.BloomTriggerThresholdCalculator.Compute(
+                carryingCapacity01,
+                envelope.LightExposure01,
+                envelope.TemperatureCelsius,
+                bloomNutrientThreshold01,
+                bloomLightThreshold01,
+                bloomTemperatureMinCelsius,
+                bloomTemperatureMaxCelsius);
+
+            _debugBloomIntensity01 = bloomTriggered ? bloomIntensity01 : 0f;
+            if (!bloomTriggered || !(bloomIntensity01 > 0f))
+                return;
+
+            if (!TryLockSectorSolveJobBuffers())
+                return;
+
+            try
+            {
+                int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
+                if (slotIndex < 0)
+                    return;
+
+                SectorPopulationState state = _sectorFrontStates[slotIndex];
+                float ramped = math.min(
+                    bloomIntensity01,
+                    math.saturate(state.AlgaeBloom01) + (bloomRampPerSecond * math.max(0f, deltaSeconds)));
+                if (ramped <= state.AlgaeBloom01)
+                    return;
+
+                state.AlgaeBloom01 = math.saturate(ramped);
+                _sectorFrontStates[slotIndex] = state;
+                _sectorBackStates[slotIndex] = state;
+                WriteHeadlessSlot(slotIndex, in state);
+                _debugBloomTriggerCount++;
+            }
+            finally
+            {
+                UnlockSectorSolveJobBuffers();
+            }
         }
 
         private void DrainBiomeGradientSignal()
@@ -4798,6 +5278,13 @@ namespace Hecton8.World
             _lastSectorResidencySignalDrainFrame = -1;
             _scheduledApexTerritoryOverlapCount = 0;
             _coldTickAccumulator = 0f;
+
+            // Drop the slow-tick clock latch with the accumulator it feeds, so the first tick after a
+            // shutdown/hot-swap re-bootstraps at the nominal delta instead of differencing against a stale
+            // timestamp from the previous service lifetime.
+            _lastSlowTickTimeSeconds = 0f;
+            _heartbeatAccumulator = 0f;
+            _heartbeatHasBaseline = false;
             _scheduledSolveHandle = default;
             _scheduledGenomeMutationHandle = default;
             _macroSwarmTravelHandle = default;
@@ -9172,10 +9659,29 @@ namespace Hecton8.World
             return (byte)math.select(0, 1, value);
         }
 
-        #region JulesLink_BiomassResourceGradientWeightCalculator
-        private static void JulesLink_BiomassResourceGradientWeightCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.BiomassResourceGradientWeightCalculator); }
-        #endregion
+        // JulesLink_BiomassResourceGradientWeightCalculator removed: the model now has a real call site in
+        // ResolveFoodGradientSpawnWeight, reached from ResolveBiomassSpawnSelectionWeight. A keep-alive left
+        // beside a live call would keep advertising the model as unwired.
 
+        // These two keep-alives are deliberately NOT removed, because neither model was wired and saying so
+        // in the inventory is the point.
+        //
+        // BiomeDepthViabilityCurveCalculator is a SYMMETRIC Gaussian preference around an optimal depth with
+        // a tolerance, and it returns hard 0 once the sample is more than one tolerance away on EITHER side.
+        // Nothing in this project authors a per-species depth band: neither CreatureArchetypeData nor
+        // FaunaDataTemplate carries any depth field at all. The only depth datum available is
+        // ThermalSpawnDepthThresholdMeters (2000 m), which is a ONE-SIDED MINIMUM - thermal species must be
+        // at least that deep. Feeding a one-sided minimum in as a symmetric optimum would start rejecting
+        // thermal spawns BELOW 2000 m, which pass today, so wiring it here would be a regression rather than
+        // a feature. It needs an authored optimal-depth/tolerance pair on the species data first.
+        //
+        // _2dGridHeatmapDecayCalculator cannot be called from any tick path as written: it allocates
+        // `new byte[grid.Length]` on every invocation (2dGridHeatmapDecayCalculator.cs:34) and throws
+        // ArgumentNullException on a null grid, despite a doc comment claiming it is "Fully stateless and
+        // allocation-free". Decaying a heatmap in place needs an in-place overload that writes back into the
+        // caller's buffer; there is also no live heatmap to decay yet, since BindSectorFoodDensityHeatmap has
+        // no caller anywhere in the project (see the NaturalSectorFoodFloor01 remarks and the unbound-heatmap
+        // warning).
         #region JulesLink_BiomeDepthViabilityCurveCalculator
         private static void JulesLink_BiomeDepthViabilityCurveCalculator() { _ = typeof(Hecton8.PureLogic.Ecosystem.BiomeDepthViabilityCurveCalculator); }
         #endregion
