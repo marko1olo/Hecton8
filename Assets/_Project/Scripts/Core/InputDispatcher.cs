@@ -150,6 +150,19 @@ namespace Hecton8.Core
 #endif
             ;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // The vault does NOT compare _activeLocks against the 64-bit guard mask. It folds the mask onto its
+        // 32-bit active-lock space with low|high (GlobalDataVault.cs:2930-2932) and refuses the guard when
+        // ANY of those folded bits is set in _activeLocks (HasActiveLockConflictForMutationMask, :3253-3257).
+        // Active-lock bits are allocated as 1 << (bufferId & 31) (ResolveActiveLockBit, :3008-3012), so this
+        // owner's 14 buffer IDs claim 13 of the 32 residues - and every OTHER buffer in the project sharing
+        // one of those residues can refuse this owner's guard while having nothing to do with input.
+        // Derived from the same constant so the two can never drift. Diagnostic-only.
+        private static readonly uint InputOwnerActiveLockConflictMask =
+            unchecked((uint)InputOwnerMutationGuardMask) |
+            unchecked((uint)(InputOwnerMutationGuardMask >> 32));
+#endif
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong MutationGuardBit(BufferID bufferId)
         {
@@ -295,6 +308,27 @@ namespace Hecton8.Core
         private int _diagReadObservations;
         private int _diagReportsEmitted;
         private bool _diagFinalCensusEmitted;
+        // Last refusal identity reported by DiagReportPublishRefusal. 0 means nothing reported yet, so the
+        // FIRST refusal of a session always prints. Guard refusals use the small codes below; buffer
+        // refusals use PublishRefusalBufferFlag plus one nibble per buffer, so a change in ANY of the four
+        // reprints exactly once. Transition-gated, not per frame: probe7 shows 1240 refusals in 313 frames.
+        private int _diagPublishRefusalReported;
+        // Guard refusal codes, in the order the checks are evaluated - two here, then
+        // GlobalDataVault.TryAcquireMutationGuard (GlobalDataVault.cs:2912-2994).
+        private const int PublishRefusalGuardVaultNull = 1;
+        private const int PublishRefusalGuardOwnerThread = 2;
+        private const int PublishRefusalGuardCompactionFence = 3;
+        private const int PublishRefusalGuardMaskHeld = 4;
+        private const int PublishRefusalGuardActiveLockConflict = 5;
+        private const int PublishRefusalGuardOpaque = 6;
+        private const int PublishRefusalBufferFlag = 1 << 16;
+        // Buffer states from DiagClassifyInputBuffer. 1 and 2 are DIFFERENT failures: 1 means this owner
+        // never got a handle at all, 2 means it holds one the vault will not honour.
+        private const int DiagBufferOk = 0;
+        private const int DiagBufferNoHandle = 1;
+        private const int DiagBufferVaultRefused = 2;
+        private const int DiagBufferNotCreated = 3;
+        private const int DiagBufferTooShort = 4;
         private float _diagLastOverrideMoveX;
         private float _diagLastOverrideMoveY;
         private float _diagLastPostMaskMoveX;
@@ -861,6 +895,7 @@ namespace Hecton8.Core
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _diagPublishGuardFail++;
+            DiagReportGuardRefusal();
 #endif
         }
 
@@ -868,8 +903,159 @@ namespace Hecton8.Core
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _diagPublishBufferFail++;
+            DiagReportBufferRefusal();
 #endif
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // -------------------------------------------------------------------------------------------------
+        // Which precondition refused the publish.
+        //
+        // WHY THIS EXISTS. The hop census above already localised the fault by measurement:
+        // Logs/h8_probe7.log reports "publishAttempt=1240 publishGuardFail=1240 publishBufferFail=0
+        // publishOk=0" on all three emissions, so TryAcquireInputMutationGuard refuses 100% of publishes and
+        // the four TryResolveInputBuffer calls are never even reached (publishBufferFail=0 is unreachable
+        // code, not a passing check). What the census can NOT say is WHICH precondition refused, and the
+        // guard has six distinct refusal paths that produce byte-identical observables - GlobalDataVault
+        // records every one of them through RecordMutationGuardContentionFault (GlobalDataVault.cs:5454)
+        // into a telemetry ring that nothing in the probe route prints.
+        //
+        // Every discriminator below is already public on IDataVault (:42-51), so this reads the vault's own
+        // state rather than guessing: IsCompactionFenceActive, ActiveMutationGuardMask, ActiveBurstLockMask.
+        // Two refusal paths are NOT observable from outside - a vault whose _initialized went false and a
+        // contended _blockMutationGate (TryEnterBlockMutationGate, :3028) - so they collapse into
+        // PublishRefusalGuardOpaque, and that code appearing is itself the answer: it excludes the other
+        // four. probe7 already excludes two of them at end-of-run, "[H8_PLAYPROBE] DETERMINISM OWNER
+        // LIFETIME ... vaultAllocationLocked=False vaultCompactionFenceActive=False".
+        //
+        // Transition-gated, not per frame. 1240 refusals in one run collapse to one line per distinct cause,
+        // and the first refusal always prints because _diagPublishRefusalReported starts at 0.
+        // -------------------------------------------------------------------------------------------------
+        private void DiagReportGuardRefusal()
+        {
+            IDataVault vault = _dataVault;
+            int code;
+            ulong guardHeld = 0UL;
+            uint activeLockConflict = 0u;
+            if (vault == null)
+            {
+                code = PublishRefusalGuardVaultNull;
+            }
+            else if (!IsOwnerThread())
+            {
+                code = PublishRefusalGuardOwnerThread;
+            }
+            else if (vault.IsCompactionFenceActive)
+            {
+                code = PublishRefusalGuardCompactionFence;
+            }
+            else
+            {
+                guardHeld = vault.ActiveMutationGuardMask & InputOwnerMutationGuardMask;
+                activeLockConflict = vault.ActiveBurstLockMask & InputOwnerActiveLockConflictMask;
+                if (guardHeld != 0UL)
+                    code = PublishRefusalGuardMaskHeld;
+                else if (activeLockConflict != 0u)
+                    code = PublishRefusalGuardActiveLockConflict;
+                else
+                    code = PublishRefusalGuardOpaque;
+            }
+
+            if (_diagPublishRefusalReported == code)
+                return;
+
+            _diagPublishRefusalReported = code;
+            // COLD ALLOC: one refusal string per distinct cause per session - owner: InputDispatcher
+            Hecton8.Core.H8Debug.LogWarning(
+                "[H8_INPUTREFUSE] stage=GUARD code=" + code +
+                " (1=vaultNull 2=notOwnerThread 3=compactionFence 4=guardBitsAlreadyHeld" +
+                " 5=activeLockConflict 6=opaque:blockMutationGateContended-or-vaultNotInitialized)" +
+                " ownerThread=" + _ownerThreadId +
+                " callThread=" + Thread.CurrentThread.ManagedThreadId +
+                " | ownerGuardMask=" + InputOwnerMutationGuardMask +
+                " vaultGuardMask=" + (vault == null ? 0UL : vault.ActiveMutationGuardMask) +
+                " heldOverlap=" + guardHeld +
+                " | ownerConflictMask=" + InputOwnerActiveLockConflictMask +
+                " vaultActiveLocks=" + (vault == null ? 0u : vault.ActiveBurstLockMask) +
+                " lockOverlap=" + activeLockConflict +
+                " lowestConflictBit=" + (activeLockConflict == 0u ? -1 : (int)math.tzcnt(activeLockConflict)) +
+                " | allocLocked=" + (vault != null && vault.IsAllocationLocked) +
+                " fence=" + (vault != null && vault.IsCompactionFenceActive) +
+                " vaultGenId=" + (vault == null ? 0u : vault.VaultGenerationID) +
+                " genMiss=" + (vault == null ? 0 : vault.GenerationHandleMissCount) +
+                " | buffersReady=" + _deterministicVaultBuffersReady +
+                " buffersCleared=" + _deterministicVaultBuffersCleared +
+                " guardDepth=" + _inputMutationGuardDepth +
+                " attempts=" + _diagPublishAttempts +
+                " - code 4 means an owner holds bits from THIS mask and did not release them; code 5 means a" +
+                " buffer unrelated to input is pinned or write-locked on a colliding residue, because the" +
+                " vault folds the 64-bit guard mask onto 32 active-lock bits with (bufferId & 31) and this" +
+                " owner claims 13 of those 32. buffersCleared=False additionally means the guarded cold block" +
+                " at EnsureDeterministicInputNativeBuffers never ran, so ShinobuInputProfile still holds" +
+                " UninitializedMemory rather than InitializeDefaultInputProfile's values.");
+        }
+
+        private void DiagReportBufferRefusal()
+        {
+            int journal = DiagClassifyInputBuffer(in _inputJournalHandle, DeterministicInputRingCapacity, out int journalLength);
+            int predicted = DiagClassifyInputBuffer(in _predictedInputHandle, DeterministicInputRingCapacity, out int predictedLength);
+            int targets = DiagClassifyInputBuffer(in _predictedInputAupTargetHandle, DeterministicInputRingCapacity, out int targetsLength);
+            int bridge = DiagClassifyInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out int bridgeLength);
+            int code = PublishRefusalBufferFlag | journal | (predicted << 4) | (targets << 8) | (bridge << 12);
+            if (_diagPublishRefusalReported == code)
+                return;
+
+            _diagPublishRefusalReported = code;
+            // COLD ALLOC: one refusal string per distinct cause per session - owner: InputDispatcher
+            Hecton8.Core.H8Debug.LogWarning(
+                "[H8_INPUTREFUSE] stage=BUFFER need=" + DeterministicInputRingCapacity +
+                " (state 0=ok 1=noHandle:neverAllocated 2=vaultRefusedHandle:staleGeneration/missingMetadata/ownerMismatch" +
+                " 3=resolvedNotCreated 4=resolvedTooShort)" +
+                " | journal id=" + _inputJournalHandle.BufferID +
+                " gen=" + _inputJournalHandle.Generation +
+                " len=" + journalLength +
+                " state=" + journal +
+                " | predicted id=" + _predictedInputHandle.BufferID +
+                " gen=" + _predictedInputHandle.Generation +
+                " len=" + predictedLength +
+                " state=" + predicted +
+                " | aupTargets id=" + _predictedInputAupTargetHandle.BufferID +
+                " gen=" + _predictedInputAupTargetHandle.Generation +
+                " len=" + targetsLength +
+                " state=" + targets +
+                " | bridgeRing id=" + _inputStateBridgeRingHandle.BufferID +
+                " gen=" + _inputStateBridgeRingHandle.Generation +
+                " len=" + bridgeLength +
+                " state=" + bridge +
+                " | vaultGenId=" + (_dataVault == null ? 0u : _dataVault.VaultGenerationID) +
+                " genMiss=" + (_dataVault == null ? 0 : _dataVault.GenerationHandleMissCount) +
+                " - state 1 and state 2 are DIFFERENT defects: 1 means this owner never got a handle" +
+                " (EnsureGenerationHandle was never reached or returned empty), 2 means it holds one the" +
+                " vault will not honour. Neither is a stale-handle generation stamp unless genMiss is rising.");
+        }
+
+        // Mirrors TryResolveInputBuffer's checks but reports WHICH one failed instead of collapsing all four
+        // into one bool. Zero allocation; only ever called from the refusal path.
+        private int DiagClassifyInputBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out int actualLength) where T : struct
+        {
+            actualLength = 0;
+            IDataVault vault = _dataVault;
+            if (vault == null || handle.BufferID == 0u)
+                return DiagBufferNoHandle;
+
+            if (!vault.TryResolveHandle(in handle, out NativeArray<T> buffer))
+                return DiagBufferVaultRefused;
+
+            if (!buffer.IsCreated)
+                return DiagBufferNotCreated;
+
+            actualLength = buffer.Length;
+            return actualLength < requiredLength ? DiagBufferTooShort : DiagBufferOk;
+        }
+#endif
 
         private void DiagRecordPublishOk()
         {
