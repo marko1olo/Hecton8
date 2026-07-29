@@ -367,9 +367,49 @@ Three things could not have caught this, and each is worth knowing:
 
 - **The lock-free compile gate.** `CONTRIBUTING.md` records that it emits FALSE `CS0433`/`CS0656` against
   `Hecton8.Editor`, so it is untrustworthy for precisely the assembly that broke.
-- **The unit tests.** `Assets/_Project/Tests/Editor/WorldWaterLevelCalibrationEditTests.cs` "references"
-  `WorldWaterLevelCalibrationMath` only through `StringAssert.Contains` on source text. A source-text
-  assertion compiles whether or not the reference resolves — it is not a compile.
+- **The unit tests — and the reason is worse than I first wrote.**
+  `Assets/_Project/Tests/Editor/WorldWaterLevelCalibrationEditTests.cs` "references"
+  `WorldWaterLevelCalibrationMath` only through `StringAssert.Contains` on source text, and a source-text
+  assertion compiles whether or not the reference resolves. That much is true. But I claimed the test
+  "stayed green" through the break, and **it never ran at all** — see
+  `Two entire test assemblies are compiled out by a symbol nobody defines` below.
+
+### Two entire test assemblies are compiled out by a symbol nobody defines — measured 2026-07-29
+
+```
+Assets/_Project/Tests/Editor/Hecton8.EditModeTests.asmdef:49   "defineConstraints": [ "NEVER_COMPILE_TESTS" ]
+rg NEVER_COMPILE_TESTS ProjectSettings/ProjectSettings.asset   0 matches — defined for NO platform
+Library/ScriptAssemblies/Hecton8.EditModeTests.dll             ABSENT
+Library/ScriptAssemblies/Hecton8.PlayModeTests.dll             ABSENT
+...while 179 other Hecton8.*.dll are present
+```
+
+`Hecton8.PlayModeTests.asmdef:23` carries the same constraint. So the edit-mode and play-mode test
+assemblies do not exist as compiled code, have never run, and cannot fail. Any statement of the form
+"the tests pass" that includes them is meaningless, and a suite report that omits them looks identical to
+one where they passed.
+
+Contrast with a LIVE test assembly, which is how the difference was established rather than assumed:
+`Assets/_Project/Tests/Editor/SaveSystem/Hecton8.SaveSystem.EditModeTests.asmdef` constrains on
+`UNITY_INCLUDE_TESTS` — a real Unity define — and its DLL **is** present. So the mechanism is specific to
+that one invented symbol, not to test assemblies in general.
+
+**The source-text practice is also about 4x larger than this document claimed.** Measured across all 433
+files under `Assets/_Project/Tests/Editor`, not the 62 previously stated: 258 files read project files as
+text, 1,476 `File.ReadAll*` calls, 6,093 `Extract*Body(...)` calls carving method bodies out of source
+strings, and **29,345 source-text assertions** — 16,394 `StringAssert.Contains`, 2,696 `DoesNotContain`,
+6,379 `Does.Contain`, 1,569 `Does.Not.Contain`, and **2,307 statement-ORDER pins** (1,477 `AssertTextBefore`
+plus `Assert.Greater`/`Assert.Less` on raw `IndexOf` offsets). "Some use `Assert.Greater/Less` on `IndexOf`"
+understated a 2,307-assertion practice.
+
+Of those, **234 assertions (0.8%, in 17 files) are legitimate architecture guards** — bans on `void Update(`,
+`StartCoroutine`, `System.Linq`, `Camera.main`, `MaterialPropertyBlock`, `UnityEngine.Random`, `PlayerPrefs`,
+`JsonUtility`, merge-conflict markers, and direct `new NativeArray<...>`. Those are correct as text
+assertions, the hot-path law depends on them, and they must not be "modernised" away. The other 29,075
+(99.1%, 238 files) assert on implementation detail or statement order.
+
+- **Exit code alone.** The first attempt returned **0** from the shell despite `Scripts have compiler
+  errors` and an internal exit 1. Reading the log was the only way to see it.
 - **Exit code alone.** The first attempt returned **0** from the shell despite `Scripts have compiler
   errors` and an internal exit 1. Reading the log was the only way to see it.
 
