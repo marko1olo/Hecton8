@@ -43,7 +43,11 @@ namespace Hecton8.AI.Editor
             Material leviathanMaterial = EnsureMaterial("Mat_LeviathanProxy.mat", new Color(0.75f, 0.22f, 0.22f));
             Material droneMaterial = EnsureMaterial("Mat_DroneProxy.mat", new Color(0.70f, 0.86f, 1.00f));
 
-            EnsureProxyPrefab(SmallPassiveProxyPath, BuildRoot("SmallPassiveProxy", PrimitiveType.Sphere, passiveMaterial, new Vector3(0.8f, 0.45f, 1.2f), AddSmallPassiveCollider, kinematicOnly: true));
+            // expectMonoBehaviours mirrors kinematicOnly, which is the ONLY reason a proxy legitimately has
+            // no brain: BuildRoot puts AddComponent<FaunaBrain>() and AddComponent<ScannableTarget>() inside
+            // if (!kinematicOnly). Kept as an explicit argument at the call site rather than inferred inside
+            // EnsureProxyPrefab, so the two flags cannot drift apart silently.
+            EnsureProxyPrefab(SmallPassiveProxyPath, BuildRoot("SmallPassiveProxy", PrimitiveType.Sphere, passiveMaterial, new Vector3(0.8f, 0.45f, 1.2f), AddSmallPassiveCollider, kinematicOnly: true), expectMonoBehaviours: false);
             EnsureProxyPrefab(TerritorialProxyPath, BuildRoot("TerritorialProxy", PrimitiveType.Capsule, territorialMaterial, new Vector3(1.2f, 0.9f, 2.0f), AddTerritorialCollider));
             EnsureProxyPrefab(HunterProxyPath, BuildRoot("HunterProxy", PrimitiveType.Capsule, hunterMaterial, new Vector3(1.4f, 1.0f, 2.6f), AddHunterCollider));
             EnsureProxyPrefab(HeavyHunterProxyPath, BuildRoot("HeavyHunterProxy", PrimitiveType.Capsule, heavyHunterMaterial, new Vector3(2.0f, 1.4f, 3.8f), AddHeavyHunterCollider));
@@ -179,10 +183,94 @@ namespace Hecton8.AI.Editor
             collider.size = new Vector3(1.4f, 0.8f, 1.6f);
         }
 
-        private static void EnsureProxyPrefab(string assetPath, GameObject root)
+        /// <summary>
+        /// Saves a proxy prefab and then PROVES the save produced the components the caller authored, by
+        /// loading the written asset back off disk.
+        /// <para>
+        /// WHY IT VERIFIES INSTEAD OF ASSUMING. Measured 2026-07-29: all six proxy prefabs on disk contain
+        /// ZERO <c>m_Script</c> entries, so no MonoBehaviour of any kind is attached to any of them - no
+        /// <c>FaunaBrain</c> and no ScannableTarget. FaunaBrain's GUID
+        /// <c>f97102d76d9d9d04f95ccebcd55b7079</c> occurs in exactly ONE file in the whole Assets tree: its
+        /// own <c>.cs.meta</c>. The prefabs date from 2026-05-19 while this source last changed 2026-06-17,
+        /// so the current code path has never run - meaning nothing in this game has an AI brain, and the
+        /// only tool that would ever attach one logged "AI proxy prefabs rebuilt." and said nothing at all
+        /// about whether the components landed.
+        /// </para>
+        /// <para>
+        /// The old body called SaveAsPrefabAsset and discarded its result. That overload has an out-success
+        /// parameter and returns the saved asset, and neither was read. So the defect was never that the
+        /// tool broke - it is that the tool could not tell anyone whether it had worked. Same class as a
+        /// diagnostic exiting 0 after its work threw, and the same remedy: verify the artifact, then speak.
+        /// </para>
+        /// <para>
+        /// <paramref name="expectMonoBehaviours"/> exists because ONE of the six proxies legitimately has
+        /// none: <c>SmallPassiveProxy</c> is built with <c>kinematicOnly: true</c>, and BuildRoot places both
+        /// AddComponent calls inside <c>if (!kinematicOnly)</c>. Demanding a brain in all six would make a
+        /// CORRECT run fail. A verifier stricter than the pipeline it verifies is its own defect, and this
+        /// project has already shipped one - a terrain layer check that would have refused every input size
+        /// the bake path accepts.
+        /// </para>
+        /// </summary>
+        private static void EnsureProxyPrefab(string assetPath, GameObject root, bool expectMonoBehaviours = true)
         {
-            PrefabUtility.SaveAsPrefabAsset(root, assetPath);
+            int expectedMonoBehaviourCount = 0;
+            if (expectMonoBehaviours)
+            {
+                // Counted off the in-memory root rather than hardcoded to 2, so adding a third AddComponent
+                // to BuildRoot cannot silently outgrow this assertion.
+                MonoBehaviour[] authored = root.GetComponents<MonoBehaviour>();
+                expectedMonoBehaviourCount = authored != null ? authored.Length : 0;
+            }
+
+            GameObject saved = PrefabUtility.SaveAsPrefabAsset(root, assetPath, out bool saveSucceeded);
             Object.DestroyImmediate(root);
+
+            if (!saveSucceeded || saved == null)
+            {
+                Debug.LogError(
+                    $"[CreatureProxyPrefabAuthoring] FAILED: SaveAsPrefabAsset did not write '{assetPath}'. " +
+                    "No proxy prefab was produced at that path.");
+                return;
+            }
+
+            // Read the ASSET back rather than trusting the returned instance: what matters is what landed on
+            // disk, because that is where every consumer loads it from.
+            GameObject onDisk = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+            if (onDisk == null)
+            {
+                Debug.LogError(
+                    $"[CreatureProxyPrefabAuthoring] FAILED: '{assetPath}' reported saved but cannot be " +
+                    "loaded back, so nothing usable exists at that path.");
+                return;
+            }
+
+            MonoBehaviour[] persisted = onDisk.GetComponents<MonoBehaviour>();
+            int persistedCount = persisted != null ? persisted.Length : 0;
+            if (persistedCount != expectedMonoBehaviourCount)
+            {
+                Debug.LogError(
+                    $"[CreatureProxyPrefabAuthoring] FAILED: '{assetPath}' persisted {persistedCount} " +
+                    $"MonoBehaviour component(s) but {expectedMonoBehaviourCount} were authored on the root. " +
+                    (expectedMonoBehaviourCount > 0
+                        ? "The behaviour scripts did NOT reach the asset, so this creature has no brain - do " +
+                          "not read a successful build message as meaning the AI is wired."
+                        : "This proxy is kinematic-only and is expected to carry none."));
+                return;
+            }
+
+            if (expectedMonoBehaviourCount > 0 && onDisk.GetComponent<FaunaBrain>() == null)
+            {
+                Debug.LogError(
+                    $"[CreatureProxyPrefabAuthoring] FAILED: '{assetPath}' persisted {persistedCount} " +
+                    "MonoBehaviour(s) but no FaunaBrain. The proxy exists and is still brainless.");
+                return;
+            }
+
+            Debug.Log(
+                $"[CreatureProxyPrefabAuthoring] wrote '{assetPath}' with {persistedCount} MonoBehaviour(s)" +
+                (expectedMonoBehaviourCount > 0
+                    ? " including FaunaBrain."
+                    : " (kinematic-only, none expected)."));
         }
 
         private static Material EnsureMaterial(string fileName, Color color)
