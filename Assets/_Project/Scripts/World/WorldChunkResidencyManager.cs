@@ -682,6 +682,7 @@ namespace Hecton8.World
         private const uint MemoryBreachContextHash = 0x43535452u; // "CSTR"
         private const uint LoadRingOverflowWarningHash = 0x43534F56u; // "CSOV"
         private const uint TeleportContextHash = 0x53545250u; // "STRP"
+        private const uint SignalPushDropWarningHash = 0x53534452u; // "SSDR" — signal-push drops
         private const uint StreamingDirectorSourceHash = 0x53333544u; // "S35D"
         private const BufferID ChunkResidencyVaultBufferId = BufferID.PDAEncyclopediaStreamer_UnlockMaskBufferId;
         private const BufferID AddressablesRequestVaultBufferId = BufferID.PDAEncyclopediaStreamer_RuntimeStateBufferId;
@@ -1552,6 +1553,7 @@ namespace Hecton8.World
         public void SlowTick()
         {
             FlushAsyncUploadBudgetPolicySlow();
+            ReportSignalPushDrops();
 
             if (_chunkCount <= 0)
                 return;
@@ -1562,6 +1564,50 @@ namespace Hecton8.World
             EvaluateAndPublishStorageBackpressure();
             EvictDistantMacroDatabaseBreadcrumbs();
             ScheduleResidencyJob();
+        }
+
+        /// <summary>
+        /// Drains the signal-push drop counter and reports it, so a dropped signal stops being invisible.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <c>_signalPushDropCount</c> is passed by ref to seven <c>TryPushTracked</c> calls in this class —
+        /// StorageDebt, StreamingTurbulence, HUDNotification and two lambda-form pushes among them — and until
+        /// this method existed it was ONLY ever incremented. Never read, never reset, never surfaced. A bus
+        /// lane that silently drops is precisely the silent-degeneracy shape this project's rules single out:
+        /// the system keeps producing plausible output while quietly losing work, and nothing fails.
+        /// </para>
+        /// <para>
+        /// The HUDNotification lane makes it concrete. Its consumer drains at most
+        /// <c>MaxHudNotificationSignalsPerLateFrame</c> per frame, so a burst of chunk-residency warnings
+        /// overflows by design — and the overflow was the player simply not being told something the game had
+        /// decided to tell them, with no trace anywhere.
+        /// </para>
+        /// <para>
+        /// Idiom copied from <c>RadiationHazardGrid.ConsumeSignalDropFlags</c>, which does the same
+        /// <see cref="Interlocked.Exchange"/> drain-and-test and is covered by
+        /// <c>RadiationHazardGridSignalDropTelemetryEditTests</c> — so this is the sanctioned shape in this
+        /// codebase rather than an invention. <c>Interlocked</c> rather than a plain read because
+        /// <c>TryPushTracked</c> is called from lambda-form pushes that may run off the owner thread, and a
+        /// lost increment here would defeat the point of counting at all.
+        /// </para>
+        /// <para>
+        /// Reported through <see cref="GlobalTelemetryBus.PublishPerformanceWarning"/>, the channel this class
+        /// already uses for load-ring overflow and teleport pressure, so it lands where an operator is already
+        /// looking. Cadence is SlowTick rather than Tick deliberately: a drop count is a rate, not an event,
+        /// and sampling it every frame would spam the warning lane it is trying to make legible.
+        /// </para>
+        /// </remarks>
+        private void ReportSignalPushDrops()
+        {
+            int dropped = Interlocked.Exchange(ref _signalPushDropCount, 0);
+            if (dropped <= 0)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                SignalPushDropWarningHash,
+                MemoryBreachContextHash,
+                dropped);
         }
 
         /// <inheritdoc />
