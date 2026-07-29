@@ -201,6 +201,16 @@ namespace Hecton8.Gameplay
         private const int MaxDamageSignalsPerSolve = 128;
         private const int LowQualityDamageSignalsPerSolve = 16;
         internal const int MaxRicochetsPerTrajectory = 3;
+
+        // Damage-chain bounds. Kinetic energy is already monotonically non-increasing in distance because
+        // the drag factor is saturated to [0,1], so the falloff direction is safe; the unbounded axis was
+        // the per-primitive multiplier chain, which RegisterAabbPrimitiveFromRuntime only floored at zero.
+        // Widest value any live authoring route produces is 1.25 (ResolveArmorScalar/Brittle) against a
+        // DamageMultiplier of 1, so these ceilings clear real data by more than 3x and only catch garbage.
+        internal const float MaxPenetrationScalar = 4f;
+        internal const float MaxPrimitiveDamageMultiplier = 8f;
+        internal const float MinPrimitiveArmorScalar = 0.0001f;
+        internal const float MaxPrimitiveArmorScalar = 4f;
         private const uint FaultTelemetryFlag = 1u << 0;
         private const uint OverBudgetTelemetryFlag = 1u << 1;
         private const uint DumpedTelemetryFlag = 1u << 2;
@@ -552,8 +562,8 @@ namespace Hecton8.Gameplay
                 primitive.MaterialHash = materialHash;
                 primitive.PrimitiveHash = primitiveHash;
                 primitive.Flags = flags | AABBPrimitiveFlags.Active;
-                primitive.DamageMultiplier = math.max(0f, SelectFinite(damageMultiplier, 1f));
-                primitive.ArmorScalar = math.max(0f, SelectFinite(armorScalar, 1f));
+                primitive.DamageMultiplier = math.clamp(SelectFinite(damageMultiplier, 1f), 0f, MaxPrimitiveDamageMultiplier);
+                primitive.ArmorScalar = math.clamp(SelectFinite(armorScalar, 1f), MinPrimitiveArmorScalar, MaxPrimitiveArmorScalar);
                 primitives[slot] = primitive;
                 return true;
             }
@@ -1927,6 +1937,9 @@ namespace Hecton8.Gameplay
             double3 originAup = trajectory.OriginAUP;
             uint ricochetCount = 0u;
             uint rejectedCount = 0u;
+            // Path length actually flown, summed over completed ricochet segments. closestDistance below is
+            // only the CURRENT segment, so a ricochet hit used to report a Distance shorter than the travel.
+            float travelledMeters = 0f;
 
             for (int bounce = 0; bounce <= maxRicochets; bounce++)
             {
@@ -1969,6 +1982,9 @@ namespace Hecton8.Gameplay
 
                 if (closestIndex < 0)
                 {
+                    // Flew off without intersecting anything: closestDistance is still the broadphase cap, not a
+                    // travel length, so report only the ricochet path already confirmed.
+                    result.Distance = travelledMeters;
                     result.Flags = rejectedCount > 0u ? BallisticHitFlags.LethalityExpired : BallisticHitFlags.None;
                     return;
                 }
@@ -1977,7 +1993,7 @@ namespace Hecton8.Gameplay
                 if (!math.isfinite(finalVelocity) || finalVelocity < Tuning.LethalityThreshold)
                 {
                     result.Flags = BallisticHitFlags.LethalityExpired;
-                    result.Distance = closestDistance;
+                    result.Distance = travelledMeters + closestDistance;
                     result.RemainingVelocity = math.max(0f, math.select(0f, finalVelocity, math.isfinite(finalVelocity)));
                     return;
                 }
@@ -1991,6 +2007,7 @@ namespace Hecton8.Gameplay
                                    bounce < maxRicochets;
                 if (canRicochet)
                 {
+                    travelledMeters += closestDistance;
                     velocity = math.max(0f, finalVelocity * Tuning.RicochetFriction);
                     direction = BallisticsRuntime.NormalizeOrDefault(
                         direction - (2f * math.dot(direction, closestNormal) * closestNormal),
@@ -2000,9 +2017,23 @@ namespace Hecton8.Gameplay
                     continue;
                 }
 
+                // Range falloff is ALREADY in this expression: finalVelocity carries exp(-DragCoefficient * distance)
+                // from above and kinetic energy squares it, so damage decays as exp(-2 * DragCoefficient * distance).
+                // Every factor below is clamped to an explicit interval so the product cannot amplify a hit; the
+                // drag factor itself is saturated to [0,1] by ApproxExpNegPade33Wide40, and the sub-lethal case is
+                // already rejected by the LethalityThreshold gate above rather than silently reaching zero damage.
                 float kineticEnergy = 0.5f * mass * finalVelocity * finalVelocity;
-                float damage = kineticEnergy * math.max(0f, penetrationScalar) * math.max(0f, hitPrimitive.DamageMultiplier) *
-                               math.max(0.0001f, hitPrimitive.ArmorScalar) * math.max(0.0001f, Tuning.DamageEnergyScale);
+                float boundedPenetration = math.clamp(penetrationScalar, 0f, BallisticsRuntime.MaxPenetrationScalar);
+                float boundedDamageMultiplier = math.clamp(
+                    BallisticsRuntime.SelectFinite(hitPrimitive.DamageMultiplier, 1f),
+                    0f,
+                    BallisticsRuntime.MaxPrimitiveDamageMultiplier);
+                float boundedArmorScalar = math.clamp(
+                    BallisticsRuntime.SelectFinite(hitPrimitive.ArmorScalar, 1f),
+                    BallisticsRuntime.MinPrimitiveArmorScalar,
+                    BallisticsRuntime.MaxPrimitiveArmorScalar);
+                float damage = kineticEnergy * boundedPenetration * boundedDamageMultiplier * boundedArmorScalar *
+                               math.max(0.0001f, Tuning.DamageEnergyScale);
                 if (!math.isfinite(damage) || damage <= 0.0001f)
                 {
                     result.Flags = BallisticHitFlags.NanGuard;
@@ -2015,7 +2046,7 @@ namespace Hecton8.Gameplay
                 result.ImpactDirection = direction;
                 result.Damage = damage;
                 result.RemainingVelocity = finalVelocity;
-                result.Distance = closestDistance;
+                result.Distance = travelledMeters + closestDistance;
                 result.TargetEntityID = hitPrimitive.TargetEntityID;
                 result.SourceEntityID = trajectory.SourceEntityID;
                 result.WeaponHash = trajectory.WeaponHash;
@@ -2028,6 +2059,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            result.Distance = travelledMeters;
             result.Flags = BallisticHitFlags.LethalityExpired;
         }
 
