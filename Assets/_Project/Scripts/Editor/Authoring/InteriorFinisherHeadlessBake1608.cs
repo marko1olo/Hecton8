@@ -19,6 +19,27 @@
 //     -executeMethod Hecton8.Editor.Authoring.InteriorFinisherHeadlessBake1608.FinishModuleInteriorsDiagnosticFallbackNow \
 //     -logFile <log>
 //
+//   Optional on both: -h8InteriorInstrumentFolder <assetFolder>
+//     Points the instrument library at a folder that actually has prefabs. The
+//     default, Assets/_Project/Prefabs/Instruments, does not exist and nothing in
+//     the project writes to it; EquipmentPropBaker1715 generates instrument-class
+//     props into Assets/_Project/Prefabs/Equipment instead. One loadable prefab is
+//     enough to clear the fallback-kit half of the STRICT refusal.
+//
+// INPUT STATE MEASURED 2026-07-29 - STRICT CANNOT SUCCEED YET, BY DESIGN:
+//   instruments: Assets/_Project/Prefabs/Instruments ABSENT (0 prefabs), and
+//     Assets/_Project/Prefabs/Equipment ABSENT too - EquipmentPropBaker1715 has
+//     never been run, so there is no folder to point the override at yet.
+//   sockets: ZERO children named DecorativeSocket* or Socket_* across all six
+//     H8_A1712_* module prefabs. Their only children are COL_*Proxy, VIS_LOD1,
+//     VIS_LOD2 and InteriorTrigger. Note that ModuleArchitect1712 DOES carry a
+//     socket concept, but it is ModuleSocket/SocketMask CONSTRUCTION data for
+//     module-to-module connection - not the named child Transforms this bake
+//     scans for. Two different meanings of "socket"; do not read the presence of
+//     one as the presence of the other.
+//   Therefore both STRICT refusal conditions hold for every module today, and the
+//   DIAGNOSTIC entry is the only one that can produce output.
+//
 // -nographics IS FORBIDDEN FOR BOTH. The pipeline packs its instrument atlas through
 // UnityEngine.Graphics.Blit into a temporary RenderTexture and reads it back with
 // Texture2D.ReadPixels (InteriorFinisherStudio1608.cs TryFillAuthoredTextureBlock),
@@ -68,10 +89,39 @@ namespace Hecton8.Editor.Authoring
         private const string ModulePrefabFolder = "Assets/_Project/Art/Baked/Structures/Agent1712";
 
         private const string ProductionOutputFolder = "Assets/_Project/Art/Baked/Interiors";
-        private const string DiagnosticOutputFolder = "Assets/_Project/Art/Baked/Interiors/_DiagnosticFallback";
+
+        /// <summary>
+        /// Diagnostic output is a SIBLING of the production root, not a child of it.
+        /// </summary>
+        /// <remarks>
+        /// This was <c>Assets/_Project/Art/Baked/Interiors/_DiagnosticFallback</c> - INSIDE the production
+        /// folder - which contradicted this file's own header claim that diagnostic output "is never written
+        /// next to production assets". Nothing censuses that root recursively today (checked 2026-07-29: the
+        /// only other references are the pipeline's default at InteriorFinisherStudio1608.cs:43 and its
+        /// Sanitize call at :1555), so it was a latent foot-gun rather than a live bug. But any future
+        /// <c>AssetDatabase.FindAssets("t:Prefab", new[] { ProductionOutputFolder })</c> would have counted
+        /// bible-rejected cardboard as shipped interior content, and neither folder exists yet, so moving it
+        /// costs nothing now and would cost a migration later.
+        /// </remarks>
+        private const string DiagnosticOutputFolder = "Assets/_Project/Art/Baked/Interiors_DiagnosticFallback";
         private const string OutputNamePrefix = "GEN_InteriorDetailPack_1608_";
         private const string DecorativeSocketMarker = "DecorativeSocket";
         private const string SocketMarkerPrefix = "Socket_";
+
+        /// <summary>
+        /// Overrides <c>InteriorFinisherSettings1608.Default.InstrumentPrefabFolder</c>.
+        /// </summary>
+        /// <remarks>
+        /// Without this the instrument input was unfeedable in practice. The default is
+        /// <c>Assets/_Project/Prefabs/Instruments</c> (InteriorFinisherStudio1608.cs:122) and that folder
+        /// does not exist, while the project's only generator of instrument-class props,
+        /// <c>EquipmentPropBaker1715</c>, writes to <c>Assets/_Project/Prefabs/Equipment</c>
+        /// (EquipmentPropBaker1715.cs:27). The two were never connected, so a STRICT bake could only be
+        /// unblocked by hand-authoring prefabs into a path nothing produces. One loadable prefab in the
+        /// folder is enough: InteriorInstrumentLibraryBuilder1608.Build adds one rule per readable prefab
+        /// and falls back only when the rule list is still empty (InteriorFinisherStudio1608.cs:167-169).
+        /// </remarks>
+        private const string InstrumentFolderArgument = "-h8InteriorInstrumentFolder";
 
         // COLD ALLOC: List<Transform>[256] - editor-only socket marker census scratch - owner: InteriorFinisherHeadlessBake1608
         private static readonly List<Transform> s_transformScratch = new List<Transform>(256);
@@ -117,6 +167,16 @@ namespace Hecton8.Editor.Authoring
                   .AppendLine();
 
             InteriorFinisherSettings1608 defaults = InteriorFinisherSettings1608.Default;
+
+            string instrumentFolderOverride = ReadArgument(InstrumentFolderArgument);
+            if (!string.IsNullOrEmpty(instrumentFolderOverride))
+            {
+                defaults.InstrumentPrefabFolder = instrumentFolderOverride;
+                report.Append("  instrument folder OVERRIDDEN by ").Append(InstrumentFolderArgument)
+                      .Append(" -> ").Append(instrumentFolderOverride)
+                      .AppendLine();
+            }
+
             report.Append("  instrument folder = ").Append(defaults.InstrumentPrefabFolder)
                   .Append(" exists=").Append(AssetDatabase.IsValidFolder(defaults.InstrumentPrefabFolder))
                   .Append(" authoredPrefabs=").Append(CountPrefabsInFolder(defaults.InstrumentPrefabFolder))
@@ -359,6 +419,26 @@ namespace Hecton8.Editor.Authoring
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Reads the value after a named command-line switch, or null. <c>-executeMethod</c> cannot pass
+        /// parameters, so overrides have to come off the process command line.
+        /// </summary>
+        /// <remarks>
+        /// <c>System.Environment</c> is spelled out deliberately: a bare <c>Environment</c> inside a
+        /// <c>Hecton8.*</c> namespace binds to <c>Hecton8.Environment</c> and fails CS0234.
+        /// </remarks>
+        private static string ReadArgument(string switchName)
+        {
+            string[] args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length - 1; i++)
+            {
+                if (string.Equals(args[i], switchName, StringComparison.Ordinal))
+                    return args[i + 1];
+            }
+
+            return null;
         }
 
         private static int CountPrefabsInFolder(string folder)

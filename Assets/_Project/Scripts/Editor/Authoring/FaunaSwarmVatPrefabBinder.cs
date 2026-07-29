@@ -50,12 +50,23 @@
 //      EFFECTIVE values, this binding is PENDING VERIFICATION.
 //   2. It never creates a texture. If no baked page exists it aborts and names
 //      the bake command. Fabricating VAT data would be worse than no VAT.
-//   3. Two blockers it deliberately does NOT touch, because they are outside the
-//      VAT lane and belong to their own owners - it only REPORTS them:
-//        - Ocean_Crest.prefab:615 boidMesh is a Unity BUILT-IN primitive
-//          ({fileID: 10209, guid: 0000000000000000e000000000000000}). Vertex
-//          animation on a built-in primitive is meaningless; the swarm needs a
-//          real fish mesh first. ASSET ownership.
+//   3. boidMesh: REPORTED by default, REBOUND only on explicit opt-in.
+//      Ocean_Crest.prefab:615 boidMesh is a Unity BUILT-IN primitive
+//      ({fileID: 10209, guid: 0000000000000000e000000000000000}). Vertex
+//      animation on a built-in primitive is meaningless, and you cannot bake a
+//      VAT from one either - so while that value stands, the width gate below
+//      can NEVER pass however many times the bake runs. Treating the mesh as
+//      purely somebody else's problem therefore made this binder unclosable
+//      rather than merely unfed, which is why the opt-in exists: the bake's own
+//      companion mesh (Assets/_Project/Art/Generated/Fauna/Rigged1610/
+//      GEN_FaunaVAT1610_<token>_Mesh.asset, an Object.Instantiate of the source
+//      mesh) has the matching vertex count by construction. The default entries
+//      still leave boidMesh alone and still refuse; -h8FaunaBindMesh, or the
+//      "Bind Swarm VAT Pages + Companion Mesh To Prefab" menu entry, rebinds it
+//      and clears the gate. Whether the resulting silhouette reads as a creature
+//      is still 3DMODEL_FAUNA.md section 1's call and is PENDING VERIFICATION.
+//   4. One blocker it does NOT touch, because it belongs to another owner and it
+//      only REPORTS it:
 //        - Ocean_Crest.prefab:634 neutralAbyssalFlowTexture points at GUID
 //          5b18df2e53d2a3f4bbd9eba32746810b, which owns no .meta anywhere under
 //          Assets/. In the EDITOR SargassumMicroFaunaBoids.cs:2867-2875 silently
@@ -64,10 +75,19 @@
 //          DisableComputeDispatch and the whole swarm is dead. The existing
 //          repair for that is SargassumNeutralAbyssalFlowPrefabRepair, and it
 //          has not been run.
-//   4. Running this mutates a production prefab. AGENTS.md `Unity And Build
+//   5. Running this mutates a production prefab. AGENTS.md `Unity And Build
 //      Gates` requires explicit instruction for that, so the default entry is a
 //      deliberate human MenuItem plus a named batch method - never an automatic
 //      or test-runner path.
+//
+// CONTENT PRECONDITION, MEASURED 2026-07-29: none of this can fire yet.
+// Assets/_Project/Art/Generated/Fauna/VAT1610 does not exist because the bake has
+// never run, and the bake cannot run because FaunaOfflineRigger1610.RawInputFolder
+// ("Assets/_Project/Art/Fauna/Raw", AbyssalAnatomyStudio1610.cs:485) does not exist
+// and the project contains ZERO fauna source geometry - every .fbx under
+// Assets/_Project is flora, geology, rock, small-prop or prologue architecture. So
+// the ABORT in TryResolveVatPages is the correct and expected answer today, and the
+// blocker is CONTENT (one fish mesh), not code.
 // ============================================================================
 
 using System;
@@ -100,9 +120,30 @@ namespace Hecton8.Editor.Authoring
         /// </summary>
         private const string VatOutputRoot = "Assets/_Project/Art/Generated/Fauna/VAT1610";
 
+        /// <summary>
+        /// Companion mesh root. Mirrors <c>FaunaOfflineRigger1610.MeshOutputRoot</c>
+        /// (<c>AbyssalAnatomyStudio1610.cs:486</c>) as a literal for exactly the same reason as
+        /// <see cref="VatOutputRoot"/> - <c>Hecton8.Editor.asmdef</c> does not reference
+        /// <c>Hecton8.Editor.Generators.Fauna</c>.
+        ///
+        /// THIS IS THE CONSTANT THAT CLOSES THE CHAIN. The bake writes the companion mesh as
+        /// <c>Object.Instantiate(sourceMesh)</c> (AbyssalAnatomyStudio1610.cs:1064-1065) under this root,
+        /// so its vertexCount equals the VAT page width BY CONSTRUCTION. It is therefore the only mesh in
+        /// the project that can satisfy the width gate in <see cref="TryValidateVatAgainstMesh"/>. Before
+        /// this existed the binder validated <c>boidMesh</c> but never bound it, and
+        /// Ocean_Crest.prefab:615 holds a Unity BUILT-IN primitive
+        /// (<c>{fileID: 10209, guid: 0000000000000000e000000000000000}</c>), so the gate could never pass
+        /// no matter how many times the bake ran. The chain was unclosable, not merely unfed.
+        /// </summary>
+        private const string RiggedMeshOutputRoot = "Assets/_Project/Art/Generated/Fauna/Rigged1610";
+
         private const string PositionPageSuffix = "_Position";
         private const string NormalPageSuffix = "_Normal";
+        private const string MeshAssetSuffix = "_Mesh";
         private const string GeneratedPagePrefix = "GEN_FaunaVAT1610_";
+
+        /// <summary>Opt-in for the companion-mesh write. Absent means the historical page-only behaviour.</summary>
+        private const string BindMeshFlag = "-h8FaunaBindMesh";
 
         private const string PositionFieldName = "boidVatPositionTexture";
         private const string NormalFieldName = "boidVatNormalTexture";
@@ -116,34 +157,70 @@ namespace Hecton8.Editor.Authoring
         [MenuItem("Hecton8/Fauna/Audit Swarm VAT Prefab Binding", false, 400)]
         public static void AuditFromMenu()
         {
-            Execute(applyChanges: false);
+            Execute(applyChanges: false, bindMesh: false);
         }
 
         /// <summary>
         /// Deliberate human apply. Mutates <c>Ocean_Crest.prefab</c>, so it is separated from the audit and
-        /// is never invoked by a test runner.
+        /// is never invoked by a test runner. Binds the two VAT pages and the frame count only; it leaves
+        /// <c>boidMesh</c> alone, so it still REFUSES while that field holds a built-in primitive. Use the
+        /// companion-mesh entry below to close the chain in one step.
         /// </summary>
         [MenuItem("Hecton8/Fauna/Bind Swarm VAT Pages To Prefab (writes)", false, 401)]
         public static void ApplyFromMenu()
         {
-            Execute(applyChanges: true);
+            Execute(applyChanges: true, bindMesh: false);
+        }
+
+        /// <summary>
+        /// Deliberate human apply that ALSO rebinds <c>boidMesh</c> to the companion mesh from the same
+        /// bake token. Separated from the page-only apply because swapping the drawn mesh is a visible
+        /// authoring change, not a wiring change: it replaces the built-in primitive at
+        /// Ocean_Crest.prefab:615 with generated geometry, and the swarm will look different afterwards.
+        /// That swap is nevertheless the ONLY way the width gate can pass, which is why it is offered here
+        /// rather than left as an unreachable refusal.
+        /// </summary>
+        [MenuItem("Hecton8/Fauna/Bind Swarm VAT Pages + Companion Mesh To Prefab (writes)", false, 402)]
+        public static void ApplyWithCompanionMeshFromMenu()
+        {
+            Execute(applyChanges: true, bindMesh: true);
         }
 
         /// <summary>Batch audit. Exits non-zero when the binding is not complete and correct.</summary>
         public static void AuditFromCommandLine()
         {
-            EditorApplication.Exit(Execute(applyChanges: false) ? 0 : 1);
+            EditorApplication.Exit(Execute(applyChanges: false, bindMesh: HasBindMeshFlag()) ? 0 : 1);
         }
 
-        /// <summary>Batch apply. Exits non-zero when the binding could not be completed.</summary>
+        /// <summary>
+        /// Batch apply. Exits non-zero when the binding could not be completed. Pass
+        /// <c>-h8FaunaBindMesh</c> to also rebind <c>boidMesh</c> to the companion mesh from the same bake
+        /// token; without it this refuses on any prefab whose <c>boidMesh</c> width does not already match.
+        /// </summary>
         public static void ApplyFromCommandLine()
         {
-            EditorApplication.Exit(Execute(applyChanges: true) ? 0 : 1);
+            EditorApplication.Exit(Execute(applyChanges: true, bindMesh: HasBindMeshFlag()) ? 0 : 1);
         }
 
-        private static bool Execute(bool applyChanges)
+        /// <summary>
+        /// <c>System.Environment</c> is spelled out: a bare <c>Environment</c> inside a <c>Hecton8.*</c>
+        /// namespace binds to <c>Hecton8.Environment</c> and fails CS0234.
+        /// </summary>
+        private static bool HasBindMeshFlag()
         {
-            if (!TryResolveVatPages(out Texture2D positionPage, out Texture2D normalPage))
+            string[] args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (string.Equals(args[i], BindMeshFlag, StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool Execute(bool applyChanges, bool bindMesh)
+        {
+            if (!TryResolveVatPages(out Texture2D positionPage, out Texture2D normalPage, out Mesh companionMesh))
                 return false;
 
             if (AssetDatabase.LoadAssetAtPath<GameObject>(BoidPrefabPath) == null)
@@ -219,7 +296,24 @@ namespace Hecton8.Editor.Authoring
 
                     ReportUntouchedBlockers(component.name, serialized);
 
-                    if (!TryValidateVatAgainstMesh(component.name, serialized, positionPage, normalPage, out int frameCount))
+                    SerializedProperty meshProperty = serialized.FindProperty(MeshFieldName);
+                    Mesh currentMesh = meshProperty != null ? meshProperty.objectReferenceValue as Mesh : null;
+
+                    // The mesh the width gate must be measured against is the one that WILL be bound, not
+                    // the one currently serialized. Measuring the current mesh while intending to replace
+                    // it would reject a pair that is about to become correct.
+                    bool willBindMesh = bindMesh && companionMesh != null;
+                    Mesh effectiveMesh = willBindMesh ? companionMesh : currentMesh;
+
+                    if (!TryValidateVatAgainstMesh(
+                            component.name,
+                            effectiveMesh,
+                            currentMesh,
+                            companionMesh,
+                            positionPage,
+                            normalPage,
+                            willBindMesh,
+                            out int frameCount))
                     {
                         rejected++;
                         continue;
@@ -228,7 +322,8 @@ namespace Hecton8.Editor.Authoring
                     bool positionMatches = ReferenceEquals(positionProperty.objectReferenceValue, positionPage);
                     bool normalMatches = ReferenceEquals(normalProperty.objectReferenceValue, normalPage);
                     bool frameCountMatches = frameCountProperty.intValue == frameCount;
-                    if (positionMatches && normalMatches && frameCountMatches)
+                    bool meshMatches = !willBindMesh || ReferenceEquals(currentMesh, companionMesh);
+                    if (positionMatches && normalMatches && frameCountMatches && meshMatches)
                     {
                         alreadyCorrect++;
                         Debug.Log(string.Format(
@@ -242,7 +337,7 @@ namespace Hecton8.Editor.Authoring
 
                     Debug.Log(string.Format(
                         CultureInfo.InvariantCulture,
-                        "{0} {1} '{2}': position {3} -> {4}; normal {5} -> {6}; {7} {8} -> {9}",
+                        "{0} {1} '{2}': position {3} -> {4}; normal {5} -> {6}; {7} {8} -> {9}; {10} {11}",
                         Marker,
                         applyChanges ? "BIND" : "WOULD BIND",
                         component.name,
@@ -252,7 +347,11 @@ namespace Hecton8.Editor.Authoring
                         normalPage.name,
                         FrameCountFieldName,
                         frameCountProperty.intValue.ToString(CultureInfo.InvariantCulture),
-                        frameCount.ToString(CultureInfo.InvariantCulture)));
+                        frameCount.ToString(CultureInfo.InvariantCulture),
+                        MeshFieldName,
+                        willBindMesh
+                            ? (currentMesh != null ? currentMesh.name : "NULL") + " -> " + companionMesh.name
+                            : "UNCHANGED"));
 
                     if (!applyChanges)
                     {
@@ -263,6 +362,8 @@ namespace Hecton8.Editor.Authoring
                     positionProperty.objectReferenceValue = positionPage;
                     normalProperty.objectReferenceValue = normalPage;
                     frameCountProperty.intValue = frameCount;
+                    if (willBindMesh && meshProperty != null)
+                        meshProperty.objectReferenceValue = companionMesh;
                     serialized.ApplyModifiedPropertiesWithoutUndo();
                     changed++;
                 }
@@ -331,10 +432,14 @@ namespace Hecton8.Editor.Authoring
         /// Finds the newest baked position/normal page pair. Refuses on a lone position page, because the
         /// runtime gate needs both and a half-bound component would silently keep the fallback path.
         /// </summary>
-        private static bool TryResolveVatPages(out Texture2D positionPage, out Texture2D normalPage)
+        private static bool TryResolveVatPages(
+            out Texture2D positionPage,
+            out Texture2D normalPage,
+            out Mesh companionMesh)
         {
             positionPage = null;
             normalPage = null;
+            companionMesh = null;
 
             if (!AssetDatabase.IsValidFolder(VatOutputRoot))
             {
@@ -404,26 +509,49 @@ namespace Hecton8.Editor.Authoring
                 return false;
             }
 
+            // Same token, sibling root. Absence is reported but is NOT an abort: a caller that only wants
+            // the page binding on an already-correct mesh does not need it, and inventing a mesh would be
+            // worse than naming the gap.
+            string companionMeshPath = RiggedMeshOutputRoot + "/" + bestToken + MeshAssetSuffix + ".asset";
+            companionMesh = AssetDatabase.LoadAssetAtPath<Mesh>(companionMeshPath);
+
             Debug.Log(string.Format(
                 CultureInfo.InvariantCulture,
-                "{0} selected page pair '{1}' position={2}x{3} normal={4}x{5}",
+                "{0} selected page pair '{1}' position={2}x{3} normal={4}x{5} companionMesh={6}",
                 Marker,
                 bestToken,
                 positionPage.width.ToString(CultureInfo.InvariantCulture),
                 positionPage.height.ToString(CultureInfo.InvariantCulture),
                 normalPage.width.ToString(CultureInfo.InvariantCulture),
-                normalPage.height.ToString(CultureInfo.InvariantCulture)));
+                normalPage.height.ToString(CultureInfo.InvariantCulture),
+                companionMesh == null
+                    ? "<absent at '" + companionMeshPath + "'>"
+                    : companionMesh.name + " vertexCount=" +
+                      companionMesh.vertexCount.ToString(CultureInfo.InvariantCulture)));
             return true;
         }
 
         /// <summary>
-        /// Rejects a page pair that cannot possibly sample correctly against the component's bound mesh.
+        /// Rejects a page pair that cannot possibly sample correctly against the mesh that will be bound.
         /// </summary>
+        /// <param name="effectiveMesh">
+        /// The mesh the width gate is measured against: the companion mesh when
+        /// <paramref name="willBindMesh"/> is set, otherwise whatever is currently serialized. Measuring the
+        /// current mesh while intending to replace it would reject a pair that is about to become correct.
+        /// </param>
+        /// <param name="currentMesh">Serialized value, used only for the swap warning.</param>
+        /// <param name="companionMesh">
+        /// Same-token mesh from the bake, or null. Used to turn an otherwise unactionable width refusal into
+        /// a named fix when its vertex count happens to match the page pair.
+        /// </param>
         private static bool TryValidateVatAgainstMesh(
             string componentName,
-            SerializedObject serialized,
+            Mesh effectiveMesh,
+            Mesh currentMesh,
+            Mesh companionMesh,
             Texture2D positionPage,
             Texture2D normalPage,
+            bool willBindMesh,
             out int frameCount)
         {
             frameCount = 0;
@@ -456,35 +584,70 @@ namespace Hecton8.Editor.Authoring
                 return false;
             }
 
-            SerializedProperty meshProperty = serialized.FindProperty(MeshFieldName);
-            Mesh boidMesh = meshProperty != null ? meshProperty.objectReferenceValue as Mesh : null;
-            if (boidMesh == null)
+            if (effectiveMesh == null)
             {
                 Debug.LogError(string.Format(
                     CultureInfo.InvariantCulture,
-                    "{0} REJECT '{1}' - '{2}' is null or unreadable, so VAT width cannot be checked against " +
-                    "vertex count. SargassumMicroFaunaBoids.cs:8868 feeds _VatVertexCount from this mesh.",
+                    "{0} REJECT '{1}' - '{2}' is null or unreadable and no companion mesh is available, so VAT " +
+                    "width cannot be checked against vertex count. SargassumMicroFaunaBoids.cs:8868 feeds " +
+                    "_VatVertexCount from this mesh. Either author '{2}' or re-run with {3} once the bake has " +
+                    "written '{4}/<token>{5}.asset'.",
                     Marker,
                     componentName,
-                    MeshFieldName));
+                    MeshFieldName,
+                    BindMeshFlag,
+                    RiggedMeshOutputRoot,
+                    MeshAssetSuffix));
                 return false;
             }
 
-            if (positionPage.width != boidMesh.vertexCount)
+            if (positionPage.width != effectiveMesh.vertexCount)
             {
+                // The actionable half of this refusal. A plain "re-bake from THIS mesh" was unactionable
+                // while boidMesh held a Unity built-in primitive: you cannot bake a VAT from a built-in
+                // primitive, so the operator had no move that could ever clear the gate. If the bake's own
+                // companion mesh fits, name it and the flag that binds it.
+                bool companionWouldFit = !willBindMesh
+                                         && companionMesh != null
+                                         && companionMesh.vertexCount == positionPage.width;
+
                 Debug.LogError(string.Format(
                     CultureInfo.InvariantCulture,
                     "{0} REJECT '{1}' - VAT width {2} != {3}.vertexCount {4} ('{5}'). BoidFishInstanced.shader:493 " +
                     "indexes columns by vertexID over _VatVertexCount, and the runtime takes that count from the " +
                     "mesh, not the texture. Binding this pair would deform every vertex from the wrong column while " +
-                    "all null checks still pass. Re-bake the VAT from THIS mesh.",
+                    "all null checks still pass. {6}",
                     Marker,
                     componentName,
                     positionPage.width.ToString(CultureInfo.InvariantCulture),
                     MeshFieldName,
-                    boidMesh.vertexCount.ToString(CultureInfo.InvariantCulture),
-                    boidMesh.name));
+                    effectiveMesh.vertexCount.ToString(CultureInfo.InvariantCulture),
+                    effectiveMesh.name,
+                    companionWouldFit
+                        ? "FIX AVAILABLE: the companion mesh '" + companionMesh.name + "' from the same bake token " +
+                          "has vertexCount " + companionMesh.vertexCount.ToString(CultureInfo.InvariantCulture) +
+                          ", which matches this page pair exactly. Re-run with " + BindMeshFlag +
+                          " (or the 'Bind Swarm VAT Pages + Companion Mesh To Prefab' menu entry) to rebind '" +
+                          MeshFieldName + "' and clear this gate. That REPLACES the drawn mesh, so it is opt-in."
+                        : "Re-bake the VAT from THIS mesh, or bake from a mesh you are willing to bind and re-run " +
+                          "with " + BindMeshFlag + "."));
                 return false;
+            }
+
+            if (willBindMesh && !ReferenceEquals(currentMesh, companionMesh))
+            {
+                Debug.LogWarning(string.Format(
+                    CultureInfo.InvariantCulture,
+                    "{0} MESH SWAP '{1}' - '{2}' will change from '{3}' to the generated companion mesh '{4}' " +
+                    "(vertexCount={5}). This is a visible authoring change, not a wiring change: the swarm's " +
+                    "silhouette is replaced. PENDING VERIFICATION - no capture has confirmed the new silhouette " +
+                    "reads as a creature, and 3DMODEL_FAUNA.md section 1 owns that judgement.",
+                    Marker,
+                    componentName,
+                    MeshFieldName,
+                    currentMesh != null ? currentMesh.name : "NULL",
+                    companionMesh.name,
+                    companionMesh.vertexCount.ToString(CultureInfo.InvariantCulture)));
             }
 
             frameCount = positionPage.height;
