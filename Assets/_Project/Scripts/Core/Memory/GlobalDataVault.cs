@@ -5103,7 +5103,20 @@ namespace Hecton8.Core.Memory
 
             meta.BlockIndex = freeIndex;
             meta.OffsetBytes = movedBlock.OffsetBytes;
-            meta.Version = movedBlock.Version;
+            // meta.Version (buffer GENERATION) is deliberately PRESERVED here - see the invariant documented
+            // on RebuildMetadataBlockIndices. The payload really did move, but the move is TRANSPARENT to an
+            // outstanding handle: TryResolveHandle/TryReadHandle/TryReadOnlyHandle recompute the pointer as
+            // _arenaBase + meta.OffsetBytes, and meta.OffsetBytes is updated on the line above, so a preserved
+            // handle resolves to the relocated payload. Nobody holding a raw alias can be affected, because
+            // this method refuses to move any block carrying BlockFlagExternalView or BlockFlagLocked (the
+            // write-lock flag), and concurrent readers are excluded by _compactionFence, which
+            // TryRunLiveCompactionSlice holds across the whole slice.
+            //
+            // Bumping the generation here - by ANY mechanism - would permanently kill every outstanding handle
+            // to a defragged buffer, because nothing hands the new generation back to a consumer:
+            // RecordRelocation only fills a fixed-size telemetry ring, and handle resolution never reads
+            // _buffers, so PublishMovedBufferPointer below is not a notification either. That is the same
+            // failure shape as the RebuildMetadataBlockIndices defect.
             WriteMetadata(key, in meta);
             PublishMovedBufferPointer(key, newAddress);
             RecordRelocation(key, in meta, oldAddress, newAddress, occupiedBlock.Bytes, movedBlock.Version);
@@ -5144,13 +5157,16 @@ namespace Hecton8.Core.Memory
 
             if ((block.Reserved0 & BlockFlagExternalView) != 0)
             {
+                // Re-marking an already-published external view is an INDEX/OFFSET reconciliation only: no
+                // payload moves, so meta.Version (buffer GENERATION) must be preserved. The dirty check also
+                // no longer compares meta.Version against block.Version - those two counters are unequal BY
+                // CONSTRUCTION (see RebuildMetadataBlockIndices), so that term was always true and made this
+                // branch rewrite metadata and bump the vault generation on every repeat call.
                 if (meta.BlockIndex != blockIndex ||
-                    meta.OffsetBytes != block.OffsetBytes ||
-                    meta.Version != block.Version)
+                    meta.OffsetBytes != block.OffsetBytes)
                 {
                     meta.BlockIndex = blockIndex;
                     meta.OffsetBytes = block.OffsetBytes;
-                    meta.Version = block.Version;
                     WriteMetadata(key, in meta);
                     BumpVaultGeneration();
                 }
@@ -5165,7 +5181,10 @@ namespace Hecton8.Core.Memory
 
             meta.BlockIndex = blockIndex;
             meta.OffsetBytes = block.OffsetBytes;
-            meta.Version = block.Version;
+            // Publishing an external view sets a block FLAG. The payload does not move and the offset does not
+            // change, so meta.Version (buffer GENERATION) is preserved; the block-mutation counter bumped above
+            // is the correct place to record the flag change. Invalidating handles here would break the very
+            // buffer the caller is aliasing.
             WriteMetadata(key, in meta);
             BumpVaultGeneration();
             return true;
@@ -5233,7 +5252,10 @@ namespace Hecton8.Core.Memory
                 UpdateH8Descriptor(in block);
                 meta.BlockIndex = blockIndex;
                 meta.OffsetBytes = block.OffsetBytes;
-                meta.Version = block.Version;
+                // Rolling back an alias publication CLEARS a block flag. No payload moves and the offset is
+                // unchanged, so meta.Version (buffer GENERATION) is preserved. This path exists to undo a
+                // failed publication; invalidating the owner's handle would turn a clean rollback into a
+                // permanently unreadable buffer.
                 BumpVaultGeneration();
             }
 
@@ -5855,7 +5877,13 @@ namespace Hecton8.Core.Memory
                     {
                         meta.BlockIndex = i;
                         meta.OffsetBytes = block.OffsetBytes;
-                        meta.Version = block.Version;
+                        // The ARENA BASE moved, but no buffer moved WITHIN the arena: block.OffsetBytes is not
+                        // rewritten anywhere in this loop. Handle resolution is _arenaBase + meta.OffsetBytes
+                        // and TryGrowArena assigns the new _arenaBase BEFORE calling this method, so every
+                        // preserved handle resolves to the correct new address with no further action. This is
+                        // an index fixup, exactly like RebuildMetadataBlockIndices, so meta.Version (buffer
+                        // GENERATION) is preserved. The reallocation is also refused outright while
+                        // HasPinnedExternalViews() is true, so no aliased raw pointer can be left dangling.
                         WriteMetadata(block.BufferKey, in meta);
                         PublishMovedBufferPointer(block.BufferKey, newPointer);
                         RecordRelocation(block.BufferKey, in meta, oldPointer, newPointer, block.Bytes, block.Version);
@@ -6372,12 +6400,24 @@ namespace Hecton8.Core.Memory
         /// explicit paths, ResolveInitialGenerationForAllocation (:1413) and NextGeneration (:2447) - not to
         /// signal an index fixup.
         ///
-        /// NOT CHANGED HERE, deliberately: five other sites also assign a block version into meta.Version
-        /// (:5106, :5153, :5168, :5236, :5858). Those sit on defrag and move paths where invalidating a
-        /// handle may well be CORRECT, because a relocated payload should reject stale readers - but if so
-        /// the right mechanism is NextGeneration, not a block-mutation counter that can collide or skip
-        /// arbitrarily. Each needs its own move-versus-index analysis and they are queued rather than swept
-        /// in with this one.
+        /// FOLLOW-UP NOW DONE: the five other sites that assigned a block version into meta.Version have all
+        /// been resolved the same way - by PRESERVING the generation - and each carries its own comment:
+        /// TryMoveOccupiedBlockLeft, both branches of MarkExternalViewLocked,
+        /// RollbackAliasPublicationLocked and RefreshBlocksAfterArenaRelocation. Two of those are genuine
+        /// relocation paths, so invalidation was considered and rejected on evidence: relocation in this vault
+        /// is TRANSPARENT rather than handle-breaking, because (a) resolution recomputes the pointer from live
+        /// _arenaBase plus live meta.OffsetBytes, both updated before the fence drops, (b) both relocation
+        /// paths refuse to move anything a reader could be aliasing - TryMoveOccupiedBlockLeft skips
+        /// BlockFlagExternalView and BlockFlagLocked blocks, and arena growth aborts while
+        /// HasPinnedExternalViews() is true - and (c) there is no channel that would hand a bumped generation
+        /// back to a consumer, since RecordRelocation is a telemetry ring and resolution never reads _buffers.
+        /// So a bump on a move, by any mechanism, would silently kill every outstanding handle to a relocated
+        /// buffer. _compactionFence, not the generation, is what protects readers during a move.
+        ///
+        /// The only legitimate writers of meta.Version are therefore: ResolveInitialGenerationForAllocation
+        /// on allocation (:1413), NextGeneration(meta.Version) on explicit release/invalidation (:2447), and
+        /// NextGenerationStatic(meta.Version) on the two recovery paths. All chain off meta's OWN previous
+        /// value. If you are about to add a sixth writer sourced from a block, stop and re-read this comment.
         /// </summary>
         private void RebuildMetadataBlockIndices()
         {
