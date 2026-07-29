@@ -239,12 +239,23 @@ namespace Hecton8.World
         /// slow lane of this file: spawn-credit regeneration, eclipse migration, campaign toxicity, and -
         /// worst - <c>_coldTickAccumulator</c>, which gates the Lotka-Volterra sector solve. That gate
         /// tripped every 10 invocations (5.0 / 0.5) and then handed the job <c>DeltaSeconds =
-        /// coldTickIntervalSeconds</c> = 5 s (:5407, :5448), i.e. 5 s of population integration per 1 s of
-        /// real time. Headless differs again rather than agreeing: at the measured dt of roughly 1.33 s per
-        /// frame only 4 of the 13 needed substeps run (the deliberate MaxCadenceSubstepsPerFrame clamp at
-        /// SystemDispatcher.cs:6425/6471), giving about 3 invocations per second, so the same gate ran the
+        /// coldTickIntervalSeconds</c> = 5 s (:5968, :6009), i.e. 5 s of population integration per 1 s of
+        /// real time. Headless differed again rather than agreeing: at a frame dt of roughly 1.33 s only 4 of
+        /// the 13 needed substeps run (the deliberate MaxCadenceSubstepsPerFrame clamp at
+        /// SystemDispatcher.cs:6482/6528), giving about 3 invocations per second, so the same gate ran the
         /// solve 1.5x too fast instead of 5x. Two different wrong rates is the reason an editor session and
         /// a headless session were never comparable ecologies.
+        /// <para>
+        /// That 1.33 s is a QUOTED figure, not a standing property of headless, and this remark previously
+        /// presented it as "the measured dt". Its source is 0.75 game frames per wall second in
+        /// <c>Logs/omega_route28.log</c> by way of SystemDispatcher.cs:6536-6540.
+        /// <c>Logs/h8_worldsim_probe5.log</c> measures a different machine state entirely: 15.39 game frames
+        /// per wall second in its gameplay phase (dt about 0.065 s), with the dispatcher reporting
+        /// <c>slowTickDiscardedSeconds</c> 23.543 over only 4 discard events in 2490 frames. Headless frame
+        /// dt is run-dependent across more than an order of magnitude, so derive the substep count from the
+        /// run in hand - see <see cref="ResolveSlowTickDeltaSeconds"/> for the per-regime rates and
+        /// <see cref="_debugSlowTickZeroCreditSubsteps"/> for the per-run reading.
+        /// </para>
         /// </remarks>
         private const float DefaultSlowTickIntervalSeconds = 0.1f;
 
@@ -254,12 +265,38 @@ namespace Hecton8.World
         /// the slowest cadence the dispatcher will ever run this lane at.
         /// </summary>
         /// <remarks>
-        /// The clamp is what keeps the measured delta from re-injecting the surplus that
-        /// <c>MaxCadenceSubstepsPerFrame</c> deliberately discards. Crediting real elapsed time without a
-        /// ceiling would undo the anti-death-spiral guard the dispatcher documents at
-        /// SystemDispatcher.cs:6471-6484; crediting a fixed constant ignores that the dispatcher's interval
-        /// is itself dynamic across 0.1 / 0.2 / 1.0 s (<c>ResolveSlowTickIntervalSeconds</c> :6765-6786).
-        /// Bounded measurement is the only option that is correct under both.
+        /// <para>
+        /// CORRECTED. An earlier version of this remark claimed the clamp "keeps the measured delta from
+        /// re-injecting the surplus that <c>MaxCadenceSubstepsPerFrame</c> deliberately discards". That is
+        /// arithmetically false and it was the justification for a mechanism that does the opposite. On a
+        /// frame whose dilated delta is 1.33 s the dispatcher accounts 4 * 0.1 = 0.4 s and discards the
+        /// remaining 0.93 s (SystemDispatcher.cs:6528-6563), while this director credits the clamped 1.0 s -
+        /// 0.6 s MORE than the dispatcher accounted. Most of the discarded surplus is re-injected, by design,
+        /// and this ceiling only bounds how much. Nor does crediting elapsed time touch the anti-death-spiral
+        /// guard: that guard bounds substep COUNT, which is CPU, and nothing in this file changes how many
+        /// substeps the dispatcher runs.
+        /// </para>
+        /// <para>
+        /// What the ceiling is actually for is a single pathological frame, not a steady state. A domain
+        /// reload, an asset import, an editor breakpoint or a scene load can hand one frame tens of seconds
+        /// of dilated time. Credited raw, that loads <c>_coldTickAccumulator</c> far past
+        /// <c>coldTickIntervalSeconds</c> and makes the Lotka-Volterra gate trip on consecutive slow ticks,
+        /// each trip integrating a fixed 5 s of population dynamics (<c>DeltaSeconds = coldTickIntervalSeconds</c>,
+        /// :5968 and :6009) - one hitch, several sector generations, a visible population discontinuity.
+        /// 1.0 s is used rather than an invented number because it is the dispatcher's own slowest sanctioned
+        /// cadence for this lane, so the ceiling is a value the lane is already specified to run at.
+        /// </para>
+        /// <para>
+        /// Why a measured delta at all, rather than a constant: the dispatcher's interval is itself dynamic
+        /// across 0.1 / 0.2 / 1.0 s (<c>ResolveSlowTickIntervalSeconds</c>, SystemDispatcher.cs:6822-6843)
+        /// and there is no accessor for an <c>ISlowTickable</c> to read the live value, so a constant is
+        /// wrong under two of the three cadences.
+        /// </para>
+        /// <para>
+        /// Cost of the ceiling, stated rather than hidden: while a frame's dilated delta exceeds 1.0 s this
+        /// director runs the ecology SLOWER than wall time - 0.75x at a 1.33 s frame. The per-regime rates
+        /// are tabulated on <see cref="ResolveSlowTickDeltaSeconds"/>.
+        /// </para>
         /// </remarks>
         private const float MaxSlowTickDeltaSeconds = 1f;
 
@@ -1372,8 +1409,31 @@ namespace Hecton8.World
         [SerializeField] private float bloomTemperatureMaxCelsius = 30f;
         [Tooltip("Normalized bloom intensity gained per second while trigger conditions hold.")]
         [SerializeField, Min(0f)] private float bloomRampPerSecond = 0.08f;
+        /// <summary>Bloom CEILING the environmental model last returned, not the bloom that was reached.</summary>
         [SerializeField] private float _debugBloomIntensity01;
-        [SerializeField] private int _debugBloomTriggerCount;
+
+        /// <summary>Sector <c>AlgaeBloom01</c> this director last ramped to, so the ceiling and the achieved value are separable in a log.</summary>
+        [SerializeField] private float _debugBloomRamped01;
+
+        /// <summary>
+        /// Environmental bloom ONSETS - false-to-true edges of the model's trigger, one per bloom.
+        /// </summary>
+        /// <remarks>
+        /// Was <c>_debugBloomTriggerCount</c> and was incremented once per successful ramp STEP, which made
+        /// it a slow-tick counter published under a name that reads as an event count: at the 0.1 s cadence
+        /// two heartbeats 10 s apart differed by about 100 while a single bloom was building, so a reader
+        /// diffing them was counting ticks and calling them blooms. Renamed AND latched, both, because
+        /// either alone leaves the log key or the field lying. The lost ramp-progress signal is now
+        /// <see cref="_debugBloomRamped01"/>, which reports the value rather than a count of steps toward it.
+        /// </remarks>
+        [SerializeField] private int _debugBloomOnsetCount;
+
+        /// <summary>
+        /// True while the environmental bloom trigger is held, so <see cref="_debugBloomOnsetCount"/> counts
+        /// edges. Only written on ticks that actually evaluated the model - see
+        /// <see cref="EvaluateAlgaeBloomTrigger"/>.
+        /// </summary>
+        private bool _bloomTriggerLatched;
 
         [Header("Threshold Migration")]
         [SerializeField, Range(0f, 1f)] private float migrationFoodThreshold01 = 0.38f;
@@ -1569,10 +1629,31 @@ namespace Hecton8.World
         /// Dispatcher dilated-clock reading captured at the previous <see cref="SlowTick"/>, or 0 before the
         /// first one. Drives <see cref="ResolveSlowTickDeltaSeconds"/>.
         /// </summary>
-        private float _lastSlowTickTimeSeconds;
+        /// <remarks>
+        /// Held as a <c>double</c>, and differenced as one, because this is the clock the whole rate
+        /// accounting is derived from. <see cref="ReadDispatcherTimeSeconds"/> casts to float, and a float
+        /// ulp grows with the clock: it is 0.000244 s at 3.6e3 s but 0.0625 s past 8.6e5 s, at which point a
+        /// single frame's elapsed time quantises to one representable step and the accounting silently
+        /// under-credits in exactly the long sessions where drift matters. The dispatcher exposes the value
+        /// as a double already (<c>SystemDispatcher.DilatedTimeSeconds</c>, SystemDispatcher.cs:631), so the
+        /// precision loss was pure cast damage.
+        /// </remarks>
+        private double _lastSlowTickTimeSeconds;
 
         /// <summary>Last delta handed to slow-tick consumers. Observability only; see <see cref="EcosystemLiveHeartbeat"/>.</summary>
         [SerializeField] private float _debugSlowTickDeltaSeconds;
+
+        /// <summary>
+        /// Slow-tick invocations that credited zero elapsed time because they were substeps 2..N of a frame
+        /// whose elapsed time had already been credited by substep 1.
+        /// </summary>
+        /// <remarks>
+        /// This is the audit trail for <see cref="ResolveSlowTickDeltaSeconds"/>. A run where this stays 0
+        /// never ran a multi-substep frame, so no accounting policy on this lane could have differed. A run
+        /// where it climbs is the regime where the previous 0.1 s floor was fabricating elapsed time, and it
+        /// is the only way to tell the two apart from a log rather than from a profiler.
+        /// </remarks>
+        [SerializeField] private int _debugSlowTickZeroCreditSubsteps;
 
         /// <summary>Measured simulation seconds accumulated toward the next <see cref="EcosystemLiveHeartbeat"/> emission.</summary>
         private float _heartbeatAccumulator;
@@ -2928,14 +3009,93 @@ namespace Hecton8.World
         /// <c>ISlowTickable</c> to read it, so this director measures it instead.
         /// </para>
         /// <para>
-        /// Clamped low at <see cref="DefaultSlowTickIntervalSeconds"/> and high at
-        /// <see cref="MaxSlowTickDeltaSeconds"/>. The high clamp is load-bearing: several substeps can run
-        /// inside one frame, and every substep after the first reads an unchanged
-        /// <c>DilatedTimeSeconds</c>, so the raw measurement is 0 for those and the frame's full delta for
-        /// the first. Bounding at the dispatcher's slowest cadence keeps a late frame from crediting
-        /// unbounded catch-up time, which is the surplus <c>MaxCadenceSubstepsPerFrame</c> intentionally
-        /// throws away (SystemDispatcher.cs:6471-6484). The low clamp keeps the zero-delta substeps from
-        /// stalling accumulators outright, which would trade a 5x-too-fast ecology for a frozen one.
+        /// ACCOUNTING RULE, and this is the load-bearing part: a frame's elapsed time is credited ONCE, by
+        /// whichever substep first observes the clock move. <c>UpdateH8TimeState</c> runs once per frame
+        /// (SystemDispatcher.cs:5221) BEFORE <c>RunSlowTick</c> (:5322), so substeps 2..N of a frame read an
+        /// unchanged <c>DilatedTimeSeconds</c> and credit exactly 0. There is deliberately NO lower clamp.
+        /// A lower clamp was here and it was the defect: applied to a repeated reading of the same instant it
+        /// manufactured elapsed time out of a clock that had not moved, and it over-credited worst in the
+        /// 2.5-10 fps band a loaded editor actually sits in. With the 0.1 s floor, credited time per frame was
+        /// <c>clamp(frameDt, 0.1, 1.0) + (N-1) * 0.1</c>: a sustained 0.2 s frame credited 0.3 s (1.5x), a
+        /// 0.3 s frame 0.5 s (1.67x), and a 0.4 s frame 0.7 s (1.75x). Rate fidelity was the entire point of
+        /// introducing the measurement, so a floor that inflated the rate by up to 75 percent defeated it.
+        /// </para>
+        /// <para>
+        /// The zero credit is not a stall. Every consumer on this lane is additive in the delta -
+        /// <see cref="UpdateSpawnCreditBudget"/>, <see cref="TickEclipsePredatorShallowMigration"/>,
+        /// <see cref="TickCampaignToxicityPressure"/>, <see cref="EvaluateAlgaeBloomTrigger"/>,
+        /// <see cref="EcosystemLiveHeartbeat"/> and <c>_coldTickAccumulator</c> - so a 0 adds nothing and
+        /// nothing divides by it. The frame's whole elapsed time already went in on substep 1.
+        /// </para>
+        /// <para>
+        /// The test is "did the clock move", not "is this the same frame index", and that is deliberate: it
+        /// stays correct if the dispatcher ever moves <c>UpdateH8TimeState</c> inside the substep loop, in
+        /// which case each substep would legitimately measure its own advance and this code would need no
+        /// change. Exact equality is safe because both readings come from the same <c>double</c> field
+        /// through the same accessor within one frame.
+        /// </para>
+        /// <para>
+        /// RATE RELATIVE TO THE DISPATCHER'S OWN SLOW-LANE ACCOUNTING. The dispatcher credits its six other
+        /// consumers exactly <c>slowTickIntervalSeconds</c> per substep (SystemDispatcher.cs:6522-6524), so
+        /// its accounted time is substeps * interval; this director credits <c>min(frameDt, 1.0)</c> per
+        /// frame. With <c>MaxCadenceSubstepsPerFrame</c> = 4 and a 0.1 s interval:
+        /// </para>
+        /// <list type="bullet">
+        /// <item><description>
+        /// 60 fps (frameDt 0.0167 s): the lane fires about every sixth frame with one substep, and elapsed
+        /// time since the previous firing is about 0.1 s - the interval. 1.00x, and no substep ever credits
+        /// zero.
+        /// </description></item>
+        /// <item><description>
+        /// The 2.5-10 fps band (frameDt 0.1 to 0.4 s): 1 to 4 substeps per frame, substeps 2..N credit 0, so
+        /// the frame credits frameDt. frameDt is still within 4 * 0.1 s, so the dispatcher discards nothing
+        /// and its accounted rate is also frameDt per frame in the mean. 1.00x. Instantaneously the two
+        /// differ by the dispatcher's sub-interval accumulator remainder, which is bounded by one interval
+        /// and self-cancels. This band held the 1.5x-1.75x over-credit and is now the regime where the two
+        /// agree exactly.
+        /// </description></item>
+        /// <item><description>
+        /// frameDt about 1.33 s: 4 substeps run and 9 more are owed. This director credits min(1.33, 1.0) =
+        /// 1.0 s per 1.33 s, so 0.75x wall clock; the dispatcher accounts 0.4 s per 1.33 s, so 0.30x wall
+        /// clock. Ratio 2.50x, down from 3.25x before this fix. Neither is wall-clock-true, and the ceiling
+        /// is why - see <see cref="MaxSlowTickDeltaSeconds"/>.
+        /// </description></item>
+        /// </list>
+        /// <para>
+        /// DIVERGENCE FROM THE OTHER SIX CONSUMERS - a deliberate choice, with its reason and its bounds.
+        /// The dispatcher names them at SystemDispatcher.cs:6532-6534: <c>WorldSpatialHashGrid</c>,
+        /// <c>CombatDamageRuntime</c>, <c>ShinobuEcosystemBalancer</c>, <c>EcosystemPopulationBalancer</c>,
+        /// <c>HectonSurfaceWeatherDirector</c>, <c>ShinobuStormPropagationRuntime</c>. They take one interval
+        /// per substep and therefore silently inherit the discard. This director does not, because its delta
+        /// is not a per-tick decay rate - it is the TRIP RATE of a gate that hands
+        /// <c>SectorPopulationSolveJob</c> a FIXED <c>DeltaSeconds = coldTickIntervalSeconds</c> of 5 s
+        /// (:5968 and :6009). Throttling this clock does not make the ecology run smoothly slower; it
+        /// decouples integrated population time from elapsed time, charging 5 s of Lotka-Volterra
+        /// integration against 16.7 s of elapsed time at the 30 percent lane rate. Keeping the trip rate on
+        /// wall time is what keeps integrated time equal to elapsed time.
+        /// </para>
+        /// <para>
+        /// The divergence is bounded, not a permanent private clock. It exists only on frames where
+        /// frameDt exceeds <c>MaxCadenceSubstepsPerFrame</c> * interval - exactly the frames where the
+        /// dispatcher discards surplus. Below that, in every regime up to 2.5 fps, measurement and
+        /// per-substep-interval crediting agree. Under <c>EnableStepBoundedTime</c> with a step at or under
+        /// that product the discard branch never runs at all, which SystemDispatcher.cs:6545-6549 names as
+        /// the actual cure, and the two policies then coincide exactly. So the divergence lives only in the
+        /// configuration the dispatcher itself documents as invalid, and it disappears when that
+        /// configuration is fixed rather than needing a second fix here.
+        /// </para>
+        /// <para>
+        /// EVIDENCE NOTE on the 1.33 s figure, because a stale measurement is how this lane earned its wrong
+        /// remark in the first place. That number is 0.75 game frames per wall second from
+        /// <c>Logs/omega_route28.log</c>, quoted second-hand at SystemDispatcher.cs:6536-6540. It is NOT the
+        /// steady state of every headless run. In <c>Logs/h8_worldsim_probe5.log</c> - 2490 game frames over
+        /// 178.8 s wall - the dispatcher reports <c>slowTickDiscardedSeconds</c> 23.543 over
+        /// <c>slowTickDiscardEvents</c> 4, i.e. 4 frames out of 2490, and its gameplay phase measured 15.39
+        /// game frames per wall second (frameDt about 0.065 s) where no substep collapse happens at all; the
+        /// frames above 0.4 s were its bootstrap phases at 0.18-0.47 fps. Treat frameDt above 0.4 s as a
+        /// bootstrap-and-hitch regime whose share is run-dependent, and read
+        /// <see cref="_debugSlowTickZeroCreditSubsteps"/> from the run in hand rather than assuming either
+        /// figure.
         /// </para>
         /// <para>
         /// Not <c>Time.deltaTime</c>: hot-path law forbids reading it inside owner tick logic, and the
@@ -2944,31 +3104,41 @@ namespace Hecton8.World
         /// </remarks>
         private float ResolveSlowTickDeltaSeconds()
         {
-            float nowSeconds = ReadDispatcherTimeSeconds();
+            double nowSeconds = ReadDispatcherDilatedTimeSecondsDouble();
 
-            // A zero reading means no dispatcher instance resolved (ReadDispatcherTimeSeconds :3227-3235
-            // returns 0 for null, non-finite and non-positive alike). Fall back to nominal rather than
-            // crediting a garbage delta, and do not latch the clock.
-            if (nowSeconds <= 0f)
+            // A zero reading means no dispatcher instance resolved (the reader returns 0 for null,
+            // non-finite and non-positive alike). Fall back to nominal rather than crediting a garbage
+            // delta, and do not latch the clock.
+            if (nowSeconds <= 0d)
             {
                 _debugSlowTickDeltaSeconds = DefaultSlowTickIntervalSeconds;
                 return DefaultSlowTickIntervalSeconds;
             }
 
-            float previousSeconds = _lastSlowTickTimeSeconds;
+            double previousSeconds = _lastSlowTickTimeSeconds;
             _lastSlowTickTimeSeconds = nowSeconds;
 
             // First tick after init or after a clock reset has no previous sample to difference against.
-            if (previousSeconds <= 0f || nowSeconds < previousSeconds)
+            if (previousSeconds <= 0d || nowSeconds < previousSeconds)
             {
                 _debugSlowTickDeltaSeconds = DefaultSlowTickIntervalSeconds;
                 return DefaultSlowTickIntervalSeconds;
             }
 
-            float deltaSeconds = math.clamp(
-                nowSeconds - previousSeconds,
-                DefaultSlowTickIntervalSeconds,
-                MaxSlowTickDeltaSeconds);
+            // Substeps 2..N of one frame observe an unchanged clock, so they credit nothing: the frame's
+            // elapsed time was already credited by substep 1. No lower clamp - see the remark. Counted so a
+            // log can distinguish a run that never hit this regime from one that lived in it.
+            if (nowSeconds == previousSeconds)
+            {
+                _debugSlowTickZeroCreditSubsteps++;
+                _debugSlowTickDeltaSeconds = 0f;
+                return 0f;
+            }
+
+            double elapsedSeconds = nowSeconds - previousSeconds;
+            float deltaSeconds = elapsedSeconds >= MaxSlowTickDeltaSeconds
+                ? MaxSlowTickDeltaSeconds
+                : (float)elapsedSeconds;
             _debugSlowTickDeltaSeconds = deltaSeconds;
             return deltaSeconds;
         }
@@ -3006,11 +3176,15 @@ namespace Hecton8.World
                 PublishApexPresenceFake(false);
             }
 
-            // Was DefaultSlowTickIntervalSeconds when that constant was 0.5f, which is what made the
-            // Lotka-Volterra sector solve run five times too fast: the gate below tripped every 10
-            // invocations and then handed SectorPopulationSolveJob DeltaSeconds = coldTickIntervalSeconds
-            // (5 s, :5407/:5448) for one real second of elapsed time. Feeding the measured delta makes the
-            // trip rate track wall time, so the 5 s the job integrates corresponds to 5 s that happened.
+            // This accumulator is why the delta has to be measured rather than assumed, and why it must be
+            // measured ONCE per frame. It is not a decay rate - it is the trip rate of a gate that hands
+            // SectorPopulationSolveJob a FIXED DeltaSeconds = coldTickIntervalSeconds of 5 s (:5968, :6009).
+            // So whatever this accumulator advances at, the ecology advances at: when the constant was 0.5f
+            // the gate tripped every 10 invocations and integrated 5 s per real second, and when the measured
+            // delta carried a 0.1 s floor into substeps that observed no elapsed time it integrated up to
+            // 1.75 s per real second in the 2.5-10 fps band. Credited once per frame, the 5 s the job
+            // integrates corresponds to 5 s that actually elapsed, bounded by MaxSlowTickDeltaSeconds on a
+            // frame longer than 1 s. Full per-regime rates: ResolveSlowTickDeltaSeconds.
             _coldTickAccumulator += slowTickDeltaSeconds;
             if (_coldTickAccumulator >= coldTickIntervalSeconds)
             {
@@ -3144,11 +3318,26 @@ namespace Hecton8.World
         /// this measures.
         /// </para>
         /// <para>
-        /// Allocation: the message is built only inside the diagnostic guard, matching the reasoning already
-        /// documented on <see cref="ReportFaunaRecordCensusOnce"/> - <c>H8Debug</c> is
-        /// <c>[Conditional]</c>, so without the guard a player build would keep the concatenation and
-        /// discard the call. It allocates one string per interval, not per tick, and nothing in a player
-        /// build.
+        /// Allocation, CORRECTED. The guard is right and the reasoning behind it is unchanged: <c>H8Debug</c>
+        /// is <c>[Conditional("UNITY_EDITOR")]</c> + <c>[Conditional("DEVELOPMENT_BUILD")]</c>, so without
+        /// the <c>#if</c> a player build would delete the call and keep the concatenation. What was wrong was
+        /// the cost. "One string per interval" understates it by an order of magnitude: the expression has 26
+        /// concatenation operands, and C# does not fold that into one allocation - above four operands Roslyn
+        /// lowers <c>+</c> to <c>string.Concat(string[])</c>, so each emission allocates a <c>string[26]</c>
+        /// params array, one <c>ToString</c> result for each of the 10 int and 3 float operands, and the
+        /// joined result: roughly 15 managed allocations, of which the 3 float <c>ToString</c> calls are the
+        /// expensive and culture-dependent ones (this host formats with a comma decimal separator, so a
+        /// parser reading these lines must expect <c>0,1</c> and not <c>0.1</c>).
+        /// </para>
+        /// <para>
+        /// The precedent this reasoning was taken from covers the GUARD but NOT the cost, and the difference
+        /// is the whole point. <see cref="ReportFaunaRecordCensusOnce"/> is latched to exactly one emission
+        /// per process, so its allocation is genuinely one-shot and its size is irrelevant. This one repeats
+        /// forever - every <c>heartbeatIntervalSeconds</c> of CREDITED time, so 360 emissions per 3600 s of
+        /// credited time at the 10 s default, about 5400 allocations. That is acceptable only because the
+        /// whole block is compiled out of a player build, NOT because it is small or rare. If this readout
+        /// ever has to reach a player build it needs a <c>Span&lt;char&gt;</c>/preallocated <c>char[]</c>
+        /// path or a telemetry lane; do not delete the <c>#if</c> and ship the expression.
         /// </para>
         /// </remarks>
         private void EcosystemLiveHeartbeat(float deltaSeconds)
@@ -3208,7 +3397,16 @@ namespace Hecton8.World
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            // COLD ALLOC: string[1] per heartbeat interval - ecosystem liveness readout - owner: EcosystemDirector
+            // COLD ALLOC: string[26] params array + 13 ToString results + 1 joined string, about 15 managed
+            // allocations per heartbeat interval and NOT one string - ecosystem liveness readout - owner: EcosystemDirector
+            //
+            // bloomIntensity01 is the model's CEILING and bloomRamped01 is what was actually reached; they
+            // are separate keys because they answer different questions and a single "bloom" number hid the
+            // 0.45 environmental cap. bloomOnsets counts false-to-true trigger edges, one per bloom - it was
+            // bloomTriggers and counted ramp steps, so a heartbeat diff on the old key was a slow-tick count.
+            // zeroCreditSubsteps is the rate-accounting audit: it is the number of slow-tick invocations that
+            // credited no elapsed time because the frame's time was already credited, so a nonzero value is
+            // the multi-substep regime and a zero value proves the run never entered it.
             Hecton8.Core.H8Debug.Log(
                 "[ECOHEARTBEAT] sectors=" + sectorCount +
                 " populated=" + populatedSectors +
@@ -3218,9 +3416,11 @@ namespace Hecton8.World
                 " netPredators=" + netPredator +
                 " biomassCells=" + _activeBiomassCellCount +
                 " bloomIntensity01=" + _debugBloomIntensity01 +
-                " bloomTriggers=" + _debugBloomTriggerCount +
+                " bloomRamped01=" + _debugBloomRamped01 +
+                " bloomOnsets=" + _debugBloomOnsetCount +
                 " ratioGateDenials=" + _debugPredatorRatioGateDenials +
-                " slowDt=" + _debugSlowTickDeltaSeconds,
+                " slowDt=" + _debugSlowTickDeltaSeconds +
+                " zeroCreditSubsteps=" + _debugSlowTickZeroCreditSubsteps,
                 this);
 #endif
         }
@@ -3232,12 +3432,14 @@ namespace Hecton8.World
         /// <remarks>
         /// <para>
         /// Before this, <c>AlgaeBloom01</c> could only be raised by prey overpopulation inside
-        /// <c>SectorPopulationSolveJob.Execute</c> (:1044-1048, <c>prey &gt; PreyCapacity</c>), so a bloom was
+        /// <c>SectorPopulationSolveJob.Execute</c> (:1080-1084, <c>prey &gt; PreyCapacity</c>), so a bloom was
         /// strictly a symptom of too many grazers and nothing environmental could start one. Nutrients,
         /// light and temperature were all available and none of them were consulted. The field is not
-        /// decorative: the solve reads it into food density (:1015-1021), it suppresses oxygen (:1047), and
+        /// decorative: the solve reads it into food density (:1051-1057), it suppresses oxygen (:1083), and
         /// <see cref="RefreshStarvationPressure"/> reads it as a hostility source when a sector has no
-        /// predators (:4213), so this closes a loop that was already wired on the consuming side.
+        /// predators (:4767), so this closes a loop that was already wired on the consuming side. Those four
+        /// line references were stale by 30-500 lines and are corrected here; they are the citations a reader
+        /// checks this claim against.
         /// </para>
         /// <para>
         /// Rate handling: the model itself is a pure threshold test and returns no rate, so
@@ -3249,8 +3451,32 @@ namespace Hecton8.World
         /// </para>
         /// <para>
         /// The intensity is a ceiling, not an assignment: the ramp only ever moves bloom upward here and
-        /// never pulls it down to the model's value, because the solve owns bloom decay (:1051) and
+        /// never pulls it down to the model's value, because the solve owns bloom decay (:1087) and
         /// overwriting that would let this method cancel an overpopulation bloom the solve is holding.
+        /// </para>
+        /// <para>
+        /// CEILING ARITHMETIC, stated because it is invisible at the call site and it caps this whole path
+        /// below half. The environmental path can never drive <c>AlgaeBloom01</c> above
+        /// <c>1 - bloomNutrientThreshold01</c>, which is 0.45 at the serialized default of 0.55.
+        /// <c>BloomTriggerThresholdCalculator.Compute</c> returns <c>1 - 1/(1 + excess/range)</c> with
+        /// <c>range</c> equal to the threshold, and that simplifies exactly:
+        /// <c>1 - 1/((T + e)/T) = 1 - T/n = (n - T)/n</c> for nutrient <c>n</c> and threshold <c>T</c>. The
+        /// nutrient input is <c>carryingCapacity01</c>, which is saturated to 1.0 on BOTH branches of
+        /// <see cref="TryGetBiomassAvailability"/> (:3437 and :3508), so the maximum is <c>(1 - T)/1</c> =
+        /// <c>1 - T</c> = 0.45. Because the value is used strictly as a CEILING for the ramp, no length of
+        /// ramp and no <c>bloomRampPerSecond</c> reaches past it: the prey-overpopulation branch (:1082,
+        /// +0.2 per solve) stays the only route to a bloom above 0.45.
+        /// </para>
+        /// <para>
+        /// Deliberate, not normalised - but the coupling is a trap worth naming. The cap moves inversely with
+        /// the threshold, so a tuner raising <c>bloomNutrientThreshold01</c> to make blooms RARER also makes
+        /// every environmental bloom WEAKER (0.8 caps them at 0.2), which is the opposite of what raising a
+        /// trigger threshold suggests. The sub-half ceiling is the wanted shape here: environmental blooms
+        /// are an ambient partial bloom that overpopulation can then push past, so the two routes stay
+        /// distinguishable in the data. Normalising by <c>1/(1 - T)</c> would restore a full 0..1 range and
+        /// decouple strength from rarity, and it belongs in the calculator, not at this call site, with its
+        /// own proof - it moves food density, oxygen suppression and starvation hostility together, and this
+        /// file cannot show that any of the three still behaves.
         /// </para>
         /// <para>
         /// KNOWN GAP, stated rather than hidden: this evaluates the PLAYER's sector, so it does not run in a
@@ -3298,7 +3524,28 @@ namespace Hecton8.World
                 bloomTemperatureMaxCelsius);
 
             _debugBloomIntensity01 = bloomTriggered ? bloomIntensity01 : 0f;
-            if (!bloomTriggered || !(bloomIntensity01 > 0f))
+
+            // Onset edge. The latch is updated ONLY on ticks that reached the model: every early return
+            // above means "not evaluated" (trigger disabled, solve job owns the buffers, no resolvable
+            // player sector, no envelope, no biomass reading), not "not blooming". Clearing on those would
+            // invent a fresh onset every time one contended tick interleaved with a live bloom, which is the
+            // same class of error as the per-step counting this replaces.
+            if (!bloomTriggered)
+            {
+                _bloomTriggerLatched = false;
+                return;
+            }
+
+            // Counted on the model's own boolean, so the count and the trigger cannot disagree. That
+            // includes the exactly-at-threshold case where the trigger holds with intensity 0: it is an
+            // onset with no strength, and it is followed by the ramp bailing out below.
+            if (!_bloomTriggerLatched)
+            {
+                _bloomTriggerLatched = true;
+                _debugBloomOnsetCount++;
+            }
+
+            if (!(bloomIntensity01 > 0f))
                 return;
 
             if (!TryLockSectorSolveJobBuffers())
@@ -3321,7 +3568,7 @@ namespace Hecton8.World
                 _sectorFrontStates[slotIndex] = state;
                 _sectorBackStates[slotIndex] = state;
                 WriteHeadlessSlot(slotIndex, in state);
-                _debugBloomTriggerCount++;
+                _debugBloomRamped01 = state.AlgaeBloom01;
             }
             finally
             {
@@ -3786,6 +4033,25 @@ namespace Hecton8.World
                 return 0f;
 
             return seconds > float.MaxValue ? float.MaxValue : (float)seconds;
+        }
+
+        /// <summary>
+        /// Same dispatcher dilated clock as <see cref="ReadDispatcherTimeSeconds"/>, without the float cast,
+        /// for callers that DIFFERENCE two readings instead of comparing one against a deadline.
+        /// </summary>
+        /// <remarks>
+        /// Only <see cref="ResolveSlowTickDeltaSeconds"/> needs this. Differencing after a float cast loses
+        /// the small quantity being measured to the large absolute clock value: a float ulp is 0.0625 s once
+        /// the clock passes about 8.6e5 s, so a 0.065 s frame delta would be one representable step. The
+        /// deadline comparisons elsewhere in this file are unaffected by that and keep the float reader.
+        /// Returns 0 for a null dispatcher, a non-finite clock, and a non-positive clock alike, which is the
+        /// same "no usable reading" contract the float reader has.
+        /// </remarks>
+        private static double ReadDispatcherDilatedTimeSecondsDouble()
+        {
+            SystemDispatcher dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+            double seconds = dispatcher != null ? dispatcher.DilatedTimeSeconds : 0d;
+            return math.isfinite(seconds) && seconds > 0d ? seconds : 0d;
         }
 
         private static uint ReadDispatcherFrameId()
@@ -5355,8 +5621,10 @@ namespace Hecton8.World
 
             // Drop the slow-tick clock latch with the accumulator it feeds, so the first tick after a
             // shutdown/hot-swap re-bootstraps at the nominal delta instead of differencing against a stale
-            // timestamp from the previous service lifetime.
-            _lastSlowTickTimeSeconds = 0f;
+            // timestamp from the previous service lifetime. The zero-credit substep total is deliberately
+            // NOT reset: it is a per-process audit of how much of the run lived in the multi-substep regime,
+            // and a hot-swap mid-run must not erase evidence of the frames that already happened.
+            _lastSlowTickTimeSeconds = 0d;
             _heartbeatAccumulator = 0f;
             _heartbeatHasBaseline = false;
             _scheduledSolveHandle = default;
