@@ -13,7 +13,7 @@
    "name": "COL_Fauna_Fish_2207_00",
    "reason": "",
    "triangleBudget": 200,
-   "triangles": 68,
+   "triangles": 70,
    "withinBudget": true
   }
  ],
@@ -77,7 +77,7 @@
    "baked": true,
    "hasContrast": true,
    "max": 1.0,
-   "mean": 0.86934,
+   "mean": 0.86242,
    "min": 0.0,
    "samples": 64
   },
@@ -94,17 +94,17 @@
   "channelMeasurements": [
    {
     "channel": "sway_amplitude",
-    "coverage": 0.0796,
+    "coverage": 0.0806,
     "hasGradient": true,
     "max": 0.9911,
-    "mean": 0.18743,
+    "mean": 0.18477,
     "min": 0.0,
     "subjectVisible": true,
     "tile": "Fish_2207_00_chan0_sway_amplitude.png"
    },
    {
     "channel": "biolum_phase",
-    "coverage": 0.0796,
+    "coverage": 0.0806,
     "hasGradient": true,
     "max": 0.0003,
     "mean": 2e-05,
@@ -114,20 +114,20 @@
    },
    {
     "channel": "baked_ao",
-    "coverage": 0.0796,
+    "coverage": 0.0806,
     "hasGradient": true,
     "max": 1.0,
-    "mean": 0.96022,
-    "min": 0.14413,
+    "mean": 0.95682,
+    "min": 0.14996,
     "subjectVisible": true,
     "tile": "Fish_2207_00_chan2_baked_ao.png"
    },
    {
     "channel": "family_specific",
-    "coverage": 0.0796,
+    "coverage": 0.0806,
     "hasGradient": true,
     "max": 1.0,
-    "mean": 0.66697,
+    "mean": 0.66542,
     "min": 0.0,
     "subjectVisible": true,
     "tile": "Fish_2207_00_chan3_family_specific.png"
@@ -136,16 +136,16 @@
   "consumerContract": {
    "fishScaleAtMaterial": 0.28,
    "localSize": [
-    0.4561,
+    0.42128,
     0.77697,
     2.0
    ],
-   "maxAbsX": 0.23127,
+   "maxAbsX": 0.21341,
    "noseZ": 1.0,
    "renderedLengthMetresAtThatScale": 0.56,
    "tailZ": -1.0,
-   "widthOverDepth": 0.587,
-   "zLongestMarginOverX": 4.385,
+   "widthOverDepth": 0.5422,
+   "zLongestMarginOverX": 4.7474,
    "zLongestMarginOverY": 2.5741
   },
   "deformationAmplitude": {
@@ -178,21 +178,25 @@
    },
    "pectoral": {
     "baseZ": 0.3572,
-    "lengthLocal": 0.1579,
-    "rightShorterBy": 0.06
+    "leadingOverTrailingThickness": 3.5,
+    "lengthLocal": 0.2198,
+    "maxThicknessOverChord": 0.11012,
+    "rightShorterBy": 0.06,
+    "sectionRoute": "aerofoil: zero thickness at the hull (shared vertex row, no base rim), maximum at 45% span and 32% chord, leading edge 42% of max, trailing margin 12% of max, tip 45% of max",
+    "trianglesPerFin": 26
    }
   },
   "generatorNotes": [
-   "authored 44 polygons fanned into 500 triangles BEFORE UV packing, so the validated topology is the exported topology: export_unity writes use_triangles=True (mandatory -- use_tspace drops tangents silently on n-gons) and verify_fbx_roundtrip compares PER-CORNER data, which a quad source can never match",
+   "authored 48 polygons fanned into 528 triangles BEFORE UV packing, so the validated topology is the exported topology: export_unity writes use_triangles=True (mandatory -- use_tspace drops tangents silently on n-gons) and verify_fbx_roundtrip compares PER-CORNER data, which a quad source can never match",
    "stage order deviation: the shared MAT_* material is built before the AO bake because bpy.ops.object.bake refuses an object with no material slot. No other stage moved.",
-   "shell: 500 triangles in 7 components (body+caudal as ONE closed manifold, plus dorsal, anal, two pectoral membranes and two eye lenses as intentional separate shells), 0 boundary edges, 0 non-manifold edges. The component count is a BODY PLAN, not fragmentation -- compare it against the per-LOD shell trace below before reading a coarse level as damaged.",
-   "consumer contract PASS: local size (0.4561, 0.7770, 2.0000), Z longest by 4.38x over X and 2.57x over Y, width/depth 0.587, snout apex at z=1.0000 on the midline, |x|max 0.2313 inside the 0.556 fin-mask knee",
+   "shell: 528 triangles in 7 components (body+caudal as ONE closed manifold, plus dorsal, anal, two pectoral membranes and two eye lenses as intentional separate shells), 0 boundary edges, 0 non-manifold edges. The component count is a BODY PLAN, not fragmentation -- compare it against the per-LOD shell trace below before reading a coarse level as damaged.",
+   "consumer contract PASS: local size (0.4213, 0.7770, 2.0000), Z longest by 4.75x over X and 2.57x over Y, width/depth 0.542, snout apex at z=1.0000 on the midline, |x|max 0.2134 inside the 0.556 fin-mask knee",
    "AO bake distance 0.3600 local units, 64 samples",
-   "LOD1 reunwrap: entry comp=7 tris=336 boundary=0 -> exit comp=7 tris=336 boundary=0; triangulated 0 fused, purged 0 slivers and 0 duplicate faces; refitted 336 against the 12000 budget",
-   "LOD2 reunwrap: entry comp=7 tris=160 boundary=0 -> exit comp=7 tris=160 boundary=0; triangulated 0 fused, purged 0 slivers and 0 duplicate faces; refitted 160 against the 2000 budget",
-   "LOD0 uv edge-ratio: worst=0.7499 p95=0.2483 mean=0.0907 over 500 triangles",
-   "LOD1 uv edge-ratio: worst=0.3973 p95=0.1211 mean=0.0262 over 336 triangles",
-   "LOD2 uv edge-ratio: worst=0.3424 p95=0.1254 mean=0.0234 over 160 triangles"
+   "LOD1 reunwrap: entry comp=7 tris=354 boundary=0 -> exit comp=7 tris=354 boundary=0; triangulated 0 fused, purged 0 slivers and 0 duplicate faces; refitted 354 against the 12000 budget",
+   "LOD2 reunwrap: entry comp=7 tris=168 boundary=0 -> exit comp=7 tris=168 boundary=0; triangulated 0 fused, purged 0 slivers and 0 duplicate faces; refitted 168 against the 2000 budget",
+   "LOD0 uv edge-ratio: worst=0.7499 p95=0.2513 mean=0.0909 over 528 triangles",
+   "LOD1 uv edge-ratio: worst=0.3989 p95=0.1451 mean=0.0318 over 354 triangles",
+   "LOD2 uv edge-ratio: worst=0.4118 p95=0.1299 mean=0.0254 over 168 triangles"
   ],
   "hitboxes": {
    "bodyCapsule": {
@@ -235,24 +239,24 @@
    "LOD1": {
     "boundaryEdges": 0,
     "components": 7,
-    "largestComponent": 256,
+    "largestComponent": 266,
     "nonManifoldEdges": 0,
     "smallestComponent": 12,
-    "triangles": 336
+    "triangles": 354
    },
    "LOD2": {
     "boundaryEdges": 0,
     "components": 7,
-    "largestComponent": 124,
+    "largestComponent": 130,
     "nonManifoldEdges": 0,
     "smallestComponent": 4,
-    "triangles": 160
+    "triangles": 168
    }
   },
   "shading": {
-   "sharpEdges": 75,
+   "sharpEdges": 88,
    "smoothAngleDeg": 68.0,
-   "smoothPolygons": 500,
+   "smoothPolygons": 528,
    "weightedNormalsApplied": true
   },
   "topology": {
@@ -260,7 +264,7 @@
    "components": 7,
    "irreducibleFloor": 28,
    "nonManifoldEdges": 0,
-   "triangles": 500
+   "triangles": 528
   },
   "triangleBudgetDerivation": "law.LOD_BUDGETS[Fauna] = (35000, 12000, 2000, impostor 12-500) are HARD MAXIMA for a hero creature body (3dmodel.md:212). The binding figure for a mass-instanced swarm unit is BoidFishInstanced.shader:32 '2000 fish x 200 tris', with REND_GPU_Driven_Animation_VAT.txt:138 capping TIER_LOW at 2048 boids. LOD0 targets ~2x the 200-tri figure to carry a readable near silhouette; LOD1 is the swarm-cost-matched level.",
   "vatReadiness": {
@@ -268,8 +272,8 @@
    "note": "FaunaSwarmVatPrefabBinder REFUSES a bake whose page width != boidMesh.vertexCount. Vertex ORDER is equally load-bearing and is NOT checked anywhere, which is why the importer block disables vertex optimisation and welding.",
    "submeshCount": 1,
    "uvSets": 1,
-   "vatWidthWillEqual": 264,
-   "vertexCountLOD0": 264
+   "vatWidthWillEqual": 278,
+   "vertexCountLOD0": 278
   },
   "vertexColorChannels": {
    "alphaMeaning": "counter_shading_blend: 0.0 along the dorsal ridge rising to 1.0 across the ventral belly, following the real counter-shading of a schooling fish. 3DMODEL_FAUNA.md section 4 permits a shader blend mask in A. A shader may lerp a dark dorsal colour to a pale belly with it; BoidFishInstanced.shader currently derives the same effect from local Y instead and does not read A, so this channel is authored to the bible contract and is not yet consumed.",
@@ -291,7 +295,7 @@
   "vertexColorDirectReadback": {
    "baked_ao": {
     "max": 1.0,
-    "mean": 0.88938,
+    "mean": 0.88034,
     "min": 0.0
    },
    "biolum_phase": {
@@ -301,12 +305,12 @@
    },
    "family_specific": {
     "max": 1.0,
-    "mean": 0.49627,
+    "mean": 0.50564,
     "min": 0.0
    },
    "sway_amplitude": {
     "max": 1.0,
-    "mean": 0.28955,
+    "mean": 0.30744,
     "min": 0.0
    }
   }
@@ -344,9 +348,9 @@
   ],
   "monotonic": true,
   "triangleCountsPerLod": {
-   "LOD0": 500,
-   "LOD1": 336,
-   "LOD2": 160
+   "LOD0": 528,
+   "LOD1": 354,
+   "LOD2": 168
   }
  },
  "manifestGaps": [
@@ -367,24 +371,24 @@
  "meshes": [
   {
    "boundsMax": [
-    0.2312714010477066,
+    0.21341316401958466,
     0.36665990948677063,
     1.0
    ],
    "boundsMin": [
-    -0.2248305082321167,
+    -0.20787177979946136,
     -0.41031089425086975,
     -1.0
    ],
    "colorLayers": [
     "Col"
    ],
-   "digest": "3605cef5bfcf9b090b816e8f8bafa15c",
+   "digest": "f0c2b7e9adae21293f1471857366a6d4",
    "hasTangentBasis": true,
    "lod": 0,
    "name": "MESH_Fauna_Fish_2207_00_LOD0",
    "submeshes": 1,
-   "triangles": 500,
+   "triangles": 528,
    "uvLayers": [
     "UVMap"
    ],
@@ -392,32 +396,32 @@
     "failures": [],
     "passed": true,
     "warnings": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 14 of 500 triangles below the sliver floor 3.948e-04 m2 (0.1x mean triangle area 3.948e-03 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 30 of 528 triangles below the sliver floor 3.731e-04 m2 (0.1x mean triangle area 3.731e-03 m2); the area-weighted population test still covered all of them"
     ]
    },
    "validatorVersion": "1.0.0",
-   "vertices": 264
+   "vertices": 278
   },
   {
    "boundsMax": [
-    0.2312714010477066,
+    0.21256232261657715,
     0.36665990948677063,
     1.0006678104400635
    ],
    "boundsMin": [
-    -0.2248305082321167,
+    -0.2070300281047821,
     -0.41031089425086975,
     -0.9816354513168335
    ],
    "colorLayers": [
     "Col"
    ],
-   "digest": "3024df801498128838089133c384db1a",
+   "digest": "18913656c82bbd36d26dabbd5694b02d",
    "hasTangentBasis": true,
    "lod": 1,
    "name": "MESH_Fauna_Fish_2207_00_LOD1",
    "submeshes": 1,
-   "triangles": 336,
+   "triangles": 354,
    "uvLayers": [
     "UVMap"
    ],
@@ -425,34 +429,34 @@
     "failures": [],
     "passed": true,
     "warnings": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 17 of 336 triangles below the sliver floor 5.858e-04 m2 (0.1x mean triangle area 5.858e-03 m2); the area-weighted population test still covered all of them",
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 14 of 354 triangles below the sliver floor 5.525e-04 m2 (0.1x mean triangle area 5.525e-03 m2); the area-weighted population test still covered all of them",
      "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
      "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it"
     ]
    },
    "validatorVersion": "1.0.0",
-   "vertices": 182
+   "vertices": 191
   },
   {
    "boundsMax": [
-    0.2315617948770523,
+    0.2106616348028183,
     0.36665990948677063,
     1.0014162063598633
    ],
    "boundsMin": [
-    -0.22511078417301178,
+    -0.20528581738471985,
     -0.41031092405319214,
     -0.9712033271789551
    ],
    "colorLayers": [
     "Col"
    ],
-   "digest": "c11a3beaa72d3ca787515a7a06b16733",
+   "digest": "db6aff18ba7342d8e31ffe815ea68ee8",
    "hasTangentBasis": true,
    "lod": 2,
    "name": "MESH_Fauna_Fish_2207_00_LOD2",
    "submeshes": 1,
-   "triangles": 160,
+   "triangles": 168,
    "uvLayers": [
     "UVMap"
    ],
@@ -460,12 +464,13 @@
     "failures": [],
     "passed": true,
     "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 2 of 168 triangles below the sliver floor 1.138e-03 m2 (0.1x mean triangle area 1.138e-02 m2); the area-weighted population test still covered all of them",
      "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
      "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it"
     ]
    },
    "validatorVersion": "1.0.0",
-   "vertices": 94
+   "vertices": 98
   }
  ],
  "naming": {
@@ -488,62 +493,62 @@
    "Docs/AgentLogs/ForgePreviews/Fish_2207_00_SHEET_CHANNELS.png"
   ],
   "roundtripNotes": [
-   "wrote MESH_Fauna_Fish_2207_00.fbx (106364 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "wrote MESH_Fauna_Fish_2207_00.fbx (111148 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
    "MESH_Fauna_Fish_2207_00_LOD0: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
    "MESH_Fauna_Fish_2207_00_LOD1: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
    "MESH_Fauna_Fish_2207_00_LOD2: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
    "COL_Fauna_Fish_2207_00: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
    "COL_Fauna_Fish_2207_00: no material slot. 3dmodel.md section 6 declares slot 0 as the primary structural/tissue material; Unity will assign its default material to submesh 0.",
    "objects round-tripped: ['COL_Fauna_Fish_2207_00', 'MESH_Fauna_Fish_2207_00_LOD0', 'MESH_Fauna_Fish_2207_00_LOD1', 'MESH_Fauna_Fish_2207_00_LOD2']",
-   "COL_Fauna_Fish_2207_00: verts 36->36 loops 204->204 tris 68->68",
+   "COL_Fauna_Fish_2207_00: verts 37->37 loops 210->210 tris 70->70",
    "COL_Fauna_Fish_2207_00: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "COL_Fauna_Fish_2207_00: colour max delta 0.0000000 (tol 0.002)",
    "COL_Fauna_Fish_2207_00: world position max delta 0.0000001 m (tol 0.0001)",
    "COL_Fauna_Fish_2207_00: world corner-normal max delta 0.0000057 (tol 0.001), source has_custom_normals=True, reimport=True",
    "COL_Fauna_Fish_2207_00: uv0 max delta 0.00000000 (tol 1e-05)",
-   "COL_Fauna_Fish_2207_00: landmark (-0.00014, 0.31163, -0.9712) -> (-0.00014, 0.31163, -0.9712), delta 0.0000001 m, margin 0.01869 m",
-   "COL_Fauna_Fish_2207_00: signed volume +0.1956758 -> +0.1956758 (ratio +1.000000)",
+   "COL_Fauna_Fish_2207_00: landmark (-0.00014, 0.31163, -0.9712) -> (-0.00014, 0.31163, -0.9712), delta 0.0000001 m, margin 0.01957 m",
+   "COL_Fauna_Fish_2207_00: signed volume +0.1902289 -> +0.1902289 (ratio +1.000000)",
    "COL_Fauna_Fish_2207_00: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-   "MESH_Fauna_Fish_2207_00_LOD0: verts 264->264 loops 1500->1500 tris 500->500",
+   "MESH_Fauna_Fish_2207_00_LOD0: verts 278->278 loops 1584->1584 tris 528->528",
    "MESH_Fauna_Fish_2207_00_LOD0: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "MESH_Fauna_Fish_2207_00_LOD0: colour max delta 0.0000000 (tol 0.002)",
    "MESH_Fauna_Fish_2207_00_LOD0: world position max delta 0.0000001 m (tol 0.0001)",
-   "MESH_Fauna_Fish_2207_00_LOD0: world corner-normal max delta 0.0001329 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Fauna_Fish_2207_00_LOD0: world corner-normal max delta 0.0002275 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Fauna_Fish_2207_00_LOD0: uv0 max delta 0.00000000 (tol 1e-05)",
-   "MESH_Fauna_Fish_2207_00_LOD0: landmark (0.0, 0.33854, -1.0) -> (0.0, 0.33854, -1.0), delta 0.0000001 m, margin 0.01596 m",
-   "MESH_Fauna_Fish_2207_00_LOD0: signed volume +0.1038190 -> +0.1038190 (ratio +1.000000)",
+   "MESH_Fauna_Fish_2207_00_LOD0: landmark (0.0, 0.33854, -1.0) -> (0.0, 0.33854, -1.0), delta 0.0000001 m, margin 0.02416 m",
+   "MESH_Fauna_Fish_2207_00_LOD0: signed volume +0.1036742 -> +0.1036742 (ratio +1.000000)",
    "MESH_Fauna_Fish_2207_00_LOD0: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-   "MESH_Fauna_Fish_2207_00_LOD1: verts 182->182 loops 1008->1008 tris 336->336",
+   "MESH_Fauna_Fish_2207_00_LOD1: verts 191->191 loops 1062->1062 tris 354->354",
    "MESH_Fauna_Fish_2207_00_LOD1: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "MESH_Fauna_Fish_2207_00_LOD1: colour max delta 0.0000000 (tol 0.002)",
    "MESH_Fauna_Fish_2207_00_LOD1: world position max delta 0.0000001 m (tol 0.0001)",
    "MESH_Fauna_Fish_2207_00_LOD1: world corner-normal max delta 0.0000803 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Fauna_Fish_2207_00_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
-   "MESH_Fauna_Fish_2207_00_LOD1: landmark (0.00012, -0.32065, -0.98164) -> (0.00012, -0.32065, -0.98164), delta 0.0000001 m, margin 0.01091 m",
-   "MESH_Fauna_Fish_2207_00_LOD1: signed volume +0.1036738 -> +0.1036738 (ratio +1.000000)",
+   "MESH_Fauna_Fish_2207_00_LOD1: landmark (0.00012, -0.32065, -0.98164) -> (0.00012, -0.32065, -0.98164), delta 0.0000001 m, margin 0.00474 m",
+   "MESH_Fauna_Fish_2207_00_LOD1: signed volume +0.1035520 -> +0.1035520 (ratio +1.000000)",
    "MESH_Fauna_Fish_2207_00_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-   "MESH_Fauna_Fish_2207_00_LOD2: verts 94->94 loops 480->480 tris 160->160",
+   "MESH_Fauna_Fish_2207_00_LOD2: verts 98->98 loops 504->504 tris 168->168",
    "MESH_Fauna_Fish_2207_00_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "MESH_Fauna_Fish_2207_00_LOD2: colour max delta 0.0000000 (tol 0.002)",
    "MESH_Fauna_Fish_2207_00_LOD2: world position max delta 0.0000001 m (tol 0.0001)",
-   "MESH_Fauna_Fish_2207_00_LOD2: world corner-normal max delta 0.0000521 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Fauna_Fish_2207_00_LOD2: world corner-normal max delta 0.0000638 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Fauna_Fish_2207_00_LOD2: uv0 max delta 0.00000000 (tol 1e-05)",
-   "MESH_Fauna_Fish_2207_00_LOD2: landmark (-0.00014, 0.31163, -0.9712) -> (-0.00014, 0.31163, -0.9712), delta 0.0000001 m, margin 0.02271 m",
-   "MESH_Fauna_Fish_2207_00_LOD2: signed volume +0.1020647 -> +0.1020647 (ratio +1.000000)",
+   "MESH_Fauna_Fish_2207_00_LOD2: landmark (-0.00014, 0.31163, -0.9712) -> (-0.00014, 0.31163, -0.9712), delta 0.0000001 m, margin 0.02616 m",
+   "MESH_Fauna_Fish_2207_00_LOD2: signed volume +0.1020699 -> +0.1020699 (ratio +1.000000)",
    "MESH_Fauna_Fish_2207_00_LOD2: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-   "COL_Fauna_Fish_2207_00 [fbx-space]: landmark direction expected (-0.00283, -0.97422, -0.22557) measured (-0.00283, -0.97422, -0.22557) delta 0.000000",
-   "COL_Fauna_Fish_2207_00 [fbx-space]: Unity-space landmark offset will be (-0.0043, -1.48243, 0.34324) (Blender (-0.0043, 0.34324, -1.48243)); handedness flip is Unity's, winding is flipped to match",
-   "MESH_Fauna_Fish_2207_00_LOD0 [fbx-space]: landmark direction expected (-7e-05, -0.94772, -0.31911) measured (-7e-05, -0.94772, -0.31911) delta 0.000000",
-   "MESH_Fauna_Fish_2207_00_LOD0 [fbx-space]: Unity-space landmark offset will be (-8e-05, -1.08499, 0.36533) (Blender (-8e-05, 0.36533, -1.08499)); handedness flip is Unity's, winding is flipped to match",
-   "MESH_Fauna_Fish_2207_00_LOD1 [fbx-space]: landmark direction expected (-0.00084, -0.96858, 0.24871) measured (-0.00084, -0.96858, 0.24871) delta 0.000000",
-   "MESH_Fauna_Fish_2207_00_LOD1 [fbx-space]: Unity-space landmark offset will be (-0.00098, -1.12882, -0.28985) (Blender (-0.00098, -0.28985, -1.12882)); handedness flip is Unity's, winding is flipped to match",
-   "MESH_Fauna_Fish_2207_00_LOD2 [fbx-space]: landmark direction expected (-0.0006, -0.9603, -0.27896) measured (-0.0006, -0.9603, -0.27896) delta 0.000000",
-   "MESH_Fauna_Fish_2207_00_LOD2 [fbx-space]: Unity-space landmark offset will be (-0.00074, -1.18844, 0.34523) (Blender (-0.00074, 0.34523, -1.18844)); handedness flip is Unity's, winding is flipped to match",
+   "COL_Fauna_Fish_2207_00 [fbx-space]: landmark direction expected (-0.00194, -0.97415, -0.22588) measured (-0.00194, -0.97415, -0.22588) delta 0.000000",
+   "COL_Fauna_Fish_2207_00 [fbx-space]: Unity-space landmark offset will be (-0.00296, -1.49017, 0.34553) (Blender (-0.00296, 0.34553, -1.49017)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Fauna_Fish_2207_00_LOD0 [fbx-space]: landmark direction expected (-0.00013, -0.94502, -0.32702) measured (-0.00013, -0.94502, -0.32702) delta 0.000000",
+   "MESH_Fauna_Fish_2207_00_LOD0 [fbx-space]: Unity-space landmark offset will be (-0.00015, -1.09673, 0.37953) (Blender (-0.00015, 0.37953, -1.09673)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Fauna_Fish_2207_00_LOD1 [fbx-space]: landmark direction expected (-0.00102, -0.97034, 0.24174) measured (-0.00102, -0.97034, 0.24174) delta 0.000000",
+   "MESH_Fauna_Fish_2207_00_LOD1 [fbx-space]: Unity-space landmark offset will be (-0.00118, -1.11743, -0.27838) (Blender (-0.00118, -0.27838, -1.11743)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Fauna_Fish_2207_00_LOD2 [fbx-space]: landmark direction expected (-0.00085, -0.95872, -0.28434) measured (-0.00085, -0.95872, -0.28434) delta 0.000000",
+   "MESH_Fauna_Fish_2207_00_LOD2 [fbx-space]: Unity-space landmark offset will be (-0.00105, -1.18687, 0.352) (Blender (-0.00105, 0.352, -1.18687)); handedness flip is Unity's, winding is flipped to match",
    "roundtrip VERIFIED: axis map confirmed=True, chirality preserved=True",
-   "LOD0 MESH_Fauna_Fish_2207_00_LOD0: 500 tris vs law budget 35000 -> within",
-   "LOD1 MESH_Fauna_Fish_2207_00_LOD1: 336 tris vs law budget 12000 -> within",
-   "LOD2 MESH_Fauna_Fish_2207_00_LOD2: 160 tris vs law budget 2000 -> within",
-   "collider COL_Fauna_Fish_2207_00: 68 tris vs law.COLLIDER_CONVEX_TRI_MAX 200 -> within",
+   "LOD0 MESH_Fauna_Fish_2207_00_LOD0: 528 tris vs law budget 35000 -> within",
+   "LOD1 MESH_Fauna_Fish_2207_00_LOD1: 354 tris vs law budget 12000 -> within",
+   "LOD2 MESH_Fauna_Fish_2207_00_LOD2: 168 tris vs law budget 2000 -> within",
+   "collider COL_Fauna_Fish_2207_00: 70 tris vs law.COLLIDER_CONVEX_TRI_MAX 200 -> within",
    "Unity side must bind COL_Fauna_Fish_2207_00 to a MeshCollider with convex=true on a collider child, never to an LOD mesh (3dmodel.md section 9)",
    "Unity LODGroup: create it explicitly from the _LOD suffixed children rather than relying on importer auto-detection, then set screenRelativeTransitionHeight per level with a hysteresis band and fadeMode=CrossFade with animateCrossFading=false (dithered). 3dmodel.md section 7 bans alpha-blended cross-fade for dense flora/coral on the compact lane; dither is not alpha blend."
   ],
@@ -736,7 +741,7 @@
   "requestedTexelDensityPxPerM": 256,
   "route": "authored analytic UVs: cylindrical body+caudal sheet with the seam on the VENTRAL midline (least visible), u = real accumulated arc around each ring and v = mean surface advance along the spine; separate flat islands per fin membrane and per eye lens. No mirroring anywhere -- 3DMODEL_FAUNA.md section 4 forbids mirrored UVs on eyes and jaws, so the head is uniquely mapped.",
   "usedHeightUv": 0.48047,
-  "usedWidthUv": 0.94747
+  "usedWidthUv": 0.94733
  },
  "validation": {
   "meshGateFailures": 0,
@@ -744,7 +749,7 @@
   "passed": true,
   "validatorVersion": "1.0.0"
  },
- "validationHash": "07980fd1fabe3b6ebdaf0a20f9383f69",
+ "validationHash": "6d6f1d5fcc598e6e1ccdd43de0cea914",
  "validationHashAlgorithm": "blake2b-128 over the canonical JSON of every other field, sorted keys",
  "vertexColorContract": {
   "alphaMeaning": "counter_shading_blend: 0.0 along the dorsal ridge rising to 1.0 across the ventral belly, following the real counter-shading of a schooling fish. 3DMODEL_FAUNA.md section 4 permits a shader blend mask in A. A shader may lerp a dark dorsal colour to a pale belly with it; BoidFishInstanced.shader currently derives the same effect from local Y instead and does not read A, so this channel is authored to the bible contract and is not yet consumed.",

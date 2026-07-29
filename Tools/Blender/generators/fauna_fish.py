@@ -417,7 +417,10 @@ def plan_fish(rng, *, quality: float) -> FishPlan:
         anal_span=(_rng_range(rng, -0.04, -0.10), _rng_range(rng, -0.30, -0.38)),
         anal_height=_rng_range(rng, 0.10, 0.13),
         pectoral_z=_rng_range(rng, 0.34, 0.42),
-        pectoral_length=_rng_range(rng, 0.15, 0.19),
+        # Restored AFTER the plane was reoriented, not before: with the fin's faces
+        # pointing outboard instead of down, a larger fin no longer reintroduces the
+        # dark plate. Fixing the cause first is what made the size affordable.
+        pectoral_length=_rng_range(rng, 0.21, 0.26),
         eye_z=_rng_range(rng, 0.70, 0.76),
         eye_y=_rng_range(rng, 0.055, 0.075),
         eye_radius=_rng_range(rng, 0.042, 0.052),
@@ -891,6 +894,192 @@ def _thick_blade(accum: _Accum, island: int, outline: Sequence[Vector],
                     (island, uv_plus[k][1] + off[0], uv_plus[k][2] + off[1])))
 
 
+def _sectioned_fin(accum: _Accum, island: int, outline: Sequence[Vector],
+                   thickness_axis: Vector, root_half_thickness: float,
+                   flex: Sequence[float], belly: Sequence[float]) -> dict:
+    """A fin with a real AEROFOIL SECTION: thin at the hull, thick spar, fine trailing margin.
+
+    WHY THIS EXISTS RATHER THAN ANOTHER TWEAK TO ``_thick_blade``. The pectorals were built
+    as constant-thickness slabs and read as flat cards with a black underside. Size was NOT
+    the cause and was measured to prove it: after shrinking, the fin protrudes only 0.0923
+    local units past the hull -- 4.6% of body length, anatomically normal -- while still
+    reading dark, and its thickness/chord was a UNIFORM 0.0512. A constant-thickness plate
+    has exactly two large PLANAR faces, so one of them presents a single flat normal away
+    from the light however small it is or however it is angled. The fix is section, not
+    scale: three chordwise stations give each side two facets at different angles, which
+    breaks both the flat shading read and the card silhouette.
+
+    THREE SPANWISE STATIONS, AND THE BASE ONE CARRIES NO THICKNESS. Its vertex row is SHARED
+    between the two sides, so the fin emerges from the hull with no step and needs no base
+    rim. That is anatomy and it is also a gate fix, found by measurement rather than by
+    reasoning: with a thick base station, all eight worst-distortion triangles on the fin
+    were ``base_rim`` faces at 3.68 to 5.74 against the 3.30 outlier ceiling -- that rim's
+    thickness tapers 8:1 across one chord segment, which is genuinely non-conformal. Those
+    faces were BURIED INSIDE THE HULL and invisible, so the gate was failing the package for
+    geometry nobody could ever see. Deleting them beats reparameterising them.
+
+    ``3DMODEL_FAUNA.md`` section 2 requires "thin appendage, fin/membrane" as silhouette
+    contrast and section 3 requires "edge loops around ... fin bases"; the shared base row IS
+    that loop.
+
+    COST, stated because the lead asked where the budget goes: 26 triangles per fin against
+    ``_thick_blade``'s 12, so the two pectorals cost 52 instead of 24 and LOD0 moves 500 ->
+    528. That is 10% of LOD0 spent on pectoral section, against a 35 000 law maximum and a
+    200-tri swarm working figure. LOD1/LOD2 are decimated FROM this and pay nothing extra --
+    the collapse spends detail wherever it survives best, which is why thickness is
+    affordable here and is not authored separately at the coarse levels.
+
+    ``outline`` runs base-front, base-rear, tip-rear, tip-front, so the LEADING edge is
+    corner 0 -> corner 3 and the TRAILING margin is corner 1 -> corner 2.
+    """
+    # Chord stations with max thickness at 32% of chord, where a real pectoral carries its
+    # spar. Span stations with zero thickness at the hull, maximum just outboard, fine at
+    # the tip.
+    chord_at = (0.0, 0.32, 1.0)
+    profile = (0.42, 1.0, 0.12)
+    span_at = (0.0, 0.45, 1.0)
+    taper = (0.0, 1.0, 0.45)
+    spans = len(span_at)
+    # THICKNESS AXIS DERIVED FROM THE OUTLINE, with the caller's vector used only to pick
+    # the sign. A hardcoded axis is not guaranteed perpendicular to a swept outline's plane,
+    # and any component lying IN that plane skews the section instead of thickening it.
+    plane_normal = (outline[3] - outline[0]).cross(outline[1] - outline[0])
+    if plane_normal.length <= 1e-9:
+        raise GenerationAborted(
+            "pectoral outline has no plane in island {0}".format(island))
+    axis = plane_normal.normalized()
+    if axis.dot(thickness_axis) < 0.0:
+        axis = -axis
+
+    def mean_point(si: int, ci: int) -> Vector:
+        s = span_at[si]
+        front = outline[0] + (outline[3] - outline[0]) * s
+        rear = outline[1] + (outline[2] - outline[1]) * s
+        return front + (rear - front) * chord_at[ci]
+
+    def blend(seq: Sequence[float], si: int, ci: int) -> float:
+        s = span_at[si]
+        front = seq[0] + (seq[3] - seq[0]) * s
+        rear = seq[1] + (seq[2] - seq[1]) * s
+        return front + (rear - front) * chord_at[ci]
+
+    point = [[mean_point(si, ci) for ci in range(3)] for si in range(spans)]
+    half = [[root_half_thickness * profile[ci] * taper[si] for ci in range(3)]
+            for si in range(spans)]
+
+    # Flattening onto an ORTHONORMAL frame taken from the fin's own plane.
+    #
+    # The first version used "distance from the base chord" and "distance from the leading
+    # span" as u and v. Those are not orthogonal coordinates on a SWEPT quad, so the map
+    # sheared: measured worst aspect distortion 24.49, with the pectorals contributing 1.92%
+    # of total mesh area over the organic limit. The dorsal and anal blades measured exactly
+    # 0.0000 in the SAME run because `_thick_blade` already projects onto an orthogonalised
+    # frame -- two numbers side by side named the cause without a third guess.
+    origin = outline[0]
+    ax_span = ((outline[3] - outline[0]) + (outline[2] - outline[1])) * 0.5
+    ax_chord = (outline[1] - outline[0])
+    if ax_span.length <= 1e-9 or ax_chord.length <= 1e-9:
+        raise GenerationAborted(
+            "pectoral outline is degenerate in island {0}".format(island))
+    ax_span = ax_span.normalized()
+    ax_chord = ax_chord - ax_span * ax_chord.dot(ax_span)
+    if ax_chord.length <= 1e-9:
+        raise GenerationAborted(
+            "pectoral outline is collinear in island {0}".format(island))
+    ax_chord = ax_chord.normalized()
+    u = [[(point[si][ci] - origin).dot(ax_chord) for ci in range(3)]
+         for si in range(spans)]
+    v = [[(point[si][ci] - origin).dot(ax_span) for ci in range(3)]
+         for si in range(spans)]
+    u_lo = min(min(row) for row in u)
+    u = [[value - u_lo for value in row] for row in u]
+    u_max = max(max(row) for row in u)
+    gap = 2.0 * root_half_thickness + 1e-4
+
+    # Base row: ONE shared vertex per chord station, zero thickness. Shared rather than
+    # duplicated at the same position, because a coincident pair is exactly what a weld
+    # would merge -- silently changing the vertex COUNT and therefore the VAT width.
+    base = [accum.vert(point[0][ci], blend(flex, 0, ci), blend(belly, 0, ci))
+            for ci in range(3)]
+    plus = [list(base)]
+    minus = [list(base)]
+    for si in range(1, spans):
+        plus.append([accum.vert(point[si][ci] + axis * half[si][ci],
+                                blend(flex, si, ci), blend(belly, si, ci))
+                     for ci in range(3)])
+        minus.append([accum.vert(point[si][ci] - axis * half[si][ci],
+                                 blend(flex, si, ci), blend(belly, si, ci))
+                      for ci in range(3)])
+
+    def uvp(si: int, ci: int):
+        return (island, u[si][ci], v[si][ci])
+
+    def uvm(si: int, ci: int):
+        return (island, u[si][ci] + u_max + gap, v[si][ci])
+
+    def uvr(si: int, ci: int, du: float, dv: float):
+        # Rim UVs hug the +side sheet's outline so the rim stays CONTIGUOUS with it. The
+        # near pair MUST sit at offset 0, i.e. exactly on the sheet's own edge: starting the
+        # rim one thickness away left a gap and the rim became its own island, measured at
+        # 3.994 x 51.098 px against law.UV_MIN_ISLAND_PIXELS = 4. Four thousandths of a pixel
+        # from passing is still a fail, and a fail is the point.
+        t = 2.0 * max(half[si][ci], 1e-5)
+        return (island, u[si][ci] + du * t, v[si][ci] + dv * t)
+
+    top = spans - 1
+    # +side sheet.
+    for si in range(top):
+        for ci in range(2):
+            accum.quad(plus[si][ci], plus[si][ci + 1], plus[si + 1][ci + 1],
+                       plus[si + 1][ci], SLOT_BODY,
+                       (uvp(si, ci), uvp(si, ci + 1), uvp(si + 1, ci + 1),
+                        uvp(si + 1, ci)))
+    # -side sheet, traversed the other way so it faces outward AND so the SHARED base row is
+    # traversed opposite to the +side there.
+    for si in range(top):
+        for ci in range(2):
+            accum.quad(minus[si + 1][ci], minus[si + 1][ci + 1], minus[si][ci + 1],
+                       minus[si][ci], SLOT_BODY,
+                       (uvm(si + 1, ci), uvm(si + 1, ci + 1), uvm(si, ci + 1),
+                        uvm(si, ci)))
+    # Tip rim.
+    for ci in range(2):
+        accum.quad(plus[top][ci], plus[top][ci + 1], minus[top][ci + 1],
+                   minus[top][ci], SLOT_BODY,
+                   (uvr(top, ci, 0.0, 0.0), uvr(top, ci + 1, 0.0, 0.0),
+                    uvr(top, ci + 1, 0.0, 1.0), uvr(top, ci, 0.0, 1.0)))
+
+    # Margins. Each traverses its shared boundary edge OPPOSITE to the sheet that owns it --
+    # derived edge by edge rather than guessed, because getting this wrong on the caudal
+    # trailing edge produced 48 repeated directed edges and a 4-face non-manifold edge. At
+    # the hull the two sides meet on the shared row, so each margin closes with a TRIANGLE
+    # there and quads further out.
+    accum.face((base[0], plus[1][0], minus[1][0]), SLOT_BODY,
+               (uvr(0, 0, 0.0, 0.0), uvr(1, 0, 0.0, 0.0), uvr(1, 0, -1.0, 0.0)))
+    for si in range(1, top):
+        accum.quad(plus[si][0], plus[si + 1][0], minus[si + 1][0], minus[si][0],
+                   SLOT_BODY,
+                   (uvr(si, 0, 0.0, 0.0), uvr(si + 1, 0, 0.0, 0.0),
+                    uvr(si + 1, 0, -1.0, 0.0), uvr(si, 0, -1.0, 0.0)))
+    accum.face((plus[1][2], base[2], minus[1][2]), SLOT_BODY,
+               (uvr(1, 2, 0.0, 0.0), uvr(0, 2, 0.0, 0.0), uvr(1, 2, 1.0, 0.0)))
+    for si in range(1, top):
+        accum.quad(plus[si + 1][2], plus[si][2], minus[si][2], minus[si + 1][2],
+                   SLOT_BODY,
+                   (uvr(si + 1, 2, 0.0, 0.0), uvr(si, 2, 0.0, 0.0),
+                    uvr(si, 2, 1.0, 0.0), uvr(si + 1, 2, 1.0, 0.0)))
+
+    chord_length = max(1e-9, (point[0][2] - point[0][0]).length)
+    return {
+        "sectionRoute": "aerofoil: zero thickness at the hull (shared vertex row, no base "
+                        "rim), maximum at 45% span and 32% chord, leading edge 42% of max, "
+                        "trailing margin 12% of max, tip 45% of max",
+        "maxThicknessOverChord": round(2.0 * root_half_thickness / chord_length, 5),
+        "leadingOverTrailingThickness": round(profile[0] / profile[2], 3),
+        "trianglesPerFin": 26,
+    }
+
+
 def _section_t(z: float) -> float:
     return law.saturate((z - Z_PEDUNCLE) / (Z_SNOUT - 0.04 - Z_PEDUNCLE))
 
@@ -1004,11 +1193,11 @@ def _build_fins(accum: _Accum, plan: FishPlan) -> dict:
         accum.region = "pectoral_fin"
         z_base = plan.pectoral_z
         length = plan.pectoral_length * (1.0 if side > 0.0 else 0.94)
-        y_base = _hull_y(plan, z_base, False) * 0.30
+        y_base = _hull_y(plan, z_base, False) * 0.42
         # PER-CORNER hull solve: each base corner sits at its own height, where the
         # flank's x differs. One shared x_base is what opened the flank gap.
-        y_front_c = y_base + 0.030
-        y_rear_c = y_base - 0.030
+        y_front_c = y_base + 0.018
+        y_rear_c = y_base - 0.018
         z_front_c = z_base + 0.035
         z_rear_c = z_base - 0.055
         x_front = _hull_x(plan, y_front_c, z_front_c) - bite * 0.5
@@ -1018,20 +1207,31 @@ def _build_fins(accum: _Accum, plan: FishPlan) -> dict:
         # the whole membrane sweeps aft and DOWN, which is how a pectoral fin sits against
         # the flank. The first version's tip chord was longer than its base and read as a
         # rectangular paddle bolted to the side.
+        # SPAN SWEEPS DOWN, not out. The fin's plane therefore contains a mostly-vertical
+        # span and a mostly-axial chord, so its normal is mostly +/-X: the two faces point
+        # outboard and inboard instead of up and down. That is what removes the dark read --
+        # a plate whose plane is horizontal presents its underside to the light no matter how
+        # small it is or how many facets its section has, which is what the aerofoil pass
+        # alone could not fix. It is also how a pectoral sits on a cruising schooling fish.
         outline = [
             Vector((side * x_front, y_front_c, z_front_c)),
             Vector((side * x_rear, y_rear_c, z_rear_c)),
-            Vector((side * (x_base + length * 0.50), y_base - 0.052,
-                    z_base - 0.055 - length * 0.62)),
-            Vector((side * (x_base + length * 0.68), y_base - 0.036,
-                    z_base - 0.030 - length * 0.55)),
+            Vector((side * (x_base + length * 0.30), y_base - length * 0.62,
+                    z_base - 0.055 - length * 0.30)),
+            Vector((side * (x_base + length * 0.42), y_base - length * 0.50,
+                    z_base - 0.020 - length * 0.25)),
         ]
-        _thick_blade(accum, island, outline, Vector((0.0, 1.0, 0.0)),
-                     plan.caudal_thickness * 0.9,
-                     (0.30, 0.30, 0.92, 0.88), (0.62, 0.72, 0.72, 0.66))
+        section = _sectioned_fin(
+            accum, island, outline, Vector((0.0, 1.0, 0.0)),
+            # Root half-thickness is 2.4x the membrane figure the dorsal/anal blades use.
+            # A pectoral is a spar-and-web fin, not a sheet, and the leading edge is what
+            # was missing from the read.
+            plan.caudal_thickness * 1.0,
+            (0.30, 0.30, 0.92, 0.88), (0.62, 0.72, 0.72, 0.66))
     report["pectoral"] = {"baseZ": round(plan.pectoral_z, 4),
                           "lengthLocal": round(plan.pectoral_length, 4),
                           "rightShorterBy": 0.06}
+    report["pectoral"].update(section)
     return report
 
 
