@@ -261,6 +261,9 @@ namespace Hecton8.Core.Determinism
     /// </summary>
     /// <remarks>
     /// Runtime creation is a cold bootstrap bridge; all recurring execution is routed through `SystemDispatcher` POST_SIMULATION.
+    /// The owner is parented to the project persistent root by <see cref="EnsureRuntimeInstance"/> so it
+    /// survives the `LoadSceneMode.Single` flow to 02_HECTON_WORLD - it is the only writer of
+    /// `BufferID.LockstepMasterStateHash`, so if it dies with 00_BOOTSTRAP the whole run hashes nothing.
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8900)]

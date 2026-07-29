@@ -677,11 +677,28 @@ GEOLOGY_TEXTURE_BAND_CEILING_M = 0.087
 # asked for. A gate with no number cannot fire, which the project treats as the same
 # defect as a gate that can only fail.
 
-# "2x2 tile seam check for tileable sources." A periodic field has NO seam, so the test
-# is a ratio: gradient magnitude across the wrap boundary against the same statistic
-# measured inside the tile. 1.0 means the seam is statistically indistinguishable from
-# the interior. The allowance is for filter/quantisation asymmetry at the edge row only.
-TEXTURE_SEAM_GRADIENT_RATIO_MAX = 1.35
+# "2x2 tile seam check for tileable sources." A periodic field has no seam, so the test
+# asks whether the step ACROSS the wrap is distinguishable from an ordinary step INSIDE
+# the tile.
+#
+# THE STATISTIC MATTERS MORE THAN THE THRESHOLD, and the first version of this row got it
+# wrong. It compared the wrap row-pair's mean gradient against the MEAN of all interior
+# row-pairs and allowed a ratio of 1.35. Measured on a provably periodic geology bake, the
+# base-colour wrap scored 1.69 and FAILED -- while sitting at the 92nd percentile of the
+# interior distribution, whose p95 was 10.33 against the wrap's 9.30. The wrap simply
+# landed near a lamina contact. One sample against a population mean is not a test of
+# anything: for a field with spatially varying gradient, half the interior row-pairs would
+# also have "failed".
+#
+# The gate is now the wrap value against the 99th PERCENTILE of the per-line interior
+# distribution. At or below 1.0 the seam is indistinguishable from the worst ordinary step
+# in the tile; a genuine discontinuity sits far above the maximum, not just above the mean.
+# Verified to still fire: a deliberately non-periodic control scores well over 3.
+TEXTURE_SEAM_EXCESS_MAX = 1.15
+
+# Below this many lines the percentile is computed from too few samples to mean anything,
+# so the mip gate stops measuring seams rather than reporting noise as a result.
+TEXTURE_SEAM_MIN_LINES = 32
 
 # "Histogram sanity: no crushed full-black/full-white albedo." Fraction of pixels pinned
 # at 0 or 255 in any base-colour channel.
@@ -704,6 +721,21 @@ TEXTURE_ALBEDO_LIGHT_CORRELATION_MAX = 0.35
 TEXTURE_NORMAL_MEAN_SLOPE_MIN_DEG = 2.5
 TEXTURE_NORMAL_MEAN_SLOPE_MAX_DEG = 38.0
 
+# "no inverted green channel" is a test of SIGN, and it must be measured as one. The first
+# implementation used Pearson correlation between the decoded green channel and the
+# height field's -dh/dV, requiring r > 0.95. That measures LINEARITY, which normal encoding
+# does not have and is not required to have: green is ``-dh/dV / sqrt(1 + |grad|^2)``, so it
+# saturates as slope grows. Measured on one family at two lanes, same code and same
+# convention: r = 0.984 at 512 and r = 0.908 at 2048, failing purely because the finer band
+# carries steeper slopes. A gate whose result depends on the quality lane is not measuring
+# the property it names.
+#
+# Sign agreement is exact and lane-independent, because ``length`` is strictly positive so
+# the signs of green and -dh/dV must match identically. Pixels with a near-zero slope are
+# excluded: there the sign is decided by 8-bit quantisation, not by the convention.
+TEXTURE_NORMAL_GREEN_SIGN_AGREEMENT_MIN = 0.99
+TEXTURE_NORMAL_SIGN_SLOPE_FLOOR = 0.02
+
 # "MRAO channel independence; channels cannot be identical unless manifest proves why."
 # Pearson |r| between the DATA-CARRYING channels of one packed map. A channel pair above
 # this is one map stored twice.
@@ -719,11 +751,26 @@ TEXTURE_METALLIC_INSIDE_ORE_MASK_MIN = 0.90
 # explicitly rejected by section 3 unless the material is uniform.
 TEXTURE_ROUGHNESS_STD_MIN = 0.030
 
-# "AO is cavity-biased, not random dirt across exposed planes." Occlusion must
-# correlate with measured concavity and anti-correlate with height. This is the gate
-# that separates a real occlusion integral from a noise field.
-TEXTURE_AO_CONCAVITY_CORRELATION_MIN = 0.30
-TEXTURE_AO_HEIGHT_CORRELATION_MAX = -0.10
+# "AO is cavity-biased, not random dirt across exposed planes." This is the gate that
+# separates a real occlusion integral from a noise field: the channel must track measured
+# concavity, and it must anti-track height.
+#
+# SIGN CORRECTED 2026-07-29 on measurement, and the first spelling of these two rows was
+# backwards. They originally read ``..._CONCAVITY_CORRELATION_MIN = 0.30`` and
+# ``..._HEIGHT_CORRELATION_MAX = -0.10``, which is the correct test for an occlusion
+# STRENGTH field where 1.0 means fully occluded. The channel that actually ships is not
+# that. ``Hecton_ModuleHardSurfaceLit`` :349-353 decodes G as
+# ``occlusionMap = lerp(1.0, packedMask.g, weight)``, i.e. an occlusion MULTIPLIER where
+# 1.0 means fully OPEN and 0.0 means fully dark. So in a cavity the stored value is LOW,
+# the correlation with concavity is NEGATIVE, and a generator that satisfied the old rows
+# would have shipped an inverted AO map that brightened every crevice.
+#
+# Measured on the first geology bake: concavity -0.896, height +0.601. Both correct for a
+# multiplier, both would have FAILED the old rows. This is the same class of confusion the
+# bible amendment warns about in ``3DMODEL_TEXTURES_MATERIALS.md`` section 3 -- knowing
+# which slot AO lives in is not the same as knowing which direction it runs.
+TEXTURE_AO_CONCAVITY_CORRELATION_MAX = -0.30
+TEXTURE_AO_HEIGHT_CORRELATION_MIN = 0.10
 
 # "Emission mask is sparse and semantically placed." Coverage ceiling when the family
 # has emission at all.

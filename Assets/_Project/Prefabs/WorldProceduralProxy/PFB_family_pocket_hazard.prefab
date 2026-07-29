@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 1413920938641002926}
   - component: {fileID: 5297917768198205290}
   - component: {fileID: 4464821335710865784}
+  - component: {fileID: 2301003990480187166}
   m_Layer: 0
   m_Name: PFB_family_pocket_hazard
   m_TagString: Untagged
@@ -101,7 +102,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c67cc21e3ed74e0409eecc155c308112, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.ScannableFragment
   scanTime: 3
   canBeScanned: 1
@@ -131,3 +132,21 @@ MonoBehaviour:
   OnScanStopped:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2301003990480187166
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8460731591416850718}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c699d22c14bc69e4893dbfae53a1c9c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.HectonHazardSource
+  _type: 2
+  _profile: {fileID: 0}
+  _intensity: 30
+  _radius: 6
+  _isStatic: 1
+  _updateInterval: 0.5

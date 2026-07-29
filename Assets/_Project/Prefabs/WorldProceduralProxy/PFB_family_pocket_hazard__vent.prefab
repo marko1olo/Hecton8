@@ -101,7 +101,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c67cc21e3ed74e0409eecc155c308112, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.ScannableFragment
   scanTime: 3
   canBeScanned: 1
@@ -230,6 +230,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8053698375052014182}
+  - component: {fileID: 4720664403510455353}
   m_Layer: 0
   m_Name: PFB_family_pocket_hazard__vent
   m_TagString: Untagged
@@ -255,6 +256,24 @@ Transform:
   - {fileID: 2826582307544535900}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4720664403510455353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4464770331634704478}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c699d22c14bc69e4893dbfae53a1c9c5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.HectonHazardSource
+  _type: 1
+  _profile: {fileID: 0}
+  _intensity: 25
+  _radius: 8
+  _isStatic: 1
+  _updateInterval: 0.5
 --- !u!1 &8706922396708728086
 GameObject:
   m_ObjectHideFlags: 0

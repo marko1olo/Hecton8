@@ -112,30 +112,181 @@ namespace Hecton8.Tests.Editor.SaveSystem
         }
 
         [Test]
-        public void SaveableRegistryOverflowPublishesTelemetryBeforeDroppingOwner()
+        public void SaveableRegistryRefusesOverflowOwnerAndKeepsDenseArrayIntact()
         {
-            string source = ReadProjectFile("Assets/_Project/Scripts/SaveManager.cs");
-            string registerBody = ExtractMethodBody(source, "public void Register(ISaveable saveable)");
-            string publishBestEffort = ExtractMethodBody(source, "private static void PublishPerformanceWarningBestEffort(");
+            // Replaces a source-text test that pinned the ORDER of statements inside
+            // SaveManager.Register (SaveManager.cs:4483) with IndexOf offsets. That test proved the
+            // capacity branch was WRITTEN above the append, not that an owner past capacity is
+            // actually refused - it stayed green for any rewrite that kept the same literals and any
+            // off-by-one in the bound itself. This drives the real method and reads the real registry.
+            //
+            // BOUNDARY, stated rather than faked: the telemetry publish that precedes the drop goes to
+            // GlobalTelemetryBus and is not readable from this assembly, and the paired editor-only
+            // Debug.LogError (SaveManager.cs:4507) is suppressed here rather than asserted, because
+            // GlobalTelemetryBus may itself log from the best-effort catch in EditMode and that second
+            // message would fail the fixture for the wrong reason. What is proven below is the
+            // observable contract: capacity is honoured, the refused owner never lands in the array,
+            // duplicates are rejected, and a freed slot is reusable.
+            int maxRegisteredSaveables = ReadPrivateConstInt("MaxRegisteredSaveables");
+            Assert.Greater(maxRegisteredSaveables, 1, "MaxRegisteredSaveables must leave room for an overflow case.");
 
-            StringAssert.Contains("if (_runtimeOwnerAborted || !_serviceRegistered || !IsAlive(saveable)) return;", registerBody);
-            StringAssert.DoesNotContain("if (_runtimeOwnerAborted || !_serviceRegistered || saveable == null) return;", registerBody);
-            int pruneIndex = registerBody.IndexOf("PruneDeadSaveables();", StringComparison.Ordinal);
-            int duplicateScanIndex = registerBody.IndexOf("for (int i = 0; i < _saveableCount; i++)", StringComparison.Ordinal);
-            int capacityIndex = registerBody.IndexOf("if (_saveableCount >= MaxRegisteredSaveables)", StringComparison.Ordinal);
-            int telemetryIndex = registerBody.IndexOf("PublishPerformanceWarningBestEffort(", StringComparison.Ordinal);
-            int dropIndex = registerBody.IndexOf("return;", telemetryIndex, StringComparison.Ordinal);
+            GameObject host = new GameObject("SaveManagerLoadPriorityConflictEditTests.RegistryOverflow");
+            bool previousIgnoreFailingMessages = UnityEngine.TestTools.LogAssert.ignoreFailingMessages;
+            try
+            {
+                UnityEngine.TestTools.LogAssert.ignoreFailingMessages = true;
 
-            Assert.GreaterOrEqual(pruneIndex, 0);
-            Assert.Greater(duplicateScanIndex, pruneIndex);
-            Assert.GreaterOrEqual(capacityIndex, 0);
-            Assert.Greater(capacityIndex, duplicateScanIndex);
-            Assert.Greater(telemetryIndex, capacityIndex);
-            Assert.Greater(dropIndex, telemetryIndex);
-            StringAssert.Contains("SaveableRegistryOverflowTelemetryHash", registerBody);
-            StringAssert.Contains("AsyncPersistenceSourceHash", registerBody);
-            StringAssert.Contains("catch (Exception telemetryException)", publishBestEffort);
-            StringAssert.Contains("LogErrorBestEffort(", publishBestEffort);
+                SaveManager manager = host.AddComponent<SaveManager>();
+                SetPrivateInstanceField(manager, "_runtimeOwnerAborted", false);
+                SetPrivateInstanceField(manager, "_serviceRegistered", true);
+
+                AlphaPriorityOwner[] owners = new AlphaPriorityOwner[maxRegisteredSaveables];
+                for (int i = 0; i < owners.Length; i++)
+                {
+                    owners[i] = new AlphaPriorityOwner();
+                    manager.Register(owners[i]);
+                }
+
+                Assert.AreEqual(
+                    maxRegisteredSaveables,
+                    ReadRegisteredSaveableCount(manager),
+                    "Registering exactly MaxRegisteredSaveables live owners must fill the registry.");
+
+                BetaPriorityOwner overflowOwner = new BetaPriorityOwner();
+                manager.Register(overflowOwner);
+
+                Assert.AreEqual(
+                    maxRegisteredSaveables,
+                    ReadRegisteredSaveableCount(manager),
+                    "An owner registered past capacity must be dropped, not appended.");
+                Assert.IsFalse(
+                    IsRegistered(manager, overflowOwner),
+                    "The refused owner is still in the dense array, so the capacity branch did not drop it.");
+
+                manager.Register(owners[0]);
+                Assert.AreEqual(
+                    maxRegisteredSaveables,
+                    ReadRegisteredSaveableCount(manager),
+                    "Re-registering an owner that is already present must not grow the registry.");
+
+                manager.Unregister(owners[0]);
+                Assert.AreEqual(maxRegisteredSaveables - 1, ReadRegisteredSaveableCount(manager));
+                Assert.IsFalse(IsRegistered(manager, owners[0]));
+                AssertNoNullEntriesBelowCount(manager);
+
+                // Swap-with-last removal must leave the freed tail slot genuinely reusable.
+                manager.Register(overflowOwner);
+                Assert.AreEqual(maxRegisteredSaveables, ReadRegisteredSaveableCount(manager));
+                Assert.IsTrue(
+                    IsRegistered(manager, overflowOwner),
+                    "A slot freed by Unregister was not reusable, so capacity accounting drifted.");
+                AssertNoNullEntriesBelowCount(manager);
+            }
+            finally
+            {
+                UnityEngine.TestTools.LogAssert.ignoreFailingMessages = previousIgnoreFailingMessages;
+                UnityEngine.Object.DestroyImmediate(host);
+            }
+        }
+
+        [Test]
+        public void SaveableRegistryRejectsDestroyedUnityOwnerInsteadOfStoringAStaleHandle()
+        {
+            // The dropped source-text test also asserted the literal
+            // "!IsAlive(saveable)" guard in Register. IsAlive (SaveManager.cs:5082) exists so that a
+            // destroyed UnityEngine.Object never enters the dense array; that is observable.
+            GameObject host = new GameObject("SaveManagerLoadPriorityConflictEditTests.DeadOwner");
+            UnityObjectSaveableOwner unityOwner = null;
+            bool previousIgnoreFailingMessages = UnityEngine.TestTools.LogAssert.ignoreFailingMessages;
+            try
+            {
+                UnityEngine.TestTools.LogAssert.ignoreFailingMessages = true;
+
+                SaveManager manager = host.AddComponent<SaveManager>();
+                SetPrivateInstanceField(manager, "_runtimeOwnerAborted", false);
+                SetPrivateInstanceField(manager, "_serviceRegistered", true);
+
+                unityOwner = ScriptableObject.CreateInstance<UnityObjectSaveableOwner>();
+                unityOwner.name = "SaveManagerLoadPriorityConflictEditTests.DeadOwner.Owner";
+
+                manager.Register(unityOwner);
+                Assert.AreEqual(1, ReadRegisteredSaveableCount(manager));
+                Assert.IsTrue(IsRegistered(manager, unityOwner));
+
+                manager.Unregister(unityOwner);
+                Assert.AreEqual(0, ReadRegisteredSaveableCount(manager));
+
+                UnityEngine.Object.DestroyImmediate(unityOwner);
+
+                manager.Register(unityOwner);
+                Assert.AreEqual(
+                    0,
+                    ReadRegisteredSaveableCount(manager),
+                    "A destroyed UnityEngine.Object owner was accepted, so the registry now holds a fake-null handle.");
+            }
+            finally
+            {
+                UnityEngine.TestTools.LogAssert.ignoreFailingMessages = previousIgnoreFailingMessages;
+                if (unityOwner != null)
+                    UnityEngine.Object.DestroyImmediate(unityOwner);
+
+                UnityEngine.Object.DestroyImmediate(host);
+            }
+        }
+
+        private static int ReadPrivateConstInt(string fieldName)
+        {
+            FieldInfo field = typeof(SaveManager).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(field, "Missing SaveManager constant: " + fieldName);
+            return (int)field.GetRawConstantValue();
+        }
+
+        private static void SetPrivateInstanceField(SaveManager manager, string fieldName, object value)
+        {
+            FieldInfo field = typeof(SaveManager).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(field, "Missing SaveManager field: " + fieldName);
+            field.SetValue(manager, value);
+        }
+
+        private static ISaveable[] ReadRegisteredSaveables(SaveManager manager)
+        {
+            FieldInfo field = typeof(SaveManager).GetField("_saveables", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(field, "Missing SaveManager field: _saveables");
+            ISaveable[] saveables = field.GetValue(manager) as ISaveable[];
+            Assert.IsNotNull(saveables, "SaveManager._saveables is not an ISaveable[]");
+            return saveables;
+        }
+
+        private static int ReadRegisteredSaveableCount(SaveManager manager)
+        {
+            FieldInfo field = typeof(SaveManager).GetField("_saveableCount", BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(field, "Missing SaveManager field: _saveableCount");
+            return (int)field.GetValue(manager);
+        }
+
+        private static bool IsRegistered(SaveManager manager, ISaveable candidate)
+        {
+            ISaveable[] saveables = ReadRegisteredSaveables(manager);
+            int count = ReadRegisteredSaveableCount(manager);
+            for (int i = 0; i < count; i++)
+            {
+                if (ReferenceEquals(saveables[i], candidate))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void AssertNoNullEntriesBelowCount(SaveManager manager)
+        {
+            ISaveable[] saveables = ReadRegisteredSaveables(manager);
+            int count = ReadRegisteredSaveableCount(manager);
+            for (int i = 0; i < count; i++)
+            {
+                Assert.IsNotNull(
+                    saveables[i],
+                    "Dense registry has a hole at index " + i + " below live count " + count + ".");
+            }
         }
 
         [Test]
@@ -786,5 +937,24 @@ namespace Hecton8.Tests.Editor.SaveSystem
             public void PopulateSaveData(SaveData data) { }
             public void LoadFromSaveData(SaveData data) { }
         }
+
+    }
+
+    /// <summary>
+    /// Save owner backed by a real <see cref="UnityEngine.Object"/> so that
+    /// <c>SaveManager.IsAlive</c> (SaveManager.cs:5082) can be exercised against Unity's overloaded
+    /// fake-null equality rather than against plain managed null.
+    /// <para>
+    /// Declared at namespace scope rather than nested inside the fixture: Unity instantiates
+    /// <see cref="ScriptableObject"/> types through its own object factory, and a nested type is the
+    /// kind of shape that has no reason to be risked here for zero benefit.
+    /// </para>
+    /// </summary>
+    internal sealed class UnityObjectSaveableOwner : ScriptableObject, ISaveable
+    {
+        public int SavePriority => 50;
+        public int LoadPriority => 50;
+        public void PopulateSaveData(SaveData data) { }
+        public void LoadFromSaveData(SaveData data) { }
     }
 }

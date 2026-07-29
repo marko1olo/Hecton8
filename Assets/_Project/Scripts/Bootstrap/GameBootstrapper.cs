@@ -401,6 +401,13 @@ namespace Hecton8.Bootstrap
         private static bool _isDispatchingGameBootstrapperEvents;
         private static bool _h8MemoryFatalLogHooked;
         private static bool _h8MemoryFatalDumpWritten;
+        /// <summary>
+        /// True when the <c>DebrisManager</c> bootstrap node found <see cref="GlobalRegistry.Debris"/> empty and
+        /// therefore passed under the recorded not-installed exemption instead of a real readiness result.
+        /// Assigned (never OR-ed) once per boot by <see cref="ReportDebrisManagerBootstrapNodeState"/>, which is
+        /// what writes the loud record, so readiness can never silently report ready.
+        /// </summary>
+        private static bool _debrisManagerBootstrapNodeNotInstalled;
         private static string _lastDataMonolithBootstrapStatus = "none";
 #if UNITY_EDITOR
         private static string _pendingDirtySceneReloadPath;
@@ -5553,7 +5560,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.ConnectionSplineBatchRenderer:
                     return _headlessBootMode || service != null;
                 case BootstrapDependencyNode.DebrisManager:
-                    return true;
+                    return IsDebrisManagerBootstrapNodeReady(service);
                 case BootstrapDependencyNode.FaunaSimulation:
                     return service is IFaunaSim faunaSimulation && faunaSimulation.IsReady;
                 case BootstrapDependencyNode.SpatialAudioManager:
@@ -5580,7 +5587,11 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.ConnectionSplineBatchRenderer: return GlobalRegistry.ConnectionSplineBatchRenderer;
                 case BootstrapDependencyNode.GlobalPhysicsStateManager: return GlobalRegistry.PhysicsStateManager;
                 case BootstrapDependencyNode.PhysicsApplySystem: return GlobalRegistry.Physics;
-                case BootstrapDependencyNode.DebrisManager: return GlobalRegistry.DebrisCompute;
+                // The startup graph declares this node as GlobalRegistryServiceSlot.Debris
+                // (BootstrapRegistryCycleValidator._startupNodes), and IDebrisService is what DebrisManager
+                // registers. DebrisCompute is a different slot owned by CarveDebrisComputeRenderer and is not
+                // in the startup graph at all, so resolving it here made the node blind to its own service.
+                case BootstrapDependencyNode.DebrisManager: return GlobalRegistry.Debris;
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService: return GlobalRegistry.Environment;
                 case BootstrapDependencyNode.OceanKinematicsRuntimeService: return GlobalRegistry.OceanKinematics;
                 case BootstrapDependencyNode.EcosystemDirector: return GlobalRegistry.EcosystemDirector;
@@ -5682,6 +5693,81 @@ namespace Hecton8.Bootstrap
             return false;
         }
 
+        /// <summary>
+        /// Records the real installation state of the <c>DebrisManager</c> bootstrap node and reports whether
+        /// boot may proceed past it.
+        /// </summary>
+        /// <remarks>
+        /// This node is enumerated, ordered, phase-mapped to <see cref="BootstrapPhase.Environment"/> and
+        /// heartbeat-probed exactly like a wired dependency, but nothing installs the service. The only
+        /// implementer of <c>IDebrisService</c> is <c>DebrisManager</c>
+        /// (Assets/_Project/Scripts/Gameplay/DebrisManager.cs), and its <c>EnsureRuntimeInstance</c> factory has
+        /// no caller anywhere in the project. This initializer used to be a bare <c>return true;</c>, so the boot
+        /// log and the node graph both reported DebrisManager READY while creating nothing at all.
+        /// <para>
+        /// Returning <c>false</c> is deliberately NOT the refusal used here, because a false return from a
+        /// bootstrap node is fatal to the entire game, not just to the node: the caller logs
+        /// <c>LogBootstrapDependencyFailure</c> and returns false out of
+        /// <see cref="InitializeBootstrapLayerNodesAsync"/>, which fails the Environment phase, which makes
+        /// <see cref="RunBootstrapStateMachineAsync"/> abandon the Player phase, the UI phase, the CoreReady
+        /// marker, <c>GlobalRegistry.LockReady</c> and scene activation. Nothing in the startup graph depends on
+        /// the Debris slot - <c>BootstrapRegistryCycleValidator</c> lists it only as an edge source, never as a
+        /// dependency - so killing boot over an absent cosmetic debris owner would be a far worse defect than the
+        /// missing subsystem. An absent service is therefore a loud, named, recorded exemption. It is never a
+        /// silent success, and it never claims to be ready.
+        /// </para>
+        /// Cold path: runs once per boot from the node initializer, so the message construction here costs
+        /// nothing at runtime cadence.
+        /// </remarks>
+        /// <returns>Always <c>true</c>, so boot survives an uninstalled debris subsystem.</returns>
+        private static bool ReportDebrisManagerBootstrapNodeState()
+        {
+            object debrisService = ResolveBootstrapDependencyService(BootstrapDependencyNode.DebrisManager);
+
+            // Assigned, not OR-ed: the exemption must never survive from an earlier boot into a boot where the
+            // service is genuinely present.
+            _debrisManagerBootstrapNodeNotInstalled = debrisService == null;
+            if (!_debrisManagerBootstrapNodeNotInstalled)
+                return true;
+
+            RuntimeDiagnosticsTrace.EnsureSession("bootstrap_blackbox");
+            RuntimeDiagnosticsTrace.WriteEvent(
+                "bootstrap.node.declared_but_not_installed",
+                ResolveBootstrapDependencyNodeName(BootstrapDependencyNode.DebrisManager));
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError(
+                "[GameBootstrapper] DebrisManager is declared as a bootstrap dependency but is NOT installed. " +
+                "GlobalRegistry.Debris is empty and nothing calls DebrisManager.EnsureRuntimeInstance, so there " +
+                "is no debris owner this session and every IDebrisService.SpawnBurst call is dropped. " +
+                "This node is EXEMPT, not ready. Boot continues on purpose: nothing in the startup graph " +
+                "depends on the Debris slot, and failing the node would abort the whole boot.");
+#endif
+            return true;
+        }
+
+        /// <summary>
+        /// Reports the real readiness of the <c>DebrisManager</c> bootstrap node.
+        /// </summary>
+        /// <remarks>
+        /// An installed service is gated on its own heartbeat, so the node genuinely works or genuinely fails.
+        /// An empty slot passes only through the exemption that
+        /// <see cref="ReportDebrisManagerBootstrapNodeState"/> has already recorded loudly; if that record was
+        /// never written, an empty slot reports NOT ready rather than inventing readiness.
+        /// <para>
+        /// Allocation-free and log-free by contract: one reference test, one interface type check, two property
+        /// reads, one enum compare and one static bool read. <see cref="WaitForBootstrapDependencyHeartbeatAsync"/>
+        /// polls this every frame while the node is pending, so it must not format strings or log - the single
+        /// loud record is written once per boot by the initializer instead.
+        /// </para>
+        /// </remarks>
+        private static bool IsDebrisManagerBootstrapNodeReady(object service)
+        {
+            if (service is IServiceHeartbeat heartbeat)
+                return heartbeat.IsServiceReady && heartbeat.HeartbeatState != ServiceHeartbeatState.Failed;
+
+            return service != null || _debrisManagerBootstrapNodeNotInstalled;
+        }
+
         private static bool InitializeBootstrapDependencyNode(BootstrapDependencyNode node)
         {
             switch (node)
@@ -5743,7 +5829,7 @@ namespace Hecton8.Bootstrap
 
                 case BootstrapDependencyNode.DebrisManager:
                 {
-                    return true;
+                    return ReportDebrisManagerBootstrapNodeState();
                 }
 
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService:
@@ -5772,6 +5858,9 @@ namespace Hecton8.Bootstrap
 
                     PersistRuntimeService(oceanKinematicsRuntimeService);
                     oceanKinematicsRuntimeService.InitializeService();
+                    // Result is intentionally not fatal to boot - caustics are cosmetic and have no startup-graph
+                    // node of their own. TryEnsureDeferredCausticsRegistered logs its own named failure, so this
+                    // is a reported degrade rather than a discarded bool. Do not convert it into a false return.
                     if (!_headlessBootMode)
                         TryEnsureDeferredCausticsRegistered();
                     return IsBootstrapDependencyNodeReady(node);
@@ -5937,6 +6026,17 @@ namespace Hecton8.Bootstrap
             return _jobAdmissionService;
         }
 
+        /// <summary>
+        /// Wires the deferred caustics runtime through reflection-by-string.
+        /// </summary>
+        /// <remarks>
+        /// Every lookup below is a string the compiler does not check, so renaming the type, renaming either
+        /// method, or moving the type into its own asmdef (as the sibling <c>Rendering/*</c> folders already do)
+        /// turns this whole function into a no-op. It previously returned <c>false</c> silently at three separate
+        /// points into a discarded result, so a rename would have cost the player all caustics with nothing in the
+        /// log. Each failure now names the exact broken string.
+        /// Cold path: one call per boot from the OceanKinematics node.
+        /// </remarks>
         private static bool TryEnsureDeferredCausticsRegistered()
         {
             if (GlobalRegistry.Caustics != null)
@@ -5945,17 +6045,51 @@ namespace Hecton8.Bootstrap
             Type serviceType = Type.GetType("Hecton8.Rendering.AbyssalDeferredCausticsRuntime, Hecton8.Core", false) ??
                                Type.GetType("Hecton8.Rendering.AbyssalDeferredCausticsRuntime, Assembly-CSharp", false);
             if (serviceType == null)
-                return false;
+                return LogDeferredCausticsWiringFailure(
+                    "Type.GetType could not resolve 'Hecton8.Rendering.AbyssalDeferredCausticsRuntime' in either " +
+                    "Hecton8.Core or Assembly-CSharp. The type was renamed, moved namespace, or moved into another " +
+                    "assembly.");
 
             MethodInfo ensureMethod = serviceType.GetMethod("EnsureRuntimeInstance", BindingFlags.Public | BindingFlags.Static);
-            Component serviceComponent = ensureMethod != null ? ensureMethod.Invoke(null, null) as Component : null;
+            if (ensureMethod == null)
+                return LogDeferredCausticsWiringFailure(
+                    "AbyssalDeferredCausticsRuntime resolved, but it has no public static 'EnsureRuntimeInstance' " +
+                    "method. The factory was renamed or its signature changed.");
+
+            Component serviceComponent = ensureMethod.Invoke(null, null) as Component;
             if (serviceComponent == null)
-                return false;
+                return LogDeferredCausticsWiringFailure(
+                    "AbyssalDeferredCausticsRuntime.EnsureRuntimeInstance returned no Component, so no caustics " +
+                    "runtime owner was created.");
 
             PersistRuntimeService(serviceComponent);
             MethodInfo initializeMethod = serviceType.GetMethod("InitializeService", BindingFlags.Public | BindingFlags.Instance);
-            initializeMethod?.Invoke(serviceComponent, null);
-            return GlobalRegistry.Caustics != null;
+            if (initializeMethod == null)
+                return LogDeferredCausticsWiringFailure(
+                    "AbyssalDeferredCausticsRuntime has no public instance 'InitializeService' method, so the " +
+                    "created owner was never initialized.");
+
+            initializeMethod.Invoke(serviceComponent, null);
+            if (GlobalRegistry.Caustics != null)
+                return true;
+
+            return LogDeferredCausticsWiringFailure(
+                "AbyssalDeferredCausticsRuntime.InitializeService ran but GlobalRegistry.Caustics is still empty, " +
+                "so the service never registered itself.");
+        }
+
+        /// <summary>
+        /// Reports a broken link in the reflection-by-string caustics wiring.
+        /// </summary>
+        /// <returns>Always <c>false</c>, so callers can <c>return</c> this directly.</returns>
+        private static bool LogDeferredCausticsWiringFailure(string reason)
+        {
+            RuntimeDiagnosticsTrace.EnsureSession("bootstrap_blackbox");
+            RuntimeDiagnosticsTrace.WriteEvent("bootstrap.caustics.wiring.broken", reason);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError("[GameBootstrapper] Deferred caustics wiring is broken, caustics will not render. " + reason);
+#endif
+            return false;
         }
 
         internal static void PersistRuntimeService(Component component)
@@ -8592,7 +8726,11 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.HectonFloatingOrigin: return GlobalRegistryServiceSlot.FloatingOriginRuntime;
                 case BootstrapDependencyNode.GlobalPhysicsStateManager: return GlobalRegistryServiceSlot.PhysicsStateManager;
                 case BootstrapDependencyNode.PhysicsApplySystem: return GlobalRegistryServiceSlot.Physics;
-                case BootstrapDependencyNode.DebrisManager: return GlobalRegistryServiceSlot.DebrisComputeRuntime;
+                // Debris, not DebrisComputeRuntime: the startup graph node this bootstrap node was built from is
+                // GlobalRegistryServiceSlot.Debris (BootstrapRegistryCycleValidator._startupNodes). Reporting the
+                // compute slot here wrote boot-state records and reverse-order shutdown against a slot that is
+                // not in the startup graph.
+                case BootstrapDependencyNode.DebrisManager: return GlobalRegistryServiceSlot.Debris;
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService: return GlobalRegistryServiceSlot.Environment;
                 case BootstrapDependencyNode.OceanKinematicsRuntimeService: return GlobalRegistryServiceSlot.OceanKinematics;
                 case BootstrapDependencyNode.EcosystemDirector: return GlobalRegistryServiceSlot.EcosystemDirector;

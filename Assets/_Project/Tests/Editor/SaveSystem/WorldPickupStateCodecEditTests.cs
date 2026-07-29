@@ -766,187 +766,507 @@ namespace Hecton8.Tests.Editor.SaveSystem
         }
 
         [Test]
-        public void PickupItem_OnValidateRegeneratesDuplicateStableWorldStateIdsInEditorSceneScope()
+        public void PickupItem_OnValidateInvalidatesCachedPersistenceIdentityAndRebuildsItFromTheNewStableId()
         {
+            // Replaces a source-text test whose central assertion was
+            //   normalizedOnValidate.StartsWith("{\n            InvalidateWorldStateIdentity();")
+            // - a claim about twelve spaces of indentation and a line ending, not about behaviour. It
+            // passed for any body that merely began with that text and failed for a correct body that
+            // was reformatted. What it was standing in for is real and observable: the cached
+            // persistence identity must be dropped by OnValidate before every early return, otherwise a
+            // pickup keeps answering with the key of its previous stableWorldStateId and the save layer
+            // suppresses the wrong object.
+            const string tempScenePath = "Assets/_Project/Tests/Editor/SaveSystem/__WorldPickupStateOnValidateInvalidationEditTests_Temp.unity";
+            Scene previousActiveScene = SceneManager.GetActiveScene();
+            Scene scene = default;
+            ItemData itemData = null;
+            try
+            {
+                scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+                SceneManager.SetActiveScene(scene);
+                Assert.IsTrue(EditorSceneManager.SaveScene(scene, tempScenePath));
+
+                itemData = ScriptableObject.CreateInstance<ItemData>();
+                itemData.name = "WorldPickupStateOnValidateInvalidationEditTests.Item";
+
+                PickupItem pickup = CreatePickup("WorldPickupStateOnValidateInvalidationEditTests.Pickup");
+                SceneManager.MoveGameObjectToScene(pickup.gameObject, scene);
+                Assert.IsTrue(EditorSceneManager.SaveScene(scene, tempScenePath));
+
+                SetPrivateField(pickup, "itemData", itemData);
+                SetPrivateField(pickup, "persistWorldState", true);
+                SetPrivateField(pickup, "stableWorldStateId", "onvalidate-invalidation-first");
+                InvokePrivateInstance(pickup, "InvalidateWorldStateIdentity");
+                InvokePrivateInstance(pickup, "CaptureWorldStateIdentityCold");
+
+                Assert.IsTrue(
+                    pickup.TryGetWorldStatePersistenceIdentity(out long firstKey, out long firstChunkKey),
+                    "A persistent authored pickup in a saved scene must resolve a world-state identity.");
+                Assert.AreNotEqual(0L, firstKey);
+                Assert.AreNotEqual(0L, firstChunkKey);
+
+                // Writing the serialized field alone must NOT move the cached key. This is the half that
+                // makes OnValidate's invalidation load-bearing instead of decorative; without it the
+                // next assertion could pass for the wrong reason.
+                SetPrivateField(pickup, "stableWorldStateId", "onvalidate-invalidation-second");
+                Assert.IsTrue(pickup.TryGetWorldStatePersistenceIdentity(out long staleKey, out _));
+                Assert.AreEqual(
+                    firstKey,
+                    staleKey,
+                    "The identity is not actually cached, so this fixture cannot prove OnValidate invalidates it.");
+
+                InvokePrivateInstance(pickup, "OnValidate");
+
+                Assert.IsFalse(
+                    pickup.TryGetWorldStatePersistenceIdentity(out long clearedKey, out long clearedChunkKey),
+                    "OnValidate left a stale persistence identity cached, so a re-authored stableWorldStateId still resolves to the old save key.");
+                Assert.AreEqual(0L, clearedKey);
+                Assert.AreEqual(0L, clearedChunkKey);
+
+                InvokePrivateInstance(pickup, "CaptureWorldStateIdentityCold");
+                Assert.IsTrue(pickup.TryGetWorldStatePersistenceIdentity(out long secondKey, out long secondChunkKey));
+                Assert.AreNotEqual(
+                    firstKey,
+                    secondKey,
+                    "A different stableWorldStateId must produce a different persistence key.");
+
+                // The pickup did not move, and the chunk key is derived from position only, so it must
+                // survive a stable-id change untouched.
+                Assert.AreEqual(firstChunkKey, secondChunkKey);
+
+                string currentStableId = ReadPrivateField<string>(pickup, "stableWorldStateId");
+                Assert.AreEqual("onvalidate-invalidation-second", currentStableId);
+                Assert.IsTrue(WorldPickupStateCodec.TryBuildIdentity(
+                    scene.path,
+                    currentStableId,
+                    itemData.PersistentId,
+                    pickup.transform.position,
+                    out long expectedKey,
+                    out long expectedChunkKey));
+                Assert.AreEqual(
+                    expectedKey,
+                    secondKey,
+                    "The rebuilt identity does not match the codec, so the pickup and the save layer disagree about its key.");
+                Assert.AreEqual(expectedChunkKey, secondChunkKey);
+            }
+            finally
+            {
+                if (itemData != null)
+                    UnityEngine.Object.DestroyImmediate(itemData);
+
+                if (previousActiveScene.IsValid() && previousActiveScene.isLoaded)
+                    SceneManager.SetActiveScene(previousActiveScene);
+
+                if (scene.IsValid() && scene.isLoaded)
+                    EditorSceneManager.CloseScene(scene, removeScene: true);
+
+                AssetDatabase.DeleteAsset(tempScenePath);
+            }
+        }
+
+        [Test]
+        public void PickupItem_DoesNotUseGlobalObjectIdForAuthoredIdentity()
+        {
+            // ARCHITECTURE GUARD, deliberately still a text assertion and named as one.
+            // UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow returns editor-session-scoped ids that
+            // are not stable across a reimport, so it must never seed a persisted save key. There is no
+            // behavioural assertion for "this API is absent from the file" - the whole point is that
+            // the call must not exist, and a runtime test can only observe the API when it is already
+            // being used. This is the one assertion kept from the source-text test that used to live
+            // here; it is a rule about source shape, not a behaviour pretending to be tested.
             string source = File.ReadAllText(Path.Combine(
                 Application.dataPath,
                 "_Project/Scripts/Items/PickupItem.cs"));
-            string onValidate = ExtractMethodBody(source, "private void OnValidate()");
-            string duplicateCheck = ExtractMethodBody(
-                source,
-                "private bool HasDuplicateStableWorldStateIdInOpenScenes(string normalizedStableId)");
 
-            string normalizedOnValidate = onValidate.Replace("\r\n", "\n").TrimStart();
-            Assert.IsTrue(
-                normalizedOnValidate.StartsWith("{\n            InvalidateWorldStateIdentity();", StringComparison.Ordinal),
-                "OnValidate must invalidate cached persistence identity before early returns.");
-            Assert.That(onValidate, Does.Contain("HasDuplicateStableWorldStateIdInOpenScenes(normalizedStableId)"));
-            Assert.That(onValidate, Does.Contain("gameObject.scene.path.EndsWith(\".unity\", StringComparison.OrdinalIgnoreCase)"));
-            Assert.That(onValidate, Does.Contain("itemData == null || string.IsNullOrWhiteSpace(itemData.PersistentId)"));
-            Assert.That(onValidate, Does.Contain("Persistent scene pickup cannot seed stableWorldStateId without item persistent ID."));
-            Assert.That(onValidate, Does.Contain("Guid.NewGuid().ToString(\"N\")"));
-            Assert.That(onValidate, Does.Contain("UnityEditor.Undo.RecordObject(this"));
-            Assert.That(onValidate, Does.Contain("UnityEditor.EditorUtility.SetDirty(this)"));
-            Assert.That(onValidate, Does.Contain("UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(gameObject.scene)"));
-            Assert.That(duplicateCheck, Does.Contain("UnityEngine.Object.FindObjectsByType<PickupItem>"));
-            Assert.That(duplicateCheck, Does.Contain("UnityEngine.FindObjectsInactive.Include"));
-            Assert.That(duplicateCheck, Does.Contain("candidate.gameObject.scene.path"));
-            Assert.That(duplicateCheck, Does.Contain("!candidate.persistWorldState"));
-            Assert.That(duplicateCheck, Does.Contain("candidate.stableWorldStateId.Trim()"));
-            Assert.That(duplicateCheck, Does.Contain("return true"));
             Assert.That(source, Does.Not.Contain("UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow"));
         }
 
         [Test]
-        public void WorldPickupStateAuthoringValidator_SourceGuardsStableIdRoutingAndUnresolvedIssues()
+        public void WorldPickupStateAuthoringValidator_ScanFindsInactiveDuplicatesAndScopesToTheRequestedScene()
         {
-            string source = File.ReadAllText(Path.Combine(
-                Application.dataPath,
-                "_Project/Scripts/Editor/SaveSystem/WorldPickupStateAuthoringValidator.cs"));
+            // Replaces 22 StringAssert/Does.Contain probes on the validator's own source text. Two of
+            // them ("[MenuItem(\"Hecton/...") sat red for a long time against a file that had always
+            // spelled the prefix Hecton8 - the failure mode of text assertions in both directions. The
+            // menu paths below are read from the COMPILED MenuItem attributes, which cannot drift from
+            // the menu Unity actually registers, and every other claim is replaced by driving the real
+            // scan. FindObjectsInactive.Include and the requiredScenePath filter are proven by outcome:
+            // a disabled duplicate is still counted, and the same duplicate pair is not counted when the
+            // scan is asked about a different scene path. The repair pass is proven by the resulting IDs
+            // no longer colliding, not by the presence of an AssignNewStableId call site.
+            const string tempScenePath = "Assets/_Project/Tests/Editor/SaveSystem/__WorldPickupStateValidatorScanEditTests_Temp.unity";
+            Scene previousActiveScene = SceneManager.GetActiveScene();
+            Scene scene = default;
+            ItemData itemData = null;
+            try
+            {
+                AssertValidatorMenuItemPath("ValidateOpenScenePickupStableIds", "Hecton8/Validation/Validate World Pickup Stable IDs");
+                AssertValidatorMenuItemPath("SeedOpenScenePickupStableIds", "Hecton8/Authoring/Seed World Pickup Stable IDs In Open Scenes");
 
-            // "Hecton8/", not "Hecton/". The source has always carried the Hecton8 prefix that every
-            // other menu in this project uses, so "[MenuItem(\"Hecton/" was never a substring of it and
-            // both of these assertions were red. The validator's own two user-facing instruction strings
-            // had the same typo and told people to run a menu path that does not exist; they now say
-            // Hecton8 as well. Fixing only one side would have re-broken the other.
-            Assert.That(source, Does.Contain("[MenuItem(\"Hecton8/Validation/Validate World Pickup Stable IDs\")]"));
-            Assert.That(source, Does.Contain("[MenuItem(\"Hecton8/Authoring/Seed World Pickup Stable IDs In Open Scenes\")]"));
-            Assert.That(source, Does.Contain("WorldPickupStableIdBuildGate : IProcessSceneWithReport"));
-            Assert.That(source, Does.Contain("throw new BuildFailedException"));
-            Assert.That(source, Does.Contain("internal static int ScanOpenScenePickups(bool repair, string requiredScenePath)"));
-            Assert.That(source, Does.Contain("internal static WorldPickupStableIdScanResult ScanOpenScenePickupStableIds(bool repair, string requiredScenePath)"));
-            Assert.That(source, Does.Contain("UnityEngine.Object.FindObjectsByType<PickupItem>"));
-            Assert.That(source, Does.Contain("FindObjectsInactive.Include"));
-            Assert.That(source, Does.Contain("requiredScenePath"));
-            Assert.That(source, Does.Contain("pickup.gameObject.scene.path.EndsWith(\".unity\", StringComparison.OrdinalIgnoreCase)"));
-            Assert.That(source, Does.Contain("FindProperty(PersistWorldStateProperty)"));
-            Assert.That(source, Does.Contain("FindProperty(StableWorldStateIdProperty)"));
-            Assert.That(source, Does.Contain("itemData.PersistentId"));
-            Assert.That(source, Does.Contain("MaxStableIdRepairAttempts"));
-            Assert.That(source, Does.Contain("AssignNewStableId"));
-            Assert.That(source, Does.Contain("Undo.RecordObject"));
-            Assert.That(source, Does.Contain("serialized.ApplyModifiedProperties()"));
-            Assert.That(source, Does.Contain("EditorSceneManager.MarkSceneDirty"));
-            Assert.That(source, Does.Contain("UnresolvedCount"));
-            Assert.That(source, Does.Contain("Duplicate pickup stable ID remains unresolved"));
-            Assert.That(source, Does.Contain("BuildIdentityKey(pickup.gameObject.scene.path, stableId)"));
+                scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+                SceneManager.SetActiveScene(scene);
+                Assert.IsTrue(EditorSceneManager.SaveScene(scene, tempScenePath));
+
+                itemData = ScriptableObject.CreateInstance<ItemData>();
+                itemData.name = "WorldPickupStateValidatorScanEditTests.Item";
+
+                PickupItem first = CreatePickup("WorldPickupStateValidatorScanEditTests.First");
+                PickupItem second = CreatePickup("WorldPickupStateValidatorScanEditTests.Second");
+                SceneManager.MoveGameObjectToScene(first.gameObject, scene);
+                SceneManager.MoveGameObjectToScene(second.gameObject, scene);
+                Assert.IsTrue(EditorSceneManager.SaveScene(scene, tempScenePath));
+
+                SetPrivateField(first, "itemData", itemData);
+                SetPrivateField(second, "itemData", itemData);
+                SetPrivateField(first, "persistWorldState", true);
+                SetPrivateField(second, "persistWorldState", true);
+                SetPrivateField(first, "stableWorldStateId", "validator-scan-unique-first");
+                SetPrivateField(second, "stableWorldStateId", "validator-scan-unique-second");
+
+                Assert.AreEqual(
+                    0,
+                    WorldPickupStateAuthoringValidator.ScanOpenScenePickups(repair: false, requiredScenePath: tempScenePath),
+                    "Two persistent pickups with distinct stable IDs must scan clean.");
+
+                // A DISABLED duplicate must still be found. A scan that omitted
+                // FindObjectsInactive.Include would report zero issues here and the build gate would
+                // ship a save-key collision.
+                SetPrivateField(second, "stableWorldStateId", "validator-scan-unique-first");
+                second.gameObject.SetActive(false);
+
+                WorldPickupStableIdScanResult duplicateScan =
+                    WorldPickupStateAuthoringValidator.ScanOpenScenePickupStableIds(repair: false, requiredScenePath: tempScenePath);
+
+                Assert.AreEqual(
+                    1,
+                    duplicateScan.IssueCount,
+                    "An inactive duplicate stable ID was not reported, so the scan is not including inactive objects.");
+                Assert.AreEqual(0, duplicateScan.RepairedCount, "repair:false must not mutate authoring data.");
+                Assert.AreEqual(
+                    "validator-scan-unique-first",
+                    ReadSerializedString(second, "stableWorldStateId"),
+                    "repair:false rewrote a stable ID.");
+
+                // Scene scoping: the same duplicate pair must NOT be counted when the scan is asked for a
+                // different scene path. A scan that ignored requiredScenePath would report 1 here and
+                // fail an unrelated scene's build gate.
+                Assert.AreEqual(
+                    0,
+                    WorldPickupStateAuthoringValidator.ScanOpenScenePickups(
+                        repair: false,
+                        requiredScenePath: "Assets/_Project/Tests/Editor/SaveSystem/__WorldPickupStateValidatorScanEditTests_NotThisScene.unity"),
+                    "The scan ignored requiredScenePath and reported issues from a scene it was not asked about.");
+
+                second.gameObject.SetActive(true);
+
+                // repair:true must resolve the duplicate rather than leave it unresolved.
+                WorldPickupStableIdScanResult repairScan =
+                    WorldPickupStateAuthoringValidator.ScanOpenScenePickupStableIds(repair: true, requiredScenePath: tempScenePath);
+
+                Assert.AreEqual(1, repairScan.IssueCount);
+                Assert.AreEqual(1, repairScan.RepairedCount);
+                Assert.AreEqual(0, repairScan.UnresolvedCount);
+                Assert.AreNotEqual(
+                    ReadSerializedString(first, "stableWorldStateId"),
+                    ReadSerializedString(second, "stableWorldStateId"),
+                    "repair:true reported a repair but left the two pickups sharing one save key.");
+                Assert.AreEqual(
+                    0,
+                    WorldPickupStateAuthoringValidator.ScanOpenScenePickups(repair: false, requiredScenePath: tempScenePath),
+                    "A repaired scene must scan clean on the next pass.");
+            }
+            finally
+            {
+                if (itemData != null)
+                    UnityEngine.Object.DestroyImmediate(itemData);
+
+                if (previousActiveScene.IsValid() && previousActiveScene.isLoaded)
+                    SceneManager.SetActiveScene(previousActiveScene);
+
+                if (scene.IsValid() && scene.isLoaded)
+                    EditorSceneManager.CloseScene(scene, removeScene: true);
+
+                AssetDatabase.DeleteAsset(tempScenePath);
+            }
         }
 
         [Test]
-        public void WorldStateManager_ApplyPickupStateScansRegistryBackwardsForSwapRemoval()
+        public void WorldStateManager_ApplyPickupStateSuppressesEveryDepletedPickupEvenWhenTheSweepMutatesTheRegistry()
         {
-            string source = File.ReadAllText(Path.Combine(
-                Application.dataPath,
-                "_Project/Scripts/WorldStateManager.cs"));
-            string applyPickupState = ExtractMethodBody(source, "private void ApplyPickupStateToScene()");
+            // Replaces a source-text test that asserted the literal loop header
+            //   "for (int i = PickupItem.WorldStateRegistryCount - 1; i >= 0; i--)"
+            // in ApplyPickupStateToScene (WorldStateManager.cs:643). That assertion is green for a
+            // reformat and green for a correct-looking loop with a broken body, and it is red for a
+            // rename of `i` that changes nothing. The reason the descending scan exists is real:
+            // PickupItem's registry is a RegistryBucket (RegistryBucket.cs:152) that removes with
+            // swap-with-last, and suppressing a pickup can unregister it mid-sweep, moving the tail
+            // entry down into the slot just visited. An ascending scan over a live count skips that
+            // moved entry.
+            //
+            // This drives the real sweep with a real mid-sweep swap-removal. Middle.persistWorldState
+            // is cleared AFTER its identity is cached, so ShouldRetainWorldStateRegistryWhileInactive
+            // (PickupItem.cs:779) turns false and its OnDisable unregisters it (PickupItem.cs:342)
+            // while ApplyPickupStateToScene is still iterating - which is exactly the shape that
+            // relocates Last into Middle's slot. An ascending sweep leaves Last active and this test
+            // fails; a descending sweep suppresses all three.
+            const string tempScenePath = "Assets/_Project/Tests/Editor/SaveSystem/__WorldPickupStateSweepEditTests_Temp.unity";
+            Scene previousActiveScene = SceneManager.GetActiveScene();
+            Scene scene = default;
+            GameObject managerHost = null;
+            ItemData itemData = null;
+            PickupItem[] pickups = null;
+            try
+            {
+                scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+                SceneManager.SetActiveScene(scene);
+                Assert.IsTrue(EditorSceneManager.SaveScene(scene, tempScenePath));
 
-            Assert.That(applyPickupState, Does.Contain("for (int i = PickupItem.WorldStateRegistryCount - 1; i >= 0; i--)"));
-            Assert.That(applyPickupState, Does.Contain("TryResolveOrPromoteCollectedPickup(persistenceKey, chunkKey, legacyPersistenceKey)"));
-            Assert.That(applyPickupState, Does.Contain("pickup.ApplyWorldStateSuppression();"));
-            Assert.That(applyPickupState, Does.Contain("pickup.TryRestoreWorldStateSuppression()"));
-            Assert.That(applyPickupState, Does.Not.Contain("pickup.gameObject.SetActive(false);"));
-            Assert.That(applyPickupState, Does.Not.Contain("pickup.gameObject.SetActive(true);"));
-            Assert.That(applyPickupState, Does.Not.Contain("for (int i = 0; i < pickupCount; i++)"));
+                itemData = ScriptableObject.CreateInstance<ItemData>();
+                itemData.name = "WorldPickupStateSweepEditTests.Item";
+
+                int baselineRegistryCount = PickupItem.WorldStateRegistryCount;
+                pickups = new PickupItem[3];
+                long[] persistenceKeys = new long[3];
+                long[] chunkKeys = new long[3];
+                string[] names = { "First", "Middle", "Last" };
+
+                for (int i = 0; i < pickups.Length; i++)
+                {
+                    PickupItem pickup = CreatePickup("WorldPickupStateSweepEditTests." + names[i]);
+                    SceneManager.MoveGameObjectToScene(pickup.gameObject, scene);
+                    SetPrivateField(pickup, "itemData", itemData);
+                    SetPrivateField(pickup, "quantity", 2 + i);
+                    SetPrivateField(pickup, "persistWorldState", true);
+                    SetPrivateField(pickup, "stableWorldStateId", "sweep-stable-id-" + names[i]);
+                    InvokePrivateInstance(pickup, "CaptureWorldStateRestoreBaseline");
+                    InvokePrivateInstance(pickup, "InvalidateWorldStateIdentity");
+                    InvokePrivateInstance(pickup, "CaptureWorldStateIdentityCold");
+                    InvokePrivateInstance(pickup, "RegisterWorldStateRegistry");
+
+                    Assert.IsTrue(
+                        pickup.TryGetWorldStatePersistenceIdentity(out persistenceKeys[i], out chunkKeys[i]),
+                        names[i] + " has no world-state identity, so the sweep would skip it for the wrong reason.");
+                    Assert.AreNotEqual(0L, persistenceKeys[i]);
+                    pickups[i] = pickup;
+                }
+
+                Assert.AreEqual(
+                    baselineRegistryCount + 3,
+                    PickupItem.WorldStateRegistryCount,
+                    "All three pickups must be in the world-state registry before the sweep runs.");
+                Assert.AreNotEqual(persistenceKeys[0], persistenceKeys[1]);
+                Assert.AreNotEqual(persistenceKeys[1], persistenceKeys[2]);
+
+                managerHost = new GameObject("WorldPickupStateSweepEditTests.WorldStateManager");
+                WorldStateManager manager = managerHost.AddComponent<WorldStateManager>();
+                SetPrivateField(manager, "_depletedNodeIds", new HashSet<string>());
+                SetPrivateField(manager, "_depletedPickupKeys", new HashSet<long>());
+
+                for (int i = 0; i < pickups.Length; i++)
+                    manager.RegisterCollectedPickup(persistenceKeys[i], chunkKeys[i]);
+
+                // Arm the mid-sweep swap-removal on the middle entry.
+                SetPrivateField(pickups[1], "persistWorldState", false);
+
+                for (int i = 0; i < pickups.Length; i++)
+                    Assert.IsTrue(pickups[i].gameObject.activeSelf, names[i] + " must start active.");
+
+                manager.ApplyToScene();
+
+                for (int i = 0; i < pickups.Length; i++)
+                {
+                    Assert.IsFalse(
+                        pickups[i].gameObject.activeSelf,
+                        names[i] + " is still active after one sweep. A single ApplyToScene pass must suppress every "
+                            + "depleted pickup; an ascending scan over the live registry count skips the entry that "
+                            + "swap-removal relocated into the slot it just visited.");
+                }
+
+                Assert.AreEqual(
+                    baselineRegistryCount + 2,
+                    PickupItem.WorldStateRegistryCount,
+                    "The middle pickup was expected to unregister during the sweep; without that mutation this "
+                        + "fixture is not exercising the swap-removal hazard it exists to cover.");
+
+                // Restoration side of the same sweep: clearing the depleted set must bring the still
+                // registered pickups back, with the authored quantity restored rather than left at zero.
+                SetPrivateField(pickups[0], "quantity", 0);
+                SetPrivateField(pickups[2], "quantity", 0);
+                manager.ClearAll();
+                manager.ApplyToScene();
+
+                Assert.IsTrue(pickups[0].gameObject.activeSelf, "First was not restored by the sweep.");
+                Assert.IsTrue(pickups[2].gameObject.activeSelf, "Last was not restored by the sweep.");
+                Assert.AreEqual(2, pickups[0].Quantity, "Restoration must replay the captured quantity baseline.");
+                Assert.AreEqual(4, pickups[2].Quantity, "Restoration must replay the captured quantity baseline.");
+
+                // The middle pickup opted out of persistence and left the registry, so the sweep can no
+                // longer reach it. Asserted so that a future change of that contract shows up here
+                // instead of silently altering which objects a load can restore.
+                Assert.IsFalse(pickups[1].gameObject.activeSelf);
+            }
+            finally
+            {
+                if (managerHost != null)
+                    UnityEngine.Object.DestroyImmediate(managerHost);
+
+                if (pickups != null)
+                {
+                    for (int i = 0; i < pickups.Length; i++)
+                    {
+                        if (pickups[i] != null)
+                            UnityEngine.Object.DestroyImmediate(pickups[i].gameObject);
+                    }
+                }
+
+                if (itemData != null)
+                    UnityEngine.Object.DestroyImmediate(itemData);
+
+                if (previousActiveScene.IsValid() && previousActiveScene.isLoaded)
+                    SceneManager.SetActiveScene(previousActiveScene);
+
+                if (scene.IsValid() && scene.isLoaded)
+                    EditorSceneManager.CloseScene(scene, removeScene: true);
+
+                AssetDatabase.DeleteAsset(tempScenePath);
+            }
         }
 
         [Test]
-        public void WorldStateManager_SourceGuardsRestorePassDoesNotEarlyReturnWhenLoadedStateIsEmpty()
+        public void WorldStateManager_LoadingAnEmptyWorldStateRestoresEverySuppressedNodeAndPickup()
         {
-            string managerSource = File.ReadAllText(Path.Combine(
-                Application.dataPath,
-                "_Project/Scripts/WorldStateManager.cs"));
-            string loadFromSaveData = ExtractMethodBody(managerSource, "public void LoadFromSaveData(SaveData data)");
-            string applyToScene = ExtractMethodBody(managerSource, "public void ApplyToScene()");
-            string applyPickupState = ExtractMethodBody(managerSource, "private void ApplyPickupStateToScene()");
+            // Replaces the worst source-text test in this fixture: 41 Does.Contain probes spread across
+            // FIVE product files it does not own, plus eight Assert.Greater comparisons on raw IndexOf
+            // offsets into SaveManager.cs and PersistentWorldRegistry.cs. Those offset comparisons pin
+            // the ORDER OF STATEMENTS in files this fixture has no ownership of; the whole block is
+            // green for a wrong implementation that happens to contain the same substrings, and red for
+            // a correct one that renames a local.
+            //
+            // The name of that test made a behavioural claim - "restore pass does not early return when
+            // loaded state is empty" - and its evidence was
+            //   Does.Not.Contain("_depletedNodeIds.Count == 0")
+            // which any rewrite to "< 1", "!= 0" or an extracted guard method defeats while reintroducing
+            // the exact bug. Loading a save with no depletions is precisely when restoration has to run:
+            // if the sweep bails out on an empty set, a player who reloads an earlier slot keeps every
+            // node and pickup that a later session had already consumed.
+            const string tempScenePath = "Assets/_Project/Tests/Editor/SaveSystem/__WorldPickupStateEmptyLoadEditTests_Temp.unity";
+            Scene previousActiveScene = SceneManager.GetActiveScene();
+            Scene scene = default;
+            GameObject managerHost = null;
+            GameObject nodeHost = null;
+            ItemData itemData = null;
+            PickupItem pickup = null;
+            try
+            {
+                scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+                SceneManager.SetActiveScene(scene);
+                Assert.IsTrue(EditorSceneManager.SaveScene(scene, tempScenePath));
 
-            Assert.That(loadFromSaveData, Does.Contain("if (data == null)"));
-            Assert.That(loadFromSaveData, Does.Contain("ClearAll();"));
-            Assert.That(loadFromSaveData, Does.Contain("ApplyToScene();"));
-            Assert.That(applyToScene, Does.Not.Contain("_depletedNodeIds.Count == 0"));
-            Assert.That(applyToScene, Does.Contain("node.ApplyWorldStateSuppression();"));
-            Assert.That(applyToScene, Does.Contain("node.TryRestoreWorldStateSuppression()"));
-            Assert.That(applyToScene, Does.Not.Contain("node.gameObject.SetActive(true);"));
-            Assert.That(applyToScene, Does.Not.Contain("node.gameObject.SetActive(false);"));
-            Assert.That(applyToScene, Does.Contain("for (int i = ResourceNode.WorldStateRegistryCount - 1; i >= 0; i--)"));
-            Assert.That(applyPickupState, Does.Not.Contain("_depletedPickupKeys.Count == 0"));
-            Assert.That(applyPickupState, Does.Contain("pickup.TryRestoreWorldStateSuppression()"));
+                itemData = ScriptableObject.CreateInstance<ItemData>();
+                itemData.name = "WorldPickupStateEmptyLoadEditTests.Item";
 
-            string pickupSource = File.ReadAllText(Path.Combine(
-                Application.dataPath,
-                "_Project/Scripts/Items/PickupItem.cs"));
-            Assert.That(pickupSource, Does.Contain("ShouldRetainWorldStateRegistryWhileInactive()"));
-            Assert.That(pickupSource, Does.Contain("if (!ShouldRetainWorldStateRegistryWhileInactive())"));
-            Assert.That(pickupSource, Does.Contain("_worldStateSuppressedByPersistence"));
-            Assert.That(pickupSource, Does.Contain("_worldStateRestoreQuantity"));
-            Assert.That(pickupSource, Does.Contain("internal void ApplyWorldStateSuppression()"));
-            Assert.That(pickupSource, Does.Contain("internal bool TryRestoreWorldStateSuppression()"));
-            Assert.That(pickupSource, Does.Contain("CaptureWorldStateRestoreBaseline()"));
-            Assert.That(pickupSource, Does.Contain("PublishItemLifecycleCollectedSignal(attempt.AddedQuantity, interactor);"));
-            Assert.That(pickupSource, Does.Contain("ItemLifecycleSignalRoute.TryPublishCollected"));
-            Assert.That(pickupSource, Does.Contain("private static WorldStateManager s_worldStateManager;"));
-            Assert.That(pickupSource, Does.Contain("case GlobalRegistryServiceSlot.WorldStateRuntime:"));
-            Assert.That(pickupSource, Does.Contain("private WorldStateManager ResolveWorldStateManager()"));
-            Assert.That(pickupSource, Does.Contain("ResolveWorldStateManager()?.RegisterCollectedPickup"));
-            Assert.That(pickupSource, Does.Not.Contain("_worldStateManager?.RegisterCollectedPickup"));
+                pickup = CreatePickup("WorldPickupStateEmptyLoadEditTests.Pickup");
+                SceneManager.MoveGameObjectToScene(pickup.gameObject, scene);
+                SetPrivateField(pickup, "itemData", itemData);
+                SetPrivateField(pickup, "quantity", 5);
+                SetPrivateField(pickup, "persistWorldState", true);
+                SetPrivateField(pickup, "stableWorldStateId", "empty-load-stable-id");
+                InvokePrivateInstance(pickup, "CaptureWorldStateRestoreBaseline");
+                InvokePrivateInstance(pickup, "InvalidateWorldStateIdentity");
+                InvokePrivateInstance(pickup, "CaptureWorldStateIdentityCold");
+                InvokePrivateInstance(pickup, "RegisterWorldStateRegistry");
 
-            string hectonItemSource = File.ReadAllText(Path.Combine(
-                Application.dataPath,
-                "_Project/Scripts/HectonItem.cs"));
-            Assert.That(hectonItemSource, Does.Contain("PublishItemLifecycleCollectedSignal(attempt.AddedQuantity, interactor);"));
-            Assert.That(hectonItemSource, Does.Contain("ItemLifecycleSignalRoute.TryPublishCollected"));
+                Assert.IsTrue(pickup.TryGetWorldStatePersistenceIdentity(
+                    out long pickupPersistenceKey,
+                    out long pickupChunkKey));
+                Assert.AreNotEqual(0L, pickupPersistenceKey);
 
-            string resourceNodeSource = File.ReadAllText(Path.Combine(
-                Application.dataPath,
-                "_Project/Scripts/ResourceNode.cs"));
-            string resourceNodeRestore = ExtractMethodBody(resourceNodeSource, "internal bool TryRestoreWorldStateSuppression()");
-            Assert.That(resourceNodeSource, Does.Contain("if (IsPooledInstance())"));
-            Assert.That(resourceNodeSource, Does.Contain("UnregisterWorldStateRegistry();"));
-            Assert.That(resourceNodeSource, Does.Contain("_worldStateSuppressedByPersistence"));
-            Assert.That(resourceNodeSource, Does.Contain("internal void ApplyWorldStateSuppression()"));
-            Assert.That(resourceNodeSource, Does.Contain("internal bool TryRestoreWorldStateSuppression()"));
-            Assert.That(resourceNodeSource, Does.Contain("internal static int ApplyPersistentWorldRegistryStateToRegisteredNodes()"));
-            Assert.That(resourceNodeSource, Does.Contain("internal static int ApplyPersistentWorldRegistryStateToRegisteredNodes(PersistentWorldRegistry registry)"));
-            Assert.That(resourceNodeSource, Does.Contain("EnsureRegistryCache();"));
-            Assert.That(resourceNodeSource, Does.Contain("s_persistentWorldRegistry = registry;"));
-            Assert.That(resourceNodeSource, Does.Contain("node.ShouldSuppressSpawn()"));
-            Assert.That(resourceNodeSource, Does.Contain("ResetState();"));
-            Assert.That(resourceNodeRestore, Does.Contain("EnsureRegistryCache();"));
-            Assert.That(resourceNodeRestore, Does.Contain("RefreshPersistentIdentity();"));
-            Assert.That(resourceNodeRestore, Does.Contain("if (ShouldSuppressSpawn())"));
+                nodeHost = new GameObject("WorldPickupStateEmptyLoadEditTests.Node");
+                ResourceNode node = nodeHost.AddComponent<ResourceNode>();
+                node.SetUniqueId("empty-load-resource-node");
 
-            string saveManagerSource = File.ReadAllText(Path.Combine(
-                Application.dataPath,
-                "_Project/Scripts/SaveManager.cs"));
-            int indexedRestoreIndex = saveManagerSource.IndexOf(
-                "persistentWorldRegistryForLoad.RestoreFromIndexedSave",
-                StringComparison.Ordinal);
-            int fallbackRestoreIndex = saveManagerSource.IndexOf(
-                "persistentWorldRegistryForLoad.RestoreFromLoadedRecords",
-                StringComparison.Ordinal);
-            int resourcePostRestorePassIndex = saveManagerSource.IndexOf(
-                "ResourceNode.ApplyPersistentWorldRegistryStateToRegisteredNodes(persistentWorldRegistryForLoad)",
-                StringComparison.Ordinal);
+                managerHost = new GameObject("WorldPickupStateEmptyLoadEditTests.WorldStateManager");
+                WorldStateManager manager = managerHost.AddComponent<WorldStateManager>();
+                SetPrivateField(manager, "_depletedNodeIds", new HashSet<string>());
+                SetPrivateField(manager, "_depletedPickupKeys", new HashSet<long>());
 
-            Assert.GreaterOrEqual(indexedRestoreIndex, 0);
-            Assert.GreaterOrEqual(fallbackRestoreIndex, 0);
-            Assert.GreaterOrEqual(resourcePostRestorePassIndex, 0);
-            Assert.Greater(resourcePostRestorePassIndex, indexedRestoreIndex);
-            Assert.Greater(resourcePostRestorePassIndex, fallbackRestoreIndex);
+                manager.RegisterDepletedNode(node.UniqueId);
+                manager.RegisterCollectedPickup(pickupPersistenceKey, pickupChunkKey);
+                manager.ApplyToScene();
 
-            string persistentWorldRegistrySource = File.ReadAllText(Path.Combine(
-                Application.dataPath,
-                "_Project/Scripts/World/PersistentWorldRegistry.cs"));
-            int indexedSectorRestoreIndex = persistentWorldRegistrySource.IndexOf(
-                "RestoreFromLoadedRecords(stagedRecords, scheduleHydration: false);",
-                StringComparison.Ordinal);
-            int indexedSectorPostRestorePassIndex = persistentWorldRegistrySource.IndexOf(
-                "ResourceNode.ApplyPersistentWorldRegistryStateToRegisteredNodes(this)",
-                Math.Max(0, indexedSectorRestoreIndex),
-                StringComparison.Ordinal);
+                Assert.IsFalse(node.gameObject.activeSelf, "Precondition: the depleted node must be suppressed first.");
+                Assert.IsFalse(pickup.gameObject.activeSelf, "Precondition: the collected pickup must be suppressed first.");
 
-            Assert.GreaterOrEqual(indexedSectorRestoreIndex, 0);
-            Assert.GreaterOrEqual(indexedSectorPostRestorePassIndex, 0);
-            Assert.Greater(indexedSectorPostRestorePassIndex, indexedSectorRestoreIndex);
+                // Zero the authored quantity so a restore that only flips activeSelf is distinguishable
+                // from one that replays the captured baseline.
+                SetPrivateField(pickup, "quantity", 0);
+
+                // A real save container that carries NO depletions - the exact input the dropped test
+                // claimed to cover with a Does.Not.Contain on a literal count comparison.
+                SaveData emptyWorldState = SaveData.CreateNew(0.0);
+                Assert.AreEqual(0, emptyWorldState.worldState.depletedCount);
+                Assert.AreEqual(0, emptyWorldState.worldState.depletedPickupWordCount);
+
+                manager.LoadFromSaveData(emptyWorldState);
+
+                Assert.AreEqual(0, manager.DepletedCount);
+                Assert.AreEqual(0, manager.DepletedPickupCount);
+                Assert.IsFalse(manager.IsNodeDepleted("empty-load-resource-node"));
+                Assert.IsFalse(manager.IsPickupDepleted(pickupPersistenceKey));
+                Assert.IsTrue(
+                    node.gameObject.activeSelf,
+                    "Loading a save with no depleted nodes left a previously suppressed node inactive. The restore "
+                        + "pass must run when the loaded set is EMPTY - that is the only moment it can undo a "
+                        + "suppression from an earlier session.");
+                Assert.IsTrue(
+                    pickup.gameObject.activeSelf,
+                    "Loading a save with no collected pickups left a previously suppressed pickup inactive.");
+                Assert.AreEqual(
+                    5,
+                    pickup.Quantity,
+                    "The pickup was reactivated without replaying its captured quantity baseline, so the player "
+                        + "gets an empty pickup back.");
+
+                // LoadFromSaveData(null) takes a different branch (WorldStateManager.cs:301) and must
+                // reach the same restore pass rather than only clearing runtime state.
+                manager.RegisterDepletedNode(node.UniqueId);
+                manager.RegisterCollectedPickup(pickupPersistenceKey, pickupChunkKey);
+                manager.ApplyToScene();
+                Assert.IsFalse(node.gameObject.activeSelf);
+                Assert.IsFalse(pickup.gameObject.activeSelf);
+
+                manager.LoadFromSaveData(null);
+
+                Assert.AreEqual(0, manager.DepletedCount);
+                Assert.AreEqual(0, manager.DepletedPickupCount);
+                Assert.IsTrue(
+                    node.gameObject.activeSelf,
+                    "LoadFromSaveData(null) cleared runtime state without applying it to the scene.");
+                Assert.IsTrue(
+                    pickup.gameObject.activeSelf,
+                    "LoadFromSaveData(null) cleared runtime state without applying it to the scene.");
+            }
+            finally
+            {
+                if (managerHost != null)
+                    UnityEngine.Object.DestroyImmediate(managerHost);
+
+                if (pickup != null)
+                    UnityEngine.Object.DestroyImmediate(pickup.gameObject);
+
+                if (nodeHost != null)
+                    UnityEngine.Object.DestroyImmediate(nodeHost);
+
+                if (itemData != null)
+                    UnityEngine.Object.DestroyImmediate(itemData);
+
+                if (previousActiveScene.IsValid() && previousActiveScene.isLoaded)
+                    SceneManager.SetActiveScene(previousActiveScene);
+
+                if (scene.IsValid() && scene.isLoaded)
+                    EditorSceneManager.CloseScene(scene, removeScene: true);
+
+                AssetDatabase.DeleteAsset(tempScenePath);
+            }
         }
 
         [Test]
@@ -1182,6 +1502,34 @@ namespace Hecton8.Tests.Editor.SaveSystem
             FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(field, fieldName);
             field.SetValue(target, value);
+        }
+
+        private static T ReadPrivateField<T>(object target, string fieldName)
+        {
+            FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, fieldName);
+            return (T)field.GetValue(target);
+        }
+
+        /// <summary>
+        /// Asserts that a validator entry point carries the expected <see cref="MenuItem"/> path on the
+        /// COMPILED attribute. Unlike a substring probe on the source file this cannot disagree with the
+        /// menu Unity actually registers, and it fails when the method is renamed or the attribute is
+        /// dropped rather than only when the literal text moves.
+        /// </summary>
+        private static void AssertValidatorMenuItemPath(string methodName, string expectedMenuPath)
+        {
+            MethodInfo method = typeof(WorldPickupStateAuthoringValidator).GetMethod(
+                methodName,
+                BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+            Assert.IsNotNull(method, "Missing WorldPickupStateAuthoringValidator method: " + methodName);
+
+            MenuItem menuItem = (MenuItem)Attribute.GetCustomAttribute(method, typeof(MenuItem));
+            Assert.IsNotNull(menuItem, methodName + " has no MenuItem attribute, so the authoring entry point is unreachable.");
+            Assert.AreEqual(
+                expectedMenuPath,
+                menuItem.menuItem,
+                "The registered menu path does not match the path this project's authoring instructions tell people to use.");
         }
     }
 }
