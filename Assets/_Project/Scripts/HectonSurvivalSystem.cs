@@ -285,6 +285,8 @@ namespace Hecton8.Gameplay
         private float _slowTickDt = 0.1f;
         private bool _registeredSlowTickable;
         private bool _registeredLateFrameTickable;
+        private bool _tickOwnerRegistrationRefusalReported;
+        private bool _tickOwnerRegistrationDeferralReported;
         private bool _registeredHotSwapListener;
         private uint _survivalVitalsSignalSourceId;
         private uint _survivalVitalsSignalSequence;
@@ -720,6 +722,34 @@ namespace Hecton8.Gameplay
             _combatTargetId = ResolveCachedCombatTargetId();
         }
 
+        /// <summary>
+        /// Re-pulls the player component handles when the Player service slot is rebound.
+        ///
+        /// The slot handler used to update only <see cref="_playerRuntimeContext"/>, which left every
+        /// handle resolved by <see cref="ResolveRuntimeContextDependencies"/> - <c>_playerMovement</c> above
+        /// all - frozen at whatever Awake/OnEnable last saw. PlayerRuntimeContextService republishes the
+        /// player root after consumers have already bound (its SyncPlayerContextHot rationale spells this
+        /// out), so this owner could carry a null movement handle for a whole session with nothing to
+        /// notice. That handle is not cosmetic: with it null, ComputeDepthAndPressure drops off the
+        /// movement depth contract onto the SERIALIZED surfaceWorldY minus a pose snapshot, and
+        /// ResolveSurfaceContractUnderwater drops onto a depth-only test - so a dead depth source then
+        /// reports "in air" and the suit refills oxygen instead of consuming it.
+        ///
+        /// Read-only against the service on purpose: re-binding the player root from here would let this
+        /// system fight whoever owns the newly published root.
+        /// </summary>
+        private void RefreshPlayerComponentHandlesFromActiveContext()
+        {
+            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+                return;
+
+            _runtimeContext = runtimeContext;
+            _playerMovement = runtimeContext.PlayerMovement;
+            _playerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
+            _traumaDispatcher = runtimeContext.TraumaDispatcher;
+            _playerRigidbody = runtimeContext.PlayerRigidbody;
+        }
+
         private int ResolveCachedCombatTargetId()
         {
             if (_combatTargetId != 0)
@@ -783,14 +813,83 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterTickOwners()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            // Steady-state cost of the per-tick repair call below: two bool reads.
+            if (_registeredSlowTickable && _registeredLateFrameTickable)
                 return;
 
-            if (!_registeredSlowTickable)
+            if (!Application.isPlaying)
+                return;
+
+            // A LOST DISPATCHER LANE IS THE WHOLE SIMULATION, AND IT USED TO BE PERMANENT AND SILENT.
+            // Every value this system integrates - depth, pressure, oxygen, thermal, hunger, thirst,
+            // nitrogen - moves only inside SlowTick, and ResetToMax() leaves the component holding
+            // depth=0, pressure=1 and oxygen=MaxOxygen. An owner that is constructed, enabled and
+            // census-visible but never reached the Player slow lane therefore reports exactly those three
+            // numbers for the entire session, emits no further SurvivalVitalsChangedSignal after the first
+            // sentinel-forced one, and reads as a healthy suit floating at the surface.
+            //
+            // Three routes into that state, none of which logged anything:
+            //   1. GlobalRegistry.Dispatcher null at OnEnable. The old combined pre-guard returned before
+            //      TryRegisterSlowTickable, so GlobalRegistry's own "SystemDispatcher is not registered"
+            //      error (GlobalRegistry.cs:7067) never fired - the guard suppressed the one diagnostic
+            //      that existed for this failure.
+            //   2. TryRegisterSlowTickable returning false on bucket or lane capacity. HectonPlayerSpawner
+            //      instantiates the player prefab only after the world scene has loaded and every
+            //      environment owner has claimed its lane, so this owner is one of the last to ask.
+            //   3. Nothing retried. Both retry hooks are lanes of this same component, so losing both was
+            //      terminal - and losing one left the surviving lane able to repair the other, unused.
+            //
+            // Lanes are now claimed independently, SlowTick and LateFrameTick each re-enter this method so
+            // a surviving lane repairs the dead one, and a total failure is reported once instead of never.
+            // Cross-lane repair cannot mutate a bucket mid-iteration: while SlowTick runs,
+            // _registeredSlowTickable is necessarily true (TryUnregisterTickOwners clears flag and lane
+            // together), so the slow branch below is skipped, and symmetrically for LateFrameTick.
+            bool dispatcherReady = GlobalRegistry.Dispatcher != null;
+
+            if (dispatcherReady && !_registeredSlowTickable)
                 _registeredSlowTickable = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
 
-            if (!_registeredLateFrameTickable)
+            if (dispatcherReady && !_registeredLateFrameTickable)
                 _registeredLateFrameTickable = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+
+            ReportTickOwnerRegistrationGapIfNeeded(dispatcherReady);
+        }
+
+        /// <summary>
+        /// Fails loudly when this owner holds no dispatcher lane at all, because without one the survival
+        /// simulation does not advance and nothing else in the build can observe that. Reporting is
+        /// one-shot per enable cycle and split by cause: a missing dispatcher is recoverable through the
+        /// Dispatcher hot-swap slot, whereas a live dispatcher that refused both lanes is terminal for the
+        /// session.
+        /// </summary>
+        private void ReportTickOwnerRegistrationGapIfNeeded(bool dispatcherReady)
+        {
+            if (_registeredSlowTickable || _registeredLateFrameTickable)
+                return;
+
+            if (!dispatcherReady)
+            {
+                if (_tickOwnerRegistrationDeferralReported)
+                    return;
+
+                _tickOwnerRegistrationDeferralReported = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[HectonSurvival] Tick registration deferred: no SystemDispatcher in GlobalRegistry at enable time. Survival integration stays frozen until the Dispatcher slot is published.",
+                    this);
+#endif
+                return;
+            }
+
+            if (_tickOwnerRegistrationRefusalReported)
+                return;
+
+            _tickOwnerRegistrationRefusalReported = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Hecton8.Core.H8Debug.LogError(
+                "[HectonSurvival] The dispatcher refused both Player lanes. Depth, pressure, oxygen, thermal, hunger and nitrogen will not advance this session.",
+                this);
+#endif
         }
 
         private void TryUnregisterTickOwners()
@@ -807,6 +906,8 @@ namespace Hecton8.Gameplay
                 _registeredLateFrameTickable = false;
             }
 
+            _tickOwnerRegistrationRefusalReported = false;
+            _tickOwnerRegistrationDeferralReported = false;
             _hasPendingNarcosisShaderScalar = false;
         }
 
@@ -814,6 +915,10 @@ namespace Hecton8.Gameplay
         {
             ConsumeCommittedRespawnReconciliationSignals();
             FlushNarcosisShaderScalar();
+
+            // Repairs a dead slow lane from the lane that survived. Two bool tests and one static null
+            // check per frame, allocation-free.
+            TryRegisterTickOwners();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -828,6 +933,7 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    RefreshPlayerComponentHandlesFromActiveContext();
                     break;
                 case GlobalRegistryServiceSlot.Physics:
                     _physicsService = currentService as IPhysicsService;
@@ -983,6 +1089,11 @@ namespace Hecton8.Gameplay
         public void SlowTick()
         {
             ConsumeCommittedRespawnReconciliationSignals();
+
+            // Repairs a dead late-frame lane from the lane that survived. Ahead of the !alive gate on
+            // purpose: lane ownership is not a function of being alive.
+            TryRegisterTickOwners();
+
             if (!alive) return;
 
             float dt = _slowTickDt;
@@ -1049,22 +1160,22 @@ namespace Hecton8.Gameplay
 
             if (!_surfaceContractUnderwater)
             {
-                bool surfaceLockDenied = false;
                 float surfaceNextOxygen = math.min(
                     ResolveRuntimeMaxOxygenCapacity(),
                     oxygen + surfaceOxygenRefillRate * dt);
-                if (TryWriteMetabolicOxygenStateToVault(
-                        ResolveRealOxygen01(surfaceNextOxygen),
-                        0f,
-                        0,
-                        out surfaceLockDenied))
-                {
-                    _metabolicOxygenStateSyncedThisTick = true;
-                }
-                else if (surfaceLockDenied)
-                {
-                    return;
-                }
+
+                // A DENIED VAULT MIRROR SKIPS THE MIRROR, NOT THE SIMULATION. This branch used to return
+                // before the assignment below whenever FrostTickDefrag held the compaction fence or another
+                // SystemID held the MetabolismStates write lock, so a lock this system does not own could
+                // stop the suit's oxygen from moving at all - permanently, if the denial is steady - while
+                // every number it reports stayed plausible. `oxygen` is local state; only the
+                // MetabolicStateDTO mirror lives in the vault, so declining to write the mirror is enough
+                // to honour the fence. The mirror re-syncs on the next tick that acquires the lock.
+                _metabolicOxygenStateSyncedThisTick = TryWriteMetabolicOxygenStateToVault(
+                    ResolveRealOxygen01(surfaceNextOxygen),
+                    0f,
+                    0,
+                    out _);
 
                 oxygen = surfaceNextOxygen;
                 return;
@@ -1076,25 +1187,21 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            bool wroteMetabolicState = false;
-            bool oxygenDrainLockDenied = false;
             float oxygenDrainPerSecond = ResolveCurrentOxygenDrainPerSecond();
             float nextOxygen = math.max(0f, oxygen - oxygenDrainPerSecond * dt);
             byte nextHypoxiaState = (byte)math.select(0, 1, nextOxygen <= 0f);
             float nextAgonyTimeRemaining = ResolveStagedAgonyTimeRemaining(nextHypoxiaState);
-            if (TryWriteMetabolicOxygenStateToVault(
-                    ResolveRealOxygen01(nextOxygen),
-                    nextAgonyTimeRemaining,
-                    nextHypoxiaState,
-                    out oxygenDrainLockDenied))
-            {
-                wroteMetabolicState = true;
-            }
-            else if (oxygenDrainLockDenied)
-            {
-                // If FrostTickDefrag owns the vault this frame, drop the oxygen sample instead of risking a stale pointer.
-                return;
-            }
+
+            // If FrostTickDefrag owns the vault this frame, drop the MetabolicStateDTO write instead of
+            // risking a stale pointer - that half of the original rationale stands. What used to sit here
+            // was an early `return` that dropped the local drain as well, so a steady lock denial froze suit
+            // oxygen for the rest of the session: the single most load-bearing integration in this system,
+            // vetoed by a mirror write it does not need. The drain is unconditional now; the mirror is not.
+            bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
+                ResolveRealOxygen01(nextOxygen),
+                nextAgonyTimeRemaining,
+                nextHypoxiaState,
+                out _);
 
             oxygen = nextOxygen;
             _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
@@ -1121,14 +1228,16 @@ namespace Hecton8.Gameplay
             float nextOxygen = math.max(0f, targetOxygen);
             byte nextHypoxiaState = (byte)math.select(0, 1, nextOxygen <= 0f);
             float nextAgonyTimeRemaining = ResolveStagedAgonyTimeRemaining(nextHypoxiaState);
-            bool lockDenied = false;
+
+            // Same rule as UpdateOxygen: a denied vault mirror skips the mirror, not the clamp. This clamp is
+            // a min-fold against an authored critical-oxygen authority, so refusing to apply it can only ever
+            // leave the player holding MORE oxygen than the authority says they have - the wrong direction to
+            // fail in, and previously the one a held write lock produced.
             bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
                 ResolveRealOxygen01(nextOxygen),
                 nextAgonyTimeRemaining,
                 nextHypoxiaState,
-                out lockDenied);
-            if (lockDenied)
-                return;
+                out _);
 
             oxygen = nextOxygen;
             _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
@@ -1682,14 +1791,13 @@ namespace Hecton8.Gameplay
                 ResolveRuntimeMaxOxygenCapacity() * math.max(0.01f, oxygenRefillFraction));
             if (nextOxygen > oxygen + Epsilon)
             {
-                bool lockDenied = false;
+                // Mirror-optional, same as UpdateOxygen: a held vault lock used to abort the air-pocket
+                // refill and everything after it, so a player breathing a real air pocket got nothing.
                 bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
                     ResolveRealOxygen01(nextOxygen),
                     0f,
                     0,
-                    out lockDenied);
-                if (lockDenied)
-                    return;
+                    out _);
 
                 oxygen = nextOxygen;
                 _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
@@ -2685,16 +2793,17 @@ namespace Hecton8.Gameplay
 
         private void UpdateOxygenGraceState(float deltaTime)
         {
+            // EVERY VAULT WRITE IN THIS STATE MACHINE IS A MIRROR, AND EVERY ONE OF THEM USED TO BE ABLE TO
+            // ABORT THE MACHINE. A denied lock returned before _oxygenGraceTimer was advanced, so a steady
+            // denial left the grace window frozen at full: a player on zero oxygen never finished drowning.
+            // The mirror is still skipped under a fence; the state machine is not.
             if (integrity <= 0f)
             {
-                bool lockDenied = false;
                 bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
                     ResolveRealOxygen01(oxygen),
                     0f,
                     0,
-                    out lockDenied);
-                if (lockDenied)
-                    return;
+                    out _);
 
                 ResetOxygenGraceState();
                 _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
@@ -2705,16 +2814,11 @@ namespace Hecton8.Gameplay
             {
                 if (!_metabolicOxygenStateSyncedThisTick)
                 {
-                    bool lockDenied = false;
-                    bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
+                    _metabolicOxygenStateSyncedThisTick = TryWriteMetabolicOxygenStateToVault(
                         ResolveRealOxygen01(oxygen),
                         0f,
                         0,
-                        out lockDenied);
-                    if (lockDenied)
-                        return;
-
-                    _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
+                        out _);
                 }
 
                 ResetOxygenGraceState();
@@ -2739,16 +2843,11 @@ namespace Hecton8.Gameplay
 
             if (!_metabolicOxygenStateSyncedThisTick)
             {
-                bool lockDenied = false;
-                bool wroteMetabolicState = TryWriteMetabolicOxygenStateToVault(
+                _metabolicOxygenStateSyncedThisTick = TryWriteMetabolicOxygenStateToVault(
                     0f,
                     nextGraceTimer,
                     1,
-                    out lockDenied);
-                if (lockDenied)
-                    return;
-
-                _metabolicOxygenStateSyncedThisTick = wroteMetabolicState;
+                    out _);
             }
 
             _oxygenGraceActive = nextGraceActive;

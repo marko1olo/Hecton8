@@ -46,6 +46,8 @@ namespace Hecton8.Core
         private const string StaleBufferCrimeRetentionMessage = "STALE_BUFFER_CRIME: TempJob allocation exceeded 4-frame legal window.";
         private const string PersistentFragmentationRiskMessage = "PERSISTENT_FRAGMENTATION_RISK: persistent native allocation changed size more than 3 times in 60 seconds.";
         private const string NativeLeakReapedMessage = "NATIVE_LEAK_REAPED: RuntimeWatchdog force-freed a scene native allocation.";
+        private const string SceneScopeOwnerDeclaredLabel = "owner-declared";
+        private const string SceneScopeActiveSceneAtAllocLabel = "active-scene-at-alloc";
 
         private static readonly uint _nativeMemoryContextHash = ComputeStableHash(nameof(NativeMemorySentinel));
         private static readonly uint _criticalMemoryViolationHash = ComputeStableHash(CriticalMemoryViolationPrefix);
@@ -67,7 +69,8 @@ namespace Hecton8.Core
             [FieldOffset(288)] public uint LabelHash;
             [FieldOffset(292)] public NativeAllocationLifetime Lifetime;
             [FieldOffset(293)] private byte _leakReported;
-            [FieldOffset(294)] private ushort _pad0;
+            [FieldOffset(294)] private byte _sceneIdentityOwnerDeclared;
+            [FieldOffset(295)] private byte _pad0;
             [FieldOffset(296)] public int SceneIdentityHash;
             [FieldOffset(300)] public int SceneBuildIndex;
             [FieldOffset(304)] private ulong _pad1;
@@ -76,6 +79,19 @@ namespace Hecton8.Core
             {
                 get => _leakReported != 0;
                 set => _leakReported = value ? (byte)1 : (byte)0;
+            }
+
+            /// <summary>
+            /// True when the owner passed its own <see cref="Scene"/> at registration, so
+            /// <see cref="SceneIdentityHash"/> is an ownership fact. False when the sentinel inferred the
+            /// binding from <c>SceneManager.GetActiveScene()</c> at allocation time, which is a guess that
+            /// is provably wrong during an additive scene transition - see ResolveCurrentSceneIdentity.
+            /// Reporting must say which of the two it has; the gate treats both identically.
+            /// </summary>
+            public bool SceneIdentityOwnerDeclared
+            {
+                get => _sceneIdentityOwnerDeclared != 0;
+                set => _sceneIdentityOwnerDeclared = value ? (byte)1 : (byte)0;
             }
         }
 
@@ -790,7 +806,8 @@ namespace Hecton8.Core
                 lifetime,
                 coalescePointerlessOwnerLabel,
                 currentSceneIdentityHash,
-                currentSceneBuildIndex);
+                currentSceneBuildIndex,
+                false);
         }
 
         private static int RegisterPointerFixed(
@@ -818,7 +835,8 @@ namespace Hecton8.Core
                 lifetime,
                 coalescePointerlessOwnerLabel,
                 currentSceneIdentityHash,
-                currentSceneBuildIndex);
+                currentSceneBuildIndex,
+                true);
         }
 
         private static int RegisterPointerFixed(
@@ -831,7 +849,8 @@ namespace Hecton8.Core
             NativeAllocationLifetime lifetime,
             bool coalescePointerlessOwnerLabel,
             int currentSceneIdentityHash,
-            int currentSceneBuildIndex)
+            int currentSceneBuildIndex,
+            bool sceneIdentityOwnerDeclared)
         {
             if (bytes <= 0L)
                 return 0;
@@ -885,11 +904,13 @@ namespace Hecton8.Core
                             {
                                 existing.SceneIdentityHash = currentSceneIdentityHash;
                                 existing.SceneBuildIndex = currentSceneBuildIndex;
+                                existing.SceneIdentityOwnerDeclared = sceneIdentityOwnerDeclared;
                             }
                             else
                             {
                                 existing.SceneIdentityHash = 0;
                                 existing.SceneBuildIndex = -1;
+                                existing.SceneIdentityOwnerDeclared = false;
                             }
 
                             recordChanged = true;
@@ -960,6 +981,7 @@ namespace Hecton8.Core
                 {
                     record.SceneIdentityHash = currentSceneIdentityHash;
                     record.SceneBuildIndex = currentSceneBuildIndex;
+                    record.SceneIdentityOwnerDeclared = sceneIdentityOwnerDeclared;
                 }
                 else
                     record.SceneBuildIndex = -1;
@@ -1323,7 +1345,11 @@ namespace Hecton8.Core
             builder.Append(" allocator=").Append(record.Allocator);
             builder.Append(" allocFrame=").Append(record.AllocationFrame);
             builder.Append(" id=").Append(record.Id);
+            builder.Append(" sceneIdentity=").Append(record.SceneIdentityHash);
             builder.Append(" sceneBuildIndex=").Append(record.SceneBuildIndex);
+            builder.Append(" sceneScope=").Append(record.SceneIdentityOwnerDeclared
+                ? SceneScopeOwnerDeclaredLabel
+                : SceneScopeActiveSceneAtAllocLabel);
             builder.Append(" ownerHash=0x").Append(record.OwnerHash.ToString("X8"));
             builder.Append(" labelHash=0x").Append(record.LabelHash.ToString("X8"));
             return builder.ToString();
@@ -1780,6 +1806,10 @@ namespace Hecton8.Core
                     builder.Append(record.SceneIdentityHash);
                     builder.Append(" sceneBuildIndex=");
                     builder.Append(record.SceneBuildIndex);
+                    builder.Append(" sceneScope=");
+                    builder.Append(record.SceneIdentityOwnerDeclared
+                        ? SceneScopeOwnerDeclaredLabel
+                        : SceneScopeActiveSceneAtAllocLabel);
                 }
             }
             finally
@@ -1977,6 +2007,37 @@ namespace Hecton8.Core
             return SystemDispatcher.ActiveRuntimeInstance != null ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
         }
 
+        /// <summary>
+        /// Resolves the ACTIVE scene, which is a proxy for ownership and not ownership itself. Nothing here
+        /// asks who owns the allocation; there is no owner handle in a record, only strings.
+        ///
+        /// The proxy is provably wrong during an additive scene transition, and HECTON-8's menu-to-world
+        /// transition is additive. SceneRuntimeService.LoadSceneAsync picks
+        /// `LoadSceneMode.Additive` for the cinematic menu handoff, so 02_HECTON_WORLD loads while
+        /// 01_MAIN_MENU is still the active scene; every world object's Awake/OnEnable therefore registers
+        /// its buffers against the MENU. SetActiveScene(02_HECTON_WORLD) runs afterwards in
+        /// CompleteMainMenuCinematicTransitionAsync, then UnloadSceneAsync(01_MAIN_MENU) fires
+        /// HandleSceneUnloaded and every one of those records matches the menu's identity.
+        ///
+        /// That produced ten CRITICAL_MEMORY_VIOLATION scene-leak errors plus a FatalMemoryLeakException
+        /// naming `context=01_MAIN_MENU active=10 sceneBuildIndex=1` against QuestStateManager and
+        /// WorldProceduralScatterDirector.ScatterWorkingMemory - two live gameplay owners that dispose
+        /// correctly and have no business in the main menu. The gate was right that ten Scene-lifetime
+        /// records survived the menu unload; the scene it named was this guess.
+        ///
+        /// Do not "fix" that by loosening MatchesSceneLeakFilter or by skipping the stamp mid-transition:
+        /// an unstamped record has SceneIdentityHash 0, which that filter matches against EVERY unload, and
+        /// re-binding a survivor to the newly active scene would let a genuine menu-scene leak walk. The
+        /// two correct fixes both live at the call site - an owner that outlives the scene declares
+        /// NativeAllocationLifetime.Session (which is what QuestGraphEvaluator, QuestDagResolverRuntime and
+        /// WorldProceduralFieldSampler, the direct siblings of the two leak owners, already declare), and an
+        /// owner that really is scene-scoped passes its own Scene through the explicit-scene overload.
+        ///
+        /// API gap worth closing when a caller needs it: only RegisterPointer accepts an explicit Scene.
+        /// RegisterNativeListInstance, RegisterNativeParallelMultiHashMapInstance and the other collection
+        /// registrars do not, so a collection-backed additive-scene owner currently cannot follow the advice
+        /// in the RegisterPointer(..., Scene) doc comment even when it wants to.
+        /// </summary>
         private static void ResolveCurrentSceneIdentity(out int sceneIdentityHash, out int sceneBuildIndex)
         {
             sceneIdentityHash = 0;
@@ -1987,6 +2048,10 @@ namespace Hecton8.Core
             ResolveSceneIdentity(SceneManager.GetActiveScene(), out sceneIdentityHash, out sceneBuildIndex);
         }
 
+        /// <summary>
+        /// Inferred registration binding: the caller named no scene, so the active scene stands in. Records
+        /// written from here carry SceneIdentityOwnerDeclared = false and every report must say so.
+        /// </summary>
         private static void ResolveRegistrationSceneIdentity(
             NativeAllocationLifetime lifetime,
             out int sceneIdentityHash,
