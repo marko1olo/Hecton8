@@ -558,10 +558,21 @@ def build_lamina_stack(spec: GeologyTextureSpec,
     thicknesses = raw * (spec.tile_m / raw.sum())
     boundaries = np.concatenate([[0.0], np.cumsum(thicknesses)])
 
-    # Undulation. 0.0045 m against an 0.008 m thinnest lamina is just over half a lamina,
-    # enough to read as a bent bed and not enough to fold the stack.
-    warp = periodic_warp(rng, resolution, spec.tile_m,
-                         wavelength_m=spec.tile_m * 0.55, amplitude=0.0045)
+    # Undulation, at TWO scales. A single 0.0045 m term was measured too weak: the first
+    # preview render showed laminae running dead straight across the whole tile and reading
+    # as corduroy or stacked planks -- the same "stack of discs" failure ``rock.py``
+    # documents for its beds, and a pattern rather than a rock.
+    #
+    # A long, larger term bends whole packages of laminae; a shorter, smaller one gives each
+    # one its own waviness. The FOLD LIMIT is what bounds them: the warp's derivative along
+    # the bedding coordinate must stay well under 1 or the mapping becomes non-monotonic and
+    # laminae fold through each other. For a sinusoid of amplitude ``a`` and wavelength
+    # ``L`` that derivative is ``2*pi*a/L``, so 0.011 m at 0.94 m gives 0.074 and 0.004 m at
+    # 0.18 m gives 0.14 -- together 0.21, safely inside the limit.
+    warp = (periodic_warp(rng, resolution, spec.tile_m,
+                          wavelength_m=spec.tile_m * 0.75, amplitude=0.011)
+            + periodic_warp(rng, resolution, spec.tile_m,
+                            wavelength_m=0.18, amplitude=0.004))
     coordinate = np.mod(depth_m + warp, spec.tile_m)
 
     index = np.clip(np.searchsorted(boundaries, coordinate, side="right") - 1,
@@ -586,12 +597,26 @@ def build_lamina_stack(spec: GeologyTextureSpec,
     to_top = (base + span) - coordinate
     contact = np.exp(-(np.minimum(to_base, to_top) / contact_width_m) ** 2)
 
+    # LATERAL VARIATION ALONG THE BEDDING. A lamina is not one flat tone from edge to edge:
+    # it pinches and swells, and its carbonate content varies laterally as the depositional
+    # environment shifted. Without this every band renders as a single uniform stripe, which
+    # is the other half of the corduroy problem the two-scale warp addresses geometrically.
+    # The field is stretched hard along U so the variation runs WITH the bedding rather than
+    # cutting across it, which would read as mottling.
+    lateral = _normalise_to_peak(
+        periodic_fbm(rng, resolution, spec.tile_m,
+                     coarsest_m=spec.tile_m * 0.8, finest_m=0.09,
+                     beta=2.3, anisotropy=5.0, anisotropy_axis="v")) * 0.5 + 0.5
+
+    carbonate_field = np.clip(carbonate[index] * (0.68 + 0.64 * lateral), 0.0, 1.0)
+    organic_field = np.clip(organic[index] * (0.78 + 0.44 * (1.0 - lateral)), 0.0, 1.0)
+
     return LaminaStack(
         index=index,
         across=across,
         hardness=hardness[index],
-        carbonate=carbonate[index],
-        organic=organic[index],
+        carbonate=carbonate_field,
+        organic=organic_field,
         contact=contact,
         count=count,
         thicknesses_m=thicknesses,
@@ -619,8 +644,20 @@ PARTING_DEPTH_M = 0.0035
 # Joints cut ACROSS bedding. A Worley cell border is isotropic, which is correct here --
 # tectonic and desiccation joints have no reason to follow the bedding plane, and a crack
 # field that did would read as more bedding rather than as fracture.
-JOINT_DEPTH_M = 0.005
-JOINT_WIDTH_M = 0.003
+#
+# JOINTS MUST BE SPARSE, and the first version was not. Drawing every Worley cell border
+# produced a complete polygonal tessellation over the whole tile: seen in the first preview
+# render, it read unmistakably as CRACKED MUD, which is a different material from jointed
+# siltstone and is close to the "generic grunge" and "'interesting' patterns that do not
+# match the mesh and source material" that playbook sections 0 and 1 reject by name. Real
+# jointing is a few discrete fracture traces concentrated in zones, not a closed net around
+# every cell. A low-frequency gate restricts them to roughly a third of the surface, and
+# the width comes down so a trace reads as a fracture rather than a channel.
+JOINT_DEPTH_M = 0.0045
+JOINT_WIDTH_M = 0.0022
+JOINT_ZONE_WAVELENGTH_M = 0.42
+JOINT_ZONE_LOW = 0.30
+JOINT_ZONE_HIGH = 0.78
 
 # Bioclasts. Playbook section 4 names "shell fragments" for sediment specifically. They
 # stand PROUD because carbonate shell resists weathering better than a clay matrix, and
@@ -746,10 +783,31 @@ def build_height_field(spec: GeologyTextureSpec,
 
     # --- dissolution vugs: Worley F1 --------------------------------------------
     pit_cells = max(2, int(round(spec.tile_m / law.GEOLOGY_PIT_WITNESS_M)))
-    pit_f1, _pit_f2, _pit_id = periodic_worley(rng, resolution, pit_cells)
-    # F1 is in cell units; 0.34 of a cell radius is a vug that occupies about a third of
-    # its cell, leaving matrix between them.
-    pit = 1.0 - _smooth_step(0.0, 0.34, pit_f1)
+    pit_f1, _pit_f2, pit_id = periodic_worley(rng, resolution, pit_cells, jitter=1.0)
+    # ONE VUG PER CELL AT ONE SIZE IS A DOT GRID, which is what the first preview render
+    # showed: evenly spaced round bubbles in rows, the Worley lattice visible through the
+    # result. Dissolution does not work on a lattice. Per-cell RADIUS variation and an
+    # occupancy draw break the regularity -- some cells host a large vug, some a small one,
+    # a third of them none at all. Jitter goes to full so the centres are not near-regular
+    # either.
+    def pit_layer(cells: int, f1: np.ndarray, ids: np.ndarray) -> np.ndarray:
+        count = cells * cells + 1
+        radius = (0.16 + 0.34 * rng.random(count))[ids]
+        present = (rng.random(count) < 0.62)[ids]
+        return (1.0 - _smooth_step(0.0, 1.0, f1 / np.maximum(radius, 1e-6))) * present
+
+    # TWO LAYERS AT COPRIME CELL COUNTS. A jittered-grid Worley keeps every centre inside
+    # its own cell, so even at full jitter a residual lattice survives -- visible in the
+    # grazing preview as horizontal ROWS of pocks, which is a grid showing through a field
+    # that is supposed to be dissolution. Overlaying a second layer whose cell count shares
+    # no factor with the first pushes the combined periodicity out to their product, which
+    # is far larger than the tile, so no row structure can align.
+    second_cells = max(2, pit_cells - 7)
+    while second_cells > 2 and math.gcd(second_cells, pit_cells) != 1:
+        second_cells -= 1
+    pit_f1b, _f2b, pit_idb = periodic_worley(rng, resolution, second_cells, jitter=1.0)
+    pit = np.maximum(pit_layer(pit_cells, pit_f1, pit_id),
+                     pit_layer(second_cells, pit_f1b, pit_idb))
     # Vugs open preferentially in carbonate-rich laminae, because that is the phase that
     # dissolves. A vug field that ignored lithology would cut straight through a clay
     # lamina, which does not happen.
@@ -761,7 +819,15 @@ def build_height_field(spec: GeologyTextureSpec,
     joint_f1, joint_f2, _joint_id = periodic_worley(rng, resolution, joint_cells,
                                                     jitter=1.0)
     border_m = (joint_f2 - joint_f1) * (spec.tile_m / joint_cells)
-    joint = 1.0 - _smooth_step(0.0, JOINT_WIDTH_M, border_m)
+    joint_trace = 1.0 - _smooth_step(0.0, JOINT_WIDTH_M, border_m)
+    # Fracture ZONES: a low-frequency field decides where the rock is jointed at all, so
+    # the tile carries discrete traces instead of a closed polygonal net.
+    zone_field = _normalise_to_peak(
+        periodic_fbm(rng, resolution, spec.tile_m,
+                     coarsest_m=JOINT_ZONE_WAVELENGTH_M * 2.0,
+                     finest_m=JOINT_ZONE_WAVELENGTH_M, beta=2.4)) * 0.5 + 0.5
+    joint_zone = _smooth_step(JOINT_ZONE_LOW, JOINT_ZONE_HIGH, zone_field)
+    joint = joint_trace * joint_zone
     joint_relief = -JOINT_DEPTH_M * joint
 
     # --- bioclasts --------------------------------------------------------------
@@ -2223,10 +2289,18 @@ LIGHTING_SETUPS = {
                 "whether the material still reads when the scene stops helping",
     },
     "grazing": {
-        "lights": [((-0.97, -0.16, 0.122), 3.6)],
+        # ENERGY IS RAISED FOR EXPOSURE PARITY, NOT FOR FLATTERY. At 7 degrees elevation on
+        # a near-horizontal sample N.L is about 0.12 against roughly 0.8 in the neutral rig,
+        # so the same energy renders the grazing pass about eight times darker and the lead
+        # cannot see the relief the pass exists to reveal. Scaling the sun to match exposure
+        # keeps the LIGHT DIRECTION -- the thing being tested -- untouched. The view
+        # transform stays Standard with no look, no bloom and no grading, so nothing here is
+        # the presentation-hides-weak-work trick 3dmodel.md bans.
+        "lights": [((-0.97, -0.16, 0.122), 26.0)],
         "world": 0.010,
-        "note": "single sun at 7 degrees elevation. The hardest test for a normal map "
-                "and the one that exposes any baked lighting left in albedo",
+        "note": "single sun at 7 degrees elevation, energy scaled for exposure parity with "
+                "the neutral rig. The hardest test for a normal map and the pass that "
+                "exposes any baked lighting left in albedo",
     },
 }
 
@@ -2385,7 +2459,7 @@ def _build_lights(setup: str) -> list:
 
 
 def _place_camera(target, radius: float, direction=(-0.72, -0.78, 0.42),
-                  margin: float = 1.18):
+                  margin: float = 1.04):
     import bpy
     from mathutils import Vector
     data = bpy.data.cameras.new("H8TX_Cam")
@@ -2519,8 +2593,13 @@ def render_preview_sweep(spec: GeologyTextureSpec, map_dir: str, *,
         if subject_name == "sample":
             subject, _witness = _make_sample_plane(spec.tile_m, material)
             centre = (0.0, 0.0, 0.0)
-            radius = spec.tile_m * 0.72
-            view = (-0.30, -0.86, 0.41)
+            # A flat tile viewed obliquely foreshortens to a sliver and wastes most of the
+            # frame, so the sample is shot close to face-on with a tight margin. The first
+            # framing used a 0.30/-0.86/0.41 direction with a 1.18 margin and the tile
+            # covered under a third of the image -- a render the lead cannot judge detail
+            # in is not proof of anything.
+            radius = spec.tile_m * 0.5 * math.sqrt(2.0)
+            view = (-0.18, -0.45, 0.87)
             notes[subject_name] = (
                 "flat {t} m tile at TRUE SCALE with a 1 m emissive witness bar; UV maps "
                 "1:1 so the tangent-space normal is consumed exactly".format(
@@ -2532,12 +2611,26 @@ def render_preview_sweep(spec: GeologyTextureSpec, map_dir: str, *,
                 if verbose:
                     sys.stdout.write("  boulder skipped: no FBX at " + fbx_path + "\n")
                 continue
-            lo = [min(v.co[i] for v in subject.data.vertices) for i in range(3)]
-            hi = [max(v.co[i] for v in subject.data.vertices) for i in range(3)]
+            # WORLD bounds, not local. FBX import applies a unit conversion at the OBJECT
+            # level, so ``vertex.co`` is in the exporter's units while the camera works in
+            # scene units. Framing a 0.8 m boulder from its local coordinates put the
+            # camera two orders of magnitude too far away and rendered a black frame with
+            # a single grey speck at the centre -- which looks like a missing subject, not
+            # like a units bug. ``preview._world_bounds`` transforms by ``matrix_world``
+            # for exactly this reason.
+            matrix = subject.matrix_world
+            world = [matrix @ v.co for v in subject.data.vertices]
+            lo = [min(p[i] for p in world) for i in range(3)]
+            hi = [max(p[i] for p in world) for i in range(3)]
             centre = tuple((lo[i] + hi[i]) * 0.5 for i in range(3))
             radius = max(1e-3, 0.5 * math.sqrt(sum((hi[i] - lo[i]) ** 2
                                                    for i in range(3))))
             view = (-0.72, -0.78, 0.30)
+            if verbose:
+                sys.stdout.write(
+                    "  boulder world extent {x:.3f} x {y:.3f} x {z:.3f} m, "
+                    "radius {r:.3f} m\n".format(x=hi[0] - lo[0], y=hi[1] - lo[1],
+                                                z=hi[2] - lo[2], r=radius))
             notes[subject_name] = (
                 "MESH_Geology_boulder_sedimentary_s1713_q100 LOD0, material projected "
                 "through UV0 (the angle-based fallback unwrap), NOT through the shipped "
