@@ -250,6 +250,10 @@ namespace Hecton8.Gameplay
         private const float DefaultBleedStatusDurationSeconds = 6f;
         private const float DefaultStunStatusDurationSeconds = 0.75f;
         private const float PoisonDiffusionRadiusMeters = 2f;
+        // Dimensionless 0..1 floor of the poison-spread radial weight at the rim of
+        // PoisonDiffusionRadiusMeters. Peak weight at the epicentre is 1. Used only as an
+        // interpolation floor for ExplosionRadialDamageCalculator; it is NOT a damage value.
+        private const float PoisonDiffusionRimWeight01 = 0.2f;
         private const float ShieldAbsorbFraction = 0.8f;
         private const float BrittleImpactMultiplier = 1.25f;
         private const float BleedingDamagePerSlowTick = 0.5f;
@@ -1929,14 +1933,32 @@ namespace Hecton8.Gameplay
                 if (duplicateTarget)
                     continue;
 
+                // Radial falloff of the poison plume. ExplosionRadialDamageCalculator is used here
+                // strictly as a DIMENSIONLESS radial interpolator: peak 1 at the epicentre, floor
+                // PoisonDiffusionRimWeight01, hard zero beyond the radius. No damage number is
+                // passed in or out. Both distance inputs are metres:
+                //   distanceMeters       - metres from the poisoned target's impact point (hit.DistanceSqr is m^2)
+                //   PoisonDiffusionRadiusMeters - metres, the same radius the spatial query used
+                float distanceMeters = math.sqrt(math.max(0f, hit.DistanceSqr));
+                float spreadWeight01 = Hecton8.PureLogic.Systems.ExplosionRadialDamageCalculator.Compute(
+                    distanceMeters,
+                    PoisonDiffusionRadiusMeters,
+                    1f,
+                    PoisonDiffusionRimWeight01);
+                if (!(spreadWeight01 > 0f))
+                    continue;
+
                 _poisonDiffusionTargetIds[queuedTargetCount] = targetId;
                 queuedTargetCount++;
+                // Units: duration is SECONDS (5 s peak scaled by the 0..1 weight); magnitude is the
+                // dimensionless 0..1 status intensity. A zero duration would be silently replaced by
+                // the 5 s default inside SanitizeStatusDuration, which the weight>0 guard above prevents.
                 if (!TryQueueStatusEffect(
                         targetId,
                         CombatStatusBits.Poisoned64,
-                        DefaultPoisonStatusDurationSeconds,
+                        DefaultPoisonStatusDurationSeconds * spreadWeight01,
                         result.SourceId,
-                        1f))
+                        spreadWeight01))
                 {
                     return;
                 }
@@ -2874,9 +2896,9 @@ namespace Hecton8.Gameplay
         private static void JulesLink_ProjectileDamageFalloffCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ProjectileDamageFalloffCalculator); }
         #endregion
 
-        #region JulesLink_ExplosionRadialDamageCalculator
-        private static void JulesLink_ExplosionRadialDamageCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ExplosionRadialDamageCalculator); }
-        #endregion
+        // JulesLink_ExplosionRadialDamageCalculator removed: ExplosionRadialDamageCalculator now has a
+        // real call site in TryDiffusePoison (poison-plume radial weight), so the keep-alive stub would
+        // misreport it as unwired.
 
         #region JulesLink_ArmorPenetrationCalculator
         private static void JulesLink_ArmorPenetrationCalculator() { _ = typeof(Hecton8.PureLogic.Systems.ArmorPenetrationCalculator); }
