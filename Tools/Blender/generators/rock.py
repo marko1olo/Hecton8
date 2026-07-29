@@ -146,6 +146,16 @@ def resolve_size_class(name: str) -> str:
 CHIP_WIDTH_FRACTION_MIN = 0.009
 CHIP_WIDTH_FRACTION_MAX = 0.026
 
+# Radial factors for the concentric cap rings in ``build_body``, rim inward. A pole fan's
+# triangle aspect ratio is ``circumference / segments`` REGARDLESS of resolution, so the only
+# way to stop a cap reading as a starburst is to stop the spokes spanning the whole radius.
+# Four bands land each quad at 2-5:1 on all three size classes and confine the residual pole
+# fan to the innermost 12 percent of the radius, where the displacement limit -- which is a
+# multiple of the vertex's OWN mean edge length -- is small enough that it cannot pinwheel.
+# Cost is 2 * len(CAP_RING_FACTORS) * segments triangles per cap: +6 percent of the sculpt
+# mesh on the cliff chunk, all of which the LOD0 decimation to budget absorbs.
+CAP_RING_FACTORS = (0.72, 0.48, 0.28, 0.12)
+
 # Absolute-size scale witnesses (metres). These do NOT scale with the rock: that is
 # the entire point. ``3dmodel.md`` section 12 lists "scale witnesses" as a required
 # property, and a feature whose size tracks the asset tells the player nothing. Bed
@@ -1079,18 +1089,98 @@ def build_body(strata: Stratigraphy, frame: BeddingFrame, density: LatticeDensit
                           verts[next_row + s_next], verts[next_row + s]))
 
     # Caps: closed solid. ``3DMODEL_GEOLOGY_ROCKS.md`` section 2 requires manifold
-    # output for a solid rock, so both ends are filled and then poked into a fan so the
-    # top can dome and the base can dish -- a flat lid reads as a sliced cylinder.
-    bottom = bm.faces.new(tuple(reversed(verts[0:segments])))
-    top = bm.faces.new(tuple(verts[(rings - 1) * segments:rings * segments]))
-    # Dome amounts cut from 0.055/0.030 to 0.012/0.022. The top dome is now the summit
-    # truncation's job; leaving a 5.5 percent dome there would either survive the cut as a
-    # rounded cap or be thrown away, and in the first case it is the loaf silhouette again.
-    for face, sign, amount in ((top, 1.0, 0.012), (bottom, -1.0, 0.022)):
-        poked = bmesh.ops.poke(bm, faces=[face], offset=0.0,
+    # output for a solid rock, so both ends are filled -- but NOT by poking the rim n-gon
+    # straight to a single pole, which is what this did for its whole history.
+    #
+    # MEASURED on the shipped s1713 q1.0 FBX, 2026-07-29, before this change. Every one of
+    # the twelve longest edges in boulder LOD0 and outcrop LOD0, and ten of the twelve in
+    # cliff-chunk LOD0, was a SPOKE of a cap pole:
+    #
+    #   boulder    pole valence 68 / 64, spokes up to 0.461 m, median edge 0.035 m  (13x)
+    #   outcrop    pole valence 95 / 79, spokes up to 1.562 m, median edge 0.079 m  (20x)
+    #   cliffchunk pole valence 72 / 70, spokes up to 3.788 m, median edge 0.160 m  (24x)
+    #
+    # That is the whole geometry of the defect. A pole fan over a rim of ``segments``
+    # vertices makes ``segments`` triangles whose length is the cap RADIUS and whose base is
+    # the segment spacing, so the aspect ratio is fixed at ``circumference / segments`` --
+    # 18:1 on the cliff chunk -- and it does not improve with more triangles, because
+    # refining the lattice refines the base and the spoke together. Two visible symptoms,
+    # one cause:
+    #
+    #   * the summit rendered as a radial STARBURST, because each 3 m sliver takes its own
+    #     normal from the grain displacement and the fan shares one high-valence centre;
+    #   * the base grew a NEEDLE FRINGE, because the fracture cuts and the bedding inset
+    #     chew the rim those 3 m spokes hang from, and a chewed 24x-median edge leaves a
+    #     1-2 px wafer in the silhouette.
+    #
+    # `truncate_summit`'s ceiling clamp cannot fix this and neither can `_plane_clamp`:
+    # clamping PROJECTS the cap onto the summit plane instead of removing it, so the pole
+    # survives the cut lying flat inside the facet -- measured at height fraction 0.83-0.94
+    # on all three sizes, i.e. below the top, inside the summit facet, exactly where the
+    # starburst renders.
+    #
+    # So the cap is built as CONCENTRIC RINGS of the rim polygon scaled toward its own
+    # centre: a dartboard, not a pinwheel. Each band is quads at 2-5:1, the pole fan that
+    # remains is confined to the innermost 12 percent of the radius, and the dome the poke
+    # used to provide is now a parabola over the whole cap, which is a better dome anyway.
+    # Scaling a star-shaped polygon about its centre cannot self-intersect, which is why
+    # this is analytic and not `inset_region`: the plan outline carries 44 percent landmark
+    # notches, and an even inset of 0.8 m into a 1.4 m notch collapses it.
+    def _cap_ring(h: float, radius_scale: float, factor: float, lift: float) -> list:
+        """One concentric cap ring: the body's own plan outline at ``factor`` of radius."""
+        drift_u, drift_v = strata.drift(h)
+        t = (h - base_h) / max(1e-6, size.height_m)
+        taper = 1.0
+        if t > 0.92:
+            local = (t - 0.92) / 0.08
+            taper = 1.0 - 0.14 * (local * local * (3.0 - 2.0 * local))
+        row = []
+        for s in range(segments):
+            theta = float(angle_list[s])
+            shape = strata.plan_shape(theta, h)
+            notch = strata.landmark_sector_weight(theta, h)
+            radius = (size.radius_m * shape * radius_scale * taper
+                      * (1.0 - 0.44 * notch) * factor)
+            direction = frame.e1 * math.cos(theta) + frame.e2 * math.sin(theta)
+            point = direction * radius + frame.normal * (h + lift)
+            point.x += drift_u
+            point.y += drift_v
+            row.append(bm.verts.new(point))
+        return row
+
+    # Dome amounts kept at 0.012/0.022. The top dome is the summit truncation's job; leaving
+    # a 5.5 percent dome there would either survive the cut as a rounded cap or be thrown
+    # away, and in the first case it is the loaf silhouette again.
+    # The base dish is CONCAVE (sign +1, i.e. lifted INTO the body), not convex. It used to
+    # push the base centre downward, which on a pole cap was one hidden vertex but on a
+    # concentric cap is a shallow cone the rock balances on -- measured as a gathered radial
+    # pucker in the low and underside views of all three sizes. A ground-standing rock rests
+    # on its rim, so dishing upward both removes the cone from the low silhouette and puts
+    # the whole underside into self-shadow where the AO bake wants it.
+    for end_ring, sign, amount in ((0, 1.0, 0.022), (rings - 1, 1.0, 0.012)):
+        cap_h, cap_scale = ring_specs[end_ring]
+        previous = verts[end_ring * segments:(end_ring + 1) * segments]
+        for factor in CAP_RING_FACTORS:
+            # Parabolic in the radial factor: zero at the rim so the band meets the flank
+            # flush, full ``amount`` at the centre so the apex lands where the single poke
+            # used to put it.
+            lift = sign * size.height_m * amount * (1.0 - factor * factor)
+            row = _cap_ring(cap_h, cap_scale, factor, lift)
+            for s in range(segments):
+                s_next = (s + 1) % segments
+                bm.faces.new((previous[s], previous[s_next], row[s_next], row[s]))
+            previous = row
+        centre = bm.faces.new(tuple(previous))
+        poked = bmesh.ops.poke(bm, faces=[centre], offset=0.0,
                                center_mode="MEAN_WEIGHTED", use_relative_offset=False)
         for vert in poked["verts"]:
-            vert.co += frame.normal * (sign * size.height_m * amount)
+            # The innermost ring already carries ``amount * (1 - f^2)``; this adds the
+            # remaining ``amount * f^2`` so the apex sits at exactly the same dome height
+            # the single-poke version gave it, rather than at twice it.
+            vert.co += frame.normal * (sign * size.height_m * amount
+                                       * CAP_RING_FACTORS[-1] ** 2)
+    bm.verts.ensure_lookup_table()
+    bm.faces.ensure_lookup_table()
 
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
     bm.normal_update()
@@ -2849,6 +2939,12 @@ class VariantResult:
     lod_shading: list = field(default_factory=list)
     stale_smooth_edges: dict = field(default_factory=dict)
     lod_silhouette: dict = field(default_factory=dict)
+    # Both of these used to be computed and THROWN AWAY, which is why this generator ended
+    # up with a second manifest producer. `export_unity.write_manifest` needs the per-LOD
+    # `validate.MeshReport` objects and the `ExportResult`, not the flattened strings this
+    # file kept, so keeping only the strings made the shared producer look unusable.
+    mesh_reports: list = field(default_factory=list)
+    export_result: object = None
 
 
 def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str,
@@ -3465,11 +3561,13 @@ def generate_variant(*, seed: int, quality: float, size: SizeClass, process: str
             # whether it came from the authored solid or from a decimated proxy -- the two
             # have completely different fixes and only one of them is a defect.
             result.validator_failures = []
+            result.mesh_reports = []
             for level in lods:
                 report = h8validate.validate_mesh(
                     level.obj.data, family=law.Family.GEOLOGY, lod_index=level.index,
                     surface_class=law.SurfaceClass.GEOLOGIC, blackbox=blackbox,
                     hero=False, triplanar=True)
+                result.mesh_reports.append(report)
                 result.validator_failures.extend(
                     "LOD{i} {g}: {d}".format(i=level.index, g=f.gate, d=f.detail)
                     for f in h8validate._collect_failures([report]))
@@ -4059,11 +4157,73 @@ def write_manifest(result: VariantResult, size: SizeClass, frame: BeddingFrame,
                                "per AGENTS.md Evidence Law; this generator emits mesh + "
                                "manifest for a Unity-side assembler.",
     }
-    path = os.path.join(package_dir, law.NAME_MANIFEST.format(
-        family=law.Family.GEOLOGY.value, name=result.name) + ".json")
-    with open(path, "w", encoding="utf-8") as handle:
-        json.dump(payload, handle, indent=1, sort_keys=False)
-    return path
+    # `identity` is dropped from the geology block because the shared producer emits it as a
+    # top-level key from the same `law.GeneratorIdentity`. Nothing else is dropped: every
+    # other key here is geology proof `3DMODEL_GEOLOGY_ROCKS.md` section 10 enumerates by
+    # name, and the no-loss protocol in `Docs/AGENT_AUTHORITY_ROUTING.md` says move a rule's
+    # full text to its destination rather than summarise it away.
+    payload.pop("identity", None)
+
+    # THE MANIFEST IS WRITTEN BY `export_unity.write_manifest`, NOT HERE.
+    #
+    # This function used to json.dump its own payload, and that made it a SECOND manifest
+    # producer competing with the shared one. The cost was not cosmetic and it was not
+    # theoretical -- it silently destroyed this family's authored normals at Unity import:
+    #
+    #   HectonFBXPostprocessor.cs:774 honours a package's importer contract only when the
+    #   sibling manifest declares `"schema": "h8forge.manifest/1"`; :776-786 requires a
+    #   `unityImport.modelImporter` block behind it; :789-793 requires
+    #   `modelImporter.importNormals == "Import"` AND `export.hasCustomNormals == true`.
+    #   Miss any one and :438-440 falls back to `importNormals = Calculate`.
+    #
+    # This payload had NO `schema` key and NO `unityImport` block -- it could not have,
+    # because both are owned by `export_unity` -- so the carve-out could never fire for
+    # geology. Measured on the shipped package: the boulder's `.fbx.meta` carried
+    # `normalImportMode: 1` (Calculate) while flora's coral, which routes through the shared
+    # producer, carried 0 (Import). Every weighted split normal `mesh_ops.apply_shading_basis`
+    # authored, and the whole FBX round-trip corner-normal gate that guards them at 0.001
+    # tolerance, was being re-derived from one angle and discarded downstream.
+    #
+    # Hand-adding `schema` and `unityImport` here would have been the wrong repair: it makes
+    # two producers of one format, and the next field the postprocessor learns to read gets
+    # added to one of them. Delegating means geology inherits that contract by construction,
+    # and the geology-specific proof rides in `extra` where it cannot collide with it.
+    meshes = result.mesh_reports or [
+        # `h8forge.validate` is optional at import (see `_VALIDATE_IMPORT_NOTE`), and the
+        # shared producer REFUSES a manifest with no mesh records. Without this fallback a
+        # missing validator would turn a working run into a hard failure at the last step,
+        # so the LOD census stands in -- fewer fields, same identities and counts.
+        {"name": level["object"], "lod": level["index"],
+         "triangles": level["triangles"], "lodBudget": level["effectiveBudget"],
+         "withinBudget": level["triangles"] <= level["effectiveBudget"]}
+        for level in result.lods]
+    return export_unity.write_manifest(
+        os.path.join(package_dir, export_unity.manifest_filename(
+            law.Family.GEOLOGY, result.name)),
+        identity, meshes,
+        # No MAT_* or TX_* file is authored by this generator: the rock's colour lives in the
+        # material base colour and every mask lives in a vertex-colour channel, so naming
+        # files that do not exist would be a false reference. The shared producer records
+        # both as `manifestGaps` instead, which is the honest record and the same thing
+        # coral_branching.py does.
+        [], [],
+        # A plain dict, which `_collider_entry` accepts verbatim. The ColliderResult object
+        # itself is not kept on VariantResult, and inventing a shim class to carry four
+        # numbers it already has would be the more fragile of the two options.
+        [{"name": law.NAME_COLLIDER.format(family=law.Family.GEOLOGY.value,
+                                          name=result.name),
+          "kind": result.collider_kind,
+          "triangles": result.collider_triangles,
+          "triangleBudget": law.COLLIDER_CONVEX_TRI_MAX,
+          "withinBudget": result.collider_within_budget,
+          "reason": "3dmodel.md section 9 convex proxy; LOD0 MeshCollider is banned"}]
+        if result.collider_triangles else [],
+        sorted(result.sheets.values()),
+        export_result=result.export_result,
+        uv_summary=result.uv or None,
+        alpha_meaning="material blend / ore-emission mask "
+                      "(3DMODEL_GEOLOGY_ROCKS.md section 4 vertex colour contract)",
+        extra=payload)
 
 
 def export_package(lods: list, collider, package_dir: str, name: str,
@@ -4111,6 +4271,10 @@ def export_package(lods: list, collider, package_dir: str, name: str,
     result.roundtrip_notes = list(export.roundtrip_notes)
     result.roundtrip_verified = bool(export.roundtrip_verified)
     result.export_summary = export.summary()
+    # The ExportResult itself, not just three fields lifted off it. `write_manifest` has to
+    # emit an `export.hasCustomNormals` that HectonFBXPostprocessor.cs:789-793 reads as half
+    # of its import contract, and it cannot reconstruct that from a summary string.
+    result.export_result = export
     return export.fbx_path
 
 
