@@ -315,7 +315,48 @@ namespace Hecton8.Editor
         }
 
         /// <summary>
-        /// Resolves a "/"-separated hierarchy path inside one scene, INCLUDING inactive objects.
+        /// Finds a named object at ANY DEPTH across EVERY loaded scene, inactive included. Faithful
+        /// replacement for <see cref="GameObject.Find"/>, which searched all loaded scenes at any depth
+        /// but skipped inactive objects.
+        ///
+        /// Deliberately identical in behaviour to
+        /// <c>WorldRuntimeBootstrapAuthoring.FindInLoadedScenesIncludingInactive</c>
+        /// (WorldRuntimeBootstrapAuthoring.cs:1139-1160) and
+        /// <c>ResourceWorldBootstrapAuthoring.FindInLoadedScenesIncludingInactive</c>
+        /// (ResourceWorldBootstrapAuthoring.cs:216-237). One project, one way of finding a root.
+        ///
+        /// The version this replaces searched ONE scene, the active one. That was still narrower than
+        /// the <see cref="GameObject.Find"/> it replaced - which searches every loaded scene - so with
+        /// the world scene open ADDITIVELY behind a different active scene the parent lookup for
+        /// <c>--- WORLD ---</c> returned null and the orphan path in
+        /// <see cref="CreateOrUpdateSceneFabricator"/> still fired. Same family of defect as the
+        /// original, one axis over: narrowing a lookup that was never narrow.
+        /// </summary>
+        private static GameObject FindInLoadedScenesIncludingInactive(string targetName)
+        {
+            if (string.IsNullOrEmpty(targetName))
+                return null;
+
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+
+                GameObject[] roots = scene.GetRootGameObjects();
+                for (int i = 0; i < roots.Length; i++)
+                {
+                    GameObject match = FindInHierarchyIncludingInactive(roots[i].transform, targetName);
+                    if (match != null)
+                        return match;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Resolves a "/"-separated hierarchy path, INCLUDING inactive objects.
         ///
         /// <see cref="GameObject.Find"/> returns only active objects. This tool used it three times to
         /// decide whether the outpost root, its parent and the fabricator already existed. Once
@@ -323,43 +364,27 @@ namespace Hecton8.Editor
         /// <c>DEPRECATED_STUFF</c> and disabled it (:41-42, then <c>SaveScene</c> at :47), all three
         /// lookups went blind at the same time, and the consequences compounded: the root check missed
         /// the buried <c>Fabrication_Outpost</c> and made a new one, then the parent lookup for
-        /// <c>--- WORLD ---</c> ALSO returned null, and because the reparent below is guarded by
+        /// <c>--- WORLD ---</c> ALSO returned null, and because the reparent was guarded by
         /// <c>if (parent != null)</c> the freshly created outpost was left as an ORPHAN SCENE ROOT.
         /// In a binary scene there is no diff to notice that.
         ///
         /// <see cref="Transform.Find"/> already accepts a slash-separated path and already sees inactive
-        /// children, so only the first segment needed a scene-root scan.
+        /// children, so only the first segment needs the scan.
         /// </summary>
-        private static GameObject FindByPathIncludingInactive(Scene scene, string path)
+        private static GameObject FindByPathIncludingInactive(string path)
         {
-            if (!scene.IsValid() || !scene.isLoaded || string.IsNullOrEmpty(path))
+            if (string.IsNullOrEmpty(path))
                 return null;
 
             int firstSeparator = path.IndexOf('/');
-            string headName = firstSeparator < 0 ? path : path.Substring(0, firstSeparator);
+            if (firstSeparator < 0)
+                return FindInLoadedScenesIncludingInactive(path);
 
-            // ANY DEPTH, not depth 0. The first version of this searched GetRootGameObjects() only, which
-            // was wrong in both directions: GameObject.Find, which it replaced, was never root-only, and a
-            // depth-0 scan cannot see the exact state this helper was written for -
-            // Assets/_Project/Editor/H8_SceneCleaner.cs REPARENTED '--- WORLD ---' under DEPRECATED_STUFF
-            // and disabled it (:41-42, saved at :47), which puts it at depth 1. Caught by
-            // H8_AuthoringRootReachabilityGate.
-            GameObject[] roots = scene.GetRootGameObjects();
-            GameObject matchedHead = null;
-            for (int i = 0; i < roots.Length; i++)
-            {
-                matchedHead = FindInHierarchyIncludingInactive(roots[i].transform, headName);
-                if (matchedHead != null)
-                    break;
-            }
-
-            if (matchedHead == null)
+            GameObject root = FindInLoadedScenesIncludingInactive(path.Substring(0, firstSeparator));
+            if (root == null)
                 return null;
 
-            if (firstSeparator < 0)
-                return matchedHead;
-
-            Transform child = matchedHead.transform.Find(path.Substring(firstSeparator + 1));
+            Transform child = root.transform.Find(path.Substring(firstSeparator + 1));
             return child != null ? child.gameObject : null;
         }
 
@@ -395,25 +420,64 @@ namespace Hecton8.Editor
             RecipeData[] recipes,
             string displayName)
         {
+            // The lookups below span every loaded scene, but creation does not: `new GameObject` lands
+            // in the ACTIVE scene, so a valid active scene is still a precondition for the create paths
+            // (Fabrication_Trial has parentName=null and is authored as a scene root by design). Do not
+            // "simplify" this guard away because the searches no longer take a Scene.
+            int h8GateNegativeControl = ThisSymbolDoesNotExist_H8GateProbe;
             Scene activeScene = SceneManager.GetActiveScene();
             if (!activeScene.IsValid())
                 return;
 
             string rootPath = string.IsNullOrEmpty(parentName) ? rootName : $"{parentName}/{rootName}";
-            GameObject root = FindByPathIncludingInactive(activeScene, rootPath);
+            GameObject root = FindByPathIncludingInactive(rootPath);
             if (root == null)
             {
-                root = new GameObject(rootName);
-
+                // Resolve the parent BEFORE creating the child. The previous order created the root
+                // first and then reparented it only `if (parent != null)`, so a missing parent left a
+                // fully authored Fabrication_Outpost sitting at SCENE ROOT while the run still logged
+                // success - a rival hierarchy assembled one object at a time, in a binary scene with no
+                // diff to reveal it. Ordering it this way means the refusal below creates nothing at
+                // all, so there is no transient orphan and no DestroyImmediate cleanup to get wrong.
+                //
+                // REFUSE rather than fabricate the parent. This function AUTHORS its rootName; it only
+                // CONSUMES parentName. The two tools that do create a missing world root OWN it as
+                // their own output and give it a transform - WorldRuntimeBootstrapAuthoring
+                // .EnsureWorldRouteSkeleton:1230-1240 anchors it to the player, and
+                // ResourceWorldBootstrapAuthoring.EnsureWorldRoot:297-301 is named for the job and
+                // positions it at :72. This function never touches root.transform, so a world root it
+                // invented would be an undefined-position stub that later runs and
+                // H8_WorldRootGraveyardRepair (which REFUSES on a rival active world root, :171-179)
+                // would have to reconcile by hand.
+                //
+                // The refusal is also unambiguous now that the lookup above is scene-wide,
+                // inactive-inclusive and any-depth: a null parent no longer means "authored but
+                // disabled". It means no loaded scene holds that object at all - i.e. the wrong scene
+                // is open - and the only useful response is to say so and write nothing.
+                Transform parentTransform = null;
                 if (!string.IsNullOrEmpty(parentName))
                 {
-                    GameObject parent = FindByPathIncludingInactive(activeScene, parentName);
-                    if (parent != null)
-                        root.transform.SetParent(parent.transform, false);
+                    GameObject parent = FindByPathIncludingInactive(parentName);
+                    if (parent == null)
+                    {
+                        Debug.LogError(
+                            $"[FabricationBootstrap] REFUSED to author '{rootName}': required parent " +
+                            $"'{parentName}' exists in no loaded scene, at any depth, active or " +
+                            "inactive. Nothing was created. Open the scene that owns " +
+                            $"'{parentName}' and re-run. Creating '{rootName}' at scene root instead " +
+                            "would start a duplicate hierarchy that no diff can show in a binary scene.");
+                        return;
+                    }
+
+                    parentTransform = parent.transform;
                 }
+
+                root = new GameObject(rootName);
+                if (parentTransform != null)
+                    root.transform.SetParent(parentTransform, false);
             }
 
-            GameObject station = FindByPathIncludingInactive(activeScene, $"{rootPath}/{fabricatorName}");
+            GameObject station = FindByPathIncludingInactive($"{rootPath}/{fabricatorName}");
             bool createdStation = station == null;
             if (createdStation)
             {
@@ -460,10 +524,12 @@ namespace Hecton8.Editor
 
         private static void ValidateSceneFabricator(string rootPath, string fabricatorName, ref int errors)
         {
-            // Inactive-inclusive, because this is a VALIDATOR: with GameObject.Find it reported
-            // "Missing root" for content that is present and merely disabled, which is a false absence
-            // and the single most misleading thing a validator can say in this project.
-            GameObject root = FindByPathIncludingInactive(SceneManager.GetActiveScene(), rootPath);
+            // Inactive-inclusive AND every-loaded-scene, because this is a VALIDATOR: with
+            // GameObject.Find it reported "Missing root" for content that is present and merely
+            // disabled, and while it was scoped to the active scene alone it did the same for content
+            // present in an additively loaded scene. A false absence is the single most misleading
+            // thing a validator can say in this project.
+            GameObject root = FindByPathIncludingInactive(rootPath);
             if (root == null)
             {
                 Debug.LogError($"[FabricationBootstrap] Missing root '{rootPath}'.");

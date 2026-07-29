@@ -68,6 +68,7 @@ manifest and stops there, which is the honest boundary.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import os
@@ -87,6 +88,57 @@ try:
 except ImportError:  # pragma: no cover - exercised only under `blender -P`
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from h8forge import law
+
+
+# ===========================================================================
+# Per-purpose RNG substreams
+# ===========================================================================
+# WHY ONE SHARED STREAM IS A DEFECT, measured rather than argued.
+#
+# This module originally threaded a single ``np.random.default_rng(seed)`` through every
+# field generator, which is what ``generators/rock.py`` also does. That is DETERMINISTIC --
+# same seed, same call sequence, same numbers every run -- but it is not INDEPENDENT, and the
+# difference bit this family:
+#
+#   ``periodic_fbm`` and ``periodic_worley`` draw arrays sized by RESOLUTION. So the number of
+#   values consumed before the spall-scar loop runs depends on the tile resolution, and the
+#   scar layout for seed 1713 therefore differs between the 512 and 2048 lanes. Measured:
+#   erosional coverage 0.195 at 512 against 0.141 at 2048, passing a family requirement at one
+#   lane and failing it at the other. Tuning at 512 and trusting 2048 is invalid.
+#
+# The fix is a substream per PURPOSE, so a draw by one generator cannot shift another's, and
+# the discrete structure of the rock (how many scars, where, at what azimuth) is identical
+# across quality lanes while the continuous fields legitimately gain bandwidth with resolution.
+#
+# THE HASH MUST NOT BE PYTHON'S ``hash()``. ``hash("grain")`` is randomised per process unless
+# PYTHONHASHSEED is pinned, so seeding a stream from it would import exactly the class of
+# nondeterminism this construct exists to remove -- and it would look fixed in any single
+# process. ``hashlib.blake2b`` is stable across processes, machines and Python versions.
+
+
+# THE RULE THAT MAKES SUBSTREAMS ACTUALLY WORK, and having substreams is not enough on its
+# own: NEVER MIX RESOLUTION-SIZED DRAWS AND STRUCTURE-DEFINING SCALAR DRAWS IN ONE STREAM.
+#
+# A substream per purpose was the first attempt and it still leaked. ``_build_spall_scars``
+# drew its shared edge-jitter FIELD -- resolution-sized -- from the "spall" stream before the
+# scar loop, so the scalar draws that decide how many scars there are, where, and how wide
+# still advanced by a resolution-dependent amount. Same in ``_build_fault`` (wall jitter before
+# the origin draw) and in ``build_lamina_stack`` (bedding warps before the lithology draws).
+#
+# So every builder takes TWO streams: ``<purpose>`` for the scalars that define STRUCTURE, and
+# ``<purpose>.field`` for the arrays. Structure is then bit-identical across quality lanes
+# while the continuous fields legitimately gain bandwidth with resolution -- which is exactly
+# the separation a texture family wants.
+def substream(seed: int, purpose: str) -> np.random.Generator:
+    """An independent generator for one named purpose, stable across processes.
+
+    ``numpy.random.SeedSequence`` is the supported way to spawn independent streams; mixing
+    the purpose digest into the entropy means two purposes cannot correlate and neither can
+    shift the other by consuming values.
+    """
+    digest = hashlib.blake2b(purpose.encode("utf-8"), digest_size=8).digest()
+    return np.random.default_rng(
+        np.random.SeedSequence([int(seed) & 0xFFFFFFFF, int.from_bytes(digest, "big")]))
 
 
 MODULE_NAME = "texture.py"
@@ -448,24 +500,36 @@ def periodic_joint_traces(
     axis = (np.arange(resolution) + 0.5) / resolution * tile_m
     py, px = np.meshgrid(axis, axis, indexing="ij")
 
+    max_length = min(length_max_fraction, 0.45) * tile_m
+    min_length = max(1e-3, length_min_fraction * tile_m)
+
+    # EVERY STRUCTURE PARAMETER IS DRAWN BEFORE ANY RESOLUTION-SIZED FIELD, and the order is
+    # the fix rather than a style choice. The waviness field is resolution-sized, so drawing it
+    # first advanced this stream by a resolution-dependent number of values and the joint
+    # azimuths for one seed then differed between the 512 and 2048 lanes -- measured, while the
+    # fault, unconformities and lamina stack had already been made lane-stable. Structure
+    # first, fields second, and the whole set becomes lane-invariant.
+    drawn = []
+    for index in range(max(1, count)):
+        # Conjugate pair: alternate sides of the stress axis.
+        side = 1.0 if (index % 2 == 0) else -1.0
+        drawn.append((
+            side,
+            math.radians(stress_azimuth_deg + side * conjugate_deg
+                         + rng.normal(0.0, jitter_deg)),
+            float(rng.uniform(min_length, max_length)),
+            rng.random(2) * tile_m,
+        ))
+
     # A little waviness so a trace is a fracture rather than a ruled line. Applied to the
     # SAMPLE coordinate, which bends every trace coherently as if the rock itself deformed.
     if waviness_m > 0.0:
         px = px + periodic_warp(rng, resolution, tile_m, tile_m * 0.22, waviness_m)
         py = py + periodic_warp(rng, resolution, tile_m, tile_m * 0.19, waviness_m)
 
-    max_length = min(length_max_fraction, 0.45) * tile_m
-    min_length = max(1e-3, length_min_fraction * tile_m)
-
     best = np.full((resolution, resolution), np.inf)
     traces = []
-    for index in range(max(1, count)):
-        # Conjugate pair: alternate sides of the stress axis.
-        side = 1.0 if (index % 2 == 0) else -1.0
-        azimuth = math.radians(stress_azimuth_deg + side * conjugate_deg
-                               + rng.normal(0.0, jitter_deg))
-        length = float(rng.uniform(min_length, max_length))
-        start = rng.random(2) * tile_m
+    for side, azimuth, length, start in drawn:
         direction = np.array([math.sin(azimuth), math.cos(azimuth)])  # (row, col)
         delta = direction * length
 
@@ -634,7 +698,7 @@ PARTING_WIDTH_PIXEL_FLOOR = 2.5
 # invalid. The clean fix is a per-generator rng stream seeded from a hash rather than one
 # shared stream -- generators/rock.py has the same property -- and that is outstanding debt,
 # not something to change under a texture task.
-SPALL_SCAR_COUNT = 36
+SPALL_SCAR_COUNT = 44
 SPALL_PACKAGE_LAMINAE_MIN = 1
 SPALL_PACKAGE_LAMINAE_MAX = 4
 # NARROW AND DENSE beats wide and sparse. At 0.08-0.30 width the scars met the run
@@ -668,7 +732,8 @@ class LaminaStack:
     organic: np.ndarray        # dark organic/clay fraction; hosts pyrite
     porosity: np.ndarray       # where dissolution can open a vug at all
     spall: np.ndarray          # 0..1 inside a flake scar, sharp at the rim
-    gouge: np.ndarray          # 0..1 on a truncation-block wall
+    fault_gouge: np.ndarray    # 0..1 on the single high-angle fault wall
+    unconformity: np.ndarray   # 0..1 on a low-angle unconformity boundary
     contact: np.ndarray        # 1.0 exactly on a lamina contact, falling off
     count: int
     thicknesses_m: np.ndarray
@@ -678,92 +743,188 @@ class LaminaStack:
         return 1.0 - self.hardness
 
 
-# TRUNCATION BLOCKS: differential erosion cutting ACROSS bed packages.
+# TWO SEPARATE MECHANISMS, and conflating them was the defect that produced a masonry wall.
 #
-# Scars alone could not meet the run budget, and the measurement showed why rather than
-# suggesting it. A spall scar interrupts only the rows inside its own bed package, so with
-# 78 scars stratified over 52 laminae each lamina still got about 1.5 of them and a row with
-# one 10-percent-wide scar retained a 90-percent run. Pushing the count higher raised
-# coverage to 40 percent without fixing p95 -- the wrong mechanism applied harder.
+# The previous version had one construct called "fault/unconformity blocks" and built four of
+# them, all oriented on the JOINT SET -- two conjugate directions about a 24-degree stress
+# axis. So all four were STEEP and NEAR-PARALLEL, at roughly regular spacing, cutting
+# horizontal beds. Steep near-parallel walls at a regular interval crossing horizontal bedding
+# is a rectangular grid BY CONSTRUCTION, which is why the tile read as brick courses. It is the
+# same class of error as the Voronoi partition: ORTHOGONAL STRUCTURE AT A REGULAR INTERVAL
+# READS AS MANUFACTURED, however the individual elements are shaped.
 #
-# A truncation is a LINE ACROSS THE WHOLE TILE, so it splits every row it crosses. Three of
-# them break the bedding into domains at a coverage cost of almost nothing, which is the
-# efficiency a patch-based mechanism cannot reach. Geologically these are small
-# faults/unconformities: beds on one side do not line up with beds on the other, which is
-# ``3DMODEL_GEOLOGY_ROCKS.md`` section 1's "sheared planes" and "collapsed fracture faces".
-TRUNCATION_COUNT = 4
-TRUNCATION_WIDTH_MIN_FRACTION = 0.30
-TRUNCATION_WIDTH_MAX_FRACTION = 0.62
-TRUNCATION_OFFSET_MIN_FRACTION = 2.0
-TRUNCATION_OFFSET_MAX_FRACTION = 6.5
-TRUNCATION_GOUGE_M = 0.0030
-# 0.16, not 0.34. A bright continuous highlight along every wall is what turned the
-# fault traces into scribed lines under raking light; the offset across the wall is the
-# feature that matters, not the notch at it.
-TRUNCATION_GOUGE_DEPTH_FRACTION = 0.16
+# They are not one thing:
+#
+#   A FAULT is HIGH-ANGLE. It cuts across bedding steeply, offsets it, and DRAWS A STEEP LINE.
+#   An UNCONFORMITY is LOW-ANGLE -- a former depositional or erosional surface. It truncates
+#   beds OBLIQUELY and shallowly, and the beds above sit at a different dip from those below.
+#
+# So the low-angle mechanism is primary, and there is AT MOST ONE fault whose azimuth is forced
+# away from every joint direction so nothing is parallel to anything else. Neither mechanism
+# uses regular spacing: both draw position, thickness and orientation per instance.
+#
+# An unconformity is implemented as a PACKAGE bounded above and below by two low-angle
+# surfaces, which is what a depositional sequence actually is -- and it is also what makes the
+# construct periodic. On a torus "everything above a surface" is not a well-defined region,
+# while "within half a band thickness of an undulating level" is.
+UNCONFORMITY_COUNT = 2
+UNCONFORMITY_THICKNESS_MIN_FRACTION = 0.18
+UNCONFORMITY_THICKNESS_MAX_FRACTION = 0.42
+# Undulation amplitude as a fraction of the tile, with ONE harmonic, so the boundary slope
+# stays low: slope = 2*pi*amplitude, i.e. 0.22 (12.4 degrees) at 0.035. Low-angle by
+# construction rather than by tuning, which is the point of separating this from the fault.
+UNCONFORMITY_UNDULATION_MIN = 0.022
+UNCONFORMITY_UNDULATION_MAX = 0.040
+UNCONFORMITY_DISCORDANCE_MIN = 0.010
+UNCONFORMITY_DISCORDANCE_MAX = 0.028
+UNCONFORMITY_OFFSET_MIN_FRACTION = 1.5
+UNCONFORMITY_OFFSET_MAX_FRACTION = 5.0
+UNCONFORMITY_TRACE_M = 0.0026
+UNCONFORMITY_TRACE_DEPTH_FRACTION = 0.20
+
+FAULT_COUNT = 1
+FAULT_WIDTH_MIN_FRACTION = 0.26
+FAULT_WIDTH_MAX_FRACTION = 0.58
+FAULT_OFFSET_MIN_FRACTION = 2.5
+FAULT_OFFSET_MAX_FRACTION = 7.0
+FAULT_GOUGE_M = 0.0024
+FAULT_GOUGE_DEPTH_FRACTION = 0.16
+# A fault parallel to the joint set rejoins the grid. Enforced as a minimum angular separation
+# from EVERY joint azimuth rather than as a fixed offset, because the joint azimuths are drawn
+# per seed and a fixed offset would collide on some of them.
+FAULT_MIN_SEPARATION_FROM_JOINTS_DEG = 35.0
 
 
-def _build_truncation_blocks(spec: GeologyTextureSpec, rng: np.random.Generator,
-                             thicknesses: np.ndarray,
-                             joint_traces: Optional[list]) -> tuple:
-    """Fault/unconformity blocks that offset the bedding wholesale. ``(offset_m, gouge)``.
+def _build_unconformities(spec, thicknesses, base_coordinate):
+    """Low-angle unconformity-bounded packages. ``(offset_m, trace, report)``.
 
-    Each block is a wide slab whose orientation is taken from the joint set, so the
-    truncation is parallel to a real structure rather than an arbitrary cut. Inside the slab
-    the bedding coordinate is displaced by SEVERAL lamina thicknesses -- enough that no bed
-    can be traced across the boundary, which is the whole point. The boundary itself carries
-    a thin gouge recess so it is visible and so the extent metric can count it.
+    Each package is a band in BEDDING-COORDINATE space whose upper and lower boundaries are
+    gently undulating low-angle surfaces. Inside the band the bedding carries a different
+    periodic warp -- a different LOCAL DIP -- plus a wholesale offset of several lamina
+    thicknesses, so beds inside lie discordantly to beds outside and none can be traced
+    across. That discordance is the visual signature of an unconformity, and it is
+    unmistakably geological rather than built.
+
+    The boundary slope is bounded by construction: with one harmonic it is
+    ``2*pi*amplitude``, so the amplitude band caps it near 14 degrees. That is what makes this
+    the low-angle mechanism, and it is why it cannot draw the steep line that turned the
+    previous version into brickwork.
     """
+    rng = substream(spec.seed, "unconformity")
+    resolution = spec.resolved_resolution()
+    column = np.broadcast_to(
+        ((np.arange(resolution) + 0.5) / resolution)[None, :],
+        (resolution, resolution))
+    mean_thickness = float(thicknesses.mean())
+
+    offset = np.zeros((resolution, resolution), dtype=np.float64)
+    trace = np.zeros((resolution, resolution), dtype=np.float64)
+    surfaces = []
+
+    for _index in range(max(0, UNCONFORMITY_COUNT)):
+        centre = float(rng.uniform(0.0, spec.tile_m))
+        thickness = spec.tile_m * float(rng.uniform(
+            UNCONFORMITY_THICKNESS_MIN_FRACTION, UNCONFORMITY_THICKNESS_MAX_FRACTION))
+        amplitude = spec.tile_m * float(rng.uniform(UNCONFORMITY_UNDULATION_MIN,
+                                                    UNCONFORMITY_UNDULATION_MAX))
+        phase = float(rng.uniform(0.0, 2.0 * math.pi))
+        undulation = amplitude * np.sin(2.0 * math.pi * column + phase)
+
+        delta = base_coordinate - (centre + undulation)
+        delta = delta - spec.tile_m * np.rint(delta / spec.tile_m)
+        half = thickness * 0.5
+        inside = np.abs(delta) < half
+
+        discordance = spec.tile_m * float(rng.uniform(UNCONFORMITY_DISCORDANCE_MIN,
+                                                      UNCONFORMITY_DISCORDANCE_MAX))
+        discord_phase = float(rng.uniform(0.0, 2.0 * math.pi))
+        dip_term = discordance * np.sin(2.0 * math.pi * column + discord_phase)
+
+        throw = mean_thickness * float(rng.uniform(UNCONFORMITY_OFFSET_MIN_FRACTION,
+                                                   UNCONFORMITY_OFFSET_MAX_FRACTION))
+        offset = offset + np.where(inside, throw + dip_term, 0.0)
+
+        near_boundary = np.abs(np.abs(delta) - half)
+        trace = np.maximum(
+            trace, 1.0 - _smooth_step(0.0, UNCONFORMITY_TRACE_M, near_boundary))
+        surfaces.append({
+            "bandThicknessM": round(thickness, 4),
+            "undulationAmplitudeM": round(amplitude, 5),
+            "boundarySlopeDeg": round(math.degrees(math.atan(
+                2.0 * math.pi * amplitude / spec.tile_m)), 2),
+            "beddingThrowM": round(throw, 5),
+            "dipDiscordanceM": round(discordance, 5),
+        })
+
+    return offset, trace, surfaces
+
+
+def _build_fault(spec, thicknesses, joint_traces):
+    """AT MOST ONE high-angle fault. ``(offset_m, gouge, report)``.
+
+    A fault is the high-angle mechanism and it does draw a steep line -- that is what a fault
+    looks like, and one of them is a feature. FOUR of them parallel to each other was the
+    defect. Its azimuth is forced at least ``FAULT_MIN_SEPARATION_FROM_JOINTS_DEG`` from EVERY
+    joint azimuth so it cannot rejoin the conjugate set and re-form a grid.
+    """
+    rng = substream(spec.seed, "fault")
+    field_rng = substream(spec.seed, "fault.field")
     resolution = spec.resolved_resolution()
     axis = (np.arange(resolution) + 0.5) / resolution * spec.tile_m
     py, px = np.meshgrid(axis, axis, indexing="ij")
     mean_thickness = float(thicknesses.mean())
 
-    steep = [t for t in (joint_traces or ()) if abs(float(t.get("dirRow", 0.0))) > 0.35]
-    wall_jitter = periodic_warp(rng, resolution, spec.tile_m,
-                                wavelength_m=0.16, amplitude=0.012)
-    offset = np.zeros((resolution, resolution), dtype=np.float64)
-    gouge = np.zeros((resolution, resolution), dtype=np.float64)
+    joint_azimuths = [float(t.get("azimuthDeg", 0.0)) for t in (joint_traces or ())]
 
-    for index in range(max(1, TRUNCATION_COUNT)):
-        if steep:
-            trace = steep[index % len(steep)]
-            direction = np.array([trace["dirRow"], trace["dirCol"]])
-        else:
-            angle = math.radians(JOINT_STRESS_AZIMUTH_DEG + JOINT_CONJUGATE_DEG)
-            direction = np.array([math.sin(angle), math.cos(angle)])
-        norm = float(np.hypot(direction[0], direction[1]))
-        if norm < 1e-9:
-            continue
-        direction = direction / norm
-        normal = np.array([direction[1], -direction[0]])
+    def separation(candidate):
+        if not joint_azimuths:
+            return 999.0
+        return min(abs((candidate - a + 90.0) % 180.0 - 90.0) for a in joint_azimuths)
 
-        origin = rng.random(2) * spec.tile_m
-        offset_row = py - origin[0]
-        offset_col = px - origin[1]
-        offset_row = offset_row - spec.tile_m * np.rint(offset_row / spec.tile_m)
-        offset_col = offset_col - spec.tile_m * np.rint(offset_col / spec.tile_m)
-        lateral = offset_row * normal[0] + offset_col * normal[1]
-        # IRREGULAR WALLS. A truncation block spans the whole tile, so each of its two walls is
-        # a full-length line -- and at four blocks that is eight straight lines crossing the
-        # face. Under grazing light they read as a SCRIBED GRID rather than as fault traces: the
-        # mechanism was right and the geometry was too clean. A real fault trace wanders. Same
-        # shared-fabric jitter the spall walls use, at a longer wavelength because a fault
-        # surface is smoother than a flake edge.
-        lateral = lateral + wall_jitter
+    azimuth_deg = None
+    for _attempt in range(96):
+        candidate = float(rng.uniform(0.0, 180.0))
+        if separation(candidate) >= FAULT_MIN_SEPARATION_FROM_JOINTS_DEG:
+            azimuth_deg = candidate
+            break
+    if azimuth_deg is None or FAULT_COUNT < 1:
+        # Reporting the refusal beats placing a fault parallel to the joint set and quietly
+        # rebuilding the grid this change exists to remove.
+        return (np.zeros((resolution, resolution)), np.zeros((resolution, resolution)),
+                {"placed": False,
+                 "reason": "no azimuth at least {d} deg from every joint azimuth".format(
+                     d=FAULT_MIN_SEPARATION_FROM_JOINTS_DEG)})
 
-        width = float(rng.uniform(TRUNCATION_WIDTH_MIN_FRACTION,
-                                  TRUNCATION_WIDTH_MAX_FRACTION)) * spec.tile_m
-        inside = (lateral >= 0.0) & (lateral < width)
-        throw = mean_thickness * float(rng.uniform(TRUNCATION_OFFSET_MIN_FRACTION,
-                                                   TRUNCATION_OFFSET_MAX_FRACTION))
-        offset = offset + np.where(inside, throw, 0.0)
+    azimuth = math.radians(azimuth_deg)
+    direction = np.array([math.sin(azimuth), math.cos(azimuth)])
+    normal = np.array([direction[1], -direction[0]])
+    wall_jitter = periodic_warp(field_rng, resolution, spec.tile_m,
+                               wavelength_m=0.16, amplitude=0.012)
 
-        # Gouge on both walls of the block.
-        near_wall = np.minimum(np.abs(lateral), np.abs(lateral - width))
-        gouge = np.maximum(gouge, 1.0 - _smooth_step(0.0, TRUNCATION_GOUGE_M, near_wall))
+    origin = rng.random(2) * spec.tile_m
+    offset_row = py - origin[0]
+    offset_col = px - origin[1]
+    offset_row = offset_row - spec.tile_m * np.rint(offset_row / spec.tile_m)
+    offset_col = offset_col - spec.tile_m * np.rint(offset_col / spec.tile_m)
+    lateral = offset_row * normal[0] + offset_col * normal[1] + wall_jitter
 
-    return offset, gouge
+    width = float(rng.uniform(FAULT_WIDTH_MIN_FRACTION,
+                              FAULT_WIDTH_MAX_FRACTION)) * spec.tile_m
+    inside = (lateral >= 0.0) & (lateral < width)
+    throw = mean_thickness * float(rng.uniform(FAULT_OFFSET_MIN_FRACTION,
+                                               FAULT_OFFSET_MAX_FRACTION))
+    offset = np.where(inside, throw, 0.0)
+
+    near_wall = np.minimum(np.abs(lateral), np.abs(lateral - width))
+    gouge = 1.0 - _smooth_step(0.0, FAULT_GOUGE_M, near_wall)
+
+    return offset, gouge, {
+        "placed": True,
+        "azimuthDeg": round(azimuth_deg, 3),
+        "minSeparationFromJointsDeg": round(separation(azimuth_deg), 2),
+        "blockWidthM": round(width, 4),
+        "beddingThrowM": round(throw, 5),
+    }
 
 
 def _longest_wrapped_run(row: np.ndarray) -> int:
@@ -801,7 +962,8 @@ def measure_structural_extent(lamina: LaminaStack, joint: np.ndarray,
     out of the section 9 gate list: the playbook names eleven gates and inventing a twelfth
     inside that table would misrepresent the authority. It is reported beside them instead.
     """
-    interrupted = ((lamina.spall > 0.5) | (joint > 0.5) | (lamina.gouge > 0.5))
+    interrupted = ((lamina.spall > 0.5) | (joint > 0.5)
+                   | (lamina.fault_gouge > 0.5) | (lamina.unconformity > 0.5))
     intact = ~interrupted
     runs = np.array([_longest_wrapped_run(intact[row]) for row in range(intact.shape[0])],
                     dtype=np.float64)
@@ -822,12 +984,13 @@ def measure_structural_extent(lamina: LaminaStack, joint: np.ndarray,
         "erosionalCoverage": round(erosional, 5),
         "erosionalCoverageMin": law.GEOLOGY_MIN_EROSIONAL_COVERAGE,
         "erosionalCoverageMet": bool(erosional >= law.GEOLOGY_MIN_EROSIONAL_COVERAGE),
-        "interruptedBy": "spall scars, joint traces and truncation-block walls; grain "
-                         "and vugs roughen a bed without truncating it",
+        "interruptedBy": "spall scars, joint traces, the single fault wall and the "
+                         "low-angle unconformity boundaries; grain and vugs roughen a bed "
+                         "without truncating it",
     }
 
 
-def _build_spall_scars(spec: GeologyTextureSpec, rng: np.random.Generator,
+def _build_spall_scars(spec: GeologyTextureSpec,
                        base_coordinate: np.ndarray, boundaries: np.ndarray,
                        thicknesses: np.ndarray,
                        joint_traces: Optional[list]) -> tuple:
@@ -856,6 +1019,8 @@ def _build_spall_scars(spec: GeologyTextureSpec, rng: np.random.Generator,
     exposed in the scar floor do not line up with the beds outside it. That discontinuity at
     the rim is the feature, not an artefact.
     """
+    rng = substream(spec.seed, "spall")
+    field_rng = substream(spec.seed, "spall.field")
     resolution = spec.resolved_resolution()
     axis = (np.arange(resolution) + 0.5) / resolution * spec.tile_m
     py, px = np.meshgrid(axis, axis, indexing="ij")
@@ -877,7 +1042,7 @@ def _build_spall_scars(spec: GeologyTextureSpec, rng: np.random.Generator,
     offset = np.zeros((resolution, resolution), dtype=np.float64)
     # One SHARED edge-jitter field, so every scar's walls are roughened by the same rock
     # fabric rather than by independent noise per scar.
-    edge_jitter = periodic_warp(rng, resolution, spec.tile_m,
+    edge_jitter = periodic_warp(field_rng, resolution, spec.tile_m,
                                 wavelength_m=0.055, amplitude=0.007)
 
     # SCAR PLACEMENT IS STRATIFIED ACROSS THE COLUMN, not uniformly random, and the
@@ -951,7 +1116,6 @@ def _build_spall_scars(spec: GeologyTextureSpec, rng: np.random.Generator,
 
 
 def build_lamina_stack(spec: GeologyTextureSpec,
-                       rng: np.random.Generator,
                        joint_traces: Optional[list] = None) -> LaminaStack:
     """Build the sedimentary column and sample it per pixel.
 
@@ -965,6 +1129,8 @@ def build_lamina_stack(spec: GeologyTextureSpec,
     index non-physical, and the resulting colour field would read as marbling rather than
     as bedding.
     """
+    rng = substream(spec.seed, "lamina")
+    field_rng = substream(spec.seed, "lamina.field")
     resolution = spec.resolved_resolution()
 
     # Row 0 is the TOP of the image. V increases upward, so a lamina's "base" is below it
@@ -1002,20 +1168,26 @@ def build_lamina_stack(spec: GeologyTextureSpec,
     # Physically this is spalling: weathered laminae break off in small flakes along their
     # partings, so a contact is chipped at the centimetre scale rather than drawn. Fold
     # budget: 2*pi*0.0015/0.030 = 0.31, taking the total to about 0.52, inside the limit.
-    warp = (periodic_warp(rng, resolution, spec.tile_m,
+    warp = (periodic_warp(field_rng, resolution, spec.tile_m,
                           wavelength_m=spec.tile_m * 0.75, amplitude=0.011)
-            + periodic_warp(rng, resolution, spec.tile_m,
+            + periodic_warp(field_rng, resolution, spec.tile_m,
                             wavelength_m=0.18, amplitude=0.004)
-            + periodic_warp(rng, resolution, spec.tile_m,
+            + periodic_warp(field_rng, resolution, spec.tile_m,
                             wavelength_m=0.030, amplitude=0.0015))
     # The BASE bedding coordinate, before any scar offset. Scars are decided from this so a
     # scar's own displacement cannot feed back into where scars are.
-    truncation_offset, gouge = _build_truncation_blocks(
-        spec, rng, thicknesses, joint_traces)
-    base_coordinate = np.mod(depth_m + warp + truncation_offset, spec.tile_m)
+    # THE ORDER HERE IS FORCED. The unconformity bands are defined in bedding-coordinate
+    # space, so they need a base coordinate to test against; the fault is defined in image
+    # space and does not. So: warp -> provisional coordinate -> unconformity -> fault.
+    provisional = np.mod(depth_m + warp, spec.tile_m)
+    unconformity_offset, unconformity_trace, unconformity_report = _build_unconformities(
+        spec, thicknesses, provisional)
+    fault_offset, fault_gouge, fault_report = _build_fault(spec, thicknesses, joint_traces)
+    base_coordinate = np.mod(provisional + unconformity_offset + fault_offset,
+                             spec.tile_m)
 
     spall, spall_offset = _build_spall_scars(
-        spec, rng, base_coordinate, boundaries, thicknesses, joint_traces)
+        spec, base_coordinate, boundaries, thicknesses, joint_traces)
 
     coordinate = np.mod(base_coordinate + spall_offset * spall, spec.tile_m)
 
@@ -1048,7 +1220,7 @@ def build_lamina_stack(spec: GeologyTextureSpec,
     # The field is stretched hard along U so the variation runs WITH the bedding rather than
     # cutting across it, which would read as mottling.
     lateral = _normalise_to_peak(
-        periodic_fbm(rng, resolution, spec.tile_m,
+        periodic_fbm(field_rng, resolution, spec.tile_m,
                      coarsest_m=spec.tile_m * 0.8, finest_m=0.09,
                      beta=2.3, anisotropy=5.0, anisotropy_axis="v")) * 0.5 + 0.5
 
@@ -1072,7 +1244,7 @@ def build_lamina_stack(spec: GeologyTextureSpec,
     porosity_field = np.clip(porosity_per_lamina[index] * (0.75 + 0.5 * lateral),
                              0.0, 1.0)
 
-    return LaminaStack(
+    stack = LaminaStack(
         index=index,
         across=across,
         hardness=hardness[index],
@@ -1080,11 +1252,15 @@ def build_lamina_stack(spec: GeologyTextureSpec,
         organic=organic_field,
         porosity=porosity_field,
         spall=spall,
-        gouge=gouge,
+        fault_gouge=fault_gouge,
+        unconformity=unconformity_trace,
         contact=contact,
         count=count,
         thicknesses_m=thicknesses,
     )
+    stack.unconformity_report = unconformity_report
+    stack.fault_report = fault_report
+    return stack
 
 
 # ===========================================================================
@@ -1246,7 +1422,7 @@ def _normalise_to_peak(values: np.ndarray, percentile: float = 99.5) -> np.ndarr
 
 
 def build_height_field(spec: GeologyTextureSpec,
-                       rng: np.random.Generator) -> HeightField:
+                       rng: Optional[np.random.Generator] = None) -> HeightField:
     """Compose the source relief from the sanctioned generators in section 5.
 
     Order matters only for legibility; the terms are additive because they are
@@ -1263,7 +1439,7 @@ def build_height_field(spec: GeologyTextureSpec,
     # lines. That dependency is the whole reason the scars can be angular, so the ordering is
     # load-bearing rather than incidental.
     joint_trace, joint_traces = periodic_joint_traces(
-        rng, resolution, spec.tile_m,
+        substream(spec.seed, "joints"), resolution, spec.tile_m,
         count=JOINT_TRACE_COUNT,
         stress_azimuth_deg=JOINT_STRESS_AZIMUTH_DEG,
         conjugate_deg=JOINT_CONJUGATE_DEG,
@@ -1273,7 +1449,7 @@ def build_height_field(spec: GeologyTextureSpec,
         width_m=JOINT_WIDTH_M,
         waviness_m=JOINT_WAVINESS_M)
 
-    lamina = build_lamina_stack(spec, rng, joint_traces=joint_traces)
+    lamina = build_lamina_stack(spec, joint_traces=joint_traces)
 
     # --- deposition + differential weathering -----------------------------------
     # A soft lamina is deepest in its middle and rises back toward its contacts, because
@@ -1287,8 +1463,12 @@ def build_height_field(spec: GeologyTextureSpec,
     # --- spall scars: a flaked package sits below the intact face ----------------
     spall_relief = -BEDDING_RECESS_M * SPALL_STEP_FRACTION * lamina.spall
 
-    # --- truncation gouge: the wall of a sheared block ---------------------------
-    gouge_relief = -BEDDING_RECESS_M * TRUNCATION_GOUGE_DEPTH_FRACTION * lamina.gouge
+    # --- fault gouge: the wall of the single high-angle fault --------------------
+    fault_relief = -BEDDING_RECESS_M * FAULT_GOUGE_DEPTH_FRACTION * lamina.fault_gouge
+
+    # --- unconformity trace: a low-angle discontinuity erodes preferentially -----
+    unconformity_relief = (-BEDDING_RECESS_M * UNCONFORMITY_TRACE_DEPTH_FRACTION
+                           * lamina.unconformity)
 
     # --- grain: band-limited anisotropic fBm ------------------------------------
     finest_m = FBM_FINEST_PIXELS * mpp
@@ -1307,10 +1487,11 @@ def build_height_field(spec: GeologyTextureSpec,
     # reason not to be. Coarse band keeps the bedding-parallel fabric; fine band is isotropic
     # stone micro-texture.
     fabric_floor_m = max(finest_m * 2.0, 0.020)
-    grain_coarse = periodic_fbm(rng, resolution, spec.tile_m,
+    grain_rng = substream(spec.seed, "grain")
+    grain_coarse = periodic_fbm(grain_rng, resolution, spec.tile_m,
                                 coarsest_m=coarsest_m, finest_m=fabric_floor_m,
                                 anisotropy=anisotropy, anisotropy_axis="v")
-    grain_fine = periodic_fbm(rng, resolution, spec.tile_m,
+    grain_fine = periodic_fbm(grain_rng, resolution, spec.tile_m,
                               coarsest_m=fabric_floor_m, finest_m=finest_m,
                               beta=2.05, anisotropy=1.0)
     grain_unit = _normalise_to_peak(0.62 * grain_coarse + 0.55 * grain_fine)
@@ -1337,18 +1518,20 @@ def build_height_field(spec: GeologyTextureSpec,
     #  3. VUGS CLUSTER IN POROUS LAMINAE via lamina.porosity, so they appear in bands. The
     #     previous carbonate gate was too weak and too smooth to band them, and the field
     #     spread evenly over every bed -- which is why the tile read as pumice.
+    pit_rng = substream(spec.seed, "vugs")
+    pit_field_rng = substream(spec.seed, "vugs.field")
     pit_cells = max(2, int(round(spec.tile_m / law.GEOLOGY_PIT_WITNESS_M)))
 
     def pit_layer(cells: int, f1: np.ndarray, ids: np.ndarray) -> tuple:
         count = cells * cells + 1
         # Bounded Pareto radii: heavy tail, so a few cells host a large cavity.
-        uniform = rng.random(count)
+        uniform = pit_rng.random(count)
         span = (VUG_RADIUS_MIN ** -VUG_PARETO_ALPHA
                 - VUG_RADIUS_MAX ** -VUG_PARETO_ALPHA)
         radii = np.power(VUG_RADIUS_MIN ** -VUG_PARETO_ALPHA - uniform * span,
                          -1.0 / VUG_PARETO_ALPHA)
         radius = radii[ids]
-        present = (rng.random(count) < 0.62)[ids]
+        present = (pit_rng.random(count) < 0.62)[ids]
         shape = (1.0 - _smooth_step(0.0, 1.0, f1 / np.maximum(radius, 1e-6))) * present
         return shape, radius
 
@@ -1360,8 +1543,10 @@ def build_height_field(spec: GeologyTextureSpec,
     second_cells = max(2, pit_cells - 7)
     while second_cells > 2 and math.gcd(second_cells, pit_cells) != 1:
         second_cells -= 1
-    pit_f1, _pit_f2, pit_id = periodic_worley(rng, resolution, pit_cells, jitter=1.0)
-    pit_f1b, _f2b, pit_idb = periodic_worley(rng, resolution, second_cells, jitter=1.0)
+    pit_f1, _pit_f2, pit_id = periodic_worley(pit_field_rng, resolution, pit_cells,
+                                             jitter=1.0)
+    pit_f1b, _f2b, pit_idb = periodic_worley(pit_field_rng, resolution, second_cells,
+                                            jitter=1.0)
     shape_a, radius_a = pit_layer(pit_cells, pit_f1, pit_id)
     shape_b, radius_b = pit_layer(second_cells, pit_f1b, pit_idb)
 
@@ -1391,14 +1576,17 @@ def build_height_field(spec: GeologyTextureSpec,
     joint_relief = -JOINT_DEPTH_M * joint
 
     # --- bioclasts --------------------------------------------------------------
+    shell_rng = substream(spec.seed, "bioclasts")
+    shell_field_rng = substream(spec.seed, "bioclasts.field")
     shell_cells = max(2, int(round(spec.tile_m / 0.020)))
-    shell_f1, _s2, shell_id = periodic_worley(rng, resolution, shell_cells)
+    shell_f1, _s2, shell_id = periodic_worley(shell_field_rng, resolution, shell_cells)
     # Occupancy is decided per CELL from a hash of its id, so shells are sparse and
     # discrete rather than a thresholded noise field with ragged edges.
-    occupied = (rng.random(shell_cells * shell_cells + 1)[shell_id]
+    occupied = (shell_rng.random(shell_cells * shell_cells + 1)[shell_id]
                 < SHELL_OCCUPANCY)
     # Per-cell size variation, or every fragment is the same disc.
-    shell_radius = (0.16 + 0.30 * rng.random(shell_cells * shell_cells + 1))[shell_id]
+    shell_radius = (0.16 + 0.30
+                    * shell_rng.random(shell_cells * shell_cells + 1))[shell_id]
     lens = (1.0 - _smooth_step(0.0, 1.0, shell_f1 / np.maximum(shell_radius, 1e-6)))
     lens = lens * occupied
     # Shells sit in the carbonate-bearing laminae and are absent from organic clay.
@@ -1409,14 +1597,15 @@ def build_height_field(spec: GeologyTextureSpec,
     # in trains, which is both the real depositional pattern and what stops them reading as
     # sprinkles on a cake.
     shell_band = _normalise_to_peak(
-        periodic_fbm(rng, resolution, spec.tile_m, coarsest_m=spec.tile_m * 0.5,
+        periodic_fbm(shell_field_rng, resolution, spec.tile_m,
+                     coarsest_m=spec.tile_m * 0.5,
                      finest_m=0.05, beta=2.2, anisotropy=6.0,
                      anisotropy_axis="v")) * 0.5 + 0.5
     shell = shell * _smooth_step(0.42, 0.82, shell_band)
     shell_relief = SHELL_RELIEF_M * shell
 
-    height = (recess + parting + spall_relief + gouge_relief + grain + pit_relief
-              + joint_relief + shell_relief)
+    height = (recess + parting + spall_relief + fault_relief + unconformity_relief
+              + grain + pit_relief + joint_relief + shell_relief)
     height = height - float(height.mean())
 
     report = {
@@ -1480,11 +1669,20 @@ def build_height_field(spec: GeologyTextureSpec,
             "joints": round(float(joint_relief.max() - joint_relief.min()), 6),
             "bioclasts": round(float(shell_relief.max() - shell_relief.min()), 6),
             "spallScars": round(float(spall_relief.max() - spall_relief.min()), 6),
-            "truncationGouge": round(float(gouge_relief.max() - gouge_relief.min()), 6),
+            "faultGouge": round(float(fault_relief.max() - fault_relief.min()), 6),
+            "unconformityTrace": round(
+                float(unconformity_relief.max() - unconformity_relief.min()), 6),
         },
         "spallCoverage": round(float((lamina.spall > 0.5).mean()), 5),
         "spallScarCount": SPALL_SCAR_COUNT,
-        "truncationCount": TRUNCATION_COUNT,
+        "unconformityCount": UNCONFORMITY_COUNT,
+        "unconformities": lamina.unconformity_report,
+        "fault": lamina.fault_report,
+        "mechanismSeparation":
+            "FAULT is high-angle and draws a steep line; UNCONFORMITY is low-angle and "
+            "truncates beds obliquely. Four steep near-parallel walls at regular spacing "
+            "against horizontal bedding is a rectangular grid by construction, which is why "
+            "the previous single conflated mechanism read as masonry.",
         "spallGeometry": "angular: top/bottom edges snapped to real parting positions, one lateral edge clipped to an actual joint line, opposite edge parallel",
         "structuralExtent": measure_structural_extent(lamina, joint, spec.tile_m),
         # THE HIERARCHY IS PUBLISHED AS A RANKING so an inversion is visible in the manifest
@@ -1519,7 +1717,9 @@ def build_height_field(spec: GeologyTextureSpec,
                                             ("joints", joint_relief),
                                             ("bioclasts", shell_relief),
                                             ("spallScars", spall_relief),
-                                            ("truncationGouge", gouge_relief))},
+                                            ("faultGouge", fault_relief),
+                                            ("unconformityTrace",
+                                             unconformity_relief))},
             "rankedByRms": [
                 name for name, _v in sorted(
                     (("beddingRecess", float(np.sqrt((recess ** 2).mean()))),
@@ -1529,8 +1729,9 @@ def build_height_field(spec: GeologyTextureSpec,
                      ("joints", float(np.sqrt((joint_relief ** 2).mean()))),
                      ("bioclasts", float(np.sqrt((shell_relief ** 2).mean()))),
                      ("spallScars", float(np.sqrt((spall_relief ** 2).mean()))),
-                     ("truncationGouge",
-                      float(np.sqrt((gouge_relief ** 2).mean())))),
+                     ("faultGouge", float(np.sqrt((fault_relief ** 2).mean()))),
+                     ("unconformityTrace",
+                      float(np.sqrt((unconformity_relief ** 2).mean())))),
                     key=lambda kv: -kv[1])
             ],
             "rankedByPeakToPeak": [
@@ -1970,7 +2171,8 @@ class ChannelSet:
 
 
 def derive_channels(spec: GeologyTextureSpec, height: HeightField,
-                    surface: SurfaceFields, rng: np.random.Generator) -> ChannelSet:
+                    surface: SurfaceFields,
+                    rng: Optional[np.random.Generator] = None) -> ChannelSet:
     """Assemble every channel as a stated function of a measured field.
 
     Section 5: "These fields must be mixed by material semantics, not blind
@@ -2037,9 +2239,12 @@ def derive_channels(spec: GeologyTextureSpec, height: HeightField,
     # shelf rock the only honest metal is authigenic pyrite, which means three conditions
     # must hold at once, and the ORE MASK records them so the gate can measure the claim
     # instead of trusting it.
+    pyrite_rng = substream(spec.seed, "pyrite")
     pyrite_cells = max(2, int(round(spec.tile_m / PYRITE_WAVELENGTH_M)))
-    pyrite_f1, _pf2, pyrite_id = periodic_worley(rng, resolution, pyrite_cells)
-    occupied = rng.random(pyrite_cells * pyrite_cells + 1)[pyrite_id] < PYRITE_OCCUPANCY
+    pyrite_f1, _pf2, pyrite_id = periodic_worley(
+        substream(spec.seed, "pyrite.field"), resolution, pyrite_cells)
+    occupied = (pyrite_rng.random(pyrite_cells * pyrite_cells + 1)[pyrite_id]
+                < PYRITE_OCCUPANCY)
     framboid = (1.0 - _smooth_step(0.10, 0.30, pyrite_f1)) * occupied
     in_reducing_mud = _smooth_step(0.55, 0.95, lamina.organic)
     sheltered = (1.0 - edge_wear) * (0.30 + 0.70 * surface.concave)
@@ -2833,10 +3038,13 @@ def write_family(spec: GeologyTextureSpec, *, output_dir: Optional[str] = None,
     ``AGENTS.md``'s Unity gate allows one owner at a time. The manifest records the
     production path so the owner holding the lock can move it deliberately.
     """
-    rng = np.random.default_rng(spec.seed)
-    height = build_height_field(spec, rng)
+    # NO ROOT STREAM. Every builder derives its own from (seed, purpose), so nothing can
+    # shift anything else by consuming values. The ``rng`` parameters that remain on
+    # build_height_field and derive_channels are accepted and IGNORED, kept only so existing
+    # callers and the self-tests do not break.
+    height = build_height_field(spec)
     surface = measure_surface(height)
-    channels = derive_channels(spec, height, surface, rng)
+    channels = derive_channels(spec, height, surface)
     packed = pack_maps(channels)
     gates = run_acceptance_gates(spec, height, surface, channels, packed)
 

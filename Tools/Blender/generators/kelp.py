@@ -714,8 +714,32 @@ class KelpForm:
         # returns one cord's worth of triangles (~168) and, more importantly, lets each cord
         # carry half again as many blades. Still a bundle; three ascending cords are not a
         # stem. See stipeDensityCeiling in the manifest for what the budget actually allows.
-        self.stipe_count = _qi(3, 3, self.quality)
-        self.blade_count_target = _qi(11, 17, self.quality)
+        #
+        # TWO, not three. ITERATION 18, and it is arithmetic rather than taste. The lead
+        # opened the three-cord sheet, accepted that the conifer read is dead, and rejected
+        # the plant as SEE-THROUGH in every view -- ornamental grass or a hanging fern
+        # basket -- at a 32.1 cm median blade gap against the real 10-20 cm. Cord count and
+        # per-cord density trade directly at a fixed blade budget, and the whole measured
+        # ladder is one relation:
+        #     1 axis    56 blades   10.9 cm
+        #     4 cords   56 blades   41.9 cm
+        #     3 cords   63 blades   32.1 cm
+        # so the SAME ~63 blades over TWO cords is the only move that buys density without
+        # spending triangles. Mature nodes span 0.075..0.86 of a cord, so the gap scales as
+        # (mature_count - 1)^-1 over that span: 17 mature per cord gives 0.785 x 6.7 m / 16
+        # = 32.9 cm, and 28 mature gives 0.785 x 6.7 m / 27 = 19.5 cm. That is the whole
+        # prediction, and it is the lead's 21 cm figure corrected for the fact that the apex
+        # cluster and the scimitar occupy a FIXED span and must not enter the divisor.
+        # Two ascending cords that cross is still not a trunk, so the property the lead
+        # ruled for at iteration 17 survives intact -- but see StipeAxis: two cords cannot
+        # be placed the way three were.
+        self.stipe_count = _qi(2, 2, self.quality)
+        # PER CORD. 18-28 mature nodes; with canopy + scimitar that is 2 x (28+3+1) = 64
+        # blades at quality 1.0 against the three-cord 3 x (17+3+1) = 63, and 2 x (23+3+1)
+        # = 54 at quality 0.5 against the three-cord 3 x (14+3+1) = 54. Byte-for-byte the
+        # same blade budget at every quality point the pipeline is run at, which is what
+        # makes the gap measurement a clean comparison instead of a confounded one.
+        self.blade_count_target = _qi(18, 28, self.quality)
         # APEX CLUSTER, per stipe. Was 9-12 on a single axis; each cord now carries its own.
         self.canopy_blades_target = _qi(2, 3, self.quality)
         self.blade_length = float(rng.uniform(2.30, 3.40))
@@ -726,6 +750,68 @@ class KelpForm:
         # 46-56 blades instead of 23 the total width-sum still rises.
         self.blade_half_width = float(rng.uniform(0.058, 0.098))
         self.blade_half_thickness = float(rng.uniform(0.00064, 0.00098))
+
+        # ---- BUNDLE GEOMETRY, plant scale. Drawn LAST on purpose ----------------
+        # Appending rather than inserting keeps every draw above byte-identical for a
+        # given seed, so the two-cord measurement differs from the three-cord one only by
+        # what actually changed. Inserting these earlier would have reshuffled height,
+        # current, blade length and every holdfast value and made the comparison useless.
+        #
+        # These are PLANT-level because every cord has to agree on them, and StipeAxis is
+        # handed one shared sequential rng -- drawing a "shared" value per cord from it
+        # gives each cord a different one, which is the bug this placement avoids.
+        #
+        # INCLUDED ANGLE between the cords' divergence bearings. NOT 2*pi/count.
+        # PROVEN INSUFFICIENT for two cords, and the proof is geometric rather than
+        # empirical: with an even spread, count=2 puts the bearings exactly ANTIPODAL, and
+        # an antipodal pair CANNOT cross in projection at any swirl. Viewing along y, cord
+        # i projects to x_i = d_i(t) * cos(phi_i + theta_i(t)); with phi_B = phi_A + pi and
+        # counter-swirl theta_B = -theta_A the difference is
+        #     x_A - x_B = (d_A + d_B) * cos(phi_A + theta_A)
+        # which changes sign only where cos() does -- and at that bearing BOTH cords
+        # project onto x = 0 and coincide for their whole length instead of crossing. So in
+        # every non-degenerate view an antipodal pair stays on opposite sides of the axis
+        # forever: two near-parallel spines with a white channel between them, which is
+        # exactly the defect the lead already flagged on ONE view of the three-cord plant
+        # and which would have become the dominant read at two. Swirl cannot fix it; the
+        # PLACEMENT has to change, to a narrow shared arc the swirl budget can close.
+        #
+        # SWIRL IS DRAWN FIRST AND THE INCLUDED ANGLE IS DERIVED FROM IT. The obvious
+        # ordering -- draw the angle, then a closure large enough to shut it, then clamp the
+        # per-cord magnitude to the +-0.62 band -- WAS WRITTEN, RUN, AND MEASURED WRONG on
+        # seed 4021: the clamp bound on BOTH cords, so `cordSwirlRad` came back exactly
+        # [+0.62, -0.62]. An exactly equal-and-opposite pair is the mirror-degenerate case
+        # this file's own comment warns about three lines further down, reached by the clamp
+        # rather than by a draw. A clamp that fires on every cord silently deletes the
+        # asymmetry a range was supposed to provide.
+        #
+        # Inverting the dependency removes the clamp entirely: magnitudes are drawn inside
+        # the band, so they CANNOT leave it, they are independent so they cannot be equal,
+        # and the included angle is then set as a fraction of the closure they actually
+        # achieve. Signs alternate with cord index (see StipeAxis for why a free sign draw
+        # is a coin flip on the whole change at two cords).
+        count = max(1, int(self.stipe_count))
+        self.cord_swirl_rad = [
+            (1.0 if index % 2 == 0 else -1.0) * float(rng.uniform(0.34, 0.62))
+            for index in range(count)]
+        # Closure is the relative rotation between the two EXTREME cords, which for a
+        # counter-rotating pair is the sum of their magnitudes.
+        self.bundle_swirl_closure_rad = (
+            abs(self.cord_swirl_rad[0] - self.cord_swirl_rad[-1]) if count >= 2 else 0.0)
+        # INCLUDED ANGLE between the cords' divergence bearings, as a fraction of the
+        # closure -- so the closure always OVERSHOOTS it and the crossing is arithmetic
+        # rather than probable. separation(t) = included - closure * t**1.20 reaches zero at
+        # t = (included/closure)**(1/1.20), which over this range lands at 0.56-0.85 of cord
+        # height: above the t=0.55 divergence saturation, so the cords are sweeping at
+        # constant plan radius when they pass. That zero IS the crossing -- both cords sit on
+        # one bearing there and differ only by their divergence magnitudes.
+        self.bundle_included_rad = (self.bundle_swirl_closure_rad *
+                                    float(rng.uniform(0.50, 0.82)))
+        # Bearing of the bundle plane, held OFF the current axis. Putting the divergence
+        # bearing along `current` would stack it on the shared downstream canopy lean and
+        # compound two small tilts into one visible lean; across the flow the two effects
+        # spread the plan envelope on separate axes instead.
+        self.bundle_bearing = current_angle + math.pi * 0.5 + float(rng.uniform(-0.5, 0.5))
 
     @property
     def canopy_blades(self) -> int:
@@ -793,14 +879,31 @@ class StipeAxis:
 
     def __init__(self, form, index: int, count: int, rng) -> None:
         self.index = int(index)
-        # Even azimuthal spread with jitter, so the cords do not sit in a tidy rosette but
-        # also cannot all bunch on one side and re-form a single visual trunk.
-        azimuth = 2.0 * math.pi * index / float(max(1, count)) + \
+        # TWO BEARINGS, NOT ONE, and separating them is the load-bearing change of
+        # iteration 18. The old code used a single even-spread azimuth for both the
+        # emergence point and the divergence direction, which for count=2 is antipodal --
+        # and an antipodal pair provably cannot cross in projection (derivation in
+        # KelpForm.bundle_included_rad). So:
+        #
+        #   EMERGENCE bearing stays evenly spread around the whole pad. That is the
+        #   anatomy: several stipes leave a Macrocystis holdfast from different points on
+        #   it, not from one spot.
+        #   DIVERGENCE bearing is a narrow shared BUNDLE arc. The cords therefore lean
+        #   into each other from opposite sides of the pad, which puts a real low crossing
+        #   in as well as the swirl crossing higher up -- cord B travels across the axis at
+        #   about t=0.25, where its divergence overtakes cord A's base offset.
+        emergence = 2.0 * math.pi * index / float(max(1, count)) + \
             float(rng.uniform(-0.42, 0.42))
+        emergence_radial = Vector((math.cos(emergence), math.sin(emergence), 0.0))
+        # Fan the divergence bearings symmetrically about the bundle bearing. With count=1
+        # this collapses to the bundle bearing itself and the plant is a solo stipe again.
+        spread = (0.0 if count < 2 else
+                  form.bundle_included_rad * (index / float(count - 1) - 0.5))
+        azimuth = form.bundle_bearing + spread + float(rng.uniform(-0.10, 0.10))
         self.radial = Vector((math.cos(azimuth), math.sin(azimuth), 0.0))
         # Emergence point on the holdfast boss. Inside the pad radius so every cord still
         # leaves the knuckle that hides the union, per the section 3 weld clause.
-        self.base = self.radial * (form.boss_radius * float(rng.uniform(0.28, 0.60)))
+        self.base = emergence_radial * (form.boss_radius * float(rng.uniform(0.28, 0.60)))
         self.height = form.height * float(rng.uniform(0.76, 1.06))
         # DIVERGENCE is the whole point and it is capped deliberately. Parallel cords are a
         # broom -- the defect rejected at iteration 7 and fixed at the base -- so this must
@@ -815,12 +918,31 @@ class StipeAxis:
         # angle makes them CROSS, which is what the lead asked for and what the reference
         # frames show. It costs nothing in plan radius: the bearing rotates, the distance
         # along it does not change.
-        self.swirl = float(rng.uniform(-0.62, 0.62))
+        #
+        # ITERATION 18: the SIGN is no longer drawn, it alternates with cord index, and the
+        # magnitude comes from the plant-level draw in KelpForm rather than from this cord's
+        # own stream. A free signed draw was fine at three cords (only 1 chance in 4 that all
+        # three co-rotate) but at two cords it co-rotates half the time, and two co-rotating
+        # cords are a RIGID ROTATION of the pair: their relative bearing never changes, so
+        # the separation never passes through zero and nothing crosses. That is the "bundle
+        # of ribbons" broom rejected at iteration 7, reached by a coin flip. Index-signed
+        # counter-rotation makes the crossing structural instead of probable.
+        #
+        # Magnitudes are drawn independently in 0.34-0.62 -- inside the band iteration 17
+        # measured, and NEVER equal, which matters: exactly equal and opposite swirl on a
+        # symmetric pair is the one degenerate case left, because the cords are then mirror
+        # images about the bundle plane and project on top of each other for their whole
+        # length in the view along that plane's normal. Unequal magnitudes, unequal
+        # divergence and unequal heights all break that mirror. See the note in KelpForm on
+        # why a clamp here produced exactly that failure.
+        self.swirl = float(form.cord_swirl_rad[index % len(form.cord_swirl_rad)])
         self.lean = 0.040 + 0.075 * form.current_strength * float(rng.uniform(0.7, 1.3))
         self.wander_phase = float(rng.uniform(0.0, 2.0 * math.pi))
         self.wander_gain = float(rng.uniform(0.7, 1.35))
-        # Thinner cords than a solo stipe: a bundle of four 2 cm cords is the real anatomy,
-        # and four cords at the solo 2.6-4.0 cm base radius would read as four trunks.
+        # Thinner cords than a solo stipe: a bundle of thin cords is the real anatomy, and
+        # cords at the solo 2.6-4.0 cm base radius read as several trunks rather than one
+        # organism. Kept at two cords: the argument is weaker with two than with four, but
+        # the thinning was measured good and a fatter cord buys nothing at this budget.
         self.radius_base = form.stipe_radius_base * float(rng.uniform(0.58, 0.82))
         self.radius_top = form.stipe_radius_top * float(rng.uniform(0.68, 0.94))
         self._form = form
@@ -1942,16 +2064,48 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         "attachmentSpacingMaxM": round(gaps_m_sorted[-1], 4) if gaps_m_sorted else 0.0,
         "attachmentSpacingRealTargetM": "0.10-0.20 (Macrocystis)",
         "stipeDensityCeiling": (
-            "MEASURED TRADEOFF, not a tuning miss. Blade budget, not cord count, sets "
-            "per-cord spacing: 56 blades on ONE axis measured a 10.9 cm median gap (inside "
-            "the real 10-20 cm band); the same 56 across FOUR axes measured 41.9 cm; 63 "
-            "across THREE measures 32.1 cm. Reaching 20 cm on three cords needs ~33 mature "
-            "blades per cord, about 111 total, which is roughly 8800 triangles against a "
-            "6500 LOD0 budget. So a multi-cord kelp CANNOT have real per-cord blade spacing "
-            "at this budget. Three cords is the chosen compromise: it buys the bundle "
-            "silhouette, which no arrangement of laterals on a single axis could produce, "
-            "and pays for it in per-cord density. Raising the budget or accepting sparser "
-            "cords are the only other options and both are the lead's call."),
+            "RESOLVED AT TWO CORDS, iteration 18. Blade budget, not cord count, sets "
+            "per-cord spacing, and the ladder is one relation: 56 blades on ONE axis "
+            "measured a 10.9 cm median gap; the same 56 across FOUR axes measured 41.9 cm; "
+            "63 across THREE measured 24.3-32.1 cm depending on seed; 64 across TWO "
+            "measures 15.1-20.5 cm over six seeds, mean 18.0. Two cords is the first "
+            "multi-cord configuration whose "
+            "per-cord spacing is INSIDE the real Macrocystis 10-20 cm band, and it costs "
+            "nothing: the dropped cord returns ~190 raw triangles and the blade budget is "
+            "unchanged at every quality point. The earlier conclusion that a multi-cord "
+            "kelp cannot have real per-cord spacing at this budget was drawn from three- "
+            "and four-cord measurements and does not survive the two-cord one."),
+        "bladeCountCeiling": (
+            "THE BINDING CONSTRAINT IS NOT THE 6500 LOD0 BUDGET. reduce_to_budget targets "
+            "0.94*6500 = 6110 RAW triangles and its 0.96 ratio margin overshoots to ~5865, "
+            "and the authored mesh arrives at 7146-7254 -- so 17-19 percent of LOD0 is "
+            "already being decimated away, on two cords and on three alike (measured 7218 "
+            "-> 5865 at three cords, 7146 -> 5864 at two). LOD0 therefore lands at ~5865 "
+            "whatever blade count is authored, and extra blades are paid for in per-blade "
+            "resolution through the decimator rather than out of headroom. At 6 "
+            "cross-section vertices and 8-10 rows a blade is already at the density where "
+            "this file's own notes measured corrugation aliasing, so the surplus that would "
+            "buy more blades has to come from somewhere else. The concrete candidate is the "
+            "holdfast: ~910 raw triangles for a partly buried organ, which is the lead's own "
+            "stated second-in-line target after the stipe."),
+        "lodDecimationLottery": (
+            "MEASURED 2026-07-29 AND IT IS NOT A PROPERTY OF THE GRAMMAR. uv_stretch_excessive "
+            "at LOD1/quality 0.5 fires on a SEED-DEPENDENT SUBSET whatever the cord count, and "
+            "the failing seeds MOVE when any grammar parameter changes -- which is the "
+            "signature of a decimation lottery, not of an authoring bug. Controlled, same "
+            "build, seeds 4021-4025 at quality 0.5: THREE cords fails 2 of 5 (4022 at 9.1614, "
+            "4024 on inconsistent_winding from an edge carrying 4 triangles); TWO cords fails "
+            "3 of 5 (4021 at 8.8034, 4024 at 11.2044, 4025 at 43.5997). 4022 fails at three "
+            "cords and PASSES at two; 4021 and 4025 do the opposite. LOD0 is clean on all ten "
+            "runs (max 0.36-0.69 against a 3.3 ceiling), so the defect is created by the LOD1 "
+            "decimation itself: 5392-5530 triangles collapsed to ~1580 is a 0.29 ratio, and "
+            "Blender's COLLAPSE emits 3D triangles so badly shaped that the re-solve in "
+            "_reunwrap cannot parameterise them. Four previous occurrences of this same gate "
+            "were each attributed to the grammar change that happened to be in flight -- the "
+            "0.24 collar width, the sub-1 divergence power, and now the cord count -- and at "
+            "least three of those attributions cannot all be right. Do NOT re-tune the "
+            "grammar against this gate; that is the same-failure escalation AGENTS.md "
+            "forbids. The route owner is the decimation ratio at LOD1."),
         "apexTop15PctBlades": sum(1 for a in attachments if a["heightT"] >= 0.85),
         "apicalScimitar": ("one terminal blade continuing the stipe axis; rises along the "
                            "apex tangent, tapers to a point, exempt from the lift clamp"),
@@ -3218,9 +3372,14 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
     # and they are also what every blade attachment interpolates against.
     # PER CORD, not per plant. Four cords at the solo 20x8 resolution would cost +960
     # triangles against ~700 of headroom, so each cord is 13-16 rings on a hexagonal
-    # section: ~168 triangles against the solo ~320, four for 672. A 2 cm cord in a bundle
-    # of four does not need an octagon, and rows still carry its lean and its blade
-    # attachments -- 16 rings over 8 m is a ring every 0.53 m.
+    # section: ~192 triangles against the solo ~320. A 2 cm cord in a bundle does not need
+    # an octagon, and rows still carry its lean and its blade attachments -- 16 rings over
+    # 8 m is a ring every 0.53 m.
+    # At TWO cords the resolution is NOT restored to the solo 20x8. Dropping the third cord
+    # returns ~192 triangles and that headroom is spent on the extra blade the redistribution
+    # asks for plus budget margin, not on giving the two survivors rounder sections: a cord
+    # is a 2 cm tube seen against 8 m of blade mass, and the lead's standing ruling is that
+    # every stipe triangle past the minimum is misallocated.
     stipe_rows = _qi(13, 16, quality)
     stipe_segments = _qi(6, 6, quality)
     axis_rng = _rng(form.seed, STREAM_STIPE)
@@ -3270,6 +3429,51 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
                                          if r.get("apicalScimitar"))
     blade_stats["stipeDivergenceM"] = [round(a.divergence * a.height, 3)
                                        for a in stipe_axes]
+    # BUNDLE CROSSING, MEASURED rather than asserted. Iteration 18 replaced an antipodal
+    # cord placement whose failure to cross is provable on paper; the counter-claim that the
+    # replacement DOES cross has to be a number, so it is sampled off the real centrelines
+    # instead of re-deriving the analytic separation. `crossings` counts sign changes of the
+    # signed plan offset along the bundle-normal axis, i.e. how many times one cord passes
+    # the other in the view that can see it; `minPlanDistanceM` and the height it occurs at
+    # say how tight the braid is. A crossing count of 0 means the change did not land, and
+    # the number is here so that failure cannot be reported as success.
+    if len(stipe_axes) >= 2:
+        normal = Vector((-math.sin(form.bundle_bearing),
+                         math.cos(form.bundle_bearing), 0.0))
+        samples = [i / 48.0 for i in range(49)]
+        pairs = []
+        for a_index in range(len(stipe_axes)):
+            for b_index in range(a_index + 1, len(stipe_axes)):
+                axis_a, axis_b = stipe_axes[a_index], stipe_axes[b_index]
+                signed = []
+                distances = []
+                for t in samples:
+                    point_a, point_b = axis_a.point(t), axis_b.point(t)
+                    delta = point_b - point_a
+                    signed.append(delta.x * normal.x + delta.y * normal.y)
+                    distances.append(math.hypot(delta.x, delta.y))
+                crossings = sum(1 for i in range(len(signed) - 1)
+                                if signed[i] * signed[i + 1] < 0.0)
+                closest = min(range(len(distances)), key=lambda i: distances[i])
+                pairs.append({
+                    "cords": [a_index, b_index],
+                    "crossings": crossings,
+                    "minPlanDistanceM": round(distances[closest], 4),
+                    "minPlanDistanceAtHeightT": round(samples[closest], 3),
+                    "maxPlanDistanceM": round(max(distances), 4),
+                })
+        blade_stats["bundleGeometry"] = {
+            "includedAngleRad": round(form.bundle_included_rad, 4),
+            "swirlClosureRad": round(form.bundle_swirl_closure_rad, 4),
+            "cordSwirlRad": [round(a.swirl, 4) for a in stipe_axes],
+            "pairs": pairs,
+            "note": ("cords are placed on a NARROW shared bundle arc with index-signed "
+                     "counter-swirl, NOT on an even 2*pi/count spread. An even spread puts "
+                     "two cords antipodal, and an antipodal pair cannot cross in projection "
+                     "at any swirl -- x_A - x_B = (d_A + d_B) * cos(bearing), which only "
+                     "changes sign where both cords project onto the same line. Emergence "
+                     "points stay evenly spread around the holdfast pad."),
+        }
     # Tube parts (boss, haptera, stipe) contribute THREE islands: the tube opened along
     # its lengthwise seam plus two caps cut free along their boundary rings. A blade
     # contributes ONE: cut_caps is off there, because a 1 mm-thick sheet's cap island can

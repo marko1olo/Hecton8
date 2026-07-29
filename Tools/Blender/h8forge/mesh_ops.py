@@ -27,6 +27,7 @@ import bpy
 from mathutils import Vector
 
 from . import law
+from . import validate
 from .blackbox import BlackBox
 
 
@@ -606,6 +607,7 @@ def reduce_to_budget(
     target = max(4, int(budget * max(0.1, min(1.0, headroom))))
     start = triangle_count(obj.data)
 
+    passes = 0
     for _attempt in range(8):
         current = triangle_count(obj.data)
         if current <= target:
@@ -616,14 +618,49 @@ def reduce_to_budget(
         modifier.use_collapse_triangulate = True
         _make_sole_active(obj)
         bpy.ops.object.modifier_apply(modifier=modifier.name)
+        passes += 1
+
+    # THE SECOND COLLAPSE SITE, PROBED BUT DELIBERATELY NOT REPAIRED HERE.
+    #
+    # This function runs the same Decimate/COLLAPSE as `build_lod_chain` and therefore
+    # emits the same 3D slivers, which are the cause of `uv_stretch_excessive` (see
+    # `heal_collapse_slivers`). It is not healed here because this is the LOD0 path for
+    # five generator families and the blast radius of editing an authored LOD0 silhouette
+    # cannot be judged without a measured run per family -- rock and the hand tool carry
+    # authored split normals through an FBX round-trip gate that has already rejected two
+    # different post-decimation edits.
+    #
+    # So the honest move is a CENSUS, which changes nothing and makes the site visible:
+    # `kelp` happens to heal its LOD0 by hand afterwards and measures clean, and the
+    # other four generators do not heal at all. Without this number that asymmetry is
+    # invisible, and a future LOD0 breach would look like a new defect rather than the
+    # known one at a known site. Repairing here needs per-family proof first.
+    slivers = 0
+    worst_aspect = 0.0
+    if passes:
+        bm = bmesh_from_object(obj)
+        try:
+            slivers, worst_aspect, _ngons = _sliver_census(bm, sliver_aspect_max())
+        finally:
+            bm.free()
 
     final = triangle_count(obj.data)
     if blackbox is not None:
+        notes = []
+        if final > budget:
+            notes.append("still over budget {f}>{b} from {s}".format(
+                f=final, b=budget, s=start))
+        if slivers:
+            notes.append(
+                "{n} collapse slivers above aspect {a:g} (worst {w}); NOT repaired at "
+                "this site -- see heal_collapse_slivers. Any later "
+                "uv_stretch_excessive on LOD{i} starts here".format(
+                    n=slivers, a=sliver_aspect_max(), w=_fmt_metric(worst_aspect),
+                    i=lod_index))
         blackbox.record(
             "reduce_to_budget", family=family.value, triangle_count=final,
             vertex_count=len(obj.data.vertices),
-            warning="" if final <= budget else
-            "still over budget {f}>{b} from {s}".format(f=final, b=budget, s=start),
+            warning="; ".join(notes),
             failure_code="" if final <= budget else "BUDGET_UNREACHABLE",
         )
     return final
@@ -832,7 +869,258 @@ def _weld_coincident(obj: bpy.types.Object, distance: float = 1e-6) -> dict:
     }
 
 
-def uv_stretch_stats(obj: bpy.types.Object) -> dict:
+# ---------------------------------------------------------------------------
+# Post-decimation sliver repair  --  the owner of uv_stretch_excessive at LOD1+
+# ---------------------------------------------------------------------------
+
+# Aspect ceiling for a triangle Decimate/COLLAPSE is allowed to leave behind, written
+# as ``longest_edge ** 2 / (2 * area)``: the ratio of the longest edge to the altitude
+# dropped onto it. Dimensionless, so one number covers a 0.2 m hand tool and a 6.7 m
+# kelp without a per-family scale constant.
+#
+# ``law.py`` is the correct long-term home and the value there wins as soon as it
+# exists -- the same deferral ``validate.packed_vcol_attribute_name`` uses for the
+# packed vertex-colour attribute name.
+#
+# 30.0 is not a guess. It is the value ``kelp._heal_degenerate`` converged on by
+# measurement: at 60 a 53.3 sliver was missed outright, and at 42 the pass converged
+# leaving a 41.8 sliver alive that still mapped to 4.03 UV aspect distortion against a
+# 3.3 ceiling. A collapse pass converges just under whatever threshold it is given, so
+# the threshold has to sit BELOW the aspect that produces a gate breach, not at it.
+_SLIVER_ASPECT_MAX_FALLBACK = 30.0
+
+
+def sliver_aspect_max() -> float:
+    """Dimensionless ``longest_edge^2 / 2A`` ceiling for a post-collapse triangle."""
+    return float(getattr(law, "DECIMATION_SLIVER_ASPECT_MAX",
+                         _SLIVER_ASPECT_MAX_FALLBACK))
+
+
+def _face_aspect(face: bmesh.types.BMFace) -> float:
+    """``longest_edge^2 / 2A``, or ``inf`` for a face with no usable area."""
+    area = face.calc_area()
+    if area <= law.DEGENERATE_TRIANGLE_AREA_EPS:
+        return float("inf")
+    longest = max(edge.calc_length() for edge in face.edges)
+    return (longest * longest) / (2.0 * area)
+
+
+def _sliver_census(bm: bmesh.types.BMesh, aspect_max: float) -> tuple:
+    """(count above ``aspect_max``, worst aspect, non-triangular faces skipped)."""
+    count = 0
+    worst = 0.0
+    ngons = 0
+    for face in bm.faces:
+        if len(face.verts) != 3:
+            # Recorded rather than silently included: the gate judges loop triangles,
+            # so a quad's own aspect is not the number that fails, and triangulating
+            # here would rewrite geometry the decimator never touched.
+            ngons += 1
+            continue
+        aspect = _face_aspect(face)
+        if aspect > worst:
+            worst = aspect
+        if aspect > aspect_max:
+            count += 1
+    return count, worst, ngons
+
+
+def heal_collapse_slivers(
+    obj: bpy.types.Object,
+    *,
+    aspect_max: Optional[float] = None,
+    passes: int = 8,
+    blackbox: Optional[BlackBox] = None,
+    stage: str = "heal_collapse_slivers",
+) -> dict:
+    """Remove the 3D slivers Decimate/COLLAPSE emits, BEFORE any UV solve sees them.
+
+    WHY THIS IS THE OWNER OF ``uv_stretch_excessive`` AND THE GROWTH GRAMMAR IS NOT.
+    ``validate.uv_aspect_distortion`` builds the Jacobian of the UV -> 3D map by
+    dividing 3D position differences by the SIGNED UV AREA (``validate.py:351``,
+    ``:359-360``), then returns ``sigma_max / sigma_min - 1`` of that Jacobian
+    (``validate.py:371``). The 3D area never appears in the denominator. So the metric
+    blows up in exactly one geometric situation: the 3D triangle has collapsed towards
+    a LINE, the Jacobian drops to rank one, ``sigma_min`` goes to zero, and the ratio
+    diverges *for any parameterisation whatsoever*. It is not a statement about the
+    UVs at all.
+
+    That is why re-solving cannot fix it and why re-tuning the grammar cannot either.
+    ``kelp._unwrap_and_pack`` solves with ``ANGLE_BASED`` (ABF++), an ANGLE-preserving
+    solver, and the gate measures ANGLE anisotropy -- a conformal map of a well-shaped
+    triangle tends to ``sigma_max/sigma_min = 1``, i.e. distortion 0. A conformal
+    solver physically cannot manufacture 43.6 out of a healthy triangle. Where ABF++
+    does have an unavoidable singularity it trades AREA, not angle. So a large value
+    here is a DEGENERATE-TRIANGLE ARTEFACT, never genuine texture stretch, and the
+    opposite fix -- relaxing ``law.UV_STRETCH_*`` -- would hide real stretch instead.
+
+    AND NO OTHER GATE CAN SEE IT. ``validate`` judges 3D degeneracy by AREA
+    (``GATE_DEGENERATE_TRIANGLE``, ``validate.py:1076-1083``, against
+    ``law.DEGENERATE_TRIANGLE_AREA_EPS`` = 1e-7). A collapse sliver is LONG: 9.7 cm by
+    1.8 mm measures 8.7e-5 m2, roughly a thousand times above that epsilon, and it
+    also clears ``law.UV_STRETCH_OUTLIER_MIN_AREA_RATIO``'s sliver floor because the
+    floor is relative to the mean triangle area and a decimated level has a large mean.
+    An area threshold therefore cannot catch it in either place. The repair has to be
+    ASPECT-based, which is what this function is.
+
+    WHAT IT DOES NOT DO, each for a measured reason recorded in this file:
+      * no ``remove_doubles`` -- ``_split_uv_seams`` has just duplicated coincident
+        vertices along every seam and material border on purpose, and welding here
+        would undo the boundary constraints the decimation was shaped by;
+      * no ``dissolve_degenerate`` -- its ``dist`` is a LENGTH in metres, so a single
+        default would be a scale-dependent magic number across five families of very
+        different physical size, and it can merge genuinely separate vertices. The
+        law-sourced zero-area face sweep below is scale-free and is the real backstop;
+      * no ``recalc_face_normals`` -- measured in ``_weld_coincident``: recalculating
+        after decimation put face normals out of agreement with the authored
+        weighted/split basis and the FBX round trip started failing on rock with
+        "corner normals changed by 0.001859". Collapsing and deleting do not change
+        the winding of the faces that survive, so the recalc is not needed;
+      * no plain aggressive collapse -- measured to fold the surface into non-manifold
+        joins (three faces on one edge) that ``recalc_face_normals`` cannot orient,
+        surfacing as ``inconsistent_winding``. Every collapse here is gated by the
+        edge-collapse LINK CONDITION, which is precisely the test for "this collapse
+        does not create a non-manifold join";
+      * no dissolve of the middle vertex -- measured to produce n-gons whose
+        re-triangulation created fresh slivers (worst triangle went to 116).
+
+    It can only ever REMOVE triangles, so it cannot threaten a LOD budget; it makes
+    the seam-drop rebuild in :func:`build_lod_chain` less likely, not more.
+
+    Returns the census on both sides plus every refusal, and records a
+    ``LOD_SLIVER_UNHEALED`` failure code when the census does not clear. A stage that
+    can quietly fail to repair must say so: that is the whole reason this reports
+    ``slivers_remaining`` instead of just ``edges_collapsed``.
+    """
+    limit = sliver_aspect_max() if aspect_max is None else float(aspect_max)
+    bm = bmesh_from_object(obj)
+    faces_before = len(bm.faces)
+    found, worst_before, ngons = _sliver_census(bm, limit)
+
+    collapsed = 0
+    skipped_link = 0
+    skipped_nonmanifold = 0
+    skipped_contended = 0
+    passes_used = 0
+
+    if found:
+        for _pass in range(max(1, int(passes))):
+            candidates = []
+            for face in bm.faces:
+                if len(face.verts) != 3:
+                    continue
+                area = face.calc_area()
+                if area <= law.DEGENERATE_TRIANGLE_AREA_EPS:
+                    # Nothing to collapse towards; the zero-area sweep deletes it.
+                    continue
+                longest = max(edge.calc_length() for edge in face.edges)
+                if (longest * longest) / (2.0 * area) > limit:
+                    candidates.append(min(face.edges,
+                                          key=lambda e: e.calc_length()))
+            if not candidates:
+                break
+            passes_used += 1
+
+            claimed = set()
+            chosen = []
+            for edge in candidates:
+                # Boundary edges COUNT. _split_uv_seams turns every seam and material
+                # border into a boundary before decimating, so a decimated level is
+                # covered in them, and a sliver sitting on one is exactly the case that
+                # survived every earlier repair attempt. The link condition still
+                # applies there, with one opposite vertex instead of two.
+                if len(edge.link_faces) not in (1, 2):
+                    skipped_nonmanifold += 1
+                    continue
+                u, v = edge.verts
+                ring_u = set(e.other_vert(u).index for e in u.link_edges)
+                ring_v = set(e.other_vert(v).index for e in v.link_edges)
+                opposite = set()
+                for face in edge.link_faces:
+                    for vertex in face.verts:
+                        if vertex is not u and vertex is not v:
+                            opposite.add(vertex.index)
+                if (ring_u & ring_v) != opposite:
+                    skipped_link += 1
+                    continue
+                # Independent set as well: two individually legal collapses in one
+                # neighbourhood can still interact.
+                ring = {u.index, v.index} | ring_u | ring_v
+                if ring & claimed:
+                    skipped_contended += 1
+                    continue
+                claimed |= ring
+                chosen.append(edge)
+            if not chosen:
+                break
+            # uvs=True interpolates the parameterisation across the collapse instead of
+            # discarding it, which is what a level with reunwrap=None ships.
+            bmesh.ops.collapse(bm, edges=chosen, uvs=True)
+            collapsed += len(chosen)
+            bm.verts.index_update()
+            bm.edges.index_update()
+            bm.faces.index_update()
+
+    dead = [f for f in bm.faces
+            if f.calc_area() <= law.DEGENERATE_TRIANGLE_AREA_EPS]
+    if dead:
+        bmesh.ops.delete(bm, geom=dead, context="FACES")
+    loose = [v for v in bm.verts if not v.link_faces]
+    if loose:
+        bmesh.ops.delete(bm, geom=loose, context="VERTS")
+
+    remaining, worst_after, _ngons_after = _sliver_census(bm, limit)
+    faces_after = len(bm.faces)
+    bmesh_to_object(bm, obj)
+
+    stats = {
+        "aspectMax": limit,
+        "facesBefore": faces_before,
+        "facesAfter": faces_after,
+        "sliversFound": found,
+        "sliversRemaining": remaining,
+        "worstAspectBefore": worst_before,
+        "worstAspectAfter": worst_after,
+        "edgesCollapsed": collapsed,
+        "passesUsed": passes_used,
+        "skippedLinkCondition": skipped_link,
+        "skippedNonManifold": skipped_nonmanifold,
+        "skippedContended": skipped_contended,
+        "zeroAreaFacesDeleted": len(dead),
+        "looseVertsDeleted": len(loose),
+        "ngonFacesSkipped": ngons,
+    }
+    if blackbox is not None:
+        blackbox.record(
+            stage,
+            vertex_count=len(obj.data.vertices),
+            triangle_count=triangle_count(obj.data),
+            warning=(
+                "slivers {f}->{r} at aspect>{l:g}; worst {wb}->{wa}; collapsed {c} "
+                "edges in {p} passes; refused {lk} link-condition / {nm} non-manifold "
+                "/ {ct} contended; deleted {z} zero-area faces, {lv} loose verts; "
+                "{ng} non-triangular faces not measured".format(
+                    f=found, r=remaining, l=limit,
+                    wb=_fmt_metric(worst_before), wa=_fmt_metric(worst_after),
+                    c=collapsed, p=passes_used, lk=skipped_link,
+                    nm=skipped_nonmanifold, ct=skipped_contended,
+                    z=len(dead), lv=len(loose), ng=ngons)
+                if (found or ngons) else ""),
+            # The repair cannot hide behind a clean-looking level. A residual sliver is
+            # the cause of the uv_stretch_excessive the validator will report later, so
+            # the black box names it HERE, at the stage that owns it, rather than
+            # leaving the gate to report a symptom with no attribution.
+            failure_code="LOD_SLIVER_UNHEALED" if remaining else "",
+        )
+    return stats
+
+
+def _fmt_metric(value: float) -> str:
+    """Format a distortion/aspect number that may legitimately be ``inf``."""
+    return "{0:.4g}".format(value)
+
+
+def uv_stretch_stats(obj: bpy.types.Object, *, surface_class=None) -> dict:
     """Area-weighted UV aspect-distortion summary for one object.
 
     Exists so a caller can prove whether a decimation pass wrecked the parameterisation
@@ -840,15 +1128,68 @@ def uv_stretch_stats(obj: bpy.types.Object) -> dict:
     p95 = 0.98 and its LOD1 worst triangle reached 7610 -- Decimate/COLLAPSE has no UV term
     in its collapse cost and there is no flag to add one, so UV quality after decimation is
     not something to assume.
+
+    THE ``worst``/``p95``/``mean`` FAMILY IS BLIND TO THE FAILURE THAT ACTUALLY FIRES,
+    and that blindness is why four LOD1 investigations mis-attributed
+    ``uv_stretch_excessive`` to whatever grammar change was in flight. Those numbers are
+    the ratio of two EDGE scalings and the loop below SKIPS any triangle with
+    ``world <= 1e-12``; the gate instead measures ``sigma_max/sigma_min`` of the whole
+    parameterisation and diverges on precisely the triangles this metric either skips or
+    scores near zero. Measured disagreement: this function reported worst 0.561 on a
+    level whose worst gate triangle was 181.46 against a 3.3 ceiling. A probe that
+    cannot fire on the defect it is watching for is the same class of bug as a parameter
+    accepted and ignored.
+
+    So the gate's OWN formula is reported alongside, by calling
+    ``validate.uv_aspect_distortion`` rather than restating it -- one copy of the
+    formula, no drift. ``gate_worst_significant`` mirrors the sub-test that actually
+    fails: ``validate._gate_uv`` judges its outlier ceiling only on triangles at or
+    above ``law.UV_STRETCH_OUTLIER_MIN_AREA_RATIO`` of the mean triangle area, so that
+    is the number to compare against ``gate_ceiling``. ``validate`` remains the
+    authority; this is a probe, not a second gate.
+
+    ``surface_class`` is optional only so existing callers keep working. Without it
+    ``gate_ceiling`` is ``None`` and ``gate_breaches`` cannot be counted.
     """
+    empty = {
+        "worst": 0.0, "p95": 0.0, "mean": 0.0, "triangles": 0,
+        "gate_worst": 0.0, "gate_worst_significant": 0.0,
+        "gate_breaches": 0, "gate_ceiling": None,
+        "gate_measured": 0, "mean_area_m2": 0.0, "sliver_floor_m2": 0.0,
+    }
     mesh = obj.data
     layer = mesh.uv_layers.active
     if layer is None or not mesh.polygons:
-        return {"worst": 0.0, "p95": 0.0, "mean": 0.0, "triangles": 0}
+        return dict(empty)
+
+    ceiling = None
+    if surface_class is not None:
+        # hero=False: LOD1+ are the distant levels, which is how the generators call
+        # validate. law.uv_stretch_limit_for floors an organic/geologic class at its own
+        # wider limit rather than at UV_STRETCH_MAX_DISTANT, so this matches the gate.
+        ceiling = (law.uv_stretch_limit_for(surface_class, hero=False) *
+                   law.UV_STRETCH_OUTLIER_MULTIPLIER)
 
     mesh.calc_loop_triangles()
+
+    # Flat buffers for validate.uv_aspect_distortion. Built with foreach_get rather
+    # than validate.extract_mesh_data because that also runs calc_tangents, and this
+    # is a measurement pass that must not add or drop a custom-data layer.
+    vertex_count = len(mesh.vertices)
+    loop_count = len(mesh.loops)
+    tri_count = len(mesh.loop_triangles)
+    positions = [0.0] * (vertex_count * 3)
+    mesh.vertices.foreach_get("co", positions)
+    uv_flat = [0.0] * (loop_count * 2)
+    layer.data.foreach_get("uv", uv_flat)
+    tri_vertices = [0] * (tri_count * 3)
+    mesh.loop_triangles.foreach_get("vertices", tri_vertices)
+    tri_loops = [0] * (tri_count * 3)
+    mesh.loop_triangles.foreach_get("loops", tri_loops)
+
     samples = []
-    for tri in mesh.loop_triangles:
+    gate_samples = []
+    for index, tri in enumerate(mesh.loop_triangles):
         p = [mesh.vertices[v].co for v in tri.vertices]
         uv = [layer.data[loop].uv for loop in tri.loops]
         e1 = p[1] - p[0]
@@ -857,6 +1198,15 @@ def uv_stretch_stats(obj: bpy.types.Object) -> dict:
         du2 = uv[2] - uv[0]
         world = e1.cross(e2).length * 0.5
         uv_area = abs(du1.x * du2.y - du2.x * du1.y) * 0.5
+        # BEFORE the skip below, deliberately: the triangles that skip are the ones the
+        # gate fails on, so measuring the gate's metric after the skip would rebuild the
+        # exact blind spot this block exists to close. The UV-area floor mirrors
+        # validate._gate_uv, which routes those to GATE_ZERO_AREA_UV_TRIANGLE instead.
+        if uv_area * 2.0 > law.DEGENERATE_UV_AREA_EPS:
+            gate_samples.append((
+                validate.uv_aspect_distortion(positions, uv_flat, tri_vertices,
+                                              tri_loops, index),
+                world))
         if world <= 1e-12 or uv_area <= 1e-14:
             continue
         # Ratio of the two edge scalings; a uniform map gives ~0.
@@ -865,8 +1215,23 @@ def uv_stretch_stats(obj: bpy.types.Object) -> dict:
         lo, hi = (s1, s2) if s1 <= s2 else (s2, s1)
         samples.append((hi / max(1e-9, lo) - 1.0, world))
 
+    gate = dict(empty)
+    if gate_samples:
+        gate_total = sum(area for _d, area in gate_samples)
+        gate_mean_area = gate_total / len(gate_samples)
+        floor_area = gate_mean_area * law.UV_STRETCH_OUTLIER_MIN_AREA_RATIO
+        significant = [d for d, area in gate_samples if area >= floor_area]
+        gate["gate_worst"] = max(d for d, _a in gate_samples)
+        gate["gate_worst_significant"] = max(significant) if significant else 0.0
+        gate["gate_measured"] = len(gate_samples)
+        gate["mean_area_m2"] = gate_mean_area
+        gate["sliver_floor_m2"] = floor_area
+        gate["gate_ceiling"] = ceiling
+        if ceiling is not None:
+            gate["gate_breaches"] = sum(1 for d in significant if d > ceiling)
+
     if not samples:
-        return {"worst": 0.0, "p95": 0.0, "mean": 0.0, "triangles": 0}
+        return gate
     samples.sort(key=lambda item: item[0])
     total = sum(area for _d, area in samples)
     cumulative = 0.0
@@ -876,12 +1241,13 @@ def uv_stretch_stats(obj: bpy.types.Object) -> dict:
         if cumulative >= total * 0.95:
             p95 = distortion
             break
-    return {
+    gate.update({
         "worst": samples[-1][0],
         "p95": p95,
         "mean": sum(d * a for d, a in samples) / max(1e-9, total),
         "triangles": len(samples),
-    }
+    })
+    return gate
 
 
 def build_lod_chain(
@@ -966,6 +1332,7 @@ def build_lod_chain(
         target = max(4, min(target, budget))
 
         ratio_used = 1.0
+        decimation_passes = 0
         for _attempt in range(6):
             current = triangle_count(clone.data)
             if current <= target:
@@ -978,6 +1345,7 @@ def build_lod_chain(
             _make_sole_active(clone)
             bpy.ops.object.modifier_apply(modifier=modifier.name)
             ratio_used *= ratio
+            decimation_passes += 1
 
         # Put the shell back together. The seam split above did its job during the
         # decimation and is pure damage afterwards - see _weld_coincident for the
@@ -1001,6 +1369,21 @@ def build_lod_chain(
                                 be=weld_stats["boundaryEdges"],
                                 nm=weld_stats["nonManifoldEdges"]))
 
+        # HEAL THE SLIVERS THE COLLAPSE JUST MADE, before anything measures or
+        # re-solves UVs over them. This is the route owner for `uv_stretch_excessive`
+        # at LOD1+ -- see heal_collapse_slivers for why the metric that fails is a
+        # statement about 3D shape and not about the parameterisation, and therefore
+        # why neither a re-solve nor a grammar change can reach it.
+        #
+        # Gated on decimation_passes so a level the decimator never touched ships
+        # exactly the geometry it was cloned from. LOD0 is the authored silhouette and
+        # this function is not entitled to edit a level that was not collapsed.
+        sliver_stats = None
+        if decimation_passes:
+            sliver_stats = heal_collapse_slivers(
+                clone, blackbox=blackbox,
+                stage="lod{i}_heal_slivers".format(i=index))
+
         final_tris = triangle_count(clone.data)
 
         # Decimation has no UV term in its collapse cost, so the parameterisation can be
@@ -1009,17 +1392,40 @@ def build_lod_chain(
         # settings -- unwrap parameters are family knowledge and do not belong here.
         # Without it the LOD ships whatever the collapse left behind.
         if reunwrap is not None:
-            before = uv_stretch_stats(clone)
+            surface_class = law.FAMILY_SURFACE_CLASS.get(family)
+            before = uv_stretch_stats(clone, surface_class=surface_class)
             reunwrap(clone, index)
-            after = uv_stretch_stats(clone)
+            after = uv_stretch_stats(clone, surface_class=surface_class)
             if blackbox is not None:
                 blackbox.record(
                     "lod{i}_reunwrap".format(i=index),
                     vertex_count=len(clone.data.vertices),
                     triangle_count=triangle_count(clone.data),
-                    warning="uv worst {b:.2f}->{a:.2f} p95 {bp:.3f}->{ap:.3f}".format(
-                        b=before["worst"], a=after["worst"],
-                        bp=before["p95"], ap=after["p95"]),
+                    # THE GATE'S OWN NUMBER, not just the edge-scaling summary. The
+                    # `worst`/`p95` pair is blind to the failure that actually fires --
+                    # measured 0.561 here against a gate reading 181.46 on the same
+                    # mesh -- so recording only those is what let four LOD1 breaches be
+                    # attributed to the grammar. `gate_worst_significant` is the
+                    # quantity validate._gate_uv compares to its outlier ceiling.
+                    warning="uv worst {b:.2f}->{a:.2f} p95 {bp:.3f}->{ap:.3f}; "
+                            "gate worst {gb}->{ga} significant {sb}->{sa} "
+                            "ceiling {c} breaches {n}".format(
+                                b=before["worst"], a=after["worst"],
+                                bp=before["p95"], ap=after["p95"],
+                                gb=_fmt_metric(before["gate_worst"]),
+                                ga=_fmt_metric(after["gate_worst"]),
+                                sb=_fmt_metric(before["gate_worst_significant"]),
+                                sa=_fmt_metric(after["gate_worst_significant"]),
+                                c=("n/a" if after["gate_ceiling"] is None
+                                   else "{0:.3f}".format(after["gate_ceiling"])),
+                                n=after["gate_breaches"]),
+                    # Loud, at the stage that owns it. If the re-solve hands back a
+                    # level whose worst significant triangle still breaches the ceiling,
+                    # the validator WILL fail uv_stretch_excessive on it later, and the
+                    # black box should already name the cause rather than leave the gate
+                    # reporting a symptom with no attribution.
+                    failure_code=("LOD_UV_STRETCH_UNRESOLVED"
+                                  if after["gate_breaches"] else ""),
                 )
             final_tris = triangle_count(clone.data)
 
@@ -1036,6 +1442,7 @@ def build_lod_chain(
             clone.data.name = clone.name
             source.users_collection[0].objects.link(clone)
             seams_dropped = True
+            rebuild_passes = 0
             for _attempt in range(8):
                 current = triangle_count(clone.data)
                 if current <= target:
@@ -1046,6 +1453,7 @@ def build_lod_chain(
                 modifier.use_collapse_triangulate = True
                 _make_sole_active(clone)
                 bpy.ops.object.modifier_apply(modifier=modifier.name)
+                rebuild_passes += 1
 
             # REDO BOTH POST-DECIMATION STEPS ON THE REBUILT MESH. This branch throws the
             # first clone away and decimates a fresh copy of LOD0, so everything that ran
@@ -1076,19 +1484,40 @@ def build_lod_chain(
                                     d=weld_stats["duplicateFacesRemoved"],
                                     be=weld_stats["boundaryEdges"],
                                     nm=weld_stats["nonManifoldEdges"]))
+            # AND THE SLIVER HEAL, for the same reason the reweld and the reunwrap are
+            # here: this branch ships a mesh the discarded clone's records do not
+            # describe. A rebuilt level is decimated exactly as hard as the first
+            # attempt was, so it carries exactly the same collapse slivers.
+            if rebuild_passes:
+                sliver_stats = heal_collapse_slivers(
+                    clone, blackbox=blackbox,
+                    stage="lod{i}_heal_slivers_after_seam_drop".format(i=index))
             if reunwrap is not None:
-                before = uv_stretch_stats(clone)
+                surface_class = law.FAMILY_SURFACE_CLASS.get(family)
+                before = uv_stretch_stats(clone, surface_class=surface_class)
                 reunwrap(clone, index)
-                after = uv_stretch_stats(clone)
+                after = uv_stretch_stats(clone, surface_class=surface_class)
                 if blackbox is not None:
                     blackbox.record(
                         "lod{i}_reunwrap_after_seam_drop".format(i=index),
                         vertex_count=len(clone.data.vertices),
                         triangle_count=triangle_count(clone.data),
-                        warning="uv worst {b:.2f}->{a:.2f} p95 {bp:.3f}->{ap:.3f} "
+                        warning="uv worst {b:.2f}->{a:.2f} p95 {bp:.3f}->{ap:.3f}; "
+                                "gate worst {gb}->{ga} significant {sb}->{sa} "
+                                "ceiling {c} breaches {n} "
                                 "(rebuilt without seam splits)".format(
                                     b=before["worst"], a=after["worst"],
-                                    bp=before["p95"], ap=after["p95"]))
+                                    bp=before["p95"], ap=after["p95"],
+                                    gb=_fmt_metric(before["gate_worst"]),
+                                    ga=_fmt_metric(after["gate_worst"]),
+                                    sb=_fmt_metric(before["gate_worst_significant"]),
+                                    sa=_fmt_metric(after["gate_worst_significant"]),
+                                    c=("n/a" if after["gate_ceiling"] is None
+                                       else "{0:.3f}".format(after["gate_ceiling"])),
+                                    n=after["gate_breaches"]),
+                        failure_code=("LOD_UV_STRETCH_UNRESOLVED"
+                                      if after["gate_breaches"] else ""),
+                    )
             final_tris = triangle_count(clone.data)
 
         out.append(LodLevel(index, clone, final_tris, budget, ratio_used))
@@ -1098,6 +1527,20 @@ def build_lod_chain(
             problems.append(
                 "UV seams NOT preserved at this level: the {n} split seams imposed a "
                 "triangle floor above the {b} budget".format(n=seams_split, b=budget))
+        # The sliver census belongs on the level record too, not only on its own stage.
+        # A reader who opens the ring at `lod1` because the validator failed must see
+        # the decimation's own verdict without knowing to look one stage earlier.
+        if sliver_stats is not None and sliver_stats["sliversRemaining"]:
+            problems.append(
+                "{r} of {f} collapse slivers UNHEALED at aspect>{a:g} (worst {w}); "
+                "{lk} collapses refused by the link condition. This is the cause of a "
+                "uv_stretch_excessive on this level -- do not attribute it to the "
+                "generator grammar".format(
+                    r=sliver_stats["sliversRemaining"],
+                    f=sliver_stats["sliversFound"],
+                    a=sliver_stats["aspectMax"],
+                    w=_fmt_metric(sliver_stats["worstAspectAfter"]),
+                    lk=sliver_stats["skippedLinkCondition"]))
         if final_tris > budget:
             problems.append("over budget {t}>{b}".format(t=final_tris, b=budget))
         if final_tris > previous_tris:

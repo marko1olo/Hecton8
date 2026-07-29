@@ -952,6 +952,14 @@ namespace Hecton8.Gameplay
         private static readonly int _PlayerSwimVatSpeedId = Shader.PropertyToID("_HectonSwimVatSpeedScalar");
         private static readonly int _PlayerKinematicRollId = Shader.PropertyToID("_H8PlayerKinematicRoll");
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // One-shot latch for the dead-publisher advisory in ApplyPendingStateCorrections. That method runs on
+        // the IPostFixedTickable fixed-step cadence, so after the first fire the advisory must cost one static
+        // bool read and nothing else. Reset per play session by ResetStateCorrectionLaneDiagnostics so the
+        // warning still appears on the second play when Enter Play Mode without domain reload is enabled.
+        private static bool s_stateCorrectionLaneDeadWarned;
+#endif
+
         [SerializeField] private LayerMask handProbeLayerMask = HectonLayerMasks.StrictInteractionLayerMask;
         [SerializeField, Min(0.0f)] private float dragCoefficient = DragCoefficientBase;
         [SerializeField, Min(0.0f)] private float waterDensity = ReferenceWaterDensity;
@@ -3951,8 +3959,57 @@ namespace Hecton8.Gameplay
             _stateWriteReady = false;
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStateCorrectionLaneDiagnostics()
+        {
+            s_stateCorrectionLaneDeadWarned = false;
+        }
+#endif
+
         private void ApplyPendingStateCorrections()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Announced unconditionally on the first PostFixedTick rather than on "the drain came back empty",
+            // because an empty drain is indistinguishable from a quiet frame. The claim below is static
+            // reachability, not an observation of this run, so it must not wait for a runtime symptom.
+            // The message is built from adjacent string literals, which Roslyn folds into one literal at compile
+            // time, so nothing here concatenates or allocates at runtime. Unity's own logging still allocates
+            // internally on the single first fire; steady state is one static bool read and a branch not taken.
+            if (!s_stateCorrectionLaneDeadWarned)
+            {
+                s_stateCorrectionLaneDeadWarned = true;
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[PlayerKinematicsRuntime] DEAD PUBLISHER, LIVE DESTRUCTIVE DRAIN: ApplyPendingStateCorrections " +
+                    "drains SignalBus<StateCorrectionSignal> on every PostFixedTick (fixed-step cadence), but that " +
+                    "lane has no reachable publisher, so the drain is always empty. The only push into the lane is " +
+                    "CoreDeterminismSignals.TryPublish(in StateCorrectionSignal) (Core/Signals/CoreDeterminismSignals" +
+                    ".cs:100), whose only caller is PhysicsDeterminismSignals.TryPublish(in StateCorrectionSignal) " +
+                    "(Physics/PhysicsDeterminismSignals.cs:126), and PhysicsDeterminismSignals has zero invoking " +
+                    "callers anywhere in the scripts tree - its only textual reference outside itself is an edit " +
+                    "test that reads the file as a string (Tests/Editor/KelpShaderScalability1427EditTests.cs:4622). " +
+                    "MISSING PLAYER-VISIBLE BEHAVIOUR: authoritative reconciliation of the player never happens. A " +
+                    "correction would resolve position, velocity and rotation (ResolveCorrectionPosition/Velocity/" +
+                    "Rotation, this file :4393/:4416/:4427) and stage them with SyncStateFlagCorrection, which " +
+                    "CommitStateWrite applies the same tick through _motor.MovePosition / SetLinearVelocity and " +
+                    "optionally MoveRotation (this file :3948-3956). With no publisher the player capsule is never " +
+                    "snapped or rewound to an authoritative pose: a client that has drifted or desynced stays " +
+                    "drifted, and the hash-mismatch desync report at :4031 never fires from this path. FIX " +
+                    "CONSTRAINT - the read is destructive and its cursor is SHARED, not per-reader: SignalBus<T>" +
+                    ".TryConsumeFrame (Core/Signals/SignalBusRuntime.cs:806) advances one static _legacyReadCursor " +
+                    "per closed generic type (:414), reset each frame by FlushPostSimulation (:901). Adding a " +
+                    "publisher plus a second TryConsumeFrame reader would therefore PARTITION each frame's " +
+                    "corrections between the readers by dispatcher order instead of delivering them to both. This " +
+                    "drain also discards corrections addressed to other sources - the SourceId mismatch continues " +
+                    "at :4018-4019 after the shared cursor has already advanced past the entry - so with more than " +
+                    "one PlayerKinematicsRuntime instance the first to tick eats the others' corrections. And " +
+                    "StateCorrectionDrainLimit is 8 while the lane is configured for 16 (Core/Signals/GlobalSignals" +
+                    ".State.cs:124), so a full frame would leave 8 corrections unread before the flush clears them. " +
+                    "Any fix must either keep exactly one draining owner that fans out, or move readers to the " +
+                    "non-destructive GetFrameSnapshot (Core/Signals/SignalBusRuntime.cs:773) and filter per instance.",
+                    this);
+            }
+#endif
             for (int i = 0; i < StateCorrectionDrainLimit; i++)
             {
                 if (!CoreDeterminismSignals.TryDequeueStateCorrection(out StateCorrectionSignal correction))

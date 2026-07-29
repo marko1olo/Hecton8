@@ -29,6 +29,9 @@ using Hecton8.Quest;
 using Hecton8.UI;
 using Hecton8.World;
 using Unity.Collections;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -700,6 +703,7 @@ namespace Hecton8.SaveSystem
                 DisposeEditorNativeBuffersForLifecycle();
             }
         }
+#endif
 
         private static void DisposeEditorNativeBuffersForLifecycle()
         {
@@ -3545,6 +3549,43 @@ namespace Hecton8.SaveSystem
                 TestHook_PublishSaveStatus_SimulateException?.Invoke();
 #endif
 
+                // RETIRED LANE, republished deliberately - do not delete without the lane owner.
+                //
+                // SaveLifecycleSignal is the retired predecessor of SaveStatusSignal, and the packet
+                // below is a bit-identical duplicate of the status packet pushed above. Both payloads are
+                // [StructLayout(LayoutKind.Explicit, Size = 32)] with the same field at every offset -
+                // SlotHash@0, OperationId@4, Progress01@8, Frame@12, State@16, Flags@17, then pure
+                // padding - and the same FailureFlag/SaveOperationFlag/LoadOperationFlag constants
+                // (GlobalSignalPayloads.UiSaveWorld.cs:172 vs HectonSignalLaneContract.cs:299). Every
+                // field here is assigned from the same locals as the status packet, and Frame is copied
+                // out of status.Frame rather than re-read, so the two cannot disagree even by a frame.
+                //
+                // It has no canonical lane ID. HectonSignalLaneContract.cs:458-461 assigns 74/75/76/77 to
+                // SaveCompletedSignal/SaveMetadataReadySignal/SaveRequestSignal/SaveStatusSignal; the
+                // alphabetical slot this type would occupy is absent, and the contract file never names
+                // it. Its only registration is the legacy block at GlobalSignals.RuntimeLifecycle.cs:83.
+                //
+                // Nothing in this tree consumes it. Its sole read API,
+                // GlobalSignals.TryDequeueSaveLifecycle (GlobalSignals.LegacyFacade.cs:1159), is
+                // [Obsolete(..., true)], i.e. a hard compile error at any call site, as is the matching
+                // Publish overload (GlobalSignals.LegacyFacade.cs:726); both have zero callers. No file
+                // outside this one and the plumbing even names the type, so nothing else can construct or
+                // read one. The SignalBusRuntime references are generic type dispatch, not consumption:
+                // pause-flush policy (:1705), guard-name resolution (:3257), sanitizer (:4229). By
+                // contrast the live twin also feeds SaveEvents.PublishCurrentStatus above, which backs
+                // the SaveEvents.TryGetCurrentStatus reader (SaveEvents.cs:418/436).
+                //
+                // To remove it, all of this would have to be true: the lane owner accepts dropping a
+                // published lane, and no out-of-tree consumer reads it - ModEventProjectionBridge.cs does
+                // not project any save lane, so a modding-bridge consumer would have to live outside this
+                // tree and cannot be ruled out from here. The retirement would then have to drop this
+                // block and its twin, the legacy registration (RuntimeLifecycle.cs:83), the
+                // ValidateSignalSize<SaveLifecycleSignal>(32) assertion (RuntimeLifecycle.cs:188), the
+                // facade pair, the three SignalBusRuntime dispatch arms, and the payload struct - and
+                // regenerate H8Hashes.cs (:2151-2152) rather than hand-editing it. Note that
+                // SaveLifecycleSignalCapacity (GlobalSignals.State.cs:114) must survive that removal: it
+                // still sizes the live SaveCompletedSignal, SaveStatusSignal, and SaveMetadataReadySignal
+                // lanes (RuntimeLifecycle.cs:753/759/761) despite its name.
                 SaveLifecycleSignal lifecycle = new SaveLifecycleSignal
                 {
                     SlotHash = slotHash,
@@ -3592,6 +3633,19 @@ namespace Hecton8.SaveSystem
                 SaveEvents.PublishCurrentStatus(in status);
                 TryPushSignalTrackedBestEffort(in status);
 
+                // RETIRED LANE, republished deliberately - do not delete without the lane owner. This is
+                // the second of the two SaveLifecycleSignal push sites and behaves identically to the one
+                // in the PublishSaveStatus(byte slotIndex, ...) overload above: SaveLifecycleSignal is the
+                // retired predecessor of SaveStatusSignal, the packet below duplicates the status packet
+                // pushed above bit for bit from the same locals (identical 32-byte explicit layouts,
+                // GlobalSignalPayloads.UiSaveWorld.cs:172 vs HectonSignalLaneContract.cs:299, with Frame
+                // copied out of status.Frame), it holds no canonical lane ID in
+                // HectonSignalLaneContract.cs:458-461, it is registered only in the legacy block at
+                // GlobalSignals.RuntimeLifecycle.cs:83, and no consumer exists in this tree because its
+                // only reader, GlobalSignals.TryDequeueSaveLifecycle (GlobalSignals.LegacyFacade.cs:1159),
+                // is [Obsolete(..., true)] with zero callers. The full evidence and the conditions that
+                // would have to hold before this lane may be retired are recorded at that first site;
+                // retire both together or not at all.
                 SaveLifecycleSignal lifecycle = new SaveLifecycleSignal
                 {
                     SlotHash = slotHash,
@@ -6981,6 +7035,21 @@ namespace Hecton8.SaveSystem
                     : (repairedPrimaryArtifacts ? " and self-repaired primary artifacts." : (appliedSafeAupSnap ? " and snapped player to safe terrain." : "."));
                 ReportLoadPipelineStage(LoadingPipelineStage.Completed, 1f);
                 LogInfo($"[SaveManager] Loaded '{slotName}' from {sourceLabel} in {totalTimer.ElapsedMilliseconds}ms{loadCompletionSuffix}");
+                // Load duration belongs in the async-persistence black box for the same reason save
+                // duration does: the LogInfo above is editor-only text and the completion lane below is
+                // not read anywhere, so without this the ring holds no successful-load timing at all.
+                // AsyncPersistenceLoadOperationFlag keeps the entry separable from a save entry in
+                // Dump_SAVE_MANAGER_ASYNC_PERSISTENCE.bin, matching the load-tagged census/hydration
+                // writers. Sizes are 0 because no payload byte count is in scope here, which is also
+                // what the SaveCompletedSignal below reports.
+                RecordAsyncPersistenceTelemetry(
+                    operationId,
+                    slotName,
+                    totalTimer.ElapsedMilliseconds,
+                    0L,
+                    0,
+                    0,
+                    AsyncPersistenceLoadOperationFlag);
                 PublishSaveCompletedForSlotName(slotIndex, slotName, new PublishSaveCompletedArgs(operationId: operationId, durationMs: totalTimer.ElapsedMilliseconds, compressedSizeBytes: 0L, succeeded: true));
                 PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Completed, 1f, LoadStatusFlags);
                 RaiseLoadCompletedWithBackpressureRecovery(SaveEvents.ComputeSlotHash(slotName));

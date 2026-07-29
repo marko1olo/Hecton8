@@ -297,6 +297,22 @@ namespace Hecton8.Editor
             GameObject current = FindInLoadedScenesIncludingInactive(parts[0]);
             if (current == null)
             {
+                // Creating the root is correct HERE and not everywhere: this function is named for
+                // owning it, it positions the result at :72, and it matches
+                // WorldRuntimeBootstrapAuthoring.EnsureWorldRouteSkeleton:1230-1232. A tool that merely
+                // CONSUMES a root must refuse instead - see the refusal in
+                // FabricationBootstrapAuthoring.CreateOrUpdateSceneFabricator.
+                //
+                // But say it out loud. Fabricating a world root used to be silent, and in a binary scene
+                // a silently fabricated root is invisible until something else refuses to merge two of
+                // them (H8_WorldRootGraveyardRepair:171-179). Reaching this line now means the search
+                // above - every loaded scene, any depth, inactive included - found nothing, so the
+                // expected scene is almost certainly not open.
+                Debug.LogWarning(
+                    "[ResourceWorldBootstrap] No '" + parts[0] + "' exists in any loaded scene at any " +
+                    "depth, active or inactive, so one is being CREATED in the active scene. If the " +
+                    "authored world scene was meant to be open, close without saving and re-run with " +
+                    "it open - this run is about to build a fresh world root beside nothing.");
                 current = new GameObject(parts[0]);
             }
 

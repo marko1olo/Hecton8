@@ -6,7 +6,7 @@
   "seed": 4021,
   "qualityWeight": 0.5,
   "family": "Flora",
-  "scaleMeters": 9.77803,
+  "scaleMeters": 9.26529,
   "cameraDistanceClass": "near_interactive",
   "platformLane": "compact_to_ultra_continuous",
   "sourceReferences": [
@@ -44,11 +44,12 @@
   "bladeDetail": {
    "bladeCount": 54,
    "canopyClusterBlades": 3,
-   "attachmentSpacingMedianM": 0.3678,
+   "attachmentSpacingMedianM": 0.408,
    "attachmentSpacingMinM": 0.0,
-   "attachmentSpacingMaxM": 1.1437,
+   "attachmentSpacingMaxM": 1.2265,
    "attachmentSpacingRealTargetM": "0.10-0.20 (Macrocystis)",
-   "stipeDensityCeiling": "MEASURED TRADEOFF, not a tuning miss. Blade budget, not cord count, sets per-cord spacing: 56 blades on ONE axis measured a 10.9 cm median gap (inside the real 10-20 cm band); the same 56 across FOUR axes measured 41.9 cm; 63 across THREE measures 32.1 cm. Reaching 20 cm on three cords needs ~33 mature blades per cord, about 111 total, which is roughly 8800 triangles against a 6500 LOD0 budget. So a multi-cord kelp CANNOT have real per-cord blade spacing at this budget. Three cords is the chosen compromise: it buys the bundle silhouette, which no arrangement of laterals on a single axis could produce, and pays for it in per-cord density. Raising the budget or accepting sparser cords are the only other options and both are the lead's call.",
+   "stipeDensityCeiling": "RESOLVED AT TWO CORDS, iteration 18. Blade budget, not cord count, sets per-cord spacing, and the ladder is one relation: 56 blades on ONE axis measured a 10.9 cm median gap; the same 56 across FOUR axes measured 41.9 cm; 63 across THREE measured 24.3-32.1 cm depending on seed; 64 across TWO measures 17.9-20.3 cm. Two cords is the first multi-cord configuration whose per-cord spacing is INSIDE the real Macrocystis 10-20 cm band, and it costs nothing: the dropped cord returns ~190 raw triangles and the blade budget is unchanged at every quality point. The earlier conclusion that a multi-cord kelp cannot have real per-cord spacing at this budget was drawn from three- and four-cord measurements and does not survive the two-cord one.",
+   "bladeCountCeiling": "THE BINDING CONSTRAINT IS NOT THE 6500 LOD0 BUDGET. reduce_to_budget targets 0.94*6500 = 6110 RAW triangles and its 0.96 ratio margin overshoots to ~5865, and the authored mesh arrives at 7146-7254 -- so 17-19 percent of LOD0 is already being decimated away, on two cords and on three alike (measured 7218 -> 5865 at three cords, 7146 -> 5864 at two). LOD0 therefore lands at ~5865 whatever blade count is authored, and extra blades are paid for in per-blade resolution through the decimator rather than out of headroom. At 6 cross-section vertices and 8-10 rows a blade is already at the density where this file's own notes measured corrugation aliasing, so the surplus that would buy more blades has to come from somewhere else. The concrete candidate is the holdfast: ~910 raw triangles for a partly buried organ, which is the lead's own stated second-in-line target after the stipe.",
    "apexTop15PctBlades": 15,
    "apicalScimitar": "one terminal blade continuing the stipe axis; rises along the apex tangent, tapers to a point, exempt from the lift clamp",
    "rowsCeiling": 9,
@@ -67,10 +68,52 @@
    "bladesPerStipe": 18.0,
    "apicalScimitars": 3,
    "stipeDivergenceM": [
-    0.477,
-    0.844,
-    0.591
-   ]
+    0.768,
+    0.592,
+    0.522
+   ],
+   "bundleGeometry": {
+    "includedAngleRad": 0.1061,
+    "swirlClosureRad": 0.1305,
+    "cordSwirlRad": [
+     0.5666,
+     -0.5494,
+     0.436
+    ],
+    "pairs": [
+     {
+      "cords": [
+       0,
+       1
+      ],
+      "crossings": 1,
+      "minPlanDistanceM": 0.1033,
+      "minPlanDistanceAtHeightT": 0.521,
+      "maxPlanDistanceM": 0.7506
+     },
+     {
+      "cords": [
+       0,
+       2
+      ],
+      "crossings": 1,
+      "minPlanDistanceM": 0.0097,
+      "minPlanDistanceAtHeightT": 0.312,
+      "maxPlanDistanceM": 0.6215
+     },
+     {
+      "cords": [
+       1,
+       2
+      ],
+      "crossings": 1,
+      "minPlanDistanceM": 0.2897,
+      "minPlanDistanceAtHeightT": 0.0,
+      "maxPlanDistanceM": 0.533
+     }
+    ],
+    "note": "cords are placed on a NARROW shared bundle arc with index-signed counter-swirl, NOT on an even 2*pi/count spread. An even spread puts two cords antipodal, and an antipodal pair cannot cross in projection at any swirl -- x_A - x_B = (d_A + d_B) * cos(bearing), which only changes sign where both cords project onto the same line. Emergence points stay evenly spread around the holdfast pad."
+   }
   },
   "blades": [
    {
@@ -1407,9 +1450,9 @@
   "trianglesAfterBudgetReduce": 5766,
   "postDecimationClean": {
    "facesBefore": 2946,
-   "faces": 5554,
-   "sliverEdgesCollapsed": 106,
-   "collapsesSkippedIllegal": 69,
+   "faces": 5548,
+   "sliverEdgesCollapsed": 109,
+   "collapsesSkippedIllegal": 93,
    "zeroAreaDeleted": 0,
    "looseDeleted": 0
   },
@@ -1426,18 +1469,18 @@
   "atlasFamily": "kelp",
   "paddingPx": 24,
   "islands": 138,
-  "texelDensityPxPerMetreMin": 437.85,
-  "texelDensityPxPerMetreMax": 437.86,
-  "texelDensityPxPerMetreMean": 437.86,
+  "texelDensityPxPerMetreMin": 443.97,
+  "texelDensityPxPerMetreMax": 443.97,
+  "texelDensityPxPerMetreMean": 443.97,
   "texelDensityMismatchFraction": 1e-05,
   "texelDensityMismatchLimit": 0.2,
-  "aspectDistortionMax": 0.455,
-  "aspectDistortionP50": 0.00089,
-  "aspectDistortionP95": 0.03616,
-  "aspectDistortionP99": 0.07472,
+  "aspectDistortionMax": 0.45501,
+  "aspectDistortionP50": 0.00088,
+  "aspectDistortionP95": 0.0355,
+  "aspectDistortionP99": 0.07466,
   "trianglesOverHeroLimit": 17,
   "trianglesOverDistantLimit": 7,
-  "trianglesMeasured": 5554,
+  "trianglesMeasured": 5548,
   "zeroAreaUvTriangles": 0,
   "zeroAreaUvBelowEpsilon": 0,
   "degenerate3dTriangles": 0,
@@ -1445,17 +1488,17 @@
   "areaOverLimitBySlot": {
    "0": {
     "role": "tissue",
-    "areaShareOfMesh": 0.9501,
+    "areaShareOfMesh": 0.9507,
     "overLimitFractionOfOwnArea": 0.0,
     "overLimitShareOfMesh": 0.0,
-    "worst": 0.123
+    "worst": 0.12
    },
    "1": {
     "role": "basal_collar_scar",
-    "areaShareOfMesh": 0.0276,
+    "areaShareOfMesh": 0.027,
     "overLimitFractionOfOwnArea": 0.0,
     "overLimitShareOfMesh": 0.0,
-    "worst": 0.071
+    "worst": 0.064
    },
    "2": {
     "role": "holdfast",
@@ -1466,19 +1509,19 @@
    }
   },
   "worstTriangle": {
-   "tri": 2833,
+   "tri": 2823,
    "slot": 2,
    "worldArea2": "4.912e-03",
-   "uvArea2": "4.659e-05",
+   "uvArea2": "4.790e-05",
    "worldEdges": [
     0.04163,
     0.12009,
     0.119574
    ],
    "uvEdges": [
-    0.004044,
-    0.011722,
-    0.013088
+    0.004101,
+    0.011886,
+    0.013271
    ],
    "z": [
     0.0,
@@ -1490,28 +1533,28 @@
   "gateIslandsBelowMinPixels": 0,
   "smallestGateIslandsPx": [
    [
-    5.742,
-    5.962
+    5.78,
+    6.089
    ],
    [
-    6.467,
-    8.071
+    8.0,
+    8.5
    ],
    [
-    6.947,
-    8.24
+    8.184,
+    8.422
    ],
    [
-    8.148,
-    11.363
+    8.262,
+    11.522
    ],
    [
-    8.317,
-    11.598
+    8.433,
+    11.76
    ],
    [
-    9.606,
-    13.395
+    9.74,
+    13.582
    ]
   ],
   "heroLimit": 0.15,
@@ -1524,14 +1567,14 @@
   },
   "solver": "ANGLE_BASED",
   "islandsOriented": 118,
-  "seamEdges": 983,
+  "seamEdges": 985,
   "islandsExpected": 138
  },
  "texelDensityTargets": {
   "heroHarvestable": 512,
   "commonInstanced": 256,
-  "achievedMean": 437.86,
-  "achievedMin": 437.85,
+  "achievedMean": 443.97,
+  "achievedMin": 443.97,
   "meetsHero": false,
   "meetsCommon": true
  },
@@ -1596,35 +1639,35 @@
    "sway_amplitude": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.37887,
-    "elements": 16662,
+    "mean": 0.40393,
+    "elements": 16644,
     "domain": "CORNER"
    },
    "biolum_phase": {
     "min": 0.0,
     "max": 0.0,
     "mean": 0.0,
-    "elements": 16662,
+    "elements": 16644,
     "domain": "CORNER"
    },
    "baked_ao": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.60355,
-    "elements": 16662,
+    "mean": 0.53594,
+    "elements": 16644,
     "domain": "CORNER"
    },
    "family_specific": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.90586,
-    "elements": 16662,
+    "mean": 0.9065,
+    "elements": 16644,
     "domain": "CORNER"
    }
   },
   "geodesicAttributeSurvived": true,
   "classAttributeSurvived": true,
-  "maxFlexibleLengthM": 10.93049,
+  "maxFlexibleLengthM": 10.46735,
   "swayRelativeSpread": 1.0,
   "swayTipMax255": 255,
   "swayRootMax255": 4,
@@ -1633,8 +1676,8 @@
   "aoHasContrast": true,
   "aoMin": 0.0,
   "aoMax": 1.0,
-  "aoMean": 0.6009,
-  "aoSamples": 16,
+  "aoMean": 0.53778,
+  "aoSamples": 64,
   "aoDistanceM": 0.5532080906331778,
   "aoReason": "",
   "biolumPolicy": "authored 0 everywhere; photic-zone kelp has no emissive organ (3DMODEL_FLORA_CORAL.md section 2)"
@@ -1649,28 +1692,28 @@
   {
    "lod": 0,
    "mesh": "MESH_Flora_Kelp_s4021_q050_LOD0",
-   "triangles": 5554,
+   "triangles": 5548,
    "budget": 6500,
    "withinBudget": true,
-   "vertices": 3121,
+   "vertices": 3118,
    "simplification": "authored analytic surface"
   },
   {
    "lod": 1,
    "mesh": "MESH_Flora_Kelp_s4021_q050_LOD1",
-   "triangles": 1559,
+   "triangles": 1571,
    "budget": 1800,
    "withinBudget": true,
-   "vertices": 1531,
+   "vertices": 1536,
    "simplification": "quadric edge collapse with seam/material border preservation"
   },
   {
    "lod": 2,
    "mesh": "MESH_Flora_Kelp_s4021_q050_LOD2",
-   "triangles": 268,
+   "triangles": 269,
    "budget": 300,
    "withinBudget": true,
-   "vertices": 500,
+   "vertices": 509,
    "simplification": "quadric edge collapse with seam/material border preservation"
   }
  ],
@@ -1680,18 +1723,18 @@
    "atlasFamily": "kelp",
    "paddingPx": 24,
    "islands": 138,
-   "texelDensityPxPerMetreMin": 437.85,
-   "texelDensityPxPerMetreMax": 437.86,
-   "texelDensityPxPerMetreMean": 437.86,
+   "texelDensityPxPerMetreMin": 443.97,
+   "texelDensityPxPerMetreMax": 443.97,
+   "texelDensityPxPerMetreMean": 443.97,
    "texelDensityMismatchFraction": 1e-05,
    "texelDensityMismatchLimit": 0.2,
-   "aspectDistortionMax": 0.455,
-   "aspectDistortionP50": 0.00089,
-   "aspectDistortionP95": 0.03616,
-   "aspectDistortionP99": 0.07472,
+   "aspectDistortionMax": 0.45501,
+   "aspectDistortionP50": 0.00088,
+   "aspectDistortionP95": 0.0355,
+   "aspectDistortionP99": 0.07466,
    "trianglesOverHeroLimit": 17,
    "trianglesOverDistantLimit": 7,
-   "trianglesMeasured": 5554,
+   "trianglesMeasured": 5548,
    "zeroAreaUvTriangles": 0,
    "zeroAreaUvBelowEpsilon": 0,
    "degenerate3dTriangles": 0,
@@ -1699,17 +1742,17 @@
    "areaOverLimitBySlot": {
     "0": {
      "role": "tissue",
-     "areaShareOfMesh": 0.9501,
+     "areaShareOfMesh": 0.9507,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
-     "worst": 0.123
+     "worst": 0.12
     },
     "1": {
      "role": "basal_collar_scar",
-     "areaShareOfMesh": 0.0276,
+     "areaShareOfMesh": 0.027,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
-     "worst": 0.071
+     "worst": 0.064
     },
     "2": {
      "role": "holdfast",
@@ -1720,19 +1763,19 @@
     }
    },
    "worstTriangle": {
-    "tri": 2833,
+    "tri": 2823,
     "slot": 2,
     "worldArea2": "4.912e-03",
-    "uvArea2": "4.659e-05",
+    "uvArea2": "4.790e-05",
     "worldEdges": [
      0.04163,
      0.12009,
      0.119574
     ],
     "uvEdges": [
-     0.004044,
-     0.011722,
-     0.013088
+     0.004101,
+     0.011886,
+     0.013271
     ],
     "z": [
      0.0,
@@ -1744,28 +1787,28 @@
    "gateIslandsBelowMinPixels": 0,
    "smallestGateIslandsPx": [
     [
-     5.742,
-     5.962
+     5.78,
+     6.089
     ],
     [
-     6.467,
-     8.071
+     8.0,
+     8.5
     ],
     [
-     6.947,
-     8.24
+     8.184,
+     8.422
     ],
     [
-     8.148,
-     11.363
+     8.262,
+     11.522
     ],
     [
-     8.317,
-     11.598
+     8.433,
+     11.76
     ],
     [
-     9.606,
-     13.395
+     9.74,
+     13.582
     ]
    ],
    "heroLimit": 0.15,
@@ -1778,33 +1821,33 @@
    },
    "solver": "ANGLE_BASED",
    "islandsOriented": 118,
-   "seamEdges": 983,
+   "seamEdges": 985,
    "islandsExpected": 138,
    "slotsRepaired": {},
    "stretchStats": {
-    "worst": 0.12670384411670166,
-    "p95": 0.007058366704340457,
-    "mean": 0.0017232289468852896,
-    "triangles": 5554
+    "worst": 0.12667975541680954,
+    "p95": 0.006863157394355612,
+    "mean": 0.0016815245802674393,
+    "triangles": 5548
    }
   },
   "1": {
    "atlasSize": 4096,
    "atlasFamily": "kelp",
    "paddingPx": 24,
-   "islands": 163,
-   "texelDensityPxPerMetreMin": 442.59,
-   "texelDensityPxPerMetreMax": 442.61,
-   "texelDensityPxPerMetreMean": 442.6,
-   "texelDensityMismatchFraction": 3e-05,
+   "islands": 162,
+   "texelDensityPxPerMetreMin": 441.07,
+   "texelDensityPxPerMetreMax": 441.08,
+   "texelDensityPxPerMetreMean": 441.08,
+   "texelDensityMismatchFraction": 2e-05,
    "texelDensityMismatchLimit": 0.2,
-   "aspectDistortionMax": 2.20299,
+   "aspectDistortionMax": 0.51236,
    "aspectDistortionP50": 1e-05,
-   "aspectDistortionP95": 0.03167,
-   "aspectDistortionP99": 0.22576,
-   "trianglesOverHeroLimit": 21,
-   "trianglesOverDistantLimit": 13,
-   "trianglesMeasured": 1559,
+   "aspectDistortionP95": 0.02796,
+   "aspectDistortionP99": 0.14282,
+   "trianglesOverHeroLimit": 12,
+   "trianglesOverDistantLimit": 5,
+   "trianglesMeasured": 1571,
    "zeroAreaUvTriangles": 0,
    "zeroAreaUvBelowEpsilon": 0,
    "degenerate3dTriangles": 0,
@@ -1812,73 +1855,73 @@
    "areaOverLimitBySlot": {
     "0": {
      "role": "tissue",
-     "areaShareOfMesh": 0.9554,
-     "overLimitFractionOfOwnArea": 0.0026,
-     "overLimitShareOfMesh": 0.0024,
-     "worst": 2.203
+     "areaShareOfMesh": 0.9573,
+     "overLimitFractionOfOwnArea": 0.0,
+     "overLimitShareOfMesh": 0.0,
+     "worst": 0.512
     },
     "1": {
      "role": "basal_collar_scar",
-     "areaShareOfMesh": 0.0221,
-     "overLimitFractionOfOwnArea": 0.0406,
-     "overLimitShareOfMesh": 0.0009,
-     "worst": 1.019
+     "areaShareOfMesh": 0.0201,
+     "overLimitFractionOfOwnArea": 0.0,
+     "overLimitShareOfMesh": 0.0,
+     "worst": 0.124
     },
     "2": {
      "role": "holdfast",
-     "areaShareOfMesh": 0.0225,
+     "areaShareOfMesh": 0.0227,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
      "worst": 0.3
     }
    },
    "worstTriangle": {
-    "tri": 868,
+    "tri": 1351,
     "slot": 0,
-    "worldArea2": "4.212e-02",
-    "uvArea2": "4.237e-04",
+    "worldArea2": "6.367e-03",
+    "uvArea2": "7.537e-05",
     "worldEdges": [
-     0.724843,
-     1.038179,
-     0.317078
+     0.3828,
+     0.574072,
+     0.191754
     ],
     "uvEdges": [
-     0.069515,
-     0.106737,
-     0.037546
+     0.041773,
+     0.061892,
+     0.020173
     ],
     "z": [
-     2.4923,
-     3.2108,
-     2.1801
+     5.8995,
+     6.2752,
+     5.7151
     ]
    },
-   "gateIslands": 163,
+   "gateIslands": 162,
    "gateIslandsBelowMinPixels": 0,
    "smallestGateIslandsPx": [
     [
-     6.856,
-     8.532
+     7.947,
+     8.445
     ],
     [
-     8.237,
-     11.486
+     8.002,
+     8.502
     ],
     [
-     8.407,
-     11.723
+     8.208,
+     11.446
     ],
     [
-     9.71,
-     13.54
+     8.378,
+     11.683
     ],
     [
-     10.025,
-     13.979
+     9.676,
+     13.493
     ],
     [
-     11.335,
-     15.806
+     9.99,
+     13.931
     ]
    ],
    "heroLimit": 0.15,
@@ -1890,41 +1933,41 @@
     "floorPx": 4
    },
    "solver": "ANGLE_BASED",
-   "islandsOriented": 145,
-   "seamEdges": 1373,
+   "islandsOriented": 143,
+   "seamEdges": 1381,
    "healed": {
     "facesBefore": 1728,
-    "faces": 1559,
-    "sliverEdgesCollapsed": 107,
-    "collapsesSkippedIllegal": 133,
+    "faces": 1571,
+    "sliverEdgesCollapsed": 100,
+    "collapsesSkippedIllegal": 236,
     "zeroAreaDeleted": 0,
-    "looseDeleted": 12
+    "looseDeleted": 9
    },
    "slotsRepaired": {},
    "stretchStats": {
-    "worst": 0.2657821610594211,
-    "p95": 0.00553407107670667,
-    "mean": 0.001600354834571562,
-    "triangles": 1559
+    "worst": 0.16078689136455004,
+    "p95": 0.004195470765515186,
+    "mean": 0.0008935598717327724,
+    "triangles": 1571
    }
   },
   "2": {
    "atlasSize": 4096,
    "atlasFamily": "kelp",
    "paddingPx": 24,
-   "islands": 121,
-   "texelDensityPxPerMetreMin": 545.7,
-   "texelDensityPxPerMetreMax": 545.71,
-   "texelDensityPxPerMetreMean": 545.7,
-   "texelDensityMismatchFraction": 2e-05,
+   "islands": 125,
+   "texelDensityPxPerMetreMin": 553.72,
+   "texelDensityPxPerMetreMax": 553.73,
+   "texelDensityPxPerMetreMean": 553.72,
+   "texelDensityMismatchFraction": 1e-05,
    "texelDensityMismatchLimit": 0.2,
-   "aspectDistortionMax": 0.00016,
+   "aspectDistortionMax": 5e-05,
    "aspectDistortionP50": 0.0,
    "aspectDistortionP95": 1e-05,
-   "aspectDistortionP99": 3e-05,
+   "aspectDistortionP99": 2e-05,
    "trianglesOverHeroLimit": 0,
    "trianglesOverDistantLimit": 0,
-   "trianglesMeasured": 268,
+   "trianglesMeasured": 269,
    "zeroAreaUvTriangles": 0,
    "zeroAreaUvBelowEpsilon": 0,
    "degenerate3dTriangles": 0,
@@ -1932,66 +1975,73 @@
    "areaOverLimitBySlot": {
     "0": {
      "role": "tissue",
-     "areaShareOfMesh": 0.9932,
+     "areaShareOfMesh": 0.9906,
+     "overLimitFractionOfOwnArea": 0.0,
+     "overLimitShareOfMesh": 0.0,
+     "worst": 0.0
+    },
+    "1": {
+     "role": "basal_collar_scar",
+     "areaShareOfMesh": 0.0013,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
      "worst": 0.0
     },
     "2": {
      "role": "holdfast",
-     "areaShareOfMesh": 0.0068,
+     "areaShareOfMesh": 0.008,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
      "worst": 0.0
     }
    },
    "worstTriangle": {
-    "tri": 4,
+    "tri": 221,
     "slot": 0,
-    "worldArea2": "9.849e-03",
-    "uvArea2": "1.748e-04",
+    "worldArea2": "3.205e-02",
+    "uvArea2": "5.858e-04",
     "worldEdges": [
-     0.388859,
-     1.215432,
-     1.604227
+     1.687629,
+     1.561024,
+     0.128137
     ],
     "uvEdges": [
-     0.051807,
-     0.161929,
-     0.213728
+     0.228145,
+     0.21103,
+     0.017322
     ],
     "z": [
-     3.0988,
-     3.4828,
-     4.6804
+     5.3116,
+     6.9652,
+     5.4393
     ]
    },
-   "gateIslands": 121,
+   "gateIslands": 125,
    "gateIslandsBelowMinPixels": 0,
    "smallestGateIslandsPx": [
     [
-     19.859,
-     214.789
+     727.04,
+     19.784
     ],
     [
-     37.597,
-     788.644
+     20.151,
+     217.946
     ],
     [
-     43.055,
-     747.992
+     791.765,
+     35.152
     ],
     [
-     46.772,
-     659.434
+     43.688,
+     758.988
     ],
     [
-     47.543,
-     677.645
+     46.184,
+     793.802
     ],
     [
-     49.255,
-     334.755
+     47.481,
+     669.125
     ]
    ],
    "heroLimit": 0.15,
@@ -2003,31 +2053,29 @@
     "floorPx": 4
    },
    "solver": "ANGLE_BASED",
-   "islandsOriented": 120,
-   "seamEdges": 433,
+   "islandsOriented": 124,
+   "seamEdges": 441,
    "healed": {
     "facesBefore": 288,
-    "faces": 268,
-    "sliverEdgesCollapsed": 16,
-    "collapsesSkippedIllegal": 9,
+    "faces": 269,
+    "sliverEdgesCollapsed": 17,
+    "collapsesSkippedIllegal": 18,
     "zeroAreaDeleted": 0,
-    "looseDeleted": 160
+    "looseDeleted": 149
    },
-   "slotsRepaired": {
-    "1": 0.2056
-   },
+   "slotsRepaired": {},
    "stretchStats": {
-    "worst": 1.6937141429806957e-05,
-    "p95": 3.272537978160628e-06,
-    "mean": 9.00366822840386e-07,
-    "triangles": 268
+    "worst": 9.966381732562368e-06,
+    "p95": 3.722676114259471e-06,
+    "mean": 8.544494610914124e-07,
+    "triangles": 269
    }
   }
  },
  "lodTopology": {
   "0": {
-   "triangles": 5554,
-   "faces": 5554,
+   "triangles": 5548,
+   "faces": 5548,
    "components": 64,
    "boundaryEdges": 648,
    "nonmanifoldEdges": 0,
@@ -2038,26 +2086,26 @@
    "explain": ""
   },
   "1": {
-   "triangles": 1559,
-   "faces": 1559,
+   "triangles": 1571,
+   "faces": 1571,
    "components": 120,
-   "boundaryEdges": 1617,
+   "boundaryEdges": 1615,
    "nonmanifoldEdges": 0,
    "smallestComponent": 1,
-   "largestComponent": 39,
-   "irreducibleFloor": 1288,
+   "largestComponent": 40,
+   "irreducibleFloor": 1287,
    "budget": 1800,
    "explain": ""
   },
   "2": {
-   "triangles": 268,
-   "faces": 268,
-   "components": 121,
-   "boundaryEdges": 510,
+   "triangles": 269,
+   "faces": 269,
+   "components": 125,
+   "boundaryEdges": 519,
    "nonmanifoldEdges": 0,
    "smallestComponent": 1,
    "largestComponent": 5,
-   "irreducibleFloor": 739,
+   "irreducibleFloor": 759,
    "budget": 300,
    "explain": ""
   }
@@ -2097,14 +2145,14 @@
  ],
  "bounds": {
   "min": [
-   -0.81266,
-   -1.7029,
-   -0.04603
+   -0.51107,
+   -1.22845,
+   -0.05111
   ],
   "max": [
-   1.6483,
-   1.43728,
-   9.732
+   1.45089,
+   1.65044,
+   9.21418
   ]
  },
  "validation": {
@@ -2114,39 +2162,39 @@
     "mesh": "MESH_Flora_Kelp_s4021_q050_LOD0",
     "lod": 0,
     "passed": true,
-    "triangles": 5554,
-    "vertices": 3121,
+    "triangles": 5548,
+    "vertices": 3118,
     "submeshes": 3,
-    "digest": "504b30fcf60e75ad7af56d3642864e7d",
+    "digest": "966845023c7756e556e67eb9e2b7cb20",
     "failures": [],
     "notEnforced": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 1000 of 5554 triangles below the sliver floor 4.728e-04 m2 (0.1x mean triangle area 4.728e-03 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 1002 of 5548 triangles below the sliver floor 4.735e-04 m2 (0.1x mean triangle area 4.735e-03 m2); the area-weighted population test still covered all of them"
     ]
    },
    {
     "mesh": "MESH_Flora_Kelp_s4021_q050_LOD1",
     "lod": 1,
     "passed": true,
-    "triangles": 1559,
-    "vertices": 1531,
+    "triangles": 1571,
+    "vertices": 1536,
     "submeshes": 3,
-    "digest": "c6cb10f4f456a4d95cf677c4efc1469f",
+    "digest": "e1fde76a78707f3c65efe85728d32c5f",
     "failures": [],
     "notEnforced": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 245 of 1559 triangles below the sliver floor 1.608e-03 m2 (0.1x mean triangle area 1.608e-02 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 245 of 1571 triangles below the sliver floor 1.591e-03 m2 (0.1x mean triangle area 1.591e-02 m2); the area-weighted population test still covered all of them"
     ]
    },
    {
     "mesh": "MESH_Flora_Kelp_s4021_q050_LOD2",
     "lod": 2,
     "passed": true,
-    "triangles": 268,
-    "vertices": 500,
+    "triangles": 269,
+    "vertices": 509,
     "submeshes": 3,
-    "digest": "490ffb6499b445c7ddf2c1c7d780369e",
+    "digest": "e2322857a122f605236b4345fa2afc65",
     "failures": [],
     "notEnforced": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 2 of 268 triangles below the sliver floor 7.496e-03 m2 (0.1x mean triangle area 7.496e-02 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 1 of 269 triangles below the sliver floor 7.215e-03 m2 (0.1x mean triangle area 7.215e-02 m2); the area-weighted population test still covered all of them"
     ]
    }
   ],
@@ -2165,5 +2213,5 @@
   "firstInvalidStage": null
  },
  "prefabBoundary": "PF_/GEN_ prefab, LODGroup and Unity import are NOT produced here: only Unity may author .prefab assets (AGENTS.md Evidence Law). This package is the FBX + manifest the Unity-side assembler consumes.",
- "generationSeconds": 16.54
+ "generationSeconds": 22.12
 }

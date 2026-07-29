@@ -1,0 +1,33 @@
+C:\hades\Hecton8\Assets\_Project\Scenes\010_TEST.unity
+C:\hades\Hecton8\Assets\_Project\Scenes\020_RENDER_SANDBOX.unity
+C:\hades\Hecton8\Assets\_Project\Scenes\020_RENDER_SANDBOX_V2.unity
+C:\hades\Hecton8\Assets\_Project\Scenes\02_HECTON_WORLD.unity
+C:\hades\Hecton8\Assets\_Project\Scenes\02_HECTON_WORLD\LightingData.asset
+C:\hades\Hecton8\Assets\_Project\Data\World\Archive\ErodedTile_0_0.asset
+C:\hades\Hecton8\Assets\_Project\Data\World\Sandbox\_ARCHIVED\USE IT.asset
+C:\hades\Hecton8\Assets\MapMagic\Terrains\Resources\MapMagicDefaultTerrainData.asset
+C:\hades\Hecton8\Assets\MapMagic\Map_Graph\New Gen\Global_Mask_Data.asset
+C:\hades\Hecton8\Assets\MapMagic\Map_Graph\New Gen\Mask_Data2 1.asset
+C:\hades\Hecton8\Assets\MapMagic\Generators\Biomes\Runtime\Resources\MapMagic\Whittaker\ColdDesert.asset
+C:\hades\Hecton8\Assets\MapMagic\Generators\Biomes\Runtime\Resources\MapMagic\Whittaker\Desert.asset
+C:\hades\Hecton8\Assets\MapMagic\Generators\Biomes\Runtime\Resources\MapMagic\Whittaker\Grassland.asset
+C:\hades\Hecton8\Assets\MapMagic\Generators\Biomes\Runtime\Resources\MapMagic\Whittaker\Savanna.asset
+C:\hades\Hecton8\Assets\MapMagic\Generators\Biomes\Runtime\Resources\MapMagic\Whittaker\Taiga.asset
+C:\hades\Hecton8\Assets\MapMagic\Generators\Biomes\Runtime\Resources\MapMagic\Whittaker\TemperateForest.asset
+C:\hades\Hecton8\Assets\MapMagic\Generators\Biomes\Runtime\Resources\MapMagic\Whittaker\TemperateRainforest.asset
+C:\hades\Hecton8\Assets\MapMagic\Generators\Biomes\Runtime\Resources\MapMagic\Whittaker\TropicalForest.asset
+C:\hades\Hecton8\Assets\MapMagic\Generators\Biomes\Runtime\Resources\MapMagic\Whittaker\TropicalRainforest.asset
+C:\hades\Hecton8\Assets\MapMagic\Generators\Biomes\Runtime\Resources\MapMagic\Whittaker\Tundra.asset
+C:\hades\Hecton8\Assets\Feel\MMTools\Demos\MMPrototypeTextures\MMPrototypeTexturesDemo\LightingData.asset
+C:\hades\Hecton8\Assets\_Project\Art\Materials\Tools\Mat_Tool_BeaconDeployer_Placeholder.mat
+C:\hades\Hecton8\Assets\_Project\Art\Materials\Tools\Mat_Tool_Builder_Placeholder.mat
+C:\hades\Hecton8\Assets\_Project\Art\Materials\Tools\Mat_Tool_EnvAnalyzer_Placeholder.mat
+C:\hades\Hecton8\Assets\_Project\Art\Materials\Tools\Mat_Tool_Flashlight_Placeholder.mat
+C:\hades\Hecton8\Assets\_Project\Art\Materials\Tools\Mat_Tool_HarpoonLauncher_Placeholder.mat
+C:\hades\Hecton8\Assets\_Project\Art\Materials\Tools\Mat_Tool_Knife_Placeholder.mat
+C:\hades\Hecton8\Assets\_Project\Art\Materials\Tools\Mat_Tool_LaserCutter_Placeholder.mat
+C:\hades\Hecton8\Assets\_Project\Art\Materials\Tools\Mat_Tool_Propulsion_Placeholder.mat
+C:\hades\Hecton8\Assets\_Project\Art\Materials\Tools\Mat_Tool_Repair_Placeholder.mat
+C:\hades\Hecton8\Assets\_Project\Art\Materials\Tools\Mat_Tool_SalvageSampler_Placeholder.mat
+C:\hades\Hecton8\Assets\_Project\Art\Materials\Tools\Mat_Tool_Scanner_Placeholder.mat
+C:\hades\Hecton8\Assets\_Project\Art\Materials\Tools\Mat_Tool_StunPistol_Placeholder.mat

@@ -983,6 +983,7 @@ namespace Hecton8.EditorTools.Generators.Fauna
 
             FaunaMeshAxisDTO1610 axis = AnalyzeAxis(sourceMesh.bounds);
             float3 side = StablePerpendicular(axis.Axis);
+            WarnOnConsumerWaveFieldDisagreement(axis, sourceMesh);
 
             NativeArray<float3> vertices = default;
             NativeArray<float3> normals = default;
@@ -1669,6 +1670,65 @@ namespace Hecton8.EditorTools.Generators.Fauna
             }
         }
 
+        /// <summary>
+        /// Warns, without blocking, where this bake's wave field disagrees with the only shader that consumes
+        /// its output. Diagnostic only: it changes no geometry and no pixel, because which body part should
+        /// bend is a visual-authority call and not this method's to make.
+        /// </summary>
+        /// <remarks>
+        /// TWO DISAGREEMENTS, BOTH MEASURED 2026-07-29.
+        ///
+        /// 1. ENVELOPE SHAPE. <see cref="FaunaSwarmWaveField1610.EvaluateLateralMeters"/> uses
+        /// <c>envelope = max(0, sin(t * PI))</c>, which is zero at both <c>t=0</c> and <c>t=1</c> and peaks at
+        /// <c>t=0.5</c> - a both-ends-pinned standing wave, mid-body. The consumer's procedural fallback uses
+        /// <c>tailFactor = saturate(-localPos.z)</c> (BoidFishInstanced.shader:517), which rises monotonically
+        /// to its maximum at the tail tip and is then optionally squared or quartic via <c>_TailPower</c>
+        /// (:518-522), concentrating it further aft. The VAT branch REPLACES the fallback outright
+        /// (<c>localPos += (vatPosition - localPos)</c>, :505), so enabling a VAT baked from this envelope
+        /// moves the bend from the tail to the midriff and holds the tail rigid.
+        ///
+        /// The direction is NOT ambiguous, contrary to a natural worry about axis sign.
+        /// <see cref="AnalyzeAxis"/> is bounds-based, not PCA, and returns one of exactly three HARD-CODED
+        /// POSITIVE unit vectors. <c>ResolveAxialT</c> (:355-357) measures from
+        /// <c>axisStart = Center - Axis * Length * 0.5</c>, so for a Z-dominant mesh <c>t=0</c> sits at the
+        /// -Z end, which is the TAIL under the model axis convention the consumer hard-codes and the fish
+        /// manifest cites (BoidFishInstanced.shader:12-18). So <c>sin(t*PI)</c> pins the tail specifically.
+        /// The fish's own manifest declares <c>locomotion: "swimmer, carangiform -- amplitude concentrated
+        /// aft of maximum body depth, snout rigid"</c>, which the consumer implements and this bake does not.
+        ///
+        /// 2. AXIS AGREEMENT. This bake bends around whichever bounds axis is longest, while the consumer is
+        /// hard-coded to Z. They coincide only while the longest bounds axis IS Z. A wider-than-long or
+        /// taller-than-long body would be baked bending around X or Y and drawn bending around Z, with no
+        /// null check anywhere able to notice.
+        /// </remarks>
+        private static void WarnOnConsumerWaveFieldDisagreement(FaunaMeshAxisDTO1610 axis, Mesh sourceMesh)
+        {
+            const uint ZAxisIndex = 2u;
+
+            if (axis.AxisIndex != ZAxisIndex)
+            {
+                Debug.LogWarning(
+                    "[FaunaRigger1610] AXIS DISAGREEMENT on '" + sourceMesh.name + "': this bake resolved the " +
+                    "longest bounds axis as " + (axis.AxisIndex == 0u ? "X" : "Y") +
+                    ", but BoidFishInstanced.shader indexes body position by LOCAL Z only " +
+                    "(tailFactor = saturate(-localPos.z), :517). The VAT will encode a bend around a different " +
+                    "axis than the renderer assumes, and nothing downstream can detect it. bounds=" +
+                    sourceMesh.bounds.size.ToString("F4", CultureInfo.InvariantCulture) +
+                    ". Re-author the mesh so its long axis is Z, or bake it for a consumer that agrees.");
+            }
+
+            Debug.LogWarning(
+                "[FaunaRigger1610] ENVELOPE NOTICE for '" + sourceMesh.name + "': the baked lateral envelope is " +
+                "max(0, sin(t*PI)), which peaks at MID-BODY (t=0.5) and pins BOTH tips, while the consumer's " +
+                "procedural fallback peaks at the TAIL (BoidFishInstanced.shader:517-522). t=0 is the -Z end, " +
+                "i.e. the tail, because AnalyzeAxis returns a positive unit axis and ResolveAxialT measures from " +
+                "Center - Axis*Length*0.5 - so this envelope pins the tail specifically. Because the VAT branch " +
+                "REPLACES the fallback (:505), switching the VAT on will move the visible bend from the tail to " +
+                "the midriff. That is a VISUAL REGRESSION unless it is an intended change; it is reported here " +
+                "rather than silently corrected because which body part bends is a visual-authority decision. " +
+                "STATUS=PENDING VISUAL VERIFICATION.");
+        }
+
         private static FaunaMeshAxisDTO1610 AnalyzeAxis(Bounds bounds)
         {
             Vector3 size = bounds.size;
@@ -2164,6 +2224,27 @@ namespace Hecton8.EditorTools.Generators.Fauna
         private const string LodNameMarker = "_LOD";
 
         /// <summary>
+        /// Default target of <see cref="ReimportVatSourceModel"/>: the fauna VAT source model. Project-relative
+        /// per <c>AGENTS.md</c> `Relative Path Requirement`, and overridden with the SAME
+        /// <c>-h8FaunaMesh</c> switch the bake reads, so the reimport step and the bake step cannot be pointed
+        /// at two different files from one command line.
+        /// </summary>
+        private const string DefaultVatSourceModelPath =
+            "Assets/_Project/Art/Generated/Forge/Fauna/MESH_Fauna_Fish_2207_00.fbx";
+
+        /// <summary>
+        /// Distinct exit codes, because a batch operator reading only the process code must be able to tell
+        /// "wrong path" from "the importer carve-out did not apply" from "the tool itself broke". A single 1 for
+        /// everything forces a log dig on every failure.
+        /// </summary>
+        private const int ReimportExitPass = 0;
+        private const int ReimportExitNoModelAtPath = 2;
+        private const int ReimportExitStillUnreadable = 3;
+        private const int ReimportExitVertexIdentityUnstable = 4;
+        private const int ReimportExitLod0Unresolvable = 5;
+        private const int ReimportExitUnhandled = 6;
+
+        /// <summary>
         /// Bakes one mesh named on the command line. Exits non-zero on any rejection.
         /// </summary>
         /// <remarks>
@@ -2205,6 +2286,238 @@ namespace Hecton8.EditorTools.Generators.Fauna
             Debug.Log(Marker + " gate sweep complete. result=" + (ok ? "PASS" : "FAIL") +
                       " STATUS=PENDING UNITY IMPORT VERIFICATION until the batchmode log is read.");
             EditorApplication.Exit(ok ? 0 : 1);
+        }
+
+        /// <summary>
+        /// Forces one model asset through a synchronous reimport and then PROVES the importer state that a VAT
+        /// bake depends on, instead of trusting that <c>ImportAsset</c> did something. Exits non-zero when the
+        /// carve-out did not land.
+        /// </summary>
+        /// <remarks>
+        /// WHY THIS EXISTS. <c>HectonFBXPostprocessor.ApplyImporterPolicy</c> is the owner of
+        /// <c>isReadable</c>, <c>weldVertices</c> and <c>meshOptimizationFlags</c> for managed model roots, but
+        /// an <c>AssetPostprocessor</c> only runs during an (re)import. Editing its C# recompiles the editor
+        /// assembly and reimports NOTHING, so the settings it would now write are absent from the
+        /// <c>.meta</c> on disk until something asks for the import. The only reimport routes in this project
+        /// were <c>[MenuItem]</c> methods and <c>ImportAsset</c> calls buried inside other generators' output
+        /// paths, so the first step of the fauna VAT chain had no headless route at all - the same gap
+        /// <see cref="BakeFromCommandLine"/> was added to close for the bake itself.
+        ///
+        /// WHY IT MUST BE ABLE TO FAIL. <c>weldVertices</c> changes the vertex COUNT and
+        /// <c>meshOptimizationFlags</c> changes the vertex ORDER, and a baked VAT is indexed by
+        /// <c>vertexID</c> (BoidFishInstanced.shader:493). Baking before those two are pinned produces a
+        /// texture that is self-consistent only until the next reimport for any reason, after which the mesh
+        /// silently reorders under the texture and every null check still passes. So a run that reimports and
+        /// logs "done" is worse than no tool: it certifies a precondition it never measured. This re-reads the
+        /// importer, re-resolves the LOD0 mesh through <see cref="ResolveSourceMesh"/> - the single owner of
+        /// the LOD0 rule the bake itself uses, whose <see cref="VerifyMeshIsReadable"/> probe reads
+        /// <c>Mesh.vertices</c> and compares lengths rather than trusting the <c>isReadable</c> flag - and
+        /// fails on all three settings, not just the readable one.
+        ///
+        /// Exact invocation, and <c>-quit</c> is deliberately ABSENT:
+        /// <code>
+        /// Unity.exe -batchmode -projectPath C:\hades\Hecton8 ^
+        ///   -executeMethod Hecton8.EditorTools.Generators.Fauna.FaunaHeadlessBake1610.ReimportVatSourceModel ^
+        ///   -logFile - ^
+        ///   [-h8FaunaMesh "Assets/.../MESH_Fauna_Fish_2207_00.fbx"] [-h8FaunaSubMesh "..._LOD0"]
+        /// </code>
+        /// This method owns its own termination through <see cref="EditorApplication.Exit"/>, so <c>-quit</c>
+        /// would only add a second, racing shutdown whose code is not this gate's verdict. Unlike the bake
+        /// entry points this one needs no graphics device: it touches no <c>Texture2D</c> and no
+        /// <c>SystemInfo.SupportsTextureFormat</c>, so <see cref="RequireGraphicsDevice"/> is not called and
+        /// <c>-nographics</c> is merely pointless here rather than banned.
+        /// </remarks>
+        public static void ReimportVatSourceModel()
+        {
+            int exitCode;
+            try
+            {
+                exitCode = ExecuteVatSourceReimport();
+            }
+            catch (Exception error)
+            {
+                // Deliberately broad, and here for exactly one reason: the contract of this method is that a
+                // batch run always ENDS with a code. An exception escaping -executeMethod leaves the editor
+                // alive with no verdict, which is the hang class this project has already measured in its
+                // authoring chain. The failure is never swallowed - it is logged as an error and mapped to its
+                // own exit code, so it can never be read as a pass.
+                exitCode = ReimportExitUnhandled;
+                Debug.LogError(Marker + " REIMPORT ABORTED by an unhandled " + error.GetType().Name + ": " +
+                               error.Message + ". Nothing about the importer state is proven by this run.");
+            }
+
+            Debug.Log(Marker + " REIMPORT COMPLETE. exitCode=" +
+                      exitCode.ToString(CultureInfo.InvariantCulture) +
+                      " verdict=" + (exitCode == ReimportExitPass ? "PASS" : "FAIL") +
+                      " STATUS=PENDING UNITY IMPORT VERIFICATION until this batchmode log is read.");
+
+            // ONE exit, after every branch, guarded exactly like
+            // ConstructionFinalPrefabModuleCoverageGate.cs:396-397. Placing it here rather than inside the
+            // failure branch is the whole point: an exit that only fires on failure hangs the run on SUCCESS,
+            // which is a defect this project has measured in its own authoring chain.
+            if (Application.isBatchMode)
+                EditorApplication.Exit(exitCode);
+        }
+
+        private static int ExecuteVatSourceReimport()
+        {
+            string modelPath = ReadArgument(MeshArgument);
+            if (string.IsNullOrEmpty(modelPath))
+            {
+                modelPath = DefaultVatSourceModelPath;
+                Debug.Log(Marker + " no " + MeshArgument + " on the command line, so the default fauna VAT " +
+                          "source '" + modelPath + "' is the target.");
+            }
+
+            ModelImporter importer = AssetImporter.GetAtPath(modelPath) as ModelImporter;
+            if (importer == null)
+            {
+                Debug.LogError(Marker + " REIMPORT ABORT - '" + modelPath + "' has no ModelImporter. Either the " +
+                               "path is wrong, the file is not in the AssetDatabase, or it is not a model " +
+                               "asset. AssetDatabase.ImportAsset on a path it does not know is a SILENT no-op " +
+                               "that would still let this method report success, which is why it refuses here " +
+                               "instead of calling it.");
+                return ReimportExitNoModelAtPath;
+            }
+
+            // Snapshot as VALUES. AssetImporter.GetAtPath hands back a cached wrapper, so keeping the importer
+            // reference and re-reading it after the import would print post-import state as the "before"
+            // reading - a before/after table that can never show a difference.
+            bool readableBefore = importer.isReadable;
+            bool weldBefore = importer.weldVertices;
+            int optimizationFlagsBefore = (int)importer.meshOptimizationFlags;
+
+            // ResolveSourceMesh is the single owner of the LOD0 selection rule this lane depends on, so the
+            // count below is by construction the count the bake will use. A null here is NOT fatal: before the
+            // reimport an unreadable or unresolvable mesh is the defect being repaired, and refusing would make
+            // the repair unreachable. -1 therefore means "unavailable", never "zero vertices".
+            Mesh meshBefore = ResolveSourceMesh(modelPath);
+            int vertexCountBefore = meshBefore != null ? meshBefore.vertexCount : -1;
+            string meshNameBefore = meshBefore != null ? meshBefore.name : "<unresolved>";
+            meshBefore = null;
+
+            Debug.Log(Marker + " REIMPORT BEFORE '" + modelPath + "': isReadable=" +
+                      (readableBefore ? "true" : "false") +
+                      " weldVertices=" + (weldBefore ? "true" : "false") +
+                      " meshOptimizationFlags=" + DescribeMeshOptimizationFlags(optimizationFlagsBefore) +
+                      " lod0Mesh='" + meshNameBefore + "'" +
+                      " vertexCount=" + vertexCountBefore.ToString(CultureInfo.InvariantCulture) +
+                      " (-1 means the LOD0 mesh could not be resolved yet, not an empty mesh).");
+
+            AssetDatabase.ImportAsset(
+                modelPath,
+                ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+
+            // NO AssetDatabase.SaveAssets() and no AssetDatabase.Refresh() here, on purpose. SaveAssets is
+            // PROJECT-WIDE: several authoring orchestrators share this editor, and flushing every dirty asset
+            // would write other owners' unfinished work to disk under this run's name. ForceSynchronousImport
+            // has already completed the import and persisted the importer settings by the time this line runs,
+            // so neither call would add anything to save.
+            //
+            // meshBefore was cleared above: ImportAsset destroys and rebuilds the imported sub-assets, so that
+            // managed reference is dangling from here on and only the captured ints and strings are safe.
+            ModelImporter reloaded = AssetImporter.GetAtPath(modelPath) as ModelImporter;
+            if (reloaded == null)
+            {
+                Debug.LogError(Marker + " REIMPORT FAIL '" + modelPath + "' - the asset no longer resolves to a " +
+                               "ModelImporter AFTER the reimport, so the import destroyed or moved it. Restore " +
+                               "the asset before running the bake.");
+                return ReimportExitNoModelAtPath;
+            }
+
+            bool readableAfter = reloaded.isReadable;
+            bool weldAfter = reloaded.weldVertices;
+            int optimizationFlagsAfter = (int)reloaded.meshOptimizationFlags;
+
+            Mesh meshAfter = ResolveSourceMesh(modelPath);
+            int vertexCountAfter = meshAfter != null ? meshAfter.vertexCount : -1;
+            string meshNameAfter = meshAfter != null ? meshAfter.name : "<unresolved>";
+
+            Debug.Log(Marker + " REIMPORT AFTER '" + modelPath + "': isReadable=" +
+                      (readableAfter ? "true" : "false") +
+                      " weldVertices=" + (weldAfter ? "true" : "false") +
+                      " meshOptimizationFlags=" + DescribeMeshOptimizationFlags(optimizationFlagsAfter) +
+                      " lod0Mesh='" + meshNameAfter + "'" +
+                      " vertexCount=" + vertexCountAfter.ToString(CultureInfo.InvariantCulture) +
+                      " (before=" + vertexCountBefore.ToString(CultureInfo.InvariantCulture) + ").");
+
+            if (vertexCountBefore >= 0 && vertexCountAfter >= 0 && vertexCountBefore != vertexCountAfter)
+            {
+                Debug.LogWarning(Marker + " REIMPORT CHANGED THE VERTEX SET of '" + modelPath + "': " +
+                                 vertexCountBefore.ToString(CultureInfo.InvariantCulture) + " -> " +
+                                 vertexCountAfter.ToString(CultureInfo.InvariantCulture) +
+                                 " vertices on '" + meshNameAfter + "'. This is the EXPECTED effect of pinning " +
+                                 "weldVertices/meshOptimizationFlags, and it also means every Vertex Animation " +
+                                 "Texture baked from this asset BEFORE this run is now invalid: the VAT is " +
+                                 "indexed by vertexID (BoidFishInstanced.shader:493) and its page width no " +
+                                 "longer matches the mesh. Re-bake before trusting any swarm capture.");
+            }
+
+            if (!readableAfter)
+            {
+                Debug.LogError(Marker + " REIMPORT FAIL '" + modelPath + "' - isReadable is STILL false after a " +
+                               "forced synchronous reimport, so the bake would read an empty vertex array and " +
+                               "write a full-size VAT page of zeros that looks successful on disk. The reimport " +
+                               "itself ran; what did not happen is the carve-out. HectonFBXPostprocessor" +
+                               ".ApplyImporterPolicy grants isReadable=true only when ForgeImportContract" +
+                               ".IsVatSource is true, and that needs a sibling MANIFEST_<stem>.json in the same " +
+                               "folder that parses as schema 'h8forge.manifest/1' AND carries a ROOT-level " +
+                               "vatReadiness block with vertexCountLOD0 > 0 (HectonFBXPostprocessor.cs:891). " +
+                               "Check that manifest's nesting first: a vatReadiness block placed under any " +
+                               "other key is dropped by JsonUtility and reads as absent.");
+                return ReimportExitStillUnreadable;
+            }
+
+            if (weldAfter || optimizationFlagsAfter != (int)MeshOptimizationFlags.PolygonOrder)
+            {
+                // Fatal, not a warning, and deliberately stricter than "isReadable is the only hard gate".
+                // These two are the settings that change per-vertex IDENTITY. A bake allowed to proceed here
+                // produces a texture that desynchronises from the mesh on the next reimport for ANY reason, and
+                // nothing downstream can detect it: the page width still matches, so FaunaSwarmVatPrefabBinder's
+                // width check still passes and the swarm just animates as noise.
+                Debug.LogError(Marker + " REIMPORT FAIL '" + modelPath + "' - isReadable landed but vertex " +
+                               "identity did not: weldVertices=" + (weldAfter ? "true" : "false") +
+                               " (must be false) meshOptimizationFlags=" +
+                               DescribeMeshOptimizationFlags(optimizationFlagsAfter) +
+                               " (must be PolygonOrder(" +
+                               ((int)MeshOptimizationFlags.PolygonOrder).ToString(CultureInfo.InvariantCulture) +
+                               ")). weldVertices changes the vertex COUNT and the default Everything flag " +
+                               "reorders VERTICES; a VAT indexed by vertexID cannot survive either. Do NOT bake " +
+                               "until both are pinned - a VAT baked now is self-consistent only until the next " +
+                               "reimport, after which every vertex samples the wrong column and every null " +
+                               "check still passes.");
+                return ReimportExitVertexIdentityUnstable;
+            }
+
+            if (meshAfter == null)
+            {
+                Debug.LogError(Marker + " REIMPORT FAIL '" + modelPath + "' - the importer settings are correct " +
+                               "but the LOD0 mesh still does not resolve. The precise refusal is the " +
+                               "[H8_FAUNA_HEADLESS_1610] error immediately above this line, and the bake would " +
+                               "refuse identically because it calls the same resolver. Fix that before baking.");
+                return ReimportExitLod0Unresolvable;
+            }
+
+            Debug.Log(Marker + " REIMPORT PASS '" + modelPath + "': isReadable=true weldVertices=false " +
+                      "meshOptimizationFlags=" + DescribeMeshOptimizationFlags(optimizationFlagsAfter) +
+                      ", lod0Mesh='" + meshNameAfter + "' vertexCount=" +
+                      vertexCountAfter.ToString(CultureInfo.InvariantCulture) +
+                      " read back complete. The VAT bake may now use this vertex count as its page width. " +
+                      "PROOF CLASS: Editor importer/AssetDatabase state only - this is not Play Mode, not a " +
+                      "profiler capture and not a visual verdict on the swarm.");
+            return ReimportExitPass;
+        }
+
+        /// <summary>
+        /// Both the flag name and the raw integer, on purpose: the name is readable and the integer is directly
+        /// diffable against the <c>meshOptimizationFlags:</c> row in the <c>.meta</c> on disk, where the default
+        /// Everything serialises as <c>-1</c>. Printing only the name would leave an operator comparing "the log
+        /// says Everything" against "the file says -1" with nothing joining them.
+        /// </summary>
+        private static string DescribeMeshOptimizationFlags(int flags)
+        {
+            return ((MeshOptimizationFlags)flags).ToString() +
+                   "(" + flags.ToString(CultureInfo.InvariantCulture) + ")";
         }
 
         private static bool ExecuteCommandLineBake()

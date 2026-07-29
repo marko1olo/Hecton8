@@ -48,6 +48,16 @@ namespace Hecton8.UI
         // multi-instance (s_activeOverlay0..3) and one bridge each would raise one notification per active HUD
         // canvas for a single failed write.
         private static HUDSaveNotificationLink s_saveFailureNotificationBridge;
+        // Probe hashes for every SaveEvents status bucket. SaveEvents.ResolveStatusSlotIndex maps only the three
+        // manual slot hashes to buckets 0..2 and everything else to the final bucket, so these four hashes address
+        // all StatusSlotCapacity buckets. Polling all of them keeps the read correct whichever bucket the write
+        // landed in - which matters, because SaveManager.ComputeSlotHash and SaveEvents.ComputeSlotHash are NOT the
+        // same function today, so manual-slot statuses currently land in the trailing bucket rather than 0..2.
+        // static readonly, not const: a const cannot hold a method call (CS0133).
+        private static readonly uint s_saveStatusProbeSlot0Hash = SaveEvents.ComputeSlotHash(SaveEvents.ResolveManualSlotName(0));
+        private static readonly uint s_saveStatusProbeSlot1Hash = SaveEvents.ComputeSlotHash(SaveEvents.ResolveManualSlotName(1));
+        private static readonly uint s_saveStatusProbeSlot2Hash = SaveEvents.ComputeSlotHash(SaveEvents.ResolveManualSlotName(2));
+        private const uint SaveStatusProbeUnknownSlotHash = 0u;
         private const int ThreatChevronRollRight = 0;
         private const int ThreatChevronRollUp = 1;
         private const int ThreatChevronRollLeft = 2;
@@ -130,6 +140,12 @@ namespace Hecton8.UI
         private const float SavingProgressHapticDurationSeconds = 0.08f;
         private const float SavingProgressHapticFrequencyHz = 18f;
         private const byte SavingProgressHapticPriority = 1;
+        // A failed write is held on screen well past SavingProgressMinimumVisibleSeconds so it cannot be mistaken
+        // for the prompt fade-out of a completed one.
+        private const float SavingProgressFailureHoldSeconds = 3.25f;
+        // Radians per second, NOT Hz: IsBlinkVisible feeds this straight into EvaluateCheapSignedWave, whose
+        // argument is a phase in radians (26 rad/s is ~4.1 Hz). Matches the homeostasis blink call convention.
+        private const float SavingProgressFailureBlinkRadiansPerSecond = 26f;
         private const float CorruptedModeThreshold = 0.75f;
         private const float JitterAmplitudePixels = 7f;
         private const float JitterFrequencyRadians = 23f;
@@ -750,6 +766,12 @@ namespace Hecton8.UI
         private float _savingProgressAlpha;
         private float _savingProgressTargetAlpha;
         private float _savingProgressHideNotBeforeTime;
+        // One read cursor per SaveEvents status bucket. Fixed scalars rather than a uint[4] to match this class's
+        // fixed-slot convention and keep the per-tick poll free of an array bounds check.
+        private uint _savingProgressStatusSequenceSlot0;
+        private uint _savingProgressStatusSequenceSlot1;
+        private uint _savingProgressStatusSequenceSlot2;
+        private uint _savingProgressStatusSequenceUnknownSlot;
         private float _threatChevronPulseTime;
         private float _scannerInterferencePhase;
         private float _jitterTime;
@@ -758,6 +780,11 @@ namespace Hecton8.UI
         private int _toolDepletedHashId;
         private int _corruptionFrameVersion;
         private bool _savingProgressHidePending;
+        private bool _savingProgressFailureLatched;
+        private bool _savingProgressFailureBlinkOn;
+        private bool _appliedSavingProgressFailureLatched;
+        private bool _appliedSavingProgressFailureBlinkOn;
+        private bool _hasAppliedSavingProgressFailureStyle;
         private bool _scannerInterferenceActive;
         private bool _biosRecoveryMode;
         private Transform _defaultCanvasParent;
@@ -1848,6 +1875,7 @@ namespace Hecton8.UI
             _savingProgressTargetAlpha = 1f;
             _savingProgressHidePending = false;
             _savingProgressHideNotBeforeTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds + SavingProgressMinimumVisibleSeconds;
+            ClearSavingProgressFailureLatch();
             EmitSavingProgressHapticPulse();
         }
 
@@ -1877,6 +1905,132 @@ namespace Hecton8.UI
 
             _savingProgressHidePending = false;
             _savingProgressTargetAlpha = 0f;
+        }
+
+        /// <summary>
+        /// Polls the authoritative save-status latch so the indicator reports the write's real terminal state
+        /// instead of a fade timed off <see cref="SaveEventType.MappedWriteStarted"/> alone.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Route chosen: <see cref="SaveEvents.TryGetCurrentStatus"/>, not
+        /// <c>SignalBus&lt;SaveStatusSignal&gt;.GetFrameSnapshot()</c>. Both carry the identical payload - SaveManager
+        /// writes them on the same two lines (<c>SaveManager.PublishSaveStatus</c>, at the managed publish plus the
+        /// best-effort lane push) - so the choice is purely about whether the terminal state can be missed from THIS
+        /// tick lane. The SignalBus read is edge-triggered and frame-scoped, and <see cref="LateFrameTick"/> has five
+        /// early returns above <see cref="RunReactiveLateFrameSolve"/> (stencil suppression, pending suppression
+        /// apply, inactive runtime callbacks, pending canvas refresh, forced slow-tick resolve, hierarchy not ready)
+        /// plus a sixth on <c>_layoutBuilt</c>. A <c>Failed</c> signal that flushes on a frame gated by any of those
+        /// is gone for good, and the lane push is best-effort anyway - <c>SignalBus.TryPush</c> can shed on stress or
+        /// on ring overflow. The latch is level-triggered: <c>SaveEvents.PublishCurrentStatus</c> stores the status
+        /// against a monotonic, never-zero sequence, and this method compares it against a caller-owned cursor, so a
+        /// skipped frame costs latency and nothing else. It is also unconditional - no lane initialization, no load
+        /// shedding, no capacity - and cheaper per tick than the span read plus its filter loop.
+        /// </para>
+        /// <para>
+        /// This is the SAVE indicator, so load traffic is filtered out by
+        /// <see cref="SaveStatusSignal.LoadOperationFlag"/>: SaveManager latches load statuses into the same
+        /// per-slot bucket, and an unfiltered read would light the disk during a load.
+        /// </para>
+        /// <para>
+        /// No numeric percentage is rendered, and that is a truth constraint rather than a budget one.
+        /// <see cref="SaveStatusSignal.Progress01"/> is not a ramp in this codebase - SaveManager publishes exactly
+        /// <c>0f</c> for Queued/Rejected, <c>0.05f</c> once for a save in progress, <c>0.08f</c> once for a load in
+        /// progress, and <c>1f</c> for Completed/Failed. Nothing increments it between those stops, so a percentage
+        /// readout would sit on "5%" for the entire write and then jump to 100%: a second false animation. The
+        /// honest signal here is the discrete state, which is what this drives. The saving-progress hierarchy also
+        /// contains no TMP_Text at all - only Images - so no tick-path text formatting is introduced.
+        /// </para>
+        /// </remarks>
+        private void PollSavingProgressStatus()
+        {
+            TryApplySavingProgressStatusBucket(s_saveStatusProbeSlot0Hash, ref _savingProgressStatusSequenceSlot0);
+            TryApplySavingProgressStatusBucket(s_saveStatusProbeSlot1Hash, ref _savingProgressStatusSequenceSlot1);
+            TryApplySavingProgressStatusBucket(s_saveStatusProbeSlot2Hash, ref _savingProgressStatusSequenceSlot2);
+            TryApplySavingProgressStatusBucket(SaveStatusProbeUnknownSlotHash, ref _savingProgressStatusSequenceUnknownSlot);
+        }
+
+        private void TryApplySavingProgressStatusBucket(uint slotHash, ref uint lastSeenSequence)
+        {
+            if (!SaveEvents.TryGetCurrentStatus(slotHash, ref lastSeenSequence, out SaveStatusSignal status))
+                return;
+
+            if ((status.Flags & SaveStatusSignal.LoadOperationFlag) != 0)
+                return;
+
+            ApplySavingProgressStatus(in status);
+        }
+
+        private void ApplySavingProgressStatus(in SaveStatusSignal status)
+        {
+            bool failed = (status.Flags & SaveStatusSignal.FailureFlag) != 0 ||
+                status.State == SaveStatusSignal.Failed ||
+                status.State == SaveStatusSignal.Rejected;
+            if (failed)
+            {
+                LatchSavingProgressFailure();
+                return;
+            }
+
+            if (status.State == SaveStatusSignal.Completed)
+            {
+                ClearSavingProgressFailureLatch();
+                RequestSavingProgressHide();
+                return;
+            }
+
+            // Queued/InProgress: the operation is genuinely live, so the icon is raised here too and not only on
+            // MappedWriteStarted. InProgress is published before the mapped write begins, which is what gives a save
+            // that dies during snapshot or compression an icon to turn red instead of showing the player nothing.
+            ClearSavingProgressFailureLatch();
+            _savingProgressHidePending = false;
+            _savingProgressTargetAlpha = 1f;
+        }
+
+        /// <summary>
+        /// Holds the indicator up in the warning palette for a failed write.
+        /// </summary>
+        /// <remarks>
+        /// The hold is applied by pushing the EXISTING <c>_savingProgressHideNotBeforeTime</c> gate forward rather
+        /// than by adding a second timer, because the ordering between this latch and
+        /// <see cref="RequestSavingProgressHide"/> is not fixed: <c>HandleSaveFailure</c> publishes the Failed status
+        /// before it raises <see cref="SaveEventType.SaveFailed"/>, but the status is polled on this tick lane while
+        /// the event arrives through the SaveEvents flush, so either can land first. Reusing the one gate makes both
+        /// orders end in the same held, red state.
+        /// </remarks>
+        private void LatchSavingProgressFailure()
+        {
+            _savingProgressTargetAlpha = 1f;
+            _savingProgressHidePending = false;
+
+            float failureHoldUntilTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds + SavingProgressFailureHoldSeconds;
+            if (failureHoldUntilTime > _savingProgressHideNotBeforeTime)
+                _savingProgressHideNotBeforeTime = failureHoldUntilTime;
+
+            _savingProgressFailureLatched = true;
+        }
+
+        private void ClearSavingProgressFailureLatch()
+        {
+            _savingProgressFailureLatched = false;
+        }
+
+        /// <summary>
+        /// Re-applies the saving-progress colours from the cached palette after a status change.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="ApplySavingProgressStyle"/> stays the single writer of those Image colours. Writing them
+        /// directly from the tick would lose the fight with <see cref="ApplyStressPulseStyle"/>, which re-applies the
+        /// whole chrome style whenever the stress pulse moves and would repaint a failed write back to its normal
+        /// colour. When no palette has been resolved yet there is nothing to re-apply from; the next
+        /// <see cref="ApplyStaticStyleIfNeeded"/> pass picks the state up.
+        /// </remarks>
+        private void RefreshSavingProgressStyleForStatus()
+        {
+            if (!_styleApplied)
+                return;
+
+            ApplySavingProgressStyle(_appliedPrimary, _appliedDim, _appliedWarning);
         }
 
         private void HandleGameBootstrapperReady()
@@ -4118,6 +4272,8 @@ namespace Hecton8.UI
             if (_savingProgressCanvasGroup == null)
                 return;
 
+            PollSavingProgressStatus();
+
             if (_savingProgressHidePending && (float)SystemDispatcher.CurrentUnscaledTimeSeconds >= _savingProgressHideNotBeforeTime)
                 RequestSavingProgressHide();
 
@@ -4135,6 +4291,24 @@ namespace Hecton8.UI
 
             if (nextAlpha <= SavingProgressVisibleEpsilon)
                 return;
+
+            // The tick is the only writer of the failure colours, so both the latch and its release repaint from
+            // here. Doing it inside OnSaveEvent instead would write Image.color from the SaveEvents flush, which is
+            // not this HUD's frame phase.
+            bool failureLatched = _savingProgressFailureLatched;
+            bool failureBlinkOn = failureLatched &&
+                IsBlinkVisible(
+                    (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
+                    SavingProgressFailureBlinkRadiansPerSecond);
+            if (_hasAppliedSavingProgressFailureStyle &&
+                _appliedSavingProgressFailureLatched == failureLatched &&
+                _appliedSavingProgressFailureBlinkOn == failureBlinkOn)
+            {
+                return;
+            }
+
+            _savingProgressFailureBlinkOn = failureBlinkOn;
+            RefreshSavingProgressStyleForStatus();
         }
 
         private static bool IsBlinkVisible(float elapsedTime, float frequency)
@@ -7113,18 +7287,36 @@ namespace Hecton8.UI
             _appliedAnalogUiJitterStrength = quantizedStrength;
         }
 
+        /// <summary>
+        /// Single writer of the saving-indicator colours, for both the normal and the failed write.
+        /// </summary>
+        /// <remarks>
+        /// The failure read is deliberately non-numeric and non-textual: the whole disk goes to the warning colour
+        /// and the record lamp blinks, which separates a lost write from a completed one without formatting a
+        /// percentage that the save system never publishes. See <see cref="PollSavingProgressStatus"/>.
+        /// </remarks>
         private void ApplySavingProgressStyle(Color primary, Color dim, Color warning)
         {
+            bool failureLatched = _savingProgressFailureLatched;
+            Color bodyColor = failureLatched ? warning : primary;
+            Color labelColor = failureLatched ? warning : dim;
+            float bodyAlpha = failureLatched ? 0.88f : 0.58f;
+            float lampAlpha = !failureLatched || _savingProgressFailureBlinkOn ? 0.95f : 0.1f;
+
             if (_savingProgressDiskBody != null)
-                _savingProgressDiskBody.color = Alpha(primary, 0.58f);
+                _savingProgressDiskBody.color = Alpha(bodyColor, bodyAlpha);
             if (_savingProgressDiskNotch != null)
                 _savingProgressDiskNotch.color = Alpha(Color.black, 0.78f);
             if (_savingProgressDiskLabel != null)
-                _savingProgressDiskLabel.color = Alpha(dim, 0.72f);
+                _savingProgressDiskLabel.color = Alpha(labelColor, 0.72f);
             if (_savingProgressDataNeedle != null)
                 _savingProgressDataNeedle.color = Alpha(warning, 0.92f);
             if (_savingProgressDataLamp != null)
-                _savingProgressDataLamp.color = Alpha(warning, 0.95f);
+                _savingProgressDataLamp.color = Alpha(warning, lampAlpha);
+
+            _appliedSavingProgressFailureLatched = failureLatched;
+            _appliedSavingProgressFailureBlinkOn = _savingProgressFailureBlinkOn;
+            _hasAppliedSavingProgressFailureStyle = true;
         }
 
         private void UpdateReticleSpread(float dt)
@@ -7208,6 +7400,11 @@ namespace Hecton8.UI
             _lastHapticHealthVersion = 0u;
             _nextCriticalHapticTime = 0f;
             _nextSavingProgressHapticTime = 0f;
+            // The hierarchy is about to be rebuilt, so the previously applied disk colours are gone; drop the
+            // change-gate cache or a live failure latch would never repaint itself onto the new Images.
+            _appliedSavingProgressFailureLatched = false;
+            _appliedSavingProgressFailureBlinkOn = false;
+            _hasAppliedSavingProgressFailureStyle = false;
             _activeCriticalHapticMask = 0;
             _appliedSuitLabelVersion = int.MinValue;
             _appliedSuitLabelColor = default;
