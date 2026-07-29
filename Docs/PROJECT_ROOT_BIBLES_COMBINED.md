@@ -15325,7 +15325,32 @@ Default shipped stack:
 
 - Albedo: base color only. No painted shadows. No direct highlights. sRGB true.
 - Normal: tangent-space normal derived from sculpt, height, or high-poly bake. Linear. BC5 where supported.
-- MRAO: R metallic, G roughness or smoothness according to shader manifest, B ambient occlusion, A emission/wetness/family mask. Linear.
+- MRAO, shipped as `_MaskMap_UnityURP`: **R metallic, G ambient occlusion, B unused, A smoothness.** Linear.
+
+  **AMENDED 2026-07-29 on measurement, by the lead.** This line previously read
+  `R metallic, G roughness or smoothness according to shader manifest, B ambient occlusion,
+  A emission/wetness/family mask`, and is RETAINED HERE AS SUPERSEDED rather than deleted, per the
+  no-loss protocol. Basis: across the 703 `TX_*` files actually shipped under
+  `Assets/_Project/Art/TEXTURES`, the suffix `_MRAO` has **ZERO instances** while
+  `_MaskMap_UnityURP` has **138**, and its packing is bit-exact against
+  `Hecton_ModuleHardSurfaceLit._MaskMap` (property label :71, decode :349-353). So AO ships in **G**,
+  not B, and smoothness in **A**, not G. The matching amendment landed in
+  `3DMODEL_TEXTURES_MATERIALS.md` §3 in commit 35cfe1c45; this file is the sibling that still
+  disagreed. "Roughness or smoothness according to shader manifest" is moot for this map: A is
+  smoothness by definition of the format.
+
+  `_ARM_AO_Rough_Metal` is a SECOND layout that also ships (R = AO, G = roughness, B = metal) and is
+  **not interchangeable** with the URP mask. Binding it where the URP mask is expected puts AO in the
+  metallic slot. Every generated family must record WHICH layout each map uses. Pick by suffix, never
+  by assumption.
+
+  The word "MRAO" elsewhere in this document is the generic term for the packed mask and is left
+  alone; the concrete shipped map is `_MaskMap_UnityURP`.
+
+  Do not confuse either with the VERTEX-COLOUR contract, which is separate and unchanged: baked AO
+  sits in **B of the vertex stream** and in **G of the packed texture**, and both are true at once.
+  Conflating them is how two shipping shaders came to apply a harvest mask as occlusion (fixed
+  2026-07-29 in 66559a8c0).
 - Emission: only for bioluminescence, instrument glow, hot venting, energized equipment, or emergency markings.
 - Detail: optional high-frequency overlay for near-field surfaces; must be shared by material family.
 - Height: offline source for parallax, normal derivation, wear masks, or displacement bake. It may ship only if shader contract and platform budget allow it.
