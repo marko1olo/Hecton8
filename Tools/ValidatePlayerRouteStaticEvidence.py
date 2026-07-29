@@ -24,6 +24,12 @@ SUIT_HUD_CANVAS_PREFAB_GUID = "e286dd44e529d8b4498750dd0abbbfd8"
 HECTON_PLAYER_MOVEMENT_GUID = "6d195933dec89b14ebbfa47a621ac549"
 PLAYER_INTERACTION_GUID = "215f6ea2a912636499ffc2dda9bdfb9d"
 
+# Root GameObject name inside each HUD prefab, used for the name probe below.
+# Verified 2026-07-29: `m_Name: HUD_Internal` is the sole name in HUD_Internal.prefab,
+# and `m_Name: Suit_HUD_Canvas` is at Suit_HUD_Canvas.prefab:2350.
+HUD_INTERNAL_ROOT_NAME = "HUD_Internal"
+SUIT_HUD_CANVAS_ROOT_NAME = "Suit_HUD_Canvas"
+
 DEFAULT_SCENE = REPO_ROOT / "Assets" / "_Project" / "Scenes" / "02_HECTON_WORLD.unity"
 DEFAULT_BOOTSTRAP = REPO_ROOT / "Assets" / "_Project" / "Scripts" / "Bootstrap" / "GameBootstrapper.cs"
 DEFAULT_SCENE_GATE = REPO_ROOT / "Assets" / "_Project" / "Scripts" / "Bootstrap" / "SceneInstantiationGate.cs"
@@ -134,6 +140,86 @@ def scene_guid_present(guid: str, scene_text: str, scene_bytes: bytes) -> bool:
     return guid in scene_text or guid.upper() in scene_text
 
 
+# ---------------------------------------------------------------------------
+# The prefab-instance inversion.
+#
+# A component carried by a prefab INSTANCE emits no scene entry unless the value
+# is overridden. So for anything that lives on Player.prefab, absence from
+# 02_HECTON_WORLD.unity is the EXPECTED SIGNATURE OF A CORRECT PREFAB INSTANCE,
+# not evidence against one. Asking the scene is asking the wrong artifact, and
+# four checks in this file used to treat the right answer as a defect.
+#
+# Measured 2026-07-29 in this repo, and this is the control that proves the
+# inversion rather than asserting it: `HUD_Render_Camera` is a GameObject inside
+# Player.prefab (Player.prefab:3549) and the binary world scene contains that
+# name ZERO times, while it does contain `Main Camera` and `Directional Light`
+# once each. The scene emits nothing for a prefab instance's interior. The same
+# scene DOES carry Player.prefab's own asset GUID. Both facts together are the
+# whole point: the scene names the prefab, and says nothing about its contents.
+#
+# Therefore:
+#   * a script GUID that resolves only to Player.prefab -> ask Player.prefab
+#     whether it carries the component (`prefab_carries_script`);
+#   * a prefab asset GUID -> ask BOTH whether the scene instantiates it AND
+#     whether Player.prefab nests it, because a nested prefab serialises its
+#     source GUID into the parent prefab and never into the scene.
+#
+# DO NOT "fix" these back into scene-only GUID searches. That inversion is one
+# of the five wrong claims retracted from
+# Docs/Orchestration/PLAYER_HUD_MOVEMENT_P0_SYNTHESIS_20260605.md (blocker 4),
+# which stood for seven weeks and was used to declare visor polish and cinematic
+# camera work invalid.
+# ---------------------------------------------------------------------------
+
+
+def prefab_carries_script(prefab_text: str, script_guid: str) -> bool:
+    """Is this MonoBehaviour an actual component of the prefab?
+
+    Requires the full `m_Script` binding, not a bare GUID substring: a prefab can
+    mention a GUID in a serialized field without carrying the component, and
+    "the component is on the prefab" is a stronger claim than "the GUID occurs".
+    """
+    pattern = rf"m_Script:\s*\{{fileID:\s*11500000,\s*guid:\s*{re.escape(script_guid)},\s*type:\s*3\}}"
+    return bool(prefab_text) and re.search(pattern, prefab_text) is not None
+
+
+def text_references_guid(text: str, guid: str) -> bool:
+    """Does this text artifact reference the GUID at all, in either hex case?
+
+    Used against Player.prefab, which is a TEXT prefab - a nested prefab stores
+    its source GUID here as hex, which is why the nesting question is answerable
+    without Unity while the same question against a binary scene is not.
+    """
+    return bool(text) and (guid in text or guid.upper() in text)
+
+
+def object_name_present(text: str, name: str) -> bool:
+    """Does a GameObject with exactly this name exist in a TEXT scene or prefab?"""
+    if not text:
+        return False
+    return re.search(rf"^\s*m_Name:\s*{re.escape(name)}\s*$", text, re.MULTILINE) is not None
+
+
+def scene_object_name_present(name: str, scene_text: str, scene_bytes: bytes) -> bool:
+    """Same question against whichever encoding the scene uses.
+
+    Binary Unity scenes store GameObject names as plain length-prefixed UTF-8, so
+    unlike GUIDs the name needs no nibble swap and IS greppable in the bytes.
+    Verified against this scene: `Main Camera` and `Directional Light` both read
+    1, so a name miss here is a real miss at scene level - subject to the
+    inversion above, which means it still says nothing about prefab interiors.
+
+    The binary branch is a raw substring test, so `Suit_HUD_Canvas_Legacy` would
+    also satisfy `Suit_HUD_Canvas`. That looseness is deliberate and one-directional:
+    every caller uses a name HIT only to WITHHOLD a blocker, never to raise one, so
+    the failure mode is an over-cautious UNDECIDABLE rather than a false accusation.
+    Do not tighten this into something that can manufacture a negative.
+    """
+    if is_binary_scene(scene_bytes):
+        return name.encode("utf-8") in scene_bytes
+    return object_name_present(scene_text, name)
+
+
 def has_production_player_prefab_source_route(text: str) -> bool:
     prefab_field = re.search(r"\b(?:GameObject|AssetReferenceGameObject)\s+productionPlayerPrefab\b", text) is not None
     prefab_instantiate = re.search(r"\bInstantiate\s*\(\s*productionPlayerPrefab\b", text) is not None
@@ -231,6 +317,27 @@ def classify(
     scene_has_movement_guid = scene_guid_present(HECTON_PLAYER_MOVEMENT_GUID, scene_text, scene_bytes)
     scene_has_interaction_guid = scene_guid_present(PLAYER_INTERACTION_GUID, scene_text, scene_bytes)
 
+    # Ask Player.prefab the questions only Player.prefab can answer. See the
+    # prefab-instance inversion block above for why the scene cannot.
+    prefab_has_movement = prefab_carries_script(player_prefab_text, HECTON_PLAYER_MOVEMENT_GUID)
+    prefab_has_interaction = prefab_carries_script(player_prefab_text, PLAYER_INTERACTION_GUID)
+    prefab_nests_hud_internal = text_references_guid(player_prefab_text, HUD_INTERNAL_PREFAB_GUID)
+    prefab_nests_suit_hud = text_references_guid(player_prefab_text, SUIT_HUD_CANVAS_PREFAB_GUID)
+    prefab_names_hud_internal = object_name_present(player_prefab_text, HUD_INTERNAL_ROOT_NAME)
+    prefab_names_suit_hud = object_name_present(player_prefab_text, SUIT_HUD_CANVAS_ROOT_NAME)
+    scene_names_hud_internal = scene_object_name_present(HUD_INTERNAL_ROOT_NAME, scene_text, scene_bytes)
+    scene_names_suit_hud = scene_object_name_present(SUIT_HUD_CANVAS_ROOT_NAME, scene_text, scene_bytes)
+
+    # THE POSITIVE CONTROL. A search that has not been shown able to find a
+    # positive in this exact file has not established that anything is missing -
+    # that is the rule Tools/SceneGuidReachability.py enforces with --control, and
+    # this tool violated it for seven weeks. Player.prefab's own GUID being found
+    # in these very scene bytes is the control: it proves the byte search reaches
+    # this scene. If even that GUID is missing, the search is unproven and every
+    # scene negative below is withheld as UNDECIDABLE instead of blamed on the
+    # asset.
+    scene_guid_search_validated = scene_has_guid
+
     # Two questions below are answered by YAML text markers and are genuinely
     # UNDECIDABLE against a binary scene. `None` means "not answered", which is
     # deliberately distinct from `False` - reporting an unearned negative is the
@@ -286,25 +393,103 @@ def classify(
     else:
         notes.append("scene-production-prefab-instance-exact: present")
 
-    if not scene_has_hud_internal_guid:
-        blockers.append(f"scene-missing-hud-internal-prefab-guid: {HUD_INTERNAL_PREFAB_GUID} not found in scene")
-    else:
-        notes.append("scene-hud-internal-prefab-guid: present")
+    # ---- HUD prefab ASSET GUIDs -------------------------------------------
+    # These two are prefab asset GUIDs, not script GUIDs (verified against
+    # HUD_Internal.prefab.meta and Suit_HUD_Canvas.prefab.meta), so the question
+    # is "does the player route instantiate this prefab", and there are TWO
+    # places that can answer: the scene, as a prefab instance, or Player.prefab,
+    # as a NESTED prefab. Asking only the scene was wrong because a nested prefab
+    # never appears in the scene. Both are asked now, plus the root object name
+    # in both artifacts, which catches an unpacked/plain-GameObject authoring
+    # that carries no prefab asset link at all.
+    for label, guid, scene_guid_hit, nested_hit, named_in_prefab, named_in_scene, retired_key in (
+        (
+            "hud-internal-prefab",
+            HUD_INTERNAL_PREFAB_GUID,
+            scene_has_hud_internal_guid,
+            prefab_nests_hud_internal,
+            prefab_names_hud_internal,
+            scene_names_hud_internal,
+            "scene-missing-hud-internal-prefab-guid",
+        ),
+        (
+            "suit-hud-canvas-prefab",
+            SUIT_HUD_CANVAS_PREFAB_GUID,
+            scene_has_suit_hud_guid,
+            prefab_nests_suit_hud,
+            prefab_names_suit_hud,
+            scene_names_suit_hud,
+            "scene-missing-suit-hud-prefab-guid",
+        ),
+    ):
+        if scene_guid_hit:
+            notes.append(f"{label}-reference: present - scene instantiates {guid}")
+        elif nested_hit:
+            notes.append(f"{label}-reference: present - nested inside Player.prefab, which is why the scene has no entry")
+        elif named_in_prefab:
+            notes.append(
+                f"{label}-reference: UNDECIDABLE - Player.prefab has no {guid} link but does carry a GameObject "
+                f"named for it, so the prefab asset GUID is not the right question here. Unity readback required."
+            )
+        elif named_in_scene:
+            notes.append(
+                f"{label}-reference: UNDECIDABLE - no {guid} link anywhere on the player route, but the scene "
+                f"carries a GameObject with that root name (unpacked prefab authoring). Whether it is the "
+                f"authored HUD needs Unity readback."
+            )
+        elif not scene_guid_search_validated:
+            notes.append(
+                f"{label}-reference: UNDECIDABLE - {guid} not found, but the scene GUID search is unvalidated "
+                f"(Player.prefab's own GUID is missing too), so this negative is withheld rather than reported."
+            )
+        else:
+            blockers.append(
+                f"{label}-unreferenced-by-player-route: {guid} is instantiated by neither the scene nor "
+                f"Player.prefab, and neither artifact carries a GameObject with its root name "
+                f"(retires the inverted check {retired_key}, which asked only the scene)"
+            )
 
-    if not scene_has_suit_hud_guid:
-        blockers.append(f"scene-missing-suit-hud-prefab-guid: {SUIT_HUD_CANVAS_PREFAB_GUID} not found in scene")
-    else:
-        notes.append("scene-suit-hud-prefab-guid: present")
-
-    if not scene_has_movement_guid:
-        blockers.append(f"scene-missing-player-movement-guid: {HECTON_PLAYER_MOVEMENT_GUID} not found in scene")
-    else:
-        notes.append("scene-player-movement-guid: present")
-
-    if not scene_has_interaction_guid:
-        blockers.append(f"scene-missing-player-interaction-guid: {PLAYER_INTERACTION_GUID} not found in scene")
-    else:
-        notes.append("scene-player-interaction-guid: present")
+    # ---- Player component SCRIPT GUIDs ------------------------------------
+    # HectonPlayerMovement and PlayerInteraction resolve ONLY to
+    # Assets/_Project/Prefabs/Player.prefab (Tools/SceneGuidReachability.py,
+    # 2026-07-29). Their absence from the scene is therefore the expected
+    # signature of a correct prefab instance, and the old
+    # `scene-missing-player-*-guid` blockers were reporting the right answer as a
+    # defect. Player.prefab is the artifact that can answer, so it is the one
+    # asked; a scene hit still counts, because that is the legitimate
+    # scene-override / scene-authored case.
+    for label, guid, prefab_hit, scene_hit, retired_key in (
+        (
+            "player-movement-component",
+            HECTON_PLAYER_MOVEMENT_GUID,
+            prefab_has_movement,
+            scene_has_movement_guid,
+            "scene-missing-player-movement-guid",
+        ),
+        (
+            "player-interaction-component",
+            PLAYER_INTERACTION_GUID,
+            prefab_has_interaction,
+            scene_has_interaction_guid,
+            "scene-missing-player-interaction-guid",
+        ),
+    ):
+        if prefab_hit:
+            notes.append(
+                f"{label}: present - Player.prefab carries the m_Script binding for {guid}. Scene absence is "
+                f"the expected signature of a prefab instance, not a defect (retires {retired_key})."
+            )
+        elif scene_hit:
+            notes.append(f"{label}: present - scene-level entry for {guid} (scene-authored or overridden)")
+        elif not player_prefab_text:
+            notes.append(
+                f"{label}: UNDECIDABLE - {guid} absent from the scene and Player.prefab text was not supplied, "
+                f"so the artifact that can answer was never read."
+            )
+        else:
+            blockers.append(
+                f"{label}-missing: {guid} has no m_Script binding in Player.prefab and no scene-level entry"
+            )
 
     if not runtime_has_guid:
         blockers.append(f"runtime-missing-production-prefab-guid: {PLAYER_PREFAB_GUID} production prefab source route not found in bootstrap/spawner")
