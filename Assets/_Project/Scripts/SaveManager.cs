@@ -37,9 +37,6 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace Hecton8.SaveSystem
 {
