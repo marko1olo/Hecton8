@@ -135,16 +135,37 @@ What this proves, and what it does not:
    appear in the log, the bootstrap reaches `TryInitializeBootstrapDependencyNodeWithFallback for node
    SystemDispatcher`, a day completes, and a verdict is written. None of that had ever been observed.
 2. **The ecology is empty, and this is now a measured blocker rather than a suspicion.** Status
-   `[ECOLOGY_UNAVAILABLE]` with prey, predator and carrying capacity all exactly `0.000` at day 1. The
-   likely mechanism was predicted before the run and matches: `EcosystemDirector.AllocateRuntimeState`
-   continues past the last term of the 19-term `IsInitialized` predicate (`EcosystemDirector.cs:4361`) into
-   graphics work — two `CreateStructuredLockBuffer` calls at `:4382-4383` and `Shader.SetGlobal*` at
-   `:4388-4389`. A throw there leaves `IsInitialized == true` while `TryRegisterService()` (`:2637`) never
-   runs, so `GlobalRegistry.EcosystemDirector` stays null and `HeadlessSimulationRunner.cs:504-505` waits on
-   null forever. That is also the concrete reason `-nographics` is banned here: it would guarantee this
-   failure instead of merely risking it. **Which of the two gates actually fired — this one or the silent
-   `vault == null` bail at `:4308-4310` — is NOT yet established. The run proves the outcome, not the
-   mechanism.**
+   `[ECOLOGY_UNAVAILABLE]` with prey, predator and carrying capacity all exactly `0.000` at day 1.
+   **The cause is NOT in `EcosystemDirector`, and two predictions of mine were wrong.** Before the run,
+   both a static analysis pass and my own first write-up of this section blamed
+   `EcosystemDirector.AllocateRuntimeState` — either the silent `vault == null` bail at
+   `EcosystemDirector.cs:4308-4310` or a throw in its graphics tail (`:4382-4383`, `:4388-4389`) leaving
+   `IsInitialized == true` while `TryRegisterService()` at `:2637` never runs. The log refutes both:
+   there is no GraphicsBuffer exception anywhere in it, and no runtime line mentioning DataVault,
+   Ecosystem or Ecology at all.
+
+   What the log actually shows is that **the bootstrap dependency chain reaches exactly EIGHT nodes and
+   then stops**, and `EcosystemDirector` is not among them. In order:
+   `SystemDispatcher`, `GameTickManager`, `SaveManager`, `ObjectPoolManager`, `RenderDispatcher`,
+   `SceneRuntimeService`, `EquipmentInteractionHandler`, `ModWorldPersistenceManager`. Each logs
+   `TryInitializeBootstrapDependencyNodeWithFallback for node X` followed by
+   `Waiting for heartbeat for node X`; after the `ModWorldPersistenceManager` heartbeat line there is no
+   ninth node and no further bootstrap output. `GlobalRegistry.EcosystemDirector` is therefore null for a
+   reason that has nothing to do with `EcosystemDirector`'s own code, and
+   `HeadlessSimulationRunner.cs:504-505` reports `[ECOLOGY_UNAVAILABLE]` truthfully about a service that
+   was never given the chance to initialise.
+
+   The wrinkle that has to be reconciled before anyone patches this: **the simulation advanced anyway** —
+   one full day, 62.65 simulated seconds, 130 synthetic origin shifts. So the dispatcher was up and
+   ticking while the bootstrap chain was parked. That leaves two candidate shapes with different fixes,
+   and the run does not yet separate them: a genuine dependency stall at the `ModWorldPersistenceManager`
+   heartbeat, or a boot that was merely slower than the runner's ecology-wait timeout (the verdict was
+   written 50 s after start — `started 04:47:24`, verdict `04:48:14`). A deadlock needs the dependency
+   broken; a slow boot needs the wait or the node order changed. **Do not widen the timeout until that
+   question is settled** — that would hide a deadlock rather than fix it.
+
+   `-nographics` remains banned regardless, on the independent grounds that
+   `AllocateRuntimeState`'s graphics tail runs after the last `IsInitialized` term.
 3. **Time dilation is 3.5x, not the 4x-13x I estimated.** `timeDilationDelivered: 3.500491` against
    `timeDilationNominal: 100`. My own watchdog arithmetic in `60a7ed08d` reasoned from an optimistic floor
    of 4x; the real floor is below it. The budget `420 s + span/4` still held for this run because the run
