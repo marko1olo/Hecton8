@@ -78,8 +78,11 @@ Not proven by that log:
 | ~~Notifications never reach the player: `HUDNotification` had zero instances~~ FIXED 2026-07-29, `5caea2a5e` | `[~]` | Play Mode: a warning visible on screen once |
 | ~~Every notification delivered twice (two drains, different hashes, suppressor never matched)~~ FIXED `cc377a985` | `[~]` | Play Mode: exactly one toast per event |
 | ~~Headless world sim could not finish its own default run~~ FIXED `60a7ed08d` — **and the run has now actually happened**, see the section below | `[x]` | RUN EXISTS 2026-07-29: `[ECOLOGY_UNAVAILABLE]`, 1 of 5 days, JSON on disk |
-| **The headless sim now runs and the ecology inside it is empty: prey `0.000`, predator `0.000`, carrying capacity `0.000`** | `[!]` | one CSV day row with non-zero biomass |
-| **Measured time dilation is 3.5x against a nominal 100x** — below the 4x floor the new watchdog budget assumed | `[x]` | measured: `timeDilationDelivered: 3.500491` |
+| ~~The headless sim runs and the ecology inside it is empty: prey `0.000`, predator `0.000`~~ **RETRACTED — those zeros were never measured.** They are `default(EcosystemBiomassAuditSample)` written by the failure branch itself | `[?]` | none; the premise was wrong, see the correction below |
+| **`-h8headless` skips `BootstrapPhase.Player` entirely, so the ecology is never told where to look** — the harness's success condition is structurally unreachable in the mode it runs in | `[!]` | one CSV day row with non-zero biomass, from a run whose ecology was actually asked a question it could answer |
+| **The harness's own verdict line is filtered out by its own log policy.** `filterLogType = LogType.Warning` (`HeadlessSimulationRunner.cs:483`) eats every `Debug.Log` — including `[HEADLESS] fail` and all `[GameBootstrapper]` node progress | `[!]` | a run whose log contains its own terminal verdict |
+| Default headless config still cannot finish: 100 days x 3600 s at the measured 3.5x needs **28.6 h** against a 6 h `TimeoutCeilingSeconds` (`HeadlessSimulationBatchRunner.cs:62`) | `[!]` | a raised ceiling, or a documented maximum day count |
+| **Measured time dilation is 3.5x against a nominal 100x** — below the 4x floor the batch runner's own comment calls pessimistic (`HeadlessSimulationBatchRunner.cs:61`) | `[x]` | measured: `timeDilationDelivered: 3.500491` |
 | A missing asmdef reference cost a whole batchmode run, and neither the lock-free gate nor the unit tests could see it | `[x]` | fixed; see `The build break that ate the first headless run` |
 
 ### The first headless simulation run that ever produced a verdict — 2026-07-29
@@ -134,38 +137,69 @@ What this proves, and what it does not:
 1. **The harness works.** `[HEADLESS] runner installed and started` then `[HEADLESS] waiting for dispatcher`
    appear in the log, the bootstrap reaches `TryInitializeBootstrapDependencyNodeWithFallback for node
    SystemDispatcher`, a day completes, and a verdict is written. None of that had ever been observed.
-2. **The ecology is empty, and this is now a measured blocker rather than a suspicion.** Status
-   `[ECOLOGY_UNAVAILABLE]` with prey, predator and carrying capacity all exactly `0.000` at day 1.
-   **The cause is NOT in `EcosystemDirector`, and two predictions of mine were wrong.** Before the run,
-   both a static analysis pass and my own first write-up of this section blamed
+2. **The ecology was never empty. It was never asked a question it could answer — and the zeros in the CSV
+   are not measurements at all.** This entry has now been wrong twice in two different ways, so the
+   corrections are kept in order rather than tidied away.
+
+   **Wrong prediction 1 (pre-run, static).** That the cause sat in
    `EcosystemDirector.AllocateRuntimeState` — either the silent `vault == null` bail at
-   `EcosystemDirector.cs:4308-4310` or a throw in its graphics tail (`:4382-4383`, `:4388-4389`) leaving
-   `IsInitialized == true` while `TryRegisterService()` at `:2637` never runs. The log refutes both:
-   there is no GraphicsBuffer exception anywhere in it, and no runtime line mentioning DataVault,
-   Ecosystem or Ecology at all.
+   `EcosystemDirector.cs:4308-4310`, or a throw in its graphics tail (`:4382-4383`, `:4388-4389`) leaving
+   `IsInitialized == true` while service registration never ran.
 
-   What the log actually shows is that **the bootstrap dependency chain reaches exactly EIGHT nodes and
-   then stops**, and `EcosystemDirector` is not among them. In order:
-   `SystemDispatcher`, `GameTickManager`, `SaveManager`, `ObjectPoolManager`, `RenderDispatcher`,
-   `SceneRuntimeService`, `EquipmentInteractionHandler`, `ModWorldPersistenceManager`. Each logs
-   `TryInitializeBootstrapDependencyNodeWithFallback for node X` followed by
-   `Waiting for heartbeat for node X`; after the `ModWorldPersistenceManager` heartbeat line there is no
-   ninth node and no further bootstrap output. `GlobalRegistry.EcosystemDirector` is therefore null for a
-   reason that has nothing to do with `EcosystemDirector`'s own code, and
-   `HeadlessSimulationRunner.cs:504-505` reports `[ECOLOGY_UNAVAILABLE]` truthfully about a service that
-   was never given the chance to initialise.
+   **Wrong prediction 2 (mine, post-run).** That the bootstrap dependency chain *stalled* at
+   `ModWorldPersistenceManager` because the log shows exactly eight nodes and then goes silent. It does show
+   that. It is not a stall. Those eight are the complete `BootstrapPhase.CoreServices` set —
+   `ResolveBootstrapNodePhase` (`GameBootstrapper.cs:5603-5615`) assigns that phase to exactly those eight,
+   in exactly the logged order, and `:5424-5428` filters one global topological order by phase and
+   `continue`s past everything else. The loop ended because it ran out of nodes for the phase. The next node
+   in global order, `HectonFloatingOrigin`, is `BootstrapPhase.Environment` and ran later.
 
-   The wrinkle that has to be reconciled before anyone patches this: **the simulation advanced anyway** —
-   one full day, 62.65 simulated seconds, 130 synthetic origin shifts. So the dispatcher was up and
-   ticking while the bootstrap chain was parked. That leaves two candidate shapes with different fixes,
-   and the run does not yet separate them: a genuine dependency stall at the `ModWorldPersistenceManager`
-   heartbeat, or a boot that was merely slower than the runner's ecology-wait timeout (the verdict was
-   written 50 s after start — `started 04:47:24`, verdict `04:48:14`). A deadlock needs the dependency
-   broken; a slow boot needs the wait or the node order changed. **Do not widen the timeout until that
-   question is settled** — that would hide a deadlock rather than fix it.
+   **Why the log goes dark, which is what made both of us misread it.**
+   `ForceHeadlessRuntimePolicy` sets `Debug.unityLogger.filterLogType = LogType.Warning`
+   (`HeadlessSimulationRunner.cs:483`), called at `:337` the moment the dispatcher wait succeeds. Unity
+   drops `LogType.Log` at the managed `Logger` before it reaches the log file *or*
+   `Application.logMessageReceived`. So the filter ate the rest of the boot trace **and the harness's own
+   verdict line**: `FailAndQuit` writes the result JSON at `:939` and logs at `:940`, the JSON is on disk,
+   and `[HEADLESS] fail` appears **zero times** in all 27,107 log lines. Native engine output kept flowing
+   the whole time, which is the tell — managed-only silence, exactly as a managed-only filter predicts.
+   The `logSpamSuppressed: 18` field is also misnamed: `:1174-1178` counts `LogType.Log` messages
+   *delivered*, not suppressed, and 18 reconciles exactly with the 19 `Debug:Log` frames in the play-mode
+   window minus the one that fired before the hook was installed.
 
-   `-nographics` remains banned regardless, on the independent grounds that
-   `AllocateRuntimeState`'s graphics tail runs after the last `IsInitialized` term.
+   **The ecosystem was alive and registered.** `_simulatedSeconds` only accrues while `_ecologyReady`
+   (`HeadlessSimulationRunner.cs:213-217`), and `_ecologyReady` is `ecosystem != null &&
+   ecosystem.IsInitialized`, re-evaluated every tick including the one that wrote the verdict. The JSON says
+   `simulatedSeconds: 62.65`. So `GlobalRegistry.EcosystemDirector` was non-null and `IsInitialized` true,
+   which — since `IsInitialized` is a 19-term `IsCreated` conjunction over the buffers
+   `AllocateRuntimeState` creates — also proves that method ran past its graphics tail without throwing.
+   Both earlier hypotheses are dead on the same evidence.
+
+   **The actual cause.** `-h8headless` skips `BootstrapPhase.Player` outright
+   (`GameBootstrapper.cs:2417-2418`) and parks the boot in `00_BOOTSTRAP` (`:3120-3124`). No player is ever
+   created, so `TryResolvePlayerAup` cannot succeed, so `EnsurePlayerSectorRegistered` returns before
+   seeding anything, so `_activeBiomassCellCount` stays `0` — and `TryGetGlobalBiomassAudit` fails its
+   `count <= 0` gate (`EcosystemDirector.cs:3415-3417`), which the runner turns into a fatal
+   `[ECOLOGY_UNAVAILABLE]` (`:588-594`). **The ecology only ever seeds biomass cells from an observer
+   position, and headless never gives it one. The harness's success condition is structurally unreachable
+   in the mode the harness runs in.**
+
+   **Therefore the CSV zeros are not data.** `1,0.000,0.000,0.000,...,1` is
+   `default(EcosystemBiomassAuditSample)` plus the literal `flags: 1u` hard-coded in that failure branch. No
+   biomass was sampled and none was reported as zero — the row records that no sample exists. Reading it as
+   "the world has no life in it" is reading a null as a measurement, and that is what the retracted blocker
+   row above did.
+
+   `-nographics` remains banned regardless, on the independent grounds that `AllocateRuntimeState`'s
+   graphics tail runs after the last `IsInitialized` term — that reasoning survives even though it is not
+   what fired here.
+
+   **UNPROVEN, and worth stating precisely.** `count <= 0` is *forced* by source — with no player there is
+   no seeding path — but it was never *observed*, because the log filter above hid it and the result file
+   surfaces no ecology telemetry. `TryGetGlobalBiomassAudit` has four false branches and one of them,
+   `HasPendingSimulationJob()`, is transient. Settling which fired costs one `Debug.LogWarning` of
+   `_activeBiomassCellCount` and about a minute of Unity. Also unproven: whether a *patched* run passes at
+   all. Making the ecology answerable is not the same as making it healthy, and whether the solver keeps
+   predator biomass above zero for five simulated days has never been measured once.
 3. **Time dilation is 3.5x, not the 4x-13x I estimated.** `timeDilationDelivered: 3.500491` against
    `timeDilationNominal: 100`. My own watchdog arithmetic in `60a7ed08d` reasoned from an optimistic floor
    of 4x; the real floor is below it. The budget `420 s + span/4` still held for this run because the run
