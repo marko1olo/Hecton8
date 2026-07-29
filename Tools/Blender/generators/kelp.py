@@ -60,9 +60,16 @@ from mathutils import Vector, kdtree, noise
 _TOOLS_BLENDER = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _TOOLS_BLENDER not in sys.path:
     sys.path.insert(0, _TOOLS_BLENDER)
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    # `blender -P script` does NOT put the script's own directory on sys.path, so a
+    # sibling module in generators/ is unimportable without this line. Same reason
+    # rock.py carries it.
+    sys.path.insert(0, _HERE)
 
 from h8forge import law, mesh_ops, preview, validate, vertexcolor  # noqa: E402
 from h8forge.blackbox import BlackBox, GenerationAborted  # noqa: E402
+import silhouette_probe  # noqa: E402
 
 GENERATOR_NAME = "kelp.py"
 GENERATOR_VERSION = "1.0.0"
@@ -136,6 +143,31 @@ STREAM_DETAIL = 71
 # mask has to say "this tissue leaves with the cut" about the same place the anchor
 # puts the cut. Low, because on a 10 m column the reachable stipe is the bottom metre
 # or two, not the canopy.
+# Peak blade twist in radians, per blade, sampled symmetrically about zero. Hoisted here
+# because it is the taste knob on the slack-tissue read and the lead owns that verdict; it
+# must not sit as a literal inside a loop.
+#
+# MEASURED, seed 4021, LOD0, mean over four views:
+#   0.30 rad  coverage 0.03452  convexity 0.4899  top10 0.5122  -- iteration 5 baseline
+#   0.95 rad  coverage 0.03037  convexity 0.4542  top10 0.4408
+#   1.45 rad  coverage 0.03028  convexity 0.4316  top10 0.4720
+#
+# READ THE FIRST TWO COLUMNS TOGETHER BEFORE TUNING THIS. An earlier version of this
+# comment asserted that twist COSTS silhouette occupancy because a twisted sheet presents
+# its 1.5 mm edge instead of its 0.22 m face. That mechanism is real but it is NOT what
+# moved the number: 0.95 and 1.45 measure the same coverage to within 0.0001, i.e. twist is
+# occupancy-NEUTRAL across the usable range. The 0.0042 coverage drop from the iteration-5
+# baseline was paid by the SAG and HANG changes, which pull blade mass inward against the
+# column, and by nothing else. Convexity does respond to twist (0.454 -> 0.432), so the
+# outline gets emptier relative to its own hull while covering the same pixels -- which is
+# the edge-on effect showing up in the metric that can actually see it.
+#
+# So twist is free here and 1.45 is kept for the read. If occupancy has to rise it must
+# come from MORE blades or a denser field -- a triangle-budget decision, not a grammar one.
+# Widening the blade is not available: 0.21-0.31 m is already at the top of the real
+# Macrocystis 0.10-0.22 m range.
+BLADE_TWIST_RAD = 1.45
+
 CUT_HEIGHT_FRACTION = 0.11
 
 # The substrate the holdfast grips. Blades trail ALONG it rather than through it.
@@ -955,10 +987,18 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         # young and short. That gradient also helps the read, because it puts the long
         # ribbons where the player swims.
         age = 1.0 - height_t
-        length = form.blade_length * (0.80 + 0.32 * lee) * (0.72 + 0.44 * age) * \
+        # ITERATION 6. The age gradient was 0.72..1.16, so an apex blade was 62 percent
+        # of a basal one. Combined with a drop of 0.72-0.94 of length, that emptied the
+        # TOP of the column: measured by opening the iteration-5 silhouette sheet, the
+        # upper third of the stipe is a bare wire in all four views, with the blade mass
+        # piled into the lower half and only the fountain straps above it. Softening the
+        # gradient to 0.84..1.10 puts real sheet area back on the upper column. Length and
+        # width still cost NO triangles -- same ring count over more metres -- so this is
+        # free silhouette mass, which is the only reason it is affordable.
+        length = form.blade_length * (0.80 + 0.32 * lee) * (0.84 + 0.26 * age) * \
             (0.86 if is_canopy else 1.0) * float(rng.uniform(0.84, 1.20))
         half_width = form.blade_half_width * (0.86 + 0.26 * lee) * \
-            (0.78 + 0.30 * age) * float(rng.uniform(0.90, 1.12))
+            (0.86 + 0.22 * age) * float(rng.uniform(0.90, 1.12))
         half_thickness = form.blade_half_thickness * float(rng.uniform(0.88, 1.14))
 
         # HANG, do not radiate. This is the single change that separates a kelp from a
@@ -993,21 +1033,97 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         # read as a bare wire with scraps: the constraint that changed is blade SIZE.
         # At 1.3 m long and 13 cm wide a low-reach blade disappeared into a 5 cm stipe;
         # at 2.8 m and 22 cm it hangs well past the stipe as a curtain.
-        reach = 0.12 + 0.11 * float(rng.uniform(0.0, 1.0))
-        hang = 0.72 + 0.22 * float(rng.uniform(0.0, 1.0))
-        lift = 0.10 + 0.14 * float(rng.uniform(0.0, 1.0))
-        swing = float(rng.uniform(-0.16, 0.16))
+        # ITERATION 7. Iteration 6 removed the fountain and bought the diagonal, but opening
+        # its sheet showed a FEATHER: a regular herringbone of blades leaving a central axis
+        # at a consistent angle on both sides, which is a pinnate leaf and as terrestrial as
+        # the maize read that was rejected at iteration 3. The cause is that every blade
+        # shared one departure profile -- `reach` in a narrow 0.12-0.23 band at a FIXED
+        # u**0.34 -- so all 23 turned their elbow at the same place and the projection
+        # combed them into ribs. Widening the band and randomising the exponent means some
+        # blades hug the stipe and fall nearly vertically while others spring clear first.
+        reach = 0.07 + 0.20 * float(rng.uniform(0.0, 1.0))
+        reach_exp = float(rng.uniform(0.22, 0.85))
+        # SLACK. This is the remaining half of the lead's "slack tissue" verdict and no
+        # amount of section twist substitutes for it: iteration 6 twisted the cross-section
+        # correctly while leaving every CENTRELINE a smooth monotone arc, so each blade was
+        # still a straight tapered bar. Real waterlogged tissue sags under its own weight
+        # between the float that holds its base and the tip that hangs free -- a catenary
+        # bowed DOWNWARD through the middle, not a straight diagonal.
+        sag = float(rng.uniform(0.06, 0.20))
+        # Hang range widened DOWNWARD (was 0.72-0.94). A blade that drops 0.9 of its own
+        # 2.8 m length falls 2.5 m past an attachment spacing of 0.6 m, so eight nodes'
+        # worth of sheet lands in the same lower metre and the column above it goes bare.
+        # 0.58-0.92 keeps more of each blade near the height it grew at.
+        hang = 0.58 + 0.34 * float(rng.uniform(0.0, 1.0))
+        # LIFT IN METRES. This is the THIRD time this generator has expressed a fixed
+        # anatomical length as a fraction of blade length, and the previous two are
+        # documented above this function: `bladder_length_m` ("In METRES, not as a
+        # fraction of blade length") and `shoulder_length_m` ("A real Macrocystis stalk
+        # is 20-30 cm whatever the blade length"). As a fraction, lift 0.10-0.24 on a
+        # 2.3-3.4 m blade RAISED the sheet 0.23-0.82 m before it began to fall; on canopy
+        # blades, lift up to 0.10 against a hang as low as 0.10 made the rise win outright
+        # over the first third. Measured by opening the iteration-5 silhouette sheet: 2-4
+        # straps per view arc UP and OUTWARD off the apex, reading as a fountain or a palm
+        # crown -- the exact failure the lead and the previous owner both named. A
+        # pneumatocyst is 3-6 cm of gas. It lifts a blade BASE by centimetres.
+        lift_m = float(rng.uniform(0.018, 0.055))
+        # Sideways travel widened (was +-0.16) so adjacent blades separate in plan instead
+        # of hanging in the same radial plane.
+        swing = float(rng.uniform(-0.30, 0.30))
+        # Per-blade fall SHAPE, not just fall scale. Every blade previously used u**1.05,
+        # so all 23 traced the same curve differing only by a scale factor -- which is
+        # precisely what makes a bundle of ribbons read as one manufactured object.
+        hang_exp = float(rng.uniform(0.88, 1.34))
+        # AZIMUTHAL DRIFT: the blade's hanging plane rotates around the stipe as it
+        # descends, so each blade is a shallow helix down the column rather than a bar in
+        # a fixed radial plane. This is the lever that buys diagonal CROSSING, and it is
+        # azimuthal rather than radial for a measured reason: iteration 4 bought the same
+        # occupancy with reach and was rejected at a 3.76 x 3.10 m plan against 8.47 m of
+        # height -- "a bush that wide is a land plant whatever the blades do". Tangential
+        # travel costs nothing in plan radius, which stays equal to `reach`, while making
+        # every blade cross its neighbours diagonally.
+        drift = float(rng.uniform(-1.45, 1.45))
+        # Per-blade deflection of the downstream sweep. `form.current` is ONE vector for
+        # the whole plant, so every blade was pushed in an identical direction by an
+        # identical profile: that shared term is the direct cause of the "too parallel"
+        # verdict. Real slack blades in a current are deflected by their neighbours and by
+        # local shear, so they trail in a spread, not a comb.
+        flow_jitter = float(rng.uniform(-0.62, 0.62))
         if is_canopy:
-            # At the surface the canopy blades lie OVER, downstream, rather than hang.
-            reach = 0.46 + 0.26 * float(rng.uniform(0.0, 1.0))
-            hang = 0.10 + 0.16 * float(rng.uniform(0.0, 1.0))
-            lift = 0.03 + 0.07 * float(rng.uniform(0.0, 1.0))
-        # Roll about the blade's own axis. Bounded hard: a helicoid is not developable
-        # and an unwrap of one carries GENUINE stretch, which is the mechanism behind the
-        # 60.918 triangle that cost the sixth asset its FBX. +-0.42 rad over the whole
-        # length is 24 degrees -- enough to make the sheet catch light differently along
-        # itself, mild enough that a margin-seam unroll stays near-isometric.
-        roll = float(rng.uniform(-0.30, 0.30))
+            # At the surface the canopy blades lie OVER, downstream. "Lie over" is a
+            # near-horizontal DRAPE and it must still never rise; the old numbers made it
+            # a fountain. Reach also comes down, because the lead's verdict was "up AND
+            # outward" and 0.46-0.72 of a 2.4 m blade is 1.1-1.7 m of pure outward spike.
+            reach = 0.34 + 0.20 * float(rng.uniform(0.0, 1.0))
+            hang = 0.26 + 0.20 * float(rng.uniform(0.0, 1.0))
+            lift_m = float(rng.uniform(0.0, 0.030))
+            drift *= 0.55
+        flow_c, flow_s = math.cos(flow_jitter), math.sin(flow_jitter)
+        flow_dir = Vector((form.current.x * flow_c - form.current.y * flow_s,
+                           form.current.x * flow_s + form.current.y * flow_c, 0.0))
+        # TWIST about the blade's own axis -- the "slack tissue" read, and the biggest
+        # single miss of iteration 5, which rolled +-0.30 rad at u**1.6. That is 17 degrees
+        # with almost all of it arriving in the last third, so the sheet is effectively
+        # flat card for its whole visible length: opening the baseline sheet, the blades
+        # read as a bundle of cigars, exactly as the lead described.
+        #
+        # Slack tissue twists along its WHOLE length and REVERSES, because it is being
+        # wrung by a shear field rather than wound by a motor. Two terms: a primary
+        # accumulating roll at a near-linear exponent, plus a slower reversal.
+        #
+        # The safety arithmetic, because a helicoid is genuinely not developable and that
+        # is what cost an earlier asset its FBX at 60.918 distortion. UV shear from twist
+        # is ~ half_width * d(theta)/ds. Worst case here: primary 1.45 rad at exponent 1.02
+        # plus reversal 0.45 * 1.9 * pi, so d(theta)/du <= 4.1, over a 2.8 m blade that is
+        # 1.5 rad/m, and at 0.13 m half-width the shear is 0.19 -- about 11 degrees, an
+        # aspect factor of 1.02 against a 3.3 ceiling. Note that spreading the primary term
+        # from exponent 1.6 to 1.02 LOWERS its peak rate for a given total, so the primary
+        # helicoid is gentler than the old one despite being nearly five times the angle.
+        # The gate that actually decides this is the FBX round trip plus the measured UV
+        # distortion, not this estimate.
+        roll = float(rng.uniform(-BLADE_TWIST_RAD, BLADE_TWIST_RAD))
+        roll_reverse = float(rng.uniform(-0.45, 0.45))
+        roll_reverse_k = float(rng.uniform(1.1, 1.9))
         serr_phase_right = float(detail_rng.uniform(0.0, 1.0))
         serr_phase_left = float(detail_rng.uniform(0.0, 1.0))
         serr_amp = float(detail_rng.uniform(0.10, 0.19))
@@ -1077,16 +1193,36 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             u = u_params[step]
             # Start inside the stipe so the junction is a hidden union under the
             # sheath, per the section 3 weld/knuckle/hidden-union clause.
-            radial = outward * (-stipe_r * 0.75 + length * reach * (u ** 0.34))
-            flow = form.current * (length * 0.20 * form.current_strength * (u ** 1.20))
-            sideways = sideways_axis * (length * swing * (u ** 1.25))
-            # Fall exponent 1.05, not 1.62: near-linear, so the blade is already
-            # descending at u=0.2 and keeps descending at the same rate. A high exponent
-            # holds the sheet up through its first half, which is exactly the stiff arc
-            # that read as maize. Lift is confined to the first fifth by u**0.30 on a
-            # (1-u) window so it lifts the float and nothing else.
-            vertical = length * (lift * (u ** 0.30) * (1.0 - u) ** 1.6 -
-                                 hang * (u ** 1.05))
+            # Rotate the blade's own radial/tangential basis about the column as it
+            # descends. `reach` is unchanged, so the plan RADIUS is unchanged and the
+            # iteration-4 "bush" failure is not reintroduced; what changes is that the
+            # blade sweeps tangentially and therefore crosses its neighbours.
+            spin = drift * (u ** 1.12)
+            spin_c, spin_s = math.cos(spin), math.sin(spin)
+            out_u = Vector((outward.x * spin_c - outward.y * spin_s,
+                            outward.x * spin_s + outward.y * spin_c, 0.0))
+            side_u = Vector((-out_u.y, out_u.x, 0.0))
+            radial = out_u * (-stipe_r * 0.75 + length * reach * (u ** reach_exp))
+            flow = flow_dir * (length * 0.20 * form.current_strength * (u ** 1.20))
+            sideways = side_u * (length * swing * (u ** 1.25))
+            # Fall exponent is PER BLADE now (`hang_exp`, 0.88-1.34) so 23 blades do not
+            # all trace one curve differing only in scale. Still near-linear: a high
+            # exponent holds the sheet up through its first half, which is exactly the
+            # stiff arc that read as maize. Lift is in METRES and rides a (1-u) window, so
+            # it raises the gas float and nothing else.
+            # The `sag` term is a downward bow peaking just past mid-blade, added on top of
+            # the monotone fall. It is what turns a straight diagonal into a limp hanging
+            # strap, and it also restores vertical extent -- iteration 6's diagonal
+            # compressed each blade's height and cost occupancy.
+            vertical = (lift_m * (u ** 0.30) * (1.0 - u) ** 1.6 -
+                        length * hang * (u ** hang_exp) -
+                        length * sag * math.sin(math.pi * (u ** 0.85)))
+            # HARD GUARANTEE, not a tuning hope. A blade centreline may never rise above
+            # its own attachment by more than the float that lifts it. "No upward-pointing
+            # straps" is the lead's acceptance criterion, and a structural clamp cannot
+            # silently regress the way a parameter range can when someone later widens
+            # `lift_m` or shrinks `hang`.
+            vertical = min(vertical, lift_m)
             # Soft floor. A 3 m blade attached 0.5 m up hangs to -2.2 m: measured at
             # iteration 3, bounds min z was -1.43 m, so the lowest blades passed
             # straight through the substrate and through the AO bake floor, and
@@ -1111,7 +1247,8 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
                          spr=serr_phase_right, spl=serr_phase_left,
                          nfc=face_columns, teeth_n=serration_teeth,
                          tear_list=tears, scar_u=scar_at, scar_w=scar_width,
-                         roll=roll, corr_amp=corr_amp, corr_phase=corr_phase,
+                         roll=roll, roll_rev=roll_reverse, roll_rev_k=roll_reverse_k,
+                         corr_amp=corr_amp, corr_phase=corr_phase,
                          corr_n=corrugations, corr_lat=corr_lateral,
                          frill_k=frill_k, frill_phase=frill_phase,
                          frill_amp=frill_amp,
@@ -1226,10 +1363,15 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
                          math.cos(corr_lat * math.pi * s_across * 0.5))
             y += corrugate
 
-            # -- roll about the blade axis -----------------------------------------
+            # -- twist about the blade axis ----------------------------------------
             # Applied as a rotation of the whole section, which keeps thickness and
-            # width exact rather than shearing them.
-            angle = roll * (u ** 1.6)
+            # width exact rather than shearing them. Exponent 1.02, not 1.6: the twist
+            # must be present along the blade's whole visible length, not delivered in
+            # the last third where it reads as a flick at the tip. The sine term reverses
+            # the twist once or twice along the sheet, which is what stops a long strap
+            # looking like a machined auger.
+            angle = (roll * (u ** 1.02) +
+                     roll_rev * math.sin(roll_rev_k * math.pi * u))
             cos_r, sin_r = math.cos(angle), math.sin(angle)
             return (x * cos_r - y * sin_r, x * sin_r + y * cos_r)
 
@@ -1307,8 +1449,17 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             "thicknessM": round(2.0 * half_thickness, 6),
             "sheetAspect": round(half_width / max(1e-9, half_thickness), 1),
             "tipDropFractionOfLength": round(hang, 4),
+            "tipDropExponent": round(hang_exp, 4),
             "radialReachFractionOfLength": round(reach, 4),
-            "rollRad": round(roll, 4),
+            "radialReachExponent": round(reach_exp, 4),
+            "catenarySagFractionOfLength": round(sag, 4),
+            "twistRad": round(roll, 4),
+            "twistReversalRad": round(roll_reverse, 4),
+            "twistReversalPeriods": round(roll_reverse_k, 4),
+            "azimuthalDriftRad": round(drift, 4),
+            "flowDeflectionRad": round(flow_jitter, 4),
+            "swingFractionOfLength": round(swing, 4),
+            "floatLiftM": round(lift_m, 5),
         })
         part_id += 1
 
@@ -3127,6 +3278,30 @@ def _render_proof(obj, *, name: str, resolution: int) -> dict:
             measurements[-1]["minDelta"] = round(abs(stored_min - stats.min_value), 5)
             measurements[-1]["maxDelta"] = round(abs(stored_max - stats.max_value), 5)
 
+    # Alpha-coverage silhouette, on the same LOD0 object that gets exported. Every sheet
+    # above is LIT, and a lit render lets shading imply mass the outline does not have, so
+    # none of them can answer 3DMODEL_FLORA_CORAL.md section 8's "Blades are flat
+    # untextured rectangles at near LOD" or the lead's occupancy verdict. This is geometric
+    # coverage: film_transparent alpha, so a blade facing away from every light still counts.
+    #
+    # Calibrated in-process against controls (`silhouette_probe.py --controls` on this
+    # Blender build), which is why the numbers below mean anything:
+    #   smooth icosphere       turn concentration 0.094
+    #   displaced icosphere    0.137
+    #   random convex polytope 0.789
+    #
+    # NO PASS/FAIL GATE IS ASSERTED HERE, deliberately. The bible sets no numeric outline
+    # floor for flora, and inventing one would be a fabricated threshold. More important:
+    # the probe's own author measured turn_top10_fraction FALLING while the image IMPROVED,
+    # because a top-10 measure rewards 1-2 pixel spikes. So coverage_fraction is reported
+    # first (it is the occupancy question actually being asked and is not spike-sensitive),
+    # the concentration numbers are triage, and the sheet is what decides.
+    silhouette_dir = preview.PreviewSpec(name=name).resolved_output_dir()
+    silhouette = silhouette_probe.render_silhouette(
+        obj, name=name, output_dir=silhouette_dir, resolution=resolution,
+        views=("front", "side", "three_quarter", "low"))
+    coverages = [m.coverage_fraction for m in silhouette.metrics]
+
     out["storedChannelStats"] = stored
     out["flatSheet"] = flat.sheet_path
     out["studioSheet"] = studio.sheet_path
@@ -3134,6 +3309,20 @@ def _render_proof(obj, *, name: str, resolution: int) -> dict:
     out["channelSheet"] = channels.sheet_path
     out["channelTiles"] = list(channels.tile_paths)
     out["channelMeasurements"] = measurements
+    out["silhouetteSheet"] = silhouette.sheet_path
+    out["silhouette"] = [m.as_dict() for m in silhouette.metrics]
+    out["silhouetteSummary"] = {
+        "meanCoverageFraction": round(sum(coverages) / max(1, len(coverages)), 5),
+        "minCoverageFraction": round(min(coverages), 5),
+        "maxCoverageFraction": round(max(coverages), 5),
+        "meanTurnTop10Fraction": round(silhouette.mean_top10, 4),
+        "meanCornerCount": round(silhouette.mean_corners, 2),
+        "meanConvexity": round(silhouette.mean_convexity, 4),
+        "controlSphereTop10": 0.094,
+        "controlPotatoTop10": 0.137,
+        "controlPolytopeTop10": 0.789,
+        "note": "coverage is the occupancy measure; top10 is spike-sensitive triage only",
+    }
     return out
 
 

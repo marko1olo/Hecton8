@@ -6,7 +6,7 @@
   "seed": 4021,
   "qualityWeight": 1.0,
   "family": "Flora",
-  "scaleMeters": 8.53819,
+  "scaleMeters": 8.52588,
   "cameraDistanceClass": "near_interactive",
   "platformLane": "compact_to_ultra_continuous",
   "sourceReferences": [
@@ -54,277 +54,484 @@
     "index": 0,
     "heightT": 0.08736,
     "canopy": false,
-    "lengthM": 4.13903,
-    "widthM": 0.28089,
+    "lengthM": 3.97563,
+    "widthM": 0.28275,
     "thicknessM": 0.001476,
-    "sheetAspect": 190.2,
-    "tipDropFractionOfLength": 0.7371,
-    "radialReachFractionOfLength": 0.1952,
-    "rollRad": 0.046
+    "sheetAspect": 191.5,
+    "tipDropFractionOfLength": 0.8023,
+    "tipDropExponent": 1.2342,
+    "radialReachFractionOfLength": 0.2067,
+    "radialReachExponent": 0.2691,
+    "catenarySagFractionOfLength": 0.1882,
+    "twistRad": 0.5117,
+    "twistReversalRad": 0.4332,
+    "twistReversalPeriods": 1.8507,
+    "azimuthalDriftRad": 0.9013,
+    "flowDeflectionRad": 0.1705,
+    "swingFractionOfLength": -0.0604,
+    "floatLiftM": 0.03933
    },
    {
     "index": 1,
     "heightT": 0.13516,
     "canopy": false,
-    "lengthM": 2.75637,
-    "widthM": 0.21427,
-    "thicknessM": 0.001553,
-    "sheetAspect": 138.0,
-    "tipDropFractionOfLength": 0.9359,
-    "radialReachFractionOfLength": 0.1944,
-    "rollRad": 0.0164
+    "lengthM": 2.45345,
+    "widthM": 0.18955,
+    "thicknessM": 0.001335,
+    "sheetAspect": 141.9,
+    "tipDropFractionOfLength": 0.8352,
+    "tipDropExponent": 1.1751,
+    "radialReachFractionOfLength": 0.2302,
+    "radialReachExponent": 0.5628,
+    "catenarySagFractionOfLength": 0.1156,
+    "twistRad": 0.0288,
+    "twistReversalRad": 0.4031,
+    "twistReversalPeriods": 1.3897,
+    "azimuthalDriftRad": -1.3002,
+    "flowDeflectionRad": 0.2291,
+    "swingFractionOfLength": -0.2171,
+    "floatLiftM": 0.02601
    },
    {
     "index": 2,
     "heightT": 0.1694,
     "canopy": false,
-    "lengthM": 2.61709,
-    "widthM": 0.25024,
-    "thicknessM": 0.001517,
-    "sheetAspect": 165.0,
-    "tipDropFractionOfLength": 0.8851,
-    "radialReachFractionOfLength": 0.1637,
-    "rollRad": 0.0849
+    "lengthM": 3.34467,
+    "widthM": 0.25371,
+    "thicknessM": 0.001591,
+    "sheetAspect": 159.5,
+    "tipDropFractionOfLength": 0.777,
+    "tipDropExponent": 0.9164,
+    "radialReachFractionOfLength": 0.2563,
+    "radialReachExponent": 0.4789,
+    "catenarySagFractionOfLength": 0.1313,
+    "twistRad": -1.1224,
+    "twistReversalRad": 0.2929,
+    "twistReversalPeriods": 1.1665,
+    "azimuthalDriftRad": 0.4592,
+    "flowDeflectionRad": 0.4989,
+    "swingFractionOfLength": -0.0883,
+    "floatLiftM": 0.02288
    },
    {
     "index": 3,
     "heightT": 0.22915,
     "canopy": false,
-    "lengthM": 3.04117,
-    "widthM": 0.22211,
-    "thicknessM": 0.001672,
-    "sheetAspect": 132.8,
-    "tipDropFractionOfLength": 0.8199,
-    "radialReachFractionOfLength": 0.1598,
-    "rollRad": 0.1419
+    "lengthM": 2.29118,
+    "widthM": 0.22134,
+    "thicknessM": 0.001641,
+    "sheetAspect": 134.9,
+    "tipDropFractionOfLength": 0.7268,
+    "tipDropExponent": 0.9868,
+    "radialReachFractionOfLength": 0.18,
+    "radialReachExponent": 0.3336,
+    "catenarySagFractionOfLength": 0.0972,
+    "twistRad": -0.2821,
+    "twistReversalRad": 0.0627,
+    "twistReversalPeriods": 1.4742,
+    "azimuthalDriftRad": 1.3771,
+    "flowDeflectionRad": -0.5217,
+    "swingFractionOfLength": -0.0923,
+    "floatLiftM": 0.02324
    },
    {
     "index": 4,
     "heightT": 0.26356,
     "canopy": false,
-    "lengthM": 2.38687,
-    "widthM": 0.19836,
-    "thicknessM": 0.00153,
-    "sheetAspect": 129.6,
-    "tipDropFractionOfLength": 0.7976,
-    "radialReachFractionOfLength": 0.1345,
-    "rollRad": 0.2414
+    "lengthM": 2.84265,
+    "widthM": 0.22142,
+    "thicknessM": 0.001425,
+    "sheetAspect": 155.4,
+    "tipDropFractionOfLength": 0.8788,
+    "tipDropExponent": 1.0347,
+    "radialReachFractionOfLength": 0.1647,
+    "radialReachExponent": 0.8217,
+    "catenarySagFractionOfLength": 0.1064,
+    "twistRad": 0.8893,
+    "twistReversalRad": -0.1809,
+    "twistReversalPeriods": 1.4918,
+    "azimuthalDriftRad": -0.5851,
+    "flowDeflectionRad": -0.5486,
+    "swingFractionOfLength": -0.1386,
+    "floatLiftM": 0.03949
    },
    {
     "index": 5,
     "heightT": 0.31993,
     "canopy": false,
-    "lengthM": 3.61914,
-    "widthM": 0.22405,
-    "thicknessM": 0.001472,
-    "sheetAspect": 152.2,
-    "tipDropFractionOfLength": 0.8307,
-    "radialReachFractionOfLength": 0.1245,
-    "rollRad": -0.1918
+    "lengthM": 3.59935,
+    "widthM": 0.26783,
+    "thicknessM": 0.001507,
+    "sheetAspect": 177.7,
+    "tipDropFractionOfLength": 0.7569,
+    "tipDropExponent": 1.0876,
+    "radialReachFractionOfLength": 0.0728,
+    "radialReachExponent": 0.7374,
+    "catenarySagFractionOfLength": 0.0726,
+    "twistRad": 0.4863,
+    "twistReversalRad": 0.0587,
+    "twistReversalPeriods": 1.5949,
+    "azimuthalDriftRad": 1.1423,
+    "flowDeflectionRad": -0.3698,
+    "swingFractionOfLength": 0.0582,
+    "floatLiftM": 0.02281
    },
    {
     "index": 6,
     "heightT": 0.35028,
     "canopy": false,
-    "lengthM": 2.50695,
-    "widthM": 0.18886,
-    "thicknessM": 0.00144,
-    "sheetAspect": 131.1,
-    "tipDropFractionOfLength": 0.9345,
-    "radialReachFractionOfLength": 0.1455,
-    "rollRad": 0.0418
+    "lengthM": 2.24839,
+    "widthM": 0.20114,
+    "thicknessM": 0.001318,
+    "sheetAspect": 152.6,
+    "tipDropFractionOfLength": 0.7769,
+    "tipDropExponent": 0.9313,
+    "radialReachFractionOfLength": 0.2209,
+    "radialReachExponent": 0.4214,
+    "catenarySagFractionOfLength": 0.1255,
+    "twistRad": 1.1502,
+    "twistReversalRad": 0.3508,
+    "twistReversalPeriods": 1.746,
+    "azimuthalDriftRad": -0.638,
+    "flowDeflectionRad": -0.1536,
+    "swingFractionOfLength": -0.2021,
+    "floatLiftM": 0.04609
    },
    {
     "index": 7,
     "heightT": 0.40447,
     "canopy": false,
-    "lengthM": 3.31673,
-    "widthM": 0.24773,
-    "thicknessM": 0.001669,
-    "sheetAspect": 148.5,
-    "tipDropFractionOfLength": 0.8241,
-    "radialReachFractionOfLength": 0.1538,
-    "rollRad": 0.2273
+    "lengthM": 3.33737,
+    "widthM": 0.24198,
+    "thicknessM": 0.001328,
+    "sheetAspect": 182.2,
+    "tipDropFractionOfLength": 0.6137,
+    "tipDropExponent": 1.3118,
+    "radialReachFractionOfLength": 0.1274,
+    "radialReachExponent": 0.313,
+    "catenarySagFractionOfLength": 0.1405,
+    "twistRad": -0.849,
+    "twistReversalRad": 0.2447,
+    "twistReversalPeriods": 1.2247,
+    "azimuthalDriftRad": 0.6023,
+    "flowDeflectionRad": -0.3604,
+    "swingFractionOfLength": 0.1169,
+    "floatLiftM": 0.02816
    },
    {
     "index": 8,
     "heightT": 0.46247,
     "canopy": false,
-    "lengthM": 2.7297,
-    "widthM": 0.22279,
-    "thicknessM": 0.001422,
-    "sheetAspect": 156.7,
-    "tipDropFractionOfLength": 0.8975,
-    "radialReachFractionOfLength": 0.1263,
-    "rollRad": -0.1829
+    "lengthM": 3.22122,
+    "widthM": 0.25864,
+    "thicknessM": 0.00142,
+    "sheetAspect": 182.1,
+    "tipDropFractionOfLength": 0.5978,
+    "tipDropExponent": 1.0896,
+    "radialReachFractionOfLength": 0.1623,
+    "radialReachExponent": 0.6017,
+    "catenarySagFractionOfLength": 0.1755,
+    "twistRad": -0.6092,
+    "twistReversalRad": -0.4488,
+    "twistReversalPeriods": 1.4954,
+    "azimuthalDriftRad": 1.1018,
+    "flowDeflectionRad": -0.317,
+    "swingFractionOfLength": -0.2013,
+    "floatLiftM": 0.04729
    },
    {
     "index": 9,
     "heightT": 0.48026,
     "canopy": false,
-    "lengthM": 2.47676,
-    "widthM": 0.18699,
-    "thicknessM": 0.001312,
-    "sheetAspect": 142.5,
-    "tipDropFractionOfLength": 0.7398,
-    "radialReachFractionOfLength": 0.2103,
-    "rollRad": 0.0582
+    "lengthM": 2.13061,
+    "widthM": 0.20951,
+    "thicknessM": 0.001612,
+    "sheetAspect": 130.0,
+    "tipDropFractionOfLength": 0.6626,
+    "tipDropExponent": 1.2109,
+    "radialReachFractionOfLength": 0.1672,
+    "radialReachExponent": 0.7534,
+    "catenarySagFractionOfLength": 0.0731,
+    "twistRad": -1.0155,
+    "twistReversalRad": 0.2847,
+    "twistReversalPeriods": 1.1346,
+    "azimuthalDriftRad": -0.6643,
+    "flowDeflectionRad": 0.2216,
+    "swingFractionOfLength": 0.0525,
+    "floatLiftM": 0.02051
    },
    {
     "index": 10,
     "heightT": 0.55264,
     "canopy": false,
-    "lengthM": 3.1538,
-    "widthM": 0.20506,
-    "thicknessM": 0.001564,
-    "sheetAspect": 131.1,
-    "tipDropFractionOfLength": 0.8561,
-    "radialReachFractionOfLength": 0.1822,
-    "rollRad": -0.13
+    "lengthM": 3.0196,
+    "widthM": 0.25076,
+    "thicknessM": 0.001624,
+    "sheetAspect": 154.4,
+    "tipDropFractionOfLength": 0.9058,
+    "tipDropExponent": 1.0439,
+    "radialReachFractionOfLength": 0.1223,
+    "radialReachExponent": 0.7003,
+    "catenarySagFractionOfLength": 0.1614,
+    "twistRad": -0.8878,
+    "twistReversalRad": -0.1418,
+    "twistReversalPeriods": 1.2757,
+    "azimuthalDriftRad": 0.124,
+    "flowDeflectionRad": -0.0803,
+    "swingFractionOfLength": 0.2645,
+    "floatLiftM": 0.04955
    },
    {
     "index": 11,
     "heightT": 0.56942,
     "canopy": false,
-    "lengthM": 2.5234,
-    "widthM": 0.18308,
-    "thicknessM": 0.001487,
-    "sheetAspect": 123.1,
-    "tipDropFractionOfLength": 0.887,
-    "radialReachFractionOfLength": 0.1837,
-    "rollRad": -0.132
+    "lengthM": 2.5794,
+    "widthM": 0.18785,
+    "thicknessM": 0.001624,
+    "sheetAspect": 115.7,
+    "tipDropFractionOfLength": 0.8244,
+    "tipDropExponent": 0.9638,
+    "radialReachFractionOfLength": 0.2571,
+    "radialReachExponent": 0.783,
+    "catenarySagFractionOfLength": 0.1544,
+    "twistRad": 0.2275,
+    "twistReversalRad": -0.1588,
+    "twistReversalPeriods": 1.2433,
+    "azimuthalDriftRad": -0.1298,
+    "flowDeflectionRad": 0.306,
+    "swingFractionOfLength": -0.0834,
+    "floatLiftM": 0.04289
    },
    {
     "index": 12,
     "heightT": 0.62168,
     "canopy": false,
-    "lengthM": 2.42134,
-    "widthM": 0.19392,
-    "thicknessM": 0.001618,
-    "sheetAspect": 119.8,
-    "tipDropFractionOfLength": 0.904,
-    "radialReachFractionOfLength": 0.2188,
-    "rollRad": -0.1278
+    "lengthM": 2.14866,
+    "widthM": 0.20411,
+    "thicknessM": 0.001314,
+    "sheetAspect": 155.3,
+    "tipDropFractionOfLength": 0.8835,
+    "tipDropExponent": 0.9067,
+    "radialReachFractionOfLength": 0.0931,
+    "radialReachExponent": 0.5383,
+    "catenarySagFractionOfLength": 0.0801,
+    "twistRad": 0.0699,
+    "twistReversalRad": -0.2013,
+    "twistReversalPeriods": 1.8622,
+    "azimuthalDriftRad": 0.5813,
+    "flowDeflectionRad": 0.5917,
+    "swingFractionOfLength": 0.1357,
+    "floatLiftM": 0.04844
    },
    {
     "index": 13,
     "heightT": 0.68461,
     "canopy": false,
-    "lengthM": 2.75252,
-    "widthM": 0.19671,
-    "thicknessM": 0.001413,
-    "sheetAspect": 139.3,
-    "tipDropFractionOfLength": 0.9265,
-    "radialReachFractionOfLength": 0.1964,
-    "rollRad": -0.1757
+    "lengthM": 2.71977,
+    "widthM": 0.1989,
+    "thicknessM": 0.001672,
+    "sheetAspect": 119.0,
+    "tipDropFractionOfLength": 0.8036,
+    "tipDropExponent": 1.1872,
+    "radialReachFractionOfLength": 0.0738,
+    "radialReachExponent": 0.6066,
+    "catenarySagFractionOfLength": 0.1643,
+    "twistRad": 0.7849,
+    "twistReversalRad": 0.2116,
+    "twistReversalPeriods": 1.685,
+    "azimuthalDriftRad": 1.2595,
+    "flowDeflectionRad": -0.0991,
+    "swingFractionOfLength": 0.1858,
+    "floatLiftM": 0.03828
    },
    {
     "index": 14,
     "heightT": 0.70907,
     "canopy": false,
-    "lengthM": 1.75979,
-    "widthM": 0.18275,
-    "thicknessM": 0.001572,
-    "sheetAspect": 116.2,
-    "tipDropFractionOfLength": 0.7847,
-    "radialReachFractionOfLength": 0.2175,
-    "rollRad": 0.195
+    "lengthM": 1.91847,
+    "widthM": 0.18566,
+    "thicknessM": 0.001677,
+    "sheetAspect": 110.7,
+    "tipDropFractionOfLength": 0.873,
+    "tipDropExponent": 1.0679,
+    "radialReachFractionOfLength": 0.1856,
+    "radialReachExponent": 0.8473,
+    "catenarySagFractionOfLength": 0.1619,
+    "twistRad": 0.123,
+    "twistReversalRad": -0.1893,
+    "twistReversalPeriods": 1.6745,
+    "azimuthalDriftRad": -0.2164,
+    "flowDeflectionRad": -0.2692,
+    "swingFractionOfLength": -0.2407,
+    "floatLiftM": 0.03347
    },
    {
     "index": 15,
     "heightT": 0.75829,
     "canopy": false,
-    "lengthM": 2.73714,
-    "widthM": 0.18871,
-    "thicknessM": 0.001482,
-    "sheetAspect": 127.3,
-    "tipDropFractionOfLength": 0.7738,
-    "radialReachFractionOfLength": 0.2168,
-    "rollRad": -0.0034
+    "lengthM": 2.52043,
+    "widthM": 0.22735,
+    "thicknessM": 0.001505,
+    "sheetAspect": 151.1,
+    "tipDropFractionOfLength": 0.8746,
+    "tipDropExponent": 1.1951,
+    "radialReachFractionOfLength": 0.0923,
+    "radialReachExponent": 0.3885,
+    "catenarySagFractionOfLength": 0.1477,
+    "twistRad": -1.3625,
+    "twistReversalRad": 0.2624,
+    "twistReversalPeriods": 1.6381,
+    "azimuthalDriftRad": 0.903,
+    "flowDeflectionRad": 0.1119,
+    "swingFractionOfLength": -0.294,
+    "floatLiftM": 0.03112
    },
    {
     "index": 16,
     "heightT": 0.83122,
     "canopy": false,
-    "lengthM": 2.12305,
-    "widthM": 0.20912,
-    "thicknessM": 0.001612,
-    "sheetAspect": 129.7,
-    "tipDropFractionOfLength": 0.9063,
-    "radialReachFractionOfLength": 0.1735,
-    "rollRad": -0.2592
+    "lengthM": 3.12848,
+    "widthM": 0.19535,
+    "thicknessM": 0.001684,
+    "sheetAspect": 116.0,
+    "tipDropFractionOfLength": 0.6689,
+    "tipDropExponent": 0.8909,
+    "radialReachFractionOfLength": 0.1453,
+    "radialReachExponent": 0.5038,
+    "catenarySagFractionOfLength": 0.1264,
+    "twistRad": 0.902,
+    "twistReversalRad": -0.0737,
+    "twistReversalPeriods": 1.5614,
+    "azimuthalDriftRad": -0.3097,
+    "flowDeflectionRad": 0.2408,
+    "swingFractionOfLength": 0.1592,
+    "floatLiftM": 0.0299
    },
    {
     "index": 17,
     "heightT": 0.85566,
     "canopy": false,
-    "lengthM": 2.07845,
-    "widthM": 0.15978,
-    "thicknessM": 0.001569,
-    "sheetAspect": 101.9,
-    "tipDropFractionOfLength": 0.8996,
-    "radialReachFractionOfLength": 0.1365,
-    "rollRad": 0.051
+    "lengthM": 1.91631,
+    "widthM": 0.1867,
+    "thicknessM": 0.00141,
+    "sheetAspect": 132.4,
+    "tipDropFractionOfLength": 0.9061,
+    "tipDropExponent": 0.9668,
+    "radialReachFractionOfLength": 0.1739,
+    "radialReachExponent": 0.7264,
+    "catenarySagFractionOfLength": 0.0953,
+    "twistRad": -0.1,
+    "twistReversalRad": -0.3329,
+    "twistReversalPeriods": 1.161,
+    "azimuthalDriftRad": 1.0584,
+    "flowDeflectionRad": -0.4324,
+    "swingFractionOfLength": 0.0001,
+    "floatLiftM": 0.03711
    },
    {
     "index": 18,
     "heightT": 0.89405,
     "canopy": false,
-    "lengthM": 2.69777,
-    "widthM": 0.19149,
-    "thicknessM": 0.001601,
-    "sheetAspect": 119.6,
-    "tipDropFractionOfLength": 0.9308,
-    "radialReachFractionOfLength": 0.1996,
-    "rollRad": -0.0862
+    "lengthM": 3.03487,
+    "widthM": 0.19649,
+    "thicknessM": 0.001388,
+    "sheetAspect": 141.6,
+    "tipDropFractionOfLength": 0.6895,
+    "tipDropExponent": 1.2548,
+    "radialReachFractionOfLength": 0.2306,
+    "radialReachExponent": 0.3334,
+    "catenarySagFractionOfLength": 0.0824,
+    "twistRad": 0.0671,
+    "twistReversalRad": -0.3322,
+    "twistReversalPeriods": 1.1189,
+    "azimuthalDriftRad": 0.2353,
+    "flowDeflectionRad": 0.1327,
+    "swingFractionOfLength": -0.1775,
+    "floatLiftM": 0.02123
    },
    {
     "index": 19,
     "heightT": 0.94387,
     "canopy": false,
-    "lengthM": 1.71483,
-    "widthM": 0.1469,
-    "thicknessM": 0.001439,
-    "sheetAspect": 102.1,
-    "tipDropFractionOfLength": 0.8176,
-    "radialReachFractionOfLength": 0.1442,
-    "rollRad": 0.1927
+    "lengthM": 1.77194,
+    "widthM": 0.16029,
+    "thicknessM": 0.001613,
+    "sheetAspect": 99.4,
+    "tipDropFractionOfLength": 0.5877,
+    "tipDropExponent": 1.0309,
+    "radialReachFractionOfLength": 0.2548,
+    "radialReachExponent": 0.6377,
+    "catenarySagFractionOfLength": 0.1204,
+    "twistRad": -0.2171,
+    "twistReversalRad": 0.0444,
+    "twistReversalPeriods": 1.4953,
+    "azimuthalDriftRad": 0.9378,
+    "flowDeflectionRad": 0.4774,
+    "swingFractionOfLength": -0.2405,
+    "floatLiftM": 0.04624
    },
    {
     "index": 20,
     "heightT": 0.90474,
     "canopy": true,
-    "lengthM": 1.95141,
-    "widthM": 0.17963,
-    "thicknessM": 0.001584,
-    "sheetAspect": 113.4,
-    "tipDropFractionOfLength": 0.1926,
-    "radialReachFractionOfLength": 0.6542,
-    "rollRad": -0.1926
+    "lengthM": 1.58743,
+    "widthM": 0.19662,
+    "thicknessM": 0.001573,
+    "sheetAspect": 125.0,
+    "tipDropFractionOfLength": 0.4072,
+    "tipDropExponent": 1.1443,
+    "radialReachFractionOfLength": 0.4017,
+    "radialReachExponent": 0.6047,
+    "catenarySagFractionOfLength": 0.1192,
+    "twistRad": 0.1381,
+    "twistReversalRad": -0.3168,
+    "twistReversalPeriods": 1.7862,
+    "azimuthalDriftRad": 0.1762,
+    "flowDeflectionRad": -0.2478,
+    "swingFractionOfLength": 0.1877,
+    "floatLiftM": 0.00433
    },
    {
     "index": 21,
     "heightT": 0.94032,
     "canopy": true,
-    "lengthM": 1.87568,
-    "widthM": 0.20905,
-    "thicknessM": 0.001314,
-    "sheetAspect": 159.0,
-    "tipDropFractionOfLength": 0.2162,
-    "radialReachFractionOfLength": 0.6739,
-    "rollRad": 0.1203
+    "lengthM": 2.52145,
+    "widthM": 0.18929,
+    "thicknessM": 0.001654,
+    "sheetAspect": 114.4,
+    "tipDropFractionOfLength": 0.3176,
+    "tipDropExponent": 1.0907,
+    "radialReachFractionOfLength": 0.4142,
+    "radialReachExponent": 0.519,
+    "catenarySagFractionOfLength": 0.1486,
+    "twistRad": -1.0602,
+    "twistReversalRad": 0.2084,
+    "twistReversalPeriods": 1.4983,
+    "azimuthalDriftRad": 0.704,
+    "flowDeflectionRad": 0.4298,
+    "swingFractionOfLength": 0.0907,
+    "floatLiftM": 0.01392
    },
    {
     "index": 22,
     "heightT": 0.97337,
     "canopy": true,
-    "lengthM": 1.45231,
-    "widthM": 0.14481,
-    "thicknessM": 0.001674,
-    "sheetAspect": 86.5,
-    "tipDropFractionOfLength": 0.1982,
-    "radialReachFractionOfLength": 0.465,
-    "rollRad": 0.0947
+    "lengthM": 1.50979,
+    "widthM": 0.15513,
+    "thicknessM": 0.001581,
+    "sheetAspect": 98.1,
+    "tipDropFractionOfLength": 0.3366,
+    "tipDropExponent": 0.9042,
+    "radialReachFractionOfLength": 0.4145,
+    "radialReachExponent": 0.2594,
+    "catenarySagFractionOfLength": 0.1174,
+    "twistRad": -0.2208,
+    "twistReversalRad": 0.1192,
+    "twistReversalPeriods": 1.1322,
+    "azimuthalDriftRad": 0.3161,
+    "flowDeflectionRad": 0.3575,
+    "swingFractionOfLength": -0.0841,
+    "floatLiftM": 0.0195
    }
   ],
   "anchorSocket": "object origin at holdfast base (0,0,0); sway measured from it",
@@ -364,9 +571,9 @@
   "trianglesAfterBudgetReduce": 5376,
   "postDecimationClean": {
    "facesBefore": 2766,
-   "faces": 5259,
-   "sliverEdgesCollapsed": 70,
-   "collapsesSkippedIllegal": 12,
+   "faces": 5291,
+   "sliverEdgesCollapsed": 47,
+   "collapsesSkippedIllegal": 8,
    "zeroAreaDeleted": 0,
    "looseDeleted": 0
   },
@@ -383,18 +590,18 @@
   "atlasFamily": "kelp",
   "paddingPx": 24,
   "islands": 73,
-  "texelDensityPxPerMetreMin": 480.55,
-  "texelDensityPxPerMetreMax": 480.55,
-  "texelDensityPxPerMetreMean": 480.55,
-  "texelDensityMismatchFraction": 1e-05,
+  "texelDensityPxPerMetreMin": 481.23,
+  "texelDensityPxPerMetreMax": 481.23,
+  "texelDensityPxPerMetreMean": 481.23,
+  "texelDensityMismatchFraction": 0.0,
   "texelDensityMismatchLimit": 0.2,
-  "aspectDistortionMax": 1.26356,
-  "aspectDistortionP50": 0.00421,
-  "aspectDistortionP95": 0.10458,
-  "aspectDistortionP99": 0.22115,
-  "trianglesOverHeroLimit": 131,
-  "trianglesOverDistantLimit": 48,
-  "trianglesMeasured": 5259,
+  "aspectDistortionMax": 0.6305,
+  "aspectDistortionP50": 0.0038,
+  "aspectDistortionP95": 0.07274,
+  "aspectDistortionP99": 0.15017,
+  "trianglesOverHeroLimit": 54,
+  "trianglesOverDistantLimit": 11,
+  "trianglesMeasured": 5291,
   "zeroAreaUvTriangles": 0,
   "zeroAreaUvBelowEpsilon": 0,
   "degenerate3dTriangles": 0,
@@ -402,73 +609,73 @@
   "areaOverLimitBySlot": {
    "0": {
     "role": "tissue",
-    "areaShareOfMesh": 0.948,
-    "overLimitFractionOfOwnArea": 0.0005,
-    "overLimitShareOfMesh": 0.0005,
-    "worst": 1.264
+    "areaShareOfMesh": 0.946,
+    "overLimitFractionOfOwnArea": 0.0,
+    "overLimitShareOfMesh": 0.0,
+    "worst": 0.444
    },
    "1": {
     "role": "basal_collar_scar",
-    "areaShareOfMesh": 0.0191,
+    "areaShareOfMesh": 0.0198,
     "overLimitFractionOfOwnArea": 0.0,
     "overLimitShareOfMesh": 0.0,
     "worst": 0.023
    },
    "2": {
     "role": "holdfast",
-    "areaShareOfMesh": 0.0329,
+    "areaShareOfMesh": 0.0342,
     "overLimitFractionOfOwnArea": 0.0055,
     "overLimitShareOfMesh": 0.0002,
     "worst": 0.63
    }
   },
   "worstTriangle": {
-   "tri": 3969,
-   "slot": 0,
-   "worldArea2": "4.861e-04",
-   "uvArea2": "8.778e-06",
+   "tri": 2722,
+   "slot": 2,
+   "worldArea2": "3.669e-03",
+   "uvArea2": "3.557e-05",
    "worldEdges": [
-    0.013082,
-    0.043978,
-    0.052162
+    0.038895,
+    0.097733,
+    0.095288
    ],
    "uvEdges": [
-    0.002637,
-    0.005382,
-    0.007631
+    0.004122,
+    0.008791,
+    0.010396
    ],
    "z": [
-    4.0248,
-    4.0129,
-    3.9763
+    0.0,
+    0.0314,
+    0.0314
    ]
   },
   "gateIslands": 73,
   "gateIslandsBelowMinPixels": 0,
   "smallestGateIslandsPx": [
    [
-    12.17,
-    8.824
+    12.187,
+    8.837
    ],
    [
-    12.219,
-    9.423
+    12.237,
+    9.437
    ],
    [
-    12.472,
-    9.618
+    12.49,
+    9.632
    ],
    [
-    14.405,
-    11.109
+    14.425,
+    11.124
    ],
    [
-    14.872,
-    11.468
+    14.893,
+    11.485
    ],
    [
-    16.034,
-    12.365
+    16.057,
+    12.383
    ]
   ],
   "heroLimit": 0.15,
@@ -487,8 +694,8 @@
  "texelDensityTargets": {
   "heroHarvestable": 512,
   "commonInstanced": 256,
-  "achievedMean": 480.55,
-  "achievedMin": 480.55,
+  "achievedMean": 481.23,
+  "achievedMin": 481.23,
   "meetsHero": false,
   "meetsCommon": true
  },
@@ -553,45 +760,45 @@
    "sway_amplitude": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.38266,
-    "elements": 15777,
+    "mean": 0.40837,
+    "elements": 15873,
     "domain": "CORNER"
    },
    "biolum_phase": {
     "min": 0.0,
     "max": 0.0,
     "mean": 0.0,
-    "elements": 15777,
+    "elements": 15873,
     "domain": "CORNER"
    },
    "baked_ao": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.69421,
-    "elements": 15777,
+    "mean": 0.60958,
+    "elements": 15873,
     "domain": "CORNER"
    },
    "family_specific": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.81438,
-    "elements": 15777,
+    "mean": 0.81551,
+    "elements": 15873,
     "domain": "CORNER"
    }
   },
   "geodesicAttributeSurvived": true,
   "classAttributeSurvived": true,
-  "maxFlexibleLengthM": 10.73836,
+  "maxFlexibleLengthM": 10.18342,
   "swayRelativeSpread": 1.0,
   "swayTipMax255": 255,
-  "swayRootMax255": 5,
+  "swayRootMax255": 6,
   "swayAnchorMin255": 0,
   "aoBaked": true,
   "aoHasContrast": true,
   "aoMin": 0.0,
   "aoMax": 1.0,
-  "aoMean": 0.68063,
-  "aoSamples": 24,
+  "aoMean": 0.60139,
+  "aoSamples": 48,
   "aoDistanceM": 0.5532080906331778,
   "aoReason": "",
   "biolumPolicy": "authored 0 everywhere; photic-zone kelp has no emissive organ (3DMODEL_FLORA_CORAL.md section 2)"
@@ -606,28 +813,28 @@
   {
    "lod": 0,
    "mesh": "MESH_Flora_Kelp_s4021_q100_LOD0",
-   "triangles": 5259,
+   "triangles": 5291,
    "budget": 6500,
    "withinBudget": true,
-   "vertices": 2819,
+   "vertices": 2842,
    "simplification": "authored analytic surface"
   },
   {
    "lod": 1,
    "mesh": "MESH_Flora_Kelp_s4021_q100_LOD1",
-   "triangles": 1607,
+   "triangles": 1643,
    "budget": 1800,
    "withinBudget": true,
-   "vertices": 1393,
+   "vertices": 1340,
    "simplification": "quadric edge collapse with seam/material border preservation"
   },
   {
    "lod": 2,
    "mesh": "MESH_Flora_Kelp_s4021_q100_LOD2",
-   "triangles": 283,
+   "triangles": 282,
    "budget": 300,
    "withinBudget": true,
-   "vertices": 388,
+   "vertices": 385,
    "simplification": "quadric edge collapse with seam/material border preservation"
   }
  ],
@@ -637,18 +844,18 @@
    "atlasFamily": "kelp",
    "paddingPx": 24,
    "islands": 73,
-   "texelDensityPxPerMetreMin": 480.55,
-   "texelDensityPxPerMetreMax": 480.55,
-   "texelDensityPxPerMetreMean": 480.55,
-   "texelDensityMismatchFraction": 1e-05,
+   "texelDensityPxPerMetreMin": 481.23,
+   "texelDensityPxPerMetreMax": 481.23,
+   "texelDensityPxPerMetreMean": 481.23,
+   "texelDensityMismatchFraction": 0.0,
    "texelDensityMismatchLimit": 0.2,
-   "aspectDistortionMax": 1.26356,
-   "aspectDistortionP50": 0.00421,
-   "aspectDistortionP95": 0.10458,
-   "aspectDistortionP99": 0.22115,
-   "trianglesOverHeroLimit": 131,
-   "trianglesOverDistantLimit": 48,
-   "trianglesMeasured": 5259,
+   "aspectDistortionMax": 0.6305,
+   "aspectDistortionP50": 0.0038,
+   "aspectDistortionP95": 0.07274,
+   "aspectDistortionP99": 0.15017,
+   "trianglesOverHeroLimit": 54,
+   "trianglesOverDistantLimit": 11,
+   "trianglesMeasured": 5291,
    "zeroAreaUvTriangles": 0,
    "zeroAreaUvBelowEpsilon": 0,
    "degenerate3dTriangles": 0,
@@ -656,73 +863,73 @@
    "areaOverLimitBySlot": {
     "0": {
      "role": "tissue",
-     "areaShareOfMesh": 0.948,
-     "overLimitFractionOfOwnArea": 0.0005,
-     "overLimitShareOfMesh": 0.0005,
-     "worst": 1.264
+     "areaShareOfMesh": 0.946,
+     "overLimitFractionOfOwnArea": 0.0,
+     "overLimitShareOfMesh": 0.0,
+     "worst": 0.444
     },
     "1": {
      "role": "basal_collar_scar",
-     "areaShareOfMesh": 0.0191,
+     "areaShareOfMesh": 0.0198,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
      "worst": 0.023
     },
     "2": {
      "role": "holdfast",
-     "areaShareOfMesh": 0.0329,
+     "areaShareOfMesh": 0.0342,
      "overLimitFractionOfOwnArea": 0.0055,
      "overLimitShareOfMesh": 0.0002,
      "worst": 0.63
     }
    },
    "worstTriangle": {
-    "tri": 3969,
-    "slot": 0,
-    "worldArea2": "4.861e-04",
-    "uvArea2": "8.778e-06",
+    "tri": 2722,
+    "slot": 2,
+    "worldArea2": "3.669e-03",
+    "uvArea2": "3.557e-05",
     "worldEdges": [
-     0.013082,
-     0.043978,
-     0.052162
+     0.038895,
+     0.097733,
+     0.095288
     ],
     "uvEdges": [
-     0.002637,
-     0.005382,
-     0.007631
+     0.004122,
+     0.008791,
+     0.010396
     ],
     "z": [
-     4.0248,
-     4.0129,
-     3.9763
+     0.0,
+     0.0314,
+     0.0314
     ]
    },
    "gateIslands": 73,
    "gateIslandsBelowMinPixels": 0,
    "smallestGateIslandsPx": [
     [
-     12.17,
-     8.824
+     12.187,
+     8.837
     ],
     [
-     12.219,
-     9.423
+     12.237,
+     9.437
     ],
     [
-     12.472,
-     9.618
+     12.49,
+     9.632
     ],
     [
-     14.405,
-     11.109
+     14.425,
+     11.124
     ],
     [
-     14.872,
-     11.468
+     14.893,
+     11.485
     ],
     [
-     16.034,
-     12.365
+     16.057,
+     12.383
     ]
    ],
    "heroLimit": 0.15,
@@ -739,29 +946,29 @@
    "islandsExpected": 73,
    "slotsRepaired": {},
    "stretchStats": {
-    "worst": 0.37917586127397995,
-    "p95": 0.015445200182369945,
-    "mean": 0.003420571478432152,
-    "triangles": 5259
+    "worst": 0.27366604964405217,
+    "p95": 0.009471312544234722,
+    "mean": 0.0025580561569455407,
+    "triangles": 5291
    }
   },
   "1": {
    "atlasSize": 4096,
    "atlasFamily": "kelp",
    "paddingPx": 24,
-   "islands": 88,
-   "texelDensityPxPerMetreMin": 567.55,
-   "texelDensityPxPerMetreMax": 617.96,
-   "texelDensityPxPerMetreMean": 568.13,
-   "texelDensityMismatchFraction": 0.08157,
+   "islands": 79,
+   "texelDensityPxPerMetreMin": 590.55,
+   "texelDensityPxPerMetreMax": 590.56,
+   "texelDensityPxPerMetreMean": 590.55,
+   "texelDensityMismatchFraction": 1e-05,
    "texelDensityMismatchLimit": 0.2,
-   "aspectDistortionMax": 2.75197,
-   "aspectDistortionP50": 0.00154,
-   "aspectDistortionP95": 0.11636,
-   "aspectDistortionP99": 0.35623,
-   "trianglesOverHeroLimit": 54,
-   "trianglesOverDistantLimit": 31,
-   "trianglesMeasured": 1607,
+   "aspectDistortionMax": 0.58448,
+   "aspectDistortionP50": 0.0073,
+   "aspectDistortionP95": 0.08437,
+   "aspectDistortionP99": 0.14348,
+   "trianglesOverHeroLimit": 16,
+   "trianglesOverDistantLimit": 7,
+   "trianglesMeasured": 1643,
    "zeroAreaUvTriangles": 0,
    "zeroAreaUvBelowEpsilon": 0,
    "degenerate3dTriangles": 0,
@@ -769,119 +976,119 @@
    "areaOverLimitBySlot": {
     "0": {
      "role": "tissue",
-     "areaShareOfMesh": 0.9491,
-     "overLimitFractionOfOwnArea": 0.005,
-     "overLimitShareOfMesh": 0.0048,
-     "worst": 2.752
+     "areaShareOfMesh": 0.9487,
+     "overLimitFractionOfOwnArea": 0.0003,
+     "overLimitShareOfMesh": 0.0003,
+     "worst": 0.584
     },
     "1": {
      "role": "basal_collar_scar",
-     "areaShareOfMesh": 0.0173,
+     "areaShareOfMesh": 0.0169,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
-     "worst": 0.333
+     "worst": 0.214
     },
     "2": {
      "role": "holdfast",
-     "areaShareOfMesh": 0.0336,
-     "overLimitFractionOfOwnArea": 0.0058,
+     "areaShareOfMesh": 0.0344,
+     "overLimitFractionOfOwnArea": 0.0059,
      "overLimitShareOfMesh": 0.0002,
      "worst": 0.576
     }
    },
    "worstTriangle": {
-    "tri": 996,
+    "tri": 1004,
     "slot": 0,
-    "worldArea2": "2.791e-03",
-    "uvArea2": "4.261e-05",
+    "worldArea2": "1.033e-02",
+    "uvArea2": "2.238e-04",
     "worldEdges": [
-     0.972945,
-     0.2893,
-     0.683665
+     0.714127,
+     0.434437,
+     0.280304
     ],
     "uvEdges": [
-     0.106899,
-     0.032283,
-     0.074619
+     0.104446,
+     0.062553,
+     0.041985
     ],
     "z": [
-     5.5868,
-     6.535,
-     6.2536
+     4.6565,
+     5.3693,
+     4.9365
     ]
    },
-   "gateIslands": 88,
+   "gateIslands": 79,
    "gateIslandsBelowMinPixels": 0,
    "smallestGateIslandsPx": [
     [
-     25.747,
-     4.08
+     34.66,
+     8.471
     ],
     [
-     15.404,
-     6.016
+     23.152,
+     9.493
     ],
     [
-     14.373,
-     10.422
+     10.511,
+     15.236
     ],
     [
-     14.668,
-     10.71
+     10.728,
+     15.551
     ],
     [
-     14.972,
-     10.932
+     10.844,
+     14.956
     ],
     [
-     29.06,
-     12.973
+     13.137,
+     17.992
     ]
    ],
    "heroLimit": 0.15,
    "distantLimit": 0.25,
    "uvOutliersCollapsed": 0,
    "islandGrowth": {
-    "islandsGrown": 1,
-    "maxScale": 1.1855,
+    "islandsGrown": 0,
+    "maxScale": 1.0,
     "floorPx": 4
    },
    "solver": "ANGLE_BASED",
-   "islandsOriented": 70,
-   "seamEdges": 1140,
+   "islandsOriented": 61,
+   "seamEdges": 1102,
    "healed": {
-    "facesBefore": 1727,
-    "faces": 1607,
-    "sliverEdgesCollapsed": 78,
-    "collapsesSkippedIllegal": 77,
+    "facesBefore": 1728,
+    "faces": 1643,
+    "sliverEdgesCollapsed": 60,
+    "collapsesSkippedIllegal": 51,
     "zeroAreaDeleted": 0,
-    "looseDeleted": 8
+    "looseDeleted": 0
    },
    "slotsRepaired": {},
    "stretchStats": {
-    "worst": 0.19255627877930537,
-    "p95": 0.01601091131466581,
-    "mean": 0.0041475512426199165,
-    "triangles": 1607
+    "worst": 0.19125462917651292,
+    "p95": 0.014988233886051638,
+    "mean": 0.004084742698849024,
+    "triangles": 1643
    }
   },
   "2": {
    "atlasSize": 4096,
    "atlasFamily": "kelp",
    "paddingPx": 24,
-   "islands": 55,
-   "texelDensityPxPerMetreMin": 653.47,
-   "texelDensityPxPerMetreMax": 653.48,
-   "texelDensityPxPerMetreMean": 653.47,
-   "texelDensityMismatchFraction": 1e-05,
+   "islands": 52,
+   "texelDensityPxPerMetreMin": 624.0,
+   "texelDensityPxPerMetreMax": 624.0,
+   "texelDensityPxPerMetreMean": 624.0,
+   "texelDensityMismatchFraction": 0.0,
    "texelDensityMismatchLimit": 0.2,
-   "aspectDistortionMax": 2e-05,
+   "aspectDistortionMax": 3e-05,
    "aspectDistortionP50": 0.0,
    "aspectDistortionP95": 1e-05,
    "aspectDistortionP99": 1e-05,
    "trianglesOverHeroLimit": 0,
    "trianglesOverDistantLimit": 0,
-   "trianglesMeasured": 283,
+   "trianglesMeasured": 282,
    "zeroAreaUvTriangles": 0,
    "zeroAreaUvBelowEpsilon": 0,
    "degenerate3dTriangles": 0,
@@ -889,7 +1096,7 @@
    "areaOverLimitBySlot": {
     "0": {
      "role": "tissue",
-     "areaShareOfMesh": 0.9829,
+     "areaShareOfMesh": 0.9827,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
      "worst": 0.0
@@ -903,59 +1110,59 @@
     },
     "2": {
      "role": "holdfast",
-     "areaShareOfMesh": 0.0137,
+     "areaShareOfMesh": 0.0138,
      "overLimitFractionOfOwnArea": 0.0,
      "overLimitShareOfMesh": 0.0,
      "worst": 0.0
     }
    },
    "worstTriangle": {
-    "tri": 109,
+    "tri": 9,
     "slot": 0,
-    "worldArea2": "3.980e-03",
-    "uvArea2": "1.013e-04",
+    "worldArea2": "9.974e-03",
+    "uvArea2": "2.315e-04",
     "worldEdges": [
-     0.131905,
-     0.122817,
-     0.032797
+     0.505282,
+     0.020893,
+     0.512506
     ],
     "uvEdges": [
-     0.021044,
-     0.019594,
-     0.005233
+     0.076976,
+     0.003183,
+     0.078077
     ],
     "z": [
-     7.2873,
-     7.2345,
-     7.3029
+     4.5914,
+     5.0962,
+     5.1021
     ]
    },
-   "gateIslands": 55,
+   "gateIslands": 52,
    "gateIslandsBelowMinPixels": 0,
    "smallestGateIslandsPx": [
     [
-     40.945,
-     48.953
+     45.378,
+     1101.945
     ],
     [
-     47.527,
-     1153.998
+     102.395,
+     521.688
     ],
     [
-     56.825,
-     267.295
+     103.242,
+     347.693
     ],
     [
-     114.815,
-     130.715
+     103.336,
+     354.148
     ],
     [
-     311.662,
-     122.7
+     109.636,
+     124.819
     ],
     [
-     122.886,
-     639.296
+     297.604,
+     117.164
     ]
    ],
    "heroLimit": 0.15,
@@ -967,59 +1174,59 @@
     "floorPx": 4
    },
    "solver": "ANGLE_BASED",
-   "islandsOriented": 53,
-   "seamEdges": 336,
+   "islandsOriented": 50,
+   "seamEdges": 339,
    "healed": {
     "facesBefore": 288,
-    "faces": 283,
+    "faces": 282,
     "sliverEdgesCollapsed": 4,
     "collapsesSkippedIllegal": 2,
     "zeroAreaDeleted": 0,
-    "looseDeleted": 95
+    "looseDeleted": 63
    },
    "slotsRepaired": {},
    "stretchStats": {
-    "worst": 1.3242240629152136e-05,
-    "p95": 2.5382214188240937e-06,
-    "mean": 7.977462386552739e-07,
-    "triangles": 283
+    "worst": 6.107502088292804e-06,
+    "p95": 3.2670938923118342e-06,
+    "mean": 8.814663766145495e-07,
+    "triangles": 282
    }
   }
  },
  "lodTopology": {
   "0": {
-   "triangles": 5259,
-   "faces": 5259,
+   "triangles": 5291,
+   "faces": 5291,
    "components": 32,
-   "boundaryEdges": 345,
+   "boundaryEdges": 359,
    "nonmanifoldEdges": 0,
    "smallestComponent": 112,
    "largestComponent": 324,
-   "irreducibleFloor": 300,
+   "irreducibleFloor": 307,
    "budget": 6500,
    "explain": ""
   },
   "1": {
-   "triangles": 1607,
-   "faces": 1607,
-   "components": 67,
-   "boundaryEdges": 1261,
+   "triangles": 1643,
+   "faces": 1643,
+   "components": 55,
+   "boundaryEdges": 1161,
    "nonmanifoldEdges": 0,
    "smallestComponent": 1,
-   "largestComponent": 78,
-   "irreducibleFloor": 898,
+   "largestComponent": 73,
+   "irreducibleFloor": 800,
    "budget": 1800,
    "explain": ""
   },
   "2": {
-   "triangles": 283,
-   "faces": 283,
-   "components": 55,
-   "boundaryEdges": 393,
+   "triangles": 282,
+   "faces": 282,
+   "components": 52,
+   "boundaryEdges": 386,
    "nonmanifoldEdges": 0,
    "smallestComponent": 1,
-   "largestComponent": 11,
-   "irreducibleFloor": 416,
+   "largestComponent": 8,
+   "irreducibleFloor": 401,
    "budget": 300,
    "explain": ""
   }
@@ -1059,13 +1266,13 @@
  ],
  "bounds": {
   "min": [
-   -0.40925,
-   -1.47748,
-   -0.0719
+   -0.27496,
+   -1.55651,
+   -0.0596
   ],
   "max": [
-   2.11221,
-   0.51389,
+   1.51608,
+   0.55236,
    8.46628
   ]
  },
@@ -1076,39 +1283,39 @@
     "mesh": "MESH_Flora_Kelp_s4021_q100_LOD0",
     "lod": 0,
     "passed": true,
-    "triangles": 5259,
-    "vertices": 2819,
+    "triangles": 5291,
+    "vertices": 2842,
     "submeshes": 3,
-    "digest": "dc8576802322e9b86397ba39af74b1fe",
+    "digest": "314a16712f15cd5f19343cd1ae77bcd8",
     "failures": [],
     "notEnforced": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 690 of 5259 triangles below the sliver floor 3.813e-04 m2 (0.1x mean triangle area 3.813e-03 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 522 of 5291 triangles below the sliver floor 3.651e-04 m2 (0.1x mean triangle area 3.651e-03 m2); the area-weighted population test still covered all of them"
     ]
    },
    {
     "mesh": "MESH_Flora_Kelp_s4021_q100_LOD1",
     "lod": 1,
     "passed": true,
-    "triangles": 1607,
-    "vertices": 1393,
+    "triangles": 1643,
+    "vertices": 1340,
     "submeshes": 3,
-    "digest": "fbe047cfbaf2f8f21744cd6b43b5a0fd",
+    "digest": "ffe64bb362ed0e8302a165fd29229999",
     "failures": [],
     "notEnforced": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 215 of 1607 triangles below the sliver floor 1.204e-03 m2 (0.1x mean triangle area 1.204e-02 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 178 of 1643 triangles below the sliver floor 1.143e-03 m2 (0.1x mean triangle area 1.143e-02 m2); the area-weighted population test still covered all of them"
     ]
    },
    {
     "mesh": "MESH_Flora_Kelp_s4021_q100_LOD2",
     "lod": 2,
     "passed": true,
-    "triangles": 283,
-    "vertices": 388,
+    "triangles": 282,
+    "vertices": 385,
     "submeshes": 3,
-    "digest": "e1d40d04fbd53462835d4c6ca8b7c5c6",
+    "digest": "1c35064189dda8b3d45bb51057ceea63",
     "failures": [],
     "notEnforced": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 12 of 283 triangles below the sliver floor 6.250e-03 m2 (0.1x mean triangle area 6.250e-02 m2); the area-weighted population test still covered all of them"
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 1 of 282 triangles below the sliver floor 6.178e-03 m2 (0.1x mean triangle area 6.178e-02 m2); the area-weighted population test still covered all of them"
     ]
    }
   ],
@@ -1126,10 +1333,10 @@
    "attribute": "Col",
    "domain": "CORNER",
    "areaWeightedMean": [
-    0.44059,
+    0.45817,
     0.0,
-    0.80382,
-    0.95762
+    0.70878,
+    0.956
    ],
    "min": [
     0.0,
@@ -1161,13 +1368,13 @@
     "tile": "Kelp_s4021_q100_s4021_q100_chan_chan0_sway_amplitude.png",
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.47254,
+    "mean": 0.49728,
     "hasGradient": true,
     "subjectVisible": true,
-    "coverage": 0.03537,
+    "coverage": 0.03129,
     "storedMin": 0.0,
     "storedMax": 1.0,
-    "storedAreaWeightedMean": 0.44059,
+    "storedAreaWeightedMean": 0.45817,
     "minDelta": 0.0,
     "maxDelta": 0.0
    },
@@ -1179,7 +1386,7 @@
     "mean": 2e-05,
     "hasGradient": true,
     "subjectVisible": true,
-    "coverage": 0.03537,
+    "coverage": 0.03129,
     "storedMin": 0.0,
     "storedMax": 0.0,
     "storedAreaWeightedMean": 0.0,
@@ -1189,16 +1396,16 @@
    {
     "channel": "baked_ao",
     "tile": "Kelp_s4021_q100_s4021_q100_chan_chan2_baked_ao.png",
-    "min": 0.13843,
+    "min": 0.11954,
     "max": 1.0,
-    "mean": 0.8717,
+    "mean": 0.81307,
     "hasGradient": true,
     "subjectVisible": true,
-    "coverage": 0.03537,
+    "coverage": 0.03129,
     "storedMin": 0.0,
     "storedMax": 1.0,
-    "storedAreaWeightedMean": 0.80382,
-    "minDelta": 0.13843,
+    "storedAreaWeightedMean": 0.70878,
+    "minDelta": 0.11954,
     "maxDelta": 0.0
    },
    {
@@ -1206,13 +1413,13 @@
     "tile": "Kelp_s4021_q100_s4021_q100_chan_chan3_family_specific.png",
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.98206,
+    "mean": 0.96599,
     "hasGradient": true,
     "subjectVisible": true,
-    "coverage": 0.03537,
+    "coverage": 0.03129,
     "storedMin": 0.0,
     "storedMax": 1.0,
-    "storedAreaWeightedMean": 0.95762,
+    "storedAreaWeightedMean": 0.956,
     "minDelta": 0.0,
     "maxDelta": 0.0
    }
@@ -1222,67 +1429,67 @@
    {
     "view": "front",
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_SIL_front.png",
-    "pixels": 15103,
-    "coverageFraction": 0.03687,
-    "perimeterPx": 1798.73,
-    "complexity": 16.4178,
-    "convexity": 0.4412,
-    "hullGapRms": 0.18238,
-    "cornerCount": 14,
-    "turnTop10Fraction": 0.4979,
-    "turnTotalDeg": 2677.0,
-    "fuzzFraction": 0.0593
+    "pixels": 25288,
+    "coverageFraction": 0.03951,
+    "perimeterPx": 2188.94,
+    "complexity": 16.0701,
+    "convexity": 0.4457,
+    "hullGapRms": 0.16139,
+    "cornerCount": 16,
+    "turnTop10Fraction": 0.3864,
+    "turnTotalDeg": 3434.5,
+    "fuzzFraction": 0.048
    },
    {
     "view": "side",
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_SIL_side.png",
-    "pixels": 11374,
-    "coverageFraction": 0.02777,
-    "perimeterPx": 1991.68,
-    "complexity": 28.4319,
-    "convexity": 0.3988,
-    "hullGapRms": 0.16398,
-    "cornerCount": 10,
-    "turnTop10Fraction": 0.6105,
-    "turnTotalDeg": 2419.9,
-    "fuzzFraction": 0.0722
+    "pixels": 10486,
+    "coverageFraction": 0.01638,
+    "perimeterPx": 2044.85,
+    "complexity": 33.1633,
+    "convexity": 0.3323,
+    "hullGapRms": 0.15121,
+    "cornerCount": 17,
+    "turnTop10Fraction": 0.4514,
+    "turnTotalDeg": 3643.7,
+    "fuzzFraction": 0.0378
    },
    {
     "view": "three_quarter",
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_SIL_three_quarter.png",
-    "pixels": 13907,
-    "coverageFraction": 0.03395,
-    "perimeterPx": 1785.67,
-    "complexity": 18.0594,
-    "convexity": 0.5759,
-    "hullGapRms": 0.11869,
-    "cornerCount": 13,
-    "turnTop10Fraction": 0.4569,
-    "turnTotalDeg": 2979.6,
-    "fuzzFraction": 0.0577
+    "pixels": 19520,
+    "coverageFraction": 0.0305,
+    "perimeterPx": 2114.39,
+    "complexity": 17.5047,
+    "convexity": 0.4138,
+    "hullGapRms": 0.17401,
+    "cornerCount": 14,
+    "turnTop10Fraction": 0.4777,
+    "turnTotalDeg": 2904.9,
+    "fuzzFraction": 0.0554
    },
    {
     "view": "low",
     "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_SIL_low.png",
-    "pixels": 16174,
-    "coverageFraction": 0.03949,
-    "perimeterPx": 1799.56,
-    "complexity": 15.4667,
-    "convexity": 0.5439,
-    "hullGapRms": 0.13201,
-    "cornerCount": 14,
-    "turnTop10Fraction": 0.4833,
-    "turnTotalDeg": 2728.6,
-    "fuzzFraction": 0.0559
+    "pixels": 22943,
+    "coverageFraction": 0.03585,
+    "perimeterPx": 2355.58,
+    "complexity": 19.7781,
+    "convexity": 0.4523,
+    "hullGapRms": 0.16837,
+    "cornerCount": 16,
+    "turnTop10Fraction": 0.3997,
+    "turnTotalDeg": 3568.3,
+    "fuzzFraction": 0.0499
    }
   ],
   "silhouetteSummary": {
-   "meanCoverageFraction": 0.03452,
-   "minCoverageFraction": 0.02777,
-   "maxCoverageFraction": 0.03949,
-   "meanTurnTop10Fraction": 0.5122,
-   "meanCornerCount": 12.75,
-   "meanConvexity": 0.4899,
+   "meanCoverageFraction": 0.03056,
+   "minCoverageFraction": 0.01638,
+   "maxCoverageFraction": 0.03951,
+   "meanTurnTop10Fraction": 0.4288,
+   "meanCornerCount": 15.75,
+   "meanConvexity": 0.411,
    "controlSphereTop10": 0.094,
    "controlPotatoTop10": 0.137,
    "controlPolytopeTop10": 0.789,
@@ -1295,5 +1502,5 @@
   "firstInvalidStage": null
  },
  "prefabBoundary": "PF_/GEN_ prefab, LODGroup and Unity import are NOT produced here: only Unity may author .prefab assets (AGENTS.md Evidence Law). This package is the FBX + manifest the Unity-side assembler consumes.",
- "generationSeconds": 48.31
+ "generationSeconds": 36.2
 }
