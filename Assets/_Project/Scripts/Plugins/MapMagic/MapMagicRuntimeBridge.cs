@@ -3011,7 +3011,48 @@ namespace Hecton8.Core
                 return;
 
             mapMagicObject.enabled = true;
-            mapMagicObject.instantGenerate = false;
+
+            // ══════════════════════════════════════════════════════════════════════════════════════
+            //  instantGenerate IS NOT A THROTTLE. Do not set it false again.
+            //
+            //  Measured defect it caused (Logs/omega_route31.log): TerrainTile:Generate fired 2 times
+            //  for a 3x3 tile grid, the centre tile's heightmap stayed flat zero, and
+            //  HectonPlayerSpawner reported "Terrain found at map center. Height: -2,8" - which is
+            //  exactly this holder's transform Y, i.e. the sampled normalised height was 0.0. No
+            //  geology value could reach the terrain, so no change to the geology fields or to
+            //  globals.height could possibly show up in that number.
+            //
+            //  Mechanism, read out of the vendor rather than assumed:
+            //    MapMagicObject.cs:451-456  StartGenerate(TerrainTile, ...) - the entry point used by
+            //                               Tile.OnChange, i.e. by every tile the streaming system
+            //                               creates or moves - is wrapped in `if (instantGenerate)`.
+            //                               With the flag false it is a silent no-op, permanently.
+            //    MapMagicObject.cs:244-252  Refresh() does not defer when the flag is false; it calls
+            //                               StopGenerate() and ClearChanged(). It cancels work.
+            //    MapMagicObject.cs:128-129  OnEnable runs StartGenerateNonReady() once. That is the
+            //                               only generation this bridge used to get: setting
+            //                               `enabled = true` on the line above fires OnEnable, which
+            //                               generates whatever tiles exist at Awake time - the 2 in
+            //                               the log - and then the old `false` here closed the door
+            //                               on every tile created afterwards, including the centre
+            //                               tile, which is created once the spawn point is known.
+            //    MapMagicRuntimeBridge:3379 the bridge's own explicit tile.Refresh path is gated on
+            //                               !Application.isPlaying, so it never covered for this.
+            //
+            //  Hitch protection lives in the four lines below plus draftsInPlaymode, not here:
+            //  one worker thread, 1 ms of apply per frame, low-resolution drafts in play mode. Those
+            //  bound the cost per frame. instantGenerate only decides whether a tile that changed is
+            //  allowed to ask for work at all, and ApplyTileSettings - the one runtime-reachable
+            //  caller of the cancelling Refresh path - is invoked exclusively from the vendor's
+            //  editor inspector (MapMagicInspector.cs:403), so flipping this cannot trigger a
+            //  full-grid clearAll regenerate.
+            //
+            //  Proof token for the next route run: TerrainTile:Generate rises from 2 toward the live
+            //  tile count, and the spawner's map-centre height stops equalling this holder's Y.
+            //  Until a run shows that, this is a verified-by-reading fix, not a proven one.
+            // ══════════════════════════════════════════════════════════════════════════════════════
+            mapMagicObject.instantGenerate = true;
+
             mapMagicObject.draftsInPlaymode = true;
             mapMagicObject.serializedMultithreading = true;
             mapMagicObject.serializedAutoMaxThreads = false;
