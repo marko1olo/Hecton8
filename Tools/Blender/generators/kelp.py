@@ -653,10 +653,33 @@ class KelpForm:
         # ring count over more metres -- so they are the only free levers on silhouette
         # mass, and 2.3-3.4 m straps at 21-31 cm wide put 5-7 overlapping sheets at any
         # height on the column instead of 2.7 narrow ones.
-        self.blade_count_target = _qi(14, 20, self.quality)
-        self.canopy_blades_target = _qi(2, 3, self.quality)
+        # ITERATION 8. The lead opened the iteration-7 sheet, accepted blade SHAPE and blade
+        # BEHAVIOUR as fixed, and rejected DISTRIBUTION: 12-16 blades over 8.5 m is 40-60 cm
+        # spacing against a real Macrocystis 10-20 cm, the spacing was too REGULAR, and the
+        # bare hooked apex was "the single most damaging feature" because Macrocystis is at
+        # its DENSEST at the apex where new blades split off the apical scimitar. Together
+        # those read as a willow branch -- the same terrestrial-gestalt class as the maize
+        # read at iteration 3 and the fern frond at iteration 6.
+        #
+        # RULING (lead, recorded): spend the triangle budget on blade COUNT; the blades ARE
+        # the organism, so every stipe/holdfast triangle past the minimum is misallocated.
+        # Do NOT widen blades further.
+        #
+        # Measured allocation before this change, quality 1.0, 5291 LOD0 triangles:
+        #   blades    4048  (76.5%)   23 blades x 176
+        #   holdfast   928  (17.5%)   7 fingers x 112 + boss 144
+        #   stipe      400   (7.6%)
+        # The holdfast was the larger prize and it sits on the seabed, mostly occluded.
+        self.blade_count_target = _qi(34, 44, self.quality)
+        # APEX CLUSTER, was 2-3. These are the blades that kill the bare hooked wire.
+        self.canopy_blades_target = _qi(9, 12, self.quality)
         self.blade_length = float(rng.uniform(2.30, 3.40))
-        self.blade_half_width = float(rng.uniform(0.105, 0.155))
+        # NARROWED BACK TO ANATOMY, was 0.105-0.155 half-width (21-31 cm). Real Macrocystis
+        # blades are 10-22 cm wide; the old range sat above the top of it, and the lead
+        # ruled that going wider trades one wrong read for another. 11.6-19.6 cm. Width
+        # costs no triangles either way, so this is a pure correctness move -- and with
+        # 46-56 blades instead of 23 the total width-sum still rises.
+        self.blade_half_width = float(rng.uniform(0.058, 0.098))
         self.blade_half_thickness = float(rng.uniform(0.00064, 0.00098))
 
     @property
@@ -775,8 +798,15 @@ def _build_holdfast(bm, layers, form, quality: float, part_start: int):
     islands = []
     part_id = part_start
 
-    boss_rows = _qi(4, 6, quality)
-    boss_segments = _qi(9, 12, quality)
+    # BUDGET RECLAIM, iteration 8, under the lead's ruling that "every triangle in the
+    # stipe past the minimum needed to read as a stipe is misallocated" and that the
+    # holdfast is second in line after the stipe. It is taken here FIRST because it was
+    # measured as the larger prize: 928 triangles, 17.5 percent of the whole asset, for an
+    # organ that sits on the seabed partly buried and never faces the camera at range.
+    # boss 6x12 -> 5x9 saves 54; fingers 7x(7x8) -> 7x(5x6) saves 434. Total 488, which
+    # buys roughly five more blades at the post-change per-blade cost.
+    boss_rows = _qi(4, 5, quality)
+    boss_segments = _qi(8, 9, quality)
     boss_points = [Vector((0.0, 0.0, form.boss_height * (i / float(boss_rows - 1))))
                    for i in range(boss_rows)]
     boss_lengths = _arclengths(boss_points)
@@ -812,8 +842,8 @@ def _build_holdfast(bm, layers, form, quality: float, part_start: int):
         across_layer=across_layer))
     part_id += 1
 
-    finger_rows = _qi(5, 7, quality)
-    finger_segments = _qi(6, 8, quality)
+    finger_rows = _qi(4, 5, quality)
+    finger_segments = _qi(5, 6, quality)
     for index in range(form.finger_count):
         azimuth = 2.0 * math.pi * index / float(form.finger_count) + \
             float(rng.uniform(-0.34, 0.34))
@@ -919,6 +949,7 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
     islands = []
     part_id = part_start
     attachments = []
+    row_counts = []
 
     # rows along the blade, and interior columns per face. Four interior columns plus
     # two margins gives ten around the section: enough for a midrib crease, a corrugation
@@ -931,8 +962,22 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
     # reduce_to_budget firing on LOD0 destroys the authored parameterisation, and the
     # worst UV triangle of that run was a 19 cm x 1.4 cm needle with no counterpart in
     # the analytic surface.
-    rows = _qi(9, 12, quality)
-    face_columns = 3
+    # `rows` is now a CEILING, spent per blade in proportion to that blade's length below.
+    base_rows = _qi(8, 10, quality)
+    # THREE INTERIOR COLUMNS PER FACE -> TWO (eight around the section -> six). This is a
+    # 25 percent cut on every blade and it is the single change that makes 10-20 cm spacing
+    # affordable at all; the lead's ruling is that count wins over per-blade refinement
+    # because "the blades ARE the organism".
+    #
+    # HONEST COST, two items, both reported rather than absorbed:
+    # (a) No vertex now lands exactly on the midrib. U samples are 0, 0.333, 0.667, 1, so
+    #     the shader's midribMask -- which peaks at widthMask 0.5 --  is interpolated
+    #     between the two inner columns instead of sampled at its peak. Midrib gloss goes
+    #     softer. It does not disappear and no seam moves: the margins are still exact
+    #     columns, which is what the single margin-seam unroll depends on.
+    # (b) Cross-sheet corrugation drops from 6 face samples to 4, so `corr_lateral` must be
+    #     capped at 1.0 (see below) to stay off Nyquist. That cap is applied, not hoped for.
+    face_columns = 2
     segments = 2 * face_columns + 2
     # Serration and corrugation density are the knobs section 9 names: "GlobalQualityWeight
     # scales flora and coral fidelity through offline branch count, pore density, blade
@@ -953,14 +998,34 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
     # reaches the surface. Azimuth advances by the golden angle so successive blades
     # never line up into the whorls that made the previous version read as radial.
     heights = []
-    span_lo, span_hi = 0.075, 0.955
+    # Regular nodes stop at 0.86 so they do not double-stack under the apex cluster, which
+    # owns everything above that.
+    span_lo, span_hi = 0.075, 0.86
     count = max(1, form.blade_count_target)
+    mean_spacing = (span_hi - span_lo) / float(max(1, count - 1))
     for node in range(count):
-        t = span_lo + (span_hi - span_lo) * (node / float(max(1, count - 1)))
-        heights.append((t + float(rng.uniform(-0.018, 0.018)), False))
-    for k in range(max(0, form.canopy_blades_target)):
-        heights.append((0.905 + 0.085 * (k / float(max(1, form.canopy_blades_target))) +
-                        float(rng.uniform(-0.012, 0.012)), True))
+        f = node / float(max(1, count - 1))
+        # f**0.85 is a MILD upward bias. A stronger exponent was rejected on paper before
+        # trying it: it empties the lower column, which is the bare-wire failure this file
+        # already fought at iterations 1, 2 and 6, just relocated downward.
+        t = span_lo + (span_hi - span_lo) * (f ** 0.85)
+        # JITTER AT +-1.4x THE MEAN SPACING, not the old +-0.018 absolute. The old jitter
+        # was 2 percent of the column against a 4.6 percent node pitch, so it could never
+        # reorder neighbours -- it was a comb with a slight tremble, and the lead read it
+        # correctly as "evenly spaced leaves along a wand". At 1.4x, adjacent nodes cross
+        # freely, which is what produces real CLUSTERS and real GAPS instead of a finer comb.
+        t += float(rng.uniform(-1.4, 1.4)) * mean_spacing
+        heights.append((t, False))
+    # THE APEX CLUSTER. Macrocystis is densest at its apex because new blades split off the
+    # apical scimitar there and only afterwards get carried down as the stipe elongates, so
+    # the growth model has to attach TOP-DOWN at the tip rather than spread a fixed count
+    # bottom-up. The lead named the naked hooked tip the single most damaging feature of
+    # iteration 7: it reads as a broken twig or a fishing line.
+    canopy_count = max(0, form.canopy_blades_target)
+    for k in range(canopy_count):
+        f = k / float(max(1, canopy_count - 1))
+        t = 0.862 + 0.133 * f + float(rng.uniform(-0.016, 0.016))
+        heights.append((t, True))
 
     golden = 2.399963229728653  # 137.507... degrees in radians
     for index, (height_t, is_canopy) in enumerate(heights):
@@ -992,14 +1057,40 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         # TOP of the column: measured by opening the iteration-5 silhouette sheet, the
         # upper third of the stipe is a bare wire in all four views, with the blade mass
         # piled into the lower half and only the fountain straps above it. Softening the
-        # gradient to 0.84..1.10 puts real sheet area back on the upper column. Length and
-        # width still cost NO triangles -- same ring count over more metres -- so this is
-        # free silhouette mass, which is the only reason it is affordable.
-        length = form.blade_length * (0.80 + 0.32 * lee) * (0.84 + 0.26 * age) * \
-            (0.86 if is_canopy else 1.0) * float(rng.uniform(0.84, 1.20))
+        # gradient to 0.84..1.10 puts real sheet area back on the upper column.
+        #
+        # ITERATION 9. Iteration 8 hit all three of the lead's distribution targets and the
+        # sheet then read as a CONIFER -- cypress or Lombardy poplar: narrow at the apex,
+        # widening monotonically downward. That is the fourth terrestrial gestalt this file
+        # has produced (maize at 3, fern at 6, willow at 7, conifer at 8), and the mechanism
+        # was mine: a top-to-bottom length ramp IS a cone. Two multiplicative ramps were
+        # stacked -- 0.84..1.10 by age and a further 0.44 on canopy blades -- so an apical
+        # blade was 0.37 of a basal one. Macrocystis reads as a COLUMN of near-constant
+        # width, because its blades are similar sizes along the whole stipe; the size ramp
+        # is a land-plant apical-dominance signature. Flattened to 0.94..1.05 with canopy at
+        # 0.62, so an apical blade is now 0.58 of a basal one instead of 0.37.
+        length = form.blade_length * (0.80 + 0.32 * lee) * (0.94 + 0.11 * age) * \
+            (0.62 if is_canopy else 1.0) * float(rng.uniform(0.84, 1.20))
         half_width = form.blade_half_width * (0.86 + 0.26 * lee) * \
-            (0.86 + 0.22 * age) * float(rng.uniform(0.90, 1.12))
+            (0.94 + 0.10 * age) * float(rng.uniform(0.90, 1.12))
         half_thickness = form.blade_half_thickness * float(rng.uniform(0.88, 1.14))
+
+        # ROWS PER BLADE, PROPORTIONAL TO LENGTH. Rows buy the drape arc and resolve the
+        # four plan-form regimes, and both of those are properties of METRES of blade, not
+        # of blade count -- so spending 12 rows on a 0.9 m apical blade in a dense cluster
+        # and 12 on a 3.4 m basal strap was the allocation that capped the count. A short
+        # apical blade is also mutually occluded by its ten neighbours, so its rows are the
+        # cheapest in the asset to give up. This is the continuous GlobalQualityWeight-style
+        # scaling section 9 asks for, applied per element instead of per run.
+        length_fraction = law.saturate(length / max(1e-6, form.blade_length * 1.15))
+        blade_rows = int(round(_lerp(6.0, float(base_rows), length_fraction)))
+        blade_rows = max(6, min(base_rows, blade_rows))
+        # Both of these are sampled ALONG the blade, so their Nyquist limit is blade_rows,
+        # not the run-wide value. 3 corrugations over 6 rings is 2 rings per period, which
+        # is exactly the aliasing the iteration-1 note above measured at 5.4144 aspect
+        # distortion once build_lod_chain collapsed the rows.
+        blade_corrugations = max(1, min(corrugations, blade_rows // 4))
+        blade_teeth = max(3, min(serration_teeth, blade_rows))
 
         # HANG, do not radiate. This is the single change that separates a kelp from a
         # bottle-brush. The previous curve put 0.48*length of straight radial reach at a
@@ -1134,7 +1225,12 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         # 8-14 mm it ripples the way the reference does.
         corr_amp = float(detail_rng.uniform(0.085, 0.155))
         corr_phase = float(detail_rng.uniform(0.0, 6.28))
-        corr_lateral = float(detail_rng.uniform(1.0, 2.0))
+        # CAPPED AT 1.0, was 1.0-2.0. With face_columns cut to 2 there are only four
+        # samples across the sheet (s_across = 1, 0.333, -0.333, -1). The cross-sheet term
+        # is cos(corr_lat * pi * s_across * 0.5), so corr_lat = 2 spans a full 2*pi period
+        # over those four samples -- exactly at Nyquist. 1.0 spans half a period, which four
+        # samples resolve.
+        corr_lateral = float(detail_rng.uniform(0.55, 1.0))
         # Margin frill: the long slow undulation of the whole edge, on top of the teeth.
         frill_k = float(detail_rng.uniform(1.4, 2.8))
         frill_phase = float(detail_rng.uniform(0.0, 6.28))
@@ -1174,22 +1270,22 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
                 bulb_end + (shoulder_end - bulb_end) * 0.45,
                 shoulder_end]
         tail = [tip_start, 1.0]
-        mid = max(1, rows - len(lead) - len(tail))
+        mid = max(1, blade_rows - len(lead) - len(tail))
         u_params = list(lead)
         for k in range(mid):
             f = (k + 1) / float(mid + 1)
             u_params.append(shoulder_end + (tip_start - shoulder_end) * f)
         u_params.extend(tail)
         u_params = sorted(set(u_params))
-        while len(u_params) < rows:
+        while len(u_params) < blade_rows:
             gaps = [(u_params[i + 1] - u_params[i], i)
                     for i in range(len(u_params) - 1)]
             widest, index = max(gaps)
             u_params.insert(index + 1, u_params[index] + widest * 0.5)
-        u_params = u_params[:rows]
+        u_params = u_params[:blade_rows]
 
         points = []
-        for step in range(rows):
+        for step in range(blade_rows):
             u = u_params[step]
             # Start inside the stipe so the junction is a hidden union under the
             # sheath, per the section 3 weld/knuckle/hidden-union clause.
@@ -1245,11 +1341,11 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
         def blade_offset(row_index, u, j, theta,
                          w=half_width, th=half_thickness, sa=serr_amp,
                          spr=serr_phase_right, spl=serr_phase_left,
-                         nfc=face_columns, teeth_n=serration_teeth,
+                         nfc=face_columns, teeth_n=blade_teeth,
                          tear_list=tears, scar_u=scar_at, scar_w=scar_width,
                          roll=roll, roll_rev=roll_reverse, roll_rev_k=roll_reverse_k,
                          corr_amp=corr_amp, corr_phase=corr_phase,
-                         corr_n=corrugations, corr_lat=corr_lateral,
+                         corr_n=blade_corrugations, corr_lat=corr_lateral,
                          frill_k=frill_k, frill_phase=frill_phase,
                          frill_amp=frill_amp,
                          bladder_span=bladder_span, shoulder_u=shoulder_end,
@@ -1460,17 +1556,38 @@ def _build_blades(bm, layers, form, quality: float, stipe_points, stipe_lengths,
             "flowDeflectionRad": round(flow_jitter, 4),
             "swingFractionOfLength": round(swing, 4),
             "floatLiftM": round(lift_m, 5),
+            "rows": blade_rows,
         })
+        row_counts.append(blade_rows)
         part_id += 1
 
+    # ACHIEVED SPACING, reported because the lead asked for the number reached and the
+    # spacing it implies rather than the number targeted. Measured from the sorted
+    # attachment heights actually used, in metres of stipe, so a clustered distribution
+    # reports its real median gap instead of a nominal count/length division.
+    used_t = sorted(a["heightT"] for a in attachments)
+    gaps_m = [(used_t[i + 1] - used_t[i]) * form.height
+              for i in range(len(used_t) - 1)]
+    gaps_m_sorted = sorted(gaps_m)
+    median_gap = (gaps_m_sorted[len(gaps_m_sorted) // 2] if gaps_m_sorted else 0.0)
     return islands, part_id, attachments, {
-        "rows": rows,
+        "bladeCount": len(attachments),
+        "canopyClusterBlades": sum(1 for a in attachments if a["canopy"]),
+        "attachmentSpacingMedianM": round(median_gap, 4),
+        "attachmentSpacingMinM": round(gaps_m_sorted[0], 4) if gaps_m_sorted else 0.0,
+        "attachmentSpacingMaxM": round(gaps_m_sorted[-1], 4) if gaps_m_sorted else 0.0,
+        "attachmentSpacingRealTargetM": "0.10-0.20 (Macrocystis)",
+        "apexTop15PctBlades": sum(1 for a in attachments if a["heightT"] >= 0.85),
+        "rowsCeiling": base_rows,
+        "rowsMin": min(row_counts) if row_counts else 0,
+        "rowsMax": max(row_counts) if row_counts else 0,
+        "rowsMean": round(sum(row_counts) / float(max(1, len(row_counts))), 2),
         "crossSectionVerts": segments,
         "faceColumnsPerSide": face_columns,
         "columnPlan": "j0=right margin, j1..n=upper face, j(n+1)=left margin, "
                       "j(n+2)..j(2n+1)=lower face",
         "serrationTeeth": serration_teeth,
-        "corrugationsPerBlade": corrugations,
+        "corrugationsPerBladeCeiling": corrugations,
         "tearsPerBlade": tear_count,
         "pneumatocyst": "one basal gas bladder per blade, material slot 3",
     }
@@ -2685,8 +2802,12 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
 
     # A 8-13 m stipe at 24 rings is a ring every ~0.45 m, which is enough for the
     # canopy lean and the growth-ring banding without spending blade budget.
+    # Radial segments 8-10 -> 7-8. The stipe is a 2-4 cm tube seen against 8.5 m of
+    # blade mass; an octagon reads as a stipe and a decagon does not read as more of one.
+    # Rows are UNTOUCHED, because rows carry the canopy lean and the growth-ring banding,
+    # and they are also what every blade attachment interpolates against.
     stipe_rows = _qi(13, 20, quality)
-    stipe_segments = _qi(8, 10, quality)
+    stipe_segments = _qi(7, 8, quality)
     stipe_part = next_part
     stipe_info, stipe_points, stipe_lengths = _build_stipe(
         bm, layers, form, stipe_rows, stipe_segments, stipe_part)
@@ -3463,11 +3584,20 @@ def _print_report(manifest: dict) -> None:
                   t=round(2.0 * structures["bladeHalfThicknessNominalM"], 5),
                   a=structures["bladeSheetAspectNominal"]))
     detail = structures["bladeDetail"]
-    print("  blade detail     rows={r} ring verts={v} serration teeth={s} "
-          "corrugations={c} tears={t}".format(
-              r=detail["rows"], v=detail["crossSectionVerts"],
-              s=detail["serrationTeeth"], c=detail["corrugationsPerBlade"],
+    print("  blade detail     rows={r0}-{r1} (mean {rm}, ceiling {rc}) ring verts={v} "
+          "serration teeth={s} corrugations<={c} tears={t}".format(
+              r0=detail["rowsMin"], r1=detail["rowsMax"], rm=detail["rowsMean"],
+              rc=detail["rowsCeiling"], v=detail["crossSectionVerts"],
+              s=detail["serrationTeeth"],
+              c=detail["corrugationsPerBladeCeiling"],
               t=detail["tearsPerBlade"]))
+    print("  blade spacing    {n} blades, {a} in apex top-15pct; gap median {gm} m "
+          "(min {g0} m, max {g1} m) vs real {rt}".format(
+              n=detail["bladeCount"], a=detail["apexTop15PctBlades"],
+              gm=detail["attachmentSpacingMedianM"],
+              g0=detail["attachmentSpacingMinM"],
+              g1=detail["attachmentSpacingMaxM"],
+              rt=detail["attachmentSpacingRealTargetM"]))
     topology = manifest["topology"]
     print("  topology         raw faces={rf} welded verts removed={wv} "
           "uv seam edges={se} budget-reduce {b}".format(
