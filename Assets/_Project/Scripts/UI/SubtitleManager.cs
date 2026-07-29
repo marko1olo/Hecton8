@@ -198,6 +198,12 @@ namespace Hecton8.UI
         private static readonly Color WaveformColor = new Color(0.72f, 0.97f, 1f, 0.92f);
         private static readonly char[] EmptyCueBuffer = new char[1]; // COLD ALLOC: char[1] - non-null empty cue sentinel - owner: SubtitleManager
         private static int s_x001SubtitleManagerSignalPushDropCount;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // One-shot latch for the dead-lane advisory in DrainGlobalSubtitleSignals. That method runs on the
+        // per-frame ILateFrameTickable cadence, so the advisory must cost one bool read after the first frame
+        // and must never build a string. Reset per play session by ResetStaticState.
+        private static bool s_deadSubtitleSignalLaneWarned;
+#endif
 
         private readonly SubtitleCommandDTO[] _subtitleCommandQueue = new SubtitleCommandDTO[MaxQueuedSubtitles]; // COLD ALLOC: SubtitleCommandDTO[8] - zero-string Babel subtitle command ring - owner: SubtitleManager
         private readonly BufferedSubtitleCue[] _bufferedQueue = new BufferedSubtitleCue[MaxQueuedSubtitles]; // COLD ALLOC: BufferedSubtitleCue[8] - zero-GC subtitle cue ring - owner: SubtitleManager
@@ -311,6 +317,9 @@ namespace Hecton8.UI
         private static void ResetStaticState()
         {
             s_activeInstance = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            s_deadSubtitleSignalLaneWarned = false;
+#endif
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -1235,6 +1244,19 @@ namespace Hecton8.UI
 
         private void DrainGlobalSubtitleSignals()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Announced before the frame-dedupe guard below on purpose: if BabelSubtitleSyncRuntime never
+            // initializes, both CurrentPresentationFrame and CurrentAudioFrame stay 0, the guard returns every
+            // frame, and an advisory placed after it would itself be dead code. See the dead-lane block at the
+            // SignalBus<SubtitleSignal> read further down for the field mapping and the owner decision needed.
+            if (!s_deadSubtitleSignalLaneWarned)
+            {
+                s_deadSubtitleSignalLaneWarned = true;
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[SubtitleManager] DEAD SIGNAL LANE: DrainGlobalSubtitleSignals reads SignalBus<SubtitleSignal>, but SubtitleSignal has no producer anywhere in the scripts tree - GlobalSignals.Publish(in SubtitleSignal) (Core/Signals/GlobalSignals.LegacyFacade.cs:324) is never called and nothing else constructs one. The frame snapshot is therefore always empty and NO subtitle is ever displayed through this path. The live lane is SubtitleCueSignal (Core/Contracts/Signals/SubtitleCueSignal.cs:9), pushed by Audio/VocalWarningSystem.cs:1626, Audio/Synthesis/VocalBankPlaybackRuntime.cs:1159 and UI/BabelSubtitleSyncRuntime.cs:408, and it still reaches this manager via DrainBabelCueSignals - so treat this as one dead legacy entry point, not as broken subtitles. Migrating this reader is NOT a type swap: it needs an owner decision on timing semantics (DurationSeconds float -> DurationMilliseconds ushort clamp/rounding, and presentation Frame -> audio-clock StartAudioFrame/AudioFrameLatency). See the field-mapping table at the read site.",
+                    this);
+            }
+#endif
             BabelSubtitleSyncRuntime.PreparePresentationFrame();
             uint frame = BabelSubtitleSyncRuntime.CurrentPresentationFrame;
             if (frame == 0u)
@@ -1243,6 +1265,39 @@ namespace Hecton8.UI
                 return;
 
             _lastGlobalSubtitleSignalFrame = frame;
+
+            // DEAD LANE - THIS LOOP HAS NEVER EXECUTED. SignalBus<SubtitleSignal> has no producer anywhere in
+            // the scripts tree, so GetFrameSnapshot below is permanently empty and no subtitle has ever been
+            // displayed through this path. Verified producers-of-SubtitleSignal set is empty:
+            //   - GlobalSignals.Publish(in SubtitleSignal)  Core/Signals/GlobalSignals.LegacyFacade.cs:324
+            //     is the only push API and has zero call sites.
+            //   - GlobalSignals.TryDequeueSubtitle          Core/Signals/GlobalSignals.LegacyFacade.cs:1093
+            //     is the only other reader and also has zero call sites.
+            //   - Core/Signals/GlobalSignals.RuntimeLifecycle.cs:62 registers the lane and :139 size-checks it;
+            //     Core/Signals/SignalBusRuntime.cs:1698 only classifies its pause-flush behaviour. Neither
+            //     constructs a payload. Docs/Generated/DEPENDENCY_GRAPH.md:686 independently lists producers as
+            //     "none found".
+            // The LIVE lane is SubtitleCueSignal (Core/Contracts/Signals/SubtitleCueSignal.cs:9), pushed by
+            // Audio/VocalWarningSystem.cs:1626, Audio/Synthesis/VocalBankPlaybackRuntime.cs:1159 and
+            // UI/BabelSubtitleSyncRuntime.cs:408. It already reaches this manager through
+            // BabelSubtitleSyncRuntime.DrainCueSignals -> TryConsumeReadyCue in DrainBabelCueSignals below, so
+            // subtitles are NOT globally broken - only this legacy entry point is.
+            //
+            // MIGRATION IS NOT A TYPE SWAP. It needs an OWNER DECISION on subtitle timing, which is
+            // player-visible and not settleable statically. Field mapping:
+            //   dead SubtitleSignal (32 B)          | live SubtitleCueSignal (64 B)
+            //   ------------------------------------+-------------------------------------------
+            //   SubtitleHash        uint   @0       | TokenHash             uint   @0
+            //   SpeakerHash         uint   @4       | SourceHash            uint   @4
+            //   DurationSeconds     FLOAT  @8       | DurationMilliseconds  USHORT @16
+            //   Frame               uint   @12      | StartAudioFrame       uint   @8
+            //   (no equivalent)                     | AudioFrameLatency     uint   @12
+            //   Priority            byte   @16      | Priority              byte   @18
+            //   Flags               byte   @17      | Flags                 byte   @19
+            // Two unresolved semantics: (1) seconds->milliseconds must clamp to ushort, which caps duration at
+            // 65.535 s and quantises it - decide the clamp and the rounding; (2) Frame is a presentation frame
+            // here but StartAudioFrame/AudioFrameLatency are audio-clock quantities in the live lane, so cue
+            // scheduling and lip-sync offset change meaning. Do not guess either one.
             ReadOnlySpan<SubtitleSignal> signals = SignalBus<SubtitleSignal>.GetFrameSnapshot();
             int count = math.min(signals.Length, MaxQueuedSubtitles);
             for (int i = 0; i < count; i++)
