@@ -567,7 +567,7 @@
    "baked_ao": {
     "min": 0.0,
     "max": 1.0,
-    "mean": 0.69431,
+    "mean": 0.69421,
     "elements": 15777,
     "domain": "CORNER"
    },
@@ -590,8 +590,8 @@
   "aoHasContrast": true,
   "aoMin": 0.0,
   "aoMax": 1.0,
-  "aoMean": 0.68054,
-  "aoSamples": 64,
+  "aoMean": 0.68063,
+  "aoSamples": 24,
   "aoDistanceM": 0.5532080906331778,
   "aoReason": "",
   "biolumPolicy": "authored 0 everywhere; photic-zone kelp has no emissive organ (3DMODEL_FLORA_CORAL.md section 2)"
@@ -1128,7 +1128,7 @@
    "areaWeightedMean": [
     0.44059,
     0.0,
-    0.80467,
+    0.80382,
     0.95762
    ],
    "min": [
@@ -1191,13 +1191,13 @@
     "tile": "Kelp_s4021_q100_s4021_q100_chan_chan2_baked_ao.png",
     "min": 0.13843,
     "max": 1.0,
-    "mean": 0.87214,
+    "mean": 0.8717,
     "hasGradient": true,
     "subjectVisible": true,
     "coverage": 0.03537,
     "storedMin": 0.0,
     "storedMax": 1.0,
-    "storedAreaWeightedMean": 0.80467,
+    "storedAreaWeightedMean": 0.80382,
     "minDelta": 0.13843,
     "maxDelta": 0.0
    },
@@ -1216,7 +1216,78 @@
     "minDelta": 0.0,
     "maxDelta": 0.0
    }
-  ]
+  ],
+  "silhouetteSheet": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_SHEET_SILHOUETTE.png",
+  "silhouette": [
+   {
+    "view": "front",
+    "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_SIL_front.png",
+    "pixels": 15103,
+    "coverageFraction": 0.03687,
+    "perimeterPx": 1798.73,
+    "complexity": 16.4178,
+    "convexity": 0.4412,
+    "hullGapRms": 0.18238,
+    "cornerCount": 14,
+    "turnTop10Fraction": 0.4979,
+    "turnTotalDeg": 2677.0,
+    "fuzzFraction": 0.0593
+   },
+   {
+    "view": "side",
+    "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_SIL_side.png",
+    "pixels": 11374,
+    "coverageFraction": 0.02777,
+    "perimeterPx": 1991.68,
+    "complexity": 28.4319,
+    "convexity": 0.3988,
+    "hullGapRms": 0.16398,
+    "cornerCount": 10,
+    "turnTop10Fraction": 0.6105,
+    "turnTotalDeg": 2419.9,
+    "fuzzFraction": 0.0722
+   },
+   {
+    "view": "three_quarter",
+    "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_SIL_three_quarter.png",
+    "pixels": 13907,
+    "coverageFraction": 0.03395,
+    "perimeterPx": 1785.67,
+    "complexity": 18.0594,
+    "convexity": 0.5759,
+    "hullGapRms": 0.11869,
+    "cornerCount": 13,
+    "turnTop10Fraction": 0.4569,
+    "turnTotalDeg": 2979.6,
+    "fuzzFraction": 0.0577
+   },
+   {
+    "view": "low",
+    "png": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\ForgePreviews\\Kelp_s4021_q100_s4021_q100_SIL_low.png",
+    "pixels": 16174,
+    "coverageFraction": 0.03949,
+    "perimeterPx": 1799.56,
+    "complexity": 15.4667,
+    "convexity": 0.5439,
+    "hullGapRms": 0.13201,
+    "cornerCount": 14,
+    "turnTop10Fraction": 0.4833,
+    "turnTotalDeg": 2728.6,
+    "fuzzFraction": 0.0559
+   }
+  ],
+  "silhouetteSummary": {
+   "meanCoverageFraction": 0.03452,
+   "minCoverageFraction": 0.02777,
+   "maxCoverageFraction": 0.03949,
+   "meanTurnTop10Fraction": 0.5122,
+   "meanCornerCount": 12.75,
+   "meanConvexity": 0.4899,
+   "controlSphereTop10": 0.094,
+   "controlPotatoTop10": 0.137,
+   "controlPolytopeTop10": 0.789,
+   "note": "coverage is the occupancy measure; top10 is spike-sensitive triage only"
+  }
  },
  "blackBox": {
   "stepsRecorded": 118,
@@ -1224,5 +1295,5 @@
   "firstInvalidStage": null
  },
  "prefabBoundary": "PF_/GEN_ prefab, LODGroup and Unity import are NOT produced here: only Unity may author .prefab assets (AGENTS.md Evidence Law). This package is the FBX + manifest the Unity-side assembler consumes.",
- "generationSeconds": 25.25
+ "generationSeconds": 48.31
 }

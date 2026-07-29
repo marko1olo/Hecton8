@@ -111,15 +111,17 @@
    "authored 2940 polygons fanned into 5520 triangles before UV packing, so the validated topology is the exported topology: export_unity writes use_triangles=True (mandatory -- use_tspace drops tangents silently on n-gons) and verify_fbx_roundtrip compares PER-CORNER data, which a quad source can never match",
    "stage order deviation: shared MAT_* materials are built at stage 5 instead of stage 7 because bpy.ops.object.bake refuses an object with no material slot, and stage 6 needs the bake. No other stage moved.",
    "AO bake distance 0.172 m (cap radius 0.150 m), 64 samples",
-   "LOD1 crack repair: 1728 -> 2066 tris closing 53 boundary loops (31 boundary edges left), triangulated 81 fused faces, purged 1 slivers and 4 duplicate faces, refitted to 1620 against the 1800 budget; post-refit repair removed 4 interior faces at non-manifold edges (4 -> 0), leaving 42 boundary edges, then triangulated 0 fused faces, purged 0 slivers and 0 duplicate faces",
-   "LOD1 shading basis re-derived at 68 deg: smooth_polygons=1620 sharp_edges=314 weighted=True",
-   "LOD1 re-unwrapped (smart_project, angle 49.8 deg derived from the 0.55 organic aspect limit) and rescaled into the 16 px border reserve by x0.9973",
-   "LOD2 crack repair: 287 -> 432 tris closing 43 boundary loops (135 boundary edges left), triangulated 14 fused faces, purged 0 slivers and 5 duplicate faces, refitted to 264 against the 300 budget; post-refit repair removed 5 interior faces at non-manifold edges (5 -> 0), leaving 132 boundary edges, then triangulated 0 fused faces, purged 0 slivers and 0 duplicate faces",
-   "LOD2 shading basis re-derived at 68 deg: smooth_polygons=264 sharp_edges=106 weighted=True",
-   "LOD2 re-unwrapped (smart_project, angle 49.8 deg derived from the 0.55 organic aspect limit) and rescaled into the 16 px border reserve by x0.9933",
-   "LOD0 uv edge-ratio: worst=1.1207 p95=0.3065 mean=0.0618 over 5520 triangles; validator sigma-ratio per slot: {'CapTissue': {'triangles': 2700, 'worst': 1.236, 'worstTriangle': 3302, 'worstRegion': 'cap_underside', 'worstWorldEdgesM': [0.006487, 0.018208, 0.023559], 'worstUvEdges': [0.001651, 0.004552, 0.005155], 'stretchedAreaFraction': 0.0078, 'overLimitByRegion': {'cap_top': 0.0008, 'cap_underside': 0.007}}, 'TornEdge': {'triangles': 720, 'worst': 2.027, 'worstTriangle': 4092, 'worstRegion': 'rim', 'worstWorldEdgesM': [0.006709, 0.03403, 0.03956], 'worstUvEdges': [0.001677, 0.008559, 0.008674], 'stretchedAreaFraction': 0.2038, 'overLimitByRegion': {'rim': 0.2038}}, 'StemHoldfast': {'triangles': 2100, 'worst': 3.471, 'worstTriangle': 4660, 'worstRegion': 'stem_band_16', 'worstWorldEdgesM': [0.003611, 0.003408, 0.006681], 'worstUvEdges': [0.001548, 0.000635, 0.00167], 'stretchedAreaFraction': 0.1069, 'overLimitByRegion': {'stem_band_00': 0.0503, 'stem_band_01': 0.0433, 'stem_band_02': 0.0032, 'stem_band_16': 0.01}}}",
-   "LOD1 uv edge-ratio: worst=0.4382 p95=0.1314 mean=0.0346 over 1620 triangles; validator sigma-ratio per slot: {'CapTissue': {'triangles': 790, 'worst': 0.458, 'worstTriangle': 1377, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.023727, 0.008551, 0.020329], 'worstUvEdges': [0.017769, 0.006505, 0.013515], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}, 'TornEdge': {'triangles': 436, 'worst': 0.471, 'worstTriangle': 1167, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.053329, 0.051688, 0.008731], 'worstUvEdges': [0.029524, 0.029753, 0.006709], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}, 'StemHoldfast': {'triangles': 394, 'worst': 0.375, 'worstTriangle': 102, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.012709, 0.028696, 0.026868], 'worstUvEdges': [0.008426, 0.022798, 0.019453], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}}",
-   "LOD2 uv edge-ratio: worst=0.1733 p95=0.1028 mean=0.0165 over 264 triangles; validator sigma-ratio per slot: {'CapTissue': {'triangles': 167, 'worst': 0.309, 'worstTriangle': 56, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.049293, 0.063953, 0.104727], 'worstUvEdges': [0.038142, 0.040834, 0.072671], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}, 'TornEdge': {'triangles': 21, 'worst': 0.273, 'worstTriangle': 164, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.091479, 0.062587, 0.036867], 'worstUvEdges': [0.072817, 0.047371, 0.029639], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}, 'StemHoldfast': {'triangles': 76, 'worst': 0.195, 'worstTriangle': 16, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.036775, 0.323522, 0.325764], 'worstUvEdges': [0.025123, 0.261132, 0.260867], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}}"
+   "LOD1 shell trace: entry comp=4 tris=1728 boundary=0 nonmanifold=0 smallest=362; after_crack_fill comp=4 tris=1728 boundary=0 nonmanifold=0 smallest=362",
+   "LOD1 crack repair: 1728 -> 1728 tris closing 0 boundary loops (0 boundary edges left), triangulated 0 fused faces, purged 0 slivers and 0 duplicate faces, refitted to 1728 against the 1800 budget",
+   "LOD1 shading basis re-derived at 68 deg: smooth_polygons=1728 sharp_edges=278 weighted=True",
+   "LOD1 re-unwrapped (smart_project, angle 49.8 deg derived from the 0.55 organic aspect limit) and rescaled into the 16 px border reserve by x0.9988",
+   "LOD2 shell trace: entry comp=4 tris=288 boundary=0 nonmanifold=0 smallest=48; after_crack_fill comp=4 tris=288 boundary=0 nonmanifold=0 smallest=48",
+   "LOD2 crack repair: 288 -> 288 tris closing 0 boundary loops (0 boundary edges left), triangulated 0 fused faces, purged 0 slivers and 0 duplicate faces, refitted to 288 against the 300 budget",
+   "LOD2 shading basis re-derived at 68 deg: smooth_polygons=288 sharp_edges=119 weighted=True",
+   "LOD2 re-unwrapped (smart_project, angle 49.8 deg derived from the 0.55 organic aspect limit) and rescaled into the 16 px border reserve by x0.9928",
+   "LOD0 uv edge-ratio: worst=1.1561 p95=0.3037 mean=0.0617 over 5520 triangles; validator sigma-ratio per slot: {'CapTissue': {'triangles': 2700, 'worst': 1.236, 'worstTriangle': 3302, 'worstRegion': 'cap_underside', 'worstWorldEdgesM': [0.006487, 0.018208, 0.023559], 'worstUvEdges': [0.001651, 0.004552, 0.005155], 'stretchedAreaFraction': 0.0078, 'overLimitByRegion': {'cap_top': 0.0008, 'cap_underside': 0.007}}, 'TornEdge': {'triangles': 720, 'worst': 2.027, 'worstTriangle': 4092, 'worstRegion': 'rim', 'worstWorldEdgesM': [0.006709, 0.03403, 0.03956], 'worstUvEdges': [0.001677, 0.008559, 0.008674], 'stretchedAreaFraction': 0.2038, 'overLimitByRegion': {'rim': 0.2038}}, 'StemHoldfast': {'triangles': 2100, 'worst': 3.465, 'worstTriangle': 4660, 'worstRegion': 'stem_band_16', 'worstWorldEdgesM': [0.003611, 0.003408, 0.006681], 'worstUvEdges': [0.001574, 0.000695, 0.00167], 'stretchedAreaFraction': 0.1057, 'overLimitByRegion': {'stem_band_00': 0.0503, 'stem_band_01': 0.0433, 'stem_band_02': 0.0032, 'stem_band_16': 0.0088}}}",
+   "LOD1 uv edge-ratio: worst=0.4088 p95=0.1319 mean=0.0363 over 1728 triangles; validator sigma-ratio per slot: {'CapTissue': {'triangles': 923, 'worst': 0.398, 'worstTriangle': 193, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.014711, 0.045596, 0.046442], 'worstUvEdges': [0.007594, 0.032845, 0.032968], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}, 'TornEdge': {'triangles': 381, 'worst': 0.472, 'worstTriangle': 1673, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.008342, 0.015319, 0.015598], 'worstUvEdges': [0.005246, 0.010053, 0.008363], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}, 'StemHoldfast': {'triangles': 424, 'worst': 0.473, 'worstTriangle': 1406, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.004867, 0.017214, 0.01601], 'worstUvEdges': [0.002482, 0.011076, 0.011115], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}}",
+   "LOD2 uv edge-ratio: worst=0.4800 p95=0.1415 mean=0.0324 over 288 triangles; validator sigma-ratio per slot: {'CapTissue': {'triangles': 200, 'worst': 0.369, 'worstTriangle': 279, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.031257, 0.07269, 0.059914], 'worstUvEdges': [0.02705, 0.069644, 0.052755], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}, 'TornEdge': {'triangles': 9, 'worst': 0.392, 'worstTriangle': 166, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.038314, 0.059017, 0.029881], 'worstUvEdges': [0.029799, 0.04123, 0.023084], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}, 'StemHoldfast': {'triangles': 79, 'worst': 0.484, 'worstTriangle': 176, 'worstRegion': 'unknown', 'worstWorldEdgesM': [0.025307, 0.219634, 0.217571], 'worstUvEdges': [0.016549, 0.210856, 0.210576], 'stretchedAreaFraction': 0.0, 'overLimitByRegion': {}}}"
   ],
   "growthAlgorithm": "parametric cap-and-stem clump: quadratic downstream stem bend, lobed non-circular cross-section with lengthwise ridges, flared finger holdfast, rib-driven cap (top relief, lobed outline and underside gills from one term), torn edge sectors, thick rounded rim band. Stem last ring IS the cap hub ring, so the union is welded rather than intersected.",
   "interaction": {
@@ -148,6 +150,24 @@
     "layer": "Flora_NonColliding",
     "radiusM": 0.12764,
     "type": "sphere"
+   }
+  },
+  "lodShellTopology": {
+   "LOD1": {
+    "boundaryEdges": 0,
+    "components": 4,
+    "largestComponent": 482,
+    "nonManifoldEdges": 0,
+    "smallestComponent": 362,
+    "triangles": 1728
+   },
+   "LOD2": {
+    "boundaryEdges": 0,
+    "components": 4,
+    "largestComponent": 86,
+    "nonManifoldEdges": 0,
+    "smallestComponent": 48,
+    "triangles": 288
    }
   },
   "materialFamily": "flora_plate_amber",
@@ -352,8 +372,8 @@
   "monotonic": true,
   "triangleCountsPerLod": {
    "LOD0": 5520,
-   "LOD1": 1620,
-   "LOD2": 264
+   "LOD1": 1728,
+   "LOD2": 288
   }
  },
  "manifestGaps": [
@@ -413,24 +433,24 @@
   },
   {
    "boundsMax": [
-    0.21747681498527527,
+    0.21690581738948822,
     0.2194797247648239,
-    0.5021034479141235
+    0.501811683177948
    ],
    "boundsMin": [
-    -0.1946411281824112,
+    -0.19480295479297638,
     -0.1786348670721054,
-    -0.000199260757653974
+    -5.8302732213633135e-05
    ],
    "colorLayers": [
     "Col"
    ],
-   "digest": "90d2e843a7fde16700bd25bc294628b9",
+   "digest": "0bab08a3b650d28c80a25dd839f2d52c",
    "hasTangentBasis": true,
    "lod": 1,
    "name": "MESH_Flora_CapStem_1811_00_LOD1",
    "submeshes": 3,
-   "triangles": 1620,
+   "triangles": 1728,
    "uvLayers": [
     "UVMap"
    ],
@@ -438,34 +458,34 @@
     "failures": [],
     "passed": true,
     "warnings": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 39 of 1620 triangles below the sliver floor 3.641e-05 m2 (0.1x mean triangle area 3.641e-04 m2); the area-weighted population test still covered all of them",
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 26 of 1728 triangles below the sliver floor 3.368e-05 m2 (0.1x mean triangle area 3.368e-04 m2); the area-weighted population test still covered all of them",
      "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
      "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it"
     ]
    },
    "validatorVersion": "1.0.0",
-   "vertices": 833
+   "vertices": 872
   },
   {
    "boundsMax": [
-    0.1987306922674179,
-    0.2167956829071045,
-    0.4961312711238861
+    0.21775947511196136,
+    0.22142843902111053,
+    0.503746509552002
    ],
    "boundsMin": [
-    -0.18180418014526367,
-    -0.17628446221351624,
-    -0.0021102090831846
+    -0.19603995978832245,
+    -0.18361087143421173,
+    0.0007378534646704793
    ],
    "colorLayers": [
     "Col"
    ],
-   "digest": "5cb3ef3e712b26e1cc6711c8b35a7db8",
+   "digest": "b00b24a15ba1df9918ca3436d821f817",
    "hasTangentBasis": true,
    "lod": 2,
    "name": "MESH_Flora_CapStem_1811_00_LOD2",
    "submeshes": 3,
-   "triangles": 264,
+   "triangles": 288,
    "uvLayers": [
     "UVMap"
    ],
@@ -473,13 +493,13 @@
     "failures": [],
     "passed": true,
     "warnings": [
-     "uv_stretch_excessive: not enforced: outlier sub-test skipped 20 of 264 triangles below the sliver floor 2.881e-04 m2 (0.1x mean triangle area 2.881e-03 m2); the area-weighted population test still covered all of them",
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 3 of 288 triangles below the sliver floor 1.913e-04 m2 (0.1x mean triangle area 1.913e-03 m2); the area-weighted population test still covered all of them",
      "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
      "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it"
     ]
    },
    "validatorVersion": "1.0.0",
-   "vertices": 240
+   "vertices": 152
   }
  ],
  "naming": {
@@ -497,10 +517,12 @@
    "Docs/AgentLogs/ForgePreviews/CapStem_1811_00_SHEET_flat.png",
    "Docs/AgentLogs/ForgePreviews/CapStem_1811_00_SHEET_studio.png",
    "Docs/AgentLogs/ForgePreviews/CapStem_1811_00_SHEET_material.png",
+   "Docs/AgentLogs/ForgePreviews/CapStem_1811_00_LOD1_SHEET_flat.png",
+   "Docs/AgentLogs/ForgePreviews/CapStem_1811_00_LOD2_SHEET_flat.png",
    "Docs/AgentLogs/ForgePreviews/CapStem_1811_00_SHEET_CHANNELS.png"
   ],
   "roundtripNotes": [
-   "wrote MESH_Flora_CapStem_1811_00.fbx (551932 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "wrote MESH_Flora_CapStem_1811_00.fbx (565196 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
    "MESH_Flora_CapStem_1811_00_LOD0: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
    "MESH_Flora_CapStem_1811_00_LOD1: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
    "MESH_Flora_CapStem_1811_00_LOD2: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
@@ -514,30 +536,30 @@
    "MESH_Flora_CapStem_1811_00_LOD0: landmark (0.21606, -0.02214, 0.49346) -> (0.21606, -0.02214, 0.49346), delta 0.0000000 m, margin 0.00167 m",
    "MESH_Flora_CapStem_1811_00_LOD0: signed volume +0.0039459 -> +0.0039459 (ratio +1.000000)",
    "MESH_Flora_CapStem_1811_00_LOD0: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-   "MESH_Flora_CapStem_1811_00_LOD1: verts 833->833 loops 4860->4860 tris 1620->1620",
+   "MESH_Flora_CapStem_1811_00_LOD1: verts 872->872 loops 5184->5184 tris 1728->1728",
    "MESH_Flora_CapStem_1811_00_LOD1: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "MESH_Flora_CapStem_1811_00_LOD1: colour max delta 0.0000000 (tol 0.002)",
    "MESH_Flora_CapStem_1811_00_LOD1: world position max delta 0.0000001 m (tol 0.0001)",
-   "MESH_Flora_CapStem_1811_00_LOD1: world corner-normal max delta 0.0003895 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Flora_CapStem_1811_00_LOD1: world corner-normal max delta 0.0003500 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Flora_CapStem_1811_00_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
-   "MESH_Flora_CapStem_1811_00_LOD1: landmark (-0.08457, 0.01519, -2e-05) -> (-0.08457, 0.01519, -2e-05), delta 0.0000000 m, margin 0.00007 m",
+   "MESH_Flora_CapStem_1811_00_LOD1: landmark (-0.08401, 0.01521, 0.00011) -> (-0.08401, 0.01521, 0.00011), delta 0.0000000 m, margin 0.00046 m",
    "MESH_Flora_CapStem_1811_00_LOD1: landmark margin below 0.001 m: this mesh is near-symmetric at its extreme vertex, so the landmark test is not decisive",
-   "MESH_Flora_CapStem_1811_00_LOD1: signed volume +0.0015236 -> +0.0015236 (ratio +1.000001)",
+   "MESH_Flora_CapStem_1811_00_LOD1: signed volume +0.0039202 -> +0.0039202 (ratio +1.000000)",
    "MESH_Flora_CapStem_1811_00_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
-   "MESH_Flora_CapStem_1811_00_LOD2: verts 240->240 loops 792->792 tris 264->264",
+   "MESH_Flora_CapStem_1811_00_LOD2: verts 152->152 loops 864->864 tris 288->288",
    "MESH_Flora_CapStem_1811_00_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
    "MESH_Flora_CapStem_1811_00_LOD2: colour max delta 0.0000000 (tol 0.002)",
    "MESH_Flora_CapStem_1811_00_LOD2: world position max delta 0.0000001 m (tol 0.0001)",
-   "MESH_Flora_CapStem_1811_00_LOD2: world corner-normal max delta 0.0000936 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Flora_CapStem_1811_00_LOD2: world corner-normal max delta 0.0003028 (tol 0.001), source has_custom_normals=True, reimport=True",
    "MESH_Flora_CapStem_1811_00_LOD2: uv0 max delta 0.00000000 (tol 1e-05)",
-   "MESH_Flora_CapStem_1811_00_LOD2: landmark (-0.08069, 0.01468, -2e-05) -> (-0.08069, 0.01468, -2e-05), delta 0.0000000 m, margin 0.00031 m",
-   "MESH_Flora_CapStem_1811_00_LOD2: landmark margin below 0.001 m: this mesh is near-symmetric at its extreme vertex, so the landmark test is not decisive",
-   "MESH_Flora_CapStem_1811_00_LOD2: signed volume +0.0034238 -> +0.0034238 (ratio +1.000000)",
+   "MESH_Flora_CapStem_1811_00_LOD2: landmark (-0.01064, -0.07381, 0.00262) -> (-0.01064, -0.07381, 0.00262), delta 0.0000000 m, margin 0.00122 m",
+   "MESH_Flora_CapStem_1811_00_LOD2: signed volume +0.0028160 -> +0.0028160 (ratio +1.000000)",
    "MESH_Flora_CapStem_1811_00_LOD2: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
    "MESH_Flora_CapStem_1811_00_LOD0 [fbx-space]: landmark direction expected (0.68256, 0.72462, 0.09505) measured (0.68256, 0.72462, 0.09505) delta 0.000000",
    "MESH_Flora_CapStem_1811_00_LOD0 [fbx-space]: Unity-space landmark offset will be (0.20855, 0.2214, -0.02904) (Blender (0.20855, -0.02904, 0.2214)); handedness flip is Unity's, winding is flipped to match",
    "MESH_Flora_CapStem_1811_00_LOD1 [fbx-space]: skipped: near-symmetric extreme vertex",
-   "MESH_Flora_CapStem_1811_00_LOD2 [fbx-space]: skipped: near-symmetric extreme vertex",
+   "MESH_Flora_CapStem_1811_00_LOD2 [fbx-space]: landmark direction expected (-0.07848, -0.95601, 0.28265) measured (-0.07848, -0.95601, 0.28265) delta 0.000000",
+   "MESH_Flora_CapStem_1811_00_LOD2 [fbx-space]: Unity-space landmark offset will be (-0.02454, -0.29896, -0.08839) (Blender (-0.02454, -0.08839, -0.29896)); handedness flip is Unity's, winding is flipped to match",
    "roundtrip VERIFIED: axis map confirmed=True, chirality preserved=True",
    "no collision proxy in this package. 3DMODEL_FLORA_CORAL.md section 7 allows this for flora/coral only; every other family needs a COL_ proxy.",
    "Unity LODGroup: create it explicitly from the _LOD suffixed children rather than relying on importer auto-detection, then set screenRelativeTransitionHeight per level with a hysteresis band and fadeMode=CrossFade with animateCrossFading=false (dithered). 3dmodel.md section 7 bans alpha-blended cross-fade for dense flora/coral on the compact lane; dither is not alpha blend."
@@ -653,7 +675,7 @@
    "materialImportMode": "None",
    "meshCompression": "Off",
    "meshOptimizationFlags": "PolygonOrder",
-   "normalSmoothingAngle": 32.0,
+   "normalSmoothingAngle": 68.0,
    "optimizeMeshPolygons": true,
    "optimizeMeshVertices": false,
    "preserveHierarchy": true,
@@ -713,7 +735,7 @@
    "materialImportMode": "3dmodel.md section 0 requires 'Static material references named MAT_*, never runtime material clones', and PROCEDURAL_ASSET_PIPELINE.md requires shared MAT_<Family>_<SurfaceRole> assets. Letting Unity build materials from the FBX creates per-model materials and breaks the SRP Batcher and atlas policy. The exporter ships nothing to import: path_mode='STRIP' and embed_textures=False. Note the existing project policy forces materialLocation=InPrefab for its managed roots.",
    "meshCompression": "Compression quantises positions, normals, tangents and UVs. 3dmodel.md section 10 gates 'Normals normalized within 0.995 to 1.005 length' and section 3 fixes a stable Float32 layout; quantised normals fail the first and quantised vertex colours corrupt the AO and sway masks. Note the existing project policy sets Medium for Assets/ScifiFacility third-party models only.",
    "meshOptimizationFlags": "PolygonOrder only, for the VAT vertex-id reason above.",
-   "normalSmoothingAngle": "law.SMOOTH_ANGLE_DEG, the same value mesh_ops used for shade_auto_smooth. Inert while importNormals=Import, but it means a forced fallback to Calculate reproduces the authored split instead of a different one.",
+   "normalSmoothingAngle": "law.smooth_angle_for(surface) -- the PER-SURFACE angle, not the flat law.SMOOTH_ANGLE_DEG this used to declare. Inert while importNormals=Import, but the whole point of writing it is that a forced fallback to Calculate reproduces the AUTHORED split rather than a different one, and the flat value did not. Measured 2026-07-29: mesh_ops.apply_shading_basis only DEFAULTS to SMOOTH_ANGLE_DEG (32.0); every generator overrides it with law.smooth_angle_for(SURFACE) -- coral_branching.py:1268 and flora_capstem.py:1805/:2111 pass ORGANIC, which is 68.0. So organic assets were authored at 68 degrees while this manifest declared 32, and geology was authored at 46 while declaring 32. The old `why` string asserted these were 'the same value'; they were not, by 36 and 14 degrees respectively.",
    "optimizeMeshPolygons": "Triangle-order optimisation touches no per-vertex identity, so it is safe even on VAT families.",
    "optimizeMeshVertices": "Off for Flora: this family renders through a baked VAT, which indexes per-vertex animation by vertex id. Reordering vertices desynchronises the texture from the mesh and the asset animates as noise.",
    "preserveHierarchy": "The _LOD0/_LOD1/_LOD2 and COL_ nodes must stay separate children for the LODGroup and the collider binding to work.",
@@ -740,7 +762,7 @@
   "passed": true,
   "validatorVersion": "1.0.0"
  },
- "validationHash": "9b7a74c0a0d07b86826a0d17f108bee5",
+ "validationHash": "0840437b1a326a044c8ea507d16e6abb",
  "validationHashAlgorithm": "blake2b-128 over the canonical JSON of every other field, sorted keys",
  "vertexColorContract": {
   "alphaMeaning": "harvest_mask: 1.0 on cap tissue that a harvest tool removes (top surface, underside gills and rim), ramping to 0.0 down the neck and 0.0 across the holdfast/foot. A cut at 0.0 yields nothing and kills the plant, so the interaction proxy is a root sphere and the shader/tool reads this mask to decide which tissue detaches.",

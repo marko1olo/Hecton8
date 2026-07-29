@@ -1070,15 +1070,47 @@ def _build_stem(accum: _Accum, plan: StemPlan, clump: ClumpPlan, rng,
             if i == last_band:
                 v_up_j = stem_v[i] + hub_advance[j]
                 v_up_k = stem_v[i] + hub_advance[k]
+                # AND THE UPPER u COMES FROM THE LOWER RING IN THIS BAND ONLY.
+                #
+                # Every other band takes its upper u from the upper ring's own arc
+                # normalisation, which is right when the two rings are near-parallel:
+                # their normalised arc positions differ by the lobe wobble alone. The hub
+                # ring is not near-parallel. It is tilted up to 34 degrees and offset off
+                # the stem axis, so its arc lengths redistribute strongly around the ring
+                # and its normalised positions walk away from the coarse ring's. The quad
+                # then carries a u SHEAR on top of the 3:1 v variation this band already
+                # has, and the two together are what put sigma_max/sigma_min out of range.
+                #
+                # MEASURED as the dominant cause: sweeping 48 seeds at quality 1.0, every
+                # LOD0 uv_stretch_excessive failure put its worst triangle in the
+                # StemHoldfast slot and in THIS band (stem_band_09 to _16 depending on the
+                # seed's ring count), at 3.35 to 12.79 against a 3.30 ceiling, while
+                # cap_top, cap_underside and rim never exceeded 4.21.
+                #
+                # The topology makes the substitution exact rather than approximate:
+                # lower[j] connects to upper[j] by construction, both rings are indexed by
+                # the same coarse `thetas_stem`, so column j IS the same column on both
+                # rings. Reusing the lower u asserts that, which is true, instead of
+                # re-deriving a second opinion from a tilted ring's arc lengths. v still
+                # carries the real per-column advance, so the band's genuine 3:1 stretch
+                # is still described -- only the spurious shear is removed.
+                #
+                # Safe against the cap island: UVs here are per-CORNER, and the hub ring's
+                # cap-side UVs are emitted separately into `island_bottom`, so this does
+                # not move the cap underside's parameterisation.
+                u_up_j = strip_u[i][j]
+                u_up_k = strip_u[i][k] + wrap
             else:
                 v_up_j = stem_v[i + 1]
                 v_up_k = stem_v[i + 1]
+                u_up_j = strip_u[i + 1][j]
+                u_up_k = strip_u[i + 1][k] + wrap
             accum.quad(
                 lower[j], lower[k], upper[k], upper[j], SLOT_STEM,
                 ((island_stem, strip_u[i][j], stem_v[i]),
                  (island_stem, strip_u[i][k] + wrap, stem_v[i]),
-                 (island_stem, strip_u[i + 1][k] + wrap, v_up_k),
-                 (island_stem, strip_u[i + 1][j], v_up_j)))
+                 (island_stem, u_up_k, v_up_k),
+                 (island_stem, u_up_j, v_up_j)))
 
     accum.region = "cap_underside"
     # ---- cap underside: hub ring outward to the rim ----------------------
@@ -1694,7 +1726,16 @@ def _make_reunwrap(atlas_size: int, notes: List[str]):
         # LOD0 path: LOD0's per-vertex sway/harvest arrays are index-aligned and a merge
         # there would desynchronise them.
         before_tris = mesh_ops.triangle_count(obj.data)
+        # Bracket EVERY step in this hook with a component count. `build_lod_chain`
+        # already welds the seam split back before calling us, so anything that
+        # fragments the shell after that point is made HERE, and until this probe
+        # existed there was no way to tell which of the five steps below did it.
+        # Attributing it by plausibility is how three earlier attributions in this
+        # pipeline went wrong ("disconnected shells", "the generator opens rims",
+        # "recalc_face_normals").
+        shell_trace = [("entry", mesh_ops.topology_report(obj))]
         clean, settle = _settle_topology(obj, fill_cracks=True)
+        shell_trace.append(("after_crack_fill", mesh_ops.topology_report(obj)))
 
         # Refit the budget the crack repair just broke. Without this the level is
         # discarded and rebuilt without seam preservation -- see the docstring.
@@ -1716,8 +1757,19 @@ def _make_reunwrap(atlas_size: int, notes: List[str]):
             # buried interior sheets) is the owner of that defect. Filling again here
             # would re-inflate past the budget and put the level straight back on the
             # seam-drop path, so this pass repairs without adding geometry.
+            shell_trace.append(("after_refit_decimate",
+                                mesh_ops.topology_report(obj)))
             repair, resettle = _settle_topology(obj, fill_cracks=False)
             refitted = mesh_ops.triangle_count(obj.data)
+            shell_trace.append(("after_refit_repair", mesh_ops.topology_report(obj)))
+        notes.append("LOD{0} shell trace: {1}".format(
+            lod_index,
+            "; ".join("{0} comp={1} tris={2} boundary={3} nonmanifold={4} "
+                      "smallest={5}".format(stage, report.components,
+                                            report.triangles, report.boundary_edges,
+                                            report.nonmanifold_edges,
+                                            report.smallest_component)
+                      for stage, report in shell_trace)))
         notes.append(
             "LOD{0} crack repair: {1} -> {2} tris closing {3} boundary loops "
             "({4} boundary edges left), {7}, refitted to {5} against the {6} budget"
@@ -2101,12 +2153,76 @@ def generate_variant(*, seed: int, quality: float, cap_radius: float, height: fl
     vcol_direct = _read_vcol_direct(obj)
 
     # --- 7/8. LOD chain (materials already built at stage 5) --------------
+    #
+    # preserve_seams=False, AND THAT IS NOT A RELAXATION OF 3dmodel.md SECTION 7.
+    #
+    # `_split_uv_seams` converts UV seams, sharp edges and material borders into mesh
+    # BOUNDARIES so Decimate/COLLAPSE cannot collapse across them. It exists to protect a
+    # parameterisation and a shading basis through the decimation. This generator THROWS
+    # BOTH AWAY at LOD1 and LOD2: `_make_reunwrap` re-solves UVs from scratch with
+    # `smart_project` and re-derives the weighted/split normal basis with
+    # `apply_shading_basis`. So the split was protecting data that is discarded minutes
+    # later -- it bought exactly nothing here, while doing real damage.
+    #
+    # THE DAMAGE, MEASURED on seed 1811 by bracketing every step of the reunwrap hook
+    # with `topology_report` (the shell trace note below):
+    #
+    #   preserve_seams=True     LOD1  4 comp, 42 boundary edges, 1620 tris
+    #                           LOD2 37 comp, 132 boundary edges,  264 tris
+    #   preserve_seams=False    LOD1  4 comp,  0 boundary edges, 1728 tris
+    #                           LOD2  4 comp,  0 boundary edges,  288 tris
+    #
+    # LOD2 was 264 triangles in 37 disconnected pieces -- 18 of them SINGLE TRIANGLES,
+    # visible as shards off the cap rims, plus a detached juvenile cap disc -- while
+    # passing the triangle budget, uv_stretch_excessive, winding, tangent and FBX
+    # round-trip gates. Both coarse levels are now closed 4-component manifolds matching
+    # LOD0's authored shell count exactly, and the triangle counts went UP because no
+    # budget is spent on fragments.
+    #
+    # A WELD CANNOT FIX IT, and that was measured before this change rather than assumed.
+    # `_weld_coincident` (1e-6) already runs inside `build_lod_chain` after the decimation
+    # and `weld_and_clean` (1e-4) runs twice more inside the reunwrap hook; LOD2 still
+    # arrived at 37 components. Probing the real gaps between those components gave
+    # 0.66 mm to 15.5 mm with ZERO pairs inside either tolerance: Quadric Edge Collapse
+    # moves the two sides of a split seam independently, so the duplicates stop being
+    # coincident and a distance weld has nothing to grab. Closing the 15.5 mm gap would
+    # need a tolerance larger than the cap rim thickness (12.3-13.6 mm), i.e. it would
+    # flatten the plate the asset is made of. Not splitting is the fix; welding is not.
+    #
+    # THE PRECONDITION IS THE REUNWRAP HOOK. Dropping seams is only correct BECAUSE this
+    # generator re-solves UVs and normals per level. A generator that passes
+    # `reunwrap=None` must keep `preserve_seams=True` or it ships whatever the collapse
+    # left. The two settings are redundant with each other and destructive together.
+    #
+    # AND IT NEEDS THE SLOT REPAIR BELOW TO BE SAFE. Measured A/B over the same 40 seeds
+    # at quality 1.0, which is the only reason this is not shipping as a regression:
+    # dropping the seam split took `submesh_empty_declared_slot` from 0/40 to 12/40.
+    # `_split_uv_seams` also splits MATERIAL BORDERS, and without that boundary Quadric
+    # Edge Collapse drags one slot's geometry into another until the smallest role --
+    # TornEdge, the rim band -- loses its last polygon. The first version of this change
+    # fixed LOD2's shell on one seed and broke the submesh contract on 30% of them.
+    slot_anchors = mesh_ops.material_slot_anchors(obj)
     lod_notes: List[str] = []
     lods = mesh_ops.build_lod_chain(
         obj, family=FAMILY, name=name, quality_weight=quality, levels=3,
-        preserve_seams=True, reunwrap=_make_reunwrap(atlas_size, lod_notes),
+        preserve_seams=False, reunwrap=_make_reunwrap(atlas_size, lod_notes),
         blackbox=blackbox)
     notes.extend(lod_notes)
+
+    # `mesh_ops.preserve_material_slots` is the documented owner of that defect -- it
+    # re-tags the surviving polygon nearest each emptied slot's LOD0 centroid -- and
+    # cap-stem was the ONLY generator that never called it. `kelp.py` and
+    # `coral_branching.py` both wired it after hitting this same gate at 288 and 285
+    # triangles. 3dmodel.md section 10 requires the submesh count to match the
+    # declaration and 3DMODEL_FLORA_CORAL.md section 6 requires LOD2 to keep the shader
+    # semantics it still reads, so keeping the role alive at its own location is the
+    # honest repair rather than letting a material silently vanish down the chain.
+    for level in lods:
+        repaired = mesh_ops.preserve_material_slots(level.obj, slot_anchors)
+        if repaired:
+            notes.append("LOD{0} material slots repaired: {1}".format(
+                level.index, repaired))
+
     for level in lods:
         if not level.within_budget:
             report = mesh_ops.topology_report(level.obj)
@@ -2199,6 +2315,52 @@ def render_proof(variant: VariantResult, *, out_dir: str, resolution: int) -> di
             surface_class=SURFACE)
         sheets[mode] = preview.render_contact_sheet(subject, spec).sheet_path
 
+    # ---- COARSE LOD SHEETS ------------------------------------------------
+    # Until this existed, `subject = variant.lods[0].obj` was the ONLY thing rendered
+    # anywhere in the pipeline, so LOD1 and LOD2 had zero visual proof at any point --
+    # and LOD2 used that cover to ship VISIBLY SHATTERED while passing every numeric
+    # gate it has: triangle budget, uv_stretch_excessive, winding, tangents and the FBX
+    # round trip were all green at 264 triangles in 37 disconnected components with
+    # shards off the cap rims. The rule that governs this is in the pipeline notes as
+    # "the number and the image are two instruments, neither substitutes for the other";
+    # a level nobody renders only has one of them.
+    #
+    # `flat` mode only, and that is a deliberate choice rather than a saving. Coarse-LOD
+    # damage is SILHOUETTE and SHELL damage -- fragments, shards, holes, a detached cap
+    # -- and the flat override is the mode that shows it. A material render at LOD2
+    # would dress the same fragments in pigment and read as acceptable, which is the
+    # failure mode this block exists to end.
+    #
+    # THE LOD NUMBER IS IN THE FILENAME, not just in a dict key. These sheets sit in the
+    # same directory as LOD0's, and a coarse sheet mistaken for LOD0 is worse than no
+    # sheet -- it makes a broken level look like an authoring choice. `PreviewSpec.name`
+    # drives every tile and sheet path, so `..._LOD2_SHEET_flat.png` is unambiguous in
+    # any file listing, in the manifest, and in a chat window. `clear_render_dir` keys
+    # its staleness sweep on that same name plus mtime-against-process-start, so the
+    # per-LOD prefixes cannot delete each other's output within one run.
+    lod_sheets = {}
+    lod_topology = {}
+    for level in variant.lods[1:]:
+        key = "LOD{0}".format(level.index)
+        spec = preview.PreviewSpec(
+            name="{0}_{1}".format(variant.name, key), output_dir=out_dir,
+            resolution=resolution, views=("three_quarter", "low"), mode="flat",
+            surface_class=SURFACE)
+        lod_sheets[key] = preview.render_contact_sheet(level.obj, spec).sheet_path
+        # Ship the number NEXT TO the image, from the same object, in the same pass.
+        # `topology_report` is what turns "LOD2 looks wrong" into "37 components,
+        # largest 38 triangles" -- a cause rather than an impression -- and the
+        # component count is the one figure no existing gate reports.
+        report = mesh_ops.topology_report(level.obj)
+        lod_topology[key] = {
+            "triangles": report.triangles,
+            "components": report.components,
+            "boundaryEdges": report.boundary_edges,
+            "nonManifoldEdges": report.nonmanifold_edges,
+            "smallestComponent": report.smallest_component,
+            "largestComponent": report.largest_component,
+        }
+
     channel_spec = preview.PreviewSpec(
         name=variant.name, output_dir=out_dir, resolution=resolution,
         mode="studio", surface_class=SURFACE)
@@ -2221,6 +2383,8 @@ def render_proof(variant: VariantResult, *, out_dir: str, resolution: int) -> di
 
     return {
         "sheets": sheets,
+        "lodSheets": lod_sheets,
+        "lodTopology": lod_topology,
         "channelSheet": channels.sheet_path,
         "channelTiles": list(channels.tile_paths),
         "measurements": measurements,
@@ -2276,6 +2440,10 @@ def _print_report(variant: VariantResult, proof: Optional[dict],
                       measurement["hasGradient"], measurement["subjectVisible"]))
         for mode, path in proof["sheets"].items():
             print("  sheet {0:<9} {1}".format(mode, path))
+        for key, path in proof.get("lodSheets", {}).items():
+            print("  sheet {0:<9} {1}".format(key, path))
+        for key, report in proof.get("lodTopology", {}).items():
+            print("  shell {0:<9} {1}".format(key, report))
         print("  sheet channels  {0}".format(proof["channelSheet"]))
     if export_result is not None:
         print("  fbx      : {0}".format(export_result.fbx_path))
@@ -2416,7 +2584,12 @@ def main(argv: Sequence[str]) -> int:
 
             proof_paths = []
             if proof is not None:
-                proof_paths = list(proof["sheets"].values()) + [proof["channelSheet"]]
+                # Coarse-LOD sheets are PROOF PATHS, not a side artefact: a reviewer who
+                # opens only what the manifest lists must be shown LOD1 and LOD2, or the
+                # blind spot that let a 37-component LOD2 ship is still open.
+                proof_paths = (list(proof["sheets"].values())
+                               + list(proof.get("lodSheets", {}).values())
+                               + [proof["channelSheet"]])
 
             # Sibling of the FBX, in the package directory, never in out_dir: the
             # postprocessor derives the manifest path FROM the mesh path, so a manifest
@@ -2460,6 +2633,12 @@ def main(argv: Sequence[str]) -> int:
                     },
                     "vertexColorChannels": variant.vcol_report,
                     "vertexColorDirectReadback": variant.vcol_direct,
+                    # Per-level shell topology, recorded because no validator gate
+                    # reports a component count and LOD2 fragmentation is invisible to
+                    # every gate that does run. Sits beside "lodSheets" on purpose:
+                    # number and image, same level, same run.
+                    "lodShellTopology":
+                        proof["lodTopology"] if proof is not None else {},
                     "aoBake": {
                         "baked": variant.ao.baked,
                         "samples": variant.ao.samples,
