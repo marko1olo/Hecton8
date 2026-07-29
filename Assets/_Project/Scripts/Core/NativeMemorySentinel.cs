@@ -38,6 +38,7 @@ namespace Hecton8.Core
         private const string MemoryLeakDetectedPrefix = "MEMORY_LEAK_DETECTED";
         private const string StaleBufferCrimePrefix = "STALE_BUFFER_CRIME";
         private const string PersistentFragmentationRiskPrefix = "PERSISTENT_FRAGMENTATION_RISK";
+        private const string SceneLeakAttributionUnprovenPrefix = "SCENE_LEAK_ATTRIBUTION_UNPROVEN";
         private const string CriticalMemoryViolationRegistryCapacityMessage = "CRITICAL_MEMORY_VIOLATION: NativeMemorySentinel registry capacity exceeded.";
         private const string CriticalMemoryViolationSceneLeakMessage = "CRITICAL_MEMORY_VIOLATION: scene allocation survived unload.";
         private const string CriticalMemoryViolationUnsafeLeakMessage = "CRITICAL_MEMORY_VIOLATION: UnsafeUtility leak detector reported leaks.";
@@ -46,6 +47,9 @@ namespace Hecton8.Core
         private const string StaleBufferCrimeRetentionMessage = "STALE_BUFFER_CRIME: TempJob allocation exceeded 4-frame legal window.";
         private const string PersistentFragmentationRiskMessage = "PERSISTENT_FRAGMENTATION_RISK: persistent native allocation changed size more than 3 times in 60 seconds.";
         private const string NativeLeakReapedMessage = "NATIVE_LEAK_REAPED: RuntimeWatchdog force-freed a scene native allocation.";
+        private const string SceneLeakAttributionUnprovenMessage = "SCENE_LEAK_ATTRIBUTION_UNPROVEN: scene-lifetime allocation outlived a scene the sentinel only guessed it belonged to.";
+        private const string SceneLeakProvenActionMessage = " ACTION=REAL LEAK. The owner declared this scene itself, so the buffer outlived a scene it claimed. Unregister it (NativeMemorySentinel.Unregister(id) or Unregister(owner, label, scene)) from the owner's Dispose/OnDestroy before that scene unloads, or declare NativeAllocationLifetime.Session if it is meant to outlive the scene.";
+        private const string SceneLeakUnprovenActionMessage = " ACTION=NOT A PROVEN LEAK, DO NOT HUNT THE BUFFER. sceneScope=active-scene-at-alloc means the sentinel inferred this scene from SceneManager.GetActiveScene() at allocFrame; HECTON-8 loads 02_HECTON_WORLD additively while 01_MAIN_MENU is still active, so world-owned buffers get stamped with the menu and every one of them 'survives' the menu unload. Fix the DECLARATION at the owner: NativeAllocationLifetime.Session when the owner outlives any single scene, or an explicit-Scene registration when it truly is scene-scoped (note: only RegisterPointer has a Scene overload today, the collection registrars do not). A genuine leak by this owner is still fatal later at NativeMemorySentinel.AssertNoAllocationsAfterServiceShutdown.";
         private const string SceneScopeOwnerDeclaredLabel = "owner-declared";
         private const string SceneScopeActiveSceneAtAllocLabel = "active-scene-at-alloc";
 
@@ -54,6 +58,7 @@ namespace Hecton8.Core
         private static readonly uint _memoryLeakDetectedHash = ComputeStableHash(MemoryLeakDetectedPrefix);
         private static readonly uint _staleBufferCrimeHash = ComputeStableHash(StaleBufferCrimePrefix);
         private static readonly uint _persistentFragmentationRiskHash = ComputeStableHash(PersistentFragmentationRiskPrefix);
+        private static readonly uint _sceneLeakAttributionUnprovenHash = ComputeStableHash(SceneLeakAttributionUnprovenPrefix);
 
         [StructLayout(LayoutKind.Explicit, Size = 312)]
         private struct NativeAllocationRecord
@@ -128,6 +133,7 @@ namespace Hecton8.Core
         private static int _nextId = 1;
         private static long _trackedBytes;
         private static int _sceneLeakViolationCount;
+        private static int _unprovenSceneLeakAttributionCount;
         private static int _activeTempAllocationCount;
         private static int _activeTempJobAllocationCount;
         private static int _telemetryPublishInProgress;
@@ -143,8 +149,22 @@ namespace Hecton8.Core
         /// <summary>Tracked persistent native bytes.</summary>
         public static long TrackedBytes => Volatile.Read(ref _trackedBytes);
 
-        /// <summary>Scene lifetime leak violation count reported by the sentinel.</summary>
+        /// <summary>
+        /// Scene lifetime leak violation count reported by the sentinel. Counts only PROVEN leaks - a
+        /// scene-scoped unload assert now only increments this when the record's scene binding was declared
+        /// by its owner. Inferred bindings land in <see cref="UnprovenSceneLeakAttributionCount"/> instead.
+        /// </summary>
         public static int SceneLeakViolationCount => Volatile.Read(ref _sceneLeakViolationCount);
+
+        /// <summary>
+        /// Count of scene-lifetime allocations that outlived a scene the sentinel only INFERRED they belonged
+        /// to (<c>SceneIdentityOwnerDeclared == false</c>, or an owner declaration that did not resolve to a
+        /// valid scene). These are attribution defects, not evidence of a leak - see
+        /// <see cref="ResolveCurrentSceneIdentity"/> for why the inference is provably wrong across an
+        /// additive scene handoff. A real leak by such an owner still fails closed at
+        /// <see cref="AssertNoAllocationsAfterServiceShutdown"/>, where no scene ambiguity exists.
+        /// </summary>
+        public static int UnprovenSceneLeakAttributionCount => Volatile.Read(ref _unprovenSceneLeakAttributionCount);
 
         /// <summary>
         /// Computes the same stable numeric hash used by native allocation records.
@@ -236,6 +256,7 @@ namespace Hecton8.Core
                 _nextId = 1;
                 _trackedBytes = 0L;
                 _sceneLeakViolationCount = 0;
+                _unprovenSceneLeakAttributionCount = 0;
                 _activeTempAllocationCount = 0;
                 _activeTempJobAllocationCount = 0;
                 _telemetryPublishInProgress = 0;
@@ -1238,22 +1259,25 @@ namespace Hecton8.Core
 
         /// <summary>
         /// Reports scene-lifetime native allocations that survived a scene unload.
+        /// Scene-agnostic: nothing may survive this call, so every match is a proven leak.
         /// </summary>
         public static void ReportSceneLifetimeLeaks(string context)
         {
-            ReportSceneLifetimeLeaks(context, 0);
+            ReportSceneLifetimeLeaks(context, 0, false);
         }
 
         /// <summary>
         /// Reports scene-lifetime native allocations for an explicit scene context.
+        /// Scene-scoped: only owner-declared bindings are judged as leaks - see
+        /// <see cref="IsProvenSceneLifetimeLeak"/>.
         /// </summary>
         public static void ReportSceneLifetimeLeaks(string context, Scene scene)
         {
             ResolveSceneIdentity(scene, out int sceneIdentityHash, out _);
-            ReportSceneLifetimeLeaks(context, sceneIdentityHash);
+            ReportSceneLifetimeLeaks(context, sceneIdentityHash, true);
         }
 
-        private static void ReportSceneLifetimeLeaks(string context, int sceneIdentityHash)
+        private static void ReportSceneLifetimeLeaks(string context, int sceneIdentityHash, bool sceneScopedAssert)
         {
             int reported = 0;
             EnterSceneLeakReportGate();
@@ -1284,7 +1308,7 @@ namespace Hecton8.Core
                 }
 
                 for (int i = 0; i < reported; i++)
-                    PublishSceneLifetimeLeak(in _sceneLeakReportScratch[i]);
+                    PublishSceneLifetimeLeak(in _sceneLeakReportScratch[i], context, sceneScopedAssert);
 
 #if HECTON_FULL_NATIVE_LEAK_SCAN_ON_SCENE_UNLOAD
                 int unsafeLeakCount = UnsafeUtility.CheckForLeaks();
@@ -1310,19 +1334,70 @@ namespace Hecton8.Core
             }
         }
 
-        private static void PublishSceneLifetimeLeak(in NativeAllocationRecord record)
+        /// <summary>
+        /// Splits the report by whether the scene binding is an ownership FACT or the sentinel's own guess.
+        /// A guess must never raise CRITICAL and must never enter the crash-time leak ring: ten unprovable
+        /// lines per run is what taught readers to ignore the real ones. The guess still publishes telemetry
+        /// under its own hash and still logs, so nothing goes silent.
+        /// </summary>
+        private static void PublishSceneLifetimeLeak(in NativeAllocationRecord record, string context, bool sceneScopedAssert)
         {
-            Interlocked.Increment(ref _sceneLeakViolationCount);
-            PublishPerformanceWarningNoReentry(
-                _criticalMemoryViolationHash,
-                _nativeMemoryContextHash,
-                record.Bytes <= 0L ? 0f : record.Bytes > float.MaxValue ? float.MaxValue : (float)record.Bytes);
-            uint allocationHash = ComputeOwnerLabelHash(record.OwnerHash, record.LabelHash);
-            CrashTelemetryBuffer.ReportNativeTransientLeak(allocationHash, 0, record.Bytes);
+            bool proven = IsProvenSceneLifetimeLeak(in record, sceneScopedAssert);
+            float bytesScalar = record.Bytes <= 0L ? 0f : record.Bytes > float.MaxValue ? float.MaxValue : (float)record.Bytes;
+            if (proven)
+            {
+                Interlocked.Increment(ref _sceneLeakViolationCount);
+                PublishPerformanceWarningNoReentry(
+                    _criticalMemoryViolationHash,
+                    _nativeMemoryContextHash,
+                    bytesScalar);
+                uint allocationHash = ComputeOwnerLabelHash(record.OwnerHash, record.LabelHash);
+                CrashTelemetryBuffer.ReportNativeTransientLeak(allocationHash, 0, record.Bytes);
+            }
+            else
+            {
+                Interlocked.Increment(ref _unprovenSceneLeakAttributionCount);
+                PublishPerformanceWarningNoReentry(
+                    _sceneLeakAttributionUnprovenHash,
+                    _nativeMemoryContextHash,
+                    bytesScalar);
+            }
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Volatile.Read(ref _diagnosticSceneLeakLogSuppressions) <= 0)
-                Debug.LogError(DescribeSceneLifetimeLeak(record));
+            {
+                if (proven)
+                    Debug.LogError(DescribeSceneLifetimeLeak(record, context, true));
+                else
+                    Debug.LogWarning(DescribeSceneLifetimeLeak(record, context, false));
+            }
 #endif
+        }
+
+        /// <summary>
+        /// Decides whether the record's binding to the scene under assertion is an ownership FACT.
+        ///
+        /// A scene-agnostic assert (teardown, service shutdown, watchdog reap) has no ambiguity to exploit -
+        /// nothing at all may survive it - so every match there is proven.
+        ///
+        /// A scene-SCOPED assert (the <see cref="SceneManager.sceneUnloaded"/> hook) is only meaningful when
+        /// the owner named the scene itself. When the binding came from
+        /// <see cref="ResolveCurrentSceneIdentity"/> the sentinel guessed, and that guess is provably wrong
+        /// across HECTON-8's additive menu-to-world handoff: probe5 produced exactly ten of these, all
+        /// <c>sceneScope=active-scene-at-alloc allocFrame=546 sceneBuildIndex=1</c> (01_MAIN_MENU), against
+        /// QuestStateManager and WorldProceduralScatterDirector.ScatterWorkingMemory - two 02_HECTON_WORLD
+        /// owners whose Dispose/OnDestroy do unregister, just not when the MENU unloads.
+        ///
+        /// A record with <c>SceneIdentityHash == 0</c> is also unproven here on purpose: that record matches
+        /// EVERY unload through <see cref="MatchesSceneLeakFilter"/>, so the first scene to unload would be
+        /// blamed for a buffer it never owned - including when an owner declared a Scene that did not resolve.
+        /// </summary>
+        private static bool IsProvenSceneLifetimeLeak(in NativeAllocationRecord record, bool sceneScopedAssert)
+        {
+            if (!sceneScopedAssert)
+                return true;
+
+            return record.SceneIdentityOwnerDeclared && record.SceneIdentityHash != 0;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1331,14 +1406,20 @@ namespace Hecton8.Core
         /// byte count, the allocating frame and the allocator; emitting only the bare constant threw all of
         /// that away and left a critical error that names nothing. A production run logged ten of these and
         /// the log could not say which ten allocations they were.
+        ///
+        /// It also could not say WHICH SCENE unloaded (only the separate FATAL_MEMORY_LEAK line carried the
+        /// context) and it could not say what the reader was supposed to do, so ten lines per run survived
+        /// several sessions undiagnosed. Both are now on the line: <c>unloadedScene=</c> and <c>ACTION=</c>,
+        /// with different text per verdict because the two verdicts need opposite work - fix the buffer versus
+        /// fix the declaration.
         /// </summary>
-        private static string DescribeSceneLifetimeLeak(in NativeAllocationRecord record)
+        private static string DescribeSceneLifetimeLeak(in NativeAllocationRecord record, string context, bool proven)
         {
-            // COLD ALLOC: StringBuilder[192] - editor-only scene-unload leak report - owner: NativeMemorySentinel
+            // COLD ALLOC: StringBuilder[512] - editor-only scene-unload leak report - owner: NativeMemorySentinel
             // Cold by construction: raised from HandleSceneUnloaded, never from a tick, and the Debug.LogError
             // it feeds allocates far more than this does.
-            System.Text.StringBuilder builder = new System.Text.StringBuilder(192);
-            builder.Append(CriticalMemoryViolationSceneLeakMessage);
+            System.Text.StringBuilder builder = new System.Text.StringBuilder(512);
+            builder.Append(proven ? CriticalMemoryViolationSceneLeakMessage : SceneLeakAttributionUnprovenMessage);
             builder.Append(" owner=").Append(record.Owner.IsEmpty ? "<unnamed>" : record.Owner.ToString());
             builder.Append(" label=").Append(record.Label.IsEmpty ? "<unlabelled>" : record.Label.ToString());
             builder.Append(" bytes=").Append(record.Bytes);
@@ -1352,35 +1433,52 @@ namespace Hecton8.Core
                 : SceneScopeActiveSceneAtAllocLabel);
             builder.Append(" ownerHash=0x").Append(record.OwnerHash.ToString("X8"));
             builder.Append(" labelHash=0x").Append(record.LabelHash.ToString("X8"));
+            builder.Append(" unloadedScene=").Append(string.IsNullOrEmpty(context) ? "<all-scenes>" : context);
+            builder.Append(proven ? SceneLeakProvenActionMessage : SceneLeakUnprovenActionMessage);
             return builder.ToString();
         }
 #endif
 
         /// <summary>
-        /// Fails closed when scene lifetime native allocations survive a scene unload.
+        /// Fails closed when scene lifetime native allocations survive a scene-agnostic teardown.
+        /// Nothing may survive this, so every survivor is fatal.
         /// </summary>
         public static bool AssertNoSceneLifetimeAllocations(string context)
         {
-            return AssertNoSceneLifetimeAllocations(context, 0);
+            return AssertNoSceneLifetimeAllocations(context, 0, false);
         }
 
         /// <summary>
         /// Fails closed when an explicit scene still owns scene-lifetime native allocations.
+        /// Only OWNER-DECLARED bindings are fatal here; an inferred binding is reported as an attribution
+        /// defect instead - see <see cref="IsProvenSceneLifetimeLeak"/>.
         /// </summary>
         public static bool AssertNoSceneLifetimeAllocations(string context, Scene scene)
         {
             ResolveSceneIdentity(scene, out int sceneIdentityHash, out _);
-            return AssertNoSceneLifetimeAllocations(context, sceneIdentityHash);
+            return AssertNoSceneLifetimeAllocations(context, sceneIdentityHash, true);
         }
 
-        private static bool AssertNoSceneLifetimeAllocations(string context, int sceneIdentityHash)
+        /// <summary>
+        /// Returns true when the scene under assertion is clean, false when only UNPROVEN attributions were
+        /// found (reported, never fatal - a guess must not kill the run), and throws when a proven leak exists.
+        /// </summary>
+        private static bool AssertNoSceneLifetimeAllocations(string context, int sceneIdentityHash, bool sceneScopedAssert)
         {
-            int sceneAllocationCount = CountSceneLifetimeAllocations(sceneIdentityHash);
-            if (sceneAllocationCount <= 0)
+            CountSceneLifetimeAllocations(
+                sceneIdentityHash,
+                sceneScopedAssert,
+                out int provenCount,
+                out int unprovenCount);
+            if (provenCount <= 0 && unprovenCount <= 0)
                 return true;
 
-            ReportSceneLifetimeLeaks(context, sceneIdentityHash);
-            throw new FatalMemoryLeakException(BuildFatalLeakMessage(context, sceneAllocationCount, true, sceneIdentityHash));
+            ReportSceneLifetimeLeaks(context, sceneIdentityHash, sceneScopedAssert);
+            if (provenCount <= 0)
+                return false;
+
+            throw new FatalMemoryLeakException(
+                BuildFatalLeakMessage(context, provenCount, true, sceneIdentityHash, sceneScopedAssert));
         }
 
         /// <summary>
@@ -1411,31 +1509,53 @@ namespace Hecton8.Core
             if (sceneAllocationCount <= 0)
                 return true;
 
-            throw new FatalMemoryLeakException(BuildFatalLeakMessage(context, sceneAllocationCount, true, 0));
+            throw new FatalMemoryLeakException(BuildFatalLeakMessage(context, sceneAllocationCount, true, 0, false));
         }
 
         private static int CountSceneLifetimeAllocations(int sceneIdentityHash)
         {
+            CountSceneLifetimeAllocations(sceneIdentityHash, false, out int provenCount, out int unprovenCount);
+            return provenCount + unprovenCount;
+        }
+
+        /// <summary>
+        /// Splits matching scene-lifetime records into proven leaks and unproven attributions so the caller can
+        /// fail closed on the first without crying wolf on the second. Public
+        /// <see cref="CountSceneLifetimeAllocations()"/> keeps its old meaning (total matches).
+        /// </summary>
+        private static void CountSceneLifetimeAllocations(
+            int sceneIdentityHash,
+            bool sceneScopedAssert,
+            out int provenCount,
+            out int unprovenCount)
+        {
+            int proven = 0;
+            int unproven = 0;
             EnterMutationGate();
             try
             {
-                int sceneAllocationCount = 0;
                 for (int i = 0; i < _count; i++)
                 {
                     NativeAllocationRecord record = _records[i];
-                    if (record.Lifetime == NativeAllocationLifetime.Scene &&
-                        MatchesSceneLeakFilter(in record, sceneIdentityHash))
+                    if (record.Lifetime != NativeAllocationLifetime.Scene ||
+                        !MatchesSceneLeakFilter(in record, sceneIdentityHash))
                     {
-                        sceneAllocationCount++;
+                        continue;
                     }
-                }
 
-                return sceneAllocationCount;
+                    if (IsProvenSceneLifetimeLeak(in record, sceneScopedAssert))
+                        proven++;
+                    else
+                        unproven++;
+                }
             }
             finally
             {
                 ExitMutationGate();
             }
+
+            provenCount = proven;
+            unprovenCount = unproven;
         }
 
         /// <summary>
@@ -1566,8 +1686,9 @@ namespace Hecton8.Core
                         record.LeakReported = true;
                         _records[i] = record;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        // Scene-agnostic reap: no scene ambiguity exists here, so every survivor is proven.
                         if (Volatile.Read(ref _diagnosticSceneLeakLogSuppressions) <= 0)
-                            Debug.LogError(DescribeSceneLifetimeLeak(record));
+                            Debug.LogError(DescribeSceneLifetimeLeak(record, context, true));
 #endif
                         continue;
                     }
@@ -1720,13 +1841,19 @@ namespace Hecton8.Core
             _sceneHooksRegistered = true;
         }
 
+        /// <summary>
+        /// Scene-SCOPED assert: pass sceneScopedAssert = true unconditionally, including when
+        /// <paramref name="scene"/> failed to resolve to an identity. A sentinel that cannot even name the
+        /// scene it is judging against must not be the strict path - that is the cry-wolf case, not the
+        /// fail-closed case.
+        /// </summary>
         private static void HandleSceneUnloaded(Scene scene)
         {
             ResolveSceneIdentity(scene, out int sceneIdentityHash, out _);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            AssertNoSceneLifetimeAllocations(scene.name, sceneIdentityHash);
+            AssertNoSceneLifetimeAllocations(scene.name, sceneIdentityHash, true);
 #else
-            AssertNoSceneLifetimeAllocations(string.Empty, sceneIdentityHash);
+            AssertNoSceneLifetimeAllocations(string.Empty, sceneIdentityHash, true);
 #endif
         }
 
@@ -1765,10 +1892,20 @@ namespace Hecton8.Core
 
         private static string BuildFatalLeakMessage(string context, int activeCount, bool sceneOnly)
         {
-            return BuildFatalLeakMessage(context, activeCount, sceneOnly, 0);
+            return BuildFatalLeakMessage(context, activeCount, sceneOnly, 0, false);
         }
 
-        private static string BuildFatalLeakMessage(string context, int activeCount, bool sceneOnly, int sceneIdentityHash)
+        /// <summary>
+        /// Enumerates only the records the caller is actually failing on. With <paramref name="sceneScopedAssert"/>
+        /// set, unproven attributions are excluded so the payload's record list matches
+        /// <c>active=</c> instead of listing ten owners the throw did not blame.
+        /// </summary>
+        private static string BuildFatalLeakMessage(
+            string context,
+            int activeCount,
+            bool sceneOnly,
+            int sceneIdentityHash,
+            bool sceneScopedAssert)
         {
             StringBuilder builder = new StringBuilder(512);
             builder.Append("FATAL_MEMORY_LEAK: context=");
@@ -1787,7 +1924,8 @@ namespace Hecton8.Core
                     NativeAllocationRecord record = _records[i];
                     if (sceneOnly &&
                         (record.Lifetime != NativeAllocationLifetime.Scene ||
-                         !MatchesSceneLeakFilter(in record, sceneIdentityHash)))
+                         !MatchesSceneLeakFilter(in record, sceneIdentityHash) ||
+                         !IsProvenSceneLifetimeLeak(in record, sceneScopedAssert)))
                     {
                         continue;
                     }
