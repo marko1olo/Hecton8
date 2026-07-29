@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P710_ROUTE_MARK_SEVEN
 ---
 
 # P710_CROWN_PIN_ACCOUNTS

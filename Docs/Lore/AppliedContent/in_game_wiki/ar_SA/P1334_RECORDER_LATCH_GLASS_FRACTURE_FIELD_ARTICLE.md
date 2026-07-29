@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1333_PRESSURE_INK_WHEEL_DRYOUT_FIELD_ARTICLE
+next_packet_ids: P1335_RECORDER_SERVICE_SEAL_TEAR_DIRECTION_FIELD_ARTICLE
 ---
 
 # كسر زجاج مزلاج المسجل

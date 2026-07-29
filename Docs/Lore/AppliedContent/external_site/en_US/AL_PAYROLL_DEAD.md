@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P706_AL_NARCOSIS_TEST
 ---
 
 # Payroll Period Close, Sector 44

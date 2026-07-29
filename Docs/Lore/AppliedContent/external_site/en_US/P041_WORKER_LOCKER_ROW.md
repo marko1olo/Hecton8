@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P025_PROFESSIONAL_MOTIVE
+next_packet_ids: P800_WORKER_LOCKER_SEAL_FAILURE
 ---
 
 # Worker Locker Row

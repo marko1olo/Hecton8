@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P702_SHADOW_INTERCEPTOR
+next_packet_ids: P707_ALPHA_LEVIATHAN_FILE
 ---
 
 # P706_AL_LEVIATHAN_BEARING

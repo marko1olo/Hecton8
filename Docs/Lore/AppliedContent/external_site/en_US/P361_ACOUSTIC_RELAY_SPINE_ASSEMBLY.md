@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1090_SILENT_ORBIT_RECEIPT_LEDGER
+next_packet_ids: P622_KESTREL_RELAY_SHADOW_CHART
 ---
 
 # Acoustic Relay Spine Assembly

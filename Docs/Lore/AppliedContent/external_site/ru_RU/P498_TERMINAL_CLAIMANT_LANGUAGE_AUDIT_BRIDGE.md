@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P497_EVIDENCE_RELATION_GRAPH_DOSSIER_BRIDGE
+next_packet_ids: P499_PUBLIC_INDEX_SPOILER_CAP_BRIDGE
 ---
 
 # Аудит языка претензий

@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P500_PUBLIC_ARCHIVE_RECEIVER_AMBIGUITY_BRIDGE
+next_packet_ids: P502_CLAIMANT_SAFE_SUMMARY_CONFLICT_BRIDGE
 ---
 
 # Evidence Cleanup Bid

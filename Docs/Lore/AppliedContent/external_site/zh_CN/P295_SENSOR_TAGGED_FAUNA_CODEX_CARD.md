@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P292_GLASS_GRAZER_CODEX_CARD
 ---
 
 # 传感器标记动物图鉴卡

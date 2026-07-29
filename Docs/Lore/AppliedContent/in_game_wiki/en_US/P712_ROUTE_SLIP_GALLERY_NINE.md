@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P712_PROOF_WEIGHT_PW9
+next_packet_ids: P712_TAPE_SEAL_G77
 ---
 
 # Route Permission Slip RP-2209

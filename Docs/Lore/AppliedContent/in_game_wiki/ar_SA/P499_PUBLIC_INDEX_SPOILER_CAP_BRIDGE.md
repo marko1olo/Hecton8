@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 0
+prereq_packet_ids: P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE
 ---
 
 # قاعدة حجب الفهرس العام

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P275_PRESERVE_QUARANTINE_RECORD
 ---
 
 # 검역 릴레이 파편

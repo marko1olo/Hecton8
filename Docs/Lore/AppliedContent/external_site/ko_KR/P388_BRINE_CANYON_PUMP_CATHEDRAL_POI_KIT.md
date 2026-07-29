@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P079_HECTON8_ORBIT_TIDE_GEOMETRY
 ---
 
 # 브라인 캐니언 펌프 대성당 증거 키트

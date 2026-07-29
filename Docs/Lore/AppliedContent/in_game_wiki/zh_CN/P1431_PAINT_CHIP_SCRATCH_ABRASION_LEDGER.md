@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1324_PAINT_CHIP_SCRATCH_DECAL_FIELD_ARTICLE
 ---
 
 # 漆面剥落、划痕与磨损账本

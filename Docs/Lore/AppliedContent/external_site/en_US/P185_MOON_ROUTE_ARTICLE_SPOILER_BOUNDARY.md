@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P190_FALSE_PUBLIC_REPORT_PACKET;P193_FINAL_QUESTION_PUBLIC_TRUTH_LOST_CONTROL
 ---
 
 # Atlas Basin Redaction Line

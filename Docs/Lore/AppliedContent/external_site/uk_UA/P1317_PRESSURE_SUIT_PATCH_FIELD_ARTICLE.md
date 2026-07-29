@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P1318_AMBER_EMERGENCY_LENS_FIELD_ARTICLE;P1319_RIBBED_FLEXIBLE_HOSE_FIELD_ARTICLE
 ---
 
 # Польова стаття про латку на скафандрі

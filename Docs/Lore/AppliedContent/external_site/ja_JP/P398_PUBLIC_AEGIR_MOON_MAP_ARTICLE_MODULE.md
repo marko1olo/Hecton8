@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P423_HECTON8_MOON_LADDER_PUBLIC_BAND
 ---
 
 # Aegir衛星経路図

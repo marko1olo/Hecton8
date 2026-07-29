@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK;P326_SANITIZED_ACCIDENT_REPLY_WINDOW;P329_DEEP_REACH_FACTION_MESSAGE_SPLIT;P339_CORPORATE_COORDINATE_CAPTURE_RECORD
 ---
 
 # Deep Reach Site Accountability Copy

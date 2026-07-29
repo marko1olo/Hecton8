@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1426_STORM_BENT_RELAY_MAST_LEDGER;P323_ORBITAL_RECOVERY_WINDOW_PROTOCOL;P051_LIGHT_DELAY_AUTHORITY
+next_packet_ids: P628_AEGIR_MOON_LADDER_SKY_WINDOW_ARTICLE;P663_SHALLOW_SERVICE_BUOY_SALTED_RECEIVER
 ---
 
 # ثمن نافذة Black Keel

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P392_STORM_WINDOW_RUSH_CONTRACT_SEED;P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED;P444_CONTRACT_RISK_REWARD_VALUE_DRAFT_ROWS
 ---
 
 # Seed Kontrak Salvage Tenang

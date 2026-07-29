@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1328_MARAUDER_CORRECTION_MARK_FIELD_ARTICLE;P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE
+next_packet_ids: P289_MARAUDER_CORRECTION_NOTE_SAMPLE
 ---
 
 # Marauder Correction Note

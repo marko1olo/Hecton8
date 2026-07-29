@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P265_ENDING_PAYOUT_AUTHORING_ROWS
+next_packet_ids: P290_QUARANTINE_RELAY_FRAGMENT
 ---
 
 # Preserve Quarantine Record

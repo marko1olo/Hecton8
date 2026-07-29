@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P102_BEAM_SAIL_PROBE_ERA
 ---
 
 # Probe Packet Travel Times

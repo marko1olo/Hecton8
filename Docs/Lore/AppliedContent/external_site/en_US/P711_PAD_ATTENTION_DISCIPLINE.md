@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: AL_SHIFT_B_AIR_COUNT;P706_AL_NARCOSIS_TEST
 ---
 
 # Procedure AD-4, Attention Discipline

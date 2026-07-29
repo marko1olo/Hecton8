@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P706_AL_LAST_SHIFT_MARKER;P700_SHORE_SKIMMER
+next_packet_ids: P711_PAD_SILENCE_DIRECTIVE
 ---
 
 # Receiver Handshake Schedule RH-4

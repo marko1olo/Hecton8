@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P092_GLOBAL_OCEAN_DEPTH_BANDS;P034_ABYSSAL_REPAIR_FAUNA
 ---
 
 # Лестница давления

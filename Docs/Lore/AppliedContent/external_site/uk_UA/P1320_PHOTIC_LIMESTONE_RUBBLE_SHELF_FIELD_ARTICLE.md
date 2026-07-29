@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P1321_SHALLOW_SEAGRASS_ROOT_MAT_FIELD_ARTICLE
 ---
 
 # Світлова вапнякова осипна полиця

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P1330_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE
 ---
 
 # 오디오 파편 태그

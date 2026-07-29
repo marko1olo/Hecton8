@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P312_SITE_AEGIR_SYSTEM_ART_COMPOSITION_LOCK;P330_BLACKOUT_WINDOW_SIGNAL_DECAY
 ---
 
 # HE LOC HOLD: Aegir Site System Map Copy

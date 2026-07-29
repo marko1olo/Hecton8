@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P706_AL_LEVIATHAN_BEARING
+next_packet_ids: P711_PAD_NOTARY_RECEIPT
 ---
 
 # アルファ・リヴァイアサン：統合ファイル

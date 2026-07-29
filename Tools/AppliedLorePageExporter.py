@@ -432,7 +432,8 @@ def localization_frontmatter_matches(existing: str, rendered: str) -> bool:
     return frontmatter_localization_state(existing) == frontmatter_localization_state(rendered)
 
 
-def render_page(base: Path, packet: dict, locale: str, surface_key: str, surface_title: str, cluster_spoiler_tiers: dict) -> str:
+def render_page(base: Path, packet: dict, locale: str, surface_key: str, surface_title: str,
+                cluster_spoiler_tiers: dict, crosslinks: dict | None = None) -> str:
     packet_id = safe_text(packet.get("packet_id"))
     release_set_id = safe_text(packet.get("release_set_id"))
     article_id = safe_text(packet.get("article_id"))
@@ -475,6 +476,19 @@ def render_page(base: Path, packet: dict, locale: str, surface_key: str, surface
         f"localization_status: {status}",
         f"localization_flags: {flags}",
     ]
+
+    # Crosslink edges. The graph was being read for spoiler_tier only and its prereq/next columns were
+    # parsed and discarded, so even the authored edges linked nothing. Emitted as frontmatter rather than
+    # prose because a runtime codex reads fields, and because injecting a "Related" paragraph would change
+    # authored page bodies that the validator and the writers have just been driven to zero findings.
+    if crosslinks:
+        edges = crosslinks.get(packet_id)
+        if edges:
+            prereq_ids, next_ids = edges
+            if prereq_ids:
+                lines.append(f"prereq_packet_ids: {prereq_ids}")
+            if next_ids:
+                lines.append(f"next_packet_ids: {next_ids}")
 
     if surface_key == "external_site" and str(spoiler_tier).isdigit() and int(spoiler_tier) >= 3:
         lines.append("spoiler_warning: archive_spoilers")
@@ -690,6 +704,31 @@ def write_publication_surface_index(base: Path, packets: list[dict]) -> None:
     write_text_if_changed(base / "Publication_Surface_Index.csv", render_publication_surface_index(base, packets))
 
 
+def crosslink_edge_map(base: Path) -> dict:
+    """packet_id -> (prereq_packet_ids, next_packet_ids) as authored in the navigation graph.
+
+    The graph was previously read only for spoiler_tier; its prereq/next columns were parsed and thrown
+    away, so even the five hand-authored edges linked nothing and 689 packets had no relationship recorded
+    anywhere. Tools/AppliedLoreCrosslinkGraphBuilder.py now derives the graph from unlock/poi/biome tags,
+    611 rows covering 95 percent of in-world packets, and this is the consuming side.
+    """
+    out: dict = {}
+    try:
+        for row in navigation_cluster_graph_rows(base):
+            pid = safe_text(row.get("packet_id"))
+            if not pid:
+                continue
+            prereq = safe_text(row.get("prereq_packet_ids"))
+            nxt = safe_text(row.get("next_packet_ids"))
+            if prereq or nxt:
+                out[pid] = (prereq, nxt)
+    except Exception:
+        # Same fail-open posture the spoiler-tier read already uses: a malformed graph must not stop a
+        # publish, it just means pages ship without crosslink frontmatter.
+        return {}
+    return out
+
+
 def navigation_cluster_graph_rows(base: Path) -> list[dict[str, str]]:
     path = base / NAVIGATION_CLUSTER_GRAPH_PATH
     rows: list[dict[str, str]] = []
@@ -890,6 +929,7 @@ def check_publication_freshness(
     base = root / "Docs" / "Lore" / "AppliedContent"
     selected_packets = [packet for packet in packets if packet_matches_glob(safe_text(packet.get("packet_id")), packet_glob)]
     cluster_spoiler_tiers = cluster_spoiler_tier_map(base)
+    crosslinks = crosslink_edge_map(base)
     counts = {"checked": 0, "stale": 0, "missing": 0, "disabled": 0, "integrity": 0, "denied": 0, "denied_present": 0}
     issues: list[str] = []
     expected_paths: set[Path] = set()
@@ -927,7 +967,7 @@ def check_publication_freshness(
                     expected_paths.add(path.resolve())
                     continue
 
-                rendered = render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers)
+                rendered = render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers, crosslinks)
                 expected_paths.add(path.resolve())
                 compare_expected_file(
                     root,
@@ -985,6 +1025,7 @@ def export_pages(
     denied_pages_present = 0
     purged_pages = 0
     cluster_spoiler_tiers = cluster_spoiler_tier_map(base)
+    crosslinks = crosslink_edge_map(base)
     expected_paths: set[Path] = set()
     undeclared_labels: list[str] = []
 
@@ -1031,7 +1072,7 @@ def export_pages(
                         expected_paths.add(path.resolve())
                     continue
 
-                rendered = render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers)
+                rendered = render_page(base, packet, locale, surface_key, surface_title, cluster_spoiler_tiers, crosslinks)
                 expected_paths.add(path.resolve())
                 if path.exists() and not overwrite:
                     if write_markdown_if_changed(path, rendered):

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1327_TRIAGE_DELAY_LEDGER_FIELD_ARTICLE
 ---
 
 # Medical Triage Ledger

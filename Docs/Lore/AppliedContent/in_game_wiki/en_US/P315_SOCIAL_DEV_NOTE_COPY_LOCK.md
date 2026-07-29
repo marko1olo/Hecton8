@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P251_HECTON8_PUBLIC_PRIMER_ARTICLE
 ---
 
 # Public Note Copy Rule

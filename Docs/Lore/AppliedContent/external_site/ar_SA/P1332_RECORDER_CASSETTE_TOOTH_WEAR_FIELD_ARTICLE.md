@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1331_PRESSURE_ROOM_RECORDER_BAY_FIELD_ARTICLE;P1330_HYDROPHONE_LOG_STRIP_FIELD_ARTICLE
+next_packet_ids: P1333_PRESSURE_INK_WHEEL_DRYOUT_FIELD_ARTICLE
 ---
 
 # تآكل أسنان كاسيت المسجل

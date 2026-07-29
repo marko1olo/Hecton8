@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1313_PRESSURE_BASE_INTERIOR_WALL_TRIM_FIELD_ARTICLE
 ---
 
 # Damped Insulation Blanket Field Article

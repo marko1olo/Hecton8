@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1341_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE
+next_packet_ids: P1343_COMPRESSOR_HANDOFF_BACKFILL_FIELD_ARTICLE
 ---
 
 # Scrubber Cartridge Serial Mismatch

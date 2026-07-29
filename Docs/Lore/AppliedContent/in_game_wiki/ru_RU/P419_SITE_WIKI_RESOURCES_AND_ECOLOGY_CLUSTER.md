@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P351_DROWNED_CRUST_STRATA_GUIDE;P411_PREDATOR_SHADOW_ENCOUNTER_GRAMMAR;P415_SENSOR_TAGGED_FAUNA_PURSUIT_ENCOUNTER_GRAMMAR
+next_packet_ids: P420_SITE_WIKI_ENDINGS_SPOILER_CLUSTER
 ---
 
 # Ресурсы и экология

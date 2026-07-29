@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P092_GLOBAL_OCEAN_DEPTH_BANDS
 ---
 
 # Atlas 서비스 베이신 증거 키트

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P1325_PRESSURE_BASE_EXTERIOR_HULL_TRIM_FIELD_ARTICLE
 ---
 
 # Rubber Gasket Ring Pressure Seal

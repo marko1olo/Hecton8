@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1265_HUSH_BELT_ORBITAL_SILENCE_CHART
 ---
 
 # Drop Capsule Diagnostic Readout

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P703_TUBULAR_CORAL;P624_CABLE_FOREST_CONDUCTIVE_BIOTA;P008_EVACUATION_HOLD;P082_PRESSURE_GLASS_FORMATION;P085_BIOMETAL_RESOURCE_STACK;P708_PAD_BIOMASS_EUPHEMISM
 ---
 
 # Repair Scar

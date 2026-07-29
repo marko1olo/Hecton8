@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P037_COWARD_EXIT_CHAIN
 ---
 
 # Ventana de vector de retorno

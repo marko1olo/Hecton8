@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1328_MARAUDER_CORRECTION_MARK_FIELD_ARTICLE;P160_MARAUDER_CORRECTION_LAYER
+next_packet_ids: P712_GROUND_SPANNER_FILTER_PLANT;P307_SCANNER_STAGE_BINDING_PROOF_CARD
 ---
 
 # عينة تصحيح من نهّاب

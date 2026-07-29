@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P234_SENSOR_TAGGED_FAUNA
+next_packet_ids: P701_COLD_VEIL_EEL
 ---
 
 # Sensor-Tagged Fauna Feedback Loop

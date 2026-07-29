@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1337_PACKET_NOTARY_MASK_EDGE_FIELD_ARTICLE
+next_packet_ids: P1339_MISSING_RETURN_MARK_CLAIM_CONVERSION_FIELD_ARTICLE
 ---
 
 # Route Permission Stamp Overlap

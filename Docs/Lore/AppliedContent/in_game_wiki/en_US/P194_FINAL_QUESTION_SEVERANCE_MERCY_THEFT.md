@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P377_PAYLOAD_SEVER_ATLAS_RECEIVER_PROTOCOL
 ---
 
 # Final Question: Severance, Mercy, Theft

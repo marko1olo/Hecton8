@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P382_PHOTIC_SHELF_SURVIVAL_ACT
+next_packet_ids: P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE
 ---
 
 # Shallow Annex P-63 Evidence Kit

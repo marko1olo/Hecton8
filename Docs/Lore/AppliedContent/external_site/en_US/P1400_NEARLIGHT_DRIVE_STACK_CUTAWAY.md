@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P1427_RECEIVER_BRAKING_DEBT_LEDGER;P324_SALVAGE_CARRIER_AUTONOMY_LIMITS;P346_AEGIR_PRIMARY_LIGHT_AND_RADIATION;P347_INNER_RELAY_MOON_TRAFFIC_ROLE;P348_ICE_SCATTER_MOON_HAZARD_ROLE;P349_HECTON8_MID_ORBIT_TIDE_ROLE
 ---
 
 # Nearlight Drive Stack Cutaway

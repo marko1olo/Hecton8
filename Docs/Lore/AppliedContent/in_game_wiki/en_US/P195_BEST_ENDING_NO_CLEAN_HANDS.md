@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P092_GLOBAL_OCEAN_DEPTH_BANDS
+next_packet_ids: P200_NATIVE_LOCALIZATION_PASS_CONTRACT
 ---
 
 # Best Route: Residue Left Visible

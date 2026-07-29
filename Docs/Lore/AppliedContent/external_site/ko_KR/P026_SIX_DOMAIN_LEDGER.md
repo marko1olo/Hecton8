@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P016_AEGIR_HOST_STAR
+next_packet_ids: P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE;P028_NO_FTL_TRANSIT_MATH
 ---
 
 # 여섯 도메인 원장

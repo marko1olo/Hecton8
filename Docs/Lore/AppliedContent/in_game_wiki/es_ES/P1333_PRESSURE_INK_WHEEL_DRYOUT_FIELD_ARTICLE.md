@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1332_RECORDER_CASSETTE_TOOTH_WEAR_FIELD_ARTICLE;P1331_PRESSURE_ROOM_RECORDER_BAY_FIELD_ARTICLE
+next_packet_ids: P1336_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE;P1334_RECORDER_LATCH_GLASS_FRACTURE_FIELD_ARTICLE
 ---
 
 # Secado de la rueda de tinta de presión

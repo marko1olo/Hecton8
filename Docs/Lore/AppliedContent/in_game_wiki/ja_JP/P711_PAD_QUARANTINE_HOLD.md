@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P708_PAD_CONTAINER_PRIORITY;P704_GHOST_WEED;P063_JUNO_KADE_EVACUATION_HOLD
 ---
 
 # P711_PAD_QUARANTINE_HOLD

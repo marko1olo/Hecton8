@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P708_PAD_PRESSURE_BONUS;P712_JOB_CARD_TOOL_STILL_OUT
+next_packet_ids: P712_PROOF_WEIGHT_PW9
 ---
 
 # P712_LOCKER_ROSTER_ARGUMENT

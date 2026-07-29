@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P382_PHOTIC_SHELF_SURVIVAL_ACT;P254_ATLAS6_SPOILER_GATED_ARTICLE
 ---
 
 # KO LOC HOLD: First Atlas Repair Trace

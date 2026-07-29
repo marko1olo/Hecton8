@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P016_AEGIR_HOST_STAR
+next_packet_ids: P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE;P028_NO_FTL_TRANSIT_MATH
 ---
 
 # Six Domain Ledger

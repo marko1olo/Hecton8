@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P011_DOMAIN_MARKS_2190
+next_packet_ids: P153_SHALLOW_ANNEX_P63_PUMP_ROOM;P221_PHOTIC_MAT_BASELINE;P223_LANTERN_DRIFT_BLOOM;P293_LANTERN_DRIFT_CODEX_CARD;P664_HALO_SARGASSUM_OXYGEN_LURE;P700_IRON_MINNOW;P700_SILT_DRIFTER
 ---
 
 # Жизнь светового шельфа

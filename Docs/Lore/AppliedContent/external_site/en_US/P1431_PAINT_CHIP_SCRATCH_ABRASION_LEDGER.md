@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1324_PAINT_CHIP_SCRATCH_DECAL_FIELD_ARTICLE
 ---
 
 # Paint Chip, Scratch and Abrasion Ledger

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P360_LAST_NORMAL_DAY_EVIDENCE_SET
 ---
 
 # 경로판과 귀환 도장 현장 문서

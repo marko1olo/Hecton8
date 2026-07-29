@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P711_PAD_QUARANTINE_HOLD;P108_NOOR_HALDANE_EVAC_CERT
 ---
 
 # Blokada ewakuacji Juno Kade

@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P008_EVACUATION_HOLD
+next_packet_ids: P062_MARA_VENN_TIDE_MODEL
 ---
 
 # Great Tide Liability Chain

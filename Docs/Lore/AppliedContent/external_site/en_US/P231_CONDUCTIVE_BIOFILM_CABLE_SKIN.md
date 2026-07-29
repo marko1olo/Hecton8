@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P387_CABLE_REEF_RELAY_YARD_POI_KIT
 ---
 
 # Conductive Biofilm Cable Skin

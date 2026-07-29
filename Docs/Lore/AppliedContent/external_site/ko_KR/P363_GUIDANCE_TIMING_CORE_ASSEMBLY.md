@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P093_ACCESSIBLE_SEAFLOOR_WINDOWS
 ---
 
 # 유도 타이밍 코어 조립체

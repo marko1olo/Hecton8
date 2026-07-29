@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P6802_AEGIR_SKY_WINDOW_MACHINE
 ---
 
 # Журнал погодных окон Aegir

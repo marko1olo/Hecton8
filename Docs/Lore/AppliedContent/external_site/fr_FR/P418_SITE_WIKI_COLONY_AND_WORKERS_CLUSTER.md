@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P359_WORKER_COMMUNITY_NO_FAMILY_HOOK_RULE;P401_MARA_VENN_PUMP_CHIEF_DOSSIER;P405_LIAN_TORRES_VENT_FORGE_OPERATOR_DOSSIER
+next_packet_ids: P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER
 ---
 
 # Colonie et travailleurs

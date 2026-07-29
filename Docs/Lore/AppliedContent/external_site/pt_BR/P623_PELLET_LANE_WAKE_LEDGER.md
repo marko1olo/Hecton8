@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P622_KESTREL_RELAY_SHADOW_CHART;P103_PELLET_FUSION_FREIGHT
+next_packet_ids: P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE
 ---
 
 # Livro de esteira da via de pellets

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P295_SENSOR_TAGGED_FAUNA_CODEX_CARD
 ---
 
 # 玻璃啃食者图鉴卡

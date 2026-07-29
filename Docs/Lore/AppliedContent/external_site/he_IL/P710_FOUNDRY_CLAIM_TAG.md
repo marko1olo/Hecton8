@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P710_FOUNDRY_BOTTLE_RACK
+next_packet_ids: P710_FOUNDRY_RETURN_LINE
 ---
 
 # P710_FOUNDRY_CLAIM_TAG

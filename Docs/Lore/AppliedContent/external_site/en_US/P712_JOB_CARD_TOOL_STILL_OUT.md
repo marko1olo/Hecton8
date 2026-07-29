@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P712_HANDOVER_SECTION_ELEVEN;P712_GROUND_SPANNER_FILTER_PLANT
+next_packet_ids: P712_LOCKER_ROSTER_ARGUMENT
 ---
 
 # Job Card 4411, Crib 4

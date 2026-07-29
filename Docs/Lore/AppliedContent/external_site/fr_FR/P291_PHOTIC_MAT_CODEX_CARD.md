@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P419_SITE_WIKI_RESOURCES_AND_ECOLOGY_CLUSTER
 ---
 
 # Carte Codex du tapis photique

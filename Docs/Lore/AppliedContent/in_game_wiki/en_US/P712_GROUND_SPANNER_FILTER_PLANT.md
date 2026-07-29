@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P289_MARAUDER_CORRECTION_NOTE_SAMPLE
+next_packet_ids: P712_HANDOVER_SECTION_ELEVEN;P712_JOB_CARD_TOOL_STILL_OUT
 ---
 
 # Ground Spanner, Filter Plant 3

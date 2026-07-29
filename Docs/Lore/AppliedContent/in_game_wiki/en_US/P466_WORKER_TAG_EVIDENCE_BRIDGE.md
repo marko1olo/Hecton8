@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1326_ROUTE_PERMISSION_STAMP_FIELD_ARTICLE
+next_packet_ids: P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE
 ---
 
 # Worker Tag Evidence Chain

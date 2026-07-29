@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P712_TAPE_SEAL_G77;P712_HANDOVER_SECTION_ELEVEN
 ---
 
 # Triage Ledger Page, Medical Post 2

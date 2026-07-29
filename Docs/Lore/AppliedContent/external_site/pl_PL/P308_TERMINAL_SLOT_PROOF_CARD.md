@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE
+next_packet_ids: P320_TERMINAL_BACKLOG_TRIAGE_LOCK
 ---
 
 # PL LOC HOLD: Terminal Slot Chain

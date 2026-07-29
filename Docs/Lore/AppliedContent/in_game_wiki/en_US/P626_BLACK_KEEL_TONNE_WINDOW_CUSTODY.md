@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE
+next_packet_ids: P6800_CARRIER_WINDOW_AUDIO_CUE;P6801_BLACK_KEEL_NEARLIGHT_WAKE
 ---
 
 # Black Keel Tonne-Window Custody

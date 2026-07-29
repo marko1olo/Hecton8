@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P185_MOON_ROUTE_ARTICLE_SPOILER_BOUNDARY
 ---
 
 # 최종 질문: 공개 장부, 잃어버린 통제

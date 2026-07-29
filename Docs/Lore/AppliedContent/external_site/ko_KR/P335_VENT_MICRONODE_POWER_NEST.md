@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P235_VENT_MICRONODE_NESTS
 ---
 
 # 벤트 마이크로노드 전력 둥지

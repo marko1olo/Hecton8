@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P712_HANDOVER_SECTION_ELEVEN;P712_GROUND_SPANNER_FILTER_PLANT
+next_packet_ids: P712_LOCKER_ROSTER_ARGUMENT
 ---
 
 # P712_JOB_CARD_TOOL_STILL_OUT

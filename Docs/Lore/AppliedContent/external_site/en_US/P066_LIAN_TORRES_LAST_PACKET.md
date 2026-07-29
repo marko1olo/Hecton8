@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P075_LUYTEN_JUNCTION_PACKET_CUSTODY;P074_TAU_CETI_PUBLIC_LEDGER
 ---
 
 # Lian Torres Last Packet

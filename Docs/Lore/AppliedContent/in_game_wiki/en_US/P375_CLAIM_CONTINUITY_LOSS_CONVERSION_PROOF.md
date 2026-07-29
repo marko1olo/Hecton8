@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P204_ASSET_SILENCE_BOARD_SIGNATURES;P149_KEELMARK_LOSS_DESK
 ---
 
 # Claim Continuity Loss Conversion

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P079_HECTON8_ORBIT_TIDE_GEOMETRY
 ---
 
 # 潮汐工作窗口现场文章

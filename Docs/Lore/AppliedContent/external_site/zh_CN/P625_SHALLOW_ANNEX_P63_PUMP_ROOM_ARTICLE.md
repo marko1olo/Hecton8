@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE
 ---
 
 # 浅层附属舱 P-63 泵房

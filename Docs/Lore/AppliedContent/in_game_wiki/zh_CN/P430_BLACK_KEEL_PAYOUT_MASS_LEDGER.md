@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P336_MATERIAL_EXIT_RECEIPT_AUDIT
+next_packet_ids: P468_XENON_OMEGA_PUBLIC_MATERIAL_BRIDGE
 ---
 
 # ZH LOC HOLD: Black Keel Payout Mass Ledger

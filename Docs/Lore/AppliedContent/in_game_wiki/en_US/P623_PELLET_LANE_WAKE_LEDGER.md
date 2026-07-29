@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P622_KESTREL_RELAY_SHADOW_CHART;P103_PELLET_FUSION_FREIGHT
+next_packet_ids: P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE
 ---
 
 # Pellet Lane Wake Ledger

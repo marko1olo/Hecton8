@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P282_AEGIR_SITE_SYSTEM_MAP_COPY
 ---
 
 # NL LOC HOLD: Aegir System Art Rule

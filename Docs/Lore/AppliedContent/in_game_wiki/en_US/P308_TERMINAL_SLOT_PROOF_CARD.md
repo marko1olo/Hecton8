@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE
+next_packet_ids: P320_TERMINAL_BACKLOG_TRIAGE_LOCK
 ---
 
 # Terminal Slot Chain

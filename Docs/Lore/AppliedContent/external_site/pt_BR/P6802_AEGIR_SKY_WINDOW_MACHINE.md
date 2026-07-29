@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1423_AEGIR_SKY_WEATHER_SURVIVAL_LEDGER;P6801_BLACK_KEEL_NEARLIGHT_WAKE
+next_packet_ids: P6803_TONNE_WINDOW_BODY_LEDGER
 ---
 
 # Máquina de janela do céu de Aegir

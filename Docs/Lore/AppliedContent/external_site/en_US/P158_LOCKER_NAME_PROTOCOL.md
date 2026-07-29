@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P208_ANCHOR_WORKER_NAME_SET_A
 ---
 
 # Locker Name Protocol

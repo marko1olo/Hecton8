@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P021_BLACK_KEEL_CUSTODY;P028_NO_FTL_TRANSIT_MATH
+next_packet_ids: P086_AEGIR_RECLAMATION_POOL
 ---
 
 # Rantai Utang Relay Custody

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P466_WORKER_TAG_EVIDENCE_BRIDGE;P471_LUYTEN_PACKET_CUSTODY_RELAY_BRIDGE
 ---
 
 # Tau Ceti Public Ledger Pressure

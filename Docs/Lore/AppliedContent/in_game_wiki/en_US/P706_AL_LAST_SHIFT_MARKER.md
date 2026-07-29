@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P467_ATLAS6_PUBLIC_REPAIR_NETWORK_BRIDGE
+next_packet_ids: P711_PAD_HANDSHAKE_WINDOWS
 ---
 
 # Marker Inventory, P-63 Back Wall

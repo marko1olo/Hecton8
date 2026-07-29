@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED
 ---
 
 # Sample Custody Grade Card

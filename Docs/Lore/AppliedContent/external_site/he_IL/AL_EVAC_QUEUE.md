@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P702_BRINE_STALKER;AL_SCRUBBER_BED;AL_SERVICE_CHAPEL;AL_WINDOW_WATCH;P706_AL_COLD_MIST_LEAK;P706_AL_MANUAL_GAUGE
 ---
 
 # AL_EVAC_QUEUE

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1400_NEARLIGHT_DRIVE_STACK_CUTAWAY
 ---
 
 # HECTON-8 Mid-Orbit Tide Role

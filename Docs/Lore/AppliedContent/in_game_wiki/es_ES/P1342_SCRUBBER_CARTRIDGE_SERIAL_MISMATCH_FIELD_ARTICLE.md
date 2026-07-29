@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1341_SUIT_RESERVE_DELTA_MISMATCH_FIELD_ARTICLE
+next_packet_ids: P1343_COMPRESSOR_HANDOFF_BACKFILL_FIELD_ARTICLE
 ---
 
 # Discrepancia del Número de Serie del Cartucho del Scrubber

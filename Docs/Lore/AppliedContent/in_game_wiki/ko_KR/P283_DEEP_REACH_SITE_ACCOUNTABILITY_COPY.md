@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P313_SITE_DEEP_REACH_EVIDENCE_COMPOSITION_LOCK;P326_SANITIZED_ACCIDENT_REPLY_WINDOW;P329_DEEP_REACH_FACTION_MESSAGE_SPLIT;P339_CORPORATE_COORDINATE_CAPTURE_RECORD
 ---
 
 # KO LOC HOLD: Deep Reach Site Accountability Copy

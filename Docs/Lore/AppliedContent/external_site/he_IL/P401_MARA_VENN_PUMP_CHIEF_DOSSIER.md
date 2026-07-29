@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P106_ILIYA_VARNEK_TIDE_MARGIN
 ---
 
 # מארה ון, ראש צוות המשאבות

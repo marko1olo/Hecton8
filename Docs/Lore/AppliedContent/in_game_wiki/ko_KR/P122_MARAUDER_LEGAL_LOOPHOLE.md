@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P1302_MARAUDER_SALVAGE_LAW_FIELD_ARTICLE
 ---
 
 # 마로더 법적 허점

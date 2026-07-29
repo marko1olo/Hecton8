@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE;P039_DEEP_REACH_CLEANSE_ORDER
 ---
 
 # Material Settlement Ledger

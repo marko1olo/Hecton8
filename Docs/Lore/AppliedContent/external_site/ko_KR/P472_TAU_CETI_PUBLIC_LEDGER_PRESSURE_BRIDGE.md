@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P466_WORKER_TAG_EVIDENCE_BRIDGE;P471_LUYTEN_PACKET_CUSTODY_RELAY_BRIDGE
 ---
 
 # Tau Ceti 공개 장부 압력

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P1316_DAMPED_INSULATION_BLANKET_FIELD_ARTICLE
 ---
 
 # Pressure Base Interior Wall Trim Field Article

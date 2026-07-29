@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P1309_IRON_OXIDE_SEEP_CRUST_FIELD_ARTICLE
 ---
 
 # Cold Seep Hydrate Crack Field Article

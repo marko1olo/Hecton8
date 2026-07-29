@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P245_DEEP_REACH_CLAUSE_WEIGHT_CARD
 ---
 
 # HE LOC HOLD: Sanitized Accident Packet Body

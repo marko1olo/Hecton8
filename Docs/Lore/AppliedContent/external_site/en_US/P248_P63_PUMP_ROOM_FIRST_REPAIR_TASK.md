@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY
 ---
 
 # P-63 Pump Room First Repair Task

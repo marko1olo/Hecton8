@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P1421_SALVAGE_CUT_CROSS_SECTION_LEDGER
 ---
 
 # Artigo de campo sobre corte transversal de salvamento

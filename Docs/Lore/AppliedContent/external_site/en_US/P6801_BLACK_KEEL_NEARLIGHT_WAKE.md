@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P6800_CARRIER_WINDOW_AUDIO_CUE;P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY;P1091_PELLET_WAKE_BRAKING_LEDGER
+next_packet_ids: P6802_AEGIR_SKY_WINDOW_MACHINE
 ---
 
 # Black Keel Nearlight Wake

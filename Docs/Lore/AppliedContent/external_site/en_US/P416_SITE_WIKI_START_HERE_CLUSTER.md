@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P396_PUBLIC_STARTING_PREMISE_ARTICLE_MODULE;P381_CONTRACT_APPROACH_ACT_GATE
+next_packet_ids: P417_SITE_WIKI_SYSTEM_AND_SHIPS_CLUSTER
 ---
 
 # Start Here: HECTON-8

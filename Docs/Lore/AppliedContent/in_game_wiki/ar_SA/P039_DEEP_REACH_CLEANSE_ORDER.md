@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P038_MATERIAL_PAYOUT_LEDGER
 ---
 
 # أمر تنظيف Deep Reach النشط

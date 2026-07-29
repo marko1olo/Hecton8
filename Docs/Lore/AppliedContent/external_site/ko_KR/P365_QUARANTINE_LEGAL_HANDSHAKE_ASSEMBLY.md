@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P385_ATLAS_BASIN_PAYLOAD_ACT
 ---
 
 # 격리 법무 핸드셰이크 조립체

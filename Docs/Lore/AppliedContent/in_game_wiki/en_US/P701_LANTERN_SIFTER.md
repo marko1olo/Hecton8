@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P622_KESTREL_RELAY_SHADOW_CHART;P701_COLD_VEIL_EEL
+next_packet_ids: P711_PAD_SILENCE_DIRECTIVE;P703_THERMAL_TUBEWORM
 ---
 
 # Lantern Sifter

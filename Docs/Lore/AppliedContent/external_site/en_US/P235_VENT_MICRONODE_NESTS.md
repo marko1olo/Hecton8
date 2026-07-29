@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P335_VENT_MICRONODE_POWER_NEST
 ---
 
 # Vent Micronode Nests

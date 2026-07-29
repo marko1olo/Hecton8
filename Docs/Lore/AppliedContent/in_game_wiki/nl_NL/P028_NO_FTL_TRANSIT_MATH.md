@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P026_SIX_DOMAIN_LEDGER
+next_packet_ids: P030_RELAY_CUSTODY_DEBT_CHAIN;P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE
 ---
 
 # Transitwiskunde zonder FTL

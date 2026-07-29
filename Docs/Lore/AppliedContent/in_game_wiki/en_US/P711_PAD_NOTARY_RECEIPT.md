@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P707_ALPHA_LEVIATHAN_FILE;P708_PAD_PR_DRAFT_LANGUAGE
 ---
 
 # Packet Notary Receipt 44-EV-0006

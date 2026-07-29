@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P284_ATLAS6_SITE_SPOILER_GATE_COPY;P298_FACTORY_TEMPLE_ENTRY_FRAGMENT;P314_SITE_ATLAS_SPOILER_COMPOSITION_LOCK;P331_CONDUCTIVE_BIOFILM_REPAIR_BUS;P333_SHELL_SEALANT_PRESSURE_GROWTH;P355_PRESSURE_GLASS_AND_SEALANT_GUIDE
 ---
 
 # سجل قطع Atlas

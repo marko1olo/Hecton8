@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P708_PAD_CONTAINER_PRIORITY;P704_GHOST_WEED;P063_JUNO_KADE_EVACUATION_HOLD
 ---
 
 # Quarantine Hold Record 44-1188

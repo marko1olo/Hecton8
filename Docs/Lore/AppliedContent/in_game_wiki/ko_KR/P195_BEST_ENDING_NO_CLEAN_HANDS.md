@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P092_GLOBAL_OCEAN_DEPTH_BANDS
+next_packet_ids: P200_NATIVE_LOCALIZATION_PASS_CONTRACT
 ---
 
 # 최선 경로: 잔여를 보이게 남김

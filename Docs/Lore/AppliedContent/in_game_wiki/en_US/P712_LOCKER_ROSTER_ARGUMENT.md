@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P708_PAD_PRESSURE_BONUS;P712_JOB_CARD_TOOL_STILL_OUT
+next_packet_ids: P712_PROOF_WEIGHT_PW9
 ---
 
 # Locker 44-C-17, Crown Muster Row

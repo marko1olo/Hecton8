@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P403_REN_OKOYE_BRINE_CARTOGRAPHER_DOSSIER;P213_ROUTE_PERMISSION_STAMP_SET;P466_WORKER_TAG_EVIDENCE_BRIDGE
 ---
 
 # Route Permission Stamps

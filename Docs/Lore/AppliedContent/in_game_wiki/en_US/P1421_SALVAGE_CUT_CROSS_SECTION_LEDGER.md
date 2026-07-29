@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1315_SALVAGE_CUT_CROSS_SECTION_FIELD_ARTICLE
 ---
 
 # Salvage Cut Cross-Section Ledger

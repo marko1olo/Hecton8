@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P253_DEEP_REACH_PUBLIC_DOSSIER_ARTICLE
 ---
 
 # Deep Reach Liability Evidence

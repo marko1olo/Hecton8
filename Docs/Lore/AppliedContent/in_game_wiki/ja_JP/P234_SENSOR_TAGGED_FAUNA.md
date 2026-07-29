@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P155_FIRST_ATLAS_REPAIR_TRACE
+next_packet_ids: P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP
 ---
 
 # センサータグ付き動物相

@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P712_GROUND_SPANNER_FILTER_PLANT;P1336_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE
+next_packet_ids: P712_JOB_CARD_TOOL_STILL_OUT;P712_TRIAGE_LEDGER_CATEGORY_FOUR
 ---
 
 # P712_HANDOVER_SECTION_ELEVEN

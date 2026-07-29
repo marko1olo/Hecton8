@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P496_PUBLIC_EVIDENCE_MISUSE_WARNING_BRIDGE
+next_packet_ids: P498_TERMINAL_CLAIMANT_LANGUAGE_AUDIT_BRIDGE
 ---
 
 # Evidence Relation Graph Dossier

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P257_UNIT_NUMBER_STYLE_CARD;P260_RTL_CJK_FONT_RISK_CARD;P276_RU_NATIVE_REVIEW_LOCK;P277_CJK_REVIEW_LOCK;P278_RTL_REVIEW_LOCK;P279_EUROPEAN_LANGUAGE_REVIEW_LOCK;P308_TERMINAL_SLOT_PROOF_CARD;P310_LOCALIZED_OVERFLOW_PROOF_CARD
 ---
 
 # NL LOC HOLD: Proper Noun Translation Lock Table

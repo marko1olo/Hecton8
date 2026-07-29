@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P623_PELLET_LANE_WAKE_LEDGER;P026_SIX_DOMAIN_LEDGER;P028_NO_FTL_TRANSIT_MATH
+next_packet_ids: P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY
 ---
 
 # Ran Long Claim Transit

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 0
+next_packet_ids: P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY
 ---
 
 # Rejestr odbioru cichej orbity

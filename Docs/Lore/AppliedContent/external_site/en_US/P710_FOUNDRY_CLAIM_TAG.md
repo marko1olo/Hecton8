@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P710_FOUNDRY_BOTTLE_RACK
+next_packet_ids: P710_FOUNDRY_RETURN_LINE
 ---
 
 # Claim Tag 44-C-0771, Filled Ahead

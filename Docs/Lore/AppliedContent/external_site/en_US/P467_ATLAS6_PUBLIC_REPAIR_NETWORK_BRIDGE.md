@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P461_PACKET_CUSTODY_BRIDGE;P462_PRESSURE_SEAL_FIRST_REPAIR_BRIDGE
+next_packet_ids: P706_AL_LAST_SHIFT_MARKER
 ---
 
 # Atlas-6 Public Repair Network

@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P706_AL_LAST_SHIFT_MARKER;P700_SHORE_SKIMMER
+next_packet_ids: P711_PAD_SILENCE_DIRECTIVE
 ---
 
 # P711_PAD_HANDSHAKE_WINDOWS

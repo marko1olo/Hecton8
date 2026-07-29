@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P244_EVIDENCE_ORDER_DEPTH_CARD
 ---
 
 # 깨끗한 엔딩 없음 dossier 메모

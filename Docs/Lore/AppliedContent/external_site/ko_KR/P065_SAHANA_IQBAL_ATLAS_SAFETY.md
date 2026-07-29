@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P025_PROFESSIONAL_MOTIVE
 ---
 
 # 사하나 이크발 Atlas 안전

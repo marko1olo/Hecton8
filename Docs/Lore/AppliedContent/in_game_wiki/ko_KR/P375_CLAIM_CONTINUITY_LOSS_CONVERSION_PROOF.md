@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P204_ASSET_SILENCE_BOARD_SIGNATURES;P149_KEELMARK_LOSS_DESK
 ---
 
 # 청구 연속성 손실 전환

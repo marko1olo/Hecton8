@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P701_LANTERN_SIFTER;P702_SHADOW_INTERCEPTOR;P711_PAD_HANDSHAKE_WINDOWS
 ---
 
 # P711_PAD_SILENCE_DIRECTIVE

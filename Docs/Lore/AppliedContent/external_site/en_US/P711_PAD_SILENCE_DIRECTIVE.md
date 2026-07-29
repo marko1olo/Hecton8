@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P701_LANTERN_SIFTER;P702_SHADOW_INTERCEPTOR;P711_PAD_HANDSHAKE_WINDOWS
 ---
 
 # Silence Directive AS-19

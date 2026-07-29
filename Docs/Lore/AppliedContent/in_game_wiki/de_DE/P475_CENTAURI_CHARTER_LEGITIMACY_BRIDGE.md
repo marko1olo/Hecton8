@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P465_DEEP_REACH_MANAGED_VARIANCE_BRIDGE
+next_packet_ids: P477_RECOVERY_COMPLIANCE_RETURN_ACTION_QUEUE_BRIDGE
 ---
 
 # Legitimität der Centauri-Charta

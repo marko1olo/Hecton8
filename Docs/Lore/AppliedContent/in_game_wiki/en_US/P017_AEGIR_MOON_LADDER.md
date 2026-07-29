@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P016_AEGIR_HOST_STAR;P002_BLACK_KEEL_CONTACT
 ---
 
 # Aegir Moon Ladder

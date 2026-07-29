@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P712_TAPE_SEAL_G77;P712_HANDOVER_SECTION_ELEVEN
 ---
 
 # P712_TRIAGE_LEDGER_CATEGORY_FOUR

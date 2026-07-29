@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P465_DEEP_REACH_MANAGED_VARIANCE_BRIDGE
+next_packet_ids: P477_RECOVERY_COMPLIANCE_RETURN_ACTION_QUEUE_BRIDGE
 ---
 
 # Centauri Charter Legitimacy

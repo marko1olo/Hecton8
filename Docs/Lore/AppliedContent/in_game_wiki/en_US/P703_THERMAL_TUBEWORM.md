@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P701_LANTERN_SIFTER
+next_packet_ids: P704_RIFT_RIBBON
 ---
 
 # Thermal Tubeworm

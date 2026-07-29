@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 0
+next_packet_ids: P497_EVIDENCE_RELATION_GRAPH_DOSSIER_BRIDGE
 ---
 
 # Advertencia de abuso de pruebas publicas

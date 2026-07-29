@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P470_KEELMARK_TONNE_WINDOW_BRIDGE;P095_PRESSURE_CONTAINMENT_FAILURE
 ---
 
 # トン窓債務

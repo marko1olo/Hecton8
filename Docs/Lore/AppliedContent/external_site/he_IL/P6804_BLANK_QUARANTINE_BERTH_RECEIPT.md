@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P6803_TONNE_WINDOW_BODY_LEDGER
 ---
 
 # קבלת berth הסגר ריקה

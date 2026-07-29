@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P026_SIX_DOMAIN_LEDGER
+next_packet_ids: P030_RELAY_CUSTODY_DEBT_CHAIN;P625_RAN_LONG_CLAIM_TRANSIT_ARTICLE
 ---
 
 # No-FTL Transit Math

@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P009_BOTTOM_FACTORY
+next_packet_ids: P024_FALSE_EXIT_MATERIAL
 ---
 
 # Payload Window

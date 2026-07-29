@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P050_SALVAGE_TOOL_CUSTODY;P049_SONAR_RETURN_ROUTE
 ---
 
 # Pile de noms boîte noire

@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P712_ROUTE_SLIP_GALLERY_NINE;P1336_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE
+next_packet_ids: P712_TRIAGE_LEDGER_CATEGORY_FOUR
 ---
 
 # Tape Seal, Gland Collar G-77

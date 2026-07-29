@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P364_ASCENT_ENERGY_CHARGE_ASSEMBLY
 ---
 
 # 奥斯卡·诺伊曼压力锻炉

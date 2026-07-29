@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: AL_PUMP_BLESSING;P708_PAD_OXYGEN_PRODUCTIVITY
 ---
 
 # P711_PAD_ROSTER_DOUBLE_ENTRY

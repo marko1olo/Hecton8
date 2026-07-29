@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1308_COLD_SEEP_HYDRATE_CRACK_FIELD_ARTICLE
 ---
 
 # Artigo de campo sobre crosta de óxido de ferro

@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P001_CRASH_SHELF;P056_EX_DEEP_REACH_MARAUDER
+next_packet_ids: P1095_AEGIR_MOON_LADDER_ORBITAL_HAZARDS
 ---
 
 # Styx Drop Pod Cutaway

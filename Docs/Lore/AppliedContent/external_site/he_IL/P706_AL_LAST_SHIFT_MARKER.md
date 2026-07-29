@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P467_ATLAS6_PUBLIC_REPAIR_NETWORK_BRIDGE
+next_packet_ids: P711_PAD_HANDSHAKE_WINDOWS
 ---
 
 # P706_AL_LAST_SHIFT_MARKER

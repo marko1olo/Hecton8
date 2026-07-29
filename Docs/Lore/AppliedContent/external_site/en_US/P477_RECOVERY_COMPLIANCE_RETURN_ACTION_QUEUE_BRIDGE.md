@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P476_AEGIR_CONTINUITY_HOLDINGS_SHELL_CHAIN_BRIDGE;P475_CENTAURI_CHARTER_LEGITIMACY_BRIDGE
 ---
 
 # Return Action Queue

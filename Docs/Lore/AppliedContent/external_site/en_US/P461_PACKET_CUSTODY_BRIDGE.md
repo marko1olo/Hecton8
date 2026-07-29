@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE;P467_ATLAS6_PUBLIC_REPAIR_NETWORK_BRIDGE
 ---
 
 # Packet Custody

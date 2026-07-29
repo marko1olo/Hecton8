@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1306_ROUTE_BOARD_RETURN_STAMP_FIELD_ARTICLE
 ---
 
 # Last Normal Day Evidence Set

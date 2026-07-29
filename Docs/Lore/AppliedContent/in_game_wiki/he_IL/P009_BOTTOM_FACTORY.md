@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P010_PAYLOAD_WINDOW;P020_HECTON8_ECOLOGY_REGISTRY;P040_ATLAS_FINAL_ARGUMENT;P084_VENT_FORGE_GEOTHERMAL_ENGINE
 ---
 
 # מפעל הקרקעית

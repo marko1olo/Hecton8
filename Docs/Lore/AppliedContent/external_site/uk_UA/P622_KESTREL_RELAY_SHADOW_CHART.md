@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P621_AEGIR_RECOVERY_WINDOW_GEOMETRY;P361_ACOUSTIC_RELAY_SPINE_ASSEMBLY
+next_packet_ids: P621_AEGIR_RECOVERY_WINDOW_GEOMETRY;P701_LANTERN_SIFTER;P623_PELLET_LANE_WAKE_LEDGER
 ---
 
 # Карта тіні реле Kestrel

@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P097_RECOVERY_COMPLIANCE_OFFICE
+next_packet_ids: P245_DEEP_REACH_CLAUSE_WEIGHT_CARD;P205_RETURN_ACTION_QUEUE_SIGNATURES
 ---
 
 # Chaîne Recovery Compliance

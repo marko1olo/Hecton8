@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE;P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL;P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL
 ---
 
 # 結末とpayload custody

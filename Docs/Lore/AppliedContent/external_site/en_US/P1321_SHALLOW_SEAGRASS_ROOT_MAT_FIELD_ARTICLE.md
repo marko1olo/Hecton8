@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1320_PHOTIC_LIMESTONE_RUBBLE_SHELF_FIELD_ARTICLE
 ---
 
 # Shallow Seagrass Root-Mat Substrate

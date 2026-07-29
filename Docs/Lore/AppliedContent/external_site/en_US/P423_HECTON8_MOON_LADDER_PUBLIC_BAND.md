@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P398_PUBLIC_AEGIR_MOON_MAP_ARTICLE_MODULE
 ---
 
 # HECTON-8 Moon Ladder

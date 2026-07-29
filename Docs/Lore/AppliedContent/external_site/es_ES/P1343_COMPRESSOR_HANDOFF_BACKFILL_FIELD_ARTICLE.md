@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1342_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE
+next_packet_ids: P1344_SUPPORT_LOAD_CARRY_FORWARD_EXCEPTION_FIELD_ARTICLE
 ---
 
 # Relleno de traspaso del compresor

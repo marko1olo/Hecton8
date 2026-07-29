@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 0
+prereq_packet_ids: P092_GLOBAL_OCEAN_DEPTH_BANDS
+next_packet_ids: P247_DROP_CAPSULE_DIAGNOSTIC_READOUT
 ---
 
 # Mapa ciszy orbitalnej Pasa Wyciszenia

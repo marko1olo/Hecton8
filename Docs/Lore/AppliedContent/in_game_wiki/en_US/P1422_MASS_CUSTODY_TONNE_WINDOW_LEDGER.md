@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P086_AEGIR_RECLAMATION_POOL
+next_packet_ids: P369_DEBT_BLACKLIST_CONTRACT_PRESSURE
 ---
 
 # Mass Custody Tonne-Window Ledger

@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P702_SHADOW_INTERCEPTOR
+next_packet_ids: P707_ALPHA_LEVIATHAN_FILE
 ---
 
 # Six Returns, No Range

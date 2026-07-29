@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P159_MEDICAL_TRIAGE_LEDGER;P212_TRIAGE_LEDGER_PROP_VARIANTS
 ---
 
 # 지연 트리아지 장부

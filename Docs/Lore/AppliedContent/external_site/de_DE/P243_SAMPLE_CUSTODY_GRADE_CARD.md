@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P393_HIGH_CUSTODY_SAMPLE_CONTRACT_SEED
 ---
 
 # DE LOC HOLD: Sample Custody Grade Card

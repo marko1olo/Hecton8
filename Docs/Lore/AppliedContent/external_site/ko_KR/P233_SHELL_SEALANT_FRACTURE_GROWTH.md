@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P093_ACCESSIBLE_SEAFLOOR_WINDOWS
 ---
 
 # 균열 위 패각 실란트 성장

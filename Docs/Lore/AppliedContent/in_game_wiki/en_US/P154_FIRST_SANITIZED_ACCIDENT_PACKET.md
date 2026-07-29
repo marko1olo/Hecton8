@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P106_ILIYA_VARNEK_TIDE_MARGIN
 ---
 
 # First Sanitized Accident Packet

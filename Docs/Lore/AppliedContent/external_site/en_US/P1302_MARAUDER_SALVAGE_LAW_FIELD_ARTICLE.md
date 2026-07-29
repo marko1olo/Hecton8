@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P122_MARAUDER_LEGAL_LOOPHOLE
+next_packet_ids: P160_MARAUDER_CORRECTION_LAYER
 ---
 
 # Marauder Salvage Law Field Article

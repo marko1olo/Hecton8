@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P354_BLUE_DEBT_PRESSURE_HISTORY_GUIDE
 ---
 
 # Blue Debt Custody Grade Receipt

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P043_SHIFT_BOARD_ROUTE_HOLDS;P027_BARNARD_YARDS_ORIGIN;P006_DEAD_CLAIM_CACHE
 ---
 
 # Barnard Mark

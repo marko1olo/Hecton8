@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1300_RAN_LONG_CLAIM_TRANSIT_LEDGER
 ---
 
 # Packet Custody Under Light Delay

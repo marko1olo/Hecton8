@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1314_CABLE_JACKET_REPAIR_WRAP_FIELD_ARTICLE
 ---
 
 # 케이블 외피 보수 감김 장부

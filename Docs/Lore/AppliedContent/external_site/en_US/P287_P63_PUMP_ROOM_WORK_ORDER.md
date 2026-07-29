@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P286_CAPSULE_BLACKBOX_AUDIO_01
 ---
 
 # P-63 Pump Room Work Order

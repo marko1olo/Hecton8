@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P019_HECTON8_RESOURCE_STACK;P627_BLUE_DEBT_CASKET_HANDLING_ARTICLE
 ---
 
 # Dívida azul

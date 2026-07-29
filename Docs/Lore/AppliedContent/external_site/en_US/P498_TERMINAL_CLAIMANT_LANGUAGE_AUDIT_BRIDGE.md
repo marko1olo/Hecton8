@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P497_EVIDENCE_RELATION_GRAPH_DOSSIER_BRIDGE
+next_packet_ids: P499_PUBLIC_INDEX_SPOILER_CAP_BRIDGE
 ---
 
 # Claim Procedure Language Audit

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P156_SHIFT_CREWS_NOT_HEROES
 ---
 
 # Artículo de campo sobre la jornada de una colonia a presión

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P261_RESOURCE_YIELD_AUTHORING_ROWS
 ---
 
 # מדריך תהליך שדה של מחשלת פתח

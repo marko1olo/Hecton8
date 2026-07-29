@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P121_DOMAIN_CIVIC_CORPORATE_SPLIT
 ---
 
 # Dossier Knowledge, Not Power

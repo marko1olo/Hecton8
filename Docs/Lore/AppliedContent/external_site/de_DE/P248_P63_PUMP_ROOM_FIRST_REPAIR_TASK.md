@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P362_PRESSURE_SEAL_CLAMP_RING_ASSEMBLY
 ---
 
 # DE LOC HOLD: P-63 Pump Room First Repair Task

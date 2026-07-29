@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P066_LIAN_TORRES_LAST_PACKET
 ---
 
 # Pieczę nad pakietami Luyten Junction

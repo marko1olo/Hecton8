@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P005_REPAIR_SCAR
+next_packet_ids: P706_AL_THERMAL_POCKET
 ---
 
 # Pembentukan Pressure Glass

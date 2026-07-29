@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P092_GLOBAL_OCEAN_DEPTH_BANDS
+next_packet_ids: P247_DROP_CAPSULE_DIAGNOSTIC_READOUT
 ---
 
 # Hush Belt Orbital Silence Chart

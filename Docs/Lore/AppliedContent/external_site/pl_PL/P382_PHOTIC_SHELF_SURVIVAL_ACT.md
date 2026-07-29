@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P250_FIRST_ATLAS_REPAIR_TRACE_SCENE
+next_packet_ids: P386_SHALLOW_ANNEX_P63_POI_KIT
 ---
 
 # Brama szelfu fotycznego

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P364_ASCENT_ENERGY_CHARGE_ASSEMBLY
 ---
 
 # Oskar Neumann Pressure Forge

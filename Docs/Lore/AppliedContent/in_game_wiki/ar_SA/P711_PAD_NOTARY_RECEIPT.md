@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P707_ALPHA_LEVIATHAN_FILE;P708_PAD_PR_DRAFT_LANGUAGE
 ---
 
 # P711_PAD_NOTARY_RECEIPT

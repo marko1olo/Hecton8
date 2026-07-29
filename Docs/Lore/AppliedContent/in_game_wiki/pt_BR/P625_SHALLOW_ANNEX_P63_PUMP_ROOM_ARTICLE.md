@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE
 ---
 
 # Sala de bombas do anexo raso P-63

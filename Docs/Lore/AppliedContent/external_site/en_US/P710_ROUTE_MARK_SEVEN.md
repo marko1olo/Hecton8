@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P710_CROWN_PIN_ACCOUNTS
+next_packet_ids: P710_WINDOW_SETTLEMENT_WS11
 ---
 
 # Route Mark 7, Corrected Twice

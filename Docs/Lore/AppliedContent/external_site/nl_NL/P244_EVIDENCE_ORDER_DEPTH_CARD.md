@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P266_DOSSIER_START_SCREEN_COPY;P299_PAYLOAD_AUTHORITY_LAST_CHECK;P300_NO_CLEAN_ENDING_DOSSIER_NOTE;P305_ENDING_PAYOUT_ROW_CONTRACT;P306_PDA_CODEX_STATE_PROOF_CARD;P309_DOSSIER_ENDING_RECORD_PROOF_CARD
 ---
 
 # NL LOC HOLD: Evidence Order Depth Card

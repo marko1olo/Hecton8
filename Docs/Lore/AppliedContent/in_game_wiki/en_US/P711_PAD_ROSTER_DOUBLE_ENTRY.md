@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: AL_PUMP_BLESSING;P708_PAD_OXYGEN_PRODUCTIVITY
 ---
 
 # Shift Roster 44-C, Shift 3

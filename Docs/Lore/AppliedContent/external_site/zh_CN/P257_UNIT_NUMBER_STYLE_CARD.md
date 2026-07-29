@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P256_PROPER_NOUN_TRANSLATION_LOCK_TABLE
 ---
 
 # CN LOC HOLD: Unit And Number Style Card

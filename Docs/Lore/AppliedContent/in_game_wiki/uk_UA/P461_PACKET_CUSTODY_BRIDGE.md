@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE;P467_ATLAS6_PUBLIC_REPAIR_NETWORK_BRIDGE
 ---
 
 # Ланцюг збереження пакета

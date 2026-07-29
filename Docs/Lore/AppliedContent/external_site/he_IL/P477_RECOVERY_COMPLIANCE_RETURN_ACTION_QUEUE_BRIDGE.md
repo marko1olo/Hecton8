@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P476_AEGIR_CONTINUITY_HOLDINGS_SHELL_CHAIN_BRIDGE;P475_CENTAURI_CHARTER_LEGITIMACY_BRIDGE
 ---
 
 # תור פעולת החזרה

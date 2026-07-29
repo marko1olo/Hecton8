@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P409_IBARRA_LOSS_CONVERSION_LEDGER_ARTIFACT
 ---
 
 # 瓦尔内克余量接受备忘录

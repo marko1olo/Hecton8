@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P099_MARAUDER_DOSSIER_PERSISTENCE
+next_packet_ids: P178_ENDING_RECORD_PRESENTATION
 ---
 
 # Dossier Rumor Memory

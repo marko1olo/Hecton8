@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P150_RECOVERY_COMPLIANCE_CHAIN
+next_packet_ids: P712_PROOF_WEIGHT_PW9
 ---
 
 # Return Action Queue Signatures

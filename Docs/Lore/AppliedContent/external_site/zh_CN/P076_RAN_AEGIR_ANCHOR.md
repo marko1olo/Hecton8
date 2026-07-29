@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P077_AEGIR_MOON_LADDER;P078_INNER_MOON_RELAY_HAZARDS;P080_OUTER_MOON_COLD_CLAIMS
 ---
 
 # Ran / Aegir锚点

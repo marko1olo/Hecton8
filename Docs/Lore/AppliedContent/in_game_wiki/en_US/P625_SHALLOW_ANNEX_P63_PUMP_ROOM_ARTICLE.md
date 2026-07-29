@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P629_DEEP_REACH_VARIANCE_MEMO_CONTRADICTION_ARTICLE
 ---
 
 # Shallow Annex P-63 Pump Room

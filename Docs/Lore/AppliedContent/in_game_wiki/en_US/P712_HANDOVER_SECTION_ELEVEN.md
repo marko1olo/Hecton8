@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P712_GROUND_SPANNER_FILTER_PLANT;P1336_TRANSCRIPT_DAMAGE_BAND_OFFSET_FIELD_ARTICLE
+next_packet_ids: P712_JOB_CARD_TOOL_STILL_OUT;P712_TRIAGE_LEDGER_CATEGORY_FOUR
 ---
 
 # Handover Notes, Section 11 Board

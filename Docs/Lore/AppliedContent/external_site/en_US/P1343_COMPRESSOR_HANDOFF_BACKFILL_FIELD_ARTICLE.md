@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1342_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE
+next_packet_ids: P1344_SUPPORT_LOAD_CARRY_FORWARD_EXCEPTION_FIELD_ARTICLE
 ---
 
 # Compressor Handoff Backfill

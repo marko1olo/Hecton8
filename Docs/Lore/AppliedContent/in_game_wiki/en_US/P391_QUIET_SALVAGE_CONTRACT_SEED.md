@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P392_STORM_WINDOW_RUSH_CONTRACT_SEED;P394_EVIDENCE_FIRST_CHARTER_CONTRACT_SEED;P444_CONTRACT_RISK_REWARD_VALUE_DRAFT_ROWS
 ---
 
 # Quiet Salvage Contract Seed

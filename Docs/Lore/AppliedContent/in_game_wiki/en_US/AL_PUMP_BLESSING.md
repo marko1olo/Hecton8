@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P711_PAD_ROSTER_DOUBLE_ENTRY
 ---
 
 # Pump Bay 12 Log, Maintenance Shift 4

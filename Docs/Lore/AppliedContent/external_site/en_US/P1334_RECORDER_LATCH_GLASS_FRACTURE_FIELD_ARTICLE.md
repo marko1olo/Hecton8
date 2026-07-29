@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1333_PRESSURE_INK_WHEEL_DRYOUT_FIELD_ARTICLE
+next_packet_ids: P1335_RECORDER_SERVICE_SEAL_TEAR_DIRECTION_FIELD_ARTICLE
 ---
 
 # Recorder Latch Glass Fracture

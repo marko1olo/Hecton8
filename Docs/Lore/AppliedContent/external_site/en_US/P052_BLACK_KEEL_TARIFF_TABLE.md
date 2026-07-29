@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P055_CORPORATE_RESPONSE_LEDGER;P069_PAVEL_SORN_PROCEDURE_HOLD;P053_MARAUDER_GRAFFITI_MASKS;P058_BLACK_KEEL_CLAIM_HOOKS
 ---
 
 # Black Keel Tariff Table

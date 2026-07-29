@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P626_BLACK_KEEL_TONNE_WINDOW_CUSTODY;P471_LUYTEN_PACKET_CUSTODY_RELAY_BRIDGE
+next_packet_ids: P6801_BLACK_KEEL_NEARLIGHT_WAKE
 ---
 
 # Carrier Window Audio Cue

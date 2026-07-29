@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P334_SENSOR_TAGGED_FAUNA_FEEDBACK_LOOP
+next_packet_ids: P701_LANTERN_SIFTER
 ---
 
 # Cold Veil Eel

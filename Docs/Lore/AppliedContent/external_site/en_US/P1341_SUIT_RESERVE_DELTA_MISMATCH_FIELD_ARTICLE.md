@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P1340_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE
+next_packet_ids: P1342_SCRUBBER_CARTRIDGE_SERIAL_MISMATCH_FIELD_ARTICLE
 ---
 
 # Suit Reserve Delta Mismatch

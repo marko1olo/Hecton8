@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P712_LOCKER_ROSTER_ARGUMENT;P205_RETURN_ACTION_QUEUE_SIGNATURES
+next_packet_ids: P712_ROUTE_SLIP_GALLERY_NINE
 ---
 
 # Proof Weight PW-9, Crown Hoist Deck

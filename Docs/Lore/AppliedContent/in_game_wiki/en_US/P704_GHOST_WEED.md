@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P702_POCKET_AMBUSHER
+next_packet_ids: P711_PAD_QUARANTINE_HOLD
 ---
 
 # Ghost Weed

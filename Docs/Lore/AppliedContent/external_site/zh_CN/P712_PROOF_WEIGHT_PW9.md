@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P712_LOCKER_ROSTER_ARGUMENT;P205_RETURN_ACTION_QUEUE_SIGNATURES
+next_packet_ids: P712_ROUTE_SLIP_GALLERY_NINE
 ---
 
 # P712_PROOF_WEIGHT_PW9

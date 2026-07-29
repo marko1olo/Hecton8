@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: rtl
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P1401_PACKET_CUSTODY_UNDER_LIGHT_DELAY
 ---
 
 # יומן מעבר תביעה ארוכה של Ran

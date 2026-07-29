@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P469_AEGIR_RELAY_WINDOW_BRIDGE;P463_PUBLIC_WIKI_SPOILER_GATE_BRIDGE;P202_PACKET_NOTARY_INTERFACE_SIGNATURES
+next_packet_ids: P6800_CARRIER_WINDOW_AUDIO_CUE;P472_TAU_CETI_PUBLIC_LEDGER_PRESSURE_BRIDGE
 ---
 
 # Luyten Packet Custody Relay

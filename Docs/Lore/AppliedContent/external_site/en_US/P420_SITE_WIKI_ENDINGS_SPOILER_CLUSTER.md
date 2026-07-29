@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P400_PUBLIC_ATLAS_SPOILER_GATE_ARTICLE_MODULE;P376_PAYLOAD_SELL_COORDINATES_RECEIVER_PROTOCOL;P380_PAYLOAD_WITHHOLD_BLIND_RETURN_PROTOCOL
 ---
 
 # Endings and Payload Custody

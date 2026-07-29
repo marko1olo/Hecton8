@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P001_CRASH_SHELF;P056_EX_DEEP_REACH_MARAUDER
+next_packet_ids: P1095_AEGIR_MOON_LADDER_ORBITAL_HAZARDS
 ---
 
 # Potongan Kapsul Styx

@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+next_packet_ids: P356_PRESSURE_BUNK_SHIFT_ROUTINE;P357_CANTEEN_WATER_LEDGER;P358_TOOL_CERTIFICATION_RITUALS;P366_FIELD_SYSTEMS_SPECIALIST_RECORD;P367_REVOKED_ACCESS_LANGUAGE_TRACE;P372_EVACUATION_QUEUE_DELAY_PROOF
 ---
 
 # Ren Okoye Locker Plate

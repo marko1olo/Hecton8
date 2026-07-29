@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P711_PAD_ATTENTION_DISCIPLINE
 ---
 
 # AL_SHIFT_B_AIR_COUNT

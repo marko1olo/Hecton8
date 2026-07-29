@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1338_ROUTE_PERMISSION_STAMP_OVERLAP_FIELD_ARTICLE
+next_packet_ids: P1340_OXYGEN_LEDGER_CUTOFF_CLAIM_HOLD_FIELD_ARTICLE
 ---
 
 # 缺失返程标记与索赔转换

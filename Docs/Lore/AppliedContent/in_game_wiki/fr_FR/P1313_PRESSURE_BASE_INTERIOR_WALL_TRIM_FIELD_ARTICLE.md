@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+next_packet_ids: P1316_DAMPED_INSULATION_BLANKET_FIELD_ARTICLE
 ---
 
 # Article de terrain sur garniture murale intérieure de base pressurisée

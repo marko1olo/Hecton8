@@ -15,6 +15,7 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: draft_machine_or_llm
 localization_flags: 1
+prereq_packet_ids: P1323_RUBBER_GASKET_RING_TRIM_FIELD_ARTICLE
 ---
 
 # Bordures extérieures de coque de base pressurisée

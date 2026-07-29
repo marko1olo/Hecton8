@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P005_REPAIR_SCAR
+next_packet_ids: P706_AL_THERMAL_POCKET
 ---
 
 # Pressure Glass Formation

@@ -15,6 +15,8 @@ runtime_reads_markdown: false
 direction: ltr
 localization_status: source_authority
 localization_flags: 0
+prereq_packet_ids: P038_MATERIAL_PAYOUT_LEDGER
+next_packet_ids: P426_BLUE_DEBT_CUSTODY_GRADE_RECEIPT
 ---
 
 # Blue Debt Pressure History Guide
