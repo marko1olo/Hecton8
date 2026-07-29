@@ -2889,11 +2889,25 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
     passed = not gate_failures
 
     # -- 12. save ---------------------------------------------------------
+    # The PACKAGE and the PROOF go to different directories, and the .blend is the
+    # reason this matters more here than anywhere else in the forge. out_dir now
+    # defaults inside Assets so Unity can import the FBX - and Unity imports a
+    # `.blend` as a MODEL when Blender is installed, so leaving SRC_*.blend beside
+    # the FBX would add one phantom model asset per variant, six for a full run,
+    # each with its own .meta and GUID. A REJECTED_MANIFEST_* in the asset database
+    # is milder but equally wrong: it is a debug record, not content.
+    #
+    # law.forge_proof_dir is gitignored (.gitignore:201). That property is exactly
+    # what made it the wrong home for the FBX and exactly what makes it the right
+    # home for a source file and a rejection record.
     os.makedirs(out_dir, exist_ok=True)
+    proof_dir = os.path.join(law.project_root(),
+                             *law.forge_proof_dir(law.Family.FLORA).split("/"))
+    os.makedirs(proof_dir, exist_ok=True)
     export_objects = [level.obj for level in lods] + [empty for _n, empty in anchors]
     fbx_path = os.path.join(out_dir, "MESH_{f}_{n}.fbx".format(
         f=law.Family.FLORA.value, n=name))
-    blend_path = os.path.join(out_dir, "SRC_{f}_{n}.blend".format(
+    blend_path = os.path.join(proof_dir, "SRC_{f}_{n}.blend".format(
         f=law.Family.FLORA.value, n=name))
     if not passed:
         # 3dmodel.md section 10: "Failure aborts save." No FBX, no .blend.
@@ -3079,7 +3093,15 @@ def generate_kelp(*, seed: int, quality: float, out_dir: str,
 
     # A rejected asset gets a REJECTED_-prefixed failure report, never a manifest
     # that a later stage could mistake for a shippable package.
-    manifest_path = os.path.join(out_dir, ("" if passed else "REJECTED_") +
+    #
+    # And it goes to the PROOF directory, not beside the package. A passing manifest
+    # MUST stay a sibling of its FBX - HectonFBXPostprocessor.TryResolveForgeManifestPath
+    # derives the manifest path from the mesh path, and that lookup is what gates the
+    # import carve-out preserving the authored weighted/split normals - but a rejected
+    # one has no FBX to sit beside, so putting it in the asset database would leave a
+    # debug record with a GUID and nothing to describe.
+    manifest_path = os.path.join(out_dir if passed else proof_dir,
+                                 ("" if passed else "REJECTED_") +
                                  law.NAME_MANIFEST.format(
                                      family=law.Family.FLORA.value, name=name) +
                                  ".json")
