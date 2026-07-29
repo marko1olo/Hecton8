@@ -3144,8 +3144,17 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Advances the sector population solve at 0.1 Hz using a Burst job.
+        /// Advances the sector population solve using a Burst job.
         /// </summary>
+        /// <remarks>
+        /// Cadence, corrected 2026-07-29: SlowTick itself runs every 0.1 SECONDS (10 Hz) -
+        /// SystemDispatcher.cs:72 `SlowTickIntervalSeconds = 0.1`, mirrored here at :260. This summary
+        /// previously said "0.1 Hz", which is 100x too slow and is the number that produced a wrong
+        /// capacity argument in TryResolveSeedObserverAup below. The SOLVE is slower than the tick that
+        /// hosts it: ScheduleSectorSolve sits behind coldTickIntervalSeconds = 5f (:1347), i.e. 0.2 Hz,
+        /// while EnsurePlayerSectorRegistered runs on every slow tick. Two different rates in one
+        /// method, which is exactly why one number in a summary line was misleading.
+        /// </remarks>
         public void SlowTick()
         {
             if (!IsInitialized)
@@ -5814,8 +5823,17 @@ namespace Hecton8.World
         /// NEVER FREED - the comment at :5010-5013 is explicit that the only decrement of _activeSectorCount
         /// is a failed-upsert rollback, and MigrationNeighborSectorReserve exists precisely to keep ring
         /// expansion from consuming the last slots the player needs when walking into virgin sectors. This
-        /// method runs from SlowTick at 0.1 Hz, so an ungated fallback that followed a roaming observer
-        /// would claim a new sector every ten seconds - about 2160 of them in a six-hour run, far past
+        /// method runs from SlowTick, which is 0.1 SECONDS and therefore 10 Hz - not 0.1 Hz as an earlier
+        /// version of this comment said, a 100x error. SystemDispatcher.cs:72 is
+        /// `SlowTickIntervalSeconds = 0.1` and this class names the same value in seconds at :260.
+        /// The per-tick model that error implied was also the wrong model: slots are consumed per
+        /// DISTINCT OBSERVER POSITION, not per tick. The fallback resolves
+        /// TryResolveAupFromRuntimeOrigin(Vector3.zero, ...), which is HectonFloatingOrigin's current
+        /// total offset, and that only changes on an origin shift - so at 10 Hz the fallback re-resolves
+        /// the SAME coordinate almost every tick and ResolveOrCreateSectorSlot hands back the existing
+        /// slot for free. The bound that matters is the number of distinct observer moves, roughly eight
+        /// against a maxTrackedSectors of 128 (:1345). So the ceiling arrives SOONER than the discarded
+        /// arithmetic suggested, and for a different reason - which strengthens the case for gating,
         /// capacity - and would eat the very reserve that keeps the player's own sector resolvable. Gating
         /// on "nothing seeded yet" bounds the whole cost to one sector and five biomass cells, once, for
         /// the lifetime of the director.
