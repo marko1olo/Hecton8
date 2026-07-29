@@ -131,6 +131,19 @@ namespace MapMagic.Editor.Diagnostics
             // describe. The runtime path was corrected to the real datum in three sites in
             // HectonSandboxAbyssalShelfJobs.cs (commit 34e4591ae); this diagnostic was the fourth site of
             // the same defect and kept measuring against the old frame.
+            //
+            // This line needs "Hecton8.World.Contracts" in Hecton8.Editor.asmdef and did not have it when
+            // it was written. WorldWaterLevelCalibrationMath lives in that assembly, not in the one that
+            // owns WorldMacroGeologyParams above it (Hecton8.Core), even though BOTH are namespace
+            // Hecton8.World - so the `using Hecton8.World;` at the top of this file resolves one and not
+            // the other, and the failure reads as CS0103 "does not exist in the current context" rather
+            // than as the missing assembly reference it actually is. It cost a whole Unity batchmode run:
+            // Scripts have compiler errors -> exit 1 -> the headless simulation never started. The
+            // lock-free gate in CONTRIBUTING.md cannot catch this, because it emits FALSE CS0433/CS0656
+            // against Hecton8.Editor and so is untrustworthy for exactly this assembly. Nor could the unit
+            // tests: WorldWaterLevelCalibrationEditTests.cs "references" this type only through
+            // StringAssert.Contains on source text, which compiles whether or not the reference resolves.
+            // Do not drop that asmdef reference; nothing cheaper than a real Unity compile will notice.
             p.WaterSurfaceY = WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
 
             (float x, float z, string name)[] points = new (float, float, string)[]

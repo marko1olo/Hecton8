@@ -77,7 +77,121 @@ Not proven by that log:
 | A failed save is invisible in the GAMEPLAY HUD (the main menu shows a real modal) | `[!]` | force a save write failure in a build and watch the gameplay HUD |
 | ~~Notifications never reach the player: `HUDNotification` had zero instances~~ FIXED 2026-07-29, `5caea2a5e` | `[~]` | Play Mode: a warning visible on screen once |
 | ~~Every notification delivered twice (two drains, different hashes, suppressor never matched)~~ FIXED `cc377a985` | `[~]` | Play Mode: exactly one toast per event |
-| ~~Headless world sim could not finish its own default run~~ FIXED `60a7ed08d`; watchdog now derives from the workload | `[~]` | one completed run of `-h8headlessDays 5 -h8headlessDaySeconds 60` with its JSON |
+| ~~Headless world sim could not finish its own default run~~ FIXED `60a7ed08d` — **and the run has now actually happened**, see the section below | `[x]` | RUN EXISTS 2026-07-29: `[ECOLOGY_UNAVAILABLE]`, 1 of 5 days, JSON on disk |
+| **The headless sim now runs and the ecology inside it is empty: prey `0.000`, predator `0.000`, carrying capacity `0.000`** | `[!]` | one CSV day row with non-zero biomass |
+| **Measured time dilation is 3.5x against a nominal 100x** — below the 4x floor the new watchdog budget assumed | `[x]` | measured: `timeDilationDelivered: 3.500491` |
+| A missing asmdef reference cost a whole batchmode run, and neither the lock-free gate nor the unit tests could see it | `[x]` | fixed; see `The build break that ate the first headless run` |
+
+### The first headless simulation run that ever produced a verdict — 2026-07-29
+
+Everything in this section is **runtime proof**, not inspection. It is the first time this harness has
+written a result file with a status in it. Command line, and every part of it is load-bearing:
+
+```
+cd C:\hades\Hecton8
+"C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe" -batchmode -h8headless \
+  -h8headlessDays 5 -h8headlessDaySeconds 60 \
+  -executeMethod Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner.Run \
+  -logFile Docs/AgentLogs/headless_run_unity.log
+```
+
+- `-h8headless` is **mandatory, not optional**. `HeadlessSimulationRunner.ShouldRunStatic` accepts argv OR
+  the env var OR the `Temp/H8_HEADLESS_SIMULATION.flag` file (`:1358-1365`), but
+  `GameBootstrapper._headlessBootMode` comes only from `IsHeadlessBootRequested()`, which is **argv-only**
+  (`GameBootstrapper.cs:6649`, assigned `:2585`). Calling `HeadlessSimulationBatchRunner.Run` on its own
+  therefore starts the runtime runner while the bootstrapper boots a **full player** and loads
+  `01_MAIN_MENU` — which is exactly the "play mode simply carried on running the main menu for 45 minutes"
+  symptom already described in a comment at `HeadlessSimulationBatchRunner.cs:28-30`.
+- `cd` to the project root first. The editor side resolves paths from `Directory.GetCurrentDirectory()`
+  (`HeadlessSimulationBatchRunner.cs:462`), the runtime side from `Application.dataPath/..`
+  (`HeadlessSimulationRunner.cs:1490-1494`). A `-projectPath` launch from a foreign CWD splits the flag,
+  the result JSON and the poll loop across two trees and always ends in `BATCH_TIMEOUT`.
+- No `-nographics`, and this is not caution — see the ecology finding below.
+- Staying in `00_BOOTSTRAP` is the DESIGNED state, not a hang: `GameBootstrapper.cs:3120-3123` marks the
+  main menu reached and returns. `02_HECTON_WORLD` is never loaded, and the runner does not need it.
+
+`Docs/AgentLogs/HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json`, verbatim:
+
+```json
+{"agent":"HEADLESS_SIMULATION_RUNNER","status":"[ECOLOGY_UNAVAILABLE]","exitCode":1,"days":1,
+ "targetDays":5,"simulatedSeconds":62.6500032674521,"timeDilationNominal":100,
+ "timeDilationDelivered":3.500491,"progressionSignals":0,"crashSignalsConsumed":0,
+ "lastProgressionHash":0,"lastCrashReasonHash":0,"syntheticAupShifts":130,"actualOriginShifts":10,
+ "nativeBytes":128435600,"h8Bytes":248407616,"gasInvalidRoomId":-1,"logSpamSuppressed":18,
+ "evidenceFailureFlags":0}
+```
+
+`Docs/AgentLogs/HeadlessSimulationDaily_HEADLESS_SIMULATION_RUNNER.csv`, verbatim — one row, and the three
+numbers that matter are all zero:
+
+```
+Day,PreyBiomass,PredatorBiomass,CarryingCapacity,NativeBytes,H8Bytes,NativeAllocations,H8Allocations,Flags
+1,0.000,0.000,0.000,128435600,248407616,116,61,1
+```
+
+What this proves, and what it does not:
+
+1. **The harness works.** `[HEADLESS] runner installed and started` then `[HEADLESS] waiting for dispatcher`
+   appear in the log, the bootstrap reaches `TryInitializeBootstrapDependencyNodeWithFallback for node
+   SystemDispatcher`, a day completes, and a verdict is written. None of that had ever been observed.
+2. **The ecology is empty, and this is now a measured blocker rather than a suspicion.** Status
+   `[ECOLOGY_UNAVAILABLE]` with prey, predator and carrying capacity all exactly `0.000` at day 1. The
+   likely mechanism was predicted before the run and matches: `EcosystemDirector.AllocateRuntimeState`
+   continues past the last term of the 19-term `IsInitialized` predicate (`EcosystemDirector.cs:4361`) into
+   graphics work — two `CreateStructuredLockBuffer` calls at `:4382-4383` and `Shader.SetGlobal*` at
+   `:4388-4389`. A throw there leaves `IsInitialized == true` while `TryRegisterService()` (`:2637`) never
+   runs, so `GlobalRegistry.EcosystemDirector` stays null and `HeadlessSimulationRunner.cs:504-505` waits on
+   null forever. That is also the concrete reason `-nographics` is banned here: it would guarantee this
+   failure instead of merely risking it. **Which of the two gates actually fired — this one or the silent
+   `vault == null` bail at `:4308-4310` — is NOT yet established. The run proves the outcome, not the
+   mechanism.**
+3. **Time dilation is 3.5x, not the 4x-13x I estimated.** `timeDilationDelivered: 3.500491` against
+   `timeDilationNominal: 100`. My own watchdog arithmetic in `60a7ed08d` reasoned from an optimistic floor
+   of 4x; the real floor is below it. The budget `420 s + span/4` still held for this run because the run
+   aborted early, so it has NOT been tested against a full 5-day span.
+4. Other systems are demonstrably live: `syntheticAupShifts: 130` and `actualOriginShifts: 10` mean the
+   origin-shift path ran, `nativeBytes: 128,435,600` and `h8Bytes: 248,407,616` are real allocations, and
+   `evidenceFailureFlags: 0` means no evidence channel self-reported broken.
+5. `progressionSignals: 0` — nothing progressed. With no ecology that is expected, and it is not
+   independent evidence of a second defect.
+
+Do not read a zero-byte CSV mid-run as "no days completed": `HeadlessCsvWriter.Flush` uses
+`_stream.Flush()` (`HeadlessSimulationRunner.cs:1752`), not `Flush(true)`, so it never calls
+FlushFileBuffers and Windows will not update the visible directory-entry size while Unity holds the handle.
+The comment at `:1747-1751` claims the evidence survives a killed run and is visible mid-run; it is not.
+
+### The build break that ate the first headless run
+
+The run above was the SECOND attempt. The first died in 2 seconds with
+`Scripts have compiler errors.` and Unity exit code 1:
+
+```
+Assets\_Project\Scripts\Editor\Diagnostics\GeologyAtlasTask.cs(134,31): error CS0103:
+The name 'WorldWaterLevelCalibrationMath' does not exist in the current context
+```
+
+Commit `105d27df6` introduced that line and did not have a compiler over it.
+`WorldWaterLevelCalibrationMath` lives in assembly `Hecton8.World.Contracts`; the type directly above it in
+the same method, `WorldMacroGeologyParams`, lives in `Hecton8.Core`. **Both are `namespace Hecton8.World`**,
+so the single `using Hecton8.World;` at the top of the file resolves one and not the other, and the compiler
+reports it as CS0103 "does not exist in the current context" rather than as the missing assembly reference
+it actually is. The fix is one line in `Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef`.
+
+Three things could not have caught this, and each is worth knowing:
+
+- **The lock-free compile gate.** `CONTRIBUTING.md` records that it emits FALSE `CS0433`/`CS0656` against
+  `Hecton8.Editor`, so it is untrustworthy for precisely the assembly that broke.
+- **The unit tests.** `Assets/_Project/Tests/Editor/WorldWaterLevelCalibrationEditTests.cs` "references"
+  `WorldWaterLevelCalibrationMath` only through `StringAssert.Contains` on source text. A source-text
+  assertion compiles whether or not the reference resolves — it is not a compile.
+- **Exit code alone.** The first attempt returned **0** from the shell despite `Scripts have compiler
+  errors` and an internal exit 1. Reading the log was the only way to see it.
+
+The one-line asmdef repair is **not mine** — another session wrote it into the working tree at 08:41:28,
+two minutes and forty-one seconds after my compile died at 08:38:47, and the cement job then swallowed it
+into `7a1747361 chore(auto): cement working tree` with no rationale attached. Established by comparing the
+file mtime against the log timestamp, not by asking. The reasoning now lives in a comment at
+`GeologyAtlasTask.cs:134` so that the next snapshot commit cannot launder it away again.
 
 ### The Data Monolith content census — measured from the shipped blob, 2026-07-29
 

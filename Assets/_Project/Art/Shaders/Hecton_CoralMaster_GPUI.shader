@@ -404,7 +404,16 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                     ResolveCoralFlashlightReaction(reactionPositionWS) +
                     ResolveCoralPlayerReaction(reactionPositionWS) +
                     ResolveCoralDamageReaction(reactionPositionWS));
-                float reactiveMask = saturate(input.color.a + input.color.r * 0.35);
+                // Vertex colour channel contract, 3dmodel.md section 5 and
+                // 3DMODEL_FLORA_CORAL.md section 2: R = sway amplitude, G = bioluminescence
+                // mask/phase, B = baked ambient occlusion, A = family-specific mask, which is
+                // harvest_yield_mask for coral per the generator manifest
+                // (Assets/_Project/Art/Generated/Forge/Flora/MANIFEST_Flora_Coral_Branching_1712.json).
+                // Retraction is a damage/harvest-eligibility response, so it belongs to A alone.
+                // This used to add COLOR.r * 0.35, and R is the current-sway amplitude the contract
+                // reserves for motion, so flexible frond tips retracted harder purely for being
+                // flexible while rigid mineralised coral could not retract at all.
+                float reactiveMask = saturate(input.color.a);
                 float retract = reaction01 * reactiveMask;
                 float3 safeNormalOS = all(isfinite(input.normalOS)) ? input.normalOS : float3(0.0, 1.0, 0.0);
                 safeNormalOS = dot(safeNormalOS, safeNormalOS) > 0.000001 ? safeNormalOS : float3(0.0, 1.0, 0.0);
@@ -435,7 +444,14 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 half3 viewDirWS = SafeNormalize(input.viewDirWS);
                 half tintMask = saturate(input.color.r) * _VertexTintStrength;
                 half moisture = saturate(input.color.g);
-                half age = saturate(input.color.b);
+                // Age darkening is NOT a channel in the vertex colour contract, so it is sourced
+                // from the flora lifecycle decay owner (the same value _HectonFloraLifecycleParams.y
+                // feeds to decay01 below) rather than read out of R/G/B. This used to read COLOR.b,
+                // which is baked ambient occlusion, and at inverted polarity: B is low in crevices,
+                // so exposed tissue darkened and cavities stayed bright. Left in place it cancels
+                // roughly half the vertexAO contrast restored below, so the two reads had to move
+                // together or the occlusion fix would have been half-defeated on arrival.
+                half age = saturate((half)_HectonFloraLifecycleParams.y);
                 float3 samplePositionWS = input.positionWS;
                 half4 maskSample = SampleFloraDominantAxis(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, baseNormalWS);
                 half parallaxQualityWeight = HectonCoralSmoothRange01(0.55h, 0.95h, HectonCoralGlobalQualityWeight());
@@ -494,7 +510,14 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 albedo = lerp(albedo, albedo * 0.78h, cavity * 0.22h);
 
                 half3 ambient = H8CustomLightProbeResolveAmbient(samplePositionWS, normalWS, half3(0.015h, 0.025h, 0.035h)) * (_AmbientStrength + wetness * 0.1h);
-                half vertexAO = lerp(0.72h, 1.0h, saturate(input.color.a));
+                // COLOR.b is baked ambient occlusion in every family contract the bible set defines
+                // -- 3dmodel.md sections 4 and 5, 3DMODEL_FLORA_CORAL.md section 2,
+                // 3DMODEL_GEOLOGY_ROCKS.md section 4, 3DMODEL_HARD_SURFACE_MODULES.md section 5.
+                // This read used to be COLOR.a, the family-specific harvest_yield_mask, so the
+                // forge's ray-traced occlusion was arriving as an age tint while the harvest mask
+                // was arriving as occlusion. Nothing errored; the coral was simply lit wrong
+                // everywhere. Matches the same repair already landed in Hecton_KelpMaster.shader.
+                half vertexAO = lerp(0.72h, 1.0h, saturate(input.color.b));
                 half3 diffuse = albedo * (ambient + mainLight.color * wrapDiffuse) * vertexAO;
                 diffuse *= (1.0h - cavity * _CavityStrength * 0.5h);
 
