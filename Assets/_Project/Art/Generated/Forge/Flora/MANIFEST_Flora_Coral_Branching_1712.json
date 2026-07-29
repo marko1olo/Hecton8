@@ -1,0 +1,683 @@
+{
+ "colliderSummary": {
+  "allWithinBudget": null,
+  "count": 0,
+  "triangleBudget": 200,
+  "types": []
+ },
+ "colliders": [],
+ "export": {
+  "fbx": "Assets/_Project/Art/Generated/Forge/Flora/MESH_Flora_Coral_Branching_1712.fbx",
+  "hasCustomNormals": true,
+  "hasTangents": true,
+  "hasVertexColors": true,
+  "objectNames": [
+   "MESH_Flora_Coral_Branching_1712_LOD0",
+   "MESH_Flora_Coral_Branching_1712_LOD1",
+   "MESH_Flora_Coral_Branching_1712_LOD2"
+  ],
+  "roundtripVerified": true,
+  "settings": {
+   "apply_scale_options": "FBX_SCALE_NONE",
+   "apply_unit_scale": true,
+   "axis_forward": "-Z",
+   "axis_up": "Y",
+   "bake_anim": false,
+   "bake_space_transform": true,
+   "blenderToFbxAxes": "(x, y, z) -> (x, z, -y)",
+   "blenderToUnityAxes": "(x, y, z) -> (x, z, y)",
+   "colors_type": "LINEAR",
+   "embed_textures": false,
+   "fbxHeaderUnitScaleFactor": 1.0,
+   "fbxUnitsPerMetre": 100.0,
+   "global_scale": 1.0,
+   "mesh_smooth_type": "EDGE",
+   "object_types": [
+    "MESH"
+   ],
+   "path_mode": "STRIP",
+   "prioritize_active_color": true,
+   "use_custom_props": false,
+   "use_mesh_edges": false,
+   "use_mesh_modifiers": true,
+   "use_metadata": true,
+   "use_selection": true,
+   "use_space_transform": true,
+   "use_subsurf": false,
+   "use_triangles": true,
+   "use_tspace": true,
+   "use_visible": false
+  },
+  "unitScaleFbxUnitsPerMetre": 100.00000223517424,
+  "uvLayerNames": [
+   "UVMap"
+  ]
+ },
+ "exporterVersion": "1.0.0",
+ "extra": {
+  "biomeRoute": "photic shallows; references beauty.webp, shallows.webp",
+  "channelMeasurements": [
+   "ChannelStats(channel='Coral_Branching_1712_chan0_sway_amplitude.png', min_value=0.0, max_value=0.12743772566318512, mean_value=0.0398336760699749, covered_pixels=21940, coverage_fraction=0.0836944580078125)",
+   "ChannelStats(channel='Coral_Branching_1712_chan1_biolum_phase.png', min_value=0.0, max_value=0.7304610013961792, mean_value=0.17473316192626953, covered_pixels=21940, coverage_fraction=0.0836944580078125)",
+   "ChannelStats(channel='Coral_Branching_1712_chan2_baked_ao.png', min_value=0.0, max_value=1.0, mean_value=0.7766168117523193, covered_pixels=21940, coverage_fraction=0.0836944580078125)",
+   "ChannelStats(channel='Coral_Branching_1712_chan3_family_specific.png', min_value=0.14995981752872467, max_value=0.9911022186279297, mean_value=0.5170729756355286, covered_pixels=21940, coverage_fraction=0.0836944580078125)"
+  ],
+  "consumerDefectOpen": "Hecton_CoralMaster.shader reads input.color.a as ambient occlusion and this mesh writes AO to B per the 2026-07-29 ruling. The mesh is correct; the consumer is not fixed yet, so in-engine this asset's ray-traced AO will be consumed as the harvest mask and vice versa.",
+  "growthAlgorithm": "encrusting foot with one launch lobe per stem, so the colony branches AT THE SUBSTRATE; then repeated dichotomous forking in a plane turning ~88 degrees per generation (Acropora orthogonal alternation, not a whorl around one axis, which is a bottle-brush by construction); blunt digit clusters at parent radius. Radius is constant within an internode and steps down only at forks; radius_decay is DERIVED from the declared stem:tip ratio so it is an invariant rather than the emergent product of several multipliers.",
+  "lodUv": {
+   "0": {
+    "materialSlot3Omitted": "3dmodel.md section 6 makes slot 3 emissive 'only when needed'. Coral's biolum organ is carried by vertex colour G per 3DMODEL_FLORA_CORAL.md section 2, so a fourth submesh would duplicate the mechanism and add a per-instance draw call on a densely instanced asset.",
+    "materialSlotRoles": [
+     {
+      "polygonsLod0": 4383,
+      "role": "Tissue",
+      "slot": 0,
+      "surface": "colony tissue: stems, forks and branch shafts"
+     },
+     {
+      "polygonsLod0": 1189,
+      "role": "ExposedTipSkeleton",
+      "slot": 1,
+      "surface": "blunt digit clusters; bare pale axial skeleton at each branch end"
+     },
+     {
+      "polygonsLod0": 293,
+      "role": "EncrustingBase",
+      "slot": 2,
+      "surface": "encrusting foot: root, per-stem launch lobes, crust tongues"
+     }
+    ],
+    "materialSlots": [
+     "MAT_Flora_Tissue",
+     "MAT_Flora_ExposedTipSkeleton",
+     "MAT_Flora_EncrustingBase"
+    ],
+    "polygonsPerSlot": {
+     "0": 4382,
+     "1": 1189,
+     "2": 293
+    },
+    "slotsRepaired": {},
+    "stretchMean": 0.0885,
+    "stretchP95": 0.2825,
+    "stretchStats": {
+     "mean": 0.08853848614046664,
+     "p95": 0.28248849882079874,
+     "triangles": 5864,
+     "worst": 0.6435160631175458
+    },
+    "stretchTriangles": 5865,
+    "stretchWorst": 0.6435,
+    "texelDensityTarget": 256,
+    "uvLayer": "UVMap",
+    "uvRoute": "smart_project (LSCM-class conformal), angle_limit=66.0deg, island_margin=0.012"
+   },
+   "1": {
+    "polygonsPerSlot": {
+     "0": 1211,
+     "1": 411,
+     "2": 105
+    },
+    "slotsRepaired": {},
+    "stretchMean": 0.0833,
+    "stretchP95": 0.2827,
+    "stretchStats": {
+     "mean": 0.08334128201103388,
+     "p95": 0.28274571290142614,
+     "triangles": 1727,
+     "worst": 0.6009113822410508
+    },
+    "stretchTriangles": 1728,
+    "stretchWorst": 0.6009,
+    "texelDensityTarget": 256,
+    "uvLayer": "UVMap",
+    "uvRoute": "smart_project (LSCM-class conformal), angle_limit=66.0deg, island_margin=0.012"
+   },
+   "2": {
+    "polygonsPerSlot": {
+     "0": 260,
+     "1": 3,
+     "2": 24
+    },
+    "slotsRepaired": {},
+    "stretchMean": 0.0922,
+    "stretchP95": 0.3508,
+    "stretchStats": {
+     "mean": 0.09221366143124443,
+     "p95": 0.35084085293567546,
+     "triangles": 287,
+     "worst": 1.096842991417199
+    },
+    "stretchTriangles": 288,
+    "stretchWorst": 1.0968,
+    "texelDensityTarget": 256,
+    "uvLayer": "UVMap",
+    "uvRoute": "smart_project (LSCM-class conformal), angle_limit=66.0deg, island_margin=0.012"
+   }
+  },
+  "materialSlot3Omitted": "3dmodel.md section 6 makes slot 3 emissive 'only when needed'. Coral's biolum organ is carried by vertex colour G per 3DMODEL_FLORA_CORAL.md section 2, so a fourth submesh would duplicate the mechanism and add a per-instance draw call on a densely instanced asset.",
+  "materialSlotReport": [
+   {
+    "polygonsLod0": 4383,
+    "role": "Tissue",
+    "slot": 0,
+    "surface": "colony tissue: stems, forks and branch shafts"
+   },
+   {
+    "polygonsLod0": 1189,
+    "role": "ExposedTipSkeleton",
+    "slot": 1,
+    "surface": "blunt digit clusters; bare pale axial skeleton at each branch end"
+   },
+   {
+    "polygonsLod0": 293,
+    "role": "EncrustingBase",
+    "slot": 2,
+    "surface": "encrusting foot: root, per-stem launch lobes, crust tongues"
+   }
+  ],
+  "silhouette": {
+   "bandWidthsM": [
+    0.2369,
+    0.3194,
+    0.4091,
+    0.4513,
+    0.5128,
+    0.6462,
+    0.706,
+    0.7595,
+    0.6572,
+    0.6369
+   ],
+   "baseDiameterM": 0.0683,
+   "baseOverCanopy": 0.09,
+   "baseOverHeight": 0.124,
+   "branchRadiusSpread": 1.393,
+   "canopyAspect": 1.381,
+   "canopyWidthM": 0.7595,
+   "declaredStemTipRatio": 1.556,
+   "forkCount": 47,
+   "gateFailures": [],
+   "gatesPassed": true,
+   "heightError": 0.0,
+   "heightM": 0.55,
+   "heightRequestedM": 0.55,
+   "tipCount": 83,
+   "widestBandPercent": 70
+  },
+  "topology": [
+   {
+    "lod": 0,
+    "report": "TopologyReport(triangles=5864, faces=5864, components=2, boundary_edges=4, nonmanifold_edges=0, smallest_component=80, largest_component=5784)"
+   },
+   {
+    "lod": 1,
+    "report": "TopologyReport(triangles=1727, faces=1727, components=17, boundary_edges=603, nonmanifold_edges=0, smallest_component=1, largest_component=1181)"
+   },
+   {
+    "lod": 2,
+    "report": "TopologyReport(triangles=287, faces=287, components=7, boundary_edges=145, nonmanifold_edges=0, smallest_component=1, largest_component=76)"
+   }
+  ],
+  "unityPrefabAssembly": "NOT PERFORMED. .prefab/.mat/.asset creation is Unity-only per AGENTS.md Evidence Law; this generator emits mesh + manifest for a Unity-side assembler."
+ },
+ "forgeVersion": "1.0.0",
+ "identity": {
+  "cameraDistanceClass": "near",
+  "family": "Flora",
+  "forgeVersion": "1.0.0",
+  "generator": "coral_branching",
+  "generatorVersion": "2.0.0",
+  "platformLane": "windows_copper_wire",
+  "qualityWeight": 1.0,
+  "scaleMeters": 0.55,
+  "seed": 1712,
+  "sourceReferences": [
+   "3DMODEL_FLORA_CORAL.md",
+   "3dmodel.md",
+   "PROCEDURAL_ASSET_PIPELINE.md"
+  ]
+ },
+ "lod": {
+  "budgets": {
+   "impostorMax": 80,
+   "impostorMin": 2,
+   "lod0": 6500,
+   "lod1": 1800,
+   "lod2": 300
+  },
+  "exempt": false,
+  "levels": [
+   0,
+   1,
+   2
+  ],
+  "monotonic": true,
+  "triangleCountsPerLod": {
+   "LOD0": 5864,
+   "LOD1": 1727,
+   "LOD2": 287
+  }
+ },
+ "manifestGaps": [
+  "materials (MAT_<Family>_<SurfaceRole>, 3dmodel.md section 6 slot 0 is mandatory)",
+  "textures (TX_<Family>_<Set>_<Role>; 3DMODEL_TEXTURES_MATERIALS.md section 2: 'Missing texture is fatal unless the generator is explicitly producing a placeholder diagnostic asset')"
+ ],
+ "materialSlotContract": {
+  "maxSlots": 4,
+  "slot0": "primary structural/tissue",
+  "slot1": "exposed cut, bevel, edge, scar, fracture",
+  "slot2": "secondary trim, gasket, barnacle, mineral vein, growth plate",
+  "slot3": "emissive/bioluminescent/details"
+ },
+ "materials": [],
+ "meshes": [
+  {
+   "boundsMax": [
+    0.21588368713855743,
+    0.3293089270591736,
+    0.5520156025886536
+   ],
+   "boundsMin": [
+    -0.21879877150058746,
+    -0.3713091313838959,
+    -0.032350435853004456
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "259b09d67ab76349384b1e922c5f3d04",
+   "hasTangentBasis": true,
+   "lod": 0,
+   "name": "MESH_Flora_Coral_Branching_1712_LOD0",
+   "submeshes": 3,
+   "triangles": 5864,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [
+     "inconsistent_winding x53: directed edge (2223 -> 2254) used by triangle[300] and triangle[301]; winding is not consistent"
+    ],
+    "passed": false,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 40 of 5864 triangles below the sliver floor 1.164e-05 m2 (0.1x mean triangle area 1.164e-04 m2); the area-weighted population test still covered all of them",
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 2933
+  },
+  {
+   "boundsMax": [
+    0.21565315127372742,
+    0.3285672068595886,
+    0.551436185836792
+   ],
+   "boundsMin": [
+    -0.2175522744655609,
+    -0.37263110280036926,
+    -0.03158016502857208
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "92df658ec955e6a33f7637970558b54b",
+   "hasTangentBasis": true,
+   "lod": 1,
+   "name": "MESH_Flora_Coral_Branching_1712_LOD1",
+   "submeshes": 3,
+   "triangles": 1727,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [
+     "inconsistent_winding x21: directed edge (154 -> 695) used by triangle[71] and triangle[72]; winding is not consistent"
+    ],
+    "passed": false,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 9 of 1727 triangles below the sliver floor 3.843e-05 m2 (0.1x mean triangle area 3.843e-04 m2); the area-weighted population test still covered all of them",
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 1087
+  },
+  {
+   "boundsMax": [
+    0.19718113541603088,
+    0.30880069732666016,
+    0.5225846767425537
+   ],
+   "boundsMin": [
+    -0.21386846899986267,
+    -0.3609919548034668,
+    -0.03133666142821312
+   ],
+   "colorLayers": [
+    "Col"
+   ],
+   "digest": "d78094cb434b0915de1c299dca9f62e9",
+   "hasTangentBasis": true,
+   "lod": 2,
+   "name": "MESH_Flora_Coral_Branching_1712_LOD2",
+   "submeshes": 3,
+   "triangles": 287,
+   "uvLayers": [
+    "UVMap"
+   ],
+   "validation": {
+    "failures": [
+     "inconsistent_winding x15: directed edge (33 -> 118) used by triangle[23] and triangle[65]; winding is not consistent"
+    ],
+    "passed": false,
+    "warnings": [
+     "uv_stretch_excessive: not enforced: outlier sub-test skipped 18 of 287 triangles below the sliver floor 1.768e-04 m2 (0.1x mean triangle area 1.768e-03 m2); the area-weighted population test still covered all of them",
+     "uv_island_below_min_pixels: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it",
+     "uv_atlas_padding_violation: not enforced: caller passed no atlas_size; island pixel size and border padding are undefined without it"
+    ]
+   },
+   "validatorVersion": "1.0.0",
+   "vertices": 254
+  }
+ ],
+ "naming": {
+  "collider": "COL_{family}_{name}",
+  "manifest": "MANIFEST_{family}_{name}",
+  "material": "MAT_{family}_{role}",
+  "mesh": "MESH_{family}_{name}_LOD{lod}",
+  "namingNote": "Templates come from law.py, which follows AGENTS.md 'Project Shape' (generated prefabs GEN_*, textures TX_*). PROCEDURAL_ASSET_PIPELINE.md 'Required Output Package' spells the same two artefacts PF_<Family>_<Name>.prefab and TEX_<Family>_<AtlasOrUnique>_<Role>.png; root AGENTS.md outranks it per the authority spine, so GEN_ and TX_ are used. Flagged for the lead rather than resolved here.",
+  "prefab": "GEN_{family}_{name}",
+  "texture": "TX_{family}_{set}_{role}"
+ },
+ "productionReady": false,
+ "proof": {
+  "paths": [
+   "Docs/AgentLogs/ForgeFlora/Coral_Branching_1712_SHEET_studio.png",
+   "Docs/AgentLogs/ForgeFlora/Coral_Branching_1712_SHEET_flat.png",
+   "Docs/AgentLogs/ForgeFlora/Coral_Branching_1712_SHEET_CHANNELS.png"
+  ],
+  "roundtripNotes": [
+   "wrote MESH_Flora_Coral_Branching_1712.fbx (920284 bytes) with axis_forward=-Z axis_up=Y bake_space_transform=True colors_type=LINEAR use_triangles=True use_tspace=True",
+   "MESH_Flora_Coral_Branching_1712_LOD0: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "MESH_Flora_Coral_Branching_1712_LOD1: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "MESH_Flora_Coral_Branching_1712_LOD2: only UV0 present. 3dmodel.md section 3 requires TexCoord1 when a lightmap, detail, atlas remap or packed mask is used; confirm this asset genuinely needs none.",
+   "objects round-tripped: ['MESH_Flora_Coral_Branching_1712_LOD0', 'MESH_Flora_Coral_Branching_1712_LOD1', 'MESH_Flora_Coral_Branching_1712_LOD2']",
+   "MESH_Flora_Coral_Branching_1712_LOD0: verts 2933->2933 loops 17592->17592 tris 5864->5864",
+   "MESH_Flora_Coral_Branching_1712_LOD0: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "MESH_Flora_Coral_Branching_1712_LOD0: colour max delta 0.0000000 (tol 0.002)",
+   "MESH_Flora_Coral_Branching_1712_LOD0: world position max delta 0.0000001 m (tol 0.0001)",
+   "MESH_Flora_Coral_Branching_1712_LOD0: world corner-normal max delta 0.0004134 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Flora_Coral_Branching_1712_LOD0: uv0 max delta 0.00000000 (tol 1e-05)",
+   "MESH_Flora_Coral_Branching_1712_LOD0: landmark (-0.21408, -0.23189, 0.54743) -> (-0.21408, -0.23189, 0.54743), delta 0.0000000 m, margin 0.00091 m",
+   "MESH_Flora_Coral_Branching_1712_LOD0: landmark margin below 0.001 m: this mesh is near-symmetric at its extreme vertex, so the landmark test is not decisive",
+   "MESH_Flora_Coral_Branching_1712_LOD0: signed volume +0.0041837 -> +0.0041837 (ratio +0.999999)",
+   "MESH_Flora_Coral_Branching_1712_LOD0: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "MESH_Flora_Coral_Branching_1712_LOD1: verts 1087->1087 loops 5181->5181 tris 1727->1727",
+   "MESH_Flora_Coral_Branching_1712_LOD1: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "MESH_Flora_Coral_Branching_1712_LOD1: colour max delta 0.0000000 (tol 0.002)",
+   "MESH_Flora_Coral_Branching_1712_LOD1: world position max delta 0.0000001 m (tol 0.0001)",
+   "MESH_Flora_Coral_Branching_1712_LOD1: world corner-normal max delta 0.0001555 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Flora_Coral_Branching_1712_LOD1: uv0 max delta 0.00000000 (tol 1e-05)",
+   "MESH_Flora_Coral_Branching_1712_LOD1: landmark (0.05542, -0.09673, -0.01865) -> (0.05542, -0.09673, -0.01865), delta 0.0000000 m, margin 0.00124 m",
+   "MESH_Flora_Coral_Branching_1712_LOD1: signed volume +0.0037765 -> +0.0037765 (ratio +1.000000)",
+   "MESH_Flora_Coral_Branching_1712_LOD1: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "MESH_Flora_Coral_Branching_1712_LOD2: verts 254->254 loops 861->861 tris 287->287",
+   "MESH_Flora_Coral_Branching_1712_LOD2: colour layers [('Col', 'BYTE_COLOR', 'CORNER')] -> [('Col', 'FLOAT_COLOR', 'CORNER')] (Blender storage type changes on a LINEAR import; the file carries floats either way)",
+   "MESH_Flora_Coral_Branching_1712_LOD2: colour max delta 0.0000000 (tol 0.002)",
+   "MESH_Flora_Coral_Branching_1712_LOD2: world position max delta 0.0000001 m (tol 0.0001)",
+   "MESH_Flora_Coral_Branching_1712_LOD2: world corner-normal max delta 0.0001119 (tol 0.001), source has_custom_normals=True, reimport=True",
+   "MESH_Flora_Coral_Branching_1712_LOD2: uv0 max delta 0.00000000 (tol 1e-05)",
+   "MESH_Flora_Coral_Branching_1712_LOD2: landmark (-0.02241, 0.05062, -0.03134) -> (-0.02241, 0.05062, -0.03134), delta 0.0000000 m, margin 0.00600 m",
+   "MESH_Flora_Coral_Branching_1712_LOD2: signed volume +0.0023298 -> +0.0023298 (ratio +1.000000)",
+   "MESH_Flora_Coral_Branching_1712_LOD2: re-import object scale 0.01 -> measured 100 fbx units per metre (header UnitScaleFactor=1, i.e. centimetres)",
+   "MESH_Flora_Coral_Branching_1712_LOD0 [fbx-space]: skipped: near-symmetric extreme vertex",
+   "MESH_Flora_Coral_Branching_1712_LOD1 [fbx-space]: landmark direction expected (0.20198, -0.95081, 0.23486) measured (0.20198, -0.95081, 0.23486) delta 0.000000",
+   "MESH_Flora_Coral_Branching_1712_LOD1 [fbx-space]: Unity-space landmark offset will be (0.07493, -0.35272, -0.08713) (Blender (0.07493, -0.08713, -0.35272)); handedness flip is Unity's, winding is flipped to match",
+   "MESH_Flora_Coral_Branching_1712_LOD2 [fbx-space]: landmark direction expected (-0.00189, -0.98595, -0.167) measured (-0.00189, -0.98595, -0.167) delta 0.000000",
+   "MESH_Flora_Coral_Branching_1712_LOD2 [fbx-space]: Unity-space landmark offset will be (-0.00073, -0.37883, 0.06417) (Blender (-0.00073, 0.06417, -0.37883)); handedness flip is Unity's, winding is flipped to match",
+   "roundtrip VERIFIED: axis map confirmed=True, chirality preserved=True",
+   "no collision proxy in this package. 3DMODEL_FLORA_CORAL.md section 7 allows this for flora/coral only; every other family needs a COL_ proxy.",
+   "LOD0 MESH_Flora_Coral_Branching_1712_LOD0: 5864 tris vs law budget 6500 -> within",
+   "LOD1 MESH_Flora_Coral_Branching_1712_LOD1: 1727 tris vs law budget 1800 -> within",
+   "LOD2 MESH_Flora_Coral_Branching_1712_LOD2: 287 tris vs law budget 300 -> within",
+   "Unity LODGroup: create it explicitly from the _LOD suffixed children rather than relying on importer auto-detection, then set screenRelativeTransitionHeight per level with a hysteresis band and fadeMode=CrossFade with animateCrossFading=false (dithered). 3dmodel.md section 7 bans alpha-blended cross-fade for dense flora/coral on the compact lane; dither is not alpha blend."
+  ],
+  "status": "PENDING UNITY/PROFILER VERIFICATION",
+  "statusNote": "Static and Blender-side evidence only. No Unity import log, Console output, Frame Debugger capture, profiler capture or in-engine screenshot exists for this package."
+ },
+ "schema": "h8forge.manifest/1",
+ "surfaceClass": "Organic",
+ "textures": [],
+ "unityImport": {
+  "collider": {
+   "convexTriangleMax": 200,
+   "defaultCollision": "none",
+   "interactionAnchorNote": "PROCEDURAL_ASSET_PIPELINE.md 'Collision And Interaction Package': anchors must be serialised, never discovered by runtime scene search.",
+   "interactionAnchors": [
+    "ANCHOR_Scan",
+    "ANCHOR_Cut",
+    "ANCHOR_Weld",
+    "ANCHOR_Loot",
+    "ANCHOR_Pry",
+    "ANCHOR_Open",
+    "ANCHOR_Repair"
+   ],
+   "meshColliderConvex": true,
+   "meshColliderOnLod0": false,
+   "physicsLayer": "Flora_NonColliding",
+   "physicsLayerNote": "Layer name read from ProjectSettings/TagManager.asset. AGENTS.md forbids changing Tags/Layers without explicit instruction, so the authoring script must resolve it by name and fail loudly if absent -- it must not create one. COMMON_SENSE.md rule 2 additionally requires every raycast against these colliders to pass an explicit LayerMask.GetMask(...) plus QueryTriggerInteraction.Ignore.",
+   "proxyNamePrefix": "COL_",
+   "visualNamePrefixes": [
+    "VIS_",
+    "LOD_"
+   ]
+  },
+  "exportSettingsUsed": {
+   "apply_scale_options": "FBX_SCALE_NONE",
+   "apply_unit_scale": true,
+   "axis_forward": "-Z",
+   "axis_up": "Y",
+   "bake_anim": false,
+   "bake_space_transform": true,
+   "blenderToFbxAxes": "(x, y, z) -> (x, z, -y)",
+   "blenderToUnityAxes": "(x, y, z) -> (x, z, y)",
+   "colors_type": "LINEAR",
+   "embed_textures": false,
+   "fbxHeaderUnitScaleFactor": 1.0,
+   "fbxUnitsPerMetre": 100.0,
+   "global_scale": 1.0,
+   "mesh_smooth_type": "EDGE",
+   "object_types": [
+    "MESH"
+   ],
+   "path_mode": "STRIP",
+   "prioritize_active_color": true,
+   "use_custom_props": false,
+   "use_mesh_edges": false,
+   "use_mesh_modifiers": true,
+   "use_metadata": true,
+   "use_selection": true,
+   "use_space_transform": true,
+   "use_subsurf": false,
+   "use_triangles": true,
+   "use_tspace": true,
+   "use_visible": false
+  },
+  "family": "Flora",
+  "knownProjectConflicts": [
+   "RESOLVED: the importNormals=Calculate clobber no longer applies to forge packages. HectonFBXPostprocessor.cs:401-429 sets importNormals=Import when the sibling manifest declares h8forge.manifest/1 with unityImport.modelImporter.importNormals == 'Import'. Requires the manifest to sit in the SAME directory named MANIFEST_<stem>.json and the mesh file to start with upper-case 'MESH_' (TryResolveForgeManifestPath, :702-736). Both hold by construction from law.NAME_MESH and law.NAME_MANIFEST.",
+   "STILL TRUE, and it does not apply to Assets/ScifiFacility, which TryResolveForgeManifestPath excludes at :715 so a manifest cannot weaken third-party quarantine policy.",
+   "The postprocessor forces materialLocation=ModelImporterMaterialLocation.InPrefab, which conflicts with materialImportMode=None and the shared MAT_* policy.",
+   "HectonBakeryUvAudit.RunAudit() enables generateSecondaryUV and reimports, which overwrites authored UV1. Now sharper than when it was written: Hecton_KelpMaster reads its height and width masks from UV1 as of 2026-07-29, so this audit does not merely overwrite a lightmap set, it would overwrite the sway parameterisation.",
+   "HectonFBXPostprocessor.OnPostprocessModel builds a fallback LODGroup with its own decimation above 2000 triangles when no LODGroup is present. Mitigated for forge packages by the :181-196 branch, which logs the manifest path instead - but only when the manifest parses."
+  ],
+  "lodGroup": {
+   "animateCrossFading": false,
+   "budgets": {
+    "impostorMax": 80,
+    "impostorMin": 2,
+    "lod0": 6500,
+    "lod1": 1800,
+    "lod2": 300
+   },
+   "childSuffixPattern": "_LOD<n>",
+   "createLodGroupExplicitly": true,
+   "fadeMode": "CrossFade",
+   "nameTemplate": "MESH_{family}_{name}_LOD{lod}",
+   "requiredLevels": [
+    0,
+    1,
+    2
+   ],
+   "why": "3dmodel.md section 7 requires a complete LOD0/LOD1/LOD2 chain and 'LOD switching must use hysteresis and dithered cross-fade where the renderer supports it. Alpha-blended cross-fade is forbidden for dense flora/coral on MX350 because it creates overdraw.' CrossFade with animateCrossFading=false is the dithered path, not alpha blend. AGENTS.md requires a 3-5 m or 2-3 s hysteresis band on any LOD switch. Build the LODGroup explicitly: relying on importer auto-detection risks HectonFBXPostprocessor generating its own __AUTO_LOD1/__AUTO_LOD2 above 2000 triangles."
+  },
+  "modelImporter": {
+   "addCollider": false,
+   "animationType": "None",
+   "bakeAxisConversion": false,
+   "generateSecondaryUV": false,
+   "globalScale": 1.0,
+   "importAnimation": false,
+   "importBlendShapeNormals": "None",
+   "importBlendShapes": false,
+   "importCameras": false,
+   "importColors": true,
+   "importConstraints": false,
+   "importLights": false,
+   "importNormals": "Import",
+   "importTangents": "CalculateMikk",
+   "importVisibility": false,
+   "indexFormat": "Auto",
+   "isReadable": false,
+   "keepQuads": false,
+   "materialImportMode": "None",
+   "meshCompression": "Off",
+   "meshOptimizationFlags": "PolygonOrder",
+   "normalSmoothingAngle": 32.0,
+   "optimizeMeshPolygons": true,
+   "optimizeMeshVertices": false,
+   "preserveHierarchy": true,
+   "sortHierarchyByName": false,
+   "useFileScale": true,
+   "weldVertices": false
+  },
+  "proofStatus": "PENDING UNITY/PROFILER VERIFICATION",
+  "proofStatusNote": "Every value above is derived from the bibles and from measured FBX content. None of it has been applied in Unity by this module: no Unity import log, no Console output and no visual capture exists for it.",
+  "surfaceClass": "Organic",
+  "textureImport": {
+   "albedo": {
+    "compression": "BC7",
+    "mips": true,
+    "sRGB": true
+   },
+   "mrao": {
+    "channels": "R=Metallic G=Roughness-or-Smoothness B=AO A=Emission",
+    "compression": "BC7",
+    "mips": true,
+    "sRGB": false
+   },
+   "namePrefix": "TX_{family}_{set}_{role}",
+   "normal": {
+    "compression": "BC5",
+    "mips": true,
+    "sRGB": false,
+    "textureType": "NormalMap"
+   },
+   "why": "AGENTS.md Visual And Asset Discipline: 'Textures default to BC7 for albedo/roughness/AO and BC5 for normals where applicable.' 3DMODEL_TEXTURES_MATERIALS.md section 3 and section 8: albedo sRGB true, normal NormalMap type with sRGB false, masks sRGB false, mips enabled for world textures, and the manifest must state whether G is roughness or smoothness rather than guessing."
+  },
+  "vertexColorContract": [
+   "sway_amplitude",
+   "biolum_phase",
+   "baked_ao",
+   "family_specific"
+  ],
+  "why": {
+   "addCollider": "3dmodel.md section 9: 'LOD0 visual meshes must never be assigned directly to production MeshCollider components.' Generate Colliders does exactly that. Collision comes from the COL_ proxy in the same FBX.",
+   "animationType": "Static geometry. An Animator on a generated prop would also breach the Zero-GC Scatter protocol.",
+   "bakeAxisConversion": "bake_space_transform=True already baked the axis conversion into the vertex data on the Blender side, so the FBX node transform is identity and Unity has nothing left to bake. Enabling it too would apply a second conversion.",
+   "generateSecondaryUV": "MUST stay off. Unity's secondary-UV generator OVERWRITES UV1, and 3dmodel.md section 3 makes TexCoord1 an authored stream: 'Lightmap, detail, atlas remap, or packed baked masks when required.' Note HectonBakeryUvAudit.RunAudit() sets generateSecondaryUV=true and reimports for models under its managed roots -- a generated package placed there loses its authored UV1.",
+   "globalScale": "The FBX already carries real-world size. law.py expresses every dimension in metres (BEVEL_RANGES, MIN_BOUNDS_EXTENT_M); any scale factor other than 1.0 would silently rescale those budgets.",
+   "importAnimation": "Exported with bake_anim=False; there is no animation data.",
+   "importBlendShapeNormals": "There are no blend shapes: the exporter runs with bake_anim=False and object_types={'MESH'}.",
+   "importBlendShapes": "None present; matches the existing project importer policy.",
+   "importCameras": "preview.py builds a camera into the same scene. object_types={'MESH'} already excludes it, and this is the second gate.",
+   "importColors": "The colour stream is data, not decoration: law.VCOL_CONTRACT for Organic is ['sway_amplitude', 'biolum_phase', 'baked_ao', 'family_specific'] (3dmodel.md sections 4 and 5). Section 8: 'Missing tangents, colors, UVs, or masks are validation failures when the material reads them.' Exported with colors_type='LINEAR' so the numbers arrive unwarped by an sRGB transfer curve.",
+   "importConstraints": "No rigging in a generated static package.",
+   "importLights": "Same reason as cameras: preview.py builds lights.",
+   "importNormals": "3dmodel.md section 3: 'RecalculateNormals, RecalculateTangents, and RecalculateBounds are allowed only as editor fallback after a documented failure, never as the default strategy. A generator owns normals, tangents, UVs, and bounds because it owns the geometry.' mesh_ops.apply_shading_basis bakes the section 4 weighted-normal formula into custom split normals; Calculate throws that away and re-derives from an angle, which is the bevel shading work lost.",
+   "importTangents": "3dmodel.md section 3 requires 'Tangent | Float32 x4 ... MikkTSpace-compatible. w is handedness.' Under MikkTSpace the tangent is fully determined by position, normal and UV0, and all three are measured to survive this export exactly, so CalculateMikk reproduces the same basis expressed in Unity's own left-handed frame. The FBX does carry tangent and binormal layers (use_tspace=True, verified present in the file), so 'Import' is available -- but Blender's importer discards tangents, so no round trip inside Blender can prove the w sign survives Unity's handedness flip. Switching to 'Import' needs a Unity-side normal-map A/B capture first. Matches the existing project policy in HectonFBXPostprocessor.ApplyImporterPolicy.",
+   "importVisibility": "Blender visibility flags are authoring state, not runtime truth; matches the existing project importer policy.",
+   "indexFormat": "Auto picks 16-bit under 65k vertices. law.LOD_BUDGETS tops out at a 35 000 triangle fauna body, so most assets stay 16-bit.",
+   "isReadable": "AGENTS.md Runtime Hot-Path Law forbids mesh.vertices, mesh.normals and mesh.triangles in hot paths, and 3dmodel.md section 0A forbids runtime mutation of vertex buffers, so nothing needs the CPU copy. Read/Write on doubles mesh memory against the compact-lane 1800 MB VRAM ceiling. Colliders do not need it: PhysX cooks at import, and runtime collider cooking is rejected anyway.",
+   "keepQuads": "The FBX is already triangulated (use_triangles=True), so this is moot; leaving it off keeps the imported topology identical to the measured one.",
+   "materialImportMode": "3dmodel.md section 0 requires 'Static material references named MAT_*, never runtime material clones', and PROCEDURAL_ASSET_PIPELINE.md requires shared MAT_<Family>_<SurfaceRole> assets. Letting Unity build materials from the FBX creates per-model materials and breaks the SRP Batcher and atlas policy. The exporter ships nothing to import: path_mode='STRIP' and embed_textures=False. Note the existing project policy forces materialLocation=InPrefab for its managed roots.",
+   "meshCompression": "Compression quantises positions, normals, tangents and UVs. 3dmodel.md section 10 gates 'Normals normalized within 0.995 to 1.005 length' and section 3 fixes a stable Float32 layout; quantised normals fail the first and quantised vertex colours corrupt the AO and sway masks. Note the existing project policy sets Medium for Assets/ScifiFacility third-party models only.",
+   "meshOptimizationFlags": "PolygonOrder only, for the VAT vertex-id reason above.",
+   "normalSmoothingAngle": "law.SMOOTH_ANGLE_DEG, the same value mesh_ops used for shade_auto_smooth. Inert while importNormals=Import, but it means a forced fallback to Calculate reproduces the authored split instead of a different one.",
+   "optimizeMeshPolygons": "Triangle-order optimisation touches no per-vertex identity, so it is safe even on VAT families.",
+   "optimizeMeshVertices": "Off for Flora: this family renders through a baked VAT, which indexes per-vertex animation by vertex id. Reordering vertices desynchronises the texture from the mesh and the asset animates as noise.",
+   "preserveHierarchy": "The _LOD0/_LOD1/_LOD2 and COL_ nodes must stay separate children for the LODGroup and the collider binding to work.",
+   "sortHierarchyByName": "Off: the authored node order already reflects LOD order, and resorting would make the imported hierarchy depend on naming rather than on the manifest.",
+   "useFileScale": "Measured: the exporter writes geometry in centimetres and leaves the header UnitScaleFactor at 1, so Convert Units is what turns 175.0 back into 1.75 m. Off by mistake and the asset arrives 100x too large.",
+   "weldVertices": "Off for Flora: welding changes the vertex count and therefore the VAT row mapping."
+  }
+ },
+ "uvSummary": {
+  "materialSlot3Omitted": "3dmodel.md section 6 makes slot 3 emissive 'only when needed'. Coral's biolum organ is carried by vertex colour G per 3DMODEL_FLORA_CORAL.md section 2, so a fourth submesh would duplicate the mechanism and add a per-instance draw call on a densely instanced asset.",
+  "materialSlotRoles": [
+   {
+    "polygonsLod0": 4383,
+    "role": "Tissue",
+    "slot": 0,
+    "surface": "colony tissue: stems, forks and branch shafts"
+   },
+   {
+    "polygonsLod0": 1189,
+    "role": "ExposedTipSkeleton",
+    "slot": 1,
+    "surface": "blunt digit clusters; bare pale axial skeleton at each branch end"
+   },
+   {
+    "polygonsLod0": 293,
+    "role": "EncrustingBase",
+    "slot": 2,
+    "surface": "encrusting foot: root, per-stem launch lobes, crust tongues"
+   }
+  ],
+  "materialSlots": [
+   "MAT_Flora_Tissue",
+   "MAT_Flora_ExposedTipSkeleton",
+   "MAT_Flora_EncrustingBase"
+  ],
+  "stretchMean": 0.0885,
+  "stretchP95": 0.2825,
+  "stretchTriangles": 5865,
+  "stretchWorst": 0.6435,
+  "texelDensityTarget": 256,
+  "uvLayer": "UVMap",
+  "uvRoute": "smart_project (LSCM-class conformal), angle_limit=66.0deg, island_margin=0.012"
+ },
+ "validation": {
+  "meshGateFailures": 3,
+  "note": "Mesh, LOD-chain and collider gates are owned by validate.py and must have run before this manifest was written (PROCEDURAL_ASSET_PIPELINE.md 'Validation Before Save'). This block reports their result; it does not re-run them.",
+  "passed": false,
+  "validatorVersion": "1.0.0"
+ },
+ "validationHash": "592d4894761dd098334969e3c2402b85",
+ "validationHashAlgorithm": "blake2b-128 over the canonical JSON of every other field, sorted keys",
+ "vertexColorContract": {
+  "alphaMeaning": "harvest_yield_mask",
+  "channels": [
+   "sway_amplitude",
+   "biolum_phase",
+   "baked_ao",
+   "family_specific"
+  ],
+  "exportedColorSpace": "LINEAR",
+  "note": "Exported with colors_type='LINEAR'. Measured in the written file: an authored linear 0.25 is stored as 0.25016 with LINEAR and as 0.53725 with SRGB. Unity copies the raw FBX float into Mesh.colors32 without a colour conversion, so SRGB would gamma warp every mask channel."
+ }
+}
