@@ -190,6 +190,26 @@ your change, read their log instead of launching a second editor:
 - A `.dll` newer than your source edit, with `Ошибок: 0`, is proof your file compiled — Csc emits no
   assembly on error.
 
+> [!CAUTION]
+> **`EditorApplication.Exit` does not unwind the stack.** Execution continues past it, so an `Exit(n)`
+> without a `return` keeps running the rest of the method. This has already damaged the tree twice:
+> `Scripts/Editor/ApplyTerrainMaterial.cs` logged "Material not found!", called `Exit(1)`, fell through
+> into `t.materialTemplate = null` for **every terrain in both shipped scenes** and then `SaveScene`d —
+> so the most likely failure mode was the one path that stripped the world's material and wrote it to
+> disk. `Scripts/Editor/CompileShader.cs` fell through on both failure paths, so the branch that
+> correctly diagnosed a missing shader crashed instead of reporting it.
+>
+> Always write `Exit(n); return;`. Audit the whole tree with:
+>
+> ```bash
+> python -B Tools/AuditEditorExitFallthrough.py
+> ```
+>
+> Baseline after both fixes, 2026-07-29: **165 files, 2 candidates, both benign** — an `#endif` immediately
+> before a method's closing brace. Anything else is a regression. Note the tool must ignore a same-line
+> `return` and mentions inside string literals; without those two filters its first run was 5 candidates
+> and 5 false positives.
+
 > [!TIP]
 > To confirm a symbol actually reached a built assembly, **`strings` does not work** on these DLLs —
 > it returns zero hits even for symbols that are definitely present. Use `grep -ac <symbol> <dll>`,
