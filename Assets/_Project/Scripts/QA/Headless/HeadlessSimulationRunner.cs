@@ -520,7 +520,13 @@ namespace Hecton8.QA.Headless
             Application.targetFrameRate = -1;
             QualitySettings.vSyncCount = 0;
             Time.captureFramerate = 0;
-            Debug.unityLogger.filterLogType = LogType.Warning;
+            // The log filter is DELIBERATELY not set here any more. It is installed at the first
+            // ecology-ready transition instead - see TryMarkEcologyReady. This method runs the instant the
+            // dispatcher wait succeeds, which is MID-BOOT, and muzzling Debug.Log there blinded the entire
+            // remaining bootstrap: on 2026-07-29 the last surviving managed line in a 27,107-line log was a
+            // [GameBootstrapper] node, and two separate investigations read that silence as a bootstrap
+            // deadlock and diagnosed the wrong subsystem. _previousLogFilter is still captured above so
+            // RestoreRuntimePolicy stays symmetric whichever path set it.
             GlobalRegistry.RegisterScalabilityTierOverride(1);
             GlobalRegistry.RegisterMathPrecisionLevel(MathPrecisionLevel.High);
             DistanceMath.PushShaderMathLod(1f);
@@ -549,7 +555,24 @@ namespace Hecton8.QA.Headless
             // are far apart and the gap is the single most useful thing this harness can tell its operator —
             // see the deliveredTimeDilation note in WriteResult.
             if (readyNow && !_ecologyReady)
+            {
                 _simulationStartRealtime = Time.realtimeSinceStartupAsDouble;
+
+                // Muzzle Debug.Log HERE, not in ForceHeadlessRuntimePolicy. The filter exists so a 100-day
+                // run's log is not drowned in first-party per-frame spam, and every source of that spam is
+                // in the simulation loop that begins at this exact transition. Boot, by contrast, logs a
+                // BOUNDED number of lines once and they are the most useful diagnostic this project has:
+                // the [GameBootstrapper] dependency-node trace. Installing the filter at dispatcher-ready
+                // threw that away for nothing - the 2026-07-29 run's log goes managed-silent immediately
+                // after node 8 of the CoreServices phase, and both investigations of the resulting
+                // [ECOLOGY_UNAVAILABLE] verdict misread that silence as a stall and blamed the ecology,
+                // which turned out to be fully initialised and registered the whole time.
+                //
+                // Lifecycle lines survive either way: LogRunnerLifecycle uses LogWarning precisely because
+                // this filter once ate the harness's own verdict (`[HEADLESS] fail` appeared zero times in
+                // 27,107 lines while the result JSON sat on disk).
+                Debug.unityLogger.filterLogType = LogType.Warning;
+            }
 
             _ecologyReady = readyNow;
         }
@@ -1043,7 +1066,7 @@ namespace Hecton8.QA.Headless
         private static void LogRunnerLifecycle(string message)
         {
             // LogWarning, not Log, and that is the whole point of this method existing.
-            // ForceHeadlessRuntimePolicy sets Debug.unityLogger.filterLogType = LogType.Warning (:523) so
+            // TryMarkEcologyReady sets Debug.unityLogger.filterLogType = LogType.Warning (:574) so
             // first-party Debug.Log spam cannot drown a 100-day batchmode log, and it is installed at :377
             // the instant the dispatcher wait succeeds. Unity drops LogType.Log at the managed Logger
             // BEFORE it reaches either the log file or Application.logMessageReceived - so that filter was
@@ -1243,7 +1266,7 @@ namespace Hecton8.QA.Headless
                 // increments on LogType.Log messages it RECEIVES, so this has always been a DELIVERED count;
                 // nothing in it is suppressed. In the 2026-07-29 run the value 18 was read as "18 messages
                 // were hidden from you", which pointed the diagnosis at log volume when the actual problem
-                // was the opposite: ForceHeadlessRuntimePolicy sets filterLogType = LogType.Warning (:523)
+                // was the opposite: TryMarkEcologyReady sets filterLogType = LogType.Warning (:574)
                 // and Unity drops LogType.Log at the managed Logger BEFORE Application.logMessageReceived,
                 // so after that line installs this counter stops counting almost entirely. The honest reading
                 // of a low number here is "the filter was already active", not "little spam happened".
