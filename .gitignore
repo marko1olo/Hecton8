@@ -240,3 +240,11 @@ keys.json
 
 # ---- Multi-agent advisory locks (transient, must not be versioned) ----
 .agent-locks/ACTIVE/
+
+# ---- Agent git worktrees (transient, and NEVER as gitlinks) ----
+# `EnterWorktree` and Workflow `isolation: 'worktree'` create real git worktrees under here. An
+# automated cement job committed eight of them as gitlinks (mode 160000) with no `.gitmodules`, so
+# git could never resolve them and `git status` reported all eight as permanently "modified content"
+# — noise that hides real changes and invites the next snapshot commit to claim more. The worktrees
+# themselves are live and registered in `git worktree list`; only the index entries were wrong.
+.claude/worktrees/
