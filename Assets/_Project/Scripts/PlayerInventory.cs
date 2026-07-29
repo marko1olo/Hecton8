@@ -1272,15 +1272,32 @@ namespace Hecton8.Inventory
         private static void ValidateLayoutSize<T>(int expectedSize, ref uint failures) where T : struct
         {
             int size = UnsafeUtility.SizeOf<T>();
-            if (size != expectedSize || (size & 7) != 0)
-                failures |= 1u;
+            if (size == expectedSize && (size & 7) == 0)
+                return;
+
+            failures |= 1u;
+            // Editor-only guard path; naming the type and both numbers is the whole point of the check.
+            // Previously this set a bit and said nothing, so a layout drift silently disabled the entire
+            // player inventory with no way to tell which struct moved.
+            Debug.LogError(
+                "[PlayerInventory] DTO layout size mismatch: " + typeof(T).Name +
+                " is " + size + " bytes, expected " + expectedSize +
+                ((size & 7) != 0 ? " (and is not 8-byte aligned)" : string.Empty) +
+                ". ARM64/Burst/persistence/GPU boundaries require the authored layout; fix the struct or the "
+                + "expected constant, do not relax the guard.");
         }
 
         private static void ValidateOffset<T>(string fieldName, int expectedOffset, ref uint failures) where T : struct
         {
             int offset = (int)Marshal.OffsetOf<T>(fieldName);
-            if (offset != expectedOffset)
-                failures |= 2u;
+            if (offset == expectedOffset)
+                return;
+
+            failures |= 2u;
+            Debug.LogError(
+                "[PlayerInventory] DTO field offset mismatch: " + typeof(T).Name + "." + fieldName +
+                " is at " + offset + ", expected " + expectedOffset +
+                ". A field was reordered, resized, or lost its explicit padding.");
         }
 #endif
 
@@ -1338,7 +1355,19 @@ namespace Hecton8.Inventory
 #if UNITY_EDITOR
             if (!ValidateInventoryMemorySovereigntyLayouts1317())
             {
+                // Fail-closed is correct here - running with a drifted DTO layout would corrupt vault
+                // buffers. Failing SILENTLY was not: this returned before _grid was built and before
+                // BindPlayerInventoryVaultBuffers ran, so the inventory was dead with nothing logged, and
+                // every downstream consumer just saw an empty inventory. A headless run traced four empty
+                // tool slots back to here - PlayerToolManager had valid definitions, prefabs and catalog
+                // entries the whole time and simply had no inventory to grant into.
                 enabled = false;
+                Debug.LogError(
+                    "[PlayerInventory] DISABLED at Awake: DTO layout validation failed (see the layout " +
+                    "mismatch errors above). The inventory grid was never built and its vault lanes were " +
+                    "never bound, so item grants, tool availability and any consumer reading inventory " +
+                    "state will report empty for the rest of this session. Editor-only guard: a player " +
+                    "build does not take this path.");
                 return;
             }
 #endif
