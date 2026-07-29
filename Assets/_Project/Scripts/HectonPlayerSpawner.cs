@@ -694,7 +694,17 @@ public class HectonPlayerSpawner : MonoBehaviour
                     // cancellation surfaces from inside THIS await rather than from the loop-top
                     // ThrowIfCancellationRequested, so nothing in this method observed it and the log's last
                     // word on the subject was one more "Terrain not ready" line.
+                    // Guarded to match the declaration at :1547, which sits inside
+                    // `#if UNITY_EDITOR || DEVELOPMENT_BUILD`. Unguarded, this call was CS0103 in a PLAYER
+                    // build while every editor-configuration compile stayed green — the exact failure shape
+                    // CONTRIBUTING.md records 68 defects accumulating behind. The guard goes on the CALL
+                    // rather than the declaration's boundary moving outward, because the reporter is purely
+                    // diagnostic: it resolves a blocker and builds a log string with ToString("F1"), so it has
+                    // no business in a shipped player. The `throw` is the actual behaviour and stays
+                    // unconditional.
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     ReportPhase1Cancelled(searchOrigin.x, searchOrigin.y);
+#endif
                     throw;
                 }
             }

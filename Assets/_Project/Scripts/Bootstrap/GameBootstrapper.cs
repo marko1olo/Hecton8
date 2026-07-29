@@ -8764,6 +8764,10 @@ namespace Hecton8.Bootstrap
                 GlobalRegistry.RegisterQuestRuntime(questManager);
         }
 
+        /// <summary>
+        /// Asks the live FloraInteractionManager to re-publish itself when the IProceduralSwayDirector slot
+        /// is empty. Coverage only; the owner holds the registration.
+        /// </summary>
         /// <remarks>
         /// This is the only one of the six helpers that does NOT call GlobalRegistry.RegisterX itself, and
         /// deliberately so. TryResolveFloraInteractionManager returns FloraInteractionManager
