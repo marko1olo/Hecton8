@@ -1,3 +1,49 @@
+// =========================================================================================================
+// NOT DEPLOYED. THIS HOST IS NOT ON THE PLAYER AND EXECUTES ZERO TIMES IN THE CURRENT BUILD.
+// =========================================================================================================
+// Read this before you read anything else in this file, and before you cite any physics in it as live.
+//
+// STATIC REACHABILITY (verified 2026-07-29 via `python Tools/SceneGuidReachability.py --type ...`, which is
+// binary-scene aware and printed a validated control -- WorldStreamingDirector, 2 hits, over 1000 live
+// scene/prefab files: 996 text + 4 BINARY):
+//   * HydrodynamicKccRuntime, guid b8473f18d35854544b21911b009d348b -> ABSENT from every scene and prefab.
+//   * No call site anywhere does `AddComponent<HydrodynamicKccRuntime>` or `new HydrodynamicKccRuntime`.
+//   * Its only runtime consumers, HectonPlayerMotor and PlayerKinematicsRuntime, are likewise not deployed.
+//   * Assets/_Project/Prefabs/Player.prefab carries HectonPlayerMovement instead
+//     (guid 6d195933dec89b14ebbfa47a621ac549, PRESENT in exactly that one file). THAT is the controller the
+//     player actually moves with, and it is the declared IBootstrapProductionPlayerMovementAuthority.
+//
+// RUNTIME CONFIRMATION: the markers Hydrodynamic, HydroKcc, Thermocline, Buoyan, Crush and KccEnvironment
+// each return ZERO hits across BOTH headless world-sim logs (Logs/h8_worldsim_probe5.log and
+// Logs/h8_probe7.log), measured against controls that DO fire in the same logs (HectonPlayerMovement 6,
+// InputDispatcher 106). Nothing in this file ran in either probe.
+//
+// WHAT THAT MEANS FOR THE CODE BELOW. Four water-as-medium models are wired into this host -- ocean current
+// drag, thermocline resistance, density buoyancy, and pressure crush -- and six defects were fixed in that
+// wiring, including an unbounded crush model that would have killed a player at 4000 m in 3.5 s and a
+// disable-buoyancy idiom that silently welded the controller downward at about -98,000 m/s^2 underneath the
+// MaxSpeed clamp. All of it is correct code on a host that never runs, so NONE of those fixes changed
+// observable game behaviour. The long physics rationales further down are design intent, NOT evidence that
+// this physics is live. Do not quote them as shipped behaviour.
+//
+// The nested Burst jobs in this file ARE exercised, but only by Editor-only smoke tooling
+// (Assets/_Project/Scripts/Physics/KCC/Editor/Shinobu355KccSmokeEditorFacade.cs) and Editor tests -- never
+// by a player build, and never with this MonoBehaviour host attached to anything.
+//
+// OWNER DECISION -- this is a choice for the project owner, not a gap for the next agent to patch locally:
+//   A. Deploy this host on Player.prefab and retire HectonPlayerMovement from that object, or
+//   B. Port the four wirings into HectonPlayerMovement and keep this host as the headless/test route.
+//
+// It is genuinely a CHOICE AND NOT A MERGE. [DisallowMultipleComponent] only bars a second instance of the
+// SAME type, so nothing stops both controllers sitting on one GameObject -- and then they fight every tick
+// for the same transform, from two different sources of truth. HectonPlayerMovement is Rigidbody-driven
+// (`[RequireComponent(typeof(Rigidbody))]`, RigidbodyInterpolation.Interpolate); this host writes the
+// transform directly from the Vault KinematicStateDTO whenever _applyVisualToTransform is true, which
+// defaults to true. That combination is exactly the failure COMMON_SENSE.md #17 forbids: "Direct
+// modification of `transform.position` on physics-driven objects is FORBIDDEN during the gameplay loop."
+// Adding this component to Player.prefab as a "quick test" is therefore a regression, not a test.
+// =========================================================================================================
+
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -2955,6 +3001,14 @@ namespace Hecton8.Physics.KCC
     }
 #endif
 
+    /// <summary>
+    /// NOT DEPLOYED -- this component is on no prefab and in no scene, nothing AddComponent-s it, and it
+    /// executed zero times in both headless probe logs. The deployed player controller is
+    /// <c>HectonPlayerMovement</c> on <c>Assets/_Project/Prefabs/Player.prefab</c>. Read the NOT DEPLOYED
+    /// banner at the top of this file before treating any physics below as live behaviour, and before
+    /// attaching this component to the player -- doing so puts a direct transform writer on a
+    /// Rigidbody-driven object, which <c>COMMON_SENSE.md</c> #17 forbids.
+    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(CapsuleCollider))]
     public sealed partial class HydrodynamicKccRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
@@ -3051,6 +3105,11 @@ namespace Hecton8.Physics.KCC
         // Derived, so the per-flush clamp actually BINDS. The previous literal 250f was 500 dmg/s across a
         // 0.5 s flush -- five times the whole health pool -- so it could never fire and protected nothing.
         private const float MaxCrushDamagePerFlush = MaxCrushDamagePerSecond * CrushDamageFlushIntervalSeconds;
+        // Cadence for re-resolving a cold-cached registry service that was still EMPTY at OnEnable. See
+        // RetryEmptyColdServiceBinding for why a rebind branch alone cannot cover that case. This is a cold
+        // repair cadence, not hot polling: the retry stops permanently once the slot fills, and the steady
+        // state costs one branch per fixed tick.
+        private const float ColdServiceRebindRetryIntervalSeconds = 0.5f;
 
         [SerializeField] private int _entityCapacity = DefaultCapacity;
         [SerializeField] private float _waterSurfaceY = DefaultWaterSurfaceY;
@@ -3109,6 +3168,7 @@ namespace Hecton8.Physics.KCC
         private float _mediumDepthMeters;
         private float _pendingCrushDamage;
         private float _crushDamageFlushTimer;
+        private float _coldServiceRebindRetryTimer;
         private int _combatDamageTargetId;
         private bool _rollbackResimulationActive;
         private JobHandle _inputHandle;
@@ -3321,6 +3381,11 @@ namespace Hecton8.Physics.KCC
 
         public void FixedTick(float fixedDeltaTime)
         {
+            // Runs BEFORE every early return below, and before UpdateTuningSnapshot reads the ocean service
+            // through ResolveRuntimeWaterSurfaceY. A cold cache that was empty at OnEnable is otherwise never
+            // repaired -- the registry fires no rebound for a first fill.
+            RetryEmptyColdServiceBinding(fixedDeltaTime);
+
             if (_collisionScheduled || _postScheduled || !HasVaultBuffersReady())
                 return;
 
@@ -5527,8 +5592,9 @@ namespace Hecton8.Physics.KCC
         {
             _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             // COLD RESOLVE: the weather service is resolved once here so the fixed-tick medium path never
-            // touches GlobalRegistry per frame. Hot-swap rebind for it lives in
-            // OnGlobalRegistryServiceReplaced, GlobalRegistryServiceSlot.Weather.
+            // touches GlobalRegistry per frame. REPLACEMENT and UNREGISTRATION of either slot are covered by
+            // OnGlobalRegistryServiceReplaced; a LATE FIRST FILL is not notified at all and is covered by
+            // RetryEmptyColdServiceBinding. Read that method before assuming the rebind branch is sufficient.
             _weatherService = GlobalRegistry.Weather;
             // The combat target id is deliberately NOT resolved from this GameObject here. It is cleared and
             // resolved lazily against the combat target lookup on the first crush flush -- see
@@ -5536,6 +5602,59 @@ namespace Hecton8.Physics.KCC
             // and why cold time is too early (combat registration order is not guaranteed relative to OnEnable).
             _combatDamageTargetId = 0;
             ClearWaterMediumState();
+        }
+
+        /// <summary>
+        /// Repairs a cold service cache that was still EMPTY when <c>OnEnable</c> ran.
+        ///
+        /// A FIRST FILL IS NOT A HOT SWAP, and the registry does not pretend otherwise:
+        /// <c>GlobalRegistry.RegisterService</c> queues a rebound only when the slot already held something
+        /// (<c>if (previousService != null) { QueueServiceRebound(...); return; }</c>). A first fill instead
+        /// falls through to <c>ReportFirstFillAfterNullObjectSubstitution</c>, which returns immediately
+        /// unless that slot had handed out a null-object substitute. <c>GlobalRegistry.Weather</c> and
+        /// <c>GlobalRegistry.OceanKinematics</c> are plain field getters with NO null-object substitute, so
+        /// their first registration fires no rebound whatsoever and
+        /// <c>OnGlobalRegistryServiceReplaced</c> is never called for it.
+        ///
+        /// Consequence without this method: whenever this host's <c>OnEnable</c> wins the race against the
+        /// weather director or the ocean-kinematics service, the cold cache pins <c>null</c> for the entire
+        /// session. <c>IsThermoclineWeatherActive</c> then returns false forever, and because
+        /// <c>_requireThermoclineWeatherState</c> defaults to true, <c>UpdateThermoclineResistance</c> bails
+        /// on its weather gate every tick -- the thermocline band silently never applies. The ocean cache
+        /// fails the same way but quieter: <c>TryResolveOceanWaterSurfaceY</c> falls back to the serialized
+        /// <c>_waterSurfaceY</c> and <c>TrySampleOceanCurrentVelocity</c> stops feeding the drag model.
+        /// This is the same defect family as a cached service outliving the thing it pointed at; only the
+        /// direction differs -- the cache is stale-empty rather than stale-live.
+        ///
+        /// Unregistration is NOT handled here on purpose: <c>UnregisterService</c> does queue a rebound
+        /// (previous non-null, current null), so the slot branch in <c>OnGlobalRegistryServiceReplaced</c>
+        /// already clears the cache and its derived medium state. If the slot is genuinely empty afterwards
+        /// this retry simply reads null again and changes nothing.
+        ///
+        /// Cost: once both caches are bound this is a single two-field branch per fixed tick with no
+        /// registry access at all. While a slot is empty it reads a static field at most every
+        /// <see cref="ColdServiceRebindRetryIntervalSeconds"/>, which keeps the registry at the cold cadence
+        /// the Global Systems Doctrine requires rather than polling it per frame. Zero allocations.
+        /// </summary>
+        private void RetryEmptyColdServiceBinding(float fixedDeltaTime)
+        {
+            if (_weatherService != null && _oceanKinematicsService != null)
+            {
+                _coldServiceRebindRetryTimer = 0f;
+                return;
+            }
+
+            // Passed fdt only -- Time.fixedDeltaTime is banned in owner tick logic.
+            _coldServiceRebindRetryTimer += math.isfinite(fixedDeltaTime) ? math.max(0f, fixedDeltaTime) : 0f;
+            if (_coldServiceRebindRetryTimer < ColdServiceRebindRetryIntervalSeconds)
+                return;
+
+            _coldServiceRebindRetryTimer = 0f;
+            if (_weatherService == null)
+                _weatherService = GlobalRegistry.Weather;
+
+            if (_oceanKinematicsService == null)
+                _oceanKinematicsService = GlobalRegistry.OceanKinematics;
         }
 
         private void ClearWaterMediumState()
@@ -5547,6 +5666,7 @@ namespace Hecton8.Physics.KCC
             _mediumDepthMeters = 0f;
             _pendingCrushDamage = 0f;
             _crushDamageFlushTimer = 0f;
+            _coldServiceRebindRetryTimer = 0f;
         }
 
         private float ResolveRuntimeWaterSurfaceY()
