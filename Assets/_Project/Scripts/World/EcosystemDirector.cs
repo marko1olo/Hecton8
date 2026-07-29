@@ -1400,6 +1400,26 @@ namespace Hecton8.World
         [Header("Predator Spawn Ratio Gate")]
         [Tooltip("Scales starvationComfortPreyPerPredator into the minimum prey-per-predator ratio a sector must hold before another predator may spawn. 0 disables the gate.")]
         [SerializeField, Range(0f, 2f)] private float predatorSpawnRatioGateScale = 1f;
+
+        /// <summary>
+        /// Fraction of the achievable prey-per-predator ceiling the ratio gate may demand. Keeps the
+        /// clamped threshold strictly below the ceiling so a sector at full authored prey capacity passes
+        /// rather than landing exactly on the boundary. See PassesPreyPredatorRatioGate.
+        /// </summary>
+        private const float PredatorRatioGateHeadroom01 = 0.9f;
+
+        /// <summary>
+        /// Lower bound on the grazer spawn selection weight. Mirrors the pre-existing 0.05f floor in the
+        /// grazer branch of ResolveBiomassSpawnSelectionWeight, because callers treat a zero weight as a
+        /// hard veto rather than as low attractiveness. See ResolveFoodGradientSpawnWeight.
+        /// </summary>
+        private const float GrazerSpawnWeightFloor01 = 0.05f;
+
+        /// <summary>
+        /// One-shot latch so the unsatisfiable-threshold warning names the numbers once per session rather
+        /// than on every spawn candidate.
+        /// </summary>
+        private bool _predatorRatioGateUnsatisfiableLogged;
         [SerializeField] private int _debugPredatorRatioGateDenials;
 
         [Header("Predator Starvation")]
@@ -2028,7 +2048,43 @@ namespace Hecton8.World
             if (!TryGetSectorPopulation(worldPosition, out EcosystemSectorPopulationSample sample))
                 return true;
 
-            float optimalRatio = math.max(0f, starvationComfortPreyPerPredator * gateScale);
+            float requestedRatio = math.max(0f, starvationComfortPreyPerPredator * gateScale);
+
+            // CLAMPED TO WHAT IS ACHIEVABLE, or this gate is not a gate - it is a total denial.
+            //
+            // The solve hard-clamps prey at maxPreyPopulation (:1098) and ResolveBucketTablePopulation
+            // (:9098-9099) seeds a sector with either grazers or a single predator, so the highest
+            // prey-per-predator any sector holding a predator can ever reach is
+            // maxPreyPopulation / maxPredatorPopulation - 10/1 at authored defaults. The authored comfort
+            // figure is starvationComfortPreyPerPredator = 12. Compared against 12, Compute returned false
+            // for EVERY sector with a predator in it, permanently, so the gate degenerated to
+            // "predatorCount == 0" and - because IsPredatorOrApex (:4561) is
+            // isAggressive || Hunter || Leviathan - it closed every apex-bucket sector to ALL aggressive
+            // creatures, hunters and leviathans from their first seeded tick.
+            //
+            // Clamping against the achievable ceiling rather than hardcoding a smaller default is
+            // deliberate: a default tuned to today's 10/12 would silently break again the moment someone
+            // raises starvationComfortPreyPerPredator or lowers maxPreyPopulation. The ceiling is derived
+            // from the same two fields the solve enforces, so the two cannot drift apart.
+            //
+            // RatioHeadroom keeps the clamped threshold strictly BELOW the ceiling, so a sector at full
+            // authored prey capacity actually passes instead of sitting exactly on the boundary where the
+            // model's own >= test is at the mercy of float rounding.
+            float achievableRatio = maxPreyPopulation / (float)math.max(1, maxPredatorPopulation);
+            float optimalRatio = math.min(requestedRatio, achievableRatio * PredatorRatioGateHeadroom01);
+
+            if (requestedRatio > achievableRatio && !_predatorRatioGateUnsatisfiableLogged)
+            {
+                _predatorRatioGateUnsatisfiableLogged = true;
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[EcosystemDirector] predator ratio gate asked for " + requestedRatio.ToString("0.##") +
+                    " prey per predator, but maxPreyPopulation/maxPredatorPopulation caps the achievable " +
+                    "ratio at " + achievableRatio.ToString("0.##") + ". Unclamped this would deny EVERY " +
+                    "predator, hunter and leviathan spawn in any sector that already holds one. Clamped to " +
+                    optimalRatio.ToString("0.##") + ". Raise maxPreyPopulation or lower " +
+                    "starvationComfortPreyPerPredator to make the authored intent reachable.",
+                    this);
+            }
 
             bool allowed = Hecton8.PureLogic.Ecosystem.PreytopredatorSpawnBalancerCalculator.Compute(
                 sample.PreyPopulation,
@@ -2066,10 +2122,28 @@ namespace Hecton8.World
             if (!TryGetSectorFoodDensity01(worldPosition, out float foodDensity01))
                 return baseWeight;
 
-            return Hecton8.PureLogic.Ecosystem.BiomassResourceGradientWeightCalculator.Compute(
+            float gradientWeight = Hecton8.PureLogic.Ecosystem.BiomassResourceGradientWeightCalculator.Compute(
                 foodDensity01,
                 math.max(0.0001f, migrationFoodThreshold01),
                 baseWeight);
+
+            // FLOORED, because the caller treats zero as a HARD VETO rather than "unattractive".
+            //
+            // The pre-existing grazer branch returns math.max(0.05f, preyBiomass01) specifically so the
+            // weight can never reach zero. BiomassResourceGradientWeightCalculator returns
+            // baseWeight * (foodDensity01 / threshold) with NO lower bound, so multiplying by it threw that
+            // floor away. FoodDensity01 is math.saturate(...) at :9128 and genuinely reaches exactly 0
+            // whenever base + bias - harvest*0.35 - bloom*0.45 <= 0, which pre-existing dynamics alone can
+            // produce: the solve's overpopulation branch adds +0.2 to AlgaeBloom01 per solve (:1082) and the
+            // worst-roll sector base is 0.38.
+            //
+            // Zero then propagates to TryResolveSpawnWeightMultiplier's `return selectionMultiplier > 0f`
+            // (:1923), and callers read that as a veto, not a preference: FaunaDirector.cs:2439 and :2488
+            // `continue` past the archetype and FaunaDirector.cs:4778 returns false and abandons the spawn.
+            // So an overpopulated sector became PERMANENTLY CLOSED to grazer spawns - a starvation spiral
+            // with no recovery path, since fewer grazers cannot restore the food density that gated them.
+            // Keeping the original floor makes a poor sector unattractive, which is the intended behaviour.
+            return math.max(GrazerSpawnWeightFloor01, gradientWeight);
         }
 
         /// <summary>

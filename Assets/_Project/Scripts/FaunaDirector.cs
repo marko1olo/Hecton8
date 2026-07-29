@@ -1489,10 +1489,17 @@ namespace Hecton8.AI
             if (!logSensoryDetectionTransitions)
                 return;
 
+            // Routed through H8Debug, not naked Debug.Log. AGENTS.md:271 forbids naked Debug.Log/LogWarning/
+            // LogError in hot paths, and this runs inside SlowTick. H8Debug is
+            // [Conditional("UNITY_EDITOR")] + [Conditional("DEVELOPMENT_BUILD")] (Core/H8Debug.cs:17-18), so
+            // the compiler DELETES these calls in a release player - a serialized bool cannot do that,
+            // because logSensoryDetectionTransitions is a runtime toggle and the call still ships behind it.
+            // This file's only pre-existing log (:3630) already uses the facade; the mechanism was here and
+            // the new code had bypassed it.
             if (previousDetectedCount == 0 && detectedCount > 0)
-                Debug.Log(SensoryPlayerNoticedLog);
+                Hecton8.Core.H8Debug.Log(SensoryPlayerNoticedLog, this);
             else if (previousDetectedCount > 0 && detectedCount == 0)
-                Debug.Log(SensoryPlayerLostLog);
+                Hecton8.Core.H8Debug.Log(SensoryPlayerLostLog, this);
         }
 
         /// <summary>

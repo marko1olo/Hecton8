@@ -1851,7 +1851,32 @@ namespace Hecton8.Physiology
                 : OxygenCriticalUnknownSecondsRemaining;
 
             OxygenCriticalSignal signal = default;
-            signal.Oxygen01 = oxygen01;
+
+            // Oxygen01 IS DELIBERATELY NOT BLOOD SATURATION. Publishing it as such was a units bug.
+            //
+            // The one consumer that moves suit oxygen does
+            // `targetOxygen = math.min(targetOxygen, maxOxygen * oxygen01)` (HectonSurvivalSystem.cs:1222),
+            // where maxOxygen is the suit TANK capacity - 139.24 from Standard_Suit_V1.asset. This host's
+            // export.BloodOxygen is an SpO2-like blood SATURATION fraction. Those are different physical
+            // quantities, and multiplying one by the other is not a conversion.
+            //
+            // What it would have done: OxygenConsumptionJob raises OxygenCritical at
+            // `BloodOxygen <= 0.18f || hypoxia01 > 0f` (ShinobuPhysiologyJobs.cs:1338-1340). At
+            // BloodOxygen = 0.18 the consumer would clamp a FULL tank from 139.24 to 25.06 in one step -
+            // 82% of the tank deleted because blood saturation fell. The causality is also backwards: an
+            // empty tank should drive SpO2 down, not the reverse. And the gate is looser than 0.18, since
+            // the Hypoxia flag is set whenever hypoxia01 > 0f (:1144), so mild hypoxia with BloodOxygen
+            // still near 0.99 opens the same path.
+            //
+            // So the TANK-CLAMP channel is neutralised with 1f, making the consumer's min-fold a no-op,
+            // while the WARNING channel is preserved: VocalWarningSystem folds
+            // math.max(1 - Oxygen01, Severity/255) at :2704 and Severity below still carries the real
+            // blood-oxygen deficit. Physiology therefore reaches the lane it was previously absent from -
+            // which was the point of the wiring - without corrupting a quantity it has no authority over.
+            //
+            // The correct long-term wiring runs the other way: tank contents should feed blood saturation.
+            // That needs a tank reader this host does not have, so it is queued rather than guessed at.
+            signal.Oxygen01 = 1f;
             signal.SecondsRemaining = secondsRemaining;
             signal.SourceId = ShinobuPhysiologyConstants.SourceHash;
             signal.Frame = _simulationFrameCounter;
