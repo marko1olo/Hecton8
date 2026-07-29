@@ -62,21 +62,38 @@ WAIT_SECONDS=${H8_GATE_WAIT_SECONDS:-0}
 
 count_editors() { tasklist 2>/dev/null | grep -icE '^Unity\.exe' || true; }
 count_compile_owners() { tasklist 2>/dev/null | grep -icE '^(dotnet|csc|msbuild)\.exe' || true; }
+sample_cpu() {
+	powershell.exe -NoProfile -Command \
+		"(Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average" \
+		2>/dev/null | tr -d '\r' | tail -1
+}
 
+# The wait must cover CPU too, not just the editor and compile slots. Measured 2026-07-29:
+# the wait acquired the editor after 105 s and was then refused by gate 3 at CPU 60% then
+# 100% - because the SAME orchestrator's Blender fan-out was saturating the box. An
+# orchestrator's own parallel asset jobs and its own Unity gate compete for one CPU ceiling,
+# so a wait that ignores CPU just relocates the failure three gates later, after paying the
+# wait. Waiting on all three conditions makes the loop acquire in a genuine lull instead.
 if [ "$WAIT_SECONDS" -gt 0 ] 2>/dev/null; then
 	WAITED=0
+	ANNOUNCED=0
 	while [ "$WAITED" -lt "$WAIT_SECONDS" ]; do
-		if [ "$(count_editors)" = "0" ] && [ "$(count_compile_owners)" = "0" ]; then
+		W_ED=$(count_editors)
+		W_CO=$(count_compile_owners)
+		W_CPU=$(sample_cpu)
+		W_CPU=${W_CPU:-0}
+		if [ "$W_ED" = "0" ] && [ "$W_CO" = "0" ] && [ "$W_CPU" -le 50 ] 2>/dev/null; then
 			break
 		fi
-		if [ "$WAITED" = "0" ]; then
-			echo "waiting for the editor slot (editors=$(count_editors) compile=$(count_compile_owners)), up to ${WAIT_SECONDS}s"
+		if [ "$ANNOUNCED" = "0" ]; then
+			echo "waiting for a clear slot (editors=${W_ED} compile=${W_CO} cpu=${W_CPU}%), up to ${WAIT_SECONDS}s"
+			ANNOUNCED=1
 		fi
 		sleep 5
 		WAITED=$((WAITED + 5))
 	done
 	if [ "$WAITED" -gt 0 ]; then
-		echo "waited ${WAITED}s for the slot"
+		echo "waited ${WAITED}s for the slot (editors=$(count_editors) compile=$(count_compile_owners))"
 	fi
 fi
 
