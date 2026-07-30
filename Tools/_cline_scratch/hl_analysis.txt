@@ -1,0 +1,156 @@
+SIZE 277785
+LINES 2913
+COUNT 'Headless SceneActivate short-circuit': 1
+COUNT 'MarkMainMenuReached': 1
+COUNT 'HeadlessSimulation': 25
+COUNT 'h8headless': 3
+COUNT 'GameBootstrapper': 1237
+COUNT 'Exception': 61
+COUNT 'leak': 3
+COUNT 'Leak': 3
+COUNT 'completed': 1
+COUNT 'Complete': 4
+COUNT 'SimulationBatch': 7
+COUNT 'Day': 2
+--- TAIL 120 ---
+	InvokePackagesCallback: 3.334ms
+	ApplyChangesToAssetFolders: 0.531ms
+	Scan: 10.853ms
+	Collect global state as custom dependencies: 2.190ms
+	OnSourceAssetsModified: 0.973ms
+	CategorizeScriptCompilationAssets: 0.077ms
+	ProcessAssetsWithTransientArtifactChanges: 711.862ms
+	CategorizeAssets: 192.146ms
+	CompileScripts: 1219.389ms
+	ImportOutOfDateAssets: 9864.337ms (9753.294ms without children)
+		CollectScriptTypesHashes: 2.723ms
+		ReloadNativeAssets: 2.058ms
+		UnloadImportedAssets: 0.205ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 2.659ms
+		ImportSchedulerStart: 106.058ms
+	PostProcessAllAssets: 2482.801ms
+		AssemblyValidation.PostprocessAllAssets 133.502ms
+		PostProcessCallbackCreateDeferredMaterials 32.755ms
+		RaytracingShaderImportPostprocess 27.221ms
+		SpeedTreeImporter.PostprocessAllAssets 25.603ms
+		ComputeShaderImportPostprocess 19.708ms
+		ShaderAssetModifiedCallback 18.593ms
+		LocalizationDatabase.AssetDatabasePostprocessCallback 8.425ms
+		BlockShaderImporter.PostprocessAllAssets 7.204ms
+		XRBuildSystem.XRAssetImported 1.630ms
+		MonoPostProcessAllAssets: 1717.892ms
+			H8DataMonolithSourceWatcher.OnPostprocessAllAssets 465.100ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 456.329ms
+			AssetCallbacks.OnPostprocessAllAssets 129.379ms
+			PostProcessor.OnPostprocessAllAssets 83.459ms
+			AssetPostprocessor.OnPostprocessAllAssets 79.827ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 64.032ms
+			MaterialPostprocessor.OnPostprocessAllAssets 58.659ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 55.396ms
+			TextAssetPostProcessor.OnPostprocessAllAssets 46.568ms
+			MatrixAssetTexturePostprocessor.OnPostprocessAllAssets 43.824ms
+			SpriteSlicePostprocessor.OnPostprocessAllAssets 37.564ms
+			StyleCatalogPostProcessor.OnPostprocessAllAssets 26.047ms
+			AssetChangedListener.OnPostprocessAllAssets 24.309ms
+			TMPro_TexturePostProcessor.OnPostprocessAllAssets 16.287ms
+			UniversalRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 10.586ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 7.846ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 7.624ms
+			BuilderAssetPostprocessor.OnPostprocessAllAssets 5.164ms
+			HectonAssetIntegrityGuard.OnPostprocessAllAssets 2.795ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 2.100ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 2.089ms
+			TemplatePostProcessor.OnPostprocessAllAssets 1.975ms
+			SyncVS.PostprocessSyncProject 1.205ms
+			SpeedTreePostProcessor.OnPostprocessAllAssets 1.194ms
+			AddressablesAssetPostProcessor.OnPostprocessAllAssets 0.885ms
+			SpriteEditorTexturePostprocessor.OnPostprocessAllAssets 0.849ms
+			TextureArrayPreProcessor.OnPostprocessAllAssets 0.647ms
+			CinemachineSettings.OnPostprocessAllAssets 0.556ms
+			ShaderReflectionAssetPostProcessor.OnPostprocessAllAssets 0.446ms
+			ProjectSettingsPostprocessor.OnPostprocessAllAssets 0.434ms
+			AssetPathToTypes.OnPostprocessAllAssets 0.425ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.385ms
+			SamplePostprocessor.OnPostprocessAllAssets 0.341ms
+			UVCSAssetPostprocessor.OnPostprocessAllAssets 0.318ms
+			SampleDependencyImporterPostProcessor.OnPostprocessAllAssets 0.283ms
+			EnvironmentAssetPostprocessor.OnPostprocessAllAssets 0.260ms
+			ArtifactBrowserPostProcessor.OnPostprocessAllAssets 0.256ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.255ms
+			AudioMixerPostprocessor.OnPostprocessAllAssets 0.239ms
+			AssetEvents.OnPostprocessAllAssets 0.234ms
+			DomainReloadProcessor.OnPostprocessAllAssets 0.209ms
+			AssetDatabaseCallbacks.OnPostprocessAllAssets 0.140ms
+			HectonAgentWorkCementerPostprocessor.OnPostprocessAllAssets 0.129ms
+			ScenarioDriftAssetsTracker.OnPostprocessAllAssets 0.114ms
+			ConfigAssetsTracker.OnPostprocessAllAssets 0.110ms
+			AudioContainerPostProcessor.OnPostprocessAllAssets 0.059ms
+	PostAssetChangesProfiler: 12.848ms
+	GatherAllCurrentPrimaryImportResultRevisions: 0.905ms
+	UnloadStreamsBegin: 3.110ms
+	PersistCurrentRevisions: 0.428ms
+	GenerateScriptTypeHashes: 15.443ms
+	GenerateScriptTypeSerializationHashes: 20.004ms
+	Untracked: 3817.458ms
+
+[Licensing::Client] Successfully resolved entitlement details
+MonoPathRemapper: Attempts to remap: 611604; Successful remaps: 67770
+Serialized file version minimum: 22, current 23
+<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: No process found listening on port 8088
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MCPForUnity.Editor.Helpers.McpLog:Info (string,bool) (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Helpers/McpLog.cs:40)
+MCPForUnity.Editor.Services.ServerManagementService:StopLocalHttpServerInternal (bool,System.Nullable`1<int>,bool) (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/ServerManagementService.cs:712)
+MCPForUnity.Editor.Services.ServerManagementService:StopLocalHttpServer () (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/ServerManagementService.cs:349)
+MCPForUnity.Editor.Services.McpEditorShutdownCleanup:OnEditorQuitting () (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/McpEditorShutdownCleanup.cs:60)
+UnityEditor.EditorApplication:Internal_EditorApplicationQuit ()
+Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner:CompleteAfterPlayStopped (int) (at Assets/_Project/Scripts/QA/Headless/Editor/HeadlessSimulationBatchRunner.cs:403)
+Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner:PollRunState () (at Assets/_Project/Scripts/QA/Headless/Editor/HeadlessSimulationBatchRunner.cs:256)
+Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner:Tick () (at Assets/_Project/Scripts/QA/Headless/Editor/HeadlessSimulationBatchRunner.cs:215)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Helpers/McpLog.cs Line: 40)
+
+Importing 'GUID: 8ce5c3ce78cc12749a7c905a6d8c86fe - Path: Assets/XR/Settings/OpenXRPackageSettings.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 8ce5c3ce78cc12749a7c905a6d8c86fe' -> (Import Result ID: 'f7538dea6a6cc78bc26f3919de85edd3') in 0.005 seconds [static dependencies only]. Details - ImportResultOutputID=5c57ac83c1adf789db9531a7fe36a2bd DependenciesID=2e80793372e10abaee676b99d74b1d4d StaticDependenciesID=d65b87118d3ac273b1c32ff58ee3b5ef 
+Refreshing native plugins compatible for Editor in 5.88 ms, found 37 plugins.
+Asset Pipeline Refresh (id=8f3809cc5c2bbae4ab4d614ce3b4dbdf): Total: 0.205 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+[Licensing::IpcConnector] LicenseClient-Admin-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-Admin channel disconnected successfully.
+AcceleratorClientConnectionCallback - disconnected - :0
+Cleanup mono
+CodeReloadManager destroyed
+Checking for leaked weakptr:
+  Found no leaked weakptrs.
+[Package Manager] Server process was shutdown
+##utp:{"type":"MemoryLeaks","version":2,"phase":"Immediate","time":1785410855607,"processId":16600,"allocatedMemory":33281492,"memoryLabels":[{"Default":375008},{"Permanent":15516},{"NewDelete":70037},{"Thread":4197560},{"Manager":1433285},{"VertexData":8},{"Geometry":816},{"Texture":24},{"Shader":849571},{"Material":2
+--- KEY HITS ---
+20|Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner.Run
+21|-h8headless
+22|-h8headlessDays
+24|-h8headlessDaySeconds
+702|Hecton8.QA.Headless.HeadlessSimulationRunner:LogRunnerLifecycle (string) (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:1132)
+703|Hecton8.QA.Headless.HeadlessSimulationRunner:Start () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:200)
+705|(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1132)
+714|Hecton8.QA.Headless.HeadlessSimulationRunner:LogRunnerLifecycle (string) (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:1132)
+715|Hecton8.QA.Headless.HeadlessSimulationRunner/<WaitForDispatcherAndStart>d__116:MoveNext () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:384)
+716|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder/StateMachineBox`1<Hecton8.QA.Headless.HeadlessSimulationRunner/<WaitForDispatcherAndStart>d__116>:DoMoveNext ()
+717|Hecton8.QA.Headless.HeadlessSimulationRunner:WaitForDispatcherAndStart (System.Threading.CancellationToken)
+718|Hecton8.QA.Headless.HeadlessSimulationRunner/<RunStartupAsync>d__109:MoveNext () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:209)
+719|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder/StateMachineBox`1<Hecton8.QA.Headless.HeadlessSimulationRunner/<RunStartupAsync>d__109>:DoMoveNext ()
+720|Hecton8.QA.Headless.HeadlessSimulationRunner:RunStartupAsync (System.Threading.CancellationToken)
+721|Hecton8.QA.Headless.HeadlessSimulationRunner:Start () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:201)
+723|(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1132)
+2503|[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached on bootstrap
+2889|Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner:CompleteAfterPlayStopped (int) (at Assets/_Project/Scripts/QA/Headless/Editor/HeadlessSimulationBatchRunner.cs:403)
+2890|Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner:PollRunState () (at Assets/_Project/Scripts/QA/Headless/Editor/HeadlessSimulationBatchRunner.cs:256)
+2891|Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner:Tick () (at Assets/_Project/Scripts/QA/Headless/Editor/HeadlessSimulationBatchRunner.cs:215)

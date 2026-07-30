@@ -1,0 +1,67 @@
+start 
+add_ledger=0 
+warning: in the working copy of 'Docs/AgentLogs/H8_V0_PLAYTEST_SMOKE_GATE.json', LF will be replaced by CRLF the next time Git touches it
+add_json=0 
+add_log=0 
+Docs/AgentLogs/H8_V0_PLAYTEST_SMOKE_GATE.json
+Docs/AgentLogs/v0_kcc_gate_2026-07-30.log
+Docs/PLAYTEST/V0_VERTICAL_SLICE_EVIDENCE_2026-07-30.md
+ Docs/AgentLogs/H8_V0_PLAYTEST_SMOKE_GATE.json      |  20 +
+ Docs/AgentLogs/v0_kcc_gate_2026-07-30.log          | 567 +++++++++++++++++++++
+ .../V0_VERTICAL_SLICE_EVIDENCE_2026-07-30.md       |  20 +-
+ 3 files changed, 600 insertions(+), 7 deletions(-)
+[main 550da3cfc] docs(playtest): V0-L01 KCC gate MEASURED FAIL + headless finished
+ 3 files changed, 600 insertions(+), 7 deletions(-)
+ create mode 100644 Docs/AgentLogs/H8_V0_PLAYTEST_SMOKE_GATE.json
+ create mode 100644 Docs/AgentLogs/v0_kcc_gate_2026-07-30.log
+commit_ec=0 
+550da3cfc docs(playtest): V0-L01 KCC gate MEASURED FAIL + headless finished
+## main...gitlab/main [ahead 1]
+ M Docs/Reports/QA_OPTIMIZATION_REPORT.json
+M  README.md
+?? Assets/illustrations/
+?? Tools/_cline_scratch/adm_hits.txt
+?? Tools/_cline_scratch/analyze_gate.py
+?? Tools/_cline_scratch/analyze_hl.py
+?? Tools/_cline_scratch/cement_stat.txt
+?? Tools/_cline_scratch/commit_msg.txt
+?? Tools/_cline_scratch/commit_v0_l01.txt
+?? Tools/_cline_scratch/disp_owner.txt
+?? Tools/_cline_scratch/dispatcher_hits.txt
+?? Tools/_cline_scratch/do_commit_out.txt
+?? Tools/_cline_scratch/do_commit_v0.bat
+?? Tools/_cline_scratch/find_adm.py
+?? Tools/_cline_scratch/find_adm2.py
+?? Tools/_cline_scratch/find_adm_def.py
+?? Tools/_cline_scratch/fix_readme_conflict.py
+?? Tools/_cline_scratch/fix_readme_out.txt
+?? Tools/_cline_scratch/fix_readme_out2.txt
+?? Tools/_cline_scratch/flag_defs.txt
+?? Tools/_cline_scratch/gate_log_hits.txt
+?? Tools/_cline_scratch/gate_run_status.txt
+?? Tools/_cline_scratch/git_grep.txt
+?? Tools/_cline_scratch/git_log.txt
+?? Tools/_cline_scratch/git_status_full.txt
+?? Tools/_cline_scratch/hl_analysis.txt
+?? Tools/_cline_scratch/hl_tail.txt
+?? Tools/_cline_scratch/ignore_check.txt
+?? Tools/_cline_scratch/merge_msg.txt
+?? Tools/_cline_scratch/p0_hits.txt
+?? Tools/_cline_scratch/poll_hl.py
+?? Tools/_cline_scratch/poll_quick.py
+?? Tools/_cline_scratch/poll_smoke.py
+?? Tools/_cline_scratch/pre_commit_status.txt
+?? Tools/_cline_scratch/readme_before_fix.txt
+?? Tools/_cline_scratch/readme_check.txt
+?? Tools/_cline_scratch/readme_tail.txt
+?? Tools/_cline_scratch/report_hits.txt
+?? Tools/_cline_scratch/report_hits2.txt
+?? Tools/_cline_scratch/run_v0_kcc_gate.bat
+?? Tools/_cline_scratch/scan_disp_owner.py
+?? Tools/_cline_scratch/scan_dispatcher.py
+?? Tools/_cline_scratch/scan_ecology_seed.py
+?? Tools/_cline_scratch/scan_p0_log.py
+?? Tools/_cline_scratch/scan_p0_timeline.py
+?? Tools/_cline_scratch/scan_post_shortcircuit.py
+?? Tools/_cline_scratch/tracked_allow.txt
+done 

@@ -1,0 +1,68 @@
+SIZE=259773 MTIME=Thu Jul 30 15:27:11 2026
+TOTAL_LINES=2634
+HIT_COUNT=888
+---LAST_HITS---
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeEnvironmentPhaseAsync>d__390>:DoMoveNext ()
+Hecton8.Bootstrap.GameBootstrapper:InitializeEnvironmentPhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2526)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367>:DoMoveNext ()
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Func`2<System.Threading.CancellationToken, UnityEngine.Awaitable`1<bool>>,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__365:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2443)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__365>:DoMoveNext ()
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2556)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367>:DoMoveNext ()
+Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__388:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3058)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__388>:DoMoveNext ()
+(Filename: Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs Line: 5488)
+[GameBootstrapper-DEBUG] InitializeSceneActivatePhaseAsync: activeScene=00_BOOTSTRAP headless=True
+Hecton8.Bootstrap.GameBootstrapper/<InitializeSceneActivatePhaseAsync>d__394:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3144)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeSceneActivatePhaseAsync>d__394>:DoMoveNext ()
+Hecton8.Bootstrap.GameBootstrapper:InitializeSceneActivatePhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2526)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367>:DoMoveNext ()
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Func`2<System.Threading.CancellationToken, UnityEngine.Awaitable`1<bool>>,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__365:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2473)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__365>:DoMoveNext ()
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2556)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367>:DoMoveNext ()
+Hecton8.Bootstrap.GameBootstrapper/<InitializeEnvironmentPhaseAsync>d__390:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3088)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeEnvironmentPhaseAsync>d__390>:DoMoveNext ()
+(Filename: Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs Line: 3144)
+[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached on bootstrap
+Hecton8.Bootstrap.GameBootstrapper/<InitializeSceneActivatePhaseAsync>d__394:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3160)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeSceneActivatePhaseAsync>d__394>:DoMoveNext ()
+Hecton8.Bootstrap.GameBootstrapper:InitializeSceneActivatePhaseAsync (System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2526)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367>:DoMoveNext ()
+Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Func`2<System.Threading.CancellationToken, UnityEngine.Awaitable`1<bool>>,System.Threading.CancellationToken)
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__365:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2473)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__365>:DoMoveNext ()
+Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2556)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367>:DoMoveNext ()
+Hecton8.Bootstrap.GameBootstrapper/<InitializeEnvironmentPhaseAsync>d__390:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3088)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeEnvironmentPhaseAsync>d__390>:DoMoveNext ()
+(Filename: Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs Line: 3160)
+---TAIL20---
+GetVirtualKey: Could not map char: R (82) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: N (78) to any virtual key
+GetVirtualKey: Could not map char: U (85) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: S (83) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: o (111) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: m (109) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: u (117) to any virtual key
+Leak Detected : Persistent allocates 43 individual allocations. To find out more please enable 'Preferences > Jobs > Leak Detection Level > Enabled With Stack Trace' and reproduce the leak again.
+---UNITY---
+"Unity.exe","16600","Console","1","4я015я436 ЉЃ"
+"Unity.exe","13100","Console","1","1я845я504 ЉЃ"

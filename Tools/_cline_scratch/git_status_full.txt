@@ -1,0 +1,4 @@
+﻿ M Docs/PLAYTEST/V0_VERTICAL_SLICE_EVIDENCE_2026-07-30.md
+?? Tools/_cline_scratch/git_status_full.txt
+?? Tools/_cline_scratch/poll_smoke.py
+?? Tools/_cline_scratch/scan_post_shortcircuit.py

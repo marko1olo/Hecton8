@@ -1,0 +1,42 @@
+﻿75c883fd4 chore(auto): cement working tree 2026-07-30 15:19:11
+ .github/workflows_disabled/README_META_FREEZE.txt  |    1 +
+ .../{workflows => workflows_disabled}/stale.yml    |    0
+ .../{workflows => workflows_disabled}/welcome.yml  |    0
+ Assets/Crest/Crest/Materials/Ocean-Underwater.mat  |    2 +-
+ Assets/XR/Resources.meta                           |    8 +
+ .../XR/Resources/XRSimulationRuntimeSettings.asset |   69 +
+ .../XRSimulationRuntimeSettings.asset.meta         |    8 +
+ Assets/XR/Settings/OpenXR Editor Settings.asset    |    6 +-
+ Assets/XR/UserSimulationSettings/Resources.meta    |    8 +
+ .../Resources/XRSimulationPreferences.asset        |   24 +
+ .../Resources/XRSimulationPreferences.asset.meta   |    8 +
+ .../_Project/Scripts/Bootstrap/GameBootstrapper.cs |   30 +-
+ .../Physics/KCC/Editor/H8_V0PlaytestSmokeGate.cs   |  176 +++
+ .../KCC/Editor/H8_V0PlaytestSmokeGate.cs.meta      |    2 +
+ BUILD_PLAYTEST_ISSUES.md                           |   70 +-
+ .../V0_VERTICAL_SLICE_EVIDENCE_2026-07-30.md       |  172 +++
+ README.md                                          |   74 +-
+ Tools/_cline_diag_hang.py                          |   97 ++
+ Tools/_cline_poll_smoke.py                         |   45 +
+ Tools/_cline_read_critical.py                      |   50 +
+ Tools/_cline_read_fix2.py                          |   69 +
+ Tools/_cline_read_ranges.py                        |   50 +
+ Tools/_cline_recon.py                              |  109 ++
+ Tools/_cline_recon_out.txt                         | 1459 ++++++++++++++++++++
+ Tools/_cline_scan_bootstrap.py                     |   75 +
+ Tools/_cline_scan_smoke_log.py                     |   58 +
+ Tools/_cline_scratch/analyze_shots.py              |  136 ++
+ Tools/_cline_scratch/dump_boot.py                  |   91 ++
+ Tools/_cline_scratch/dump_boot2.py                 |  115 ++
+ Tools/_cline_scratch/dump_boot3.py                 |  113 ++
+ Tools/_cline_scratch/dump_boot4.py                 |  106 ++
+ Tools/_cline_scratch/dump_boot5.py                 |   88 ++
+ Tools/_cline_scratch/dump_boot6.py                 |   72 +
+ Tools/_cline_scratch/dump_boot7.py                 |   41 +
+ Tools/_cline_scratch/extract_report.py             |   56 +
+ Tools/_cline_scratch/extract_report_out.txt        |  465 +++++++
+ Tools/_cline_scratch/find_batch_entry.py           |   53 +
+ Tools/_cline_scratch/find_batch_entry2.py          |   94 ++
+ Tools/_cline_scratch/gate_help.py                  |   44 +
+ _plan_scan.py                                      |    3 +
+ 40 files changed, 4081 insertions(+), 66 deletions(-)

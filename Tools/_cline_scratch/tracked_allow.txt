@@ -1,0 +1,14 @@
+﻿
+.github/workflows_disabled/README_META_FREEZE.txt
+.github/workflows_disabled/stale.yml
+.github/workflows_disabled/welcome.yml
+Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
+Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs.meta
+Assets/_Project/Scripts/Physics/KCC/Editor/H8_V0PlaytestSmokeGate.cs
+Assets/_Project/Scripts/Physics/KCC/Editor/H8_V0PlaytestSmokeGate.cs.meta
+Assets/_Project/Tests/Editor/GameBootstrapperOperationCanceledTests.cs
+Assets/_Project/Tests/Editor/GameBootstrapperOperationCanceledTests.cs.meta
+BUILD_PLAYTEST_ISSUES.md
+Docs/PLAYTEST/V0_VERTICAL_SLICE_EVIDENCE_2026-07-30.md
+
+

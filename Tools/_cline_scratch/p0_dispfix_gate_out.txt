@@ -1,0 +1,2 @@
+launching Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner.Run -> C:\hades\Hecton8\Docs\AgentLogs\headless_smoke_20260730_p0_dispfix.log (timeout 600s)
+Unity exited 2 after 536s. Read C:\hades\Hecton8\Docs\AgentLogs\headless_smoke_20260730_p0_dispfix.log.

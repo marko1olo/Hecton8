@@ -1,0 +1,6 @@
+merge: gitlab/main into local main (no-ff)
+
+Resolve README architecture-block conflict (UTF-8 emoji side + marko1olo/6000.5 badges).
+Keep full MonoImporter on FirstSlice test .meta (same GUIDs).
+Re-drop stale/welcome workflows (meta-freeze stays in workflows_disabled).
+Preserve V0 playtest ledger + headless bootstrap short-circuit + WORLD ReportOnly evidence.

@@ -1,0 +1,27 @@
+start 30.07.2026 15:32:06,82
+LOCK_FREE
+UNITY_OK
+launching
+LOG_OK
+JSON_OK
+{
+  "gate": "H8_V0PlaytestSmokeGate",
+  "version": "2026-07-30",
+  "utc": "2026-07-30T11:32:52.8981387Z",
+  "claimsWorldPlayable": "false",
+  "notes": "KCC headless only. WORLD boot / save / fauna / tools / death not executed by this gate.",
+  "kccConeContractPass": "true",
+  "kccConeDisplacementPerFrameM": 1.6666667461395264,
+  "kccConeTuningMaxSpeedMps": 950,
+  "kccRunReturnedPass": "false",
+  "kccErrorFlagsHex": "0x00000042",
+  "kccFailureCount": 743920,
+  "kccDriftErrorMm": 0,
+  "kccAvgUsPerFrame": 30.513700485229492,
+  "kccManagedBytes": 0,
+  "kccPrecisionDriftClear": "true",
+  "overallPass": "false",
+  "status": "FAIL"
+
+}
+done 30.07.2026 15:33:06,31

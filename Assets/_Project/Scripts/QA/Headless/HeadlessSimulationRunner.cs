@@ -169,6 +169,7 @@ namespace Hecton8.QA.Headless
         private double _simulationStartRealtime;
         private bool _finished;
         private bool _runtimePolicyCaptured;
+        private bool _awaitingDispatcher;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoCreate()
@@ -198,18 +199,26 @@ namespace Hecton8.QA.Headless
             _instance = this;
             DontDestroyOnLoad(gameObject);
             LogRunnerLifecycle("runner installed and started");
-            _ = RunStartupAsync(destroyCancellationToken);
+            BeginStartup();
         }
 
-        private async Awaitable RunStartupAsync(CancellationToken cancellationToken)
+        private void BeginStartup()
         {
             try
             {
                 InitializeColdState();
-                await WaitForDispatcherAndStart(cancellationToken);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
+                // Do NOT await NextFrameAsync for the dispatcher gate. In -batchmode
+                // AwaitableDebtMonitor.NextFrameAsync is Task.Yield + MainThreadAsync; the
+                // runner continuation is not guaranteed to resume while bootstrap holds the
+                // main await chain. Evidence: headless_smoke_20260730_p0fix.log logs
+                // "waiting for dispatcher" then SystemDispatcher init + SceneActivate
+                // short-circuit, then silence until BATCH_TIMEOUT — no DISPATCHER_TIMEOUT
+                // either, because ColdTick only runs after RegisterRuntimeLanes.
+                // Player-loop Update always runs in editor playmode; poll there instead.
+                _startupTime = Time.realtimeSinceStartupAsDouble;
+                _awaitingDispatcher = true;
+                LogRunnerLifecycle("waiting for dispatcher");
+                TryCompleteDispatcherWait();
             }
             catch (IOException exception)
             {
@@ -233,8 +242,17 @@ namespace Hecton8.QA.Headless
             }
         }
 
+        private void Update()
+        {
+            if (!_awaitingDispatcher || _finished)
+                return;
+
+            TryCompleteDispatcherWait();
+        }
+
         private void OnDestroy()
         {
+            _awaitingDispatcher = false;
             _ghostStepPending = false;
             TryUnregisterHotSwapListener();
             UnregisterRuntimeLanes();
@@ -372,49 +390,65 @@ namespace Hecton8.QA.Headless
             _actualOriginShiftCount++;
         }
 
-        private async Awaitable WaitForDispatcherAndStart(CancellationToken cancellationToken)
+        private void TryCompleteDispatcherWait()
         {
-            // Logged before the wait, not after, because the wait itself is the suspect. In batchmode
-            // AwaitableDebtMonitor.NextFrameAsync resolves through Task.Yield() rather than a real frame
-            // boundary, so a loop that awaits "next frame" is not guaranteed a frame at all - which means
-            // the deadline below is only re-evaluated if something else pumps the player loop. If this
-            // marker appears with no matching quit marker, the loop never resumed, and no watchdog inside
-            // this component can help: ColdTick only runs once RegisterRuntimeLanes has succeeded, which
-            // happens after this method returns. That watchdog has to live in the batch runner.
-            LogRunnerLifecycle("waiting for dispatcher");
-            _startupTime = Time.realtimeSinceStartupAsDouble;
-            while (GlobalRegistry.Dispatcher == null && Time.realtimeSinceStartupAsDouble - _startupTime <= _startupTimeoutSeconds)
-            {
-                if (cancellationToken.IsCancellationRequested || _finished)
-                    return;
-
-                await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
-            }
-
-            if (cancellationToken.IsCancellationRequested || _finished)
+            if (!_awaitingDispatcher || _finished)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
             {
-                FailAndQuit(1, TimeoutHash, "[DISPATCHER_TIMEOUT]");
+                if (Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+                {
+                    _awaitingDispatcher = false;
+                    FailAndQuit(1, TimeoutHash, "[DISPATCHER_TIMEOUT]");
+                }
+
                 return;
             }
 
-            ForceHeadlessRuntimePolicy();
-            CacheDataVaultCold();
-            if (!EnsureVaultBuffersCold() || !TryInitializeGhostState())
+            _awaitingDispatcher = false;
+            LogRunnerLifecycle("dispatcher acquired");
+
+            try
             {
-                FailAndQuit(1, DataVaultUnavailableHash, "[DATAVAULT_UNAVAILABLE]");
-                return;
-            }
+                ForceHeadlessRuntimePolicy();
+                CacheDataVaultCold();
+                if (!EnsureVaultBuffersCold() || !TryInitializeGhostState())
+                {
+                    FailAndQuit(1, DataVaultUnavailableHash, "[DATAVAULT_UNAVAILABLE]");
+                    return;
+                }
 
-            RegisterRuntimeLanes();
-            TryRegisterHotSwapListener();
-            HectonFloatingOrigin.RegisterListener(this);
-            _originListenerRegistered = true;
-            GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
-            if (!_started)
-                FailAndQuit(1, TimeoutHash, "[RUNNER_REGISTRATION_FAILED]");
+                RegisterRuntimeLanes();
+                TryRegisterHotSwapListener();
+                HectonFloatingOrigin.RegisterListener(this);
+                _originListenerRegistered = true;
+                GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+                if (!_started)
+                    FailAndQuit(1, TimeoutHash, "[RUNNER_REGISTRATION_FAILED]");
+                else
+                    LogRunnerLifecycle("runtime lanes registered; dilation requested");
+            }
+            catch (IOException exception)
+            {
+                if (!_finished)
+                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                if (!_finished)
+                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+            }
+            catch (InvalidOperationException exception)
+            {
+                if (!_finished)
+                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+            }
+            catch (ArgumentException exception)
+            {
+                if (!_finished)
+                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+            }
         }
 
         private void RegisterRuntimeLanes()

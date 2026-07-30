@@ -1,0 +1,18 @@
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:25:    ///             -executeMethod Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe.Run \
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:26:    ///             -h8Scene Assets/_Project/Scenes/02_HECTON_WORLD.unity -h8WarmupFrames 240
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:31:    /// &lt;projectRoot&gt;/Logs/h8_playprobe_route.json, overridable with -h8RouteArtifact. It carries the
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:67:    /// -h8TimeoutSeconds), -h8SaveSlot (0..2), -h8SkipSaveLeg to disable it. The leg only runs after
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:496:        public static void Run()
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:527:            // An explicit -h8Scene still wins - starting mid-route is a legitimate thing to measure, as
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:533:            string scenePath = ReadStringArg("-h8Scene", startScenePath);
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:535:            _warmupFrames = Math.Max(1, ReadIntArg("-h8WarmupFrames", DefaultWarmupFrames));
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:542:            _hardTimeoutSeconds = Math.Max(30.0, ReadIntArg("-h8TimeoutSeconds", 240));
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:595:            // "also come out of -h8TimeoutSeconds"; they do not - _hardTimeoutSeconds is assigned once
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:598:            // (-h8TimeoutSeconds 240, menu 300, settle 300) the timeout cannot contain even the menu
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:610:                    $"-h8TimeoutSeconds is {_hardTimeoutSeconds:F0}s. The hard timeout can fire mid-route " +
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:612:                    $"Raise -h8TimeoutSeconds above {configuredWindows:F0} or lower the waits.");
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:615:            _artifactPath = ReadStringArg("-h8RouteArtifact", ResolveDefaultArtifactPath());
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:858:        ///      -executeMethod reports "NOTHING TO REPAIR ... no placement owner exists in any loaded
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:1010:                        "margin. Raise -h8TimeoutSeconds to let the schedule finish.");
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:1532:                    "-h8TimeoutSeconds or lower -h8GameplaySeconds so the save leg fits",
+Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:3780:        /// fixed schema at a fixed default path is the fix; <c>-h8RouteArtifact</c> moves it when two

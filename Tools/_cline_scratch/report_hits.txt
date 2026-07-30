@@ -1,0 +1,40 @@
+﻿Hecton8.EditorTools.Authoring.H8_WorldRootGraveyardRepair.ReportOnly
+[Licensing::Module] Error: Access token is unavailable; failed to update
+Refreshing native plugins compatible for Editor in 523.42 ms, found 25 plugins.
+Native extension for LinuxStandalone target not found
+Native extension for WindowsStandalone target not found
+Native extension for OSXStandalone target not found
+    com.unity.xr.arfoundation@6.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.arfoundation@13d2457b468b)
+[Subsystems] Novel subsystem found at Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.arfoundation@13d2457b468b
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'inputs' descriptors matched in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json
+[Subsystems] No descriptors matched for  displays in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'meshings' descriptors matched in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json
+UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface:EmitExceptionAsError<UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus> (System.Func`1<UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus>,UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus)
+Refreshing native plugins compatible for Editor in 22.45 ms, found 37 plugins.
+Native extension for LinuxStandalone target not found
+Native extension for WindowsStandalone target not found
+Native extension for OSXStandalone target not found
+Refreshing native plugins compatible for Editor in 6.29 ms, found 37 plugins.
+Exception while executing InitializeOnLoad for GUITimeHelper.Init
+UnityEngine.Debug:LogError (object)
+MissingFieldException: Field not found: System.Action`1<UnityEngine.UIElements.IMGUIContainer> UnityEngine.UIElements.UIElementsUtility.s_BeginContainerCallback Due to: Could not find field in class
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+Rethrow as TargetInvocationException: Exception has been thrown by the target of an invocation.
+UnityEngine.DebugLogHandler:Internal_LogException_Injected(Exception, IntPtr)
+UnityEngine.DebugLogHandler:Internal_LogException(Exception, Object)
+UnityEngine.DebugLogHandler:LogException(Exception, Object)
+UnityEngine.Logger:LogException(Exception, Object)
+UnityEngine.Debug:LogException(Exception)
+Exception while executing InitializeOnLoad for ImguiElementUtils.Init
+UnityEngine.Debug:LogError (object)
+MissingFieldException: Field not found: System.Action`1<UnityEngine.UIElements.IMGUIContainer> UnityEngine.UIElements.UIElementsUtility.s_BeginContainerCallback Due to: Could not find field in class
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+Rethrow as TargetInvocationException: Exception has been thrown by the target of an invocation.
+UnityEngine.DebugLogHandler:Internal_LogException_Injected(Exception, IntPtr)
+UnityEngine.DebugLogHandler:Internal_LogException(Exception, Object)
+UnityEngine.DebugLogHandler:LogException(Exception, Object)
+UnityEngine.Logger:LogException(Exception, Object)
+UnityEngine.Debug:LogException(Exception)
+Refreshing native plugins compatible for Editor in 9.45 ms, found 37 plugins.

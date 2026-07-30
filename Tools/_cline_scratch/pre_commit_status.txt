@@ -1,0 +1,40 @@
+## main...gitlab/main
+ M Docs/PLAYTEST/V0_VERTICAL_SLICE_EVIDENCE_2026-07-30.md
+ M Docs/Reports/QA_OPTIMIZATION_REPORT.json
+ M README.md
+?? Assets/illustrations/
+?? Tools/_cline_scratch/analyze_gate.py
+?? Tools/_cline_scratch/analyze_hl.py
+?? Tools/_cline_scratch/cement_stat.txt
+?? Tools/_cline_scratch/commit_msg.txt
+?? Tools/_cline_scratch/disp_owner.txt
+?? Tools/_cline_scratch/dispatcher_hits.txt
+?? Tools/_cline_scratch/fix_readme_conflict.py
+?? Tools/_cline_scratch/fix_readme_out.txt
+?? Tools/_cline_scratch/fix_readme_out2.txt
+?? Tools/_cline_scratch/flag_defs.txt
+?? Tools/_cline_scratch/gate_log_hits.txt
+?? Tools/_cline_scratch/gate_run_status.txt
+?? Tools/_cline_scratch/git_grep.txt
+?? Tools/_cline_scratch/git_log.txt
+?? Tools/_cline_scratch/git_status_full.txt
+?? Tools/_cline_scratch/hl_analysis.txt
+?? Tools/_cline_scratch/hl_tail.txt
+?? Tools/_cline_scratch/merge_msg.txt
+?? Tools/_cline_scratch/p0_hits.txt
+?? Tools/_cline_scratch/poll_hl.py
+?? Tools/_cline_scratch/poll_quick.py
+?? Tools/_cline_scratch/poll_smoke.py
+?? Tools/_cline_scratch/pre_commit_status.txt
+?? Tools/_cline_scratch/readme_before_fix.txt
+?? Tools/_cline_scratch/readme_check.txt
+?? Tools/_cline_scratch/readme_tail.txt
+?? Tools/_cline_scratch/report_hits.txt
+?? Tools/_cline_scratch/report_hits2.txt
+?? Tools/_cline_scratch/run_v0_kcc_gate.bat
+?? Tools/_cline_scratch/scan_disp_owner.py
+?? Tools/_cline_scratch/scan_dispatcher.py
+?? Tools/_cline_scratch/scan_ecology_seed.py
+?? Tools/_cline_scratch/scan_p0_log.py
+?? Tools/_cline_scratch/scan_post_shortcircuit.py
+?? Tools/_cline_scratch/tracked_allow.txt
