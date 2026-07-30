@@ -801,6 +801,28 @@ namespace Hecton8.Editor
         }
 
         /// <summary>
+        /// Reads the <c>vatReadiness</c> block from whichever placement the manifest uses.
+        /// </summary>
+        /// <remarks>
+        /// The forge nests it under <c>extra</c> (export_unity.py:2134-2135, fauna_fish.py:2239) while this
+        /// reader originally expected it at the root, so <c>IsVatSource</c> was always false and
+        /// <c>ReimportVatSourceModel</c> exited 3 - JsonUtility leaves an unmatched field at its default
+        /// rather than throwing, so the disagreement was silent rather than diagnosable. Root is preferred so
+        /// any manifest already written that way keeps working; <c>extra</c> is the sanctioned home going
+        /// forward and is what every current generator emits.
+        /// </remarks>
+        private static ForgeManifestVatReadinessBlock ResolveVatReadiness(ForgeManifestFile manifest)
+        {
+            if (manifest == null)
+                return null;
+
+            if (manifest.vatReadiness != null)
+                return manifest.vatReadiness;
+
+            return manifest.extra != null ? manifest.extra.vatReadiness : null;
+        }
+
+        /// <summary>
         /// Maps a managed FBX asset path to the path its sibling forge manifest must occupy, or returns false.
         /// Pure string logic with no file access, so the naming gate is provable without an import.
         /// </summary>
