@@ -317,6 +317,9 @@ namespace Hecton8.Core
         private static readonly object _blackboxDumpGate = new object();
         // COLD ALLOC: object[1] - SHINOBU watchdog lifecycle gate - owner: GlobalTelemetryBus
         private static readonly object _blackboxWatchdogGate = new object();
+        // Scoped bind/init critical-section mask ONLY - never session-held.
+        // Watchdog IDs 632-635 => guard bits 56-59 collide with InputOwnerMutationGuardMask
+        // (70520-70523 / 75000-75001). Session hold => Input publishOk=0 (L07).
         private static readonly ulong BlackboxVaultMutationGuardMask =
             BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashBlackboxBytes) |
             BlackboxVaultMutationGuardBit(BufferID.ShinobuCrashMmfScratch) |
@@ -693,6 +696,14 @@ namespace Hecton8.Core
                 if (!TryBindBlackboxVaultBuffersNoLock(desiredFrameCount, byteCount))
                     return;
                 ClearBlackboxControlStateNoLock();
+                // L08/V0: mutation guard is a short critical-section token, not a lifetime pin.
+                // Holding BlackboxVaultMutationGuardMask across the session permanently poisons
+                // InputOwnerMutationGuardMask high bits 56-59 (watchdog BufferIDs 632-635 fold to
+                // the same (id&63) slots as ShinobuInputCurrentDto/Journal/Button/Block + predicted
+                // rings). PublishDeterministicInputState then fails 100% (L07 publishOk=0).
+                // Hot-path blackbox writers (PushEvent/SignalWatchdog/Probe) already use atomics on
+                // resolved handles and do not require the vault mutation guard held.
+                ReleaseBlackboxVaultMutationGuardOnlyNoLock();
 
                 _blackboxActiveFrameCount = desiredFrameCount;
                 _blackboxFrameWriteIndex = 0;
@@ -867,6 +878,12 @@ namespace Hecton8.Core
                 UnsafeUtility.MemClear(watchdogActive.GetUnsafePtr(), watchdogActive.Length * UnsafeUtility.SizeOf<int>());
         }
 
+        /// <summary>
+        /// Acquires BlackboxVaultMutationGuardMask for a short critical section (bind/clear).
+        /// MUST be paired with ReleaseBlackboxVaultMutationGuardOnlyNoLock or
+        /// ReleaseBlackboxVaultBindingsNoLock - never leave held for the process lifetime.
+        /// Watchdog BufferIDs 632-635 collide with Input high guard bits 56-59.
+        /// </summary>
         private static bool TryLockBlackboxVaultBuffersNoLock(IDataVault vault)
         {
             if (_blackboxVaultGuardHeld)
@@ -891,14 +908,39 @@ namespace Hecton8.Core
             ClearBlackboxVaultBindingsNoLock();
         }
 
+        /// <summary>
+        /// Drops the blackbox vault mutation guard while keeping generation handles bound.
+        /// Bind/init acquires the guard only around exclusive buffer setup; runtime writers
+        /// do not keep it. See EnsureBlackboxInitialized release after ClearBlackboxControlStateNoLock.
+        /// </summary>
+        private static void ReleaseBlackboxVaultMutationGuardOnlyNoLock()
+        {
+            if (!_blackboxVaultGuardHeld)
+                return;
+
+            IDataVault vault = _blackboxVault;
+            if (vault != null)
+                TryReleaseBlackboxVaultGuardNoThrow(vault);
+            else
+                _blackboxVaultGuardHeld = false;
+        }
+
         private static void TryReleaseBlackboxVaultGuardNoThrow(IDataVault vault)
         {
             try
             {
-                vault.ReleaseMutationGuard(BlackboxVaultMutationGuardMask);
+                if (vault != null)
+                    vault.ReleaseMutationGuard(BlackboxVaultMutationGuardMask);
             }
             catch (Exception)
             {
+            }
+            finally
+            {
+                // Always drop the local hold bit even if vault release threw: a stuck
+                // true here would make TryLock short-circuit forever without vault bits,
+                // or leave us believing we still own a mask we do not.
+                _blackboxVaultGuardHeld = false;
             }
         }
 
