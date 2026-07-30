@@ -1,0 +1,1844 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.5/staging' branch; Version is '6000.5.0f1 (88b47c5e7076) revision 8959100'; Using compiler version '194234433'; Build Type 'Release'
+[Licensing::IpcConnector] Channel LicenseClient-Admin doesn't exist
+OS: 'Windows 11  (10.0.26200) Professional' Language: 'ru' Physical Memory: 32492 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-07-30T11:16:09Z
+[Licensing::Module] Successfully launched the LicensingClient (PId: 31708)
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe
+-batchmode
+-nographics
+-quit
+-projectPath
+C:\hades\Hecton8
+-executeMethod
+Hecton8.EditorTools.Authoring.H8_WorldRootGraveyardRepair.ReportOnly
+-logFile
+C:\hades\Hecton8\Docs\AgentLogs\worldroot_report_2026-07-30.log
+Successfully changed project path to: C:\hades\Hecton8
+C:/hades/Hecton8
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gfx=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-main-allocator-mimalloc-enabled=0"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+Logging is directed to a specific file, skipping project log.Player connection [35876]  Target information:
+
+Player connection [35876]  * "[IP] 10.77.0.5 [Port] 55504 [Flags] 2 [Guid] 2891516976 [EditorId] 2891516976 [Version] 1048832 [Id] WindowsEditor(7,DESKTOP-RAR7JQB) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [35876]  * "[IP] 192.168.1.43 [Port] 55504 [Flags] 2 [Guid] 2891516976 [EditorId] 2891516976 [Version] 1048832 [Id] WindowsEditor(7,DESKTOP-RAR7JQB) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [35876] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [35876] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-Admin" at "2026-07-30T11:16:10.4622859Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 31708, path: "C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Package Manager] Connected to IPC stream "Upm-11168" after 0.4 seconds.
+[Licensing::Module] Licensing is not yet initialized.
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.1+9fbee8e
+  Session Id:              5fac1ad0987a482791b8041ed4d404c3
+  Correlation Id:          0118fec062dfb088c55ec8237bf87116
+  External correlation Id: 8431476803341817977
+  Machine Id:              uAHH4osrHUaTohgWSdDtjOWKAI0=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-Admin" (connect: 0.56s, validation: 0.11s, handshake: 0.03s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-Admin-notifications" at "2026-07-30T11:16:10.604496Z"
+[Licensing::Module] Connected to LicensingClient (PId: 31708, launch time: 0.00, total connection time: 0.71s)
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: 7972536317136-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.01
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Licensing Background thread has ended after 0.76s
+[Licensing::Module] Licensing is initialized (took 0.12s).
+[Licensing::Client] Successfully resolved entitlement details
+Library Redirect Path: Library/
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Artifact Garbage Collection - Removed 7 unused hashed content files
+Refreshing native plugins compatible for Editor in 523.42 ms, found 25 plugins.
+Initialize engine version: 6000.5.0f1 (88b47c5e7076)
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/hades/Hecton8/Assets
+Forcing GfxDevice: Null
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+NullGfxDevice:
+    Version:  NULL 1.0 [1.0]
+    Renderer: Null Device
+    Vendor:   Unity Technologies
+Initialize mono
+Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/Managed'
+Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/BCLExtensions/runtime/netstandard2.1'
+Mono path[2] = 'C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56168
+CodeReloadManager initialized
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/PlaybackEngines/MacStandaloneSupport/UnityEditor.OSXStandalone.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport/UnityEditor.LinuxStandalone.Extensions.dll
+Registered in 0.003267 seconds.
+Native extension for LinuxStandalone target not found
+Native extension for WindowsStandalone target not found
+Native extension for OSXStandalone target not found
+Package Manager log level set to [2]
+[Licensing::Client] Successfully resolved entitlement details
+ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:False
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  6.015 seconds
+Domain Reload Profiling: 6574ms
+	BeginReloadAssembly (153ms)
+		CreateAndSetChildDomain (4ms)
+	RebuildCommonClasses (5ms)
+	RebuildNativeTypeToScriptingClass (21ms)
+	initialDomainReloadingComplete (68ms)
+	LoadAllAssembliesAndSetupDomain (309ms)
+		LoadAssemblies (148ms)
+		AnalyzeDomain (223ms)
+			TypeCache.Refresh (221ms)
+				TypeCache.ScanAssembly (206ms)
+	FinalizeReload (6019ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (4ms)
+			BeforeProcessingInitializeOnLoad (91ms)
+			ProcessInitializeOnLoadAttributes (109ms)
+			ProcessInitializeOnLoadMethodAttributes (5732ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 75 packages:
+  Packages from [https://packages.unity.com]:
+    com.unity.addressables@2.9.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.addressables@8460f1c9c927)
+    com.unity.ai.navigation@2.0.13 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ai.navigation@42d896194035)
+    com.unity.cinemachine@3.1.6 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.cinemachine@285f38545487)
+    com.unity.collab-proxy@2.12.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.collab-proxy@0b1559bcd34e)
+    com.unity.inputsystem@1.19.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.inputsystem@21a28c3a6c83)
+    com.unity.memoryprofiler@1.1.12 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.memoryprofiler@485b5ba42ef5)
+    com.unity.nuget.newtonsoft-json@3.2.2 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.nuget.newtonsoft-json@4dfd81071c64)
+    com.unity.probuilder@6.0.9 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.probuilder@1f279ab829b7)
+    com.unity.sharp-zip-lib@1.4.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.sharp-zip-lib@f6e4ef34e4d8)
+    com.unity.timeline@1.8.12 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.timeline@8cd8509afae5)
+    com.unity.visualscripting@1.9.11 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.visualscripting@8bed5ad90189)
+    com.unity.xr.meta-openxr@2.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c)
+    com.unity.xr.openxr@1.17.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.openxr@58837b2992e0)
+    com.unity.searcher@4.9.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.searcher@d45a78918735)
+    com.unity.xr.core-utils@2.6.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.core-utils@a8b900321199)
+    com.unity.xr.legacyinputhelpers@3.0.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.legacyinputhelpers@3f62d634f63b)
+    com.unity.xr.arfoundation@6.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.arfoundation@13d2457b468b)
+    com.unity.xr.compositionlayers@2.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.xr.compositionlayers@461024b1d757)
+    com.unity.settings-manager@2.1.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.settings-manager@0b8638c5ce86)
+    com.unity.burst@1.8.29 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.burst@6bb9aca3ef38)
+    com.unity.profiling.core@1.0.3 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.profiling.core@8a49f7027d06)
+    com.unity.editorcoroutines@1.1.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.editorcoroutines@87a15ed012c2)
+    com.unity.splines@2.8.4 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.splines@9b00833aca09)
+    com.unity.scriptablebuildpipeline@2.6.1 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.scriptablebuildpipeline@36e3b5898ee2)
+    com.unity.nuget.mono-cecil@1.11.6 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff)
+    com.unity.test-framework.performance@3.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.test-framework.performance@8b56083ec0f0)
+  Built-in packages:
+    com.unity.2d.sprite@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.2d.sprite@053a968eab56)
+    com.unity.render-pipelines.universal@17.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.universal@0c18adc4ff89)
+    com.unity.ugui@2.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ugui@4f9b15fd1386)
+    com.unity.modules.accessibility@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.accessibility)
+    com.unity.modules.ai@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.ai)
+    com.unity.modules.androidjni@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.androidjni)
+    com.unity.modules.animation@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.animation)
+    com.unity.modules.assetbundle@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.assetbundle)
+    com.unity.modules.audio@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.audio)
+    com.unity.modules.cloth@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.cloth)
+    com.unity.modules.director@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.director)
+    com.unity.modules.imageconversion@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.imageconversion)
+    com.unity.modules.imgui@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.jsonserialize)
+    com.unity.modules.particlesystem@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.particlesystem)
+    com.unity.modules.physics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.physics)
+    com.unity.modules.physics2d@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.physics2d)
+    com.unity.modules.physicscore2d@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.physicscore2d)
+    com.unity.modules.screencapture@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.screencapture)
+    com.unity.modules.terrain@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.terrain)
+    com.unity.modules.terrainphysics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.terrainphysics)
+    com.unity.modules.tilemap@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.tilemap)
+    com.unity.modules.ui@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.ui)
+    com.unity.modules.uielements@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.modules.umbra@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.umbra)
+    com.unity.modules.unityanalytics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unityanalytics)
+    com.unity.modules.unitywebrequest@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequest)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestassetbundle)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestaudio)
+    com.unity.modules.unitywebrequesttexture@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequesttexture)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestwww)
+    com.unity.modules.vectorgraphics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vectorgraphics)
+    com.unity.modules.vehicles@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vehicles)
+    com.unity.modules.video@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.video)
+    com.unity.modules.wind@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.wind)
+    com.unity.modules.xr@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.xr)
+    com.unity.render-pipelines.core@17.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.core@f43b729f1f6e)
+    com.unity.modules.subsystems@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.subsystems)
+    com.unity.modules.hierarchycore@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.render-pipelines.universal-config@17.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.universal-config@fdda01c80fe3)
+    com.unity.collections@6.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.collections@a43cabe808ca)
+    com.unity.mathematics@1.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.mathematics@981956d94fb6)
+    com.unity.test-framework@1.7.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.test-framework@f3e6c9a02477)
+    com.unity.ext.nunit@2.1.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ext.nunit@44f7d31723bd)
+  Embedded packages:
+    com.unity.xr.management@file:C:\hades\Hecton8\Packages\com.unity.xr.management (location: C:\hades\Hecton8\Packages\com.unity.xr.management)
+    com.jbooth.microsplat.core@file:C:\hades\Hecton8\Packages\com.jbooth.microsplat.core (location: C:\hades\Hecton8\Packages\com.jbooth.microsplat.core)
+    com.jbooth.microsplat.urp2022@file:C:\hades\Hecton8\Packages\com.jbooth.microsplat.urp2022 (location: C:\hades\Hecton8\Packages\com.jbooth.microsplat.urp2022)
+    com.unity.shadergraph@file:C:\hades\Hecton8\Packages\com.unity.shadergraph (location: C:\hades\Hecton8\Packages\com.unity.shadergraph)
+  Git packages:
+    com.coplaydev.unity-mcp@https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta (location: C:\hades\Hecton8\Library\PackageCache\com.coplaydev.unity-mcp@edb7113971fc)
+[Subsystems] Looking for new subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c
+[Subsystems] Novel subsystem found at Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/hades/Hecton8/Assets
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] No descriptors matched for  inputs in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] No descriptors matched for  displays in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'meshings' descriptors matched in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.openxr@58837b2992e0
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.openxr@58837b2992e0/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'inputs' descriptors matched in Library/PackageCache/com.unity.xr.openxr@58837b2992e0/Runtime/UnitySubsystemsManifest.json
+[Subsystems] 1 'displays' descriptors matched in Library/PackageCache/com.unity.xr.openxr@58837b2992e0/Runtime/UnitySubsystemsManifest.json
+[Subsystems] No descriptors matched for  meshings in Library/PackageCache/com.unity.xr.openxr@58837b2992e0/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.arfoundation@13d2457b468b
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'inputs' descriptors matched in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json
+[Subsystems] No descriptors matched for  displays in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'meshings' descriptors matched in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json
+[Package Manager] Done registering packages in 0.02 seconds
+Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+[ScriptCompilation] Requested script compilation because: AssetDatabase observed changes in script compilation related files
+Assembly for Assembly Definition File 'Assets/Feel/MMTools/Editor/MMMaintenance/Tests/MoreMountains.Tools.Editor.Tests.asmdef' will not be compiled, because it has no scripts associated with it.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:LogFormat (UnityEngine.LogType,string,object[])
+UnityEngine.Debug:LogWarningFormat (string,object[])
+UnityEditor.Scripting.ScriptCompilation.EditorCompilation:WarnIfThereAreAssembliesWithoutAnyScripts (UnityEditor.Scripting.ScriptCompilation.ScriptAssemblySettings,UnityEditor.Scripting.ScriptCompilation.ScriptAssembly[])
+UnityEditor.Scripting.ScriptCompilation.EditorCompilation:CompileScriptsWithSettings (UnityEditor.Scripting.ScriptCompilation.ScriptAssemblySettings)
+UnityEditor.Scripting.ScriptCompilation.EditorCompilation:CompileScripts (UnityEditor.Scripting.ScriptCompilation.EditorScriptCompilationOptions,UnityEditor.BuildTarget,int,string[])
+UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface/<>c__DisplayClass21_0:<CompileScripts>b__0 ()
+UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface:EmitExceptionAsError<UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus> (System.Func`1<UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus>,UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus)
+UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface:CompileScripts (UnityEditor.Scripting.ScriptCompilation.EditorScriptCompilationOptions,UnityEditor.BuildTarget,int,string[])
+
+Starting: C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: C:/hades/Hecton8
+DisplayProgressbar: Compiling Scripts
+Starting: C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Data\netcorerun\netcorerun.exe "C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Data\Tools\BuildPipeline\ScriptCompilationBuildProgram.exe" "Library/Bee/1900b0aE.dag.json" "Library/Bee/1900b0aE-inputdata.json" "Library\Bee\buildprogram0.traceevents"
+WorkingDir: C:/hades/Hecton8
+ExitCode: 4 Duration: 0s490ms
+Rebuilding DAG because FileSignature timestamp changed: Library/Bee/1900b0aE-inputdata.json
+*** Tundra requires additional run (0.45 seconds), 0 items updated, 4 evaluated
+ExitCode: 0 Duration: 5s67ms
+Starting: C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aE.dag" --continue-on-failure --dagfilejson="Library\Bee\1900b0aE.dag.json" --profile="Library/Bee/backend2.traceevents" ScriptAssemblies
+WorkingDir: C:/hades/Hecton8
+ExitCode: 0 Duration: 59s
+Finished compiling graph: 3949 nodes, 107083 flattened edges (80783 ToBuild, 732 ToUse), maximum node priority 5853
+[1491/3945  0s] WriteText Library/Bee/artifacts/1900b0aE.dag/Hecton8.Physics.KCC.Editor.rsp
+[2731/3945  0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+[BUSY       6s] Csc Library/Bee/artifacts/1900b0aE.dag/Hecton8.Core.dll (+2 others)
+[BUSY      16s] Csc Library/Bee/artifacts/1900b0aE.dag/Hecton8.Core.dll (+2 others)
+[BUSY      26s] Csc Library/Bee/artifacts/1900b0aE.dag/Hecton8.Core.dll (+2 others)
+[BUSY      36s] Csc Library/Bee/artifacts/1900b0aE.dag/Hecton8.Core.dll (+2 others)
+[3437/3945 39s] Csc Library/Bee/artifacts/1900b0aE.dag/Hecton8.Core.dll (+2 others)
+Assets\_Project\Scripts\SaveData.cs(153,42): warning UAC1009: Field 'toolDurabilityMap' uses an unsupported type 'System.Collections.Generic.Dictionary<string, float>'. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1009)
+
+Assets\_Project\Scripts\SaveData.cs(156,41): warning UAC1009: Field 'toolBrokenMap' uses an unsupported type 'System.Collections.Generic.Dictionary<string, bool>'. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1009)
+
+Assets\_Project\Scripts\SaveData.cs(159,29): warning UAC1009: Field 'discoveredBiomeIds' uses an unsupported type 'System.Collections.Generic.HashSet<int>'. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1009)
+
+Assets\_Project\Scripts\SaveData.cs(365,43): warning UAC1009: Field 'CustomModData' uses an unsupported type 'System.Collections.Generic.Dictionary<string, string>'. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1009)
+
+Assets\_Project\Scripts\SaveData.cs(1018,66): warning UAC1001: Field 'position' type 'Hecton8.World.AbsoluteUniversePositionBlit128' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+
+Assets\_Project\Scripts\Gameplay\PlayerActionController.cs(89,55): warning UAC1010: Field 'cameraJuiceProcessor' type 'Hecton8.Gameplay.CameraJuiceProcessor' is not [Serializable]; [SerializeField] is ignored. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1010)
+
+Assets\_Project\Scripts\Inventory\CargoTransferDebugGizmo.cs(15,63): warning UAC1010: Field 'sourceAup' type 'Hecton8.World.AbsoluteUniversePositionBlit' is not [Serializable]; [SerializeField] is ignored. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1010)
+
+Assets\_Project\Scripts\Inventory\CargoTransferDebugGizmo.cs(16,63): warning UAC1010: Field 'destinationAup' type 'Hecton8.World.AbsoluteUniversePositionBlit' is not [Serializable]; [SerializeField] is ignored. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1010)
+
+Assets\_Project\Scripts\Construction\NetworkNodeData.cs(137,41): warning UAC1001: Field 'NodeAup' type 'Hecton8.World.AbsoluteUniversePosition' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs(169,31): warning UAC1001: Field 'NavigationBuild' type 'UnityEngine.AsyncOperation' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+
+Assets\_Project\Scripts\WorldFaunaSpawnRegistry.cs(16,45): warning UAC1001: Field 'positionAup' type 'Hecton8.World.AbsoluteUniversePosition' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+[3562/3945  0s] Csc Library/Bee/artifacts/1900b0aE.dag/Hecton8.Physics.KCC.Editor.dll (+2 others)
+[3563/3945  0s] Csc Library/Bee/artifacts/1900b0aE.dag/Hecton8.Tests.FirstSlice.dll (+2 others)
+[3564/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.PlayModeTests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.PlayModeTests.dll, with 157 defines and 288 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3565/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Power.Generators.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Power.Generators.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3566/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.ShinobuBiomimetic.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.ShinobuBiomimetic.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3567/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.Outposts.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.Outposts.dll, with 157 defines and 319 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3568/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Narrative.Campaign.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Narrative.Campaign.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3569/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Gameplay.Loot.Contracts.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Gameplay.Loot.Contracts.dll, with 157 defines and 315 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3570/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Plugins.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Plugins.dll, with 157 defines and 319 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3571/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.AI.Ambient.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.AI.Ambient.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3572/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Gameplay.Mining.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Gameplay.Mining.dll, with 157 defines and 318 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3573/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Crest.Bridge.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Crest.Bridge.dll, with 157 defines and 323 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3574/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.VFX.Materials.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.VFX.Materials.dll, with 157 defines and 315 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3575/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Rendering.WaterOptics.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Rendering.WaterOptics.dll, with 157 defines and 319 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3576/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Rendering.OceanSinglePass.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Rendering.OceanSinglePass.dll, with 157 defines and 320 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3577/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Narrative.Prologue.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Narrative.Prologue.dll, with 157 defines and 315 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3578/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Prologue.VFX.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Prologue.VFX.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3579/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.VFX.Parasites.Runtime.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.VFX.Parasites.Runtime.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3580/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.AI.Pathfinding.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.AI.Pathfinding.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3581/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.FloraAmbientSway.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.FloraAmbientSway.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3582/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Habitat.Deformation.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Habitat.Deformation.dll, with 157 defines and 321 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3583/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Assembly-CSharp.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Assembly-CSharp.dll, with 157 defines and 441 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3584/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Rendering.BilateralDrs.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Rendering.BilateralDrs.dll, with 157 defines and 318 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3585/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Gameplay.Loot.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Gameplay.Loot.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3586/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.VFX.JacobianFoam.Runtime.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.VFX.JacobianFoam.Runtime.dll, with 157 defines and 318 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3587/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.VFX.Debris.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.VFX.Debris.dll, with 157 defines and 318 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3588/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Physics.Buoyancy.Runtime.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Physics.Buoyancy.Runtime.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3589/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Graphics.Materials.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Graphics.Materials.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3590/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Vehicles.VFX.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Vehicles.VFX.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3591/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.UI.VR.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.UI.VR.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3592/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Atmosphere.StormPropagation.Runtime.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Atmosphere.StormPropagation.Runtime.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3593/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.ProceduralCoral.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.ProceduralCoral.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3594/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Graphics.Scalability.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Graphics.Scalability.dll, with 157 defines and 319 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3595/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.UI.Navigation.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.UI.Navigation.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3596/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.QA.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.QA.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3597/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Core.Hardware.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Core.Hardware.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3598/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.Economy.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.Economy.dll, with 157 defines and 319 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3599/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.VFX.Bioluminescence.Runtime.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.VFX.Bioluminescence.Runtime.dll, with 157 defines and 318 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3600/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Tools.ToolKinematics.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Tools.ToolKinematics.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3601/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Audio.Prologue.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Audio.Prologue.dll, with 157 defines and 315 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3602/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Thermodynamics.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Thermodynamics.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3603/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Animation.FaunaProcedural.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Animation.FaunaProcedural.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3604/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Prologue.Space.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Prologue.Space.dll, with 157 defines and 321 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3605/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Power.BatteryChargerLogistics.Runtime.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Power.BatteryChargerLogistics.Runtime.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3606/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.QA.Headless.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.QA.Headless.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3607/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.SeedShipAnomaly.Runtime.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.SeedShipAnomaly.Runtime.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3608/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.VFX.PlasmaBeam.Runtime.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.VFX.PlasmaBeam.Runtime.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3609/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Tests.Animation.IK.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Tests.Animation.IK.dll, with 155 defines and 296 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3610/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.SaveSystem.Tests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.SaveSystem.Tests.dll, with 155 defines and 294 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3611/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Graphics.Culling.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Graphics.Culling.Editor.dll, with 155 defines and 323 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3612/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Crest.Bridge.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Crest.Bridge.Editor.dll, with 156 defines and 349 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3613/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Graphics.Materials.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Graphics.Materials.Editor.dll, with 155 defines and 323 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3614/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Physics.Cable132.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Physics.Cable132.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3615/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.UI.Tools.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.UI.Tools.dll, with 157 defines and 315 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3616/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Audio.Synthesis.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Audio.Synthesis.Editor.dll, with 155 defines and 327 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3617/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.ProceduralWreckage.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.ProceduralWreckage.dll, with 157 defines and 316 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3618/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Lighting.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Lighting.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3619/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Graphics.Culling.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Graphics.Culling.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3620/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Editor.Generators.Fauna.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Editor.Generators.Fauna.dll, with 155 defines and 302 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3621/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.HabitatInteriorClutterForge.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.HabitatInteriorClutterForge.Editor.dll, with 155 defines and 325 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3622/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Lighting.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Lighting.dll, with 157 defines and 319 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3623/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.QA.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.QA.Editor.dll, with 155 defines and 324 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3624/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Audio.Synthesis.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Audio.Synthesis.dll, with 157 defines and 317 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3625/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.SaveSystem.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.SaveSystem.Editor.dll, with 155 defines and 323 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3626/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Building.Power.Tests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Building.Power.Tests.dll, with 155 defines and 295 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3627/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Rendering.TexturePacker.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Rendering.TexturePacker.Editor.dll, with 155 defines and 325 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3628/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Core.Bridge.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Core.Bridge.Editor.dll, with 156 defines and 327 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3629/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Editor.ProceduralGen.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Editor.ProceduralGen.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3630/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Construction.Tests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Construction.Tests.dll, with 155 defines and 296 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3631/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.VFX.PlasmaBeam.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.VFX.PlasmaBeam.Editor.dll, with 155 defines and 323 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3632/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Physiology.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Physiology.dll, with 157 defines and 318 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3633/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Optimization.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Optimization.Editor.dll, with 155 defines and 322 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3634/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Physics.Buoyancy.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Physics.Buoyancy.Editor.dll, with 155 defines and 301 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3635/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Tests.FirstSlice.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Tests.FirstSlice.dll, with 155 defines and 323 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3636/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.OfflineWreckageBaker.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.OfflineWreckageBaker.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3637/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Physiology.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Physiology.Editor.dll, with 155 defines and 301 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3638/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Core.Content.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Core.Content.Editor.dll, with 156 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3639/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Rendering.WaterOptics.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Rendering.WaterOptics.Editor.dll, with 155 defines and 327 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3640/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.BiotaDensityMapBaker.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.BiotaDensityMapBaker.Editor.dll, with 155 defines and 325 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3641/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Project.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Project.Editor.dll, with 156 defines and 344 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3642/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Core.Tests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Core.Tests.dll, with 155 defines and 294 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3643/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Inventory.Tests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Inventory.Tests.dll, with 155 defines and 296 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3644/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Graphics.Scalability.Tests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Graphics.Scalability.Tests.dll, with 155 defines and 295 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3645/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Cartography.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Cartography.Editor.dll, with 155 defines and 297 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3646/3945  2s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.SaveSystem.EditModeTests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.SaveSystem.EditModeTests.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3647/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Animation.FaunaProcedural.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Animation.FaunaProcedural.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3648/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Tools.ToolKinematics.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Tools.ToolKinematics.Editor.dll, with 155 defines and 327 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3649/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Atmosphere.StormPropagation.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Atmosphere.StormPropagation.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3650/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.VoxelSurfaceNets.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.VoxelSurfaceNets.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3651/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.AI.Pathfinding.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.AI.Pathfinding.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3652/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.Economy.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.Economy.Editor.dll, with 155 defines and 327 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3653/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.VFX.JacobianFoam.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.VFX.JacobianFoam.Editor.dll, with 155 defines and 329 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3654/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.VFX.Parasites.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.VFX.Parasites.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3655/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.VFX.Bioluminescence.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.VFX.Bioluminescence.Editor.dll, with 155 defines and 324 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3656/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Habitat.Deformation.DamageBake.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Habitat.Deformation.DamageBake.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3657/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.InventoryRouting.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.InventoryRouting.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3658/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.OfflineGeometry.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.OfflineGeometry.Editor.dll, with 155 defines and 327 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3659/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.UI.TerminalOS.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.UI.TerminalOS.Editor.dll, with 155 defines and 299 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3660/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Quest.Tests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Quest.Tests.dll, with 155 defines and 295 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3661/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.PureLogic.Tests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.PureLogic.Tests.dll, with 155 defines and 297 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3662/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Dev.SpaceEngine098.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Dev.SpaceEngine098.dll, with 155 defines and 325 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3663/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.ProceduralWreckage.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.ProceduralWreckage.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3664/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.OfflineGeology.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.OfflineGeology.Editor.dll, with 155 defines and 301 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3665/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.FloraAmbientSway.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.FloraAmbientSway.Editor.dll, with 155 defines and 325 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3666/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Habitat.Deformation.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Habitat.Deformation.Editor.dll, with 155 defines and 323 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3667/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.ProceduralCoral.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.ProceduralCoral.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3668/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Animation.FaunaProcedural.Tests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Animation.FaunaProcedural.Tests.dll, with 155 defines and 296 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3669/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Assembly-CSharp-Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Assembly-CSharp-Editor.dll, with 155 defines and 466 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3670/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Power.BatteryChargerLogistics.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Power.BatteryChargerLogistics.Editor.dll, with 155 defines and 324 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3671/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.QA.Headless.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.QA.Headless.Editor.dll, with 155 defines and 299 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3672/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.BiomeWeightMapBaker.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.BiomeWeightMapBaker.Editor.dll, with 155 defines and 324 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3673/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Physics.KCC.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Physics.KCC.Editor.dll, with 155 defines and 300 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3674/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.StaticCaveSdfBaker.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.StaticCaveSdfBaker.Editor.dll, with 155 defines and 325 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3675/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.HydraulicErosionForge.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.HydraulicErosionForge.Editor.dll, with 155 defines and 325 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3766/3945  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Physics.KCC.Editor.dll
+[3773/3945  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Physics.KCC.Editor.pdb
+[3816/3945  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Tests.FirstSlice.dll
+[3841/3945  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Tests.FirstSlice.pdb
+[3900/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.SeedShipAnomaly.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.SeedShipAnomaly.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3901/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.AI.Cognition.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.AI.Cognition.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3902/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Tests.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Tests.dll, with 155 defines and 294 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3903/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.AbyssalGeology1606.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.AbyssalGeology1606.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3904/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.DataMonolith.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.DataMonolith.Editor.dll, with 155 defines and 301 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3905/3945  1s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.OfflineHadalTrenchBaker.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.OfflineHadalTrenchBaker.Editor.dll, with 155 defines and 327 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3906/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.AbyssalScatter1614.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.AbyssalScatter1614.Editor.dll, with 155 defines and 324 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3921/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.UI.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.UI.Editor.dll, with 155 defines and 323 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3922/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Ecosystem.NutrientDrift.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Ecosystem.NutrientDrift.Editor.dll, with 155 defines and 300 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3927/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.ShinobuBiomimetic.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.ShinobuBiomimetic.Editor.dll, with 155 defines and 326 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3930/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Physics.Vehicles.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Physics.Vehicles.Editor.dll, with 155 defines and 300 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3933/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.GeographySanity.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.GeographySanity.Editor.dll, with 155 defines and 325 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3936/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.World.OfflineHadalArchBaker.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.World.OfflineHadalArchBaker.Editor.dll, with 155 defines and 325 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3939/3945  6s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Editor.dll, with 156 defines and 352 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[BUSY      15s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Core.dll (+pdb)
+[3942/3945 18s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Core.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Core.dll, with 158 defines and 339 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[3943/3945  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Core.pdb
+[3944/3945  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Core.dll
+*** Tundra build success (59.09 seconds), 138 items updated, 3945 evaluated
+Assets\_Project\Scripts\SaveData.cs(153,42): warning UAC1009: Field 'toolDurabilityMap' uses an unsupported type 'System.Collections.Generic.Dictionary<string, float>'. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1009)
+Assets\_Project\Scripts\SaveData.cs(156,41): warning UAC1009: Field 'toolBrokenMap' uses an unsupported type 'System.Collections.Generic.Dictionary<string, bool>'. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1009)
+Assets\_Project\Scripts\SaveData.cs(159,29): warning UAC1009: Field 'discoveredBiomeIds' uses an unsupported type 'System.Collections.Generic.HashSet<int>'. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1009)
+Assets\_Project\Scripts\SaveData.cs(365,43): warning UAC1009: Field 'CustomModData' uses an unsupported type 'System.Collections.Generic.Dictionary<string, string>'. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1009)
+Assets\_Project\Scripts\SaveData.cs(1018,66): warning UAC1001: Field 'position' type 'Hecton8.World.AbsoluteUniversePositionBlit128' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+Assets\_Project\Scripts\Gameplay\PlayerActionController.cs(89,55): warning UAC1010: Field 'cameraJuiceProcessor' type 'Hecton8.Gameplay.CameraJuiceProcessor' is not [Serializable]; [SerializeField] is ignored. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1010)
+Assets\_Project\Scripts\Inventory\CargoTransferDebugGizmo.cs(15,63): warning UAC1010: Field 'sourceAup' type 'Hecton8.World.AbsoluteUniversePositionBlit' is not [Serializable]; [SerializeField] is ignored. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1010)
+Assets\_Project\Scripts\Inventory\CargoTransferDebugGizmo.cs(16,63): warning UAC1010: Field 'destinationAup' type 'Hecton8.World.AbsoluteUniversePositionBlit' is not [Serializable]; [SerializeField] is ignored. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1010)
+Assets\_Project\Scripts\Construction\NetworkNodeData.cs(137,41): warning UAC1001: Field 'NodeAup' type 'Hecton8.World.AbsoluteUniversePosition' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs(169,31): warning UAC1001: Field 'NavigationBuild' type 'UnityEngine.AsyncOperation' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+Assets\_Project\Scripts\WorldFaunaSpawnRegistry.cs(16,45): warning UAC1001: Field 'positionAup' type 'Hecton8.World.AbsoluteUniversePosition' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+AssetDatabase: script compilation time: 65.573349s
+[Licensing::Client] Successfully resolved entitlement details
+Begin MonoManager ReloadAssembly
+Total cache size 267954100
+Total cache size after purge 267954100, took 00:00:00.4060392
+Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+'Packages/com.unity.cinemachine/Editor/Editors/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+'Packages/com.unity.cinemachine/Editor/Obsolete/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+Refreshing native plugins compatible for Editor in 22.45 ms, found 37 plugins.
+Native extension for LinuxStandalone target not found
+Native extension for WindowsStandalone target not found
+Native extension for OSXStandalone target not found
+Refreshing native plugins compatible for Editor in 6.29 ms, found 37 plugins.
+Exception while executing InitializeOnLoad for GUITimeHelper.Init
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogError (object)
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadMethodAttributes ()
+
+MissingFieldException: Field not found: System.Action`1<UnityEngine.UIElements.IMGUIContainer> UnityEngine.UIElements.UIElementsUtility.s_BeginContainerCallback Due to: Could not find field in class
+  at Sirenix.Utilities.Editor.GUITimeHelper.Init () [0x00000] in <8130a2a8b0b14a5c882b3dc16007b5b2>:0 
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <816f70bc2a9c4332b0bd119906a8d40e>:0 
+Rethrow as TargetInvocationException: Exception has been thrown by the target of an invocation.
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x00083] in <816f70bc2a9c4332b0bd119906a8d40e>:0 
+  at System.Reflection.MethodBase.Invoke (System.Object obj, System.Object[] parameters) [0x00000] in <816f70bc2a9c4332b0bd119906a8d40e>:0 
+  at UnityEditor.EditorAssemblies.ProcessInitializeOnLoadMethodAttributes () [0x0007b] in <cd9a5dfa62e34daeb7c2d29ef5f4929b>:0 
+UnityEngine.DebugLogHandler:Internal_LogException_Injected(Exception, IntPtr)
+UnityEngine.DebugLogHandler:Internal_LogException(Exception, Object)
+UnityEngine.DebugLogHandler:LogException(Exception, Object)
+UnityEngine.Logger:LogException(Exception, Object)
+UnityEngine.Debug:LogException(Exception)
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadMethodAttributes()
+
+Launched and connected shader compiler UnityShaderCompiler.exe after 0.02 seconds
+Exception while executing InitializeOnLoad for ImguiElementUtils.Init
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogError (object)
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadMethodAttributes ()
+
+MissingFieldException: Field not found: System.Action`1<UnityEngine.UIElements.IMGUIContainer> UnityEngine.UIElements.UIElementsUtility.s_BeginContainerCallback Due to: Could not find field in class
+  at Sirenix.OdinInspector.Editor.Internal.UIToolkitIntegration.ImguiElementUtils.Init () [0x00010] in <e23b4c8f9acd4e9bab40e0237d631867>:0 
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <816f70bc2a9c4332b0bd119906a8d40e>:0 
+Rethrow as TargetInvocationException: Exception has been thrown by the target of an invocation.
+  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x00083] in <816f70bc2a9c4332b0bd119906a8d40e>:0 
+  at System.Reflection.MethodBase.Invoke (System.Object obj, System.Object[] parameters) [0x00000] in <816f70bc2a9c4332b0bd119906a8d40e>:0 
+  at UnityEditor.EditorAssemblies.ProcessInitializeOnLoadMethodAttributes () [0x0007b] in <cd9a5dfa62e34daeb7c2d29ef5f4929b>:0 
+UnityEngine.DebugLogHandler:Internal_LogException_Injected(Exception, IntPtr)
+UnityEngine.DebugLogHandler:Internal_LogException(Exception, Object)
+UnityEngine.DebugLogHandler:LogException(Exception, Object)
+UnityEngine.Logger:LogException(Exception, Object)
+UnityEngine.Debug:LogException(Exception)
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadMethodAttributes()
+
+Starting new worker id: 0 with log in C:/hades/Hecton8/Logs/AssetImportWorkerHW0.log
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-Hecton8
+[BiomeRuntimeDiagnostics] Starting Runtime Biome Audit...
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.BiomeRuntimeDiagnostics:RunAudit () (at Assets/_Project/Scripts/Editor/BiomeRuntimeDiagnostics.cs:17)
+System.Reflection.RuntimeMethodInfo:Invoke (object,System.Reflection.BindingFlags,System.Reflection.Binder,object[],System.Globalization.CultureInfo)
+System.Reflection.MethodBase:Invoke (object,object[])
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadMethodAttributes ()
+
+(Filename: Assets/_Project/Scripts/Editor/BiomeRuntimeDiagnostics.cs Line: 17)
+
+[BiomeRuntimeDiagnostics] Audit complete. Saved to C:\hades\Hecton8\Logs\BiomeOutput.md
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.Editor.BiomeRuntimeDiagnostics:RunAudit () (at Assets/_Project/Scripts/Editor/BiomeRuntimeDiagnostics.cs:50)
+System.Reflection.RuntimeMethodInfo:Invoke (object,System.Reflection.BindingFlags,System.Reflection.Binder,object[],System.Globalization.CultureInfo)
+System.Reflection.MethodBase:Invoke (object,object[])
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadMethodAttributes ()
+
+(Filename: Assets/_Project/Scripts/Editor/BiomeRuntimeDiagnostics.cs Line: 50)
+
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:False
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in 19.814 seconds
+Domain Reload Profiling: 21654ms
+	BeginReloadAssembly (243ms)
+		DisableScriptedObjects (50ms)
+		CreateAndSetChildDomain (39ms)
+	RebuildCommonClasses (8ms)
+	RebuildNativeTypeToScriptingClass (15ms)
+	initialDomainReloadingComplete (79ms)
+	LoadAllAssembliesAndSetupDomain (1495ms)
+		LoadAssemblies (703ms)
+		AnalyzeDomain (641ms)
+			TypeCache.Refresh (476ms)
+				TypeCache.ScanAssembly (441ms)
+			BuildScriptInfoCaches (149ms)
+			ResolveRequiredComponents (12ms)
+	FinalizeReload (19815ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (3ms)
+			BeforeProcessingInitializeOnLoad (86ms)
+			ProcessInitializeOnLoadAttributes (12567ms)
+			ProcessInitializeOnLoadMethodAttributes (2041ms)
+			AfterProcessingInitializeOnLoad (9ms)
+			EditorAssembliesLoaded (3ms)
+		AwakeInstancesAfterBackupRestoration (33ms)
+Worker ready: AssetImportWorkerHW0 0
+Importing 'GUID: 8ce5c3ce78cc12749a7c905a6d8c86fe - Path: Assets/XR/Settings/OpenXRPackageSettings.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 8ce5c3ce78cc12749a7c905a6d8c86fe' -> (Import Result ID: 'f7538dea6a6cc78bc26f3919de85edd3') in 0.017 seconds [static dependencies only]. Details - ImportResultOutputID=5c57ac83c1adf789db9531a7fe36a2bd DependenciesID=2e80793372e10abaee676b99d74b1d4d StaticDependenciesID=d65b87118d3ac273b1c32ff58ee3b5ef 
+Refreshing native plugins compatible for Editor in 9.45 ms, found 37 plugins.
+
+Asset Pipeline Refresh (id=e172860da9e28c640a9bed686416a5b6): Total: 90.063 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	(Values over 0.05ms)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=2 ms, native=21883 ms
+		Asset DB Callback time: managed=357 ms, native=45 ms
+		Scripting: domain reloads=1, domain reload time=1980 ms, compile time=65575 ms, other=218 ms
+		Project Asset Count: scripts=3897, non-scripts=11922
+		Asset File Changes: new=1, changed=2, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokePackagesCallback: 28.393ms
+	ApplyChangesToAssetFolders: 0.840ms
+	Scan: 301.127ms
+	Collect global state as custom dependencies: 4.165ms
+	OnSourceAssetsModified: 1.255ms
+	CategorizeScriptCompilationAssets: 164.634ms
+	ProcessAssetsWithTransientArtifactChanges: 284.836ms
+	CategorizeAssets: 456.237ms
+	CompileScripts: 65574.757ms
+	ImportOutOfDateAssets: 20051.913ms (19885.681ms without children)
+		ImportManagerImport: 20.750ms (2.277ms without children)
+		ReloadNativeAssets: 0.078ms
+		UnloadImportedAssets: 3.487ms
+		ReloadImportedAssets: 0.166ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 2.382ms
+		ImportSchedulerStart: 139.505ms
+	PostProcessAllAssets: 359.096ms
+		XRBuildSystem.XRAssetImported 2.072ms
+		Canvas.OnAllAssetImport 0.144ms
+		VersionControlSettings.HiddenFilePostprocess 0.064ms
+		MonoPostProcessAllAssets: 354.889ms
+			AssetPostprocessor.OnPostprocessAllAssets 224.509ms
+			StyleCatalogPostProcessor.OnPostprocessAllAssets 27.571ms
+			AssetCallbacks.OnPostprocessAllAssets 27.527ms
+			UniversalRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 14.623ms
+			BuilderAssetPostprocessor.OnPostprocessAllAssets 5.567ms
+			SpriteSlicePostprocessor.OnPostprocessAllAssets 4.115ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 3.824ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 3.119ms
+			AssetChangedListener.OnPostprocessAllAssets 3.089ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 2.943ms
+			SyncVS.PostprocessSyncProject 2.140ms
+			TextAssetPostProcessor.OnPostprocessAllAssets 1.778ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 1.624ms
+			TemplatePostProcessor.OnPostprocessAllAssets 1.593ms
+			MatrixAssetTexturePostprocessor.OnPostprocessAllAssets 1.257ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 1.226ms
+			AddressablesAssetPostProcessor.OnPostprocessAllAssets 1.026ms
+			MaterialPostprocessor.OnPostprocessAllAssets 0.958ms
+			SpriteEditorTexturePostprocessor.OnPostprocessAllAssets 0.870ms
+			HectonAssetIntegrityGuard.OnPostprocessAllAssets 0.668ms
+			H8DataMonolithSourceWatcher.OnPostprocessAllAssets 0.631ms
+			EnvironmentAssetPostprocessor.OnPostprocessAllAssets 0.555ms
+			TMPro_TexturePostProcessor.OnPostprocessAllAssets 0.505ms
+			TextureArrayPreProcessor.OnPostprocessAllAssets 0.497ms
+			ShaderReflectionAssetPostProcessor.OnPostprocessAllAssets 0.464ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 0.450ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.423ms
+			UVCSAssetPostprocessor.OnPostprocessAllAssets 0.386ms
+			PostProcessor.OnPostprocessAllAssets 0.382ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 0.376ms
+			SamplePostprocessor.OnPostprocessAllAssets 0.374ms
+			AssetPathToTypes.OnPostprocessAllAssets 0.374ms
+			CinemachineSettings.OnPostprocessAllAssets 0.363ms
+			ArtifactBrowserPostProcessor.OnPostprocessAllAssets 0.334ms
+			AudioMixerPostprocessor.OnPostprocessAllAssets 0.315ms
+			AssetEvents.OnPostprocessAllAssets 0.275ms
+			SampleDependencyImporterPostProcessor.OnPostprocessAllAssets 0.266ms
+			SpeedTreePostProcessor.OnPostprocessAllAssets 0.223ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.212ms
+			ConfigAssetsTracker.OnPostprocessAllAssets 0.192ms
+			ProjectSettingsPostprocessor.OnPostprocessAllAssets 0.190ms
+			DomainReloadProcessor.OnPostprocessAllAssets 0.179ms
+			AssetDatabaseCallbacks.OnPostprocessAllAssets 0.160ms
+			ScenarioDriftAssetsTracker.OnPostprocessAllAssets 0.122ms
+			AudioContainerPostProcessor.OnPostprocessAllAssets 0.066ms
+	PostAssetChangesProfiler: 17.283ms
+	UnloadStreamsBegin: 3.408ms
+	PersistCurrentRevisions: 0.517ms
+	GenerateScriptTypeHashes: 14.830ms
+	GenerateScriptTypeSerializationHashes: 18.476ms
+	Untracked: 2810.485ms
+
+Application.AssetDatabase Initial Refresh End
+Shader Hidden/ChartRasterizerHardware is not supported: GPU does not support conservative rasterization
+Shader Hidden/ChartRasterizerHardware is not supported: GPU does not support conservative rasterization
+Scanning for USB devices : 2.980ms
+Initializing Unity extensions:
+Cannot add menu item 'Window/Hecton-8/SpaceEngine 0.9.8 Preview' for method 'Hecton8.Editor.Generators.SpaceEngineTerrainPreviewWindow.ShowWindow' because a menu item with the same name already exists.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEditor.MenuItemScriptCommand:Update (UnityEditor.MenuItem,System.Reflection.MethodInfo)
+UnityEditor.MenuService:ExtractMenuItemsFromAttributes ()
+UnityEditor.MenuService:GetMenuItemsFromAttributesById (string)
+UnityEditor.MenuService:GetMenuItemsFromAttributes ()
+
+GetVirtualKey: Could not map char: z (122) to any virtual key
+GetVirtualKey: Could not map char: y (121) to any virtual key
+GetVirtualKey: Could not map char: x (120) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: v (118) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: i (105) to any virtual key
+GetVirtualKey: Could not map char: l (108) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: k (107) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: P (80) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: g (103) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: K (75) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: L (76) to any virtual key
+GetVirtualKey: Could not map char: R (82) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: N (78) to any virtual key
+GetVirtualKey: Could not map char: U (85) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: S (83) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: o (111) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: m (109) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: u (117) to any virtual key
+Unloading 479 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 15678 unused Assets / (66.7 MB). Loaded Objects now: 16371.
+Memory consumption went from 1.05 GB to 0.98 GB.
+Total: 85.391500 ms (FindLiveObjects: 1.147500 ms CreateObjectMapping: 8.871300 ms MarkObjects: 48.694000 ms  DeleteObjects: 26.448200 ms)
+
+GetVirtualKey: Could not map char: z (122) to any virtual key
+GetVirtualKey: Could not map char: y (121) to any virtual key
+GetVirtualKey: Could not map char: x (120) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: v (118) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: d (100) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: i (105) to any virtual key
+GetVirtualKey: Could not map char: l (108) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: k (107) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: p (112) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: r (114) to any virtual key
+GetVirtualKey: Could not map char: P (80) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: g (103) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: f (102) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: a (97) to any virtual key
+GetVirtualKey: Could not map char: K (75) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: L (76) to any virtual key
+GetVirtualKey: Could not map char: R (82) to any virtual key
+GetVirtualKey: Could not map char: G (71) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: N (78) to any virtual key
+GetVirtualKey: Could not map char: U (85) to any virtual key
+GetVirtualKey: Could not map char: E (69) to any virtual key
+GetVirtualKey: Could not map char: S (83) to any virtual key
+GetVirtualKey: Could not map char: X (88) to any virtual key
+GetVirtualKey: Could not map char: V (86) to any virtual key
+GetVirtualKey: Could not map char: n (110) to any virtual key
+GetVirtualKey: Could not map char: o (111) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: s (115) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: b (98) to any virtual key
+GetVirtualKey: Could not map char: m (109) to any virtual key
+GetVirtualKey: Could not map char: c (99) to any virtual key
+GetVirtualKey: Could not map char: u (117) to any virtual key
+Opening scene 'Assets/_Project/Scenes/02_HECTON_WORLD.unity'
+[Licensing::Client] Successfully resolved entitlement details
+Loaded scene 'Assets/_Project/Scenes/02_HECTON_WORLD.unity'
+	Deserialize:            993.070 ms
+	Integration:            1659.805 ms
+	Integration of assets:  754.008 ms
+	Thread Wait Time:       -12.351 ms
+	Total Operation Time:   3394.531 ms
+[HectonMacroGeology] TerrainData.size.y (250,0m) != geology Y-span (12000,0m). Graph terrain height should equal HighWorldY - LowWorldY = 12000,0m. Run Hecton8/World/MapMagic/Sync Terrain Height To Geology Span - REPORT ONLY to see what a repair would change. Reported once per distinct value pair, not per tile.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+MapMagic.Nodes.MatrixGenerators.HectonSandboxAbyssalShelfMapMagicNode:Generate (MapMagic.Products.TileData,MapMagic.Products.StopToken) (at Assets/_Project/Scripts/Plugins/MapMagic/HectonSandboxAbyssalShelfMapMagicNode.cs:152)
+MapMagic.Nodes.Graph:GenerateRecursive (MapMagic.Nodes.Generator,MapMagic.Products.TileData,MapMagic.Expose.Override,MapMagic.Products.StopToken) (at Assets/MapMagic/Nodes/Graph.cs:994)
+MapMagic.Nodes.Graph:GenerateRecursive (MapMagic.Nodes.Generator,MapMagic.Products.TileData,MapMagic.Expose.Override,MapMagic.Products.StopToken) (at Assets/MapMagic/Nodes/Graph.cs:958)
+MapMagic.Nodes.Graph:GenerateRecursive (MapMagic.Nodes.Generator,MapMagic.Products.TileData,MapMagic.Expose.Override,MapMagic.Products.StopToken) (at Assets/MapMagic/Nodes/Graph.cs:951)
+MapMagic.Nodes.Graph:Generate (MapMagic.Products.TileData,MapMagic.Products.StopToken,MapMagic.Expose.Override) (at Assets/MapMagic/Nodes/Graph.cs:928)
+MapMagic.Terrains.TerrainTile:Generate (MapMagic.Nodes.Graph,MapMagic.Terrains.TerrainTile,MapMagic.Terrains.TerrainTile/DetailLevel,MapMagic.Products.StopToken) (at Assets/MapMagic/Terrains/TerrainTile.cs:688)
+MapMagic.Terrains.TerrainTile/<>c__DisplayClass52_0:<EnqueueTask>b__0 () (at Assets/MapMagic/Terrains/TerrainTile.cs:550)
+Den.Tools.Tasks.ThreadManager:TaskThreadAction (Den.Tools.Tasks.ThreadManager/Task) (at Assets/MapMagic/Tools/ThreadManager/ThreadManager.cs:221)
+System.Threading.ThreadHelper:ThreadStart_Context (object)
+System.Threading.ExecutionContext:RunInternal (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object)
+System.Threading.ThreadHelper:ThreadStart ()
+
+(Filename: Assets/_Project/Scripts/Plugins/MapMagic/HectonSandboxAbyssalShelfMapMagicNode.cs Line: 152)
+
+[H8_WORLDROOTREPAIR] scene='02_HECTON_WORLD' roots=30 graveyard=present worldRootsAtSceneRoot=active:1/inactive:0
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.EditorTools.Authoring.H8_WorldRootGraveyardRepair:Execute (bool) (at Assets/_Project/Scripts/Editor/Authoring/H8_WorldRootGraveyardRepair.cs:162)
+Hecton8.EditorTools.Authoring.H8_WorldRootGraveyardRepair:ReportOnly () (at Assets/_Project/Scripts/Editor/Authoring/H8_WorldRootGraveyardRepair.cs:86)
+
+(Filename: Assets/_Project/Scripts/Editor/Authoring/H8_WorldRootGraveyardRepair.cs Line: 162)
+
+[H8_WORLDROOTREPAIR] REFUSED - an ACTIVE root named '--- WORLD ---' already exists at scene root. A Rebuild authoring menu item has run since the cleaner and created a duplicate. Resolve which root is authoritative by hand before repairing; this tool will not merge two world roots.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogError (object)
+Hecton8.EditorTools.Authoring.H8_WorldRootGraveyardRepair:Execute (bool) (at Assets/_Project/Scripts/Editor/Authoring/H8_WorldRootGraveyardRepair.cs:173)
+Hecton8.EditorTools.Authoring.H8_WorldRootGraveyardRepair:ReportOnly () (at Assets/_Project/Scripts/Editor/Authoring/H8_WorldRootGraveyardRepair.cs:86)
+
+(Filename: Assets/_Project/Scripts/Editor/Authoring/H8_WorldRootGraveyardRepair.cs Line: 173)
+
+Batchmode quit successfully invoked - shutting down!
+<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: No process found listening on port 8088
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+MCPForUnity.Editor.Helpers.McpLog:Info (string,bool) (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Helpers/McpLog.cs:40)
+MCPForUnity.Editor.Services.ServerManagementService:StopLocalHttpServerInternal (bool,System.Nullable`1<int>,bool) (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/ServerManagementService.cs:712)
+MCPForUnity.Editor.Services.ServerManagementService:StopLocalHttpServer () (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/ServerManagementService.cs:349)
+MCPForUnity.Editor.Services.McpEditorShutdownCleanup:OnEditorQuitting () (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/McpEditorShutdownCleanup.cs:60)
+UnityEditor.EditorApplication:Internal_EditorApplicationQuit ()
+
+(Filename: ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Helpers/McpLog.cs Line: 40)
+
+[DispatcherJobFence] Forced JobHandle.Complete outside dispatcher swap window.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+MapMagic.Nodes.MatrixGenerators.HectonTerrainSurfaceMaterialMapMagicNode:Generate (MapMagic.Products.TileData,MapMagic.Products.StopToken) (at Assets/_Project/Scripts/Plugins/MapMagic/HectonTerrainSurfaceMaterialMapMagicNode.cs:203)
+MapMagic.Nodes.Graph:GenerateRecursive (MapMagic.Nodes.Generator,MapMagic.Products.TileData,MapMagic.Expose.Override,MapMagic.Products.StopToken) (at Assets/MapMagic/Nodes/Graph.cs:994)
+MapMagic.Nodes.Graph:GenerateRecursive (MapMagic.Nodes.Generator,MapMagic.Products.TileData,MapMagic.Expose.Override,MapMagic.Products.StopToken) (at Assets/MapMagic/Nodes/Graph.cs:958)
+MapMagic.Nodes.Graph:Generate (MapMagic.Products.TileData,MapMagic.Products.StopToken,MapMagic.Expose.Override) (at Assets/MapMagic/Nodes/Graph.cs:928)
+MapMagic.Terrains.TerrainTile:Generate (MapMagic.Nodes.Graph,MapMagic.Terrains.TerrainTile,MapMagic.Terrains.TerrainTile/DetailLevel,MapMagic.Products.StopToken) (at Assets/MapMagic/Terrains/TerrainTile.cs:688)
+MapMagic.Terrains.TerrainTile/<>c__DisplayClass52_0:<EnqueueTask>b__0 () (at Assets/MapMagic/Terrains/TerrainTile.cs:550)
+Den.Tools.Tasks.ThreadManager:TaskThreadAction (Den.Tools.Tasks.ThreadManager/Task) (at Assets/MapMagic/Tools/ThreadManager/ThreadManager.cs:221)
+System.Threading.ThreadHelper:ThreadStart_Context (object)
+System.Threading.ExecutionContext:RunInternal (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object,bool)
+System.Threading.ExecutionContext:Run (System.Threading.ExecutionContext,System.Threading.ContextCallback,object)
+System.Threading.ThreadHelper:ThreadStart ()
+
+(Filename: Assets/_Project/Scripts/Plugins/MapMagic/HectonTerrainSurfaceMaterialMapMagicNode.cs Line: 203)
+
+Importing 'GUID: ef94c26e44a36e24a9dcbc5995a2bed1 - Path: Assets/Crest/Crest/Materials/Ocean-Underwater.mat' with importer (NativeFormatImporter)
+Imported 'GUID: ef94c26e44a36e24a9dcbc5995a2bed1' -> (Import Result ID: '11ccd393e4cee03f8558f6540b699a43') in 0.015 seconds [static dependencies only]. Details - ImportResultOutputID=ddb0b257bc2d8165dfa2da3c9f8ae818 DependenciesID=19f706b9ac409b42e98bc4abb1d18e13 StaticDependenciesID=7a9e205884b0ad001e0ba9db5ba00120 
+Refreshing native plugins compatible for Editor in 50.54 ms, found 37 plugins.
+
+Asset Pipeline Refresh (id=e8b8649055edacd43956b9e062612158): Total: 1.648 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	(Values over 0.05ms)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=1446 ms
+		Asset DB Callback time: managed=48 ms, native=153 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=3897, non-scripts=11922
+		Asset File Changes: new=0, changed=1, moved=0, deleted=0
+		Scan Filter Count: 5
+	ApplyChangesToAssetFolders: 0.391ms
+	Scan: 41.725ms
+	Collect global state as custom dependencies: 0.233ms
+	OnSourceAssetsModified: 4.987ms
+	ProcessAssetsWithTransientArtifactChanges: 0.731ms
+	CategorizeAssets: 503.524ms
+	ImportOutOfDateAssets: 791.911ms (79.752ms without children)
+		ImportManagerImport: 21.573ms (3.868ms without children)
+			UpdateCategorizedAssets: 0.090ms
+		ReloadNativeAssets: 7.293ms
+		UnloadImportedAssets: 0.807ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 7.796ms
+		ImportSchedulerStart: 674.658ms
+	PostProcessAllAssets: 143.815ms
+		XRBuildSystem.XRAssetImported 100.004ms
+		MonoPostProcessAllAssets: 43.418ms
+			AssetPostprocessor.OnPostprocessAllAssets 33.971ms
+			SpriteEditorTexturePostprocessor.OnPostprocessAllAssets 1.522ms
+			AssetChangedListener.OnPostprocessAllAssets 1.186ms
+			MaterialPostprocessor.OnPostprocessAllAssets 1.103ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 0.366ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 0.334ms
+			H8DataMonolithSourceWatcher.OnPostprocessAllAssets 0.277ms
+			SyncVS.PostprocessSyncProject 0.092ms
+			UniversalRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 0.085ms
+			TemplatePostProcessor.OnPostprocessAllAssets 0.084ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 0.063ms
+			PostProcessor.OnPostprocessAllAssets 0.062ms
+			SpriteSlicePostprocessor.OnPostprocessAllAssets 0.058ms
+			MatrixAssetTexturePostprocessor.OnPostprocessAllAssets 0.055ms
+	PostAssetChangesProfiler: 52.896ms
+	GatherAllCurrentPrimaryImportResultRevisions: 26.846ms
+	UnloadStreamsBegin: 29.503ms
+	PersistCurrentRevisions: 2.026ms
+	UnloadStreamsEnd: 0.104ms
+	Untracked: 49.667ms
+
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+[Licensing::IpcConnector] LicenseClient-Admin-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-Admin channel disconnected successfully.
+AcceleratorClientConnectionCallback - disconnected - :0
+Cleanup mono
+CodeReloadManager destroyed
+Leak Detected : TempJob allocates 8 individual allocations. To find out more please enable 'Preferences > Jobs > Leak Detection Level > Enabled With Stack Trace' and reproduce the leak again.
+Exiting batchmode successfully now!
+Exiting without the bug reporter. Application will terminate with return code 0

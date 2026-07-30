@@ -64,16 +64,16 @@ Analyze each: what is visible, what is missing, pass/fail vs checklist row.
 
 These exist under `Docs/Screenshots/` from prior agent work (prefix `1428_`, `world_*`, menu/orbit). They prove past visual experiments, **not** current post-APPLY V0 checklist completion.
 
-| Path (examples) | What it showed historically | Re-proof needed? |
-|---|---|---|
-| `Docs/Screenshots/1428_02_HECTON_WORLD_gameview.png` | WORLD game view | YES — after APPLY |
-| `Docs/Screenshots/1428_02_world_play_after_player_authoring.png` | Play after player authoring | YES |
-| `Docs/Screenshots/1428_menu_to_world_route_result.png` | Menu → world route | YES |
-| `Docs/Screenshots/1428_new_dive_route_world_clean_final.png` | New dive route | YES |
-| `Docs/Screenshots/world_after_menu_descend_runtime_1428.png` | Descend runtime | YES |
-| `Docs/Screenshots/fresh_world_after_descend_1428.png` | Fresh world after descend | YES |
+Analyzed 2026-07-30 (STATIC luminance / dominant-channel pass on disk PNGs). All captures pre-date APPLY `d7e461e67`. **None close any captain checklist row.**
 
-**Rule:** Historical PNG without a dated re-capture after `d7e461e67` cannot close a checklist row.
+| Path | avgL (approx) | Class | Re-proof? |
+|---|---|---|---|
+| `Docs/Screenshots/1428_02_world_play_after_player_authoring.png` | ~4.4 | FAIL near-black | YES |
+| `Docs/Screenshots/fresh_world_after_descend_1428.png` | ~2.0 | FAIL near-black | YES |
+| `Docs/Screenshots/h8_02_world_after_water_cloud_01.png` | ~130.9 | BLUE_WATER_OR_SKY (best legacy) | YES — still pre-APPLY |
+| Other `1428_*` / `world_*` WORLD frames | dim teal MIXED | partial visuals only | YES |
+
+**Rule:** Historical PNG without a dated re-capture after `d7e461e67` cannot close a checklist row. New captures must land under `Docs/Screenshots/V0_Playtest/` (dir present, empty as of 2026-07-30).
 
 ---
 
@@ -81,20 +81,24 @@ These exist under `Docs/Screenshots/` from prior agent work (prefix `1428_`, `wo
 
 | ID | Path | Kind | Timestamp | Result | Notes |
 |---|---|---|---|---|---|
-| V0-L01 | `Docs/AgentLogs/H8_V0_PLAYTEST_SMOKE_GATE.json` | KCC headless gate | PENDING | PENDING | Does not claim WORLD |
-| V0-L02 | `Docs/AgentLogs/worldroot_report_2026-07-30.log` | ReportOnly WORLD root | PENDING | PENDING | No APPLY |
+| V0-L01 | `Docs/AgentLogs/H8_V0_PLAYTEST_SMOKE_GATE.json` | KCC headless gate | PENDING | PENDING | Does not claim WORLD; blocked while Unity headless ecology holds lock |
+| V0-L02 | `Docs/AgentLogs/worldroot_report_2026-07-30.log` | ReportOnly WORLD root | 2026-07-30 ~15:18 | MEASURED OK | `active:1/inactive:0`; REFUSED re-lift (expected post-APPLY). No APPLY run. |
 | V0-L03 | `Docs/AgentLogs/worldroot_apply4.log` | Historical APPLY attempt | 2026-07-29 | HISTORICAL | APPLY landed in git `d7e461e67` |
-| V0-L04 | `Docs/AgentLogs/worldroot_report.log` | Historical REPORT | 2026-07-29 | HISTORICAL | Pre-APPLY |
+| V0-L04 | `Docs/AgentLogs/worldroot_report.log` | Historical REPORT | 2026-07-29 | HISTORICAL | Pre-APPLY: active:0, buried under DEPRECATED_STUFF |
+| V0-L05 | `Docs/AgentLogs/headless_smoke_20260730_p0fix.log` | Headless ecology batch | 2026-07-30 ~15:19+ | IN FLIGHT | Short-circuit hit: `Headless SceneActivate short-circuit: MarkMainMenuReached on bootstrap`. Not PLAYER. |
 
 ---
 
-## WORLD root status (EDITOR only)
+## WORLD root status (EDITOR + MEASURED ReportOnly)
 
 | Fact | Value | Class |
 |---|---|---|
 | Commit | `d7e461e67` lift `--- WORLD ---` out of DEPRECATED_STUFF | EDITOR |
 | Scene path | `Assets/_Project/Scenes/02_HECTON_WORLD.unity` | STATIC |
 | Size / mtime (disk 2026-07-30) | 6,438,976 bytes / 2026-07-30 02:15 | STATIC |
+| ReportOnly 2026-07-30 | `scene='02_HECTON_WORLD' roots=30 graveyard=present worldRootsAtSceneRoot=active:1/inactive:0` | MEASURED (V0-L02) |
+| ReportOnly disposition | `REFUSED - an ACTIVE root named '--- WORLD ---' already exists at scene root` | MEASURED — expected; do **not** re-APPLY |
+| Side warning | MapMagic TerrainData.size.y 250 vs geology Y-span 12000 | MEASURED (not playability) |
 | Play Mode boot | **unproven** | — |
 | Do not re-run APPLY | yes — use ReportOnly only | process |
 
@@ -157,11 +161,12 @@ Player production authority: `HectonPlayerMovement` as `IBootstrapProductionPlay
 
 ## Next real-game actions (ordered)
 
-1. ReportOnly WORLD root (no APPLY) — log to V0-L02.
-2. Human or instrumented Play Mode: boot → WORLD; capture V0-S01..S03.
+1. ~~ReportOnly WORLD root (no APPLY) — log to V0-L02.~~ **DONE** MEASURED 2026-07-30 (active:1, REFUSED expected).
+2. Human or instrumented Play Mode: boot → WORLD; capture V0-S01..S03 under `Docs/Screenshots/V0_Playtest/`.
 3. One tool use + one fauna sighting + death/respawn + save roundtrip; capture V0-S04..S07.
-4. Run KCC V0 gate for regression lock only (V0-L01).
+4. Run KCC V0 gate for regression lock only (V0-L01) — blocked until Unity lock free (headless ecology PID holds project).
 5. Only after PLAYER rows pass: integrate missing systems that block those rows (colliders, fauna placement, FaunaBrain host, save HUD failure path).
+6. Git: `pull --no-rebase` (merge diverged main ahead/behind) then push — no force. Allowlist docs already cemented in `75c883fd4`; keep denylist out of future commits.
 
 ---
 
@@ -170,3 +175,4 @@ Player production authority: `HectonPlayerMovement` as `IBootstrapProductionPlay
 | When | What |
 |---|---|
 | 2026-07-30 | Ledger created. Checklist all open. Historical screenshots catalogued as non-closing. Meta-freeze + README + BUILD_PLAYTEST honesty + V0 KCC gate added in working tree. |
+| 2026-07-30 15:18 | ReportOnly ran (V0-L02): active WORLD root confirmed; tool REFUSED re-lift (expected). Historical PNG analysis: 2/10 near-black, all pre-APPLY. Headless bootstrap handoff short-circuit in `GameBootstrapper` (stale PlayerPrefs no longer deadlocks batch ecology). |
