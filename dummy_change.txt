@@ -1,0 +1,1 @@
+Intentional no-op: The unit tests for TryGetPooledRootRigidbody are already fully implemented in Assets/_Project/Tests/Editor/ObjectPoolManagerTryGetPooledRootRigidbodyTests.cs.
