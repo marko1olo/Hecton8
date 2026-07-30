@@ -316,15 +316,77 @@ namespace Hecton8.Core
             if (origin == null)
                 return true;
 
-            if (origin._isShiftInProgress || origin._physicsPauseActive)
+            // Active transform shift job owns the world; do not mutate scenes under it.
+            if (origin._isShiftInProgress)
                 return false;
+
+            // Physics pause must NOT soft-deadlock the dispatcher bootstrap lock.
+            // Pending loaded scenes acquire SceneRebaseTickLock; the previous early-return
+            // here (and in ProcessPending) left that lock held while FO.Tick - the only
+            // ResumePhysicsAfterShift driver - was starved by IsOriginShiftBootstrapLocked.
+            // Drive the pause frame-gate and drain pending scene offset apply from this
+            // path (headless Update calls us outside the locked master sim).
+            if (origin._physicsPauseActive &&
+                SystemDispatcher.CurrentFrameIndex >= origin._physicsResumeFrame)
+            {
+                origin.ResumePhysicsAfterShift();
+            }
 
             if (origin._pendingLoadedScenes.Count > 0 || origin._shiftTargetsDirty)
                 origin.ProcessPendingSceneSynchronization();
 
+            // If physics remains paused only because the scene-rebase barrier never
+            // advanced (async broadcast cancelled/watchdog) and there is nothing left
+            // to apply, complete the barrier so ResumePhysicsAfterShift can finish and
+            // the bootstrap lock can release.
+            if (origin._physicsPauseActive &&
+                origin._pendingLoadedScenes.Count == 0 &&
+                HasPendingSceneRebaseBarrier(origin))
+            {
+                origin.CompleteSceneRebaseBarrier();
+                origin.ResumePhysicsAfterShift();
+            }
+
             return origin._pendingLoadedScenes.Count == 0 &&
                    !origin._shiftTargetsDirty &&
-                   !origin._sceneRebaseTickLockHeld;
+                   !origin._sceneRebaseTickLockHeld &&
+                   !origin._physicsPauseActive;
+        }
+
+
+        /// <summary>
+        /// Headless/bootstrap diagnostics: FO lock + pause + pending scene state.
+        /// Does not mutate. Used by HeadlessSimulationRunner timeout/wait traces.
+        /// </summary>
+        internal static void CopyBootstrapDrainSnapshot(
+            out bool hasOrigin,
+            out bool shiftInProgress,
+            out bool physicsPauseActive,
+            out bool sceneRebaseTickLockHeld,
+            out int pendingLoadedSceneCount,
+            out bool shiftTargetsDirty,
+            out bool sceneRebaseBarrierPending)
+        {
+            HectonFloatingOrigin origin = s_activeRuntime;
+            if (origin == null)
+            {
+                hasOrigin = false;
+                shiftInProgress = false;
+                physicsPauseActive = false;
+                sceneRebaseTickLockHeld = false;
+                pendingLoadedSceneCount = 0;
+                shiftTargetsDirty = false;
+                sceneRebaseBarrierPending = false;
+                return;
+            }
+
+            hasOrigin = true;
+            shiftInProgress = origin._isShiftInProgress;
+            physicsPauseActive = origin._physicsPauseActive;
+            sceneRebaseTickLockHeld = origin._sceneRebaseTickLockHeld;
+            pendingLoadedSceneCount = origin._pendingLoadedScenes.Count;
+            shiftTargetsDirty = origin._shiftTargetsDirty;
+            sceneRebaseBarrierPending = HasPendingSceneRebaseBarrier(origin);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -2216,9 +2278,12 @@ namespace Hecton8.Core
 
         private void TryPrepareShiftTargets()
         {
+            // Physics pause no longer blocks target-cache rebuild. Holding dirty targets
+            // under pause kept SceneRebaseTickLock alive (see ProcessPending finally) and
+            // starved Frost/Slow via IsOriginShiftBootstrapLocked. Rebuild is read-only
+            // cache work against already-committed world state.
             if (!Application.isPlaying ||
                 _isShiftInProgress ||
-                _physicsPauseActive ||
                 _pendingLoadedScenes.Count > 0 ||
                 !_shiftTargetsDirty)
             {
@@ -2232,7 +2297,13 @@ namespace Hecton8.Core
 
         private void ProcessPendingSceneSynchronization()
         {
-            if (_isShiftInProgress || _physicsPauseActive)
+            // Block only while a transform shift job is mutating the world.
+            // Physics pause previously early-returned here, which left SceneRebaseTickLock
+            // held (acquired in QueuePendingLoadedScene) and starved SystemDispatcher
+            // master simulation - including FO.Tick that would clear the pause.
+            // Applying the already-committed offset to newly loaded scenes is safe under
+            // physics pause: it does not start a new shift.
+            if (_isShiftInProgress)
                 return;
 
             try

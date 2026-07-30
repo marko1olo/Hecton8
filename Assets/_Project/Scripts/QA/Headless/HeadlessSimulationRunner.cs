@@ -129,6 +129,7 @@ namespace Hecton8.QA.Headless
         // falsely burned the entire 180s budget during dependency init before GameReady opened
         // dispatcher FrostTick — p0_gameready 2026-07-30 BOOTSTRAP_TIMEOUT at short-circuit.
         private double _ecologyWaitStartRealtime;
+        private int _ecologyWaitDiagBucket = -1;
         private float _daySeconds = DefaultDaySeconds;
         private float _startupTimeoutSeconds = DefaultStartupTimeoutSeconds;
         private int _targetDays = DefaultTargetDays;
@@ -263,6 +264,7 @@ namespace Hecton8.QA.Headless
                 // Keep FO scene-rebase barrier draining while we wait — dispatcher early-returns
                 // all Frost/LateFrame while IsOriginShiftBootstrapLocked holds.
                 HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+                MaybeLogEcologyWaitProgress();
                 if (_ecologyWaitStartRealtime > 0.0 &&
                     Time.realtimeSinceStartupAsDouble - _ecologyWaitStartRealtime > _startupTimeoutSeconds)
                 {
@@ -667,13 +669,69 @@ namespace Hecton8.QA.Headless
             bool ecoNull = ecosystem == null;
             bool ecoInit = !ecoNull && ecosystem.IsInitialized;
             bool foFlushClean = HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+            HectonFloatingOrigin.CopyBootstrapDrainSnapshot(
+                out bool foHasOrigin,
+                out bool foShift,
+                out bool foPhysicsPause,
+                out bool foLock,
+                out int foPendingScenes,
+                out bool foTargetsDirty,
+                out bool foBarrier);
+            bool dispBootstrapLocked = SystemDispatcher.IsOriginShiftBootstrapLocked;
             // FailAndQuit muzzles Log after ecologyReady; we are pre-ready so Log is fine.
             LogRunnerLifecycle(
                 "BOOTSTRAP_TIMEOUT diag ecoNull=" + (ecoNull ? "1" : "0") +
                 " ecoInit=" + (ecoInit ? "1" : "0") +
                 " foFlushClean=" + (foFlushClean ? "1" : "0") +
+                " foHasOrigin=" + (foHasOrigin ? "1" : "0") +
+                " foShift=" + (foShift ? "1" : "0") +
+                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+                " foLock=" + (foLock ? "1" : "0") +
+                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+                " foBarrier=" + (foBarrier ? "1" : "0") +
+                " dispBootstrapLocked=" + (dispBootstrapLocked ? "1" : "0") +
                 " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0") +
                 " hasBootstrap=" + (BootstrapState.HasActiveInstance ? "1" : "0"));
+        }
+
+        /// <summary>
+        /// Periodic pre-ecology wait trace so external BATCH_TIMEOUT still leaves FO lock state on disk.
+        /// </summary>
+        private void MaybeLogEcologyWaitProgress()
+        {
+            if (_ecologyWaitStartRealtime <= 0.0)
+                return;
+
+            double waited = Time.realtimeSinceStartupAsDouble - _ecologyWaitStartRealtime;
+            int bucket = (int)(waited / 15.0);
+            if (bucket <= _ecologyWaitDiagBucket)
+                return;
+
+            _ecologyWaitDiagBucket = bucket;
+            IEcosystemDirectorService ecosystem = GlobalRegistry.EcosystemDirector;
+            bool ecoNull = ecosystem == null;
+            bool ecoInit = !ecoNull && ecosystem.IsInitialized;
+            HectonFloatingOrigin.CopyBootstrapDrainSnapshot(
+                out bool foHasOrigin,
+                out bool foShift,
+                out bool foPhysicsPause,
+                out bool foLock,
+                out int foPendingScenes,
+                out bool foTargetsDirty,
+                out bool foBarrier);
+            LogRunnerLifecycle(
+                "ecology wait progress t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
+                "s ecoNull=" + (ecoNull ? "1" : "0") +
+                " ecoInit=" + (ecoInit ? "1" : "0") +
+                " foHasOrigin=" + (foHasOrigin ? "1" : "0") +
+                " foShift=" + (foShift ? "1" : "0") +
+                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+                " foLock=" + (foLock ? "1" : "0") +
+                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+                " foBarrier=" + (foBarrier ? "1" : "0") +
+                " dispBootstrapLocked=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0"));
         }
 
         private void TryMarkEcologyReady()

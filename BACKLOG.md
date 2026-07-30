@@ -4,7 +4,8 @@
 - [x] P0 | ship a6c96w abs-col spall into texture.py | Tools/Blender/h8forge/texture.py | proof@2048 seeds 0,1,2,7,13 p95_max=0.4590 eros_min=0.3417 all_run all_eros PASS | 568a19cca (cement auto-bundled product+scratch; do not amend)
 
 ## Open P0
-- [ ] P0 | headless ecology batch hang: DebrisManager EnsureRuntimeInstance missing + FaunaSimulation heartbeat/dispatcher BATCH_TIMEOUT | gate JSON must show status!=ECOLOGY_UNAVAILABLE|BATCH_TIMEOUT ecologySampledDays>0 timeDilationDelivered>0
+- [ ] P0 | headless ecology post-GameReady FO bootstrap-lock soft-deadlock | root: QueuePendingLoadedScene acquires SceneRebaseTickLock while ProcessPending/TryFlush early-return on _physicsPauseActive; FO.Tick (ResumePhysics) starved by SystemDispatcher.IsOriginShiftBootstrapLocked => FrostTick never runs, TryMarkEcologyReady never sees EcosystemDirector.IsInitialized | FIX APPLIED 2026-07-30 21:26 UTC: HectonFloatingOrigin drain under physics pause (ProcessPending+TryPrepare+TryFlush resume/barrier complete); HeadlessSimulationRunner wait progress diag foLock/physicsPause/pendingScenes | DoD still OPEN until smoke: status not in ECOLOGY_UNAVAILABLE|BATCH_TIMEOUT|BOOTSTRAP_TIMEOUT AND ecologySampledDays>0 AND timeDilationDelivered>0 | prior FAIL evidence: Docs/AgentLogs/headless_smoke_20260731_p0_ecology_clock_asmfix.log + BATCH_TIMEOUT stub JSON | real-game screenshots still REQUIRED (headless green alone = DECLINED)
+- [ ] P0 | DECLINED until real-game: Geology@2048 headless-only; KCC FAIL 0x42; Debris EXEMPT; RuntimeSmokeTester; README art; V0 Swim; Docs/Screenshots/V0_Playtest empty
 
 ## Salvaged fix from closed PR #1714
 - **PR Number**: #1714
