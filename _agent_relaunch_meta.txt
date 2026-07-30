@@ -1,0 +1,5 @@
+head=80b2d9764085b2f2e3829edca0165bb491754e21
+pid=21516
+log=C:\hades\Hecton8\Docs\AgentLogs\headless_smoke_20260731_p0_ecology_ready_20260731_014953.log
+killed=[]
+started=20260731_014953

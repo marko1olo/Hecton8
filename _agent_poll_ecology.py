@@ -1,118 +1,126 @@
 # -*- coding: utf-8 -*-
-"""Poll headless ecology smoke DoD once (safe to re-run)."""
-from __future__ import annotations
-
+"""Poll headless ecology smoke until result JSON or timeout."""
 import json
-import re
-import subprocess
-from datetime import datetime, timezone
+import os
+import sys
+import time
 from pathlib import Path
 
-ROOT = Path(r"C:\hades\Hecton8")
-LOG_DIR = ROOT / "Docs" / "AgentLogs"
-RESULT = LOG_DIR / "HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json"
-STATUS = LOG_DIR / "HeadlessSimulationBatchRunner_HEADLESS_SIMULATION_RUNNER.txt"
-META = ROOT / "_agent_smoke_meta.json"
-OUT = ROOT / "_agent_poll_ecology_out.txt"
-lines: list[str] = []
+REPO = Path(r"C:\hades\Hecton8")
+os.chdir(REPO)
+
+RESULT = REPO / "Docs" / "AgentLogs" / "HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json"
+META = REPO / "_agent_relaunch_meta.txt"
+OUT = REPO / "_agent_poll_ecology_out.txt"
+
+max_wait = int(sys.argv[1]) if len(sys.argv) > 1 else 900
+interval = int(sys.argv[2]) if len(sys.argv) > 2 else 20
+
+meta = META.read_text(encoding="utf-8") if META.exists() else ""
+log = None
+pid = None
+for line in meta.splitlines():
+    if line.startswith("log="):
+        log = Path(line[4:].strip())
+    if line.startswith("pid="):
+        try:
+            pid = int(line[4:].strip())
+        except ValueError:
+            pass
+
+start = time.time()
+lines_out = []
 
 
-def add(msg: str) -> None:
-    lines.append(msg)
+def emit(msg):
+    print(msg, flush=True)
+    lines_out.append(msg)
 
 
-add(f"utc={datetime.now(timezone.utc).isoformat()}")
-if META.exists():
-    add("meta=" + META.read_text(encoding="utf-8").strip())
-else:
-    add("meta=MISSING")
+emit(f"poll start max_wait={max_wait}s interval={interval}s pid={pid} log={log}")
 
-# processes
-p = subprocess.run(
-    ["tasklist", "/FI", "IMAGENAME eq Unity.exe"],
-    text=True,
-    capture_output=True,
-    encoding="utf-8",
-    errors="replace",
-)
-add("=== unity procs ===")
-add((p.stdout or p.stderr or "").strip())
+while True:
+    elapsed = time.time() - start
+    unity_alive = False
+    if pid:
+        try:
+            import ctypes
 
-# result
-add(f"result_exists={RESULT.exists()}")
-if RESULT.exists():
-    raw = RESULT.read_text(encoding="utf-8", errors="replace")
-    add("result_raw=" + raw.strip())
-    try:
-        data = json.loads(raw)
-        status = str(data.get("status", ""))
-        days = data.get("ecologySampledDays", data.get("ecology_sampled_days"))
-        dil = data.get("timeDilationDelivered", data.get("time_dilation_delivered"))
-        add(f"status={status}")
-        add(f"ecologySampledDays={days}")
-        add(f"timeDilationDelivered={dil}")
-        bad = status in {
-            "ECOLOGY_UNAVAILABLE",
-            "BATCH_TIMEOUT",
-            "BOOTSTRAP_TIMEOUT",
-            "",
-        }
-        dod_ok = (
-            not bad
-            and days is not None
-            and float(days) > 0
-            and dil is not None
-            and float(dil) > 0
-        )
-        add(f"DOD_OK={dod_ok}")
-        if dod_ok:
-            add("PASS")
-        else:
-            add("FAIL_OR_INCOMPLETE")
-    except Exception as exc:
-        add(f"json_err={exc!r}")
+            k = ctypes.windll.kernel32
+            h = k.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
+            if h:
+                code = ctypes.c_ulong()
+                if k.GetExitCodeProcess(h, ctypes.byref(code)):
+                    unity_alive = code.value == 259  # STILL_ACTIVE
+                k.CloseHandle(h)
+        except Exception as e:
+            emit(f"pid check err {e}")
 
-if STATUS.exists():
-    add("runner_status=" + STATUS.read_text(encoding="utf-8", errors="replace").strip())
+    result_exists = RESULT.exists()
+    log_size = log.stat().st_size if log and log.exists() else 0
+    hits = {}
+    tail = ""
+    if log and log.exists():
+        try:
+            t = log.read_text(encoding="utf-8", errors="replace")
+            for key in [
+                "error CS",
+                "[HEADLESS]",
+                "ecology ready",
+                "ecology wait clock armed",
+                "ecology wait progress",
+                "BOOTSTRAP_TIMEOUT",
+                "runtime lanes registered",
+                "GameReady",
+                "Compilation failed",
+                "fail exitCode",
+                "complete exitCode",
+            ]:
+                hits[key] = t.count(key)
+            tail = "\n".join(t.splitlines()[-15:])
+        except OSError as e:
+            emit(f"log read err {e}")
 
-# find latest fo drain log
-logs = sorted(LOG_DIR.glob("headless_smoke_20260731_p0_fo_lock_drain_*.log"))
-if logs:
-    latest = logs[-1]
-    add(f"latest_log={latest.name} size={latest.stat().st_size}")
-    text = latest.read_text(encoding="utf-8", errors="replace")
-    keys = [
-        "ecology",
-        "Ecology",
-        "GameReady",
-        "BOOTSTRAP",
-        "foLock",
-        "physicsPause",
-        "pendingScenes",
-        "OriginShift",
-        "BATCH_TIMEOUT",
-        "error CS",
-        "EcologyWait",
-        "wait-progress",
-        "CopyBootstrap",
-        "TryFlush",
-        "ecology ready",
-        "EcologyReady",
-        "timeDilation",
-    ]
-    hits = []
-    for i, line in enumerate(text.splitlines(), 1):
-        if any(k in line for k in keys):
-            hits.append(f"{i}|{line[:300]}")
-    add(f"key_hits={len(hits)}")
-    for h in hits[-40:]:
-        add(h)
-    # tail
-    tail = text.splitlines()[-30:]
-    add("=== log_tail ===")
-    add("\n".join(tail))
-else:
-    add("latest_log=NONE")
+    status_line = f"t={elapsed:.0f}s unity_alive={unity_alive} result={result_exists} log_sz={log_size} hits={hits}"
+    emit(status_line)
 
-OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
-print("POLL_WROTE", OUT, "lines", len(lines))
+    if result_exists:
+        try:
+            raw = RESULT.read_text(encoding="utf-8")
+            emit("RESULT_RAW " + raw[:2000])
+            data = json.loads(raw)
+            emit("RESULT_JSON " + json.dumps(data, indent=2)[:2000])
+            st = data.get("status", "")
+            days = data.get("ecologySampledDays", 0)
+            dil = data.get("timeDilationDelivered", 0)
+            dod_ok = (
+                st not in ("ECOLOGY_UNAVAILABLE", "BATCH_TIMEOUT", "BOOTSTRAP_TIMEOUT", "[BOOTSTRAP_TIMEOUT]", "[ECOLOGY_UNAVAILABLE]")
+                and "BOOTSTRAP_TIMEOUT" not in str(st)
+                and "ECOLOGY_UNAVAILABLE" not in str(st)
+                and "BATCH_TIMEOUT" not in str(st)
+                and int(days or 0) > 0
+                and float(dil or 0) > 0
+            )
+            emit(f"DoD={'PASS' if dod_ok else 'FAIL'} status={st} ecologySampledDays={days} timeDilationDelivered={dil}")
+        except Exception as e:
+            emit(f"result parse err {e}")
+        break
+
+    if elapsed >= max_wait:
+        emit("POLL_TIMEOUT")
+        emit("---LOG_TAIL---")
+        emit(tail)
+        break
+
+    if not unity_alive and elapsed > 60 and not result_exists:
+        emit("UNITY_DEAD_NO_RESULT")
+        emit("---LOG_TAIL---")
+        emit(tail)
+        # keep waiting a bit more for file flush
+        if elapsed > 90:
+            break
+
+    time.sleep(interval)
+
+OUT.write_text("\n".join(lines_out) + "\n", encoding="utf-8")
+emit(f"wrote {OUT}")

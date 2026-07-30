@@ -1,0 +1,399 @@
+=== assignFrameLock @571 ===
+571|        private static int _originShiftFrameLockFrame = -1;
+572|        private static int _criticalMemoryPressureDefragRequested;
+573|        private static int _streamingStorageDebtMilli;
+
+=== frameLockApi @1727 ===
+1727|        internal static void RequestOriginShiftFrameLock(int frame)
+1728|        {
+1729|            Volatile.Write(ref _originShiftFrameLockFrame, frame);
+1730|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+1731|            if (dispatcher != null)
+1732|                dispatcher.RequestAupPreShiftPause(unchecked((uint)frame));
+1733|        }
+1734|
+1735|        public void RequestTimeDilation(float scalar, uint reasonHash = 0u)
+1736|        {
+1737|            ClearCoreTickDilationBurst();
+1738|            ClearAdrenalineDilation();
+1739|            SetTimeDilationScalar(scalar, reasonHash, publishImmediate: true);
+1740|        }
+1741|
+1742|        public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+1743|        {
+1744|            ClearCoreTickDilationBurst();
+1745|            ClearAdrenalineDilation();
+1746|            SetTimeDilationScalar(
+1747|                scalar,
+1748|                TimeDilationMinimumScalar,
+1749|                HeadlessTimeDilationMaximumScalar,
+1750|                reasonHash,
+1751|                publishImmediate: true);
+1752|        }
+1753|
+1754|        /// <summary>
+1755|        /// Requests an exact frame-count core tick dilation burst.
+1756|        /// </summary>
+1757|        public void RequestCoreTickDilation(float scalar, int frameCount, uint reasonHash = 0u)
+1758|        {
+1759|            if (frameCount <= 0)
+1760|                return;
+1761|
+1762|            if (SimulationPaused)
+1763|                return;
+1764|
+1765|            float safeScalar = math.isfinite(scalar)
+1766|                ? math.clamp(scalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+
+=== reqBoot @1722 ===
+1722|        internal static void RequestOriginShiftBootstrapLock()
+1723|        {
+1724|            Interlocked.Increment(ref _originShiftBootstrapLockCount);
+1725|        }
+1726|
+1727|        internal static void RequestOriginShiftFrameLock(int frame)
+1728|        {
+1729|            Volatile.Write(ref _originShiftFrameLockFrame, frame);
+1730|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+1731|            if (dispatcher != null)
+1732|                dispatcher.RequestAupPreShiftPause(unchecked((uint)frame));
+1733|        }
+1734|
+1735|        public void RequestTimeDilation(float scalar, uint reasonHash = 0u)
+1736|        {
+1737|            ClearCoreTickDilationBurst();
+1738|            ClearAdrenalineDilation();
+1739|            SetTimeDilationScalar(scalar, reasonHash, publishImmediate: true);
+1740|        }
+1741|
+1742|        public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+1743|        {
+1744|            ClearCoreTickDilationBurst();
+1745|            ClearAdrenalineDilation();
+1746|            SetTimeDilationScalar(
+1747|                scalar,
+1748|                TimeDilationMinimumScalar,
+1749|                HeadlessTimeDilationMaximumScalar,
+1750|                reasonHash,
+1751|                publishImmediate: true);
+1752|        }
+1753|
+1754|        /// <summary>
+1755|        /// Requests an exact frame-count core tick dilation burst.
+1756|        /// </summary>
+1757|        public void RequestCoreTickDilation(float scalar, int frameCount, uint reasonHash = 0u)
+1758|        {
+1759|            if (frameCount <= 0)
+1760|                return;
+1761|
+1762|            if (SimulationPaused)
+1763|                return;
+1764|
+1765|            float safeScalar = math.isfinite(scalar)
+1766|                ? math.clamp(scalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+1767|                : 1f;
+1768|
+1769|            if (_coreTickDilationRestorePending)
+1770|            {
+1771|                _coreTickDilationRestorePending = false;
+
+=== relBoot @1916 ===
+1916|        internal static void ReleaseOriginShiftBootstrapLock()
+1917|        {
+1918|            int current = Volatile.Read(ref _originShiftBootstrapLockCount);
+1919|            while (current > 0)
+1920|            {
+1921|                int next = current - 1;
+1922|                int observed = Interlocked.CompareExchange(ref _originShiftBootstrapLockCount, next, current);
+1923|                if (observed == current)
+1924|                    return;
+1925|
+1926|                current = observed;
+1927|            }
+1928|        }
+1929|
+1930|        private void SetTimeDilationScalar(float scalar, uint reasonHash, bool publishImmediate)
+1931|        {
+1932|            SetTimeDilationScalar(
+1933|                scalar,
+1934|                TimeDilationMinimumScalar,
+1935|                TimeDilationMaximumScalar,
+1936|                reasonHash,
+1937|                publishImmediate);
+1938|        }
+1939|
+1940|        private void SetTimeDilationScalar(
+1941|            float scalar,
+1942|            float minimumScalar,
+1943|            float maximumScalar,
+1944|            uint reasonHash,
+1945|            bool publishImmediate)
+1946|        {
+1947|            float safeScalar = math.isfinite(scalar)
+1948|                ? math.clamp(scalar, minimumScalar, maximumScalar)
+1949|                : 1f;
+1950|            if (math.abs(_timeDilationScalar - safeScalar) <= 0.0001f)
+1951|                return;
+1952|
+1953|            _timeDilationScalar = safeScalar;
+1954|            _timeDilationSequence++;
+1955|            if (_timeDilationSequence == 0u)
+
+=== reqBoot2 @1722 ===
+1722|        internal static void RequestOriginShiftBootstrapLock()
+1723|        {
+1724|            Interlocked.Increment(ref _originShiftBootstrapLockCount);
+1725|        }
+1726|
+1727|        internal static void RequestOriginShiftFrameLock(int frame)
+1728|        {
+1729|            Volatile.Write(ref _originShiftFrameLockFrame, frame);
+1730|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+1731|            if (dispatcher != null)
+1732|                dispatcher.RequestAupPreShiftPause(unchecked((uint)frame));
+1733|        }
+1734|
+1735|        public void RequestTimeDilation(float scalar, uint reasonHash = 0u)
+1736|        {
+1737|            ClearCoreTickDilationBurst();
+1738|            ClearAdrenalineDilation();
+1739|            SetTimeDilationScalar(scalar, reasonHash, publishImmediate: true);
+1740|        }
+1741|
+1742|        public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+1743|        {
+1744|            ClearCoreTickDilationBurst();
+1745|            ClearAdrenalineDilation();
+1746|            SetTimeDilationScalar(
+1747|                scalar,
+1748|                TimeDilationMinimumScalar,
+1749|                HeadlessTimeDilationMaximumScalar,
+1750|                reasonHash,
+1751|                publishImmediate: true);
+1752|        }
+1753|
+1754|        /// <summary>
+1755|        /// Requests an exact frame-count core tick dilation burst.
+1756|        /// </summary>
+1757|        public void RequestCoreTickDilation(float scalar, int frameCount, uint reasonHash = 0u)
+1758|        {
+1759|            if (frameCount <= 0)
+1760|                return;
+1761|
+1762|            if (SimulationPaused)
+1763|                return;
+1764|
+1765|            float safeScalar = math.isfinite(scalar)
+1766|                ? math.clamp(scalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+1767|                : 1f;
+1768|
+1769|            if (_coreTickDilationRestorePending)
+1770|            {
+1771|                _coreTickDilationRestorePending = false;
+
+=== frostAny @75 ===
+75|        private const double FrostTickIntervalSeconds = 5.0;
+76|        private const int MaxCadenceSubstepsPerFrame = 4;
+77|
+
+=== frostAny @4517 ===
+4517|                (float)FrostTickIntervalSeconds,
+4518|                qualityCurve01);
+4519|            _memoryDefragAccumulator += unscaledDeltaTime;
+
+=== frostAny @6908 ===
+6908|            if (_frostTickAccumulator < FrostTickIntervalSeconds)
+6909|                return;
+6910|
+
+=== frostAny @6911 ===
+6911|            _frostTickAccumulator -= FrostTickIntervalSeconds;
+6912|
+6913|            using (_frostTickProfilerMarker.Auto())
+
+=== unscaled @6701 ===
+6701|        private static float ResolveDispatcherUnscaledDeltaTime()
+6702|        {
+6703|            if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+6704|                return AdvanceStepBoundedClock();
+6705|
+6706|            float measuredUnscaledDeltaTime = HectonXRRuntimeState.IsXRActive
+6707|                ? UnityEngine.Time.smoothDeltaTime
+6708|                : UnityEngine.Time.unscaledDeltaTime;
+6709|            return HectonXRRuntimeState.ResolveDispatcherDeltaTime(measuredUnscaledDeltaTime);
+6710|        }
+6711|
+6712|        /// <summary>
+6713|        /// Reports a cadence lane clamping under step-bounded time. Once per lane per session: the message
+6714|        /// names the fix, so repeating it every frame would only bury it.
+6715|        /// </summary>
+6716|        private static void ReportStepBoundedClamp(byte laneBit, double intervalSeconds, double surplusSeconds)
+6717|        {
+6718|            if ((_stepBoundedClampReportedLanes & laneBit) != 0)
+6719|                return;
+6720|
+6721|            _stepBoundedClampReportedLanes |= laneBit;
+6722|            PublishDispatcherComplianceViolation(_StepBoundedTimeClampHash, _SystemDispatcherHash, 4, laneBit);
+6723|            GlobalTelemetryBus.PublishPerformanceWarning(
+6724|                _StepBoundedTimeClampHash,
+6725|                _SystemDispatcherHash,
+6726|                (float)surplusSeconds);
+6727|#if UNITY_EDITOR
+6728|            // Editor-guarded and latched to once per lane, so this is not a hot-path log and the
+6729|            // concatenation below is not a hot-path allocation. Headless batchmode is the editor, which is
+6730|            // exactly where this has to be readable. InvariantCulture because this host is Russian-locale
+6731|            // and a comma decimal separator would break the numeric greps that read these logs.
+6732|            System.Globalization.CultureInfo invariant = System.Globalization.CultureInfo.InvariantCulture;
+6733|            UnityEngine.Debug.LogError(
+6734|                "[SystemDispatcher] STEP-BOUNDED DETERMINISM BROKEN: lane mask 0x" +
+6735|                laneBit.ToString("X2", invariant) + " (bit0=fast bit1=unscaledFast bit2=slow bit3=cold " +
+6736|                "bit4=fixed) hit its substep cap on a " +
+6737|                intervalSeconds.ToString("F4", invariant) + " s interval and discarded " +
+6738|                surplusSeconds.ToString("F4", invariant) + " s of simulation time. Step is " +
+6739|                _stepBoundedDeltaSeconds.ToString("F4", invariant) + " s at step index " +
+6740|                _stepBoundedStepIndex.ToString(invariant) + ". This run's state is NOT comparable to " +
+6741|                "another run. Use a step of at most " + MaxStepBoundedDeltaSeconds.ToString("F4", invariant) +
+6742|                " s (SystemDispatcher.MaxClampFreeStepSeconds), and note that a time-dilation scalar above " +
+6743|                "1 multiplies the effective step and can reintroduce this.");
+6744|#endif
+6745|        }
+6746|
+6747|        private static void ReportStepBoundedConfigRejected(float requestedDeltaSeconds)
+6748|        {
+6749|            PublishDispatcherComplianceViolation(_StepBoundedTimeConfigHash, _SystemDispatcherHash, 4, 1);
+6750|#if UNITY_EDITOR
+6751|            UnityEngine.Debug.LogError(
+6752|                "[SystemDispatcher] EnableStepBoundedTime rejected a step of " +
+6753|                requestedDeltaSeconds.ToString("F6", System.Globalization.CultureInfo.InvariantCulture) +
+6754|                " s: it must be finite and positive. Time source left as " + _headlessTimeMode.ToString() +
+6755|                "; this run is NOT step-bounded.");
+6756|#endif
+6757|        }
+6758|
+6759|        private static void ReportStepBoundedStepTooCoarse(float requestedDeltaSeconds)
+6760|        {
+6761|            PublishDispatcherComplianceViolation(_StepBoundedTimeConfigHash, _SystemDispatcherHash, 4, 2);
+6762|            GlobalTelemetryBus.PublishPerformanceWarning(
+6763|                _StepBoundedTimeConfigHash,
+6764|                _SystemDispatcherHash,
+6765|                requestedDeltaSeconds);
+6766|#if UNITY_EDITOR
+6767|            System.Globalization.CultureInfo invariant = System.Globalization.CultureInfo.InvariantCulture;
+6768|            UnityEngine.Debug.LogError(
+6769|                "[SystemDispatcher] Step-bounded time ENABLED with a step of " +
+6770|                requestedDeltaSeconds.ToString("F4", invariant) + " s, which EXCEEDS the clamp-free maximum of " +
+6771|                MaxStepBoundedDeltaSeconds.ToString("F4", invariant) +
+6772|                " s. A lane will discard simulation time every frame, so this run is repeatable but still " +
+6773|                "does not simulate what its step count implies. The binding lane is the FIXED-step lane " +
+6774|                "(temporal compression above " + MaxClampFreeFixedStepSeconds.ToString("F4", invariant) +
+6775|                " s), NOT the 0.1 s slow lane and not the fast lane at " +
+6776|                MaxClampFreeCadenceStepSeconds.ToString("F4", invariant) + " s.");
+6777|#endif
+6778|        }
+6779|
+6780|        private void RunBucketedSlowTick(bool blockGameplayLanes)
+
+=== headlessTime @100 ===
+100|        private const double MaxStepBoundedDeltaSeconds =
+101|            MaxClampFreeFixedStepSeconds < MaxClampFreeCadenceStepSeconds
+102|                ? MaxClampFreeFixedStepSeconds
+103|                : MaxClampFreeCadenceStepSeconds;
+104|        private const byte StepBoundedClampLaneFast = 1 << 0;
+
+=== headlessTime @104 ===
+104|        private const byte StepBoundedClampLaneFast = 1 << 0;
+105|        private const byte StepBoundedClampLaneUnscaledFast = 1 << 1;
+106|        private const byte StepBoundedClampLaneSlow = 1 << 2;
+107|        private const byte StepBoundedClampLaneCold = 1 << 3;
+108|        private const byte StepBoundedClampLaneFixed = 1 << 4;
+
+=== headlessTime @105 ===
+105|        private const byte StepBoundedClampLaneUnscaledFast = 1 << 1;
+106|        private const byte StepBoundedClampLaneSlow = 1 << 2;
+107|        private const byte StepBoundedClampLaneCold = 1 << 3;
+108|        private const byte StepBoundedClampLaneFixed = 1 << 4;
+109|        private const float TimeDilationMinimumScalar = 0f;
+
+=== headlessTime @106 ===
+106|        private const byte StepBoundedClampLaneSlow = 1 << 2;
+107|        private const byte StepBoundedClampLaneCold = 1 << 3;
+108|        private const byte StepBoundedClampLaneFixed = 1 << 4;
+109|        private const float TimeDilationMinimumScalar = 0f;
+110|        private const float TimeDilationMaximumScalar = 4f;
+
+=== headlessTime @107 ===
+107|        private const byte StepBoundedClampLaneCold = 1 << 3;
+108|        private const byte StepBoundedClampLaneFixed = 1 << 4;
+109|        private const float TimeDilationMinimumScalar = 0f;
+110|        private const float TimeDilationMaximumScalar = 4f;
+111|        private const float HeadlessTimeDilationMaximumScalar = 100f;
+
+=== headlessTime @108 ===
+108|        private const byte StepBoundedClampLaneFixed = 1 << 4;
+109|        private const float TimeDilationMinimumScalar = 0f;
+110|        private const float TimeDilationMaximumScalar = 4f;
+111|        private const float HeadlessTimeDilationMaximumScalar = 100f;
+112|        private const float TimeDilationPausedEpsilon = 0.0001f;
+
+=== headlessTime @239 ===
+239|        private const uint _StepBoundedTimeClampHash = 0x51D10005u;
+240|        // A step-bounded step size was accepted that cannot be clamp-free.
+241|        private const uint _StepBoundedTimeConfigHash = 0x51D10006u;
+242|        private const uint _BaseStressCascadeBreakerHash = 3838237614u;
+243|        private const uint _SimulationBucketContextHash = 0x53424B54u; // SBKT
+
+=== headlessTime @241 ===
+241|        private const uint _StepBoundedTimeConfigHash = 0x51D10006u;
+242|        private const uint _BaseStressCascadeBreakerHash = 3838237614u;
+243|        private const uint _SimulationBucketContextHash = 0x53424B54u; // SBKT
+244|        private const uint _FramePacingWarningHash = 0x4650574Eu; // FPWN
+245|        private const uint _Lane4VfxKillSwitchMask = 1u << 4;
+
+=== headlessTime @584 ===
+584|        private static HeadlessTimeMode _headlessTimeMode = HeadlessTimeMode.WallClock;
+585|        private static float _stepBoundedDeltaSeconds;
+586|        private static double _stepBoundedElapsedSeconds;
+587|        private static long _stepBoundedStepIndex;
+588|        private static byte _stepBoundedClampReportedLanes;
+
+=== headlessTime @584 ===
+584|        private static HeadlessTimeMode _headlessTimeMode = HeadlessTimeMode.WallClock;
+585|        private static float _stepBoundedDeltaSeconds;
+586|        private static double _stepBoundedElapsedSeconds;
+587|        private static long _stepBoundedStepIndex;
+588|        private static byte _stepBoundedClampReportedLanes;
+
+=== headlessTime @584 ===
+584|        private static HeadlessTimeMode _headlessTimeMode = HeadlessTimeMode.WallClock;
+585|        private static float _stepBoundedDeltaSeconds;
+586|        private static double _stepBoundedElapsedSeconds;
+587|        private static long _stepBoundedStepIndex;
+588|        private static byte _stepBoundedClampReportedLanes;
+
+=== headlessTime @593 ===
+593|        internal enum HeadlessTimeMode : byte
+594|        {
+595|            /// <summary>
+596|            /// Wall clock (<c>Time.unscaledDeltaTime</c> / <c>Time.smoothDeltaTime</c> under XR). The only
+597|            /// mode a player build ever runs, and the default.
+
+=== headlessTime @606 ===
+606|            StepBounded = 1,
+607|        }
+608|
+609|        public static float CurrentFrameDeltaTime { get; private set; }
+610|
+
+=== headlessTime @723 ===
+723|                return _headlessTimeMode == HeadlessTimeMode.StepBounded
+724|                    ? _stepBoundedElapsedSeconds
+725|                    : UnityEngine.Time.unscaledTimeAsDouble;
+726|            }
+727|        }
+
+=== headlessTime @723 ===
+723|                return _headlessTimeMode == HeadlessTimeMode.StepBounded
+724|                    ? _stepBoundedElapsedSeconds
+725|                    : UnityEngine.Time.unscaledTimeAsDouble;
+726|            }
+727|        }

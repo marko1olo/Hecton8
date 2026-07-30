@@ -1,0 +1,53 @@
+if (_started && !_ecologyReady)
+            {
+                TryArmEcologyWaitClock();
+                // Keep FO scene-rebase barrier draining while we wait — dispatcher early-returns
+                // all Frost/LateFrame while IsOriginShiftBootstrapLocked holds.
+                HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+                MaybeLogEcologyWaitProgress();
+                if (_ecologyWaitStartRealtime > 0.0 &&
+                    Time.realtimeSinceStartupAsDouble - _ecologyWaitStartRealtime > _startupTimeoutSeconds)
+                {
+                    LogEcologyBootstrapTimeoutDiagnostics();
+                    FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
+                    return;
+                }
+            }
+
+            if (!_awaitingDispatcher)
+                return;
+
+            TryCompleteDispatcherWait();
+        }
+
+        private void OnDestroy()
+        {
+            _awaitingDispatcher = false;
+            _ghostStepPending = false;
+            TryUnregisterHotSwapListener();
+            UnregisterRuntimeLanes();
+            if (_originListenerRegistered)
+                HectonFloatingOrigin.UnregisterListener(this);
+            Application.logMessageReceived -= HandleLogMessage;
+            RestoreRuntimePolicy();
+
+            ReleaseVaultBuffers();
+            _csvWriter?.Dispose();
+            _csvWriter = null;
+     
+---
+private void TryMarkEcologyReady()
+        {
+            IEcosystemDirectorService ecosystem = GlobalRegistry.EcosystemDirector;
+            bool readyNow = ecosystem != null && ecosystem.IsInitialized;
+
+            // Stamp the wall clock the first time simulation actually starts advancing, so the result file can
+            // report the dilation it DELIVERED rather than the one it was configured with. Those two numbers
+            // are far apart and the gap is the single most useful thing this harness can tell its operator —
+            // see the deliveredTimeDilation note in WriteResult.
+            if (readyNow && !_ecologyReady)
+            {
+                _simulationStartRealtime = Time.realtimeSinceStartupAsDouble;
+
+                // Muzzle Debug.Log HERE, not in ForceHeadlessRuntimePolicy. The filter exists so a 100-day
+                // run's log is not drowned in first-

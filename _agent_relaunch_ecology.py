@@ -1,73 +1,84 @@
 # -*- coding: utf-8 -*-
-"""Relaunch headless ecology smoke after FO lock-drain fix (411715153)."""
-from __future__ import annotations
-
-import json
+"""Kill prior headless Unity, clear result, relaunch ecology smoke on current HEAD."""
+import os
 import subprocess
+import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
-ROOT = Path(r"C:\hades\Hecton8")
-LOG_DIR = ROOT / "Docs" / "AgentLogs"
+REPO = Path(r"C:\hades\Hecton8")
+os.chdir(REPO)
+
 UNITY = Path(r"C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe")
-STAMP = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-LOG = LOG_DIR / f"headless_smoke_20260731_p0_fo_lock_drain_{STAMP}.log"
-RESULT = LOG_DIR / "HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json"
-STATUS = LOG_DIR / "HeadlessSimulationBatchRunner_HEADLESS_SIMULATION_RUNNER.txt"
-OUT = ROOT / "_agent_relaunch_ecology_out.txt"
-log: list[str] = []
+RESULT = REPO / "Docs" / "AgentLogs" / "HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json"
+LOG_DIR = REPO / "Docs" / "AgentLogs"
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
+stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+log_path = LOG_DIR / f"headless_smoke_20260731_p0_ecology_ready_{stamp}.log"
+meta_path = REPO / "_agent_relaunch_meta.txt"
 
-def flush() -> None:
-    OUT.write_text("\n".join(log) + "\n", encoding="utf-8")
+# HEAD
+head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip()
+print("HEAD", head)
 
-
-def run(args: list[str], check: bool = False) -> subprocess.CompletedProcess:
-    p = subprocess.run(
-        args,
-        cwd=str(ROOT),
+# Kill Unity processes that hold this project (batchmode headless)
+killed = []
+try:
+    out = subprocess.check_output(
+        ["powershell", "-NoProfile", "-Command",
+         "Get-CimInstance Win32_Process -Filter \"name='Unity.exe'\" | "
+         "Select-Object ProcessId,CommandLine | ConvertTo-Json -Compress"],
         text=True,
-        capture_output=True,
-        encoding="utf-8",
         errors="replace",
     )
-    log.append("$ " + " ".join(args))
-    if p.stdout:
-        log.append(p.stdout.rstrip())
-    if p.stderr:
-        log.append(p.stderr.rstrip())
-    log.append(f"exit={p.returncode}")
-    flush()
-    if check and p.returncode != 0:
-        raise SystemExit(f"fail {args} -> {p.returncode}")
-    return p
+except subprocess.CalledProcessError as e:
+    out = e.output or ""
+    print("ps list err", e)
 
+import json
 
-log.append(f"HEAD={run(['git', 'rev-parse', 'HEAD']).stdout.strip()}")
-log.append(f"status={run(['git', 'status', '-sb']).stdout.strip()}")
-log.append(f"UNITY exists={UNITY.exists()}")
-flush()
+procs = []
+if out.strip():
+    try:
+        data = json.loads(out)
+        if isinstance(data, dict):
+            procs = [data]
+        elif isinstance(data, list):
+            procs = data
+    except json.JSONDecodeError:
+        print("json fail", out[:500])
 
-# stop prior headless unity if any (do not kill interactive editor blindly — only batchmode via tasklist filter later)
-# Clear stale result so poll cannot read previous BATCH_TIMEOUT as current.
+for p in procs:
+    cmd = p.get("CommandLine") or ""
+    pid = p.get("ProcessId")
+    if "Hecton8" in cmd or "-h8headless" in cmd or "HeadlessSimulation" in cmd:
+        print(f"kill pid={pid}")
+        subprocess.run(["taskkill", "/F", "/T", "/PID", str(pid)], check=False)
+        killed.append(pid)
+
+time.sleep(3)
+
+# Clear stale result so poll does not read prior FAIL
 if RESULT.exists():
-    bak = RESULT.with_suffix(RESULT.suffix + f".bak_pre_fo_drain_{STAMP}")
-    RESULT.replace(bak)
-    log.append(f"backed up result -> {bak.name}")
-if STATUS.exists():
-    STATUS.unlink()
-    log.append("cleared runner status")
-flush()
+    RESULT.unlink()
+    print("removed stale result")
 
-cmd = [
+# Also clear CSV if present
+csv = REPO / "Docs" / "AgentLogs" / "HeadlessSimulationDaily_HEADLESS_SIMULATION_RUNNER.csv"
+if csv.exists():
+    csv.unlink()
+    print("removed stale csv")
+
+args = [
     str(UNITY),
     "-batchmode",
-    "-projectPath",
-    str(ROOT),
-    "-logFile",
-    str(LOG),
     "-nographics",
+    "-projectPath",
+    str(REPO),
+    "-logFile",
+    str(log_path),
     "-executeMethod",
     "Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner.Run",
     "-h8headless",
@@ -78,27 +89,25 @@ cmd = [
     "-h8headlessStartupTimeout",
     "600",
 ]
-log.append("LAUNCH " + " ".join(cmd))
-flush()
 
+print("log", log_path)
+print("launching...")
+# DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP on Windows
+CREATE_NEW_PROCESS_GROUP = 0x00000200
+DETACHED_PROCESS = 0x00000008
+CREATE_NO_WINDOW = 0x08000000
 proc = subprocess.Popen(
-    cmd,
-    cwd=str(ROOT),
+    args,
+    cwd=str(REPO),
     stdout=subprocess.DEVNULL,
     stderr=subprocess.DEVNULL,
+    creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW,
 )
-meta = {
-    "pid": proc.pid,
-    "log": str(LOG),
-    "result": str(RESULT),
-    "startedUtc": datetime.now(timezone.utc).isoformat(),
-    "head": run(["git", "rev-parse", "HEAD"]).stdout.strip(),
-}
-(ROOT / "_agent_smoke_meta.json").write_text(
-    json.dumps(meta, indent=2), encoding="utf-8"
+print("pid", proc.pid)
+
+meta_path.write_text(
+    f"head={head}\npid={proc.pid}\nlog={log_path}\nkilled={killed}\nstarted={stamp}\n",
+    encoding="utf-8",
 )
-log.append(f"LAUNCHED pid={proc.pid}")
-log.append(f"log={LOG}")
-log.append("SMOKE_LAUNCHED")
-flush()
-print("SMOKE_LAUNCHED", proc.pid, LOG)
+print("meta", meta_path)
+print("OK relaunch")

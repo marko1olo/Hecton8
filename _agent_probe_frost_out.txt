@@ -1,0 +1,830 @@
+=== RunDispatcherUpdate around line 5158 ===
+5158|        private void RunDispatcherUpdate()
+5159|        {
+5160|            AdvanceDispatcherFrameId();
+5161|            FrameTimeWatchdog.TickMathPrecisionTransition(CurrentFrameIndex);
+5162|#if UNITY_EDITOR
+5163|            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherUpdate);
+5164|#endif
+5165|            using (_updateProfilerMarker.Auto())
+5166|            {
+5167|#if UNITY_EDITOR
+5168|                NativeAllocationTrackerRuntimeBridge.NotifyDispatcherHeartbeat();
+5169|#endif
+5170|                ApplyPendingCoreTickDilationRestore();
+5171|                if (BootstrapStatus.TryTriggerSafeHalt())
+5172|                    BootstrapBiosErrorOverlay.Show(BootstrapStatus.SafeHaltDisplayMessage);
+5173|
+5174|                long dispatcherTickStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+5175|                long preSimulationStartTimestamp = dispatcherTickStartTimestamp;
+5176|                HectonXRRuntimeState.RefreshFrameState(CurrentFrameIndex);
+5177|                float unscaledDeltaTime = ResolveDispatcherUnscaledDeltaTime();
+5178|                if (!math.isfinite(unscaledDeltaTime) || unscaledDeltaTime < 0f)
+5179|                    unscaledDeltaTime = 0f;
+5180|                bool previousFrameMissedBudget = CurrentFrameUnscaledDeltaTime > JobAdmissionFrameBudgetMissThresholdSeconds;
+5181|                CurrentFrameUnscaledDeltaTime = unscaledDeltaTime;
+5182|                HomeostasisBrain.PreSimulationTick(unscaledDeltaTime);
+5183|
+5184|                // Self-heal before reading. The cold resolve in InitializeService runs while the registry's
+5185|                // Input slot is still empty, and first registration notifies nobody, so without this the
+5186|                // guard below is false for the entire session and the input tick never runs at all.
+5187|                EnsureInputDeterminismResolved();
+5188|                IInputDeterminismService inputDeterminism = _inputDeterminism;
+5189|                if (inputDeterminism != null && inputDeterminism.IsInitialized)
+5190|                    inputDeterminism.PreSimulationInputTick(unscaledDeltaTime);
+5191|                SignalCorridorRuntime.PreSimulationHeartbeat();
+5192|                if (SignalBusRegistry.IsSimulationHalted)
+5193|                    return;
+5194|
+5195|                float globalQualityWeight01 = RefreshScalabilityQualityWeight();
+5196|                RecordMemoryBlackBoxHeartbeat();
+5197|                RunPreSimulationMemoryDefrag(unscaledDeltaTime);
+5198|                IJobAdmissionService jobAdmission = _jobAdmission;
+5199|                byte globalQualityWeightByte = EncodeGlobalQualityWeightByte(globalQualityWeight01);
+5200|                if (jobAdmission != null && jobAdmission.IsInitialized)
+5201|                {
+5202|                    jobAdmission.Refill(
+5203|                        globalQualityWeightByte,
+5204|                        unscaledDeltaTime,
+5205|                        previousFrameMissedBudget);
+5206|                }
+5207|                Hecton8.Modding.ModCommandDispatcher.DrainPreSimulation();
+5208|                DrainSimulationPauseSignals();
+5209|                DrainAdrenalineDilationSignals(unscaledDeltaTime);
+5210|                float frameDilationScalar = ConsumeFrameTimeDilationScalar();
+5211|                if (!math.isfinite(frameDilationScalar) || frameDilationScalar < 0f)
+5212|                    frameDilationScalar = 0f;
+5213|
+5214|                float deltaTime = unscaledDeltaTime * frameDilationScalar;
+5215|                if (!math.isfinite(deltaTime) || deltaTime < 0f)
+5216|                    deltaTime = 0f;
+5217|                CurrentFrameDeltaTime = deltaTime;
+5218|                DispatcherTimingDTO masterTiming = BuildMasterDispatcherTiming(deltaTime, unscaledDeltaTime);
+5219|                uint dispatcherFrameId = masterTiming.FrameId;
+5220|                RunMasterPreSimulationPhase(in masterTiming);
+5221|                UpdateH8TimeState(deltaTime, unscaledDeltaTime);
+5222|                PublishTimeDilationState(0u);
+5223|                IDataVault dispatcherDataVault = _dataVault;
+5224|                if (dispatcherDataVault == null && TryResolveCachedDataVault(out dispatcherDataVault))
+5225|                    _dataVault = dispatcherDataVault;
+5226|                RecordDispatcherBlackBoxHeartbeat(dispatcherDataVault);
+5227|                float preSimulationCostMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - preSimulationStartTimestamp) * 1000.0 /
+5228|                                                    System.Diagnostics.Stopwatch.Frequency);
+5229|                ISimulationBucketer simulationBucketer = _simulationBucketer;
+5230|                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+5231|                                        IsOriginShiftFrameLockedForCurrentFrame ||
+5232|                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+5233|                if (simulationBucketer != null && simulationBucketer.IsInitialized)
+5234|                {
+5235|                    simulationBucketer.ReportPreSimulationCostMs(preSimulationCostMs);
+5236|                    simulationBucketer.AdvanceFrame(
+5237|                        globalQualityWeightByte,
+5238|                        unscaledDeltaTime,
+5239|                        jobAdmission != null ? jobAdmission.CriticalDebtFrameCount : 0,
+5240|                        aupBarrierActive);
+5241|                    SimulationBucketFrameState bucketFrameState = simulationBucketer.CaptureFrameState();
+5242|                    PublishSimulationBucketSync(in bucketFrameState);
+5243|                    PublishFramePacingWarningIfNeeded(in bucketFrameState);
+5244|                }
+5245|
+5246|                if (IsOriginShiftBootstrapLocked)
+5247|                {
+5248|                    if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
+5249|                        return;
+5250|
+5251|                    if (IsOriginShiftBootstrapLocked)
+5252|                        return;
+5253|                }
+5254|
+5255|                if (IsOriginShiftFrameLockedForCurrentFrame)
+5256|                    return;
+5257|
+5258|                if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+5259|                {
+5260|                    RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
+5261|                    return;
+5262|                }
+5263|
+5264|                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+5265|                RunMasterSimulationPhase(in masterTiming);
+5266|#if UNITY_EDITOR
+5267|                long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
+5268|#endif
+5269|                _foveatedSimulationManager.BeginDispatcherFrame(deltaTime);
+5270|#if UNITY_EDITOR
+5271|                EndDispatcherPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
+5272|#endif
+5273|                PredatorCognitionDomain.BeginDispatcherFrame(CurrentFrameIndex);
+5274|                bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&
+5275|                                          BootstrapState.HasActiveInstance &&
+5276|                                          !BootstrapState.IsGameReady;
+5277|                long bucketWorkStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+5278|
+5279|                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+5280|                {
+5281|                    if (SignalBusRegistry.IsSimulationHalted)
+5282|                        return;
+5283|
+5284|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+5285|                        continue;
+5286|
+5287|                    RegistryBucket<IUpdatable> lane = _priorityLanes[laneIndex];
+5288|#if UNITY_EDITOR
+5289|                    lane.ValidateNoDestroyedEntriesDebug(nameof(IUpdatable));
+5290|#endif
+5291|                    using (_updateLaneProfilerMarkers[laneIndex].Auto())
+5292|                    {
+5293|                        int count = lane.Count;
+5294|
+5295|                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+5296|                        {
+5297|                            IUpdatable updatable = lane.GetAt(itemIndex);
+5298|                            if (!_foveatedSimulationManager.TryAdvanceTick(updatable, deltaTime, out float effectiveDeltaTime))
+5299|                                continue;
+5300|
+5301|                            updatable.Tick(effectiveDeltaTime);
+5302|                            _foveatedSimulationManager.NotifyTickCompleted(updatable);
+5303|                            if (SignalBusRegistry.IsSimulationHalted)
+5304|                                return;
+5305|
+5306|                            if (IsOriginShiftFrameLockedForCurrentFrame)
+5307|                                return;
+5308|                        }
+5309|                    }
+5310|                }
+5311|
+5312|                if (SignalBusRegistry.IsSimulationHalted)
+5313|                    return;
+5314|
+5315|                CombatDamageRuntime.FrameTick(deltaTime);
+5316|                PredatorCognitionDomain.ScheduleFrameEvaluation(CurrentFrameIndex);
+5317|                _foveatedSimulationManager.ScheduleFrameJobs();
+5318|                RunFastTick(deltaTime, blockGameplayLanes);
+5319|                RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+5320|                RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+5321|                RunBucketedSlowTick(blockGameplayLanes);
+5322|                RunSlowTick(deltaTime, blockGameplayLanes);
+5323|                RunColdTick(deltaTime, blockGameplayLanes);
+5324|                RunFrostTick(deltaTime, blockGameplayLanes);
+5325|                ScheduleDispatcherSurfaceProbes();
+5326|                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+5327|                RunMasterPostSimulationPhase(in masterTiming);
+5328|                IModdingBridge moddingBridge = _moddingBridgeProjectionRuntime;
+5329|                if (moddingBridge != null)
+5330|                    moddingBridge.ProjectPostSimulation();
+5331|                if (simulationBucketer != null)
+5332|                {
+5333|                    float activeBucketLoadMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - bucketWorkStartTimestamp) * 1000.0 /
+5334|                                                       System.Diagnostics.Stopwatch.Frequency);
+5335|                    simulationBucketer.ReportActiveBucketLoadMs(activeBucketLoadMs);
+5336|                    SimulationBucketFrameState bucketFrameState = simulationBucketer.CaptureFrameState();
+5337|                    PublishFramePacingWarningIfNeeded(in bucketFrameState);
+5338|                    CrashTelemetryBuffer.ReportSimulationBucketFrame(bucketFrameState);
+5339|                }
+5340|
+5341|                double tickOverheadMilliseconds =
+5342|                    (System.Diagnostics.Stopwatch.GetTimestamp() - dispatcherTickStartTimestamp) * 1000.0 /
+5343|                    System.Diagnostics.Stopwatch.Frequency;
+5344|                CrashTelemetryBuffer.ReportTimeDilationState(_timeDilationScalar, tickOverheadMilliseconds);
+5345|            }
+5346|        }
+5347|
+5348|        private void PublishSimulationBucketSync(in SimulationBucketFrameState frameState)
+5349|        {
+5350|            float alpha = math.isfinite(frameState.SimulationBucketInterpolationAlpha)
+5351|                ? math.saturate(frameState.SimulationBucketInterpolationAlpha)
+5352|                : 0f;
+5353|            _pendingSimulationBucketInterpolationAlpha = alpha;
+5354|            _hasPendingSimulationBucketInterpolationAlpha = true;
+5355|
+5356|            SimulationBucketSyncSignal signal = default;
+5357|            signal.InterpolationAlpha = alpha;
+5358|            signal.Frame = unchecked((uint)math.max(0, frameState.CurrentFrameCount));
+5359|            signal.ActiveSlowBucket = frameState.ActiveSlowBucket;
+5360|            signal.SlowBucketMask = frameState.SlowBucketMask;
+5361|            signal.RebalanceSequence = frameState.RebalanceSequence;
+5362|            signal.ActiveSlowBucketCount = frameState.ActiveSlowBucketCount;
+5363|            signal.Flags = unchecked((byte)math.min(byte.MaxValue, frameState.FramePacingFlags));
+5364|            SignalBus<SimulationBucketSyncSignal>.TryPushTracked(in signal, ref s_x001SystemDispatcherSignalPushDropCount);
+5365|        }
+5366|
+5367|        private static void FlushSimulationBucketVisualSync()
+5368|        {
+5369|            if (!_hasPendingSimulationBucketInterpolationAlpha)
+5370|                return;
+5371|
+5372|            _hasPendingSimulationBucketInterpolationAlpha = false;
+5373|            Shader.SetGlobalFloat(_SimulationBucketInterpolationAlphaId, _pendingSimulationBucketInterpolationAlpha);
+5374|        }
+5375|
+5376|        private void PublishFramePacingWarningIf
+
+=== RunFrostTick around line 6902 ===
+6902|        private void RunFrostTick(float deltaTime, bool blockGameplayLanes)
+6903|        {
+6904|            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
+6905|                return;
+6906|
+6907|            _frostTickAccumulator += deltaTime;
+6908|            if (_frostTickAccumulator < FrostTickIntervalSeconds)
+6909|                return;
+6910|
+6911|            _frostTickAccumulator -= FrostTickIntervalSeconds;
+6912|
+6913|            using (_frostTickProfilerMarker.Auto())
+6914|            {
+6915|                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+6916|                {
+6917|                    if (SignalBusRegistry.IsSimulationHalted)
+6918|                        return;
+6919|
+6920|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6921|                        continue;
+6922|
+6923|                    RegistryBucket<IFrostTickable> lane = _frostPriorityLanes[laneIndex];
+6924|#if UNITY_EDITOR
+6925|                    lane.ValidateNoDestroyedEntriesDebug(nameof(IFrostTickable));
+6926|#endif
+6927|                    using (_frostLaneProfilerMarkers[laneIndex].Auto())
+6928|                    {
+6929|                        int count = lane.Count;
+6930|
+6931|                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+6932|                        {
+6933|                            lane.GetAt(itemIndex).FrostTick();
+6934|                            if (SignalBusRegistry.IsSimulationHalted)
+6935|                                return;
+6936|                        }
+6937|                    }
+6938|                }
+6939|            }
+6940|        }
+6941|
+6942|        private static void EnsureDispatcherSurfaceProbeBuffers()
+6943|        {
+6944|            if (!TryResolveCachedDataVault(out IDataVault dataVault))
+6945|                return;
+6946|
+6947|            TryEnsureDispatcherVaultBuffer(
+6948|                dataVault,
+6949|                ref _scheduledDispatcherSurfaceProbeHitsHandle,
+6950|                BufferID.DispatcherRaycastHits,
+6951|                MaxQueuedDispatcherSurfaceProbes,
+6952|                NativeArrayOptions.ClearMemory,
+6953|                out NativeArray<KinematicSurfaceHit> _);
+6954|        }
+6955|
+6956|        private static bool TryResolveDispatcherSurfaceProbeHits(out NativeArray<KinematicSurfaceHit> scheduledHits)
+6957|        {
+6958|            scheduledHits = default;
+6959|            if (!TryResolveCachedDataVault(out IDataVault dataVault))
+6960|                return false;
+6961|
+6962|            return TryResolveDispatcherVaultBuffer(
+6963|                dataVault,
+6964|                in _scheduledDispatcherSurfaceProbeHitsHandle,
+6965|                MaxQueuedDispatcherSurfaceProbes,
+6966|                out scheduledHits);
+6967|        }
+6968|
+6969|        private static bool TryLockDispatcherSurfaceProbeScheduledVaultBuffers()
+6970|        {
+6971|            if (_scheduledDispatcherSurfaceProbeHitsGuardHeld)
+6972|                return true;
+6973|
+6974|            if (!IsVaultGenerationHandleCreated(in _scheduledDispatcherSurfaceProbeHitsHandle))
+6975|                return false;
+6976|
+6977|            if (!TryResolveCachedDataVault(out IDataVault dataVault))
+6978|                return false;
+6979|
+6980|            if (!dataVault.TryAcquireMutationGuard(DispatcherSurfaceProbeHitsGuardMask))
+6981|                return false;
+6982|
+6983|            _scheduledDispatcherSurfaceProbeHitsGuardVault = dataVault;
+6984|            _scheduledDispatcherSurfaceProbeHitsGuardHeld = true;
+6985|            return true;
+6986|        }
+6987|
+6988|        private static void UnlockDispatcherSurfaceProbeScheduledVaultBuffers()
+6989|        {
+6990|            TryResolveCachedDataVault(out IDataVault dataVault);
+6991|            UnlockDispatcherSurfaceProbeScheduledVaultBuffers(dataVault);
+6992|        }
+6993|
+6994|        private static void UnlockDispatcherSurfaceProbeScheduledVaultBuffers(IDataVault dataVault)
+6995|        {
+6996|            if (!_scheduledDispatcherSurfaceProbeHitsGuardHeld)
+6997|                return;
+6998|
+6999|            IDataVault guardVault = _scheduledDispatcherSurfaceProbeHitsGuardVault ?? dataVault;
+7000|            _scheduledDispatcherSurfaceProbeHitsGuardVault = null;
+7001|            _scheduledDispatcherSurfaceProbeHitsGuardHeld = false;
+7002|
+7003|            if (guardVault != null)
+7004|                guardVault.ReleaseMutationGuard(DispatcherSurfaceProbeHitsGuardMask);
+7005|        }
+7006|
+7007|        private static void ScheduleDispatcherSurfaceProbes()
+7008|        {
+7009|            if (_pendingDispatcherSurfaceProbeCount <= 0)
+7010|                return;
+7011|
+7012|            using (_dispatcherSurfaceProbeScheduleProfilerMarker.Auto())
+7013|            {
+7014|                int pendingCount = _pendingDispatcherSurfaceProbeCount;
+7015|                for (int clearIndex = 0; clearIndex < pendingCount; clearIndex++)
+7016|                {
+7017|                    _pendingDispatcherSurfaceProbeReceivers[clearIndex] = null;
+7018|                    _pendingDispatcherSurfaceProbeRequestIds[clearIndex] = 0;
+7019|                }
+7020|
+7021|                _pendingDispatcherSurfaceProbeCount = 0;
+
+=== IsOriginShiftBootstrapLocked around line 617 ===
+617|        internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+618|
+619|        internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == CurrentFrameIndex;
+620|
+621|        public float TimeDilationScalar => _timeDilationScalar;
+622|
+623|        public static ulong KillSwitchMask => unchecked((ulong)Volatile.Read(ref _homeostasisKillSwitchMaskBits));
+624|
+625|        internal static byte HomeostasisPressureLevel => (byte)Volatile.Read(ref _homeostasisPressureLevel);
+626|
+627|        internal static byte HomeostasisFoveatedTier => (byte)Volatile.Read(ref _homeostasisFoveatedTier);
+628|
+629|        public bool SimulationPaused => _simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon;
+630|
+631|        public double DilatedTimeSeconds => _timeSnapshot.Time;
+632|
+633|        public double UnscaledTimeSeconds => _timeSnapshot.UnscaledTime;
+634|
+635|        public H8TimeSnapshot TimeSnapshot => _timeSnapshot;
+636|
+637|        /// <inheritdoc />
+638|        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+639|
+640|        /// <inheritdoc />
+641|        public bool IsServiceReady => _serviceRegistered;
+642|#if UNITY_EDITOR
+643|        private static object _currentPostFixedGcOwner;
+644|        private static object _lastPostFixedGcOwner;
+645|        private static int _lastPostFixedGcFrame = -1;
+646|        private static int _lastPostFixedGcDelta;
+647|        private static int _lastPostFixedGcLaneIndex = -1;
+648|        private static int _lastPostFixedGcItemIndex = -1;
+649|        private static float _nextAupNanInquisitorLogTime;
+650|        private static float _nextDispatcherPhaseWarningLogTime;
+651|        private static float _nextFoveatedFrameWarningLogTime;
+652|#endif
+653|        private static ushort _dominantLateFrameCircuitBreakerLaneCount;
+654|        private static float _pauseDepthOfFieldWeight;
+655|        private static float _pauseDepthOfFieldBlendStartTime;
+656|        private static float _pauseDepthOfFieldBlendStartWeight;
+657|        private static float _pauseDepthOfFieldTargetWeight;
+658|        private static bool _temporalCompressionActive;
+659|        private static bool _pauseMenuDepthOfFieldRequested;
+660|        private static bool _pdaDepthOfFieldRequested;
+661|        private static bool _pauseDepthOfFieldTargetActive;
+662|        private static int _temporalCompressionFrameCount;
+663|        private static int _pdaOverBudgetConsecutiveFrames;
+664|        private static VaultGenerationHandle<KinematicSurfaceHit> _scheduledDispatcherSurfaceProbeHitsHandle;
+665|        private static IDataVault _scheduledDispatcherSurfaceProbeHitsGuardVault;
+666|        private static bool _scheduledDispatcherSurfaceProbeHitsGuardHeld;
+667|        private static JobHandle _scheduledDispatcherSurfaceProbeHandle;
+668|        private static bool _dispatcherSurfaceProbesScheduled;
+669|        private static int _pendingDispatcherSurfaceProbeCount;
+670|        private static int _scheduledDispatcherSurfaceProbeCount;
+671|
+672|        [StructLayout(LayoutKind.Explicit, Size = DispatcherBlackBoxEntrySizeBytes)]
+673|        private struct DispatcherBlackBoxEntry
+674|        {
+675|            [FieldOffset(0)] public uint Frame;
+676|            [FieldOffset(4)] public uint Sequence;
+677|            [FieldOffset(8)] public double DilatedTime;
+678|            [FieldOffset(16)] public double UnscaledTime;
+679|            [FieldOffset(24)] public float DeltaTime;
+680|            [FieldOffset(28)] public float UnscaledDeltaTime;
+681|            [FieldOffset(32)] public float TimeDilationScalar;
+682|            [FieldOffset(36)] public float TickOverheadMilliseconds;
+683|            [FieldOffset(40)] public ushort Flags;
+684|            [FieldOffset(42)] public ushort PendingSurfaceProbes;
+685|            [FieldOffset(44)] public ushort ScheduledSurfaceProbes;
+686|            [FieldOffset(46)] public byte HomeostasisPressureLevel;
+687|            [FieldOffset(47)] public byte HomeostasisFoveatedTier;
+688|            [FieldOffset(48)] public uint AupPreShiftSequence;
+689|            [FieldOffset(52)] public uint StateHash;
+690|            [FieldOffset(56)] public ulong KillSwitchMask;
+691|        }
+692|
+693|        static SystemDispatcher()
+694|        {
+695|            _foveatedSimulationManager.InitializeRuntime();
+696|            ResetBaseStressCascadeCircuitBreakerState();
+697|        }
+698|
+699|        /// <summary>
+700|        /// True when this frame dropped excess fixed-step catch-up time instead of exceeding the substep cap.
+701|        /// </summary>
+702|        public static bool IsTemporalCompressionActive => _temporalCompressionActive;
+703|
+704|        /// <summary>
+705|        /// Total frame count where temporal compression was entered since subsystem reset.
+706|        /// </summary>
+707|        public static int TemporalCompressionFrameCount => _temporalCompressionFrameCount;
+708|
+709|        public static float StreamingStorageDebt01 => math.saturate(Volatile.Read(ref _streamingStorageDebtMilli) * 0.001f);
+710|
+711|        public static uint StreamingStorageDebtSequence => unchecked((uint)Volatile.Read(ref _streamingStorageDebtSequence));
+712|
+713|        public static double CurrentUnscaledTimeSeconds
+714|        {
+715|            get
+716|            {
+717|                SystemDispatcher dispatcher = ActiveRuntimeInstance;
+718|                if (dispatcher != null)
+719|                    return dispatcher._timeSnapshot.UnscaledTime;
+720|
+721|                // No dispatcher yet. Falling through to the wall clock here would leak real time into a
+722|                // step-bounded run during bootstrap, before the first snapshot exists.
+723|                return _headlessTimeMode == HeadlessTimeMode.StepBounded
+724|                    ? _stepBoundedElapsedSeconds
+725|                    : UnityEngine.Time.unscaledTimeAsDouble;
+726|            }
+727|        }
+728|
+729|        public static void PublishStreamingStorageDebt(float debt01)
+730|        {
+731|            Volatile.Write(ref _streamingStorageDebtMilli, (int)math.round(math.saturate(debt01) * 1000f));
+732|            Volatile.Write(ref _streamingStorageDebtSequence, unchecked(Volatile.Read(ref _streamingStorageDebtSequence) + 1));
+733|        }
+734|
+735|        internal static void SetModdingBridgeProjectionRuntime(IModdingBridge bridge)
+736|        {
+
+=== IsOriginShiftBootstrapLocked2 around line 617 ===
+617|        internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+618|
+619|        internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == CurrentFrameIndex;
+620|
+621|        public float TimeDilationScalar => _timeDilationScalar;
+622|
+623|        public static ulong KillSwitchMask => unchecked((ulong)Volatile.Read(ref _homeostasisKillSwitchMaskBits));
+624|
+625|        internal static byte HomeostasisPressureLevel => (byte)Volatile.Read(ref _homeostasisPressureLevel);
+626|
+627|        internal static byte HomeostasisFoveatedTier => (byte)Volatile.Read(ref _homeostasisFoveatedTier);
+628|
+629|        public bool SimulationPaused => _simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon;
+630|
+631|        public double DilatedTimeSeconds => _timeSnapshot.Time;
+632|
+633|        public double UnscaledTimeSeconds => _timeSnapshot.UnscaledTime;
+634|
+635|        public H8TimeSnapshot TimeSnapshot => _timeSnapshot;
+636|
+637|        /// <inheritdoc />
+638|        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+639|
+640|        /// <inheritdoc />
+641|        public bool IsServiceReady => _serviceRegistered;
+642|#if UNITY_EDITOR
+643|        private static object _currentPostFixedGcOwner;
+644|        private static object _lastPostFixedGcOwner;
+645|        private static int _lastPostFixedGcFrame = -1;
+646|        private static int _lastPostFixedGcDelta;
+647|        private static int _lastPostFixedGcLaneIndex = -1;
+648|        private static int _lastPostFixedGcItemIndex = -1;
+649|        private static float _nextAupNanInquisitorLogTime;
+650|        private static float _nextDispatcherPhaseWarningLogTime;
+651|        private static float _nextFoveatedFrameWarningLogTime;
+652|#endif
+653|        private static ushort _dominantLateFrameCircuitBreakerLaneCount;
+654|        private static float _pauseDepthOfFieldWeight;
+655|        private static float _pauseDepthOfFieldBlendStartTime;
+656|        private static float _pauseDepthOfFieldBlendStartWeight;
+657|        private static float _pauseDepthOfFieldTargetWeight;
+658|        private static bool _temporalCompressionActive;
+659|        private static bool _pauseMenuDepthOfFieldRequested;
+660|        private static bool _pdaDepthOfFieldRequested;
+661|        private static bool _pauseDepthOfFieldTargetActive;
+662|        private static int _temporalCompressionFrameCount;
+663|        private static int _pdaOverBudgetConsecutiveFrames;
+664|        private static VaultGenerationHandle<KinematicSurfaceHit> _scheduledDispatcherSurfaceProbeHitsHandle;
+665|        private static IDataVault _scheduledDispatcherSurfaceProbeHitsGuardVault;
+666|        private static bool _scheduledDispatcherSurfaceProbeHitsGuardHeld;
+667|        private static JobHandle _scheduledDispatcherSurfaceProbeHandle;
+668|        private static bool _dispatcherSurfaceProbesScheduled;
+669|        private static int _pendingDispatcherSurfaceProbeCount;
+670|        private static int _scheduledDispatcherSurfaceProbeCount;
+671|
+672|        [StructLayout(LayoutKind.Explicit, Size = DispatcherBlackBoxEntrySizeBytes)]
+673|        private struct DispatcherBlackBoxEntry
+674|        {
+675|            [FieldOffset(0)] public uint Frame;
+676|            [FieldOffset(4)] public uint Sequence;
+677|            [FieldOffset(8)] public double DilatedTime;
+678|            [FieldOffset(16)] public double UnscaledTime;
+679|            [FieldOffset(24)] public float DeltaTime;
+680|            [FieldOffset(28)] public float UnscaledDeltaTime;
+681|            [FieldOffset(32)] public float TimeDilationScalar;
+682|            [FieldOffset(36)] public float TickOverheadMilliseconds;
+683|            [FieldOffset(40)] public ushort Flags;
+684|            [FieldOffset(42)] public ushort PendingSurfaceProbes;
+685|            [FieldOffset(44)] public ushort ScheduledSurfaceProbes;
+686|            [FieldOffset(46)] public byte HomeostasisPressureLevel;
+687|            [FieldOffset(47)] public byte HomeostasisFoveatedTier;
+688|            [FieldOffset(48)] public uint AupPreShiftSequence;
+689|            [FieldOffset(52)] public uint StateHash;
+690|            [FieldOffset(56)] public ulong KillSwitchMask;
+691|        }
+692|
+693|        static SystemDispatcher()
+694|        {
+695|            _foveatedSimulationManager.InitializeRuntime();
+696|            ResetBaseStressCascadeCircuitBreakerState();
+697|        }
+698|
+699|        /// <summary>
+700|        /// True when this frame dropped excess fixed-step catch-up time instead of exceeding the substep cap.
+701|        /// </summary>
+702|        public static bool IsTemporalCompressionActive => _temporalCompressionActive;
+703|
+704|        /// <summary>
+705|        /// Total frame count where temporal compression was entered since subsystem reset.
+706|        /// </summary>
+707|        public static int TemporalCompressionFrameCount => _temporalCompressionFrameCount;
+708|
+709|        public static float StreamingStorageDebt01 => math.saturate(Volatile.Read(ref _streamingStorageDebtMilli) * 0.001f);
+710|
+711|        public static uint StreamingStorageDebtSequence => unchecked((uint)Volatile.Read(ref _streamingStorageDebtSequence));
+712|
+713|        public static double CurrentUnscaledTimeSeconds
+714|        {
+715|            get
+716|            {
+717|                SystemDispatcher dispatcher = ActiveRuntimeInstance;
+718|                if (dispatcher != null)
+719|                    return dispatcher._timeSnapshot.UnscaledTime;
+720|
+721|                // No dispatcher yet. Falling through to the wall clock here would leak real time into a
+722|                // step-bounded run during bootstrap, before the first snapshot exists.
+723|                return _headlessTimeMode == HeadlessTimeMode.StepBounded
+724|                    ? _stepBoundedElapsedSeconds
+725|                    : UnityEngine.Time.unscaledTimeAsDouble;
+726|            }
+727|        }
+728|
+729|        public static void PublishStreamingStorageDebt(float debt01)
+730|        {
+731|            Volatile.Write(ref _streamingStorageDebtMilli, (int)math.round(math.saturate(debt01) * 1000f));
+732|            Volatile.Write(ref _streamingStorageDebtSequence, unchecked(Volatile.Read(ref _streamingStorageDebtSequence) + 1));
+733|        }
+734|
+735|        internal static void SetModdingBridgeProjectionRuntime(IModdingBridge bridge)
+736|        {
+
+=== RequestHeadlessTimeDilation around line 1742 ===
+1742|        public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+1743|        {
+1744|            ClearCoreTickDilationBurst();
+1745|            ClearAdrenalineDilation();
+1746|            SetTimeDilationScalar(
+1747|                scalar,
+1748|                TimeDilationMinimumScalar,
+1749|                HeadlessTimeDilationMaximumScalar,
+1750|                reasonHash,
+1751|                publishImmediate: true);
+1752|        }
+1753|
+1754|        /// <summary>
+1755|        /// Requests an exact frame-count core tick dilation burst.
+1756|        /// </summary>
+1757|        public void RequestCoreTickDilation(float scalar, int frameCount, uint reasonHash = 0u)
+1758|        {
+1759|            if (frameCount <= 0)
+1760|                return;
+1761|
+1762|            if (SimulationPaused)
+1763|                return;
+1764|
+1765|            float safeScalar = math.isfinite(scalar)
+1766|                ? math.clamp(scalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+1767|                : 1f;
+1768|
+1769|            if (_coreTickDilationRestorePending)
+1770|            {
+1771|                _coreTickDilationRestorePending = false;
+1772|            }
+1773|            else if (_coreTickDilationFramesRemaining <= 0)
+1774|            {
+1775|                _coreTickDilationRestoreScalar = _timeDilationScalar;
+1776|            }
+1777|
+1778|            _coreTickDilationScalar = safeScalar;
+1779|            _coreTickDilationFramesRemaining = math.max(_coreTickDilationFramesRemaining, frameCount);
+1780|            _coreTickDilationReasonHash = reasonHash;
+1781|            SetTimeDilationScalar(safeScalar, reasonHash, publishImmediate: true);
+1782|        }
+1783|
+1784|        public void SetThermalCriticalSlowTick(bool active)
+1785|        {
+1786|            _thermalCriticalSlowTickActive = active;
+1787|            if (active && _slowTickAccumulator > ThermalCriticalSlowTickIntervalSeconds)
+1788|                _slowTickAccumulator = ThermalCriticalSlowTickIntervalSeconds;
+1789|        }
+1790|
+1791|        public void RequestSimulationPause(bool paused, uint reasonHash = 0u)
+1792|        {
+1793|            if (paused)
+1794|            {
+1795|                if (!_simulationPaused)
+1796|                    _prePauseTimeDilationScalar = ResolvePauseRestoreScalar();
+1797|
+1798|                ClearCoreTickDilationBurst();
+1799|                ClearAdrenalineDilation();
+1800|                _simulationPaused = true;
+1801|                SetTimeDilationScalar(0f, reasonHash, publishImmediate: true);
+1802|                return;
+1803|            }
+1804|
+1805|            _simulationPaused = false;
+1806|            SetTimeDilationScalar(_prePauseTimeDilationScalar, reasonHash, publishImmediate: true);
+1807|        }
+1808|
+1809|        public void RequestAupPreShiftPause(uint shiftFrameId)
+1810|        {
+1811|            SetAupJobAdmissionBarrier(active: true);
+1812|            _dataVault?.LockAllocationsForAupShift(shiftFrameId);
+1813|            ForceCompleteMasterFencesForAupRebase(shiftFrameId);
+1814|            _aupPreShiftPauseSequence = shiftFrameId;
+1815|            _aupPreShiftPauseFrameId = ResolveCurrentDispatcherFrameId();
+1816|        }
+1817|
+1818|        public void ReleaseAupPreShiftPause(uint shiftFrameId)
+1819|        {
+1820|            SetAupJobAdmissionBarrier(active: false);
+1821|        }
+1822|
+1823|        private void SetAupJobAdmissionBarrier(bool active)
+1824|        {
+1825|            IJobAdmissionService jobAdmission = _jobAdmission;
+1826|            if (jobAdmission == null || !jobAdmission.IsInitialized)
+1827|                return;
+1828|
+1829|            jobAdmission.SetAupBarrierActive(active);
+1830|        }
+1831|
+1832|        public static void RequestDebugAupHardFence()
+1833|        {
+1834|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+1835|            if (dispatcher == null)
+1836|                return;
+1837|
+1838|            dispatcher.RequestAupPreShiftPause(dispatcher.ResolveCurrentDispatcherFrameId());
+1839|        }
+1840|
+1841|        public static int ResolveInnerloopBatchCount(int elementCount, int minBatch, int maxBatch)
+1842|        {
+1843|            int safeMin = math.max(1, minBatch);
+1844|            int safeMax = math.max(safeMin, maxBatch);
+1845|            if (elementCount <= safeMin)
+1846|                return safeMin;
+1847|
+1848|            float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight)
+1849|                ? HomeostasisBrain.GlobalQualityWeight
+1850|                : 1f);
+1851|            float frameStress = math.saturate((CurrentFrameUnscaledDeltaTime - (1f / 60f)) / math.max(0.0001f, 0.025f - (1f / 60f)));
+1852|            float pressureStress = math.saturate(HomeostasisPressureLevel * 0.125f);
+1853|            float schedulerStress = math.saturate(math.max(1f - quality, math.max(frameStress, pressureStress)));
+1854|            float curved = schedulerStress * schedulerStress * (3f - 2f * schedulerStress);
+1855|            int resolved = (int)math.round(math.lerp(safeMin, safeMax, curved));
+1856|            resolved = math.clamp(resolved, safeMin, safeMax);
+1857|            return math.min(resolved, math.max(safeMin, elementCount));
+1858|        }
+1859|
+1860|        public static bool IsAsyncReadbackReadyNoWait(AsyncGPUReadbackRequest request, out byte statusFlags)
+1861|        {
+
+=== MasterSim around line 2329 ===
+2329|        private bool TryEnsureMasterSimulationBuffers(
+2330|            out NativeArray<JobHandle> simulationJobHandles,
+2331|            out NativeArray<JobHandle> dependencyScratchHandles,
+2332|            out NativeArray<JobDependencyDTO> jobDependencyTelemetry,
+2333|            out NativeArray<MockTimeDilationSignal> mockTimeDilationSignals)
+2334|        {
+2335|            return TryReadMasterSimulationBuffers(
+2336|                out simulationJobHandles,
+2337|                out dependencyScratchHandles,
+2338|                out jobDependencyTelemetry,
+2339|                out mockTimeDilationSignals);
+2340|        }
+2341|
+2342|        private bool TryReadMasterSimulationBuffers(
+2343|            out NativeArray<JobHandle> simulationJobHandles,
+2344|            out NativeArray<JobHandle> dependencyScratchHandles,
+2345|            out NativeArray<JobDependencyDTO> jobDependencyTelemetry,
+2346|            out NativeArray<MockTimeDilationSignal> mockTimeDilationSignals)
+2347|        {
+2348|            simulationJobHandles = default;
+2349|            dependencyScratchHandles = default;
+2350|            jobDependencyTelemetry = default;
+2351|            mockTimeDilationSignals = default;
+2352|            IDataVault dataVault = _dataVault;
+2353|            if (dataVault == null)
+2354|                return false;
+2355|
+2356|            TryResolveDispatcherVaultBuffer(
+2357|                dataVault,
+2358|                in _masterSimulationJobHandlesHandle,
+2359|                MasterDispatcherMaxSystems,
+2360|                out simulationJobHandles);
+2361|            TryResolveDispatcherVaultBuffer(
+2362|                dataVault,
+2363|                in _masterDependencyScratchHandlesHandle,
+2364|                MasterDispatcherDependencyScratchCapacity,
+2365|                out dependencyScratchHandles);
+2366|            TryResolveDispatcherVaultBuffer(
+2367|                dataVault,
+2368|                in _masterJobDependencyTelemetryHandle,
+2369|                MasterDispatcherMaxSystems,
+2370|                out jobDependencyTelemetry);
+2371|            TryResolveDispatcherVaultBuffer(
+2372|                dataVault,
+2373|                in _masterMockTimeDilationSignalsHandle,
+2374|                8,
+2375|                out mockTimeDilationSignals);
+2376|
+2377|            return simulationJobHandles.IsCreated &&
+2378|                   simulationJobHandles.Length >= MasterDispatcherMaxSystems &&
+2379|                   dependencyScratchHandles.IsCreated &&
+2380|                   dependencyScratchHandles.Length >= MasterDispatcherDependencyScratchCapacity &&
+2381|                   jobDependencyTelemetry.IsCreated &&
+2382|                   jobDependencyTelemetry.Length >= MasterDispatcherMaxSystems &&
+2383|                   mockTimeDilationSignals.IsCreated &&
+2384|                   mockTimeDilationSignals.Length >= 8;
+2385|        }
+2386|
+2387|        private bool TryEnsureMasterTelemetryBuffers(
+2388|            out NativeArray<DispatcherTimingDTO> telemetryRing,
+2389|            out NativeArray<int> telemetryCursor)
+2390|        {
+2391|            return TryReadMasterTelemetryBuffers(out telemetryRing, out telemetryCursor);
+2392|        }
+2393|
+2394|        private bool TryReadMasterTelemetryBuffers(
+2395|            out NativeArray<DispatcherTimingDTO> telemetryRing,
+2396|            out NativeArray<int> telemetryCursor)
+2397|        {
+2398|            telemetryRing = default;
+2399|            telemetryCursor = default;
+2400|            IDataVault dataVault = _dataVault;
+2401|            if (dataVault == null)
+2402|                return false;
+2403|
+2404|            TryResolveDispatcherVaultBuffer(
+2405|                dataVault,
+2406|                in _masterPipelineTelemetryRingHandle,
+2407|                MasterDispatcherBlackBoxFrameCount,
+2408|                out telemetryRing);
+2409|            TryResolveDispatcherVaultBuffer(
+2410|                dataVault,
+2411|                in _masterPipelineTelemetryCursorHandle,
+2412|                1,
+2413|                out telemetryCursor);
+2414|            return telemetryRing.IsCreated &&
+2415|                   telemetryRing.Length >= MasterDispatcherBlackBoxFrameCount &&
+2416|                   telemetryCursor.IsCreated &&
+2417|                   telemetryCursor.Length >= 1;
+2418|        }
+2419|
+2420|        private bool TryEnsureMasterDomainFenceBuffers(
+2421|            out NativeArray<JobHandle> domainFenceHandles,
+2422|            out NativeArray<DispatcherFenceTelemetryEntry> telemetryRing,
+2423|            out NativeArray<int> telemetryCursor)
+2424|        {
+2425|            return TryReadMasterDomainFenceBuffers(out domainFenceHandles, out telemetryRing, out telemetryCursor);
+2426|        }
+2427|
+2428|        private bool TryReadMasterDomainFenceBuffers(
+2429|            out NativeArray<JobHandle> domainFenceHandles,
+2430|            out NativeArray<DispatcherFenceTelemetryEntry> telemetryRing,
+2431|            out NativeArray<int> telemetryCursor)
+2432|        {
+2433|            domainFenceHandles = default;
+2434|            telemetryRing = default;
+2435|            telemetryCursor = default;
+2436|            IDataVault dataVault = _dataVault;
+2437|            if (dataVault == null)
+2438|                return false;
+2439|
+2440|            TryResolveDispatcherVaultBuffer(
+2441|                dataVault,
+2442|                in _masterDomainFenceHandlesHandle,
+2443|                MasterDispatcherFenceDomainCount,
+2444|                out domainFenceHandles);
+2445|            TryResolveDispatcherVaultBuffer(
+2446|                dataVault,
+2447|                in _masterFenceTelemetryRingHandle,
+2448|                MasterDispatcherBlackBoxFrameCount,
