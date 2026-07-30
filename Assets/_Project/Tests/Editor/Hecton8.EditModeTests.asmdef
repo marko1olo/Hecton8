@@ -1,55 +1,51 @@
 {
-    "name":  "Hecton8.EditModeTests",
-    "rootNamespace":  "Hecton8.Tests.Editor",
-    "references":  [
-                       "Hecton8.World.Contracts",
-                       "Hecton8.Core.Contracts",
-                       "Hecton8.Core",
-                       "Hecton8.Gameplay",
-                       "Hecton8.Gameplay.Contracts",
-                       "Hecton8.Core.Scheduling",
-                       "Hecton8.Bootstrap.Contracts",
-                       "Hecton8.Core.Memory",
-                       "Hecton8.Atmosphere.StormPropagation.Runtime",
-                       "Hecton8.Rendering.OceanSinglePass",
-                       "Hecton8.Rendering.WaterOptics",
-                       "Hecton8.Lighting",
-                       "Hecton8.SeedShipAnomaly.Runtime",
-                       "Hecton8.Power.Generators",
-                       "Hecton8.Power.Generators.Contracts",
-                       "Hecton8.Thermodynamics",
-                       "Hecton8.Editor",
-                       "Hecton8.World.OfflineGeology.Editor",
-                       "Hecton8.Project.Editor",
-                       "Hecton8.Physics.KCC.Editor",
-                       "Hecton8.QA.Headless",
-                       "Crest",
-                       "Unity.Mathematics",
-                       "Unity.Burst",
-                       "Unity.Collections",
-                       "Unity.InputSystem",
-                       "Unity.Jobs",
-                       "UnityEngine.TestRunner",
-                       "UnityEditor.TestRunner",
-                       "ShapesRuntime"
-                   ],
-    "includePlatforms":  [
-                             "Editor"
-                         ],
-    "excludePlatforms":  [
-
-                         ],
-    "allowUnsafeCode":  true,
-    "overrideReferences":  false,
-    "precompiledReferences":  [
-                                  "nunit.framework.dll"
-                              ],
-    "autoReferenced":  false,
-    "defineConstraints":  [
-                              "NEVER_COMPILE_TESTS"
-                          ],
-    "versionDefines":  [
-
-                       ],
-    "noEngineReferences":  false
+    "name": "Hecton8.EditModeTests",
+    "rootNamespace": "Hecton8.Tests.Editor",
+    "references": [
+        "Hecton8.World.Contracts",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Gameplay",
+        "Hecton8.Gameplay.Contracts",
+        "Hecton8.Core.Scheduling",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Atmosphere.StormPropagation.Runtime",
+        "Hecton8.Rendering.OceanSinglePass",
+        "Hecton8.Rendering.WaterOptics",
+        "Hecton8.Lighting",
+        "Hecton8.SeedShipAnomaly.Runtime",
+        "Hecton8.Power.Generators",
+        "Hecton8.Power.Generators.Contracts",
+        "Hecton8.Thermodynamics",
+        "Hecton8.Editor",
+        "Hecton8.World.OfflineGeology.Editor",
+        "Hecton8.Project.Editor",
+        "Hecton8.Physics.KCC.Editor",
+        "Hecton8.QA.Headless",
+        "Crest",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.InputSystem",
+        "Unity.Jobs",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "ShapesRuntime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
