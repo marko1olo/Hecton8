@@ -2390,7 +2390,6 @@ namespace Hecton8.Bootstrap
         /// </summary>
         public static void RequestSceneActivation()
         {
-            Debug.Log("[GameBootstrapper-DEBUG] RequestSceneActivation called! StackTrace: " + StackTraceUtility.ExtractStackTrace());
             GameBootstrapper bootstrapper = EnsureRuntimeInstance();
             if (bootstrapper == null)
                 return;
@@ -3135,12 +3134,10 @@ namespace Hecton8.Bootstrap
             try
             {
                 Scene activeScene = SceneManager.GetActiveScene();
-                Debug.Log($"[GameBootstrapper-DEBUG] InitializeSceneActivatePhaseAsync: activeScene={activeScene.name}");
                 if (IsBootstrapScene(activeScene))
                 {
                     if (TryResolveBootstrapGameplayHandoffScene(out string gameplaySceneName))
                     {
-                        Debug.Log("[GameBootstrapper-DEBUG] LoadGameplaySceneFromBootstrapHandoffAsync");
                         return await LoadGameplaySceneFromBootstrapHandoffAsync(gameplaySceneName, ct);
                     }
 
@@ -3162,11 +3159,9 @@ namespace Hecton8.Bootstrap
 
                 if (!_sceneActivationRequested && BootstrapState.IsGameReady)
                 {
-                    Debug.Log("[GameBootstrapper-DEBUG] Scene not bootstrap, IsGameReady=true");
                     return true;
                 }
 
-                Debug.Log("[GameBootstrapper-DEBUG] Calling ExecuteSceneActivationAsync from InitializeSceneActivatePhaseAsync");
                 _sceneActivationRequested = true;
                 BootstrapState.PublishBootstrapPresence(true);
                 return await ExecuteSceneActivationAsync(ct);
@@ -3181,7 +3176,6 @@ namespace Hecton8.Bootstrap
         {
             try
             {
-                Debug.Log("[GameBootstrapper-DEBUG] RunSceneActivationAsync calling ExecuteSceneActivationAsync");
                 bool activated = await ExecuteSceneActivationAsync(ownerToken);
                 if (activated)
                     GlobalRegistry.LockReady();
@@ -3246,7 +3240,6 @@ namespace Hecton8.Bootstrap
         {
             try
             {
-                Debug.Log("[GameBootstrapper-DEBUG] Bypassing Main Menu and forcing 020_RENDER_SANDBOX");
                 string sandboxPath = "Assets/_Project/Scenes/020_RENDER_SANDBOX.unity";
                 AsyncOperation loadOperation = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(
                     sandboxPath,
@@ -7526,7 +7519,6 @@ namespace Hecton8.Bootstrap
             {
                 EnsureExtendedRegistryCoverageForActiveScene();
                 bool req = RequiresGameplaySceneActivation(scene);
-                Debug.Log($"[GameBootstrapper-DEBUG] HandleSceneLoadedGuard: _isBootstrapComplete=true, scene={scene.name}, RequiresGameplaySceneActivation={req}");
                 if (req)
                     RequestSceneActivation();
 
@@ -9313,7 +9305,6 @@ namespace Hecton8.Bootstrap
             bool isBootstrap = IsBootstrapScene(scene);
             bool isMainMenu = IsMainMenuScene(scene);
             bool isOrbit = IsOrbitScene(scene);
-            Debug.Log($"[GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: {scene.name} -> isValid={isValid}, isLoaded={isLoaded}, isBootstrap={isBootstrap}, isMainMenu={isMainMenu}, isOrbit={isOrbit}");
             return isValid && isLoaded && !isBootstrap && !isMainMenu && !isOrbit;
         }
 
