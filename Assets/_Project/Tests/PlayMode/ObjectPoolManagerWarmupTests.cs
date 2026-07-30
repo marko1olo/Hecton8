@@ -47,6 +47,20 @@ namespace Hecton8.Tests.PlayMode
         }
 
         [Test]
+        public void Warmup_ValidPrefab_InstancesAreCreatedAndDeactivated()
+        {
+            GameObject prefab = new GameObject("TestPrefab");
+            prefab.AddComponent<BoxCollider>();
+
+            _manager.Warmup(prefab, 3);
+
+            Assert.IsTrue(_manager.HasPool(prefab), "Pool should exist after warmup.");
+            Assert.AreEqual(3, _manager.GetAvailableCount(prefab), "Available count should be 3.");
+
+            Object.Destroy(prefab);
+        }
+
+        [Test]
         public void Warmup_WithNullPrefab_DoesNotThrow()
         {
             UnityEngine.TestTools.LogAssert.Expect(LogType.Error, "[ObjectPoolManager] Warmup: prefab is null!");
