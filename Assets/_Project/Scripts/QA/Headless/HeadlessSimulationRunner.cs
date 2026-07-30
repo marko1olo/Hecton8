@@ -59,6 +59,14 @@ namespace Hecton8.QA.Headless
         // aborted the whole run and blamed the ecology. Tolerance is bounded, never unbounded: three
         // CONSECUTIVE unsampled days still fail, and FinishRunIfTargetReached refuses to report SUCCESS for a
         // run that never sampled once.
+        //
+        // FIX 2026-07-30: day-boundary biomass sampling no longer runs in FrostTick. FrostTick only
+        // accumulates completed-day debt (_pendingDayAudits). The sample itself runs in LateFrameTick,
+        // AFTER ecology's Environment-lane LateFrameTick has called CompleteScheduledSimulation and
+        // cleared HasPendingSimulationJob. Runner LateFrame is registered at PriorityLayer.Player so
+        // the lane order Core -> Environment -> Player -> UI guarantees ecology completes first.
+        // Streak only advances on a true dead/empty ecology (audit false with no pending job), never
+        // on the deterministic same-frame fence that used to make every day "unsampled".
         private const int MaxConsecutiveEcologySampleFailures = 3;
         // CSV Flags bit for "this day produced no biomass sample at all". Deliberately NOT bit 0: bit 0 is
         // the only bit EcosystemBiomassAuditSample.Flags can ever carry (EcosystemDirector.cs:3422 seeds
@@ -126,6 +134,8 @@ namespace Hecton8.QA.Headless
         private int _ecologySampleFailureStreak;
         private int _ecologySampledDayCount;
         private int _ecologyUnsampledDayCount;
+        // Day boundaries detected in FrostTick; biomass sample deferred to LateFrameTick (post job fence).
+        private int _pendingDayAudits;
         private int _blackboxCursor;
         private int _progressionSignalCount;
         private int _crashSignalCount;
@@ -280,24 +290,35 @@ namespace Hecton8.QA.Headless
 
         public void LateFrameTick()
         {
-            if (!_started || _finished || !_ghostStepPending)
+            if (!_started || _finished)
                 return;
 
-            _ghostStepPending = false;
-            if (!TryCommitPendingGhostState(out GhostState previous, out GhostState next))
+            // Ghost commit first (existing path). Day audits run after so a failed ghost write still
+            // aborts before we charge ecology for a day the harness could not advance.
+            if (_ghostStepPending)
             {
-                FailAndQuit(1, DataVaultUnavailableHash, "[GHOST_BUFFER_WRITE_FAILED]");
-                return;
+                _ghostStepPending = false;
+                if (!TryCommitPendingGhostState(out GhostState previous, out GhostState next))
+                {
+                    FailAndQuit(1, DataVaultUnavailableHash, "[GHOST_BUFFER_WRITE_FAILED]");
+                    return;
+                }
+
+                HandleSyntheticAupShift(in previous, in next);
+                if (!math.all(math.isfinite(next.AbsoluteMeters)) ||
+                    !math.isfinite(next.RuntimeMeters.x) ||
+                    !math.isfinite(next.RuntimeMeters.y) ||
+                    !math.isfinite(next.RuntimeMeters.z))
+                {
+                    FailAndQuit(1, NaNHash, "[NAN_DETECTED]");
+                    return;
+                }
             }
 
-            HandleSyntheticAupShift(in previous, in next);
-            if (!math.all(math.isfinite(next.AbsoluteMeters)) ||
-                !math.isfinite(next.RuntimeMeters.x) ||
-                !math.isfinite(next.RuntimeMeters.y) ||
-                !math.isfinite(next.RuntimeMeters.z))
-            {
-                FailAndQuit(1, NaNHash, "[NAN_DETECTED]");
-            }
+            // Biomass sample after ecology LateFrame (Environment lane) completed scheduled jobs.
+            // See MaxConsecutiveEcologySampleFailures comment block for the fence chronology.
+            if (_ecologyReady && _pendingDayAudits > 0)
+                DrainPendingDayAudits();
         }
 
         public void FrostTick()
@@ -315,14 +336,19 @@ namespace Hecton8.QA.Headless
                 return;
             }
 
+            // Do NOT sample biomass here. SlowTick (ecology) schedules the sector solve earlier in this
+            // same dispatcher update, and the job fence stays up until ecology's LateFrameTick. Queue
+            // day debt only; LateFrameTick drains it after the fence clears.
             int auditsThisTick = 0;
+            int remainingDays = _targetDays - _completedDays - _pendingDayAudits;
             while (_dayAccumulatorSeconds >= _daySeconds &&
-                   _completedDays < _targetDays &&
+                   remainingDays > 0 &&
                    auditsThisTick < MaxDailyAuditsPerFrostTick &&
                    !_finished)
             {
                 _dayAccumulatorSeconds -= _daySeconds;
-                ExecuteDailyAudit();
+                _pendingDayAudits++;
+                remainingDays--;
                 auditsThisTick++;
             }
         }
@@ -402,7 +428,8 @@ namespace Hecton8.QA.Headless
             _registeredFast = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Core);
             _registeredFrost = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Core);
             _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Core);
-            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            // Player lane runs after Environment: ecology LateFrame completes jobs before this runner samples.
+            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
             _started = _registeredFast && _registeredFrost && _registeredCold && _registeredLate;
             if (!_started)
                 UnregisterRuntimeLanes();
@@ -430,7 +457,7 @@ namespace Hecton8.QA.Headless
 
             if (_registeredLate)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
                 _registeredLate = false;
             }
 
@@ -612,6 +639,24 @@ namespace Hecton8.QA.Headless
             }
         }
 
+        /// <summary>
+        /// Drains day-boundary audits deferred from FrostTick. Invoked only from LateFrameTick so the
+        /// ecology job fence from the same frame's SlowTick has already been completed.
+        /// </summary>
+        private void DrainPendingDayAudits()
+        {
+            int auditsThisTick = 0;
+            while (_pendingDayAudits > 0 &&
+                   _completedDays < _targetDays &&
+                   auditsThisTick < MaxDailyAuditsPerFrostTick &&
+                   !_finished)
+            {
+                _pendingDayAudits--;
+                ExecuteDailyAudit();
+                auditsThisTick++;
+            }
+        }
+
         private void ExecuteDailyAudit()
         {
             _completedDays++;
@@ -651,23 +696,27 @@ namespace Hecton8.QA.Headless
             if (ecosystem == null || !ecosystem.TryGetGlobalBiomassAudit(out EcosystemBiomassAuditSample biomass))
             {
                 // The CSV row goes out FIRST and unconditionally, for every unsampled day, tolerated or not.
-                // The day counter has already advanced (:594) so a skipped row would leave a hole in the
-                // series and a reader could not tell a tolerated fence from a missing measurement.
+                // The day counter has already advanced so a skipped row would leave a hole in the
+                // series and a reader could not tell a tolerated miss from a missing measurement.
                 _ecologyUnsampledDayCount++;
                 if (!TryWriteDailyCsv(default, nativeBytes, h8Bytes, nativeAllocations, h8Allocations, CsvFlagEcologySampleUnavailable))
                     return;
 
+                // After the LateFrame move, a false audit is no longer the deterministic same-frame job
+                // fence (that fence is down by the time we sample). Streak still bounds true empty
+                // ecology: headless with zero seeded biomass cells still fails by day 3.
                 _ecologySampleFailureStreak++;
                 if (_ecologySampleFailureStreak >= MaxConsecutiveEcologySampleFailures)
                 {
-                    // Bounded, so the tolerance cannot hide the defect this harness currently exists to
-                    // surface: with -h8headless there is no player, so _activeBiomassCellCount stays 0 and
-                    // EVERY day is unsampled - that run still dies here, on day 3, with the same verdict.
+                    // Bounded, so the tolerance cannot hide a permanently empty biomass table:
+                    // with -h8headless there is no player; if EnsurePlayerSectorRegistered never seeds,
+                    // _activeBiomassCellCount stays 0 and EVERY day is unsampled - that run still dies
+                    // here, on day 3, with the same verdict.
                     FailAndQuit(1, EcologyCollapseHash, "[ECOLOGY_UNAVAILABLE]");
                     return;
                 }
 
-                // Must still run on this path. The day loop in FrostTick stops once _completedDays reaches
+                // Must still run on this path. The day loop stops once _completedDays reaches
                 // _targetDays, so a tolerated unsampled FINAL day would otherwise never reach any terminal
                 // state: no completion, no failure, and the batch runner's watchdog left to notice hours
                 // later. This is the only exit for that case.
@@ -696,13 +745,12 @@ namespace Hecton8.QA.Headless
         /// obtaining a single biomass sample fails instead.
         /// </summary>
         /// <remarks>
-        /// Tolerating transient job fences is only safe while this asymmetry holds. Without it, the tolerance
-        /// added for MaxConsecutiveEcologySampleFailures would turn the 2026-07-29 failure into a green run:
-        /// with -h8headlessDays 1 the single day is unsampled, the streak is 1 of 3 and therefore tolerated,
-        /// and the target day count is already met - so the previous "if (_completedDays >= _targetDays)
-        /// CompleteAndQuit()" would have written status SUCCESS for a run that never once measured the
-        /// ecology. A harness that can report success without evidence is worse than one that over-reports
-        /// failure, so the sample count gates the verdict, not the day count alone.
+        /// Sampling now runs in LateFrameTick after the ecology job fence clears, so the 2026-07-29
+        /// same-frame unavailability path should not fire. The sample-count gate remains: without it, a
+        /// permanently empty biomass table (seed never ran) could still reach target days with zero real
+        /// samples if streak tolerance alone were trusted. A harness that can report success without
+        /// evidence is worse than one that over-reports failure, so the sample count gates the verdict,
+        /// not the day count alone.
         /// </remarks>
         private void FinishRunIfTargetReached()
         {
