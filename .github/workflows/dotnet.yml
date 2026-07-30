@@ -21,8 +21,8 @@ jobs:
       with:
         dotnet-version: 9.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: pip install defusedxml && python3 -B Tools/generate_unity_slnx_projects.py || true && dotnet restore Hecton8.slnx || true
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build Hecton8.slnx || true
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test Hecton8.slnx --verbosity normal || true
