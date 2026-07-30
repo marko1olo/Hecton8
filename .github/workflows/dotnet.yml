@@ -20,6 +20,10 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
+    - name: Generate Unity C# projects
+      run: |
+        pip install defusedxml
+        python3 Tools/generate_unity_slnx_projects.py
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
