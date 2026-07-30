@@ -401,6 +401,18 @@ namespace Hecton8.Physics.KCC
         public const float DefaultWaterSurfaceY = Hecton8.World.WorldWaterLevelCalibrationMath.DefaultWaterLevelY;
         public const float MillimeterScale = 1000f;
         public const float InvMillimeterScale = 0.001f;
+        /// <summary>
+        /// Exact double reciprocal of <see cref="MillimeterScale"/>, for quantizing AUP coordinates.
+        /// </summary>
+        /// <remarks>
+        /// <c>(double)InvMillimeterScale</c> is NOT 1/1000: the float nearest 0.001 widens to
+        /// 0.0010000000474974513, a +4.75e-8 relative bias. Multiplied back by a real sector coordinate that
+        /// error is proportional to magnitude, so quantization drifted 0.07 mm at 1.5 km, 1.00 mm at 21 km and
+        /// 4.70 mm at the 99 km smoke-test origin - against a 1.0 mm precision gate. Dividing by
+        /// <see cref="MillimeterScale"/> or multiplying by this exact double keeps the round-trip clean at
+        /// every distance from the origin, which is what an AUP world needs.
+        /// </remarks>
+        public const double InvMillimeterScaleExact = 1.0d / 1000.0d;
         public const float MaxLocalFloatMagnitude = 131072f;
         public const double MaxAupMagnitudeMeters = 9000000000000d;
         public const uint SourceHash = 0x53484B43u;
@@ -497,7 +509,7 @@ namespace Hecton8.Physics.KCC
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double3 QuantizeMillimeter(double3 aup)
         {
-            return math.round(aup * MillimeterScale) * (double)InvMillimeterScale;
+            return math.round(aup * MillimeterScale) * InvMillimeterScaleExact;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
