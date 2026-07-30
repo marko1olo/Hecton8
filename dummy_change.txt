@@ -1,0 +1,2 @@
+Intentional no-op: The requested unit tests for CanDespawnWithoutDestroy are already present in the codebase.
+The file Assets/_Project/Tests/Editor/ObjectPoolManagerCanDespawnWithoutDestroyTests.cs fully tests the CanDespawnWithoutDestroy method's API contract.
