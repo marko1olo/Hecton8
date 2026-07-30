@@ -1,0 +1,1459 @@
+==== PlayModeSmokeTester.cs ====
+path C:\hades\Hecton8\Assets\_Project\Scripts\Editor\PlayModeSmokeTester.cs
+lines 185
+1|using UnityEngine;
+2|using UnityEditor;
+3|using UnityEditor.SceneManagement;
+4|using UnityEngine.SceneManagement;
+5|using System.IO;
+6|using System.Linq;
+7|
+8|namespace Hecton8.Editor
+9|{
+10|    public static class PlayModeSmokeTester
+11|    {
+12|        private static int _step = 0;
+13|        private static int _waitFrames = 0;
+14|        private static float _stateTimer = 0f;
+15|
+16|        [MenuItem("Hecton8/Verification/Run PlayMode Smoke Test")]
+17|        public static void RunTest()
+18|        {
+19|            Debug.Log("[PlayModeSmokeTester] Starting automated verification...");
+20|            _step = 0;
+21|            _waitFrames = 0;
+22|            _stateTimer = 0f;
+23|            EditorApplication.update += EditorUpdate;
+24|        }
+25|
+26|        private static void EditorUpdate()
+27|        {
+28|            if (_step == 0)
+29|            {
+30|                // Step 0: Load Main Menu scene
+31|                Debug.Log("[PlayModeSmokeTester] Step 0: Loading 01_MAIN_MENU scene...");
+32|                EditorSceneManager.OpenScene("Assets/_Project/Scenes/01_MAIN_MENU.unity", OpenSceneMode.Single);
+33|                _step = 1;
+34|                _waitFrames = 0;
+35|            }
+36|            else if (_step == 1)
+37|            {
+38|                // Step 1: Wait a few frames and enter play mode
+39|                _waitFrames++;
+40|                if (_waitFrames > 10)
+41|                {
+42|                    Debug.Log("[PlayModeSmokeTester] Step 1: Entering Play Mode (Main Menu)...");
+43|                    EditorApplication.isPlaying = true;
+44|                    _step = 2;
+45|                    _waitFrames = 0;
+46|                }
+47|            }
+48|            else if (_step == 2)
+49|            {
+50|                // Step 2: Running in Play Mode (Main Menu)
+51|                if (EditorApplication.isPlaying)
+52|                {
+53|                    _waitFrames++;
+54|                    if (_waitFrames > 60) // wait about 1 second
+55|                    {
+56|                        Debug.Log("[PlayModeSmokeTester] Step 2: Main Menu is playing successfully! No prewarm hangs detected.");
+57|                        // Verify registry state
+58|                        var registry = GameObject.FindAnyObjectByType<Hecton8.World.PersistentWorldRegistry>();
+59|                        if (registry != null)
+60|                        {
+61|                            Debug.Log($"[PlayModeSmokeTester] PersistentWorldRegistry status: AreResidentWorldPrefabPoolsReady = {registry.AreResidentWorldPrefabPoolsReady()}");
+62|                        }
+63|                        
+64|                        Debug.Log("[PlayModeSmokeTester] Stopping Play Mode...");
+65|                        EditorApplication.isPlaying = false;
+66|                        _step = 3;
+67|                        _waitFrames = 0;
+68|                    }
+69|                }
+70|            }
+71|            else if (_step == 3)
+72|            {
+73|                // Step 3: Wait until play mode fully stops
+74|                if (!EditorApplication.isPlaying)
+75|                {
+76|                    _waitFrames++;
+77|                    if (_waitFrames > 10)
+78|                    {
+79|                        Debug.Log("[PlayModeSmokeTester] Step 3: Loading 020_RENDER_SANDBOX scene...");
+80|                        EditorSceneManager.OpenScene("Assets/_Project/Scenes/020_RENDER_SANDBOX.unity", OpenSceneMode.Single);
+81|                        _step = 4;
+82|                        _waitFrames = 0;
+83|                    }
+84|                }
+85|            }
+86|            else if (_step == 4)
+87|            {
+88|                // Step 4: Wait and enter play mode for Sandbox
+89|                _waitFrames++;
+90|                if (_waitFrames > 10)
+91|                {
+92|                    Debug.Log("[PlayModeSmokeTester] Step 4: Entering Play Mode (Render Sandbox)...");
+93|                    EditorApplication.isPlaying = true;
+94|                    _step = 5;
+95|                    _waitFrames = 0;
+96|                    _stateTimer = 0f;
+97|                }
+98|            }
+99|            else if (_step == 5)
+100|            {
+--- key matches ---
+10|    public static class PlayModeSmokeTester
+16|        [MenuItem("Hecton8/Verification/Run PlayMode Smoke Test")]
+17|        public static void RunTest()
+32|                EditorSceneManager.OpenScene("Assets/_Project/Scenes/01_MAIN_MENU.unity", OpenSceneMode.Single);
+80|                        EditorSceneManager.OpenScene("Assets/_Project/Scenes/020_RENDER_SANDBOX.unity", OpenSceneMode.Single);
+178|                        Debug.Log("[PlayModeSmokeTester] Automated verification test passed successfully!");
+==== BuildPlaytestEntry.cs ====
+path C:\hades\Hecton8\Assets\_Project\Scripts\BuildTools\BuildPlaytestEntry.cs
+lines 209
+1|// ============================================================================
+2|// HECTON-8 — BuildPlaytestEntry.cs
+3|// Struktura dannyh dlya zapisi rezultatov kazhdoy sborki.
+4|//
+5|// NAZNAChENIE:
+6|//   Kazhdyy build dolzhen zapolnit etot kontrakt pered otpravkoy na playtest:
+7|//   - Versiya (data + hesh + nomer sborki)
+8|//   - FPS feel (mean / worst / hitch 60→30 moment)
+9|//   - Glavnaya razdrazhavshaya problema
+10|//   - Glavnyy vizualnyy defekt
+11|//   - Glavnyy UX defekt
+12|//   - Glavnyy kontent gap
+13|//   - Blocker: da/net
+14|//
+15|// ZOLOTOY STANDART:
+16|//   • Kazhdyy build = odna zapis
+17|//   • Zapisyvaetsya PERED otpravkoy na playtest
+18|//   • Vhodit v BUILD_PLAYTEST_ISSUES.md kak history
+19|//   • Ispolzuetsya dlya otslezhivaniya progress mezhdu relizami
+20|// ============================================================================
+21|
+22|using System;
+23|using System.Globalization;
+24|using UnityEngine;
+25|
+26|namespace Hecton8.BuildTools
+27|{
+28|    /// <summary>
+29|    /// Kontrakt dlya zapisi rezultatov odnogo build playtest.
+30|    /// </summary>
+31|    [Serializable]
+32|    public struct BuildPlaytestEntry
+33|    {
+34|        /// <summary>Versiya sborki (data-vetka-hesh).</summary>
+35|        [Tooltip("Versiya sborki: YYYY-MM-DD-branch-commit")]
+36|        public string Version;
+37|
+38|        /// <summary>Sredniy FPS za 10 minut testirovaniya.</summary>
+39|        [Tooltip("Sredniy FPS za testovyy progulku")]
+40|        public float FpsMean;
+41|
+42|        /// <summary>Hudshiy (minimalnyy) FPS v moment pika nagruzki.</summary>
+43|        [Tooltip("Hudshiy odnokratnyy frame za test")]
+44|        public float FpsWorst;
+45|
+46|        /// <summary>Glavnaya razdrazhayuschaya problema, kotoraya isportila opyt.</summary>
+47|        [Tooltip("Chto bolshe vsego razdrazhalo pri igre")]
+48|        public string MainIrritant;
+49|
+50|        /// <summary>Glavnyy vizualnyy defekt (sheyder, LOD, artefakt).</summary>
+51|        [Tooltip("Glavnyy vizualnyy bag: gazovyy gigant, razmytie, LOD pop, i t.d.")]
+52|        public string MainVisualFlaw;
+53|
+54|        /// <summary>Glavnyy UX defekt (nadpis, knopka, menyu).</summary>
+55|        [Tooltip("Glavnyy UX bag: neyasnaya knopka, nepravilnyy tekst, propuschennoe menyu")]
+56|        public string MainUXFlaw;
+57|
+58|        /// <summary>Glavnyy kontent gap (otsutstvuet flora, vragi, sistema).</summary>
+59|        [Tooltip("Chto otsutstvuet kontentom: voda slishkom pusta, net vragov, i t.d.")]
+60|        public string MainContentGap;
+61|
+62|        /// <summary>Yavlyaetsya li eta problema blokerom dlya sleduyuschego reliza.</summary>
+63|        [Tooltip("Blokiruet li eto priemku bilda")]
+64|        public bool IsBlocker;
+65|
+66|        /// <summary>Dopolnitelnye primechaniya (optsionalno).</summary>
+67|        [Tooltip("Lyubye dopolnitelnye zametki")]
+68|        public string Notes;
+69|
+70|        /// <summary>Timestamp kogda entry byla sozdana.</summary>
+71|        public long CreatedTimestamp;
+72|
+73|        /// <summary>Pokazyvaet, byl li entry sozdan cherez fabriku i poluchil timestamp.</summary>
+74|        public readonly bool HasRecordedTimestamp => CreatedTimestamp > 0;
+75|
+76|        /// <summary>
+77|        /// Sozdaet novuyu zapis s tekuschim vremenem.
+78|        /// </summary>
+79|        public static BuildPlaytestEntry Create(
+80|            string version,
+81|            float fpsMean,
+82|            float fpsWorst,
+83|            string mainIrritant,
+84|            string mainVisualFlaw,
+85|            string mainUXFlaw,
+86|            string mainContentGap,
+87|            bool isBlocker,
+88|            string notes = "")
+89|        {
+90|            return new BuildPlaytestEntry
+91|            {
+92|                Version = NormalizeText(version, "unknown"),
+93|                FpsMean = fpsMean,
+94|                FpsWorst = fpsWorst,
+95|                MainIrritant = NormalizeText(mainIrritant),
+96|                MainVisualFlaw = NormalizeText(mainVisualFlaw),
+97|                MainUXFlaw = NormalizeText(mainUXFlaw),
+98|                MainContentGap = NormalizeText(mainContentGap),
+99|                IsBlocker = isBlocker,
+100|                Notes = NormalizeText(notes),
+--- key matches ---
+158|    public static class BuildPlaytestLog
+166|        public static void RecordEntry(BuildPlaytestEntry entry)
+204|        public static void Clear()
+==== SaveSystemRuntimeSmokeTester.cs ====
+path C:\hades\Hecton8\Assets\_Project\Scripts\SaveSystemRuntimeSmokeTester.cs
+lines 578
+1|using System;
+2|using System.Collections.Generic;
+3|using System.IO;
+4|using Hecton8.Core;
+5|using Hecton8.SaveSystem;
+6|using Hecton8.World;
+7|using Unity.Collections;
+8|using UnityEngine;
+9|
+10|namespace Hecton8.Dev
+11|{
+12|    /// <summary>
+13|    /// Development-only runtime verifier for indexed-sector protected sub-block recovery.
+14|    /// </summary>
+15|    [DisallowMultipleComponent]
+16|    [AddComponentMenu("Hecton8/Dev/Save System Runtime Smoke Tester")]
+17|    public sealed class SaveSystemRuntimeSmokeTester : MonoBehaviour
+18|    {
+19|        private const string NativeMemoryOwner = nameof(SaveSystemRuntimeSmokeTester);
+20|        private const string RequestedSectorScratchLabel = "indexedSubBlockSmokeRequestedSectors";
+21|        private const string RestoredRecordsScratchLabel = "indexedSubBlockSmokeRestoredRecords";
+22|
+23|        [Header("References")]
+24|        [SerializeField]
+25|        [Tooltip("Save runtime owner. Auto-resolves from GlobalRegistry when empty.")]
+26|        private SaveManager saveManager;
+27|
+28|        [Header("Execution")]
+29|        [SerializeField]
+30|        [Tooltip("Runs the indexed sub-block fallback smoke pass when Play Mode starts.")]
+31|        private bool runOnStart;
+32|
+33|        [SerializeField]
+34|        [Tooltip("Temporary save slot used for sub-block fallback verification.")]
+35|        private string indexedSubBlockSlotName = "smoke_indexed_subblock_slot";
+36|
+37|        [SerializeField, Min(0f)]
+38|        [Tooltip("Realtime delay before starting the smoke pass.")]
+39|        private float startupDelay = 0.75f;
+40|
+41|        [SerializeField, Min(0.5f)]
+42|        [Tooltip("Realtime timeout while waiting for SaveManager availability.")]
+43|        private float operationTimeout = 15f;
+44|
+45|        [SerializeField]
+46|        [Tooltip("Deletes the smoke slot before the test writes dummy indexed data.")]
+47|        private bool cleanupBeforeRun = true;
+48|
+49|        [SerializeField]
+50|        [Tooltip("Deletes the smoke slot after the fallback check finishes.")]
+51|        private bool cleanupAfterRun = true;
+52|
+53|#pragma warning disable CS0414
+54|        [Header("Debug")]
+55|        [SerializeField]
+56|        private int _debugRunCount;
+57|        [SerializeField]
+58|        private string _debugLastPhase = "Idle";
+59|        [SerializeField]
+60|        private string _debugLastIssue = string.Empty;
+61|        [SerializeField]
+62|        private bool _debugIndexedSubBlockPass;
+63|        [SerializeField]
+64|        private long _debugIndexedSubBlockSectorHash;
+65|        [SerializeField]
+66|        private int _debugRestoredRecordCount;
+67|        [SerializeField]
+68|        private bool _debugIndexedSubBlockBackupRecoveryReported;
+69|#pragma warning restore CS0414
+70|
+71|        private bool _isRunning;
+72|
+73|        private void Awake()
+74|        {
+75|            AutoResolve();
+76|        }
+77|
+78|        private void Start()
+79|        {
+80|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+81|            if (runOnStart && !_isRunning)
+82|                _ = RunIndexedSubBlockFallbackSmokePassAsync();
+83|#endif
+84|        }
+85|
+86|#if UNITY_EDITOR
+87|        private void OnValidate()
+88|        {
+89|            if (UnityEditor.EditorApplication.isCompiling ||
+90|                UnityEditor.EditorApplication.isUpdating ||
+91|                UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+92|            {
+93|                return;
+94|            }
+95|
+96|            AutoResolve();
+97|            if (string.IsNullOrWhiteSpace(indexedSubBlockSlotName))
+98|                indexedSubBlockSlotName = "smoke_indexed_subblock_slot";
+99|        }
+100|#endif
+--- key matches ---
+17|    public sealed class SaveSystemRuntimeSmokeTester : MonoBehaviour
+30|        [Tooltip("Runs the indexed sub-block fallback smoke pass when Play Mode starts.")]
+38|        [Tooltip("Realtime delay before starting the smoke pass.")]
+62|        private bool _debugIndexedSubBlockPass;
+82|                _ = RunIndexedSubBlockFallbackSmokePassAsync();
+104|        /// Runs the indexed-sector protected sub-block corruption and backup fallback smoke pass.
+106|        [ContextMenu("Run Indexed Sector Sub-Block Backup Smoke Pass")]
+112|            _ = RunIndexedSubBlockFallbackSmokePassAsync();
+115|        private async Awaitable RunIndexedSubBlockFallbackSmokePassAsync()
+124|            _debugIndexedSubBlockPass = false;
+153|                    FailIndexedSubBlock($"Primary seed save failed: {saveManager.LastOperationError}");
+161|                    FailIndexedSubBlock($"Backup seed save failed: {saveManager.LastOperationError}");
+169|                    FailIndexedSubBlock("Primary indexed save or .sav.bak mirror is missing after dummy seed saves.");
+182|                    FailIndexedSubBlock($"No indexed persistent sectors available for sub-block fallback smoke: {directoryError}");
+189|                    FailIndexedSubBlock(corruptError);
+206|                    FailIndexedSubBlock($"Indexed sector fallback load failed: {loadError}");
+213|                _debugIndexedSubBlockPass = true;
+214|                Hecton8.Core.H8Debug.Log($"[SaveSmoke] Indexed sub-block fallback PASS slot={currentSlot} sector=0x{sectorHash:X16} fallbackRecords={restoredRecordCount} repairedRecords={repairedPrima
+218|                FailIndexedSubBlock("Indexed sub-block fallback smoke was cancelled.");
+244|            FailIndexedSubBlock("SaveManager not found before indexed sub-block smoke execution.");
+388|                        "Save system runtime TempJob NativeArray allocation failed and cleanup also failed.",
+395|            InvalidOperationException registrationException = new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+408|                    "Save system runtime TempJob NativeArray registration failed and cleanup also failed.",
+444|                        "Save system runtime TempJob NativeList allocation failed and cleanup also failed.",
+451|            InvalidOperationException registrationException = new InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+464|                    "Save system runtime TempJob NativeList registration failed and cleanup also failed.",
+563|        private void FailIndexedSubBlock(string issue)
+565|            _debugIndexedSubBlockPass = false;
+566|            _debugLastIssue = string.IsNullOrEmpty(issue) ? "Unknown indexed sub-block failure." : issue;
+567|            _debugLastPhase = "Failed";
+568|            Hecton8.Core.H8Debug.LogWarning($"[SaveSmoke] Indexed sub-block fallback FAIL {_debugLastIssue}");
+==== HectonKccRuntime_SmokeTest.cs ====
+path C:\hades\Hecton8\Assets\_Project\Scripts\Physics\KCC\HectonKccRuntime_SmokeTest.cs
+lines 1183
+1|using System.Runtime.CompilerServices;
+2|using System.Runtime.InteropServices;
+3|using Hecton8.Core;
+4|using Hecton8.Core.Contracts.Physics;
+5|using Hecton8.Core.Contracts.Signals;
+6|using Unity.Burst;
+7|using Unity.Collections;
+8|using Unity.Collections.LowLevel.Unsafe;
+9|using Unity.Jobs;
+10|using Unity.Mathematics;
+11|
+12|namespace Hecton8.Physics.KCC
+13|{
+14|    public sealed partial class HydrodynamicKccRuntime
+15|    {
+16|        public const int KccSmokeDefaultPhantomCount = 100;
+17|        public const int KccSmokeDefaultFrameCount = 10000;
+18|        public const int KccSmokeTelemetryFrames = 300;
+19|        public const int KccSmokeSdfDimX = 48;
+20|        public const int KccSmokeSdfDimY = 48;
+21|        public const int KccSmokeSdfDimZ = 48;
+22|        public const int KccSmokeSdfCellCount = KccSmokeSdfDimX * KccSmokeSdfDimY * KccSmokeSdfDimZ;
+23|        public const int KccSmokeMaxFailureRecords = 512;
+24|        public const int KccSmokeMaxSweepIterations = 8;
+25|        public const int KccSmokeRollbackWindowFrames = 30;
+26|        public const int KccSmokeRebaseIntervalFrames = 500;
+27|        public const float KccSmokeFixedDeltaTime = 0.016666667f;
+28|        public const float KccSmokeStrongPenetrationMeters = -0.1f;
+29|        public const float KccSmokeInvalidSdfMeters = -4096f;
+30|        public const uint KccSmokeFailureNone = 0u;
+31|        public const uint KccSmokeFailureNonFinite = 1u;
+32|        public const uint KccSmokeFailureEscape = 1u << 1;
+33|        public const uint KccSmokeFailurePerformance = 1u << 2;
+34|        public const uint KccSmokeFailurePrecisionDrift = 1u << 3;
+35|        public const uint KccSmokeFailureRollbackDesync = 1u << 4;
+36|        public const uint KccSmokeFailureAllocation = 1u << 5;
+37|        public const uint KccSmokeFailureSdfInvalid = 1u << 6;
+38|        public const uint KccSmokeFailureInputSanitized = 1u << 7;
+39|        public const uint KccSmokeFailureLayout = 1u << 8;
+40|        public const uint KccSmokeSourceHash = 0x53483355u;
+41|        public const uint ReplayDeterminismFailureDrift = 12u;
+42|        public const float ReplayDeterminismEpsilonMeters = 0.000001f;
+43|
+44|        [StructLayout(LayoutKind.Explicit, Size = 32)]
+45|        public struct KccSmokeTestStateDTO
+46|        {
+47|            [FieldOffset(0)] public double3 TestPlayerAUP;
+48|            [FieldOffset(24)] public uint CurrentFrameCount;
+49|            [FieldOffset(28)] public uint MismatchFlags;
+50|        }
+51|
+52|        [StructLayout(LayoutKind.Explicit, Size = 64)]
+53|        public struct KccSmokeProfileDTO
+54|        {
+55|            [FieldOffset(0)] public double3 StartAup;
+56|            [FieldOffset(24)] public float3 StartVelocity;
+57|            [FieldOffset(36)] public float3 InputBias;
+58|            [FieldOffset(48)] public float SpeedScale;
+59|            [FieldOffset(52)] public uint ProfileHash;
+60|            [FieldOffset(56)] public uint Flags;
+61|            [FieldOffset(60)] public uint _pad0;
+62|        }
+63|
+64|        [StructLayout(LayoutKind.Explicit, Size = 64)]
+65|        public struct KccSmokeVoxelSdfInfoDTO
+66|        {
+67|            [FieldOffset(0)] public double3 OriginAup;
+68|            [FieldOffset(24)] public int3 Dimensions;
+69|            [FieldOffset(36)] public float CellSizeMeters;
+70|            [FieldOffset(40)] public float SurfaceOffsetMeters;
+71|            [FieldOffset(44)] public float CapsuleRadiusMeters;
+72|            [FieldOffset(48)] public uint Flags;
+73|            [FieldOffset(52)] public uint ProfileHash;
+74|            [FieldOffset(56)] public uint Frame;
+75|            [FieldOffset(60)] public uint _pad0;
+76|        }
+77|
+78|        [StructLayout(LayoutKind.Explicit, Size = 128)]
+79|        public struct KccSmokeTestResultDTO
+80|        {
+81|            [FieldOffset(0)] public uint ErrorFlags;
+82|            [FieldOffset(4)] public uint FailureCount;
+83|            [FieldOffset(8)] public uint FirstFailureFrame;
+84|            [FieldOffset(12)] public uint FirstFailureIndex;
+85|            [FieldOffset(16)] public double3 FirstFailureAup;
+86|            [FieldOffset(40)] public float3 FirstFailureVelocity;
+87|            [FieldOffset(52)] public float WorstPenetrationMeters;
+88|            [FieldOffset(56)] public float AverageMicrosecondsPerFrame;
+89|            [FieldOffset(60)] public uint StateHash;
+90|            [FieldOffset(64)] public uint RollbackMismatchFrame;
+91|            [FieldOffset(68)] public uint RollbackMismatchIndex;
+92|            [FieldOffset(72)] public double DriftErrorMillimeters;
+93|            [FieldOffset(80)] public float MaxDriftMillimeters;
+94|            [FieldOffset(84)] public uint RollbackHashA;
+95|            [FieldOffset(88)] public uint RollbackHashB;
+96|            [FieldOffset(92)] public uint SuccessfulRollbackCount;
+97|            [FieldOffset(96)] public uint RebaseCount;
+98|            [FieldOffset(100)] public uint MockDesyncFrame;
+99|            [FieldOffset(104)] public ulong _pad0;
+100|            [FieldOffset(112)] public ulong _pad1;
+--- key matches ---
+14|    public sealed partial class HydrodynamicKccRuntime
+23|        public const int KccSmokeMaxFailureRecords = 512;
+30|        public const uint KccSmokeFailureNone = 0u;
+31|        public const uint KccSmokeFailureNonFinite = 1u;
+32|        public const uint KccSmokeFailureEscape = 1u << 1;
+33|        public const uint KccSmokeFailurePerformance = 1u << 2;
+34|        public const uint KccSmokeFailurePrecisionDrift = 1u << 3;
+35|        public const uint KccSmokeFailureRollbackDesync = 1u << 4;
+36|        public const uint KccSmokeFailureAllocation = 1u << 5;
+37|        public const uint KccSmokeFailureSdfInvalid = 1u << 6;
+38|        public const uint KccSmokeFailureInputSanitized = 1u << 7;
+39|        public const uint KccSmokeFailureLayout = 1u << 8;
+41|        public const uint ReplayDeterminismFailureDrift = 12u;
+82|            [FieldOffset(4)] public uint FailureCount;
+83|            [FieldOffset(8)] public uint FirstFailureFrame;
+84|            [FieldOffset(12)] public uint FirstFailureIndex;
+85|            [FieldOffset(16)] public double3 FirstFailureAup;
+86|            [FieldOffset(40)] public float3 FirstFailureVelocity;
+105|        public struct KccSmokeFailureRecordDTO
+112|            [FieldOffset(48)] public uint FailureFlags;
+293|            // exclusively by this scheduled job for the full 10,000-frame background pass.
+312|            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<KccSmokeFailureRecordDTO> Failures;
+337|                    result.ErrorFlags |= KccSmokeFailureSdfInvalid;
+355|                    if ((result.ErrorFlags & (KccSmokeFailureNonFinite | KccSmokeFailureRollbackDesync)) != 0u)
+400|                        input.Flags |= KccSmokeFailureInputSanitized;
+430|                    uint failureFlags = 0u;
+432|                        failureFlags |= KccSmokeFailureNonFinite;
+436|                        failureFlags |= KccSmokeFailureEscape | KccSmokeFailureSdfInvalid;
+438|                        failureFlags |= KccSmokeFailureEscape;
+446|                            MismatchFlags = failureFlags
+450|                    if (failureFlags != 0u)
+455|                            fault.FaultMask |= (int)failureFlags;
+459|                        RecordFailure(ref result, (uint)frame, (uint)i, failureFlags, previous, state.AUP_Position, state.Velocity, input.MoveAxis, finalSdf);
+468|                        RecordFailure(ref result, (uint)frame, (uint)i, KccSmokeFailureNonFinite, previous, state.AUP_Position, state.Velocity, input.MoveAxis, minSdf);
+570|                    result.ErrorFlags |= KccSmokeFailureRollbackDesync;
+596|                    result.ErrorFlags |= KccSmokeFailurePrecisionDrift;
+795|            private void RecordFailure(
+799|                uint failureFlags,
+806|                if (result.FailureCount == 0u)
+808|                    result.FirstFailureFrame = frame;
+809|                    result.FirstFailureIndex = index;
+810|                    result.FirstFailureAup = aup;
+811|                    result.FirstFailureVelocity = velocity;
+814|                result.ErrorFlags |= failureFlags;
+815|                uint slot = result.FailureCount;
+816|                result.FailureCount++;
+817|                if (!Failures.IsCreated || slot >= Failures.Length)
+820|                Failures[(int)slot] = new KccSmokeFailureRecordDTO
+827|                    FailureFlags = failureFlags,
+828|                    StateHash = HydrodynamicKccMath.HashState(aup, velocity, frame, failureFlags),
+842|            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<KccSmokeFailureRecordDTO> Failures;
+871|                        uint failureFlags = KccSmokeFailureEscape | (invalidSdf ? KccSmokeFailureSdfInvalid : 0u);
+872|                        result.ErrorFlags |= failureFlags;
+873|                        if (result.FailureCount == 0u)
+875|                            result.FirstFailureFrame = (uint)frame;
+876|                            result.FirstFailureIndex = (uint)entity;
+877|                            result.FirstFailureAup = aup;
+880|                        uint slot = result.FailureCount;
+881|                        result.FailureCount++;
+882|                        if (Failures.IsCreated && slot < Failures.Length)
+884|                            Failures[(int)slot] = new KccSmokeFailureRecordDTO
+890|                                FailureFlags = failureFlags,
+891|                                StateHash = HydrodynamicKccMath.HashState(aup, float3.zero, (uint)frame, failureFlags)
+905|        public struct AnalyzePrecisionDriftJob : IJob
+923|                    result.ErrorFlags |= KccSmokeFailurePrecisionDrift;
+948|                    result.ErrorFlags |= KccSmokeFailureAllocation;
+984|                    uint failureCode = math.select(0u, ReplayDeterminismFailureDrift, drifted);
+985|                    failureCode = math.select(failureCode, KccSmokeFailureNonFinite, invalid);
+986|                    WriteReplayTelemetry(Telemetry, frameIndex, predictedAup, velocity, driftMeters, frameHash, failureCode, frame.InputFlags);
+990|                        result.ErrorFlags |= math.select(KccSmokeFailurePrecisionDrift, KccSmokeFailureNonFinite, invalid);
+991|                        result.FailureCount++;
+992|                        if (result.FirstFailureFrame == 0u)
+994|                            result.FirstFailureFrame = frame.Frame;
+995|                            result.FirstFailureIndex = (uint)frameIndex;
+996|                            result.FirstFailureAup = predictedAup;
+997|                            result.FirstFailureVelocity = velocity;
+1049|                uint failureCode,
+1061|                entry.FailureCode = failureCode;
+==== FaunaRuntimeSmokeTester.cs ====
+path C:\hades\Hecton8\Assets\_Project\Scripts\FaunaRuntimeSmokeTester.cs
+lines 474
+1|using Hecton8.AI;
+2|using Hecton8.Core;
+3|using Hecton8.World;
+4|using Unity.Burst;
+5|using Unity.Collections;
+6|using Unity.Collections.LowLevel.Unsafe;
+7|using Unity.Jobs;
+8|using Unity.Mathematics;
+9|using UnityEngine;
+10|
+11|namespace Hecton8.Dev
+12|{
+13|    [DisallowMultipleComponent]
+14|    [AddComponentMenu("Hecton8/Dev/Fauna Runtime Smoke Tester")]
+15|    public sealed class FaunaRuntimeSmokeTester : MonoBehaviour
+16|    {
+17|        private const float RuntimeToleranceMeters = 0.01f;
+18|        private const double PredatorPreyDistanceToleranceMeters = 0.0001d;
+19|        private const double DistanceToleranceSqr = 0.05;
+20|        private const int AupStressPairCount = 128;
+21|        private const int ParasiteSmokeCount = 4;
+22|        private const string NativeMemoryOwner = nameof(FaunaRuntimeSmokeTester);
+23|        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.TempJob;
+24|
+25|        [SerializeField] private bool runOnStart;
+26|        [SerializeField] private bool _lastAupShiftMathPassed;
+27|        [SerializeField] private bool _lastCorpseAttractorShiftMathPassed;
+28|        [SerializeField] private float _lastMaxRuntimeDeltaError;
+29|        [SerializeField] private double _lastMaxDistanceErrorSqr;
+30|        [SerializeField] private float _lastCorpseRuntimeDeltaError;
+31|        [SerializeField] private double _lastCorpseDistanceErrorSqr;
+32|        [SerializeField] private bool _lastPredatorPreyAupShiftMathPassed;
+33|        [SerializeField] private double _lastPredatorPreyDistanceErrorMeters;
+34|
+35|        public struct OmegaSmokeResult
+36|        {
+37|            public byte Passed;
+38|            public byte AupDriftPassed;
+39|            public byte AupStressPassed;
+40|            public byte ParasiteAttachPassed;
+41|            public byte EggPersistencePassed;
+42|            public byte NativeSentinelBalanced;
+43|            public double AupDriftDistanceErrorMeters;
+44|            public double AupStressMaxDistanceErrorMeters;
+45|            public float ParasiteHostHealth;
+46|            public float ParasiteHunger01;
+47|            public double ParasiteMaxDistanceErrorMeters;
+48|            public float EggHatchTimeSeconds;
+49|            public int NativeSentinelDelta;
+50|        }
+51|
+52|        private void Start()
+53|        {
+54|            if (runOnStart)
+55|                RunAupShiftSmokeTest();
+56|        }
+57|
+58|        [ContextMenu("Run AUP Shift Smoke Test")]
+59|        public void RunAupShiftSmokeTest()
+60|        {
+61|            AbsoluteUniversePosition waypointA = AbsoluteUniversePosition.FromAbsolutePosition(new double3(10025.125, -52.5, -9988.75));
+62|            AbsoluteUniversePosition waypointB = AbsoluteUniversePosition.FromAbsolutePosition(new double3(10031.375, -52.25, -9991.5));
+63|            AbsoluteUniversePosition waypointC = AbsoluteUniversePosition.FromAbsolutePosition(new double3(14998.875, 8.125, -15002.375));
+64|            AbsoluteUniversePosition corpseAttractor = AbsoluteUniversePosition.FromAbsolutePosition(new double3(10512.5, -76.25, -10064.125));
+65|            AbsoluteUniversePosition scavengerQuery = AbsoluteUniversePosition.FromAbsolutePosition(new double3(10528.75, -76.0, -10071.5));
+66|
+67|            float3 previousOriginOffset = new float3(0f, 0f, 0f);
+68|            float3 shiftOffset = new float3(10000f, 0f, -10000f);
+69|            float3 committedOriginOffset = previousOriginOffset + shiftOffset;
+70|
+71|            float3 runtimeA0 = AUPMath.ToRuntimeFloat3(in waypointA, previousOriginOffset);
+72|            float3 runtimeB0 = AUPMath.ToRuntimeFloat3(in waypointB, previousOriginOffset);
+73|            float3 runtimeC0 = AUPMath.ToRuntimeFloat3(in waypointC, previousOriginOffset);
+74|            float3 corpseRuntime0 = AUPMath.ToRuntimeFloat3(in corpseAttractor, previousOriginOffset);
+75|            float3 scavengerRuntime0 = AUPMath.ToRuntimeFloat3(in scavengerQuery, previousOriginOffset);
+76|            float3 runtimeA1 = AUPMath.ToRuntimeFloat3(in waypointA, committedOriginOffset);
+77|            float3 runtimeB1 = AUPMath.ToRuntimeFloat3(in waypointB, committedOriginOffset);
+78|            float3 runtimeC1 = AUPMath.ToRuntimeFloat3(in waypointC, committedOriginOffset);
+79|            float3 corpseRuntime1 = AUPMath.ToRuntimeFloat3(in corpseAttractor, committedOriginOffset);
+80|            float3 scavengerRuntime1 = AUPMath.ToRuntimeFloat3(in scavengerQuery, committedOriginOffset);
+81|
+82|            float3 expectedRuntimeDelta = -shiftOffset;
+83|            float maxRuntimeDeltaError = 0f;
+84|            maxRuntimeDeltaError = math.max(maxRuntimeDeltaError, math.length((runtimeA1 - runtimeA0) - expectedRuntimeDelta));
+85|            maxRuntimeDeltaError = math.max(maxRuntimeDeltaError, math.length((runtimeB1 - runtimeB0) - expectedRuntimeDelta));
+86|            maxRuntimeDeltaError = math.max(maxRuntimeDeltaError, math.length((runtimeC1 - runtimeC0) - expectedRuntimeDelta));
+87|            float corpseRuntimeDeltaError = math.max(
+88|                math.length((corpseRuntime1 - corpseRuntime0) - expectedRuntimeDelta),
+89|                math.length((scavengerRuntime1 - scavengerRuntime0) - expectedRuntimeDelta));
+90|            maxRuntimeDeltaError = math.max(maxRuntimeDeltaError, corpseRuntimeDeltaError);
+91|
+92|            double aupDistanceAB = AUPMath.AUPDistanceSq(in waypointA, in waypointB);
+93|            double aupDistanceAC = AUPMath.AUPDistanceSq(in waypointA, in waypointC);
+94|            double corpseAupDistanceSq = AUPMath.AUPDistanceSq(in scavengerQuery, in corpseAttractor);
+95|            double runtimeDistanceAB0 = RuntimeDistanceSq(runtimeA0, runtimeB0);
+96|            double runtimeDistanceAB1 = RuntimeDistanceSq(runtimeA1, runtimeB1);
+97|            double runtimeDistanceAC0 = RuntimeDistanceSq(runtimeA0, runtimeC0);
+98|            double runtimeDistanceAC1 = RuntimeDistanceSq(runtimeA1, runtimeC1);
+99|            double corpseRuntimeDistance0 = RuntimeDistanceSq(scavengerRuntime0, corpseRuntime0);
+100|            double corpseRuntimeDistance1 = RuntimeDistanceSq(scavengerRuntime1, corpseRuntime1);
+--- key matches ---
+15|    public sealed class FaunaRuntimeSmokeTester : MonoBehaviour
+26|        [SerializeField] private bool _lastAupShiftMathPassed;
+27|        [SerializeField] private bool _lastCorpseAttractorShiftMathPassed;
+32|        [SerializeField] private bool _lastPredatorPreyAupShiftMathPassed;
+37|            public byte Passed;
+38|            public byte AupDriftPassed;
+39|            public byte AupStressPassed;
+40|            public byte ParasiteAttachPassed;
+41|            public byte EggPersistencePassed;
+111|            bool predatorPreyPassed = RunHeadlessAupDriftAssertion(out double predatorPreyDistanceErrorMeters);
+117|            _lastPredatorPreyAupShiftMathPassed = predatorPreyPassed;
+119|            _lastCorpseAttractorShiftMathPassed = corpseRuntimeDeltaError <= RuntimeToleranceMeters &&
+121|            _lastAupShiftMathPassed = maxRuntimeDeltaError <= RuntimeToleranceMeters &&
+123|                                      _lastCorpseAttractorShiftMathPassed &&
+124|                                      _lastPredatorPreyAupShiftMathPassed;
+127|            if (_lastAupShiftMathPassed)
+128|                Hecton8.Core.H8Debug.Log("FaunaRuntimeSmokeTester AUP shift math passed.");
+130|                Hecton8.Core.H8Debug.LogError("FaunaRuntimeSmokeTester AUP shift math failed.");
+146|            bool aupPassed = RunHeadlessAupDriftAssertion(out double distanceErrorMeters);
+147|            bool stressPassed = RunAupDriftStressJob(out double stressMaxDistanceErrorMeters);
+148|            bool parasitePassed = RunParasiteAttachSmoke(
+152|            bool eggPassed = RunEggPersistenceSmoke(out float eggHatchTimeSeconds);
+155|            result.AupDriftPassed = aupPassed ? (byte)1 : (byte)0;
+156|            result.AupStressPassed = stressPassed ? (byte)1 : (byte)0;
+157|            result.ParasiteAttachPassed = parasitePassed ? (byte)1 : (byte)0;
+158|            result.EggPersistencePassed = eggPassed ? (byte)1 : (byte)0;
+167|            result.Passed = aupPassed &&
+168|                            stressPassed &&
+169|                            parasitePassed &&
+170|                            eggPassed &&
+174|            return result.Passed != 0;
+249|            throw new System.InvalidOperationException($"Native memory sentinel registration failed for {label}.");
+328|                bool passed = true;
+337|                    passed &= math.abs(result.HostHealth - 0.6f) <= 0.0001f;
+338|                    passed &= math.abs(result.ParasiteHunger01 - 0.05f) <= 0.0001f;
+339|                    passed &= distanceError <= PredatorPreyDistanceToleranceMeters;
+345|                return passed;
+357|            EntityDataRecord eggState = PersistentWorldRegistry.CreateFaunaEggState(0xE6600001u, 77, in eggAup, 12.5f, 90f);
+==== ToolRuntimeSmokeTester.cs ====
+path C:\hades\Hecton8\Assets\_Project\Scripts\ToolRuntimeSmokeTester.cs
+lines 462
+1|// ============================================================================
+2|// HECTON-8 - ToolRuntimeSmokeTester.cs
+3|// Dev-only runtime smoke pass for the full held-tool set.
+4|// Temporarily remaps slot 0, equips each tool, invokes primary/secondary,
+5|// then restores the original quick-slot assignments.
+6|// ============================================================================
+7|
+8|using System;
+9|using System.Threading;
+10|using Hecton8.Core;
+11|using Hecton8.Gameplay;
+12|using Hecton8.Inventory;
+13|using Hecton8.Items;
+14|#if UNITY_EDITOR
+15|using UnityEditor;
+16|#endif
+17|using UnityEngine;
+18|
+19|namespace Hecton8.Dev
+20|{
+21|    [DisallowMultipleComponent]
+22|    [AddComponentMenu("Hecton8/Dev/Tool Runtime Smoke Tester")]
+23|    public sealed class ToolRuntimeSmokeTester : MonoBehaviour
+24|    {
+25|        [Header("References")]
+26|        [SerializeField] private PlayerToolManager toolManager;
+27|        [SerializeField] private PlayerInventory playerInventory;
+28|
+29|        [Header("Execution")]
+30|        [SerializeField] private bool runOnStart = false;
+31|        [SerializeField] private bool restoreOriginalLoadout = true;
+32|        [SerializeField] private float startupDelay = 0.75f;
+33|        [SerializeField] private float equipTimeout = 1.25f;
+34|        [SerializeField] private float settleDelay = 0.2f;
+35|        [SerializeField] private float betweenToolsDelay = 0.1f;
+36|        [SerializeField] private float simulatedDeltaTime = 0.1f;
+37|        [SerializeField] private bool verboseLogging = false;
+38|
+39|        [Header("Tool Set")]
+40|        [SerializeField] private GameObject[] heldToolPrefabs = new GameObject[13];
+41|
+42|        [Header("Diagnostics")]
+43|        [SerializeField] private int _debugPassCount;
+44|        [SerializeField] private int _debugFailCount;
+45|        [SerializeField] private string _debugLastIssue = string.Empty;
+46|        [SerializeField] private string _debugLastToolName = "None";
+47|        [SerializeField] private bool _debugLastPass;
+48|
+49|        private PlayerTool[] _cachedTools;
+50|        private bool _isRunning;
+51|        private const float DefaultSmokeFrameDeltaSeconds = 1f / 60f;
+52|
+53|        public bool IsRunning => _isRunning;
+54|        public int DebugPassCount => _debugPassCount;
+55|        public int DebugFailCount => _debugFailCount;
+56|        public string DebugLastIssue => _debugLastIssue;
+57|        public string DebugLastToolName => _debugLastToolName;
+58|        public bool DebugLastPass => _debugLastPass;
+59|
+60|        private void Awake()
+61|        {
+62|            AutoResolveSceneReferences();
+63|#if UNITY_EDITOR
+64|            AutoResolveDefaultAssets();
+65|#endif
+66|        }
+67|
+68|        private void Start()
+69|        {
+70|            if (gameObject.name.StartsWith("__DEV_", System.StringComparison.Ordinal))
+71|            {
+72|                runOnStart = false;
+73|                return;
+74|            }
+75|
+76|            if (!runOnStart || _isRunning)
+77|                return;
+78|
+79|            _ = RunSmokePassAsync(destroyCancellationToken);
+80|        }
+81|
+82|        [ContextMenu("Run Tool Runtime Smoke Pass")]
+83|        public void RunFromContextMenu()
+84|        {
+85|            if (_isRunning)
+86|                return;
+87|
+88|            _ = RunSmokePassAsync(destroyCancellationToken);
+89|        }
+90|
+91|        public void ConfigureForDevRun(
+92|            bool enableVerboseLogging = true,
+93|            bool restoreLoadoutAfterRun = true,
+94|            float startupDelaySeconds = 0.35f,
+95|            float equipTimeoutSeconds = 1.5f,
+96|            float settleDelaySeconds = 0.15f,
+97|            float betweenToolsDelaySeconds = 0.05f,
+98|            float simulatedDeltaSeconds = 0.1f)
+99|        {
+100|            runOnStart = false;
+--- key matches ---
+3|// Dev-only runtime smoke pass for the full held-tool set.
+23|    public sealed class ToolRuntimeSmokeTester : MonoBehaviour
+43|        [SerializeField] private int _debugPassCount;
+44|        [SerializeField] private int _debugFailCount;
+47|        [SerializeField] private bool _debugLastPass;
+54|        public int DebugPassCount => _debugPassCount;
+55|        public int DebugFailCount => _debugFailCount;
+58|        public bool DebugLastPass => _debugLastPass;
+79|            _ = RunSmokePassAsync(destroyCancellationToken);
+82|        [ContextMenu("Run Tool Runtime Smoke Pass")]
+88|            _ = RunSmokePassAsync(destroyCancellationToken);
+91|        public void ConfigureForDevRun(
+123|            _ = RunSmokePassAsync(destroyCancellationToken);
+131|                $"running={_isRunning} pass={_debugPassCount} fail={_debugFailCount} " +
+132|                $"lastTool={_debugLastToolName} lastPass={_debugLastPass} issue={issue}";
+135|        private async Awaitable RunSmokePassAsync(CancellationToken cancellationToken)
+161|                _debugPassCount = 0;
+162|                _debugFailCount = 0;
+165|                _debugLastPass = false;
+176|                int passed = 0;
+177|                int failed = 0;
+179|                Hecton8.Core.H8Debug.Log("[ToolSmoke] Starting runtime smoke pass.");
+190|                        passed++;
+194|                        failed++;
+203|                Hecton8.Core.H8Debug.Log($"[ToolSmoke] COMPLETE pass={passed} fail={failed}");
+212|                _debugFailCount++;
+214|                _debugLastPass = false;
+256|                _debugFailCount++;
+258|                _debugLastPass = false;
+268|                _debugFailCount++;
+270|                _debugLastPass = false;
+272|                    $"[ToolSmoke] FAIL {toolName}: equip timeout/mismatch. " +
+283|            bool stepPassed = RunToolInvocation(toolName, liveTool);
+284|            if (stepPassed)
+286|                _debugPassCount++;
+288|                _debugLastPass = true;
+292|                _debugFailCount++;
+293|                _debugLastIssue = "Invocation failed for " + toolName;
+294|                _debugLastPass = false;
+298|            return stepPassed;
+391|                Hecton8.Core.H8Debug.Log($"[ToolSmoke] PASS {toolName} -> {liveTool.GetType().Name}");
+==== AutomationSmokeTestRunner.cs ====
+path C:\hades\Hecton8\Assets\_Project\Scripts\Editor\AutomationSmokeTestRunner.cs
+lines 75
+1|using Hecton8.Debugging;
+2|using UnityEditor;
+3|using UnityEngine;
+4|
+5|namespace Hecton8.Editor
+6|{
+7|    public static class AutomationSmokeTestRunner
+8|    {
+9|        public static void RunBatchExtractorStorageRouteSmokePass()
+10|        {
+11|            bool passed = AutomationSmokeTester.RunExtractorFillsStorageSmoke(out int routedNode, out int depositedUnits);
+12|            Hecton8.Core.H8Debug.Log(
+13|                "[AutomationSmokeTester] ExtractorStorageRouteSmoke pass=" +
+14|                passed +
+15|                " routed=" +
+16|                routedNode +
+17|                " deposited=" +
+18|                depositedUnits);
+19|
+20|            if (!passed)
+21|                EditorApplication.Exit(1);
+22|        }
+23|
+24|        public static void RunBatchCraftingRuntimeSmokePass()
+25|        {
+26|            bool passed = CraftingRuntimeSmokeTester.RunFabricationVaultSmoke(
+27|                1f,
+28|                1f,
+29|                out float firstMockProgress,
+30|                out float lastMockProgress,
+31|                out float averageMockProgress);
+32|            int firstMockProgressMilli = Mathf.RoundToInt(firstMockProgress * 1000f);
+33|            int lastMockProgressMilli = Mathf.RoundToInt(lastMockProgress * 1000f);
+34|            int averageMockProgressMilli = Mathf.RoundToInt(averageMockProgress * 1000f);
+35|
+36|            Hecton8.Core.H8Debug.Log(
+37|                "{\"CraftingRuntimeSmokeTester\":{\"pass\":" +
+38|                (passed ? "true" : "false") +
+39|                ",\"firstMockProgressMilli\":" +
+40|                firstMockProgressMilli +
+41|                ",\"lastMockProgressMilli\":" +
+42|                lastMockProgressMilli +
+43|                ",\"averageMockProgressMilli\":" +
+44|                averageMockProgressMilli +
+45|                "}}");
+46|
+47|            if (!passed)
+48|                EditorApplication.Exit(1);
+49|        }
+50|
+51|        public static void RunBatchOmegaAutomationSmokePass()
+52|        {
+53|            AutomationOmegaSmokeResult result = AutomationOmegaSmokeTester.RunLogisticsRouteStressSmoke();
+54|            Hecton8.Core.H8Debug.Log(
+55|                "{\"AutomationOmegaSmokeTester\":{\"pass\":" +
+56|                (result.Passed != 0 ? "true" : "false") +
+57|                ",\"nodes\":" +
+58|                result.NodeCount +
+59|                ",\"edges\":" +
+60|                result.EdgeCount +
+61|                ",\"routedNode\":" +
+62|                result.RoutedNode +
+63|                ",\"expectedStorageNode\":" +
+64|                result.ExpectedStorageNode +
+65|                ",\"noStorageRouteNode\":" +
+66|                result.NoStorageRouteNode +
+67|                ",\"invalidStartRouteNode\":" +
+68|                result.InvalidStartRouteNode +
+69|                "}}");
+70|
+71|            if (result.Passed == 0)
+72|                EditorApplication.Exit(1);
+73|        }
+74|    }
+75|}
+--- key matches ---
+7|    public static class AutomationSmokeTestRunner
+9|        public static void RunBatchExtractorStorageRouteSmokePass()
+11|            bool passed = AutomationSmokeTester.RunExtractorFillsStorageSmoke(out int routedNode, out int depositedUnits);
+13|                "[AutomationSmokeTester] ExtractorStorageRouteSmoke pass=" +
+14|                passed +
+20|            if (!passed)
+24|        public static void RunBatchCraftingRuntimeSmokePass()
+26|            bool passed = CraftingRuntimeSmokeTester.RunFabricationVaultSmoke(
+37|                "{\"CraftingRuntimeSmokeTester\":{\"pass\":" +
+38|                (passed ? "true" : "false") +
+47|            if (!passed)
+51|        public static void RunBatchOmegaAutomationSmokePass()
+55|                "{\"AutomationOmegaSmokeTester\":{\"pass\":" +
+56|                (result.Passed != 0 ? "true" : "false") +
+71|            if (result.Passed == 0)
+==== FaunaRuntimeSmokeTesterRunner.cs ====
+path C:\hades\Hecton8\Assets\_Project\Scripts\Editor\FaunaRuntimeSmokeTesterRunner.cs
+lines 69
+1|using Hecton8.Dev;
+2|using System.Globalization;
+3|using UnityEditor;
+4|using UnityEngine;
+5|
+6|namespace Hecton8.Editor
+7|{
+8|    internal static class FaunaRuntimeSmokeTesterRunner
+9|    {
+10|        public static void RunHeadlessAupDriftAssertion()
+11|        {
+12|            bool passed = FaunaRuntimeSmokeTester.RunHeadlessAupDriftAssertion(out double distanceErrorMeters);
+13|            if (passed)
+14|            {
+15|                Debug.Log("FaunaRuntimeSmokeTester headless AUP drift assertion passed. distanceErrorMeters=" + distanceErrorMeters.ToString("R", CultureInfo.InvariantCulture));
+16|                EditorApplication.Exit(0);
+17|                return;
+18|            }
+19|
+20|            Debug.LogError("FaunaRuntimeSmokeTester headless AUP drift assertion failed. distanceErrorMeters=" + distanceErrorMeters.ToString("R", CultureInfo.InvariantCulture));
+21|            EditorApplication.Exit(1);
+22|        }
+23|
+24|        public static void RunOmegaHeadlessSmoke()
+25|        {
+26|            bool passed = FaunaRuntimeSmokeTester.RunOmegaHeadlessSmoke(out FaunaRuntimeSmokeTester.OmegaSmokeResult result);
+27|            string json =
+28|                "FAUNA_OMEGA_SMOKE_RESULT {\"passed\":" + Bool(result.Passed) +
+29|                ",\"aupDriftPassed\":" + Bool(result.AupDriftPassed) +
+30|                ",\"aupStressPassed\":" + Bool(result.AupStressPassed) +
+31|                ",\"parasiteAttachPassed\":" + Bool(result.ParasiteAttachPassed) +
+32|                ",\"eggPersistencePassed\":" + Bool(result.EggPersistencePassed) +
+33|                ",\"nativeSentinelBalanced\":" + Bool(result.NativeSentinelBalanced) +
+34|                ",\"aupDriftDistanceErrorMeters\":" + D(result.AupDriftDistanceErrorMeters) +
+35|                ",\"aupStressMaxDistanceErrorMeters\":" + D(result.AupStressMaxDistanceErrorMeters) +
+36|                ",\"parasiteHostHealth\":" + F(result.ParasiteHostHealth) +
+37|                ",\"parasiteHunger01\":" + F(result.ParasiteHunger01) +
+38|                ",\"parasiteMaxDistanceErrorMeters\":" + D(result.ParasiteMaxDistanceErrorMeters) +
+39|                ",\"eggHatchTimeSeconds\":" + F(result.EggHatchTimeSeconds) +
+40|                ",\"nativeSentinelDelta\":" + result.NativeSentinelDelta.ToString(CultureInfo.InvariantCulture) +
+41|                "}";
+42|
+43|            if (passed)
+44|            {
+45|                Debug.Log(json);
+46|                EditorApplication.Exit(0);
+47|                return;
+48|            }
+49|
+50|            Debug.LogError(json);
+51|            EditorApplication.Exit(1);
+52|        }
+53|
+54|        private static string Bool(byte value)
+55|        {
+56|            return value != 0 ? "true" : "false";
+57|        }
+58|
+59|        private static string D(double value)
+60|        {
+61|            return value.ToString("R", CultureInfo.InvariantCulture);
+62|        }
+63|
+64|        private static string F(float value)
+65|        {
+66|            return value.ToString("R", CultureInfo.InvariantCulture);
+67|        }
+68|    }
+69|}
+--- key matches ---
+8|    internal static class FaunaRuntimeSmokeTesterRunner
+10|        public static void RunHeadlessAupDriftAssertion()
+12|            bool passed = FaunaRuntimeSmokeTester.RunHeadlessAupDriftAssertion(out double distanceErrorMeters);
+13|            if (passed)
+15|                Debug.Log("FaunaRuntimeSmokeTester headless AUP drift assertion passed. distanceErrorMeters=" + distanceErrorMeters.ToString("R", CultureInfo.InvariantCulture));
+20|            Debug.LogError("FaunaRuntimeSmokeTester headless AUP drift assertion failed. distanceErrorMeters=" + distanceErrorMeters.ToString("R", CultureInfo.InvariantCulture));
+24|        public static void RunOmegaHeadlessSmoke()
+26|            bool passed = FaunaRuntimeSmokeTester.RunOmegaHeadlessSmoke(out FaunaRuntimeSmokeTester.OmegaSmokeResult result);
+28|                "FAUNA_OMEGA_SMOKE_RESULT {\"passed\":" + Bool(result.Passed) +
+29|                ",\"aupDriftPassed\":" + Bool(result.AupDriftPassed) +
+30|                ",\"aupStressPassed\":" + Bool(result.AupStressPassed) +
+31|                ",\"parasiteAttachPassed\":" + Bool(result.ParasiteAttachPassed) +
+32|                ",\"eggPersistencePassed\":" + Bool(result.EggPersistencePassed) +
+43|            if (passed)
+==== Shinobu355KccSmokeEditorFacade.cs ====
+path C:\hades\Hecton8\Assets\_Project\Scripts\Physics\KCC\Editor\Shinobu355KccSmokeEditorFacade.cs
+lines 1674
+1|#if UNITY_EDITOR
+2|using System;
+3|using System.Diagnostics;
+4|using System.IO;
+5|using System.Runtime.InteropServices;
+6|using Hecton8.Core;
+7|using Hecton8.Core.Contracts.Physics;
+8|using Hecton8.Core.Contracts.Signals;
+9|using Hecton8.Core.Memory;
+10|using Hecton8.Physics;
+11|using Unity.Collections;
+12|using Unity.Collections.LowLevel.Unsafe;
+13|using Unity.Jobs;
+14|using Unity.Mathematics;
+15|using UnityEditor;
+16|using UnityEngine;
+17|using UnityEngine.UIElements;
+18|using ForcePacketDTO = Hecton8.Physics.ForcePacketDTO;
+19|
+20|namespace Hecton8.Physics.KCC.Editor
+21|{
+22|    public struct Shinobu355KccSmokeSummary
+23|    {
+24|        public uint ErrorFlags;
+25|        public uint FailureCount;
+26|        public long ManagedBytesAllocated;
+27|        public float AverageMicrosecondsPerFrame;
+28|        public double DriftErrorMillimeters;
+29|        public uint RollbackPasses;
+30|    }
+31|
+32|    public static class Shinobu355KccSmokeRunner
+33|    {
+34|        private const BufferID SmokeStatesBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeStatesBuffer;
+35|        private const BufferID SmokePositionHistoryBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokePositionHistoryBuffer;
+36|        private const BufferID SmokeRollbackRingBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeRollbackRingBuffer;
+37|        private const BufferID SmokeResultBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeResultBuffer;
+38|        private const BufferID SmokeFailureBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeFailureBuffer;
+39|        private const BufferID SmokeTelemetryBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeTelemetryBuffer;
+40|        private const BufferID SmokeDriftBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeDriftBuffer;
+41|        private const BufferID SmokeDesyncSignalBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeDesyncSignalBuffer;
+42|        private const BufferID SmokeProfilesBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeProfilesBuffer;
+43|        private const float PerformanceBudgetMicroseconds = 100f;
+44|        private const long RetainedTelemetryVaultBytes = 1024L * 1024L;
+45|        private const double MaxProfileAupMagnitudeMeters = 250000.0d;
+46|        private const float MaxProfileSpeedMetersPerSecond = 2000f;
+47|        private const float MaxProfileInputBiasMagnitude = 4f;
+48|        private const float ProductionWaterSurfaceY = 14.02f;
+49|        public const float ConeFallProofSpeedMetersPerSecond = 100f;
+50|        public const float ConeFallProofMinimumTuningSpeedMetersPerSecond = ConeFallProofSpeedMetersPerSecond;
+51|        private const uint BlackBoxDumpVersion = 1u;
+52|
+53|        private static readonly byte[] FailureCsvHeader =
+54|        {
+55|            102,114,97,109,101,44,101,110,116,105,116,121,44,102,108,97,103,115,44,97,117,112,95,120,44,97,117,112,95,121,44,97,117,112,95,122,44,
+56|            118,101,108,95,120,44,118,101,108,95,121,44,118,101,108,95,122,44,115,100,102,95,109,44,115,112,101,101,100,95,109,112,115,44,104,97,115,104,10
+57|        };
+58|
+59|        private static GlobalDataVault s_lastVault;
+60|        private static VaultGenerationHandle<HydrodynamicKccRuntime.KccSmokeTelemetryEntry> s_lastTelemetryHandle;
+61|
+62|        static Shinobu355KccSmokeRunner()
+63|        {
+64|            AssemblyReloadEvents.beforeAssemblyReload -= DisposeTelemetryVault;
+65|            AssemblyReloadEvents.beforeAssemblyReload += DisposeTelemetryVault;
+66|            EditorApplication.quitting -= DisposeTelemetryVault;
+67|            EditorApplication.quitting += DisposeTelemetryVault;
+68|        }
+69|
+70|        public static string ProjectRoot
+71|        {
+72|            get { return Path.GetFullPath(Path.Combine(Application.dataPath, "..")); }
+73|        }
+74|
+75|        public static bool ValidateApexConeFallContract(out float displacementPerFrameMeters, out float tuningMaxSpeedMetersPerSecond)
+76|        {
+77|            HydrodynamicKccTuningDTO tuning = BuildTuning();
+78|            displacementPerFrameMeters = ConeFallProofSpeedMetersPerSecond * HydrodynamicKccRuntime.KccSmokeFixedDeltaTime;
+79|            tuningMaxSpeedMetersPerSecond = tuning.MaxSpeed;
+80|            return math.isfinite(displacementPerFrameMeters) &&
+81|                   displacementPerFrameMeters > 1.6f &&
+82|                   HydrodynamicKccRuntime.KccSmokeMaxSweepIterations == 8 &&
+83|                   HydrodynamicKccRuntime.KccSmokeDefaultPhantomCount > 1 &&
+84|                   tuningMaxSpeedMetersPerSecond >= ConeFallProofMinimumTuningSpeedMetersPerSecond;
+85|        }
+86|
+87|        public static bool Run(out Shinobu355KccSmokeSummary summary)
+88|        {
+89|            summary = default;
+90|            HeadlessKccLayoutAssertions.AssertAll();
+91|            RequireEqual(32, UnsafeUtility.SizeOf<HydrodynamicKccRuntime.KccSmokeTestStateDTO>(), "KccSmokeTestStateDTO size");
+92|            RequireEqual(8, UnsafeUtility.AlignOf<HydrodynamicKccRuntime.KccSmokeTestStateDTO>(), "KccSmokeTestStateDTO align");
+93|            DisposeTelemetryVault();
+94|
+95|            GlobalDataVault vault = GlobalDataVault.Create(128, 128L * 1024L * 1024L);
+96|            try
+97|            {
+98|                int phantomCount = HydrodynamicKccRuntime.KccSmokeDefaultPhantomCount;
+99|                int frameCount = HydrodynamicKccRuntime.KccSmokeDefaultFrameCount;
+100|                int historyCount = phantomCount * frameCount;
+--- key matches ---
+25|        public uint FailureCount;
+29|        public uint RollbackPasses;
+32|    public static class Shinobu355KccSmokeRunner
+38|        private const BufferID SmokeFailureBuffer = BufferID.Shinobu355KccSmokeEditorFacade_SmokeFailureBuffer;
+53|        private static readonly byte[] FailureCsvHeader =
+87|        public static bool Run(out Shinobu355KccSmokeSummary summary)
+148|                VaultGenerationHandle<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO> failureHandle = vault.EnsureGenerationHandle<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO>(
+149|                    SmokeFailureBuffer,
+150|                    HydrodynamicKccRuntime.KccSmokeMaxFailureRecords,
+175|                Require(vault.TryResolveHandle(in statesHandle, out NativeArray<KinematicStateDTO> states), "Failed to resolve KCC states.");
+176|                Require(vault.TryResolveHandle(in inputsHandle, out NativeArray<HydrodynamicKccInputDTO> inputs), "Failed to resolve KCC inputs.");
+177|                Require(vault.TryResolveHandle(in proposedHandle, out NativeArray<float3> proposed), "Failed to resolve KCC proposed velocities.");
+178|                Require(vault.TryResolveHandle(in faultHandle, out NativeArray<HydrodynamicKccFaultFlagDTO> faults), "Failed to resolve KCC faults.");
+179|                Require(vault.TryResolveHandle(in sdfHandle, out NativeArray<float> sdf), "Failed to resolve KCC SDF.");
+180|                Require(vault.TryResolveHandle(in smokeStateHandle, out NativeArray<HydrodynamicKccRuntime.KccSmokeTestStateDTO> smokeStates), "Failed to resolve smoke states.");
+181|                Require(vault.TryResolveHandle(in historyHandle, out NativeArray<double3> history), "Failed to resolve smoke history.");
+182|                Require(vault.TryResolveHandle(in rollbackHandle, out NativeArray<KinematicStateDTO> rollback), "Failed to resolve smoke rollback ring.");
+183|                Require(vault.TryResolveHandle(in resultHandle, out NativeArray<HydrodynamicKccRuntime.KccSmokeTestResultDTO> results), "Failed to resolve smoke result.");
+184|                Require(vault.TryResolveHandle(in failureHandle, out NativeArray<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO> failures), "Failed to resolve smoke failures.");
+185|                Require(vault.TryResolveHandle(in telemetryHandle, out NativeArray<HydrodynamicKccRuntime.KccSmokeTelemetryEntry> telemetry), "Failed to resolve smoke telemetry.");
+186|                Require(vault.TryResolveHandle(in driftHandle, out NativeArray<HydrodynamicKccRuntime.KccSmokeDriftProbeDTO> drift), "Failed to resolve smoke drift probe.");
+187|                Require(vault.TryResolveHandle(in desyncHandle, out NativeArray<DesyncDetectedSignal> desync), "Failed to resolve smoke desync lane.");
+188|                Require(vault.TryResolveHandle(in profilesHandle, out NativeArray<HydrodynamicKccRuntime.KccSmokeProfileDTO> profiles), "Failed to resolve smoke profiles.");
+200|                    failures,
+221|                WarmBurst(states, inputs, proposed, faults, sdf, history, rollback, smokeStates, results, failures, telemetry, drift, desync, sdfInfo, tuning, sectorOrigin, safePhantomCount);
+240|                    Failures = failures,
+258|                    Failures = failures,
+264|                JobHandle precisionHandle = new HydrodynamicKccRuntime.AnalyzePrecisionDriftJob
+277|                    result.ErrorFlags |= HydrodynamicKccRuntime.KccSmokeFailurePerformance;
+280|                    result.ErrorFlags |= HydrodynamicKccRuntime.KccSmokeFailureAllocation;
+286|                    FailureCount = result.FailureCount,
+290|                    RollbackPasses = result.SuccessfulRollbackCount
+296|                if (result.ErrorFlags == HydrodynamicKccRuntime.KccSmokeFailureNone)
+298|                    HeadlessKccFailureGizmo.ClearFailure();
+302|                int failureCount = (int)math.min(result.FailureCount, (uint)failures.Length);
+303|                if (failureCount > 0)
+305|                    HydrodynamicKccRuntime.KccSmokeFailureRecordDTO failure = failures[0];
+306|                    HeadlessKccFailureGizmo.SetFailure(failure.Aup, failure.PreviousAup, failure.Velocity, failure.InputVector);
+310|                    HeadlessKccFailureGizmo.SetFailure(result.FirstFailureAup);
+313|                WriteFailureCsv(failures, failureCount);
+332|        public static ScheduledRun StartScheduledRun()
+392|                VaultGenerationHandle<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO> failureHandle = vault.EnsureGenerationHandle<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO>(
+393|                    SmokeFailureBuffer,
+394|                    HydrodynamicKccRuntime.KccSmokeMaxFailureRecords,
+419|                Require(vault.TryResolveHandle(in statesHandle, out NativeArray<KinematicStateDTO> states), "Failed to resolve KCC states.");
+420|                Require(vault.TryResolveHandle(in inputsHandle, out NativeArray<HydrodynamicKccInputDTO> inputs), "Failed to resolve KCC inputs.");
+421|                Require(vault.TryResolveHandle(in proposedHandle, out NativeArray<float3> proposed), "Failed to resolve KCC proposed velocities.");
+422|                Require(vault.TryResolveHandle(in faultHandle, out NativeArray<HydrodynamicKccFaultFlagDTO> faults), "Failed to resolve KCC faults.");
+423|                Require(vault.TryResolveHandle(in sdfHandle, out NativeArray<float> sdf), "Failed to resolve KCC SDF.");
+424|                Require(vault.TryResolveHandle(in smokeStateHandle, out NativeArray<HydrodynamicKccRuntime.KccSmokeTestStateDTO> smokeStates), "Failed to resolve smoke states.");
+425|                Require(vault.TryResolveHandle(in historyHandle, out NativeArray<double3> history), "Failed to resolve smoke history.");
+426|                Require(vault.TryResolveHandle(in rollbackHandle, out NativeArray<KinematicStateDTO> rollback), "Failed to resolve smoke rollback ring.");
+427|                Require(vault.TryResolveHandle(in resultHandle, out NativeArray<HydrodynamicKccRuntime.KccSmokeTestResultDTO> results), "Failed to resolve smoke result.");
+428|                Require(vault.TryResolveHandle(in failureHandle, out NativeArray<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO> failures), "Failed to resolve smoke failures.");
+429|                Require(vault.TryResolveHandle(in telemetryHandle, out NativeArray<HydrodynamicKccRuntime.KccSmokeTelemetryEntry> telemetry), "Failed to resolve smoke telemetry.");
+430|                Require(vault.TryResolveHandle(in driftHandle, out NativeArray<HydrodynamicKccRuntime.KccSmokeDriftProbeDTO> drift), "Failed to resolve smoke drift probe.");
+431|                Require(vault.TryResolveHandle(in desyncHandle, out NativeArray<DesyncDetectedSignal> desync), "Failed to resolve smoke desync lane.");
+432|                Require(vault.TryResolveHandle(in profilesHandle, out NativeArray<HydrodynamicKccRuntime.KccSmokeProfileDTO> profiles), "Failed to resolve smoke profiles.");
+444|                    failures,
+486|                    Failures = failures,
+503|                    Failures = failures,
+508|                JobHandle finalHandle = new HydrodynamicKccRuntime.AnalyzePrecisionDriftJob
+515|                return new ScheduledRun(vault, results, failures, telemetry, finalHandle, startTicks, allocatedBefore, frameCount);
+524|        public sealed class ScheduledRun : IDisposable
+528|            private NativeArray<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO> _failures;
+538|            public bool Passed;
+542|            internal ScheduledRun(
+545|                NativeArray<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO> failures,
+554|                _failures = failures;
+575|                FinalizeCompletedRun(elapsedTicks, GC.GetAllocatedBytesForCurrentThread() - _allocatedBefore);
+588|                    FinalizeCompletedRun(elapsedTicks, GC.GetAllocatedBytesForCurrentThread() - _allocatedBefore);
+598|            private void FinalizeCompletedRun(long elapsedTicks, long managedBytesAllocated)
+611|                    FailureCount = result.FailureCount,
+615|                    RollbackPasses = result.SuccessfulRollbackCount
+621|                Passed = result.ErrorFlags == HydrodynamicKccRuntime.KccSmokeFailureNone;
+622|                if (Passed)
+624|                    HeadlessKccFailureGizmo.ClearFailure();
+628|                    int failureCount = (int)math.min(result.FailureCount, (uint)_failures.Length);
+629|                    if (failureCount > 0)
+631|                        HydrodynamicKccRuntime.KccSmokeFailureRecordDTO failure = _failures[0];
+632|                        HeadlessKccFailureGizmo.SetFailure(failure.Aup, failure.PreviousAup, failure.Velocity, failure.InputVector);
+636|                        HeadlessKccFailureGizmo.SetFailure(result.FirstFailureAup);
+639|                    WriteFailureCsv(_failures, failureCount);
+684|                Require(vault.TryAcquireWriteLock(in handle, SystemID.Physics, out NativeArray<HydrodynamicKccRuntime.KccSmokeTelemetryEntry> snapshot), "Failed to acquire retained telemetry snapshot 
+733|            NativeArray<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO> failures,
+749|            RequireLength(failures, HydrodynamicKccRuntime.KccSmokeMaxFailureRecords, "smoke failures");
+810|            NativeArray<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO> failures,
+830|                Failures = failures,
+973|                cursor = AppendAscii(buffer, cursor, summary.ErrorFlags == 0u ? "STATIC_SMOKE_PASS_PENDING_IMPORT_PROOF" : "STATIC_SMOKE_FAIL");
+993|                cursor = AppendAscii(buffer, cursor, ",\"rollback_passes\":");
+994|                cursor = AppendUInt(buffer, cursor, summary.RollbackPasses);
+1004|        private static void WriteFailureCsv(NativeArray<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO> failures, int count)
+1008|            string path = Path.Combine(directory, "HEADLESS_KCC_FAILURES.csv");
+1011|                stream.Write(FailureCsvHeader, 0, FailureCsvHeader.Length);
+1013|                int safeCount = math.clamp(count, 0, failures.Length);
+1016|                    HydrodynamicKccRuntime.KccSmokeFailureRecordDTO failure = failures[i];
+1018|                    cursor = AppendUInt(line, cursor, failure.Frame);
+1020|                    cursor = AppendUInt(line, cursor, failure.EntityIndex);
+1022|                    cursor = AppendUInt(line, cursor, failure.FailureFlags);
+1024|                    cursor = AppendDoubleFixed3(line, cursor, failure.Aup.x);
+1026|                    cursor = AppendDoubleFixed3(line, cursor, failure.Aup.y);
+1028|                    cursor = AppendDoubleFixed3(line, cursor, failure.Aup.z);
+1030|                    cursor = AppendDoubleFixed3(line, cursor, failure.Velocity.x);
+1032|                    cursor = AppendDoubleFixed3(line, cursor, failure.Velocity.y);
+1034|                    cursor = AppendDoubleFixed3(line, cursor, failure.Velocity.z);
+1036|                    cursor = AppendDoubleFixed3(line, cursor, failure.SdfMeters);
+1038|                    cursor = AppendDoubleFixed3(line, cursor, failure.SpeedMetersPerSecond);
+1040|                    cursor = AppendUInt(line, cursor, failure.StateHash);
+1057|                uint newestFrame = result.FirstFailureFrame != 0u ? result.FirstFailureFrame : (uint)HydrodynamicKccRuntime.KccSmokeDefaultFrameCount;
+1336|    public static class HeadlessKccLayoutAssertions
+1338|        public static void AssertAll()
+1346|            AssertExplicit(typeof(HydrodynamicKccRuntime.KccSmokeFailureRecordDTO), nameof(HydrodynamicKccRuntime.KccSmokeFailureRecordDTO));
+1366|            RequireEqual(128, UnsafeUtility.SizeOf<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO>(), "KccSmokeFailureRecordDTO size");
+1372|            RequireEqual(8, UnsafeUtility.AlignOf<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO>(), "KccSmokeFailureRecordDTO align");
+1392|            RequireOffset<HydrodynamicKccRuntime.KccSmokeTestResultDTO>(4, nameof(HydrodynamicKccRuntime.KccSmokeTestResultDTO.FailureCount), "KccSmokeTestResultDTO.FailureCount");
+1393|            RequireOffset<HydrodynamicKccRuntime.KccSmokeTestResultDTO>(16, nameof(HydrodynamicKccRuntime.KccSmokeTestResultDTO.FirstFailureAup), "KccSmokeTestResultDTO.FirstFailureAup");
+1394|            RequireOffset<HydrodynamicKccRuntime.KccSmokeTestResultDTO>(40, nameof(HydrodynamicKccRuntime.KccSmokeTestResultDTO.FirstFailureVelocity), "KccSmokeTestResultDTO.FirstFailureVelocity");
+1398|            RequireOffset<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO>(0, nameof(HydrodynamicKccRuntime.KccSmokeFailureRecordDTO.Aup), "KccSmokeFailureRecordDTO.Aup");
+1399|            RequireOffset<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO>(24, nameof(HydrodynamicKccRuntime.KccSmokeFailureRecordDTO.Velocity), "KccSmokeFailureRecordDTO.Velocity");
+1400|            RequireOffset<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO>(36, nameof(HydrodynamicKccRuntime.KccSmokeFailureRecordDTO.SdfMeters), "KccSmokeFailureRecordDTO.SdfMeters");
+1401|            RequireOffset<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO>(40, nameof(HydrodynamicKccRuntime.KccSmokeFailureRecordDTO.Frame), "KccSmokeFailureRecordDTO.Frame");
+1402|            RequireOffset<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO>(56, nameof(HydrodynamicKccRuntime.KccSmokeFailureRecordDTO.PreviousAup), "KccSmokeFailureRecordDTO.PreviousAup");
+1403|            RequireOffset<HydrodynamicKccRuntime.KccSmokeFailureRecordDTO>(80, nameof(HydrodynamicKccRuntime.KccSmokeFailureRecordDTO.InputVector), "KccSmokeFailureRecordDTO.InputVector");
+1436|    internal sealed class HeadlessKccSmokeTesterWindow : EditorWindow
+1445|        [MenuItem("Hecton8/Kinematics/Headless Smoke Tester")]
+1446|        public static void Open()
+1484|                _scheduledRun = Shinobu355KccSmokeRunner.StartScheduledRun();
+1492|                _statusLabel.text = "START FAILED | " + ex.GetType().Name;
+1516|                _statusLabel.text = "RUN FAILED | " + ex.GetType().Name;
+1527|            bool passed = _scheduledRun.Passed;
+1532|            _statusLabel.text = passed
+1533|                ? "PASS | avg_us=" + _lastSummary.AverageMicrosecondsPerFrame.ToString("F3")
+1534|                : "FAIL | flags=" + _lastSummary.ErrorFlags + " | failures=" + _lastSummary.FailureCount;
+1535|            _statusLabel.style.color = passed ? Color.green : Color.red;
+1542|    internal sealed class HeadlessKccSmokeTelemetryGraphElement : VisualElement
+1597|    internal static class HeadlessKccFailureGizmo
+1599|        private static bool s_hasFailure;
+1600|        private static double3 s_failureAup;
+1606|        static HeadlessKccFailureGizmo()
+1608|            SceneView.duringSceneGui -= DrawFailure;
+1609|            SceneView.duringSceneGui += DrawFailure;
+1612|        public static void SetFailure(double3 aup)
+1614|            SetFailure(aup, aup, float3.zero, float3.zero);
+1617|        public static void SetFailure(double3 aup, double3 previousAup, float3 velocity, float3 inputVector)
+1619|            s_hasFailure = true;
+1620|            s_failureAup = aup;
+1628|        public static void ClearFailure()
+1630|            s_hasFailure = false;
+1634|        private static void DrawFailure(SceneView sceneView)
+1636|            if (!s_hasFailure)
+1639|            float3 localFailure = HydrodynamicKccMath.ResolveLocalFloat3(s_failureAup, s_gizmoOriginAup);
+1641|            Vector3 pos = new Vector3(localFailure.x, localFailure.y, localFailure.z);
+1670|            Handles.Label(pos + Vector3.up * (radius * 1.5f), "KCC FAIL");
+==== WF pages.yml ====
+name: Deploy GitHub Pages SPA
+
+on:
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Artifacts
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+==== WF deploy-gh-pages.yml ====
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+==== WF static.yml ====
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+==== README owner refs ====
+barsukdana 3
+marko1olo 3
+==== playtest key lines ====
+64|| Menu -> world start context | `[c]` | clean new/load/resume path in build |
+71|| ~~Crafting is unreachable~~ RETRACTED — `Fabricator` IS in the binary world scene; my grep was text-only | `[?]` | none; see the retraction note |
+72|| ~~Nine authoring buttons were never pressed~~ RETRACTED — the world scene is binary and was saved | `[?]` | none; see the retraction note |
+76|| World-content sockets are Editor-authored only, and `WorldShippingContentFilter` drops 10 of the 14 | `[~]` | settle whether `Tool_TrialRange` ships, then port or press |
+80|| ~~Headless world sim could not finish its own default run~~ FIXED `60a7ed08d` — **and the run has now actually happened**, see the section below | `[x]` | RUN EXISTS 2026-07-29: 
+88|### The entire authored world is switched off in the shipping scene — measured 2026-07-29
+95|review of this project reads clean. `--- WORLD ---` contains none of the tokens.
+98|Hecton8.EditorTools.Authoring.H8_WorldRootGraveyardRepair.ReportOnly`), verbatim:
+101|[H8_WORLDROOTREPAIR] scene='02_HECTON_WORLD' roots=29 graveyard=present worldRootsAtSceneRoot=active:0/inactive:0
+102|[H8_WORLDROOTREPAIR] FOUND '--- WORLD ---' buried under 'DEPRECATED_STUFF': activeSelf=False directChildren=7 descendants=77
+103|[H8_WORLDROOTREPAIR] REPORT ONLY - would reparent '--- WORLD ---' to scene root and set it active,
+104|                     touching nothing else in the graveyard.
+107|**Seventy-seven descendants inactive.** `worldRootsAtSceneRoot=active:0/inactive:0` matters as much as the
+108|find: there is no duplicate world root, so the ambiguous case the tool refuses to touch does not apply. This
+112|- Every `WorldContentSocket` descends from that root, so `OnEnable` never runs, `_ActiveSockets`
+113|  (`WorldContentSocket.cs:95-99`) stays empty, and **zero of the 14 sockets reach any consumer** — not the
+115|- `WorldRuntimeBootstrapAuthoring`'s reuse check became inactive-inclusive and depth-aware, so it now FINDS
+117|  is parented under the disabled root and inherits `activeInHierarchy=false`. **The graveyard is absorbing
+120|  authored root disabled it found nothing and created a SECOND, active `--- WORLD ---` beside the graveyard
+122|  `ResourceWorldBootstrapAuthoring.cs:208-211` still have that shape. The asymmetry that makes it precise:
+125|**Status: REPORT run and clean, APPLY NOT YET RUN.** The apply attempt lost the Unity lock to another
+133|Unity.exe -batchmode -quit -h8ApplyWorldRootRepair \
+134|  -executeMethod Hecton8.EditorTools.Authoring.H8_WorldRootGraveyardRepair.Run
+137|`Run()` reports by default and writes only when `-h8ApplyWorldRootRepair` is present
+138|(`H8_WorldRootGraveyardRepair.cs:98-109`) — the write is deliberately not one misclick from the diagnostic.
+140|`git checkout 32c3c8a1a -- Assets/_Project/Scenes/02_HECTON_WORLD.unity`.
+142|Judge the repair on **world content becoming live, not on `gameReady` turning true**. The tool's own header
+144|the graveyard via `HectonMapMagicVegetationBridge`, and that chain is false — a format-agnostic GUID census
+146|own GUID as a positive control. The graveyard and the boot timeout are two independent faults.
+180|  main menu reached and returns. `02_HECTON_WORLD` is never loaded, and the runner does not need it.
+216|   `ModWorldPersistenceManager` because the log shows exactly eight nodes and then goes silent. It does show
+258|   "the world has no life in it" is reading a null as a measurement, and that is what the retracted blocker
+356|The name 'WorldWaterLevelCalibrationMath' does not exist in the current context
+360|`WorldWaterLevelCalibrationMath` lives in assembly `Hecton8.World.Contracts`; the type directly above it in
+361|the same method, `WorldMacroGeologyParams`, lives in `Hecton8.Core`. **Both are `namespace Hecton8.World`**,
+362|so the single `using Hecton8.World;` at the top of the file resolves one and not the other, and the compiler
+371|  `Assets/_Project/Tests/Editor/WorldWaterLevelCalibrationEditTests.cs` "references"
+372|  `WorldWaterLevelCalibrationMath` only through `StringAssert.Contains` on source text, and a source-text
+487|**Two smaller findings from the same parse.** The world-seed and app-version bindings at `:3157` and `:3163`
+550|*not-placeholder* gate: 22 of its 23 checklist entries compare `rowCount > 0` (`AppendMissingSection`,
+552|can never fail it. The four 0-row sections pass because they are **not on the checklist** — and that is
+594|### RETRACTED 2026-07-29 — the world scene is BINARY and every GUID grep below was blind to it
+599|> `Assets/_Project/Scenes/02_HECTON_WORLD.unity` is **6,270,260 bytes of BINARY serialization**. It does not
+601|> binary: `02_HECTON_WORLD.unity`, `010_TEST.unity`, `020_RENDER_SANDBOX.unity` (60 MB) and
+610|> | Type | filed as | actually in `02_HECTON_WORLD.unity` |
+614|> | `WorldContentSocket` | zero scenes | **PRESENT** |
+615|> | `WorldContentDirector` | zero scenes | **PRESENT** |
+617|> | `WorldCaveDirector` | zero scenes | **PRESENT** |
+629|> filtered down to 4 live kinds out of 11 by `WorldShippingContentFilter`.
+652|`WorldContentDirector`, `ScavengePopulator`, `WorldCaveDirector`, `Fabricator` and `HectonRockManager` are all
+668|`WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref ...)` is called from
+699|5. Every input loader fails silently — `LoadItemData` (`:1991`), `LoadWorldFamilyProfile` (`:1981`),
+711|**Widest case: the world runtime stack. — RETRACTED IN FULL, 2026-07-29. All six of its premises are false.**
+716|> `WorldStreamingDirector` firing on 2 files so the search is validated: **`SeamRegistry`
+718|> `0c37648b7c41d4547aeca6871aa726f6`) are each PRESENT in both `02_HECTON_WORLD.unity` and
+719|> `010_TEST.unity`.** The other four were already retracted. So "there is no world content, no scavenge
+727|`WorldRuntimeBootstrapAuthoring.cs:55` places roughly sixteen world
+728|managers, and the reported guid checks put `WorldContentDirector`, `ScavengePopulator`, `WorldCaveDirector`,
+729|`SeamRegistry`, `FloorBiolumZone` and `WorldContentSocket` each in zero scenes, with consumers holding
+730|`[SerializeField]` nulls at `WorldProceduralFillDirector.cs:16`, `WorldPopulationDirector.cs:17` and
+731|`ScatterBudgetController.cs:53`. If that holds, there is no world content, no scavenge loot and no caves — I
+744|(`WorldProceduralInteriorColonyFinalAuthoring.cs:20`, while sibling lanes for geology, support and organic-misc
+749|`GameBootstrapper.cs:6378` constructs it) and `WorldProceduralProxyInstance` (guid in zero scenes, but
+750|`WorldProceduralScatterDirector.cs:8425` constructs it). Both are live. Filing either as dead would have been
+758|"every authoring lane's output is present in a scene", so an empty world is indistinguishable from a full one
+761|`FIRST_20_MINUTES`: the biome matrix and world runtime stack sit directly on the route — atmosphere, audio,
+762|fauna and any world content at all. Pressing those two buttons plausibly changes the first twenty minutes more
+768|output directories, `DroneProxy.prefab`'s missing `m_Script`, and three of the six world-stack guids — are
+794|- `ModWorldPersistenceManager` is reachable through `GameBootstrapper.cs:6043`.
+863|**1. `WorldChunkResidencyManager`** — `Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs:590`,
+868|- Zero construction sites: no `new WorldChunkResidencyManager(` and no
+869|  `AddComponent<WorldChunkResidencyManager>` anywhere under `Assets`.
+872|- It is deliberate, and the reason is written down at `WorldRuntimeInstaller.cs:116-125`: the slot
+899|`Prologue/Space/PrologueWorldHandoffSceneLoader.cs` and `Prologue/VFX/OrbitalDropReentryVfxController.cs`;
+919|exactly 4 are binary (`02_HECTON_WORLD.unity`, `010_TEST.unity`, `020_RENDER_SANDBOX.unity`,
+921|need the nibble-swapped byte order. Control `547a39a8034a57a47b65413eb12885d2` (WorldStreamingDirector)
+926|  HLOD impostors, and the `BufferID.WorldChunkResidencyManager_ActiveImpostor*` DataVault entries are never
+949|serialiser uses. `02_HECTON_WORLD.unity` is binary, so a text grep alone proves nothing: the control
+950|`WorldStreamingDirector` (guid `547a39a8034a57a47b65413eb12885d2`) was found in 6 files, and in the
+==== search V0 / merge gate names ====
+HIT C:\hades\Hecton8\Tools\_cline_recon.py

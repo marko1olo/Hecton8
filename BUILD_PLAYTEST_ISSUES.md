@@ -1,9 +1,48 @@
-﻿# HECTON-8 Build / Playtest Issues
+# HECTON-8 Build / Playtest Issues
 
-Date: 2026-06-09
-Status: PENDING VERIFICATION
+Date: 2026-07-30
+Status: PENDING VERIFICATION — WORLD APPLY done; runtime play proof still owed
 Owner: build/playtest issue anchor
 Evidence: STATIC_DOC only unless a build/playtest artifact is cited
+
+## 15-minute playtest captain checklist
+
+Human Play Mode on a development player or Editor Play. Do **not** mark `[x]` from static review or batch smoke alone.
+
+| # | Route step | Pass condition | Status |
+|---|---|---|---|
+| 1 | Boot → world | Load `02_HECTON_WORLD` (or menu New Game) without critical console errors | `[ ]` |
+| 2 | Spawn | Player appears at a usable AUP; camera/controls respond | `[ ]` |
+| 3 | Swim | Move + look underwater ~30 s; no PrecisionDrift / soft-lock | `[ ]` |
+| 4 | Tools ×1 | Equip and use one tool (scanner / cutter / etc.) once | `[ ]` |
+| 5 | Fauna ×1 | See at least one live creature react or swim | `[ ]` |
+| 6 | Death / respawn | Die once; respawn recovers control | `[ ]` |
+| 7 | Save / load | Mid-run save then load restores position + inventory | `[ ]` |
+
+Merge gate (Editor, not a substitute for the table above):
+`Hecton8.Physics.KCC.Editor.H8_V0PlaytestSmokeGate.RunFromCommandLine`
+— runs headless KCC (`Shinobu355KccSmokeRunner.Run`); does **not** claim WORLD playable.
+
+### WORLD root graveyard — APPLIED 2026-07-30 (`d7e461e67`)
+
+**Status: APPLY landed in commit `d7e461e67`.** Scene on disk:
+`Assets/_Project/Scenes/02_HECTON_WORLD.unity` — **6,438,976 bytes**, mtime **2026-07-30 02:15**
+(was 6,270,260 bytes / 2026-07-27 before lift). Git binary delta matches the WORLD lift commit.
+
+What that proves (EDITOR/STATIC scene write only):
+- `--- WORLD ---` was reparented to scene root and set active (77 descendants no longer buried under `DEPRECATED_STUFF` for the inactive-root reason).
+- Reachable `WorldContentSocket` count is expected 0 → 4 under shipping filter — **static expectation, not Play Mode proof**.
+
+What it does **not** prove:
+- Play Mode boot without critical errors
+- Swimmable player / collider floor / no fall-through
+- Sockets `OnEnable` / content consumers live
+- Fauna, tools, death, save roundtrip in WORLD
+
+Do **not** re-run APPLY blindly. Optional verify only:
+`-executeMethod Hecton8.EditorTools.Authoring.H8_WorldRootGraveyardRepair.ReportOnly`
+
+Historical REPORT-only transcript (pre-APPLY) kept below for method context.
 
 ## Authority
 
@@ -87,7 +126,11 @@ Not proven by that log:
 
 ### The entire authored world is switched off in the shipping scene — measured 2026-07-29
 
-**This is the largest finding of the day and the repair is one menu press away, unapplied.** A screenshot
+> **SUPERSEDED 2026-07-30:** APPLY landed in `d7e461e67`. Scene is now 6,438,976 bytes (mtime 2026-07-30 02:15).
+> See top-of-file section `WORLD root graveyard — APPLIED`. Text below is the pre-APPLY historical record.
+> Do **not** re-run APPLY. Runtime Play Mode proof is still owed.
+
+**This was the largest finding of 2026-07-29; the repair has since been applied (see supersession note).** A screenshot
 convenience tool was pointed at the production scene. For every scene ROOT whose uppercased name does not
 contain one of TERRAIN / CAMERA / PLAYER / LIGHT / OCEAN / WATER / SUN / SKY / ATMOSPHERE / SYSTEM / MANAGER /
 DIRECTOR / REGISTRY / BOOTSTRAP it called `SetParent(deprecatedParent)` and `SetActive(false)`, then
@@ -122,22 +165,9 @@ Consequences, and the second one is why this is getting worse rather than merely
   `ResourceWorldBootstrapAuthoring.cs:208-211` still have that shape. The asymmetry that makes it precise:
   `Transform.Find` DOES see inactive children, so child reuse works and root reuse does not.
 
-**Status: REPORT run and clean, APPLY NOT YET RUN.** The apply attempt lost the Unity lock to another
-session — a 19-line log ending at the `COMMAND LINE ARGUMENTS` block with return code 1 and no project load,
-the contention shape documented below. The scene on disk is untouched and consistent: still 6,270,260 bytes,
-mtime `2026-07-27 16:25:31`, clean in git.
-
-To finish it:
-
-```
-Unity.exe -batchmode -quit -h8ApplyWorldRootRepair \
-  -executeMethod Hecton8.EditorTools.Authoring.H8_WorldRootGraveyardRepair.Run
-```
-
-`Run()` reports by default and writes only when `-h8ApplyWorldRootRepair` is present
-(`H8_WorldRootGraveyardRepair.cs:98-109`) — the write is deliberately not one misclick from the diagnostic.
-Rollback point, confirmed before attempting the write:
-`git checkout 32c3c8a1a -- Assets/_Project/Scenes/02_HECTON_WORLD.unity`.
+**Status (historical, pre-APPLY):** REPORT run and clean; APPLY was then lost once to Unity lock contention.
+**Current (2026-07-30):** APPLY completed in `d7e461e67`. Scene is 6,438,976 bytes / mtime 2026-07-30 02:15.
+Do **not** re-run APPLY. Optional verify: `H8_WorldRootGraveyardRepair.ReportOnly` only.
 
 Judge the repair on **world content becoming live, not on `gameReady` turning true**. The tool's own header
 carries a retraction on exactly that point: an earlier version claimed the boot timeout was a consequence of

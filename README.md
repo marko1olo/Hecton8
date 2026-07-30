@@ -1,19 +1,19 @@
-<div align="center">
+﻿<div align="center">
 
 ![HECTON-8 Banner](assets/banner.png)
 
-# HECTON-8 — Deep Sea Noir / NASA-Punk 3D Survival Game
+# HECTON-8 вЂ” Deep Sea Noir / NASA-Punk 3D Survival Game
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-brightgreen?style=for-the-badge&logo=github)](https://barsukdana.github.io/Hecton8/)
-[![Deploy GitHub Pages](https://github.com/barsukdana/Hecton8/actions/workflows/deploy-gh-pages.yml/badge.svg)](https://github.com/barsukdana/Hecton8/actions/workflows/deploy-gh-pages.yml)
-[![Unity](https://img.shields.io/badge/Engine-Unity%206000.4%20URP-black?style=for-the-badge&logo=unity)](https://unity.com)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-brightgreen?style=for-the-badge&logo=github)](https://marko1olo.github.io/Hecton8/)
+[![Deploy GitHub Pages](https://github.com/marko1olo/Hecton8/actions/workflows/deploy-gh-pages.yml/badge.svg)](https://github.com/marko1olo/Hecton8/actions/workflows/deploy-gh-pages.yml)
+[![Unity](https://img.shields.io/badge/Engine-Unity%206000.5%20URP-black?style=for-the-badge&logo=unity)](https://unity.com)
 [![C#](https://img.shields.io/badge/Language-C%23%20Burst--Compiled-purple?style=for-the-badge&logo=csharp)](https://docs.unity3d.com/Packages/com.unity.burst@latest)
 [![Performance Target](https://img.shields.io/badge/Target-60%20FPS%20%7C%200B%2Fframe%20GC-00ff88?style=for-the-badge)]()
 [![Shaders](https://img.shields.io/badge/Graphics-Custom%20URP%20Shaders-blue?style=for-the-badge)]()
 [![License](https://img.shields.io/badge/License-Commercial%20Anti--Theft-red?style=for-the-badge)](LICENSE.md)
 [![Status](https://img.shields.io/badge/Status-V0%20Vertical%20Slice-orange?style=for-the-badge)]()
 
-> **AA Deep Sea Noir / NASA-Punk 3D survival game built on Unity 6000.4 URP — strict 60 FPS, 0 B/frame GC allocation target, scalable from 2GB VRAM handhelds to Ultra PCVR.**
+> **AA Deep Sea Noir / NASA-Punk 3D survival game built on Unity 6000.5 URP вЂ” strict 60 FPS, 0 B/frame GC allocation target, scalable from 2GB VRAM handhelds to Ultra PCVR.**
 
 </div>
 
@@ -29,7 +29,7 @@
 
 ```mermaid
 graph TD
-    A[Unity 6000.4 URP Runtime Engine] --> B[Custom Volumetric Ocean Shader Pipeline]
+    A[Unity 6000.5 URP Runtime Engine] --> B[Custom Volumetric Ocean Shader Pipeline]
     A --> C[Burst-Compiled C# Systems DOD]
     C --> D[NativeMemory Unmanaged Collections]
     C --> E[0 B/frame GC Hot-Path Loop]
@@ -55,72 +55,72 @@ graph TD
 
 <img src="assets/banner.png" width="100%" alt="HECTON-8 Banner"/>
 
-# HECTON-8 — Deep Sea Noir / NASA-Punk 3D Survival Game
+# HECTON-8 вЂ” Deep Sea Noir / NASA-Punk 3D Survival Game
 
-[![Unity](https://img.shields.io/badge/Unity-6000.4%20URP-black?style=for-the-badge&logo=unity)](https://unity.com)
+[![Unity](https://img.shields.io/badge/Unity-6000.5%20URP-black?style=for-the-badge&logo=unity)](https://unity.com)
 [![Language](https://img.shields.io/badge/C%23-Burst%20Compiled-purple?style=for-the-badge&logo=csharp)]()
 [![FPS](https://img.shields.io/badge/Target-60%20FPS%20%7C%200B%2Fframe%20GC-00ff88?style=for-the-badge)]()
 [![License](https://img.shields.io/badge/License-Commercial%20Anti--Theft-red?style=for-the-badge)](LICENSE.md)
 [![Status](https://img.shields.io/badge/Status-V0%20Vertical%20Slice-orange?style=for-the-badge)]()
 
-> **AA Deep Sea Noir / NASA-Punk survival on Unity 6000.4 URP — 60 FPS, 0B/frame GC, scalable from 2GB VRAM handhelds to Ultra PCVR.**
+> **AA Deep Sea Noir / NASA-Punk survival on Unity 6000.5 URP вЂ” 60 FPS, 0B/frame GC, scalable from 2GB VRAM handhelds to Ultra PCVR.**
 
-[🌊 Wishlist](#) · [📖 Devlog](#) · [🐛 Issues](../../issues)
+[рџЊЉ Wishlist](#) В· [рџ“– Devlog](#) В· [рџђ› Issues](../../issues)
 
 </div>
 
 ---
 
-> **AA Deep Sea Noir / NASA-Punk 3D game built on Unity 6000.4 URP with extreme memory optimizations (60 FPS / GC 0 B/frame target).**
+> **AA Deep Sea Noir / NASA-Punk 3D game built on Unity 6000.5 URP with extreme memory optimizations (60 FPS / GC 0 B/frame target).**
 
 ---
 
-### 🚀 Technical Standards & Architecture
+### рџљЂ Technical Standards & Architecture
 
-* ⚡ **Performance Budget:** Strict 60 FPS (16.67 ms frame budget), 0 B/frame GC allocation in gameplay hot-paths.
-* 🌊 **Deep Sea Rendering:** Custom URP volumetric ocean shaders, photic underwater lighting, and procedural sea floor.
-* 🎮 **Platform Portability:** Scalable continuous `GlobalQualityWeight` architecture targeting 2GB VRAM handhelds up to Ultra PCVR.
-* 📦 **Unmanaged Memory:** Burst-compiled C#, NativeMemory collections, and Data-Oriented Design (DOD).
+* вљЎ **Performance Budget:** Strict 60 FPS (16.67 ms frame budget), 0 B/frame GC allocation in gameplay hot-paths.
+* рџЊЉ **Deep Sea Rendering:** Custom URP volumetric ocean shaders, photic underwater lighting, and procedural sea floor.
+* рџЋ® **Platform Portability:** Scalable continuous `GlobalQualityWeight` architecture targeting 2GB VRAM handhelds up to Ultra PCVR.
+* рџ“¦ **Unmanaged Memory:** Burst-compiled C#, NativeMemory collections, and Data-Oriented Design (DOD).
 
 ---
 
-### 📜 License / Лицензия
+### рџ“њ License / Р›РёС†РµРЅР·РёСЏ
 Protected under **HECTON-8 Commercial Anti-Theft & Source-Available License (Copyright (c) 2026 Adolf Petushkov)**. Maintainers and AI research welcome!
 
 ---
 
 <details>
-<summary><b>🇷🇺 Краткое описание на русском</b></summary>
+<summary><b>рџ‡·рџ‡є РљСЂР°С‚РєРѕРµ РѕРїРёСЃР°РЅРёРµ РЅР° СЂСѓСЃСЃРєРѕРј</b></summary>
 
-### HECTON-8 — Deep Sea Noir / NASA-Punk 3D Выживание
+### HECTON-8 вЂ” Deep Sea Noir / NASA-Punk 3D Р’С‹Р¶РёРІР°РЅРёРµ
 
-**HECTON-8** — это AA 3D-игра на выживание в атмосферном сеттинге Deep Sea Noir / NASA-Punk, разрабатываемая на движке Unity 6000.4 URP.
+**HECTON-8** вЂ” СЌС‚Рѕ AA 3D-РёРіСЂР° РЅР° РІС‹Р¶РёРІР°РЅРёРµ РІ Р°С‚РјРѕСЃС„РµСЂРЅРѕРј СЃРµС‚С‚РёРЅРіРµ Deep Sea Noir / NASA-Punk, СЂР°Р·СЂР°Р±Р°С‚С‹РІР°РµРјР°СЏ РЅР° РґРІРёР¶РєРµ Unity 6000.5 URP.
 
-#### Технические Стандарты и Архитектура:
-1. **Жесткий Бюджет Производительности**: Целевой показатель — 60 FPS (16.67 мс на кадр) и 0 B/frame GC-аллокаций в горячих циклах геймплея.
-2. **Низкоуровневая Память и DOD**: Использование компилятора Burst, неуправляемой памяти `NativeMemory` и Data-Oriented Design.
-3. **Рендеринг и Масштабирование**: Кастомные объемные шейдеры океанской толщи воды в URP, непрерывная система `GlobalQualityWeight` для масштабирования от портативок с 2GB VRAM до Ultra PCVR.
+#### РўРµС…РЅРёС‡РµСЃРєРёРµ РЎС‚Р°РЅРґР°СЂС‚С‹ Рё РђСЂС…РёС‚РµРєС‚СѓСЂР°:
+1. **Р–РµСЃС‚РєРёР№ Р‘СЋРґР¶РµС‚ РџСЂРѕРёР·РІРѕРґРёС‚РµР»СЊРЅРѕСЃС‚Рё**: Р¦РµР»РµРІРѕР№ РїРѕРєР°Р·Р°С‚РµР»СЊ вЂ” 60 FPS (16.67 РјСЃ РЅР° РєР°РґСЂ) Рё 0 B/frame GC-Р°Р»Р»РѕРєР°С†РёР№ РІ РіРѕСЂСЏС‡РёС… С†РёРєР»Р°С… РіРµР№РјРїР»РµСЏ.
+2. **РќРёР·РєРѕСѓСЂРѕРІРЅРµРІР°СЏ РџР°РјСЏС‚СЊ Рё DOD**: РСЃРїРѕР»СЊР·РѕРІР°РЅРёРµ РєРѕРјРїРёР»СЏС‚РѕСЂР° Burst, РЅРµСѓРїСЂР°РІР»СЏРµРјРѕР№ РїР°РјСЏС‚Рё `NativeMemory` Рё Data-Oriented Design.
+3. **Р РµРЅРґРµСЂРёРЅРі Рё РњР°СЃС€С‚Р°Р±РёСЂРѕРІР°РЅРёРµ**: РљР°СЃС‚РѕРјРЅС‹Рµ РѕР±СЉРµРјРЅС‹Рµ С€РµР№РґРµСЂС‹ РѕРєРµР°РЅСЃРєРѕР№ С‚РѕР»С‰Рё РІРѕРґС‹ РІ URP, РЅРµРїСЂРµСЂС‹РІРЅР°СЏ СЃРёСЃС‚РµРјР° `GlobalQualityWeight` РґР»СЏ РјР°СЃС€С‚Р°Р±РёСЂРѕРІР°РЅРёСЏ РѕС‚ РїРѕСЂС‚Р°С‚РёРІРѕРє СЃ 2GB VRAM РґРѕ Ultra PCVR.
 </details>
 
 
 
-### 🏗️ Submarine Engine Architecture (Unity 6000 URP)
+### рџЏ—пёЏ Submarine Engine Architecture (Unity 6000 URP)
 
 ```mermaid
 graph TD
-    Input[🎮 Hydro Controls] --> Core[⚙️ Submarine Main Loop]
-    Core --> Physics[🌊 Hydro-X Buoyancy Engine]
-    Core --> Terrain[🗺️ MapMagic 2 Chunk Manager]
-    Terrain --> Voxel[🧊 Voxel Mesh Generator]
-    Physics --> Telemetry[📊 Zero-GC Telemetry HUD]
-    Core --> Render[🎨 Unity 6000 URP Shaders]
+    Input[рџЋ® Hydro Controls] --> Core[вљ™пёЏ Submarine Main Loop]
+    Core --> Physics[рџЊЉ Hydro-X Buoyancy Engine]
+    Core --> Terrain[рџ—єпёЏ MapMagic 2 Chunk Manager]
+    Terrain --> Voxel[рџ§Љ Voxel Mesh Generator]
+    Physics --> Telemetry[рџ“Љ Zero-GC Telemetry HUD]
+    Core --> Render[рџЋЁ Unity 6000 URP Shaders]
 ```
 
-### ⚡ Technical Performance Budgets
+### вљЎ Technical Performance Budgets
 
 | Metric | Budget / Actual | Status |
 |---|---|---|
-| **Target Frame Rate** | 60 FPS Constant | 🎮 PASS |
-| **Garbage Collector Allocations** | 0 B / frame (Zero-GC) | ⚡ OPTIMIZED |
-| **VRAM Memory Footprint** | < 2.2 GB VRAM | 🟢 STABLE |
-| **Chunk Generation Latency** | < 12ms / chunk | 🚀 FAST |
+| **Target Frame Rate** | 60 FPS Constant | рџЋ® PASS |
+| **Garbage Collector Allocations** | 0 B / frame (Zero-GC) | вљЎ OPTIMIZED |
+| **VRAM Memory Footprint** | < 2.2 GB VRAM | рџџў STABLE |
+| **Chunk Generation Latency** | < 12ms / chunk | рџљЂ FAST |

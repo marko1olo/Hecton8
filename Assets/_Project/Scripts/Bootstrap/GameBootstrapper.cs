@@ -3135,9 +3135,32 @@ namespace Hecton8.Bootstrap
             try
             {
                 Scene activeScene = SceneManager.GetActiveScene();
-                Debug.Log($"[GameBootstrapper-DEBUG] InitializeSceneActivatePhaseAsync: activeScene={activeScene.name}");
+                // Headless ecology/batch runs stay on 00_BOOTSTRAP. A stale PlayerPrefs handoff
+                // (GameStartContextHolder, up to 900s TTL) used to win before the headless short-circuit
+                // and enter LoadGameplaySceneFromBootstrapHandoffAsync, which awaits NextFrameAsync until
+                // scene load completes. In -batchmode that await is Task.Yield, not a player-loop tick,
+                // so progress never advances → BATCH_TIMEOUT with no MarkMainMenu / no ecology samples.
+                // Headless must win first: clear any cold handoff and mark menu reached without loading.
+                Debug.Log(
+                    $"[GameBootstrapper-DEBUG] InitializeSceneActivatePhaseAsync: activeScene={activeScene.name} headless={_headlessBootMode}");
                 if (IsBootstrapScene(activeScene))
                 {
+                    if (_headlessBootMode)
+                    {
+                        if (TryResolveBootstrapGameplayHandoffScene(out string ignoredHeadlessHandoffScene))
+                        {
+                            Debug.Log(
+                                "[GameBootstrapper-DEBUG] Headless SceneActivate ignoring stale gameplay handoff '" +
+                                ignoredHeadlessHandoffScene +
+                                "' (remain on bootstrap; ecology runner does not need 01_MAIN_MENU / gameplay scene).");
+                        }
+
+                        GameStartContextHolder.Reset();
+                        BootstrapStatus.MarkMainMenuReached();
+                        Debug.Log("[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached on bootstrap");
+                        return true;
+                    }
+
                     if (TryResolveBootstrapGameplayHandoffScene(out string gameplaySceneName))
                     {
                         Debug.Log("[GameBootstrapper-DEBUG] LoadGameplaySceneFromBootstrapHandoffAsync");
@@ -3145,11 +3168,6 @@ namespace Hecton8.Bootstrap
                     }
 
                     GameStartContextHolder.Reset();
-                    if (_headlessBootMode)
-                    {
-                        BootstrapStatus.MarkMainMenuReached();
-                        return true;
-                    }
 
 #if UNITY_EDITOR
                     if (HectonForceSandboxScene)
