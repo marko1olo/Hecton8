@@ -5460,14 +5460,11 @@ namespace Hecton8.Bootstrap
                 long serviceStartTimestamp = Stopwatch.GetTimestamp();
                 try
                 {
-                    UnityEngine.Debug.Log($"[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node {node}");
                     if (!TryInitializeBootstrapDependencyNodeWithFallback(node))
                     {
                         LogBootstrapDependencyFailure(phase, node);
                         return false;
                     }
-
-                    UnityEngine.Debug.Log($"[GameBootstrapper] Waiting for heartbeat for node {node}");
 
                     BootstrapStatus.PulseActiveStep(phaseStepToken);
                     if (!await WaitForBootstrapDependencyHeartbeatAsync(node, ct))
