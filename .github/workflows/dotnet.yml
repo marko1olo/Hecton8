@@ -20,6 +20,12 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Generate Unity Csproj files
+      run: pip install defusedxml && python Tools/generate_unity_slnx_projects.py
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
