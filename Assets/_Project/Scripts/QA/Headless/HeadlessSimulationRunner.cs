@@ -261,6 +261,14 @@ namespace Hecton8.QA.Headless
             if (_started && !_ecologyReady)
             {
                 TryArmEcologyWaitClock();
+                // Ready-mark is a gate, not a sim-tick substitute. FrostTick can starve while
+                // FO bootstrap lock / frame lock / dilation=0 hold RunDispatcherUpdate off the
+                // master sim path; ecoInit was true from t=0 in p0_fo_lock_drain while
+                // TryMarkEcologyReady never ran (Frost-only). Same starvation-proof pattern as
+                // moving the wait clock off ColdTick onto Update.
+                TryMarkEcologyReady();
+                if (_ecologyReady)
+                    return;
                 // Keep FO scene-rebase barrier draining while we wait — dispatcher early-returns
                 // all Frost/LateFrame while IsOriginShiftBootstrapLocked holds.
                 HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
@@ -724,6 +732,7 @@ namespace Hecton8.QA.Headless
                 "ecology wait progress t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
                 "s ecoNull=" + (ecoNull ? "1" : "0") +
                 " ecoInit=" + (ecoInit ? "1" : "0") +
+                " frostReg=" + (_registeredFrost ? "1" : "0") +
                 " foHasOrigin=" + (foHasOrigin ? "1" : "0") +
                 " foShift=" + (foShift ? "1" : "0") +
                 " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
@@ -731,7 +740,8 @@ namespace Hecton8.QA.Headless
                 " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
                 " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
                 " foBarrier=" + (foBarrier ? "1" : "0") +
-                " dispBootstrapLocked=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0"));
+                " dispBootstrapLocked=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
+                " dispFrameLocked=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0"));
         }
 
         private void TryMarkEcologyReady()
@@ -746,6 +756,7 @@ namespace Hecton8.QA.Headless
             if (readyNow && !_ecologyReady)
             {
                 _simulationStartRealtime = Time.realtimeSinceStartupAsDouble;
+                LogRunnerLifecycle("ecology ready (ecosystem initialized)");
 
                 // Muzzle Debug.Log HERE, not in ForceHeadlessRuntimePolicy. The filter exists so a 100-day
                 // run's log is not drowned in first-party per-frame spam, and every source of that spam is

@@ -1,5 +1,12 @@
 # Hecton8 Backlog
 
+## Open — P0 ecology-ready Frost starve (2026-07-31)
+- **Symptom (live smoke after FO lock-drain):** foLock=0 ecoInit=1 from t=0 through t=480s+; `_ecologyReady` never set; BOOTSTRAP_TIMEOUT / BATCH_TIMEOUT.
+- **Root:** `TryMarkEcologyReady` only invoked from `FrostTick`. Frost never delivered while wait clock ran (dispatcher master-sim path starved or deltaTime<=0). Ready predicate (`ecosystem.IsInitialized`) was true the entire wait.
+- **Fix applied:** call `TryMarkEcologyReady` from runner `Update` wait path (starvation-proof gate, same pattern as wait-clock move off ColdTick). Lifecycle log on first ready. Wait-progress adds frostReg + dispFrameLocked.
+- **Not a mock:** ready-mark is a harness gate; day audits still require Frost/LateFrame once ready. Frost starve root for day advance remains open if dilation/pause zeros master sim.
+- Evidence: Docs/AgentLogs/p0_ecology_ready_frost_starve_20260731.md
+
 ## Completed
 - [x] P0 | ship a6c96w abs-col spall into texture.py | Tools/Blender/h8forge/texture.py | proof@2048 seeds 0,1,2,7,13 p95_max=0.4590 eros_min=0.3417 all_run all_eros PASS | 568a19cca (cement auto-bundled product+scratch; do not amend)
 
