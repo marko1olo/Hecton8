@@ -133,6 +133,11 @@ namespace Hecton8.AI
             public float FlowNoiseStrength;
             public float SuctionPulseStrength;
             public float TimeSeconds;
+            /// <summary>
+            /// Smoothed <c>GlobalQualityWeight</c> for this solve, already curved by
+            /// <c>SmoothQuality01</c> on the owner side so the job does no extra work.
+            /// </summary>
+            public float QualityCurve01;
             public float3 Gravity;
             public float3 FlowVector;
             public int TentacleCount;
@@ -180,8 +185,15 @@ namespace Hecton8.AI
                 int safeTentacleCount = math.clamp(TentacleCount, 0, MaxTentacles);
                 int safeIterations = math.clamp(ConstraintIterations, 1, 3);
                 const int segmentBudget = SegmentsPerTentacle;
-                const float qualityNoiseScale = 1f;
-                const float qualityPulseScale = 1f;
+                // Secondary motion amplitude scales with quality: this is presentation detail, not gameplay
+                // truth, so AGENTS.md `GlobalQualityWeight And Scalability` permits it - and the GPU side
+                // already receives the same SmoothQuality01 value (RadiusFxFlow.z), so CPU and shader now
+                // agree instead of the CPU silently running at full amplitude on every tier. Continuous
+                // lerp from a floor, never a binary switch: at quality 0 the organic noise and suction
+                // pulse keep 35% of authored amplitude rather than snapping to a dead, rigid tentacle.
+                float safeQualityCurve = math.saturate(math.isfinite(QualityCurve01) ? QualityCurve01 : 1f);
+                float qualityNoiseScale = math.lerp(0.35f, 1f, safeQualityCurve);
+                float qualityPulseScale = math.lerp(0.35f, 1f, safeQualityCurve);
                 float invSegmentLast = math.rcp(SegmentLastIndex);
 
                 for (int tentacleIndex = 0; tentacleIndex < MaxTentacles; tentacleIndex++)
@@ -789,6 +801,7 @@ namespace Hecton8.AI
                     FlowNoiseStrength = SanitizeFiniteMinInput(flowNoiseStrength, DefaultFlowNoiseStrength, 0f),
                     SuctionPulseStrength = SanitizeFiniteRangeInput(suctionPulseStrength, DefaultSuctionPulseStrength, 0f, 0.5f),
                     TimeSeconds = _solverTimeSeconds,
+                    QualityCurve01 = SmoothQuality01(_globalQualityWeight),
                     Gravity = safeGravity,
                     FlowVector = _lastFlowVector,
                     TentacleCount = math.clamp(activeTentacleCount, 0, MaxTentacles),
