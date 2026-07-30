@@ -1,0 +1,47 @@
+=== a6c72j10 c=72 w=0.035-0.1 j=16 ncol=6 jf=0.12 t=0.15 cj=0.1 fg=0 ps=0.5
+a6c72j10 c=72 w=0.035-0.1 j=16 ncol=6 jf=0.12 t=0.15 cj=0.1 fg=0 ps=0.5 p95_mean=0.5308 p95_max=0.5723 p95_min=0.5037 eros_mean=0.2643 eros_max=0.2852 all_run=False all_eros=True
+=== a6c72j05 c=72 w=0.035-0.1 j=16 ncol=6 jf=0.1 t=0.12 cj=0.05 fg=0 ps=0.5
+a6c72j05 c=72 w=0.035-0.1 j=16 ncol=6 jf=0.1 t=0.12 cj=0.05 fg=0 ps=0.5 p95_mean=0.5159 p95_max=0.5477 p95_min=0.4861 eros_mean=0.2634 eros_max=0.2787 all_run=True all_eros=True
+=== a6c72fg c=72 w=0.04-0.11 j=16 ncol=6 jf=0.1 t=0.12 cj=0.0 fg=1 ps=0.4
+a6c72fg c=72 w=0.04-0.11 j=16 ncol=6 jf=0.1 t=0.12 cj=0.0 fg=1 ps=0.4 p95_mean=0.5284 p95_max=0.6035 p95_min=0.4822 eros_mean=0.2911 eros_max=0.3168 all_run=False all_eros=True
+=== a7c80 c=80 w=0.035-0.1 j=16 ncol=7 jf=0.1 t=0.12 cj=0.12 fg=0 ps=0.5
+a7c80 c=80 w=0.035-0.1 j=16 ncol=7 jf=0.1 t=0.12 cj=0.12 fg=0 ps=0.5 p95_mean=0.5645 p95_max=0.7010 p95_min=0.4336 eros_mean=0.2928 eros_max=0.3116 all_run=False all_eros=True
+=== a7c80w c=80 w=0.045-0.12 j=16 ncol=7 jf=0.1 t=0.12 cj=0.1 fg=0 ps=0.4
+a7c80w c=80 w=0.045-0.12 j=16 ncol=7 jf=0.1 t=0.12 cj=0.1 fg=0 ps=0.4 p95_mean=0.5113 p95_max=0.6259 p95_min=0.4247 eros_mean=0.3480 eros_max=0.3666 all_run=False all_eros=True
+=== a7c80fg c=80 w=0.04-0.11 j=16 ncol=7 jf=0.08 t=0.1 cj=0.0 fg=1 ps=0.35
+a7c80fg c=80 w=0.04-0.11 j=16 ncol=7 jf=0.08 t=0.1 cj=0.0 fg=1 ps=0.35 p95_mean=0.4927 p95_max=0.5957 p95_min=0.3817 eros_mean=0.3357 eros_max=0.3626 all_run=False all_eros=True
+=== a8c84 c=84 w=0.035-0.1 j=18 ncol=8 jf=0.1 t=0.12 cj=0.1 fg=0 ps=0.4
+a8c84 c=84 w=0.035-0.1 j=18 ncol=8 jf=0.1 t=0.12 cj=0.1 fg=0 ps=0.4 p95_mean=0.5293 p95_max=0.5731 p95_min=0.5067 eros_mean=0.2934 eros_max=0.3274 all_run=False all_eros=True
+=== a8c84w c=84 w=0.04-0.11 j=18 ncol=8 jf=0.08 t=0.1 cj=0.08 fg=0 ps=0.35
+a8c84w c=84 w=0.04-0.11 j=18 ncol=8 jf=0.08 t=0.1 cj=0.08 fg=0 ps=0.35 p95_mean=0.5058 p95_max=0.5605 p95_min=0.4785 eros_mean=0.3255 eros_max=0.3547 all_run=False all_eros=True
+=== a8c88fg c=88 w=0.04-0.1 j=18 ncol=8 jf=0.08 t=0.1 cj=0.0 fg=1 ps=0.3
+a8c88fg c=88 w=0.04-0.1 j=18 ncol=8 jf=0.08 t=0.1 cj=0.0 fg=1 ps=0.3 p95_mean=0.4667 p95_max=0.5302 p95_min=0.4121 eros_mean=0.3176 eros_max=0.3554 all_run=True all_eros=True
+=== a6c80w c=80 w=0.045-0.12 j=16 ncol=6 jf=0.1 t=0.12 cj=0.1 fg=0 ps=0.4
+a6c80w c=80 w=0.045-0.12 j=16 ncol=6 jf=0.1 t=0.12 cj=0.1 fg=0 ps=0.4 p95_mean=0.4784 p95_max=0.5598 p95_min=0.4043 eros_mean=0.3408 eros_max=0.3711 all_run=False all_eros=True
+=== a6c88w c=88 w=0.05-0.12 j=16 ncol=6 jf=0.08 t=0.1 cj=0.08 fg=0 ps=0.35
+a6c88w c=88 w=0.05-0.12 j=16 ncol=6 jf=0.08 t=0.1 cj=0.08 fg=0 ps=0.35 p95_mean=0.4149 p95_max=0.4384 p95_min=0.3533 eros_mean=0.3802 eros_max=0.4055 all_run=True all_eros=True
+=== a6c96w c=96 w=0.045-0.11 j=18 ncol=6 jf=0.08 t=0.1 cj=0.08 fg=0 ps=0.3
+a6c96w c=96 w=0.045-0.11 j=18 ncol=6 jf=0.08 t=0.1 cj=0.08 fg=0 ps=0.3 p95_mean=0.3788 p95_max=0.4180 p95_min=0.3143 eros_mean=0.3791 eros_max=0.3924 all_run=True all_eros=True
+=== a3c72w c=72 w=0.06-0.14 j=14 ncol=3 jf=0.18 t=0.2 cj=0.3 fg=0 ps=0.5
+a3c72w c=72 w=0.06-0.14 j=14 ncol=3 jf=0.18 t=0.2 cj=0.3 fg=0 ps=0.5 p95_mean=0.4879 p95_max=0.5625 p95_min=0.4193 eros_mean=0.3881 eros_max=0.4205 all_run=False all_eros=True
+=== a3c72wj c=72 w=0.06-0.14 j=14 ncol=3 jf=0.12 t=0.15 cj=0.12 fg=0 ps=0.4
+a3c72wj c=72 w=0.06-0.14 j=14 ncol=3 jf=0.12 t=0.15 cj=0.12 fg=0 ps=0.4 p95_mean=0.4758 p95_max=0.5215 p95_min=0.4297 eros_mean=0.3541 eros_max=0.3773 all_run=True all_eros=True
+=== a3c80w c=80 w=0.055-0.13 j=16 ncol=3 jf=0.12 t=0.15 cj=0.1 fg=0 ps=0.35
+a3c80w c=80 w=0.055-0.13 j=16 ncol=3 jf=0.12 t=0.15 cj=0.1 fg=0 ps=0.35 p95_mean=0.4721 p95_max=0.5410 p95_min=0.4089 eros_mean=0.3595 eros_max=0.3775 all_run=True all_eros=True
+=== a4c80w2 c=80 w=0.055-0.13 j=16 ncol=4 jf=0.1 t=0.12 cj=0.1 fg=0 ps=0.35
+a4c80w2 c=80 w=0.055-0.13 j=16 ncol=4 jf=0.1 t=0.12 cj=0.1 fg=0 ps=0.35 p95_mean=0.4451 p95_max=0.5632 p95_min=0.4062 eros_mean=0.3625 eros_max=0.3921 all_run=False all_eros=True
+=== a4c88w c=88 w=0.05-0.12 j=16 ncol=4 jf=0.1 t=0.12 cj=0.08 fg=0 ps=0.3
+a4c88w c=88 w=0.05-0.12 j=16 ncol=4 jf=0.1 t=0.12 cj=0.08 fg=0 ps=0.3 p95_mean=0.4088 p95_max=0.4208 p95_min=0.3828 eros_mean=0.3686 eros_max=0.4217 all_run=True all_eros=True
+=== a5c88w c=88 w=0.045-0.12 j=16 ncol=5 jf=0.1 t=0.12 cj=0.08 fg=0 ps=0.3
+a5c88w c=88 w=0.045-0.12 j=16 ncol=5 jf=0.1 t=0.12 cj=0.08 fg=0 ps=0.3 p95_mean=0.4458 p95_max=0.6367 p95_min=0.3720 eros_mean=0.3749 eros_max=0.3946 all_run=False all_eros=True
+=== a6c80st c=80 w=0.04-0.11 j=16 ncol=6 jf=0.08 t=0.1 cj=0.05 fg=0 ps=0.15
+a6c80st c=80 w=0.04-0.11 j=16 ncol=6 jf=0.08 t=0.1 cj=0.05 fg=0 ps=0.15 p95_mean=0.4684 p95_max=0.5156 p95_min=0.4141 eros_mean=0.3160 eros_max=0.3528 all_run=True all_eros=True
+=== a7c88st c=88 w=0.04-0.11 j=18 ncol=7 jf=0.08 t=0.1 cj=0.05 fg=0 ps=0.15
+a7c88st c=88 w=0.04-0.11 j=18 ncol=7 jf=0.08 t=0.1 cj=0.05 fg=0 ps=0.15 p95_mean=0.4763 p95_max=0.5477 p95_min=0.4277 eros_mean=0.3307 eros_max=0.3546 all_run=True all_eros=True
+POOL a6c96w p95_max=0.4180 run=True
+POOL a4c88w p95_max=0.4208 run=True
+POOL a6c88w p95_max=0.4384 run=True
+POOL a6c80st p95_max=0.5156 run=True
+POOL a3c72wj p95_max=0.5215 run=True
+POOL a8c88fg p95_max=0.5302 run=True
+verifying 2048 a6c96w...

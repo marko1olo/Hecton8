@@ -375,13 +375,13 @@ namespace Hecton8.Tests.Editor.SaveSystem
             int invalidIndex = requestBody.IndexOf("if (slotIndex >= SaveEvents.ManualSlotCount)", StringComparison.Ordinal);
             int invalidErrorIndex = requestBody.IndexOf("LastOperationError = InvalidSlotNameReason;", invalidIndex, StringComparison.Ordinal);
             int invalidEventIndex = requestBody.IndexOf("SaveEvents.TryRaiseSaveFailed(0u, SaveEvents.ComputeMessageHash(InvalidSlotNameReason), InvalidSlotNameReason);", invalidIndex, StringComparison.Ordinal);
-            int invalidStatusIndex = requestBody.IndexOf("PublishSaveStatus(slotIndex, new SaveStatusParams(resolvedOperationId, SaveStatusSignal.Rejected, 0f, 1u));", invalidIndex, StringComparison.Ordinal);
+            int invalidStatusIndex = requestBody.IndexOf("PublishSaveStatus(slotIndex, resolvedOperationId, SaveStatusSignal.Rejected, 0f, 1u));", invalidIndex, StringComparison.Ordinal);
             int busyIndex = requestBody.IndexOf("if (_isBusy)", StringComparison.Ordinal);
             int busyReasonIndex = requestBody.IndexOf("const string reason = \"Save already in progress.\";", busyIndex, StringComparison.Ordinal);
             int busyErrorIndex = requestBody.IndexOf("LastOperationError = reason;", busyIndex, StringComparison.Ordinal);
             int busySlotIndex = requestBody.IndexOf("LastOperationSlot = slotName;", busyIndex, StringComparison.Ordinal);
             int busyEventIndex = requestBody.IndexOf("SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);", busyIndex, StringComparison.Ordinal);
-            int busyStatusIndex = requestBody.IndexOf("PublishSaveStatus(slotIndex, new SaveStatusParams(resolvedOperationId, SaveStatusSignal.Rejected, 0f, 1u));", busyIndex, StringComparison.Ordinal);
+            int busyStatusIndex = requestBody.IndexOf("PublishSaveStatus(slotIndex, resolvedOperationId, SaveStatusSignal.Rejected, 0f, 1u));", busyIndex, StringComparison.Ordinal);
             int signalIndex = requestBody.IndexOf("SaveRequestSignal signal = new SaveRequestSignal", StringComparison.Ordinal);
 
             Assert.GreaterOrEqual(operationIdIndex, 0);
@@ -397,19 +397,19 @@ namespace Hecton8.Tests.Editor.SaveSystem
             Assert.Greater(busyStatusIndex, busyEventIndex);
             Assert.Greater(signalIndex, busyStatusIndex);
             StringAssert.Contains("OperationId = resolvedOperationId,", requestBody);
-            StringAssert.Contains("PublishSaveStatus(slotIndex, new SaveStatusParams(signal.OperationId, SaveStatusSignal.Queued, 0f, 0u));", requestBody);
+            StringAssert.Contains("PublishSaveStatus(slotIndex, signal.OperationId, SaveStatusSignal.Queued, 0f, 0u));", requestBody);
 
             int processInvalidIndex = processBody.IndexOf("if (slotIndex >= SaveEvents.ManualSlotCount)", StringComparison.Ordinal);
             int processInvalidErrorIndex = processBody.IndexOf("LastOperationError = InvalidSlotNameReason;", processInvalidIndex, StringComparison.Ordinal);
             int processInvalidSlotIndex = processBody.IndexOf("LastOperationSlot = string.Empty;", processInvalidIndex, StringComparison.Ordinal);
             int processInvalidEventIndex = processBody.IndexOf("SaveEvents.TryRaiseSaveFailed(0u, SaveEvents.ComputeMessageHash(InvalidSlotNameReason), InvalidSlotNameReason);", processInvalidIndex, StringComparison.Ordinal);
-            int processInvalidStatusIndex = processBody.IndexOf("PublishSaveStatus(slotIndex, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));", processInvalidIndex, StringComparison.Ordinal);
+            int processInvalidStatusIndex = processBody.IndexOf("PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u));", processInvalidIndex, StringComparison.Ordinal);
             int processBusyIndex = processBody.IndexOf("if (_isBusy)", StringComparison.Ordinal);
             int processBusyReasonIndex = processBody.IndexOf("const string reason = \"Save already in progress.\";", processBusyIndex, StringComparison.Ordinal);
             int processBusyErrorIndex = processBody.IndexOf("LastOperationError = reason;", processBusyIndex, StringComparison.Ordinal);
             int processBusySlotIndex = processBody.IndexOf("LastOperationSlot = slotName;", processBusyIndex, StringComparison.Ordinal);
             int processBusyEventIndex = processBody.IndexOf("SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);", processBusyIndex, StringComparison.Ordinal);
-            int processBusyStatusIndex = processBody.IndexOf("PublishSaveStatus(slotIndex, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));", processBusyIndex, StringComparison.Ordinal);
+            int processBusyStatusIndex = processBody.IndexOf("PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, 1u));", processBusyIndex, StringComparison.Ordinal);
 
             Assert.GreaterOrEqual(processInvalidIndex, 0);
             Assert.Greater(processInvalidErrorIndex, processInvalidIndex);
@@ -445,10 +445,10 @@ namespace Hecton8.Tests.Editor.SaveSystem
             StringAssert.Contains("LastOperationSlot = slotName ?? string.Empty;", rejectBody);
             StringAssert.Contains("SaveEvents.TryRaiseSaveFailed(", rejectBody);
             StringAssert.Contains("SaveEvents.ComputeMessageHash(RespawnReconciliationInProgressReason)", rejectBody);
-            StringAssert.Contains("PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));", rejectBody);
+            StringAssert.Contains("PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Rejected, 0f, 1u));", rejectBody);
             StringAssert.Contains("RecordAsyncPersistenceTelemetry(operationId, LastOperationSlot, elapsedMs, 0L, 0, 0, 1u);", rejectBody);
             StringAssert.Contains("PublishSaveCompletedForSlotName(slotIndex, slotName, operationId, elapsedMs, 0L, succeeded: false);", rejectBody);
-            StringAssert.Contains("PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Failed, 1f, 1u));", rejectBody);
+            StringAssert.Contains("PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed, 1f, 1u));", rejectBody);
 
             int requestGateIndex = requestBody.IndexOf("if (TryRejectSaveDuringRespawnReconciliation(slotIndex, resolvedOperationId, slotName))", StringComparison.Ordinal);
             int requestSignalIndex = requestBody.IndexOf("SaveRequestSignal signal = new SaveRequestSignal", StringComparison.Ordinal);
@@ -543,19 +543,19 @@ namespace Hecton8.Tests.Editor.SaveSystem
             int invalidIndex = loadBody.IndexOf("if (!TryResolveSafeSlotName(slotName, out slotName))", StringComparison.Ordinal);
             int invalidErrorIndex = loadBody.IndexOf("LastOperationError = InvalidSlotNameReason;", invalidIndex, StringComparison.Ordinal);
             int invalidEventIndex = loadBody.IndexOf("SaveEvents.TryRaiseLoadFailed(0u, SaveEvents.ComputeMessageHash(InvalidSlotNameReason), InvalidSlotNameReason);", invalidIndex, StringComparison.Ordinal);
-            int invalidStatusIndex = loadBody.IndexOf("PublishSaveStatus(slotIndex, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, LoadFailureStatusFlags));", invalidIndex, StringComparison.Ordinal);
+            int invalidStatusIndex = loadBody.IndexOf("PublishSaveStatus(slotIndex, operationId, SaveStatusSignal.Rejected, 0f, LoadFailureStatusFlags));", invalidIndex, StringComparison.Ordinal);
             int validatedSlotIndex = loadBody.IndexOf("slotIndex = ResolveManualSlotIndex(slotName);", invalidIndex, StringComparison.Ordinal);
             int busyIndex = loadBody.IndexOf("if (_isBusy)", validatedSlotIndex, StringComparison.Ordinal);
             int busyEventIndex = loadBody.IndexOf("SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);", busyIndex, StringComparison.Ordinal);
-            int busyStatusIndex = loadBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, LoadFailureStatusFlags));", busyIndex, StringComparison.Ordinal);
+            int busyStatusIndex = loadBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Rejected, 0f, LoadFailureStatusFlags));", busyIndex, StringComparison.Ordinal);
             int missingSaveIndex = loadBody.IndexOf("if (!SaveExists(slotName))", busyStatusIndex, StringComparison.Ordinal);
             int missingSaveEventIndex = loadBody.IndexOf("SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName), SaveEvents.ComputeMessageHash(reason), reason);", missingSaveIndex, StringComparison.Ordinal);
-            int missingSaveStatusIndex = loadBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, LoadFailureStatusFlags));", missingSaveIndex, StringComparison.Ordinal);
+            int missingSaveStatusIndex = loadBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Rejected, 0f, LoadFailureStatusFlags));", missingSaveIndex, StringComparison.Ordinal);
             int startedEventIndex = loadBody.IndexOf("SaveEvents.TryRaiseLoadStarted(SaveEvents.ComputeSlotHash(slotName));", missingSaveStatusIndex, StringComparison.Ordinal);
-            int startedStatusIndex = loadBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.InProgress, 0.08f, LoadStatusFlags));", startedEventIndex, StringComparison.Ordinal);
+            int startedStatusIndex = loadBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.InProgress, 0.08f, LoadStatusFlags));", startedEventIndex, StringComparison.Ordinal);
             int startedStageIndex = loadBody.IndexOf("ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors, 0.08f);", startedStatusIndex, StringComparison.Ordinal);
             int completedSignalIndex = loadBody.IndexOf("PublishSaveCompletedForSlotName(slotIndex, slotName, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: true);", startedStageIndex, StringComparison.Ordinal);
-            int completedStatusIndex = loadBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Completed, 1f, LoadStatusFlags));", completedSignalIndex, StringComparison.Ordinal);
+            int completedStatusIndex = loadBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Completed, 1f, LoadStatusFlags));", completedSignalIndex, StringComparison.Ordinal);
             int completedEventIndex = loadBody.IndexOf("RaiseLoadCompletedWithBackpressureRecovery(SaveEvents.ComputeSlotHash(slotName));", completedStatusIndex, StringComparison.Ordinal);
 
             Assert.GreaterOrEqual(operationIdIndex, 0);
@@ -588,10 +588,10 @@ namespace Hecton8.Tests.Editor.SaveSystem
             string saveHelper = ExtractMethodBody(source, "private static void RaiseSaveCompletedWithBackpressureRecovery(");
             string loadHelper = ExtractMethodBody(source, "private static void RaiseLoadCompletedWithBackpressureRecovery(");
 
-            int saveStatusIndex = saveBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Completed, 1f, 0u));", StringComparison.Ordinal);
+            int saveStatusIndex = saveBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Completed, 1f, 0u));", StringComparison.Ordinal);
             int saveEventIndex = saveBody.IndexOf("RaiseSaveCompletedWithBackpressureRecovery(SaveEvents.ComputeSlotHash(slotName));", saveStatusIndex, StringComparison.Ordinal);
             int saveNotifyIndex = saveBody.IndexOf("PublishSaveSynchronizedNotification(slotName);", saveEventIndex, StringComparison.Ordinal);
-            int loadStatusIndex = loadBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Completed, 1f, LoadStatusFlags));", StringComparison.Ordinal);
+            int loadStatusIndex = loadBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Completed, 1f, LoadStatusFlags));", StringComparison.Ordinal);
             int loadEventIndex = loadBody.IndexOf("RaiseLoadCompletedWithBackpressureRecovery(SaveEvents.ComputeSlotHash(slotName));", loadStatusIndex, StringComparison.Ordinal);
 
             Assert.GreaterOrEqual(saveStatusIndex, 0);
@@ -635,7 +635,7 @@ namespace Hecton8.Tests.Editor.SaveSystem
             int slotIndex = methodBody.IndexOf("LastOperationSlot = slotIndex < SaveEvents.ManualSlotCount", unavailableIndex, StringComparison.Ordinal);
             int slotNameIndex = methodBody.IndexOf("SaveEvents.ResolveManualSlotName(slotIndex)", slotIndex, StringComparison.Ordinal);
             int eventIndex = methodBody.IndexOf("SaveEvents.TryRaiseSaveFailed(ResolveSlotHash(slotIndex), SaveEvents.ComputeMessageHash(SaveServiceUnavailableReason), SaveServiceUnavailableReason);", unavailableIndex, StringComparison.Ordinal);
-            int statusIndex = methodBody.IndexOf($"PublishSaveStatus(slotIndex, new SaveStatusParams({operationIdName}, SaveStatusSignal.Rejected, 0f, 1u));", unavailableIndex, StringComparison.Ordinal);
+            int statusIndex = methodBody.IndexOf($"PublishSaveStatus(slotIndex, {operationIdName}, SaveStatusSignal.Rejected, 0f, 1u));", unavailableIndex, StringComparison.Ordinal);
             int returnIndex = methodBody.IndexOf("return", unavailableIndex, StringComparison.Ordinal);
 
             Assert.GreaterOrEqual(unavailableIndex, 0);
@@ -654,7 +654,7 @@ namespace Hecton8.Tests.Editor.SaveSystem
             int errorIndex = methodBody.IndexOf("LastOperationError = SaveServiceUnavailableReason;", unavailableIndex, StringComparison.Ordinal);
             int slotIndex = methodBody.IndexOf("LastOperationSlot = unavailableSlotName;", unavailableIndex, StringComparison.Ordinal);
             int eventIndex = methodBody.IndexOf("SaveEvents.TryRaiseSaveFailed(unavailableSlotHash, SaveEvents.ComputeMessageHash(SaveServiceUnavailableReason), SaveServiceUnavailableReason);", unavailableIndex, StringComparison.Ordinal);
-            int statusIndex = methodBody.IndexOf($"PublishSaveStatus(unavailableSlotHash, new SaveStatusParams({operationIdName}, SaveStatusSignal.Rejected, 0f, 1u));", unavailableIndex, StringComparison.Ordinal);
+            int statusIndex = methodBody.IndexOf($"PublishSaveStatus(unavailableSlotHash, {operationIdName}, SaveStatusSignal.Rejected, 0f, 1u));", unavailableIndex, StringComparison.Ordinal);
             int returnIndex = methodBody.IndexOf("return", unavailableIndex, StringComparison.Ordinal);
 
             Assert.GreaterOrEqual(unavailableIndex, 0);
@@ -673,7 +673,7 @@ namespace Hecton8.Tests.Editor.SaveSystem
             int errorIndex = methodBody.IndexOf("LastOperationError = SaveServiceUnavailableReason;", unavailableIndex, StringComparison.Ordinal);
             int slotIndex = methodBody.IndexOf("LastOperationSlot = unavailableSlotName;", unavailableIndex, StringComparison.Ordinal);
             int eventIndex = methodBody.IndexOf("SaveEvents.TryRaiseLoadFailed(unavailableSlotHash, SaveEvents.ComputeMessageHash(SaveServiceUnavailableReason), SaveServiceUnavailableReason);", unavailableIndex, StringComparison.Ordinal);
-            int statusIndex = methodBody.IndexOf("PublishSaveStatus(unavailableSlotHash, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, LoadFailureStatusFlags));", unavailableIndex, StringComparison.Ordinal);
+            int statusIndex = methodBody.IndexOf("PublishSaveStatus(unavailableSlotHash, operationId, SaveStatusSignal.Rejected, 0f, LoadFailureStatusFlags));", unavailableIndex, StringComparison.Ordinal);
             int returnIndex = methodBody.IndexOf("return;", unavailableIndex, StringComparison.Ordinal);
 
             Assert.GreaterOrEqual(unavailableIndex, 0);
@@ -695,11 +695,11 @@ namespace Hecton8.Tests.Editor.SaveSystem
             string publishCompletedForSlotName = ExtractMethodBody(source, "private static void PublishSaveCompletedForSlotName(");
 
             int validatedIndex = saveBody.IndexOf("LastOperationSlot = slotName;", StringComparison.Ordinal);
-            int busyStatusIndex = saveBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Rejected, 0f, 1u));", validatedIndex, StringComparison.Ordinal);
-            int startedStatusIndex = saveBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.InProgress, 0.05f, 0u));", validatedIndex, StringComparison.Ordinal);
+            int busyStatusIndex = saveBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Rejected, 0f, 1u));", validatedIndex, StringComparison.Ordinal);
+            int startedStatusIndex = saveBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.InProgress, 0.05f, 0u));", validatedIndex, StringComparison.Ordinal);
             int failedCompletionIndex = saveBody.IndexOf("PublishSaveCompletedForSlotName(slotIndex, slotName, operationId, totalTimer.ElapsedMilliseconds, 0L, succeeded: false);", validatedIndex, StringComparison.Ordinal);
             int successfulCompletionIndex = saveBody.IndexOf("PublishSaveCompletedForSlotName(slotIndex, slotName, operationId, totalTimer.ElapsedMilliseconds, compressedSizeBytes, succeeded: true);", validatedIndex, StringComparison.Ordinal);
-            int successfulStatusIndex = saveBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Completed, 1f, 0u));", successfulCompletionIndex, StringComparison.Ordinal);
+            int successfulStatusIndex = saveBody.IndexOf("PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Completed, 1f, 0u));", successfulCompletionIndex, StringComparison.Ordinal);
 
             Assert.GreaterOrEqual(validatedIndex, 0);
             Assert.Greater(busyStatusIndex, validatedIndex);
@@ -773,12 +773,12 @@ namespace Hecton8.Tests.Editor.SaveSystem
                 "save",
                 "Save persistence gate request failed.",
                 "SaveEvents.TryRaiseSaveFailed(SaveEvents.ComputeSlotHash(slotName)",
-                "PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Failed", requireThumbnailAfterGate: true);
+                "PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed", requireThumbnailAfterGate: true);
             AssertOperationStartupGateFailureBlock(
                 loadBody, "load",
                 "Load persistence gate request failed.",
                 "SaveEvents.TryRaiseLoadFailed(SaveEvents.ComputeSlotHash(slotName)",
-                "PublishSaveStatusForSlotName(slotIndex, slotName, new SaveStatusParams(operationId, SaveStatusSignal.Failed", requireThumbnailAfterGate: false);
+                "PublishSaveStatusForSlotName(slotIndex, slotName, operationId, SaveStatusSignal.Failed", requireThumbnailAfterGate: false);
         }
 
         private static MethodInfo GetPrivateStaticMethod(string methodName)

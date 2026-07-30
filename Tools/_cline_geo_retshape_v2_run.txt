@@ -1,0 +1,26 @@
+=== g3c56 c=56 w=0.04-0.12 j=11 ncol=3 jf=0.25
+g3c56 c=56 w=0.04-0.12 j=11 ncol=3 jf=0.25 p95_mean=0.6707 p95_max=0.7791 p95_min=0.5762 eros_mean=0.2339 eros_max=0.3058 all_run=False all_eros=True
+=== g4c56 c=56 w=0.04-0.12 j=11 ncol=4 jf=0.25
+g4c56 c=56 w=0.04-0.12 j=11 ncol=4 jf=0.25 p95_mean=0.6714 p95_max=0.7753 p95_min=0.6298 eros_mean=0.2383 eros_max=0.2565 all_run=False all_eros=True
+=== g5c56 c=56 w=0.04-0.11 j=11 ncol=5 jf=0.2
+g5c56 c=56 w=0.04-0.11 j=11 ncol=5 jf=0.2 p95_mean=0.7194 p95_max=0.9423 p95_min=0.5435 eros_mean=0.2198 eros_max=0.2540 all_run=False all_eros=True
+=== g4c64 c=64 w=0.04-0.12 j=14 ncol=4 jf=0.25
+g4c64 c=64 w=0.04-0.12 j=14 ncol=4 jf=0.25 p95_mean=0.5967 p95_max=0.7070 p95_min=0.4521 eros_mean=0.3037 eros_max=0.3355 all_run=False all_eros=True
+=== g5c64 c=64 w=0.04-0.11 j=14 ncol=5 jf=0.2
+g5c64 c=64 w=0.04-0.11 j=14 ncol=5 jf=0.2 p95_mean=0.6698 p95_max=0.8036 p95_min=0.5820 eros_mean=0.2509 eros_max=0.2874 all_run=False all_eros=True
+=== g4c72 c=72 w=0.04-0.11 j=14 ncol=4 jf=0.22
+g4c72 c=72 w=0.04-0.11 j=14 ncol=4 jf=0.22 p95_mean=0.6048 p95_max=0.6962 p95_min=0.5057 eros_mean=0.3020 eros_max=0.3244 all_run=False all_eros=True
+=== g5c72 c=72 w=0.035-0.1 j=16 ncol=5 jf=0.18
+g5c72 c=72 w=0.035-0.1 j=16 ncol=5 jf=0.18 p95_mean=0.5981 p95_max=0.6445 p95_min=0.5669 eros_mean=0.2484 eros_max=0.2594 all_run=False all_eros=True
+=== g6c72 c=72 w=0.035-0.1 j=16 ncol=6 jf=0.15
+g6c72 c=72 w=0.035-0.1 j=16 ncol=6 jf=0.15 p95_mean=0.6522 p95_max=0.6981 p95_min=0.5888 eros_mean=0.2276 eros_max=0.2579 all_run=False all_eros=True
+=== g5c80 c=80 w=0.03-0.09 j=16 ncol=5 jf=0.18
+g5c80 c=80 w=0.03-0.09 j=16 ncol=5 jf=0.18 p95_mean=0.5984 p95_max=0.6992 p95_min=0.4970 eros_mean=0.2360 eros_max=0.2859 all_run=False all_eros=True
+=== g6c80 c=80 w=0.03-0.09 j=18 ncol=6 jf=0.15
+g6c80 c=80 w=0.03-0.09 j=18 ncol=6 jf=0.15 p95_mean=0.6035 p95_max=0.6708 p95_min=0.5410 eros_mean=0.2258 eros_max=0.2524 all_run=False all_eros=True
+=== g4c60w c=60 w=0.05-0.14 j=14 ncol=4 jf=0.25
+g4c60w c=60 w=0.05-0.14 j=14 ncol=4 jf=0.25 p95_mean=0.6311 p95_max=0.8492 p95_min=0.5419 eros_mean=0.3142 eros_max=0.3704 all_run=False all_eros=True
+=== g5c68 c=68 w=0.04-0.12 j=14 ncol=5 jf=0.2
+g5c68 c=68 w=0.04-0.12 j=14 ncol=5 jf=0.2 p95_mean=0.6148 p95_max=0.6641 p95_min=0.5634 eros_mean=0.2659 eros_max=0.3276 all_run=False all_eros=True
+BEST {'label': 'g5c72', 'p95_mean': 0.598106, 'p95_max': 0.64453, 'eros_mean': 0.24836, 'eros_max': 0.2594, 'all_run_met': False, 'all_eros_met': True, 'count': 72, 'wmin': 0.035, 'wmax': 0.1, 'joints': 16, 'ncols': 5, 'jfrac': 0.18}
+wrote C:\hades\Hecton8\Tools\_cline_geo_retshape_v2_out.txt

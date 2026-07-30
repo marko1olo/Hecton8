@@ -1,0 +1,32 @@
+=== a3c48 c=48 w=0.05-0.14 j=11 ncol=3 jf=0.25 t=0.25
+a3c48 c=48 w=0.05-0.14 j=11 ncol=3 jf=0.25 t=0.25 p95_mean=0.6278 p95_max=0.6873 p95_min=0.5332 eros_mean=0.2972 eros_max=0.3296 all_run=False all_eros=True
+=== a4c48 c=48 w=0.05-0.14 j=11 ncol=4 jf=0.22 t=0.25
+a4c48 c=48 w=0.05-0.14 j=11 ncol=4 jf=0.22 t=0.25 p95_mean=0.6221 p95_max=0.7056 p95_min=0.5087 eros_mean=0.2826 eros_max=0.3249 all_run=False all_eros=True
+=== a3c56 c=56 w=0.05-0.14 j=11 ncol=3 jf=0.22 t=0.25
+a3c56 c=56 w=0.05-0.14 j=11 ncol=3 jf=0.22 t=0.25 p95_mean=0.6077 p95_max=0.6758 p95_min=0.5545 eros_mean=0.3310 eros_max=0.3627 all_run=False all_eros=True
+=== a4c56 c=56 w=0.05-0.13 j=14 ncol=4 jf=0.22 t=0.2
+a4c56 c=56 w=0.05-0.13 j=14 ncol=4 jf=0.22 t=0.2 p95_mean=0.6086 p95_max=0.7157 p95_min=0.5351 eros_mean=0.3016 eros_max=0.3207 all_run=False all_eros=True
+=== a5c56 c=56 w=0.04-0.12 j=14 ncol=5 jf=0.18 t=0.2
+a5c56 c=56 w=0.04-0.12 j=14 ncol=5 jf=0.18 t=0.2 p95_mean=0.5690 p95_max=0.6367 p95_min=0.5078 eros_mean=0.2810 eros_max=0.3286 all_run=False all_eros=True
+=== a4c64 c=64 w=0.04-0.13 j=14 ncol=4 jf=0.2 t=0.22
+a4c64 c=64 w=0.04-0.13 j=14 ncol=4 jf=0.2 t=0.22 p95_mean=0.6394 p95_max=0.7648 p95_min=0.5673 eros_mean=0.3198 eros_max=0.3486 all_run=False all_eros=True
+=== a5c64 c=64 w=0.04-0.12 j=14 ncol=5 jf=0.18 t=0.18
+a5c64 c=64 w=0.04-0.12 j=14 ncol=5 jf=0.18 t=0.18 p95_mean=0.5449 p95_max=0.6270 p95_min=0.4316 eros_mean=0.2980 eros_max=0.3611 all_run=False all_eros=True
+=== a4c68 c=68 w=0.04-0.12 j=14 ncol=4 jf=0.2 t=0.2
+a4c68 c=68 w=0.04-0.12 j=14 ncol=4 jf=0.2 t=0.2 p95_mean=0.5503 p95_max=0.5808 p95_min=0.5028 eros_mean=0.3121 eros_max=0.3593 all_run=False all_eros=True
+=== a5c68 c=68 w=0.04-0.11 j=16 ncol=5 jf=0.15 t=0.18
+a5c68 c=68 w=0.04-0.11 j=16 ncol=5 jf=0.15 t=0.18 p95_mean=0.5763 p95_max=0.6462 p95_min=0.5067 eros_mean=0.2896 eros_max=0.3389 all_run=False all_eros=True
+=== a6c72 c=72 w=0.035-0.1 j=16 ncol=6 jf=0.15 t=0.15
+a6c72 c=72 w=0.035-0.1 j=16 ncol=6 jf=0.15 t=0.15 p95_mean=0.4945 p95_max=0.5332 p95_min=0.4655 eros_mean=0.2664 eros_max=0.3088 all_run=True all_eros=True
+=== a4c60w c=60 w=0.06-0.15 j=14 ncol=4 jf=0.2 t=0.25
+a4c60w c=60 w=0.06-0.15 j=14 ncol=4 jf=0.2 t=0.25 p95_mean=0.5739 p95_max=0.7549 p95_min=0.4638 eros_mean=0.3769 eros_max=0.4121 all_run=False all_eros=True
+=== a3c64t c=64 w=0.05-0.14 j=14 ncol=3 jf=0.3 t=0.35
+a3c64t c=64 w=0.05-0.14 j=14 ncol=3 jf=0.3 t=0.35 p95_mean=0.5669 p95_max=0.7272 p95_min=0.5039 eros_mean=0.3909 eros_max=0.4269 all_run=False all_eros=True
+=== a3c72w c=72 w=0.06-0.14 j=14 ncol=3 jf=0.18 t=0.2
+a3c72w c=72 w=0.06-0.14 j=14 ncol=3 jf=0.18 t=0.2 p95_mean=0.4738 p95_max=0.5028 p95_min=0.4434 eros_mean=0.3873 eros_max=0.4082 all_run=True all_eros=True
+=== a4c80 c=80 w=0.04-0.11 j=16 ncol=4 jf=0.15 t=0.18
+a4c80 c=80 w=0.04-0.11 j=16 ncol=4 jf=0.15 t=0.18 p95_mean=0.4701 p95_max=0.5868 p95_min=0.3555 eros_mean=0.3342 eros_max=0.3827 all_run=False all_eros=True
+BEST {'label': 'a6c72', 'p95_mean': 0.494512, 'p95_max': 0.5332, 'eros_mean': 0.26636000000000004, 'eros_max': 0.3088, 'all_run_met': True, 'all_eros_met': True, 'count': 72, 'wmin': 0.035, 'wmax': 0.1, 'joints': 16, 'ncols': 6, 'jfrac': 0.15, 'tilt': 0.15}
+verifying 2048...
+ship2048 a6c72 p95_mean=0.4994 p95_max=0.5840 p95_min=0.4375 eros_mean=0.2692 eros_max=0.3088 all_run=False all_eros=True
+wrote C:\hades\Hecton8\Tools\_cline_geo_retshape_v3_out.txt
