@@ -2,7 +2,7 @@
   "schema": "hecton8.doc_structure.v1",
   "docScope": "authority_spine",
   "repoRoot": "/app",
-  "activeDocCount": 285,
+  "activeDocCount": 294,
   "allowedRootTextDocs": [
     "3DMODEL_EQUIPMENT_PROPS.md",
     "3DMODEL_FAUNA.md",
@@ -166,10 +166,12 @@
   "rootTextDocCount": 78,
   "missingRootTextDocs": [],
   "unexpectedRootTextDocs": [
-    "ANTIGRAVITY_ADDENDUM_ENFORCEMENT.md",
-    "ANTIGRAVITY_ROUND6_VERIFY.md",
-    "ANTIGRAVITY_TERRAIN_MEGABRIEF.md",
-    "pr_description.md"
+    "BACKLOG.md",
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "LICENSE.md",
+    "README.md",
+    "SECURITY.md"
   ],
   "rootTextDocPolicyPass": false,
   "duplicateHeaderFiles": [],
@@ -181,7 +183,70 @@
       ]
     }
   ],
-  "fenceIssueFiles": [],
+  "fenceIssueFiles": [
+    {
+      "path": "BUILD_PLAYTEST_ISSUES.md",
+      "issues": [
+        "line 100: fence has no language tag",
+        "line 132: fence has no language tag",
+        "line 153: fence has no language tag",
+        "line 196: fence has no language tag",
+        "line 316: fence has no language tag",
+        "line 354: fence has no language tag",
+        "line 379: fence has no language tag"
+      ]
+    },
+    {
+      "path": "Docs/ARCHITECTURE/PROJECT_REALITY_MAP_2026-07-30.md",
+      "issues": [
+        "line 128: fence has no language tag",
+        "line 161: fence has no language tag",
+        "line 209: fence has no language tag"
+      ]
+    },
+    {
+      "path": "Docs/ARCHITECTURE/TEST_ASSEMBLY_COMPILE_GATING.md",
+      "issues": [
+        "line 36: fence has no language tag",
+        "line 53: fence has no language tag",
+        "line 63: fence has no language tag",
+        "line 124: fence has no language tag",
+        "line 159: fence has no language tag",
+        "line 222: fence has no language tag",
+        "line 246: fence has no language tag",
+        "line 312: fence has no language tag",
+        "line 357: fence has no language tag",
+        "line 392: fence has no language tag",
+        "line 419: fence has no language tag"
+      ]
+    },
+    {
+      "path": "Docs/ARCHITECTURE/VAT_BRG_SCATTER_ROUTE_AUDIT.md",
+      "issues": [
+        "line 152: fence has no language tag",
+        "line 233: fence has no language tag",
+        "line 261: fence has no language tag",
+        "line 298: fence has no language tag",
+        "line 387: fence has no language tag",
+        "line 463: fence has no language tag",
+        "line 505: fence has no language tag",
+        "line 516: fence has no language tag",
+        "line 528: fence has no language tag"
+      ]
+    },
+    {
+      "path": "Docs/ARCHITECTURE/WORLD_CONTENT_SOCKET_KIND_COVERAGE.md",
+      "issues": [
+        "line 59: fence has no language tag",
+        "line 90: fence has no language tag",
+        "line 171: fence has no language tag",
+        "line 602: fence has no language tag",
+        "line 617: fence has no language tag",
+        "line 656: fence has no language tag",
+        "line 685: fence has no language tag"
+      ]
+    }
+  ],
   "encodingWithoutUtf8Sig": [
     "3DMODEL_EQUIPMENT_PROPS.md",
     "3DMODEL_FAUNA.md",
@@ -262,10 +327,19 @@
     "Docs/AGENTS_RULE_DETAIL_LEDGER.md",
     "Docs/AGENT_AUTHORITY_ROUTING.md",
     "Docs/ARCHITECTURE/COOP_MERKLE_STATE_DELTA_PROTOCOL.md",
+    "Docs/ARCHITECTURE/GENERATION_STACK_CONTRACTS.md",
+    "Docs/ARCHITECTURE/KCC_PRECISION_DRIFT_FIX_PROOF.md",
     "Docs/ARCHITECTURE/MACRO_GEOLOGY_STABLE_BASELINE.md",
+    "Docs/ARCHITECTURE/MULTI_AGENT_FILE_OWNERSHIP_PROTOCOL.md",
     "Docs/ARCHITECTURE/PREMIUM_APPROXIMATION_LEDGER.md",
+    "Docs/ARCHITECTURE/PROJECT_REALITY_MAP_2026-07-30.md",
     "Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md",
     "Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md",
+    "Docs/ARCHITECTURE/TEST_ASSEMBLY_COMPILE_GATING.md",
+    "Docs/ARCHITECTURE/THROWING_ASSERT_SETUP_TAIL_LEDGER.md",
+    "Docs/ARCHITECTURE/VAT_BRG_SCATTER_ROUTE_AUDIT.md",
+    "Docs/ARCHITECTURE/WORLD_CONTENT_SOCKET_KIND_COVERAGE.md",
+    "Docs/ARCHITECTURE/WORLD_SHIPPING_CONTENT_FILTER.md",
     "Docs/Archive/README.md",
     "Docs/DEPRECATED/README.md",
     "Docs/PROJECT_ATLAS.md",

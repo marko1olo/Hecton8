@@ -58,6 +58,7 @@ namespace Hecton8.Core.Generated
         public const uint HECTON8_Field_Atlas = 0xB5688B53u;
         public const uint HECTON8_Flora_Fauna_Overview = 0x16891E0Fu;
         public const uint HECTON8_Geology_Resources = 0x70B78F95u;
+        public const uint HECTON8_MASTER_LORE_AND_SYSTEMS_BIBLE = 0x0C3CBC9Au;
         public const uint HECTON8_Resource_Catalog = 0xFF8205B1u;
         public const uint HECTON8_Resource_Gameplay_Catalog = 0xF8F6A3CAu;
         public const uint HECTON_8 = 0x23F71563u;
