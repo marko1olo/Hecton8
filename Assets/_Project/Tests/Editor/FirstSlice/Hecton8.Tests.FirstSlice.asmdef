@@ -1,0 +1,20 @@
+{
+    "name": "Hecton8.Tests.FirstSlice",
+    "rootNamespace": "Hecton8.Tests.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Editor",
+        "Hecton8.Physics.KCC.Editor",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [ "Editor" ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [ "nunit.framework.dll" ],
+    "autoReferenced": false,
+    "defineConstraints": [ "UNITY_INCLUDE_TESTS" ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
