@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>Sirenix.OdinInspector.Modules.UnityMathematics</AssemblyName>
+    <RootNamespace>Sirenix.OdinInspector.Modules.UnityMathematics</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>Temp\CodexBuild\Sirenix.OdinInspector.Modules.UnityMathematics\</OutputPath>
+    <DefineConstants>TRACE;UNITY_6000;UNITY_6000_4_OR_NEWER;UNITY_6000_4_1;UNITY_STANDALONE;UNITY_STANDALONE_WIN;ENABLE_UNITY_COLLECTIONS_CHECKS;UNITY_ADDRESSABLES_EXIST;UNITY_EDITOR;UNITY_EDITOR_WIN</DefineConstants>
+    <UnityEditorManagedDir>C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Data\Managed</UnityEditorManagedDir>
+    <UnityEngineManagedDir>$(UnityEditorManagedDir)\UnityEngine</UnityEngineManagedDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Assets\Plugins\Sirenix\Odin Inspector\Modules\Unity.Mathematics\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="$(UnityEditorManagedDir)\*.dll" Private="false" />
+    <Reference Include="$(UnityEngineManagedDir)\*.dll" Private="false" />
+    <Reference Include="Library\ScriptAssemblies\*.dll" Exclude="Library\ScriptAssemblies\AmplifyImpostors.Editor.dll;Library\ScriptAssemblies\AmplifyImpostors.Runtime.dll;Library\ScriptAssemblies\Assembly-CSharp.dll;Library\ScriptAssemblies\Assembly-CSharp-Editor.dll;Library\ScriptAssemblies\Assembly-CSharp-Editor-firstpass.dll;Library\ScriptAssemblies\Assembly-CSharp-firstpass.dll;Library\ScriptAssemblies\BakeryEditorAssembly.dll;Library\ScriptAssemblies\BakeryRuntimeAssembly.dll;Library\ScriptAssemblies\Crest.dll;Library\ScriptAssemblies\Crest.Helpers.Editor.dll;Library\ScriptAssemblies\Den.Tools.dll;Library\ScriptAssemblies\Den.Tools.Editor.dll;Library\ScriptAssemblies\GPUInstancer.dll;Library\ScriptAssemblies\GPUInstancer.Editor.dll;Library\ScriptAssemblies\Hecton8.Bootstrap.Contracts.dll;Library\ScriptAssemblies\Hecton8.Core.dll;Library\ScriptAssemblies\Hecton8.Core.Contracts.dll;Library\ScriptAssemblies\Hecton8.Editor.dll;Library\ScriptAssemblies\Hecton8.Input.Generated.dll;Library\ScriptAssemblies\Hecton8.World.Contracts.dll;Library\ScriptAssemblies\Hecton8.World.Dots.dll;Library\ScriptAssemblies\JBooth.MicroSplat.Core.dll;Library\ScriptAssemblies\JBooth.MicroSplat.Core.Editor.dll;Library\ScriptAssemblies\Lofelt.NiceVibrations.dll;Library\ScriptAssemblies\Lofelt.NiceVibrations.Editor.dll;Library\ScriptAssemblies\MapMagic.dll;Library\ScriptAssemblies\MapMagic.Editor.dll;Library\ScriptAssemblies\MapMagic.MicroSplat.dll;Library\ScriptAssemblies\MapMagic.MicroSplat.Editor.dll;Library\ScriptAssemblies\MapMagic.Settings.dll;Library\ScriptAssemblies\MeshBakerCore.dll;Library\ScriptAssemblies\MeshBakerEditor.dll;Library\ScriptAssemblies\MoreMountains.Feedbacks.dll;Library\ScriptAssemblies\MoreMountains.Feedbacks.Authorizations.dll;Library\ScriptAssemblies\MoreMountains.Feedbacks.Cinemachine.dll;Library\ScriptAssemblies\MoreMountains.Feedbacks.Editor.dll;Library\ScriptAssemblies\MoreMountains.Feedbacks.HDRP.dll;Library\ScriptAssemblies\MoreMountains.Feedbacks.MMTools.dll;Library\ScriptAssemblies\MoreMountains.Feedbacks.NiceVibrations.dll;Library\ScriptAssemblies\MoreMountains.Feedbacks.PostProcessing.dll;Library\ScriptAssemblies\MoreMountains.Feedbacks.TextMeshPro.dll;Library\ScriptAssemblies\MoreMountains.Feedbacks.URP.dll;Library\ScriptAssemblies\MoreMountains.Tools.dll;Library\ScriptAssemblies\MoreMountains.Tools.Editor.dll;Library\ScriptAssemblies\ShapesEditor.dll;Library\ScriptAssemblies\ShapesRuntime.dll;Library\ScriptAssemblies\Sirenix.OdinInspector.Modules.UnityMathematics.dll;Library\ScriptAssemblies\Technie.PhysicsCreator.Updater.dll;Library\ScriptAssemblies\TechniePhysicsCreator.dll;Library\ScriptAssemblies\Tools\DataMonolithBakeCli\DataMonolithBakeCli.dll;Library\ScriptAssemblies\Unity.RenderPipelines.Core.Editor.dll;Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Editor.dll;Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Runtime.dll;Library\ScriptAssemblies\Unity.ShaderGraph.Editor.dll;Library\ScriptAssemblies\VolumetricLightBeam.dll;Library\ScriptAssemblies\VolumetricLightBeam.Editor.dll" Private="false" />
+    <Reference Include="Library\PackageCache\**\*.dll" Private="false" />
+    <Reference Include="Assets\Plugins\**\*.dll" Private="false" />
+  </ItemGroup>
+</Project>

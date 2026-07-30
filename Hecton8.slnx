@@ -3,9 +3,7 @@
   <Project Path="Hecton8.Core.csproj" />
   <Project Path="Hecton8.Core.Contracts.csproj" />
   <Project Path="MoreMountains.Feedbacks.csproj" />
-  <Project Path="Unity.RenderPipelines.Universal.Editor.csproj" />
   <Project Path="Assembly-CSharp-Editor-firstpass.csproj" />
-  <Project Path="Unity.RenderPipelines.Core.Editor.csproj" />
   <Project Path="ShapesRuntime.csproj" />
   <Project Path="Crest.csproj" />
   <Project Path="MoreMountains.Tools.csproj" />
@@ -15,7 +13,6 @@
   <Project Path="VolumetricLightBeam.csproj" />
   <Project Path="ShapesEditor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
-  <Project Path="Unity.RenderPipelines.Universal.Runtime.csproj" />
   <Project Path="MoreMountains.Feedbacks.PostProcessing.csproj" />
   <Project Path="VolumetricLightBeam.Editor.csproj" />
   <Project Path="MoreMountains.Feedbacks.MMTools.csproj" />
@@ -26,7 +23,6 @@
   <Project Path="MeshBakerEditor.csproj" />
   <Project Path="MoreMountains.Feedbacks.TextMeshPro.csproj" />
   <Project Path="Assembly-CSharp-firstpass.csproj" />
-  <Project Path="BakeryEditorAssembly.csproj" />
   <Project Path="MoreMountains.Feedbacks.HDRP.csproj" />
   <Project Path="MoreMountains.Feedbacks.URP.csproj" />
   <Project Path="Den.Tools.csproj" />
@@ -51,8 +47,6 @@
   <Project Path="Hecton8.Bootstrap.Contracts.csproj" />
   <Project Path="MapMagic.Settings.csproj" />
   <Project Path="MapMagic.MicroSplat.Editor.csproj" />
-  <Project Path="Hecton8.World.Dots.csproj" />
   <Project Path="Hecton8.Input.Generated.csproj" />
   <Project Path="MapMagic.MicroSplat.csproj" />
-  <Project Path="Tools\DataMonolithBakeCli\DataMonolithBakeCli.csproj" />
 </Solution>

@@ -1,0 +1,259 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>Assembly-CSharp</AssemblyName>
+    <RootNamespace>Assembly-CSharp</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>Temp\CodexBuild\Assembly-CSharp\</OutputPath>
+    <DefineConstants>TRACE;UNITY_6000;UNITY_6000_4_OR_NEWER;UNITY_6000_4_1;UNITY_STANDALONE;UNITY_STANDALONE_WIN;ENABLE_UNITY_COLLECTIONS_CHECKS;UNITY_ADDRESSABLES_EXIST</DefineConstants>
+    <UnityEditorManagedDir>C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Data\Managed</UnityEditorManagedDir>
+    <UnityEngineManagedDir>$(UnityEditorManagedDir)\UnityEngine</UnityEngineManagedDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Assets\**\*.cs" />
+    <Compile Remove="Assets\**\Editor\**\*.cs" />
+    <Compile Remove="Assets\Plugins\**\*.cs" />
+    <Compile Remove="Assets\Standard Assets\**\*.cs" />
+    <Compile Remove="Assets\Pro Standard Assets\**\*.cs" />
+    <Compile Remove="Assets\AmplifyImpostors\Plugins\Editor\**\*.cs" />
+    <Compile Remove="Assets\AmplifyImpostors\Plugins\Scripts\**\*.cs" />
+    <Compile Remove="Assets\Bakery\**\*.cs" />
+    <Compile Remove="Assets\Candice AI for Games\Scripts\**\*.cs" />
+    <Compile Remove="Assets\Candice AI for Games\Scripts\Editor\**\*.cs" />
+    <Compile Remove="Assets\Crest\Crest\Scripts\**\*.cs" />
+    <Compile Remove="Assets\Crest\Crest\Scripts\Editor\**\*.cs" />
+    <Compile Remove="Assets\Crest\Crest\Tests\Editor\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMFeedbacks\Authorizations\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMFeedbacks\Editor\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMFeedbacks\MMFeedbacks\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMFeedbacks\MMFeedbacksForThirdParty\Cinemachine\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMFeedbacks\MMFeedbacksForThirdParty\HDRP\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMFeedbacks\MMFeedbacksForThirdParty\MMTools\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMFeedbacks\MMFeedbacksForThirdParty\NiceVibrations\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMFeedbacks\MMFeedbacksForThirdParty\PostProcessing\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMFeedbacks\MMFeedbacksForThirdParty\TextMeshPro\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMFeedbacks\MMFeedbacksForThirdParty\URP\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMTools\Editor\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMTools\Editor\MMMaintenance\Tests\**\*.cs" />
+    <Compile Remove="Assets\Feel\MMTools\Tools\**\*.cs" />
+    <Compile Remove="Assets\Feel\NiceVibrations\**\*.cs" />
+    <Compile Remove="Assets\Feel\NiceVibrations\Scripts\Editor\**\*.cs" />
+    <Compile Remove="Assets\GPUInstancer\**\*.cs" />
+    <Compile Remove="Assets\GPUInstancer\Scripts\Editor\**\*.cs" />
+    <Compile Remove="Assets\MapMagic\Compatibility\MicroSplat\**\*.cs" />
+    <Compile Remove="Assets\MapMagic\Compatibility\MicroSplat\Editor\**\*.cs" />
+    <Compile Remove="Assets\MapMagic\Core\**\*.cs" />
+    <Compile Remove="Assets\MapMagic\Core\Editor\**\*.cs" />
+    <Compile Remove="Assets\MapMagic\Core\Plugins\**\*.cs" />
+    <Compile Remove="Assets\MapMagic\Tools\**\*.cs" />
+    <Compile Remove="Assets\MapMagic\Tools\Editor\**\*.cs" />
+    <Compile Remove="Assets\MeshBaker\Editor\**\*.cs" />
+    <Compile Remove="Assets\MeshBaker\scripts\**\*.cs" />
+    <Compile Remove="Assets\Plugins\Sirenix\Odin Inspector\Modules\Unity.Addressables\**\*.cs" />
+    <Compile Remove="Assets\Plugins\Sirenix\Odin Inspector\Modules\Unity.Mathematics\**\*.cs" />
+    <Compile Remove="Assets\Shapes\Scripts\Editor\**\*.cs" />
+    <Compile Remove="Assets\Shapes\Scripts\Runtime\**\*.cs" />
+    <Compile Remove="Assets\Technie\PhysicsCreator\Scripts\**\*.cs" />
+    <Compile Remove="Assets\Technie\PhysicsCreator\Scripts\QHull\Tests\**\*.cs" />
+    <Compile Remove="Assets\Technie\PhysicsCreator\Updater\**\*.cs" />
+    <Compile Remove="Assets\VolumetricLightBeam\Editor\**\*.cs" />
+    <Compile Remove="Assets\VolumetricLightBeam\Scripts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Editor\Generators\Fauna\**\*.cs" />
+    <Compile Remove="Assets\_Project\Editor\Generators\Geology\**\*.cs" />
+    <Compile Remove="Assets\_Project\Editor\Generators\World\**\*.cs" />
+    <Compile Remove="Assets\_Project\Input\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\AI\Ambient\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\AI\Cognition\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\AI\Cognition\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\AI\Foveated\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\AI\Pathfinding\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\AI\Pathfinding\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Animation\FaunaProcedural\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Animation\FaunaProcedural\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Animation\FaunaProcedural\Tests\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Atmosphere\StormPropagation\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Atmosphere\StormPropagation\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Audio\Echolocation\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Audio\Echolocation\Tests\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Audio\Prologue\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Audio\Synthesis\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Audio\Synthesis\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Audio\Virtualization\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Cartography\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Construction\Tests\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\BootstrapContracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Bridge\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Bucketing\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Content\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Database\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Hardware\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Memory\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Memory\Defrag\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Memory\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Persistence\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Persistence\Paging\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Scheduling\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Tests\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Core\Time\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Dev\SpaceEngine098\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\DataMonolith\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\FloraAmbientSway\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\GeographySanity\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\GeologyForge\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\HydraulicErosionForge\Shinobu242\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\InventoryRouting\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\NutrientDrift\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\OfflineGeometryBaker\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\OfflineGeometryBaker\Shinobu213\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\ProceduralGen\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\SaveSystem\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Editor\TextureChannelPacker\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Environment\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Environment\Fluids\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Environment\Fluids\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Gameplay\Loot\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Gameplay\Loot\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Gameplay\Mining\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Gameplay\Mining\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Global\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Global\FutureSeams\Authoring\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Global\FutureSeams\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Global\MockDomain\Authoring\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Global\MockDomain\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Global\MockDomain\Runtime\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Graphics\Culling\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Graphics\Culling\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Graphics\Materials\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Graphics\Materials\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Graphics\Scalability\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Graphics\Scalability\Tests\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Habitat\Deformation\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Habitat\Deformation\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Habitat\Deformation\Editor\DamageBake\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Habitat\Deformation\Runtime\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Input\Determinism\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Inventory\Corrosion\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Inventory\Tests\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Lighting\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Lighting\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Logistics\Grid\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Narrative\Camera\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Narrative\Campaign\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Narrative\Prologue\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Optimization\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Physics\Buoyancy\AsyncReadback\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Physics\Buoyancy\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Physics\CCD\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Physics\Cable132\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Physics\Determinism\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Physics\KCC\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Physics\Vehicles\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Physiology\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Physiology\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Plugins\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Plugins\Crest\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Plugins\Crest\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Power\BatteryChargerLogistics\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Power\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Power\Generators\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Power\Generators\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Prologue\Space\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Prologue\VFX\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\PureLogic\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\PureLogic\Tests\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\PureLogic\Tests\CandiceGOAP\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\QA\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\QA\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\QA\Headless\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\QA\Headless\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Quest\Tests\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Rendering\BilateralDrs\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Rendering\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Rendering\OceanSinglePass\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Rendering\WaterOptics\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Rendering\WaterOptics\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\SaveSystem\Tests\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Tests\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Thermodynamics\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Tools\Scanner\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Tools\ToolKinematics\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Tools\ToolKinematics\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Tools\ToolKinematics\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\UI\Diegetic\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\UI\Diegetic\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\UI\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\UI\Localization\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\UI\Navigation\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\UI\TerminalOS\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\UI\Tools\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\UI\VR\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\UI\VR\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\VFX\Bioluminescence\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\VFX\Bioluminescence\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\VFX\Debris\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\VFX\JacobianFoam\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\VFX\JacobianFoam\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\VFX\Materials\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\VFX\Parasites\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\VFX\Parasites\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\VFX\PlasmaBeam\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\VFX\PlasmaBeam\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\VFX\Sonar\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Vehicles\Physics\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\Vehicles\VFX\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\BiomeWeightMapBaker\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\BiotaDensityMapBaker\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\Contracts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\FloraAmbientSway\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\OfflineGeometry\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\OfflineHadalArchBaker\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\OfflineHadalArchBaker\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\OfflineHadalTrenchBaker\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\OfflineWreckageBaker\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\OfflineWreckageBaker\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\Outposts\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\ProceduralCoral\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\ProceduralCoral\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\ProceduralWreckage\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\ProceduralWreckage\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\Resources\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\Resources\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\SeedShipAnomaly\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\SeedShipAnomaly\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\ShinobuBiomimetic\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\ShinobuBiomimetic\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\SpaceEngine098\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\StaticCaveSdfBaker\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\StaticCaveSdfBaker\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\Streaming\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\VoxelSurfaceNets\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\VoxelSurfaceNets\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\**\*.cs" />
+    <Compile Remove="Assets\_Project\Scripts\World\VoxelTerrainSeamBinder\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Tests\**\*.cs" />
+    <Compile Remove="Assets\_Project\Tests\Editor\**\*.cs" />
+    <Compile Remove="Assets\_Project\Tests\Editor\Animation\**\*.cs" />
+    <Compile Remove="Assets\_Project\Tests\Editor\FirstSlice\**\*.cs" />
+    <Compile Remove="Assets\_Project\Tests\Editor\SaveSystem\**\*.cs" />
+    <Compile Remove="Assets\_Project\Tests\PlayMode\**\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="$(UnityEditorManagedDir)\*.dll" Private="false" />
+    <Reference Include="$(UnityEngineManagedDir)\*.dll" Private="false" />
+    <Reference Include="Library\ScriptAssemblies\*.dll" Exclude="Library\ScriptAssemblies\Assembly-CSharp.dll" Private="false" />
+    <Reference Include="Library\PackageCache\**\*.dll" Private="false" />
+    <Reference Include="Assets\Plugins\**\*.dll" Private="false" />
+  </ItemGroup>
+</Project>
