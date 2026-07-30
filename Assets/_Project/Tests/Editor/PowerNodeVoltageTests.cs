@@ -148,4 +148,26 @@ public sealed class PowerNodeVoltageTests
         int newRevision = (int)revisionField.GetValue(_powerNode);
         Assert.Greater(newRevision, initialRevision);
     }
+
+    [Test]
+    public void OnPowerStatusChanged_True_SetsHasPowerAndUpdatesVoltage()
+    {
+        _powerNode.OnVoltageChanged(0.1f); // Reset state first
+
+        _powerNode.OnPowerStatusChanged(true);
+
+        Assert.IsTrue(_powerNode.HasPower);
+        Assert.GreaterOrEqual(_powerNode.Voltage01, 0.2f);
+    }
+
+    [Test]
+    public void OnPowerStatusChanged_False_SetsHasPowerAndUpdatesVoltage()
+    {
+        _powerNode.OnVoltageChanged(0.5f); // Reset state first
+
+        _powerNode.OnPowerStatusChanged(false);
+
+        Assert.IsFalse(_powerNode.HasPower);
+        Assert.LessOrEqual(_powerNode.Voltage01, 0.199f);
+    }
 }
