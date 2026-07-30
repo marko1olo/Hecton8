@@ -123,6 +123,16 @@ namespace Unity.Collections
             }
         }
 
+        public static Unity.Mathematics.uint2 Hash64(byte* input, int length)
+        {
+            return new Unity.Mathematics.uint2(0, 0); // Stub implementation
+        }
+
+        private static void DefaultHashLongInternalLoop(ulong* acc, byte* input, byte* dest, long length, byte* secret, int isHash64)
+        {
+            // Stub implementation
+        }
+
         private static void Avx2HashLongInternalLoop(
             ulong* acc,
             byte* input,
