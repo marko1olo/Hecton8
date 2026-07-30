@@ -105,28 +105,45 @@ def main():
         except OSError:
             pass
 
+    # --- build inverted GUID index ---
+    # text files: one regex pass extracts all referenced GUIDs
+    # binary files (4 scenes): per-known-GUID bytes search (small N)
+    GUID_BYTES_RE = re.compile(rb"guid:\s*([a-f0-9]{32})")
+    type_guids = {guid for _, (_, guid, _, _) in types.items() if guid}
+    swapped_to_guid = {swapped_bytes(g): g for g in type_guids}
+
+    guid_to_files: dict[str, list[str]] = {}
+    for hrel, blob in haystacks:
+        if blob[:6] == b'%YAML ':
+            for m in GUID_BYTES_RE.finditer(blob):
+                g = m.group(1).decode()
+                if g in type_guids:
+                    lst = guid_to_files.setdefault(g, [])
+                    if len(lst) < 3:
+                        lst.append(hrel)
+        else:
+            for sb, g in swapped_to_guid.items():
+                if sb in blob:
+                    lst = guid_to_files.setdefault(g, [])
+                    if hrel not in lst and len(lst) < 3:
+                        lst.append(hrel)
+
+    # --- build inverted construction index ---
+    CTOR_RE = re.compile(
+        r'(?:AddComponent|GetComponent(?:InChildren)?|FindObjectOfType'
+        r'|FindAnyObjectByType|FindFirstObjectByType)<(\w+)>'
+        r'|RequireComponent\(typeof\((\w+)\)\)'
+    )
+    type_to_ctors: dict[str, set[str]] = {}
+    for crel, ctext in code:
+        for m in CTOR_RE.finditer(ctext):
+            tname = m.group(1) or m.group(2)
+            type_to_ctors.setdefault(tname, set()).add(crel)
+
     rows = []
     for cname, (rel, guid, loc, is_editor) in types.items():
-        bound = []
-        if guid:
-            gb = guid.encode()
-            sb = swapped_bytes(guid)
-            for hrel, blob in haystacks:
-                if gb in blob or sb in blob:
-                    bound.append(hrel)
-                    if len(bound) >= 3:
-                        break
-        # construction sites, excluding the declaring file itself
-        ctors = []
-        pats = (f"AddComponent<{cname}>", f"GetComponent<{cname}>",
-                f"GetComponentInChildren<{cname}>", f"FindObjectOfType<{cname}>",
-                f"FindAnyObjectByType<{cname}>", f"FindFirstObjectByType<{cname}>",
-                f"RequireComponent(typeof({cname}))")
-        for crel, ctext in code:
-            if crel == rel:
-                continue
-            if any(p in ctext for p in pats):
-                ctors.append(crel)
+        bound = guid_to_files.get(guid, []) if guid else []
+        ctors = [c for c in type_to_ctors.get(cname, set()) if c != rel]
         rows.append((cname, rel, guid, loc, is_editor, bound, ctors))
 
     # dead = no binding, no construction site anywhere
