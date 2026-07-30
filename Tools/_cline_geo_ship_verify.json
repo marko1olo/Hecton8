@@ -1,0 +1,86 @@
+{
+  "res": 2048,
+  "seeds": [
+    0,
+    1,
+    2,
+    7,
+    13
+  ],
+  "p95_max": 0.45898,
+  "p95_min": 0.33154,
+  "eros_max": 0.39667,
+  "eros_min": 0.34173,
+  "all_run": true,
+  "all_eros": true,
+  "pass": true,
+  "rows": [
+    {
+      "seed": 0,
+      "res": 2048,
+      "p95": 0.33154,
+      "eros": 0.37026,
+      "run_ok": true,
+      "eros_ok": true,
+      "runBudgetMet": true,
+      "erosionalCoverageMet": true,
+      "seconds": 190.98
+    },
+    {
+      "seed": 1,
+      "res": 2048,
+      "p95": 0.45898,
+      "eros": 0.34275,
+      "run_ok": true,
+      "eros_ok": true,
+      "runBudgetMet": true,
+      "erosionalCoverageMet": true,
+      "seconds": 48.36
+    },
+    {
+      "seed": 2,
+      "res": 2048,
+      "p95": 0.42485,
+      "eros": 0.34173,
+      "run_ok": true,
+      "eros_ok": true,
+      "runBudgetMet": true,
+      "erosionalCoverageMet": true,
+      "seconds": 45.14
+    },
+    {
+      "seed": 7,
+      "res": 2048,
+      "p95": 0.36848,
+      "eros": 0.37303,
+      "run_ok": true,
+      "eros_ok": true,
+      "runBudgetMet": true,
+      "erosionalCoverageMet": true,
+      "seconds": 41.72
+    },
+    {
+      "seed": 13,
+      "res": 2048,
+      "p95": 0.39307,
+      "eros": 0.39667,
+      "run_ok": true,
+      "eros_ok": true,
+      "runBudgetMet": true,
+      "erosionalCoverageMet": true,
+      "seconds": 40.34
+    }
+  ],
+  "knobs": {
+    "SPALL_SCAR_COUNT": 96,
+    "SPALL_WIDTH_MIN_FRACTION": 0.045,
+    "SPALL_WIDTH_MAX_FRACTION": 0.11,
+    "JOINT_TRACE_COUNT": 18,
+    "SPALL_ABS_NCOL": 6,
+    "SPALL_ABS_JOINT_FRAC": 0.08,
+    "SPALL_ABS_TILT_BLEND": 0.1,
+    "SPALL_ABS_CENTRE_JITTER": 0.08,
+    "SPALL_ABS_FORCE_GRID": false,
+    "SPALL_ABS_PHASE_SCALE": 0.3
+  }
+}
