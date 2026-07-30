@@ -49,6 +49,7 @@ namespace Hecton8.Tests.PlayMode
         [Test]
         public void Warmup_WithNullPrefab_DoesNotThrow()
         {
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Error, "[ObjectPoolManager] Warmup: prefab is null!");
             Assert.DoesNotThrow(() =>
             {
                 _manager.Warmup((GameObject)null, 5);

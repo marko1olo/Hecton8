@@ -55,10 +55,11 @@ namespace Hecton8.Tests.Core
         public void Warmup_NullPrefab_DoesNothing()
         {
             // Act
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Error, "[ObjectPoolManager] Warmup: prefab is null!");
             _poolManager.Warmup((GameObject)null, 5);
 
             // Assert
-            // No exception should be thrown
+            // LogAssert expects the error and no exception should be thrown
         }
 
         [Test]

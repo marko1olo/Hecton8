@@ -44,6 +44,8 @@ namespace Hecton8.Tests.Editor
         public void Warmup_NullPrefab_DoesNothing()
         {
             _manager.InitializeService();
+
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Error, "[ObjectPoolManager] Warmup: prefab is null!");
             _manager.Warmup((GameObject)null, 5);
         }
 
