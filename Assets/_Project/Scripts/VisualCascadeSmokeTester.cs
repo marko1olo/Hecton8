@@ -30,7 +30,6 @@ namespace Hecton8.Dev
 
         [Header("Execution")]
         [SerializeField] private bool runOnStart = false;
-        [SerializeField] private bool verboseLogging = false;
 
 #pragma warning disable CS0414
         [Header("Debug")]
@@ -87,7 +86,6 @@ namespace Hecton8.Dev
                 return Fail("cascade-feature-vram-budget");
 
             _debugLastPass = true;
-            LogPass(totalBytes, causticsBytes, biolumBytes, exposureBytes);
             return true;
         }
 
@@ -134,21 +132,6 @@ namespace Hecton8.Dev
             Hecton8.Core.H8Debug.LogError(_reportBuilder.ToString(), this);
 #endif
             return false;
-        }
-
-        private void LogPass(long totalBytes, long causticsBytes, long biolumBytes, long exposureBytes)
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (!verboseLogging)
-                return;
-
-            _reportBuilder.Clear();
-            _reportBuilder.Append("[VisualCascadeSmoke] PASS estimated=").Append(BytesToMegabytes(totalBytes).ToString("0.00", CultureInfo.InvariantCulture)).Append("MB")
-                .Append(" caustics=").Append((causticsBytes / (float)BytesPerKilobyte).ToString("0.00", CultureInfo.InvariantCulture)).Append("KB")
-                .Append(" biolum=").Append(BytesToMegabytes(biolumBytes).ToString("0.00", CultureInfo.InvariantCulture)).Append("MB")
-                .Append(" exposure=").Append((exposureBytes / (float)BytesPerKilobyte).ToString("0.00", CultureInfo.InvariantCulture)).Append("KB");
-            Hecton8.Core.H8Debug.Log(_reportBuilder.ToString(), this);
-#endif
         }
 
         private static float BytesToMegabytes(long bytes)
