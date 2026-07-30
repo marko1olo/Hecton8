@@ -124,6 +124,11 @@ namespace Hecton8.QA.Headless
         private double _simulatedSeconds;
         private double _dayAccumulatorSeconds;
         private double _startupTime;
+        // Wall clock for ecology-ready budget. Armed only after lanes are live AND
+        // BootstrapState.IsGameReady (or bootstrap presence cleared). Measuring from BeginStartup
+        // falsely burned the entire 180s budget during dependency init before GameReady opened
+        // dispatcher FrostTick — p0_gameready 2026-07-30 BOOTSTRAP_TIMEOUT at short-circuit.
+        private double _ecologyWaitStartRealtime;
         private float _daySeconds = DefaultDaySeconds;
         private float _startupTimeoutSeconds = DefaultStartupTimeoutSeconds;
         private int _targetDays = DefaultTargetDays;
@@ -247,19 +252,24 @@ namespace Hecton8.QA.Headless
             if (_finished)
                 return;
 
-            // Wall-clock ecology/bootstrap timeout must NOT depend on ColdTick.
-            // ColdTick only fires after lanes are registered AND dispatcher cadence
-            // is unlocked. p0_dispfix (2026-07-30) proved lanes registered then
-            // BATCH_TIMEOUT with zero BOOTSTRAP_TIMEOUT — ticks were starved
-            // (Player LateFrame gated on !IsGameReady; possible origin-shift lock).
-            // Poll here so a stall always produces a named FailAndQuit instead of
-            // letting the batch runner win with BATCH_TIMEOUT.
-            if (_started &&
-                !_ecologyReady &&
-                Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+            // Wall-clock ecology timeout must NOT depend on ColdTick (ticks can starve).
+            // CRITICAL: budget starts at GameReady/bootstrap-exit, NOT BeginStartup.
+            // p0_gameready (2026-07-30): _startupTime armed at runner install; bootstrap
+            // dependency chain burned ~180s; short-circuit PublishGameReady then immediate
+            // BOOTSTRAP_TIMEOUT with zero post-GameReady FrostTick budget.
+            if (_started && !_ecologyReady)
             {
-                FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
-                return;
+                TryArmEcologyWaitClock();
+                // Keep FO scene-rebase barrier draining while we wait — dispatcher early-returns
+                // all Frost/LateFrame while IsOriginShiftBootstrapLocked holds.
+                HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+                if (_ecologyWaitStartRealtime > 0.0 &&
+                    Time.realtimeSinceStartupAsDouble - _ecologyWaitStartRealtime > _startupTimeoutSeconds)
+                {
+                    LogEcologyBootstrapTimeoutDiagnostics();
+                    FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
+                    return;
+                }
             }
 
             if (!_awaitingDispatcher)
@@ -362,6 +372,7 @@ namespace Hecton8.QA.Headless
             if (!_started || _finished)
                 return;
 
+            TryArmEcologyWaitClock();
             TryMarkEcologyReady();
             if (!_ecologyReady)
                 return;
@@ -397,9 +408,15 @@ namespace Hecton8.QA.Headless
             if (!_started)
                 return;
 
-            if (!_ecologyReady && Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+            if (!_ecologyReady)
             {
-                FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
+                TryArmEcologyWaitClock();
+                if (_ecologyWaitStartRealtime > 0.0 &&
+                    Time.realtimeSinceStartupAsDouble - _ecologyWaitStartRealtime > _startupTimeoutSeconds)
+                {
+                    LogEcologyBootstrapTimeoutDiagnostics();
+                    FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
+                }
             }
         }
 
@@ -622,6 +639,41 @@ namespace Hecton8.QA.Headless
             Time.captureFramerate = _previousCaptureFramerate;
             Debug.unityLogger.filterLogType = _previousLogFilter;
             _runtimePolicyCaptured = false;
+        }
+
+
+        /// <summary>
+        /// Arms the ecology-ready wall clock once bootstrap has opened gameplay ticks.
+        /// Uses IsGameReady so headless short-circuit and full ActivatePlayer paths both qualify.
+        /// Does not arm during dependency init (p0_gameready burned 180s pre-GameReady).
+        /// </summary>
+        private void TryArmEcologyWaitClock()
+        {
+            if (_ecologyWaitStartRealtime > 0.0)
+                return;
+
+            // GameReady is the hard signal. HasActiveInstance==false alone is insufficient
+            // during early boot before PublishBootstrapPresence(true).
+            if (!BootstrapState.IsGameReady)
+                return;
+
+            _ecologyWaitStartRealtime = Time.realtimeSinceStartupAsDouble;
+            LogRunnerLifecycle("ecology wait clock armed (GameReady)");
+        }
+
+        private void LogEcologyBootstrapTimeoutDiagnostics()
+        {
+            IEcosystemDirectorService ecosystem = GlobalRegistry.EcosystemDirector;
+            bool ecoNull = ecosystem == null;
+            bool ecoInit = !ecoNull && ecosystem.IsInitialized;
+            bool foFlushClean = HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+            // FailAndQuit muzzles Log after ecologyReady; we are pre-ready so Log is fine.
+            LogRunnerLifecycle(
+                "BOOTSTRAP_TIMEOUT diag ecoNull=" + (ecoNull ? "1" : "0") +
+                " ecoInit=" + (ecoInit ? "1" : "0") +
+                " foFlushClean=" + (foFlushClean ? "1" : "0") +
+                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0") +
+                " hasBootstrap=" + (BootstrapState.HasActiveInstance ? "1" : "0"));
         }
 
         private void TryMarkEcologyReady()

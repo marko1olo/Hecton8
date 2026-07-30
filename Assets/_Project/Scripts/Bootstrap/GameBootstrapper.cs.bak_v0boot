@@ -5716,10 +5716,7 @@ namespace Hecton8.Bootstrap
                     ResolveBootstrapDependencyNodeName(node));
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(
-                    "[GameBootstrapper] Bootstrap dependency exception. node=" +
-                    ResolveBootstrapDependencyNodeName(node) +
-                    " exception=" +
-                    exception);
+                    "[GameBootstrapper] Bootstrap dependency exception.");
 #endif
                 return false;
             }
@@ -5938,17 +5935,7 @@ namespace Hecton8.Bootstrap
                     // node of their own. TryEnsureDeferredCausticsRegistered logs its own named failure, so this
                     // is a reported degrade rather than a discarded bool. Do not convert it into a false return.
                     if (!_headlessBootMode)
-                    {
-                        try
-                        {
-                            TryEnsureDeferredCausticsRegistered();
-                        }
-                        catch (Exception causticsException)
-                        {
-                            LogDeferredCausticsWiringFailure(
-                                "TryEnsureDeferredCausticsRegistered threw: " + causticsException);
-                        }
-                    }
+                        TryEnsureDeferredCausticsRegistered();
                     return IsBootstrapDependencyNodeReady(node);
                 }
 
@@ -6142,17 +6129,7 @@ namespace Hecton8.Bootstrap
                     "AbyssalDeferredCausticsRuntime resolved, but it has no public static 'EnsureRuntimeInstance' " +
                     "method. The factory was renamed or its signature changed.");
 
-            Component serviceComponent;
-            try
-            {
-                serviceComponent = ensureMethod.Invoke(null, null) as Component;
-            }
-            catch (Exception invokeException)
-            {
-                return LogDeferredCausticsWiringFailure(
-                    "AbyssalDeferredCausticsRuntime.EnsureRuntimeInstance threw: " + invokeException);
-            }
-
+            Component serviceComponent = ensureMethod.Invoke(null, null) as Component;
             if (serviceComponent == null)
                 return LogDeferredCausticsWiringFailure(
                     "AbyssalDeferredCausticsRuntime.EnsureRuntimeInstance returned no Component, so no caustics " +
@@ -6165,15 +6142,7 @@ namespace Hecton8.Bootstrap
                     "AbyssalDeferredCausticsRuntime has no public instance 'InitializeService' method, so the " +
                     "created owner was never initialized.");
 
-            try
-            {
-                initializeMethod.Invoke(serviceComponent, null);
-            }
-            catch (Exception invokeException)
-            {
-                return LogDeferredCausticsWiringFailure(
-                    "AbyssalDeferredCausticsRuntime.InitializeService threw: " + invokeException);
-            }
+            initializeMethod.Invoke(serviceComponent, null);
             if (GlobalRegistry.Caustics != null)
                 return true;
 

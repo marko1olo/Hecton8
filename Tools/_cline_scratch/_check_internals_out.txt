@@ -1,0 +1,4683 @@
+Assets\_Project\Scripts\AssemblyInfo.cs:3:[assembly: InternalsVisibleTo("Hecton8.Editor")]
+Assets\_Project\Scripts\AssemblyInfo.cs:4:[assembly: InternalsVisibleTo("Hecton8.Plugins")]
+Assets\_Project\Scripts\AssemblyInfo.cs:5:[assembly: InternalsVisibleTo("Hecton8.SaveSystem.Editor")]
+Assets\_Project\Scripts\AssemblyInfo.cs:6:[assembly: InternalsVisibleTo("Hecton8.SaveSystem.EditModeTests")]
+Assets\_Project\Tests\Editor\ForgeFbxImportCarveOutEditTests.cs:14:/// Reflection is used because <c>[assembly: InternalsVisibleTo]</c> is not granted from
+Assets\_Project\Tests\Editor\H8BlackboxUtilsExceptionTests.cs:16:// Use reflection to access internal fields because [assembly: InternalsVisibleTo] is not available
+Assets\_Project\Scripts\Core\SystemDispatcher.cs:6595:// grants InternalsVisibleTo only to Hecton8.Editor, Hecton8.Plugins, Hecton8.SaveSystem.Editor and
+Assets\_Project\Scripts\Core\SystemDispatcher.cs:6600:// list. A driver there needs its own InternalsVisibleTo entry, not a widening to public.
+Assets\_Project\Scripts\World\Contracts\AssemblyInfo.cs:3:[assembly: InternalsVisibleTo("Hecton8.Core")]
+Assets\_Project\Scripts\Editor\SaveSystem\AssemblyInfo.cs:3:[assembly: InternalsVisibleTo("Hecton8.SaveSystem.EditModeTests")]
+Assets\_Project\Scripts\Editor\TextureChannelPacker\AssemblyInfo.cs:4:[assembly: InternalsVisibleTo("Hecton8.Editor")]
+Assets\_Project\Scripts\Core\Contracts\VoxelSurfaceColorEncoding.cs:30:/// cycle), and Hecton8.Core grants InternalsVisibleTo only to the editor and save-system assemblies.
+Assets\Shapes\Scripts\Runtime\Utils\ShapesAssemblyConfig.cs:6:[assembly: InternalsVisibleTo( "ShapesEditor" )]
+Assets\MeshBaker\scripts\AssemblyInfo.cs:4:[assembly: InternalsVisibleTo("MeshBakerTests2")]
+Assets\MeshBaker\scripts\AssemblyInfo.cs:5:[assembly: InternalsVisibleTo("MeshBakerTests")]
+Assets\MapMagic\Expose\Calculator.cs:9:[assembly:System.Runtime.CompilerServices.InternalsVisibleTo("MapMagic.Tests.Editor")]
+Assets\MapMagic\Tools\Matrix\Matrix.cs:10:[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Tests")]
+Assets\MapMagic\Tools\Matrix\MatrixOps.cs:8:[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Tests")]
+Assets\MapMagic\Tools\Matrix\StackMatrix.cs:7:[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Tools.Tests.Editor")]
+Assets\MapMagic\Tools\Serializer\Serialize.cs:8:[assembly:System.Runtime.CompilerServices.InternalsVisibleTo("Tests.Editor")]
+Assets\MapMagic\Tools\Serializer\UniversalSerializer.cs:8:[assembly:System.Runtime.CompilerServices.InternalsVisibleTo("Tests.Editor")]
+Assets\MapMagic\Brush\Core\UndoBac.cs:15:[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MapMagic.Tests.Editor")]
+Assets\MapMagic\Brush\Core\UndoFull.cs:15:[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MapMagic.Tests.Editor")]
+Assets\Feel\NiceVibrations\Scripts\Components\AssemblyInfo.cs:3:[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("NiceVibrationTests")]
+Assets\Crest\Crest\Scripts\AssemblyInfo.cs:3:[assembly: InternalsVisibleTo("Crest.Tests.Editor")]
+Assets\Crest\Crest\Scripts\Constants.cs:5:[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Crest.Examples")]
+Assets\Crest\Crest\Scripts\Editor\AssemblyInfo.cs:3:[assembly: InternalsVisibleTo("Crest.Tests.Editor")]
+Assets\Crest\Crest\Scripts\Linking\HDRP\Link.cs:7:[assembly: InternalsVisibleTo("Crest")]
+ASMDEF Assets/_Project/Editor/Hecton8.Project.Editor.asmdef
+{
+    "name": "Hecton8.Project.Editor",
+    "rootNamespace": "Hecton8.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.StaticCaveSdfBaker",
+        "Hecton8.World.StaticCaveSdfBaker.Editor",
+        "Hecton8.Plugins",
+        "Hecton8.Crest.Bridge.Editor",
+        "Hecton8.Rendering.OceanSinglePass",
+        "Hecton8.Dev.SpaceEngine098",
+        "Hecton8.SpaceEngine098Terrain",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.Collections",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "Unity.Addressables.Editor",
+        "Unity.InputSystem",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Jobs",
+        "Unity.TextMeshPro"
+---
+ASMDEF Assets/_Project/Input/Hecton8.Input.Generated.asmdef
+{
+    "name": "Hecton8.Input.Generated",
+    "rootNamespace": "Hecton8",
+    "references": [
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Hecton8.Core.asmdef
+{
+    "name": "Hecton8.Core",
+    "rootNamespace": "Hecton8.Core",
+    "references": [
+        "Hecton8.World.VoxelSurfaceNets",
+        "Hecton8.PureLogic",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Database",
+        "Hecton8.Core.Scheduling",
+        "Hecton8.Core.Bucketing",
+        "Hecton8.Core.Persistence.Paging",
+        "Hecton8.Core.Memory",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Audio.Virtualization.Contracts",
+        "Hecton8.Logistics.Grid.Contracts",
+        "Hecton8.Inventory.Corrosion.Contracts",
+        "Hecton8.Tools.ToolKinematics.Contracts",
+        "Hecton8.UI.Diegetic.Contracts",
+        "Hecton8.World.Contracts",
+        "Hecton8.Habitat.Deformation.Contracts",
+        "Hecton8.Environment.Fluids",
+        "Unity.InputSystem",
+        
+---
+ASMDEF Assets/_Project/Tests/Hecton8.Building.Power.Tests.asmdef
+{
+    "name": "Hecton8.Building.Power.Tests",
+    "rootNamespace": "Hecton8.Building.Power.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Tests/Editor/Hecton8.EditModeTests.asmdef
+{
+    "name": "Hecton8.EditModeTests",
+    "rootNamespace": "Hecton8.Tests.Editor",
+    "references": [
+        "Hecton8.World.Contracts",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Gameplay",
+        "Hecton8.Gameplay.Contracts",
+        "Hecton8.Core.Scheduling",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Atmosphere.StormPropagation.Runtime",
+        "Hecton8.Rendering.OceanSinglePass",
+        "Hecton8.Rendering.WaterOptics",
+        "Hecton8.Lighting",
+        "Hecton8.SeedShipAnomaly.Runtime",
+        "Hecton8.Power.Generators",
+        "Hecton8.Power.Generators.Contracts",
+        "Hecton8.Thermodynamics",
+        "Hecton8.Editor",
+        "Hecton8.World.OfflineGeology.Editor",
+        "Hecton8.Project.Editor
+---
+ASMDEF Assets/_Project/Tests/PlayMode/Hecton8.PlayModeTests.asmdef
+{
+    "name": "Hecton8.PlayModeTests",
+    "rootNamespace": "Hecton8.Tests.PlayMode",
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Mathematics",
+        "CandiceAIforGames.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Tests/Editor/Animation/Hecton8.Tests.Animation.IK.asmdef
+{
+    "name": "Hecton8.Tests.Animation.IK",
+    "rootNamespace": "",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Tests/Editor/FirstSlice/Hecton8.Tests.FirstSlice.asmdef
+{
+    "name": "Hecton8.Tests.FirstSlice",
+    "rootNamespace": "Hecton8.Tests.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Editor",
+        "Hecton8.Physics.KCC.Editor",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [ "Editor" ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [ "nunit.framework.dll" ],
+    "autoReferenced": false,
+    "defineConstraints": [ "UNITY_INCLUDE_TESTS" ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Tests/Editor/SaveSystem/Hecton8.SaveSystem.EditModeTests.asmdef
+{
+    "name": "Hecton8.SaveSystem.EditModeTests",
+    "rootNamespace": "Hecton8.Tests.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.SaveSystem.Editor",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef
+{
+    "name": "Hecton8.Editor",
+    "rootNamespace": "Hecton8.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Scheduling",
+        "Hecton8.Core.Memory",
+        "Hecton8.Project.Editor",
+        "Hecton8.Physics.Cable132",
+        "Hecton8.Rendering.TexturePacker.Editor",
+        "Hecton8.Rendering.BilateralDrs",
+        "Hecton8.Graphics.Scalability",
+        "Hecton8.Graphics.Materials",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.World.Contracts",
+        "Hecton8.Plugins",
+        "Hecton8.Dev.SpaceEngine098",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.Collections",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "Unity.Addressables.Editor",
+        "
+---
+ASMDEF Assets/_Project/Scripts/Lighting/Hecton8.Lighting.asmdef
+{
+    "name": "Hecton8.Lighting",
+    "rootNamespace": "Hecton8.Lighting",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Physiology/Hecton8.Physiology.asmdef
+{
+    "name": "Hecton8.Physiology",
+    "rootNamespace": "Hecton8.Physiology",
+    "references": [
+        "Hecton8.PureLogic",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Plugins/Hecton8.Plugins.asmdef
+{
+    "name": "Hecton8.Plugins",
+    "rootNamespace": "Hecton8.Plugins",
+    "references": [
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.SpaceEngine098Terrain",
+        "Unity.Collections",
+        "Unity.Burst",
+        "Unity.Mathematics",
+        "Den.Tools",
+        "MapMagic"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/PureLogic/Hecton8.PureLogic.asmdef
+{
+    "name": "Hecton8.PureLogic",
+    "rootNamespace": "Hecton8.PureLogic",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
+
+---
+ASMDEF Assets/_Project/Scripts/QA/Hecton8.QA.asmdef
+{
+    "name": "Hecton8.QA",
+    "rootNamespace": "Hecton8.QA",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Profiling.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Tests/Hecton8.Tests.asmdef
+{
+    "name": "Hecton8.Tests",
+    "rootNamespace": "Hecton8.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Hecton8.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Thermodynamics/Hecton8.Thermodynamics.asmdef
+{
+    "name": "Hecton8.Thermodynamics",
+    "rootNamespace": "Hecton8.Thermodynamics",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Hecton8.Core.Contracts",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/Contracts/Hecton8.World.Contracts.asmdef
+{
+    "name": "Hecton8.World.Contracts",
+    "rootNamespace": "Hecton8.World",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/FloraAmbientSway/Hecton8.World.FloraAmbientSway.asmdef
+{
+    "name": "Hecton8.World.FloraAmbientSway",
+    "rootNamespace": "Hecton8.World.FloraAmbientSway",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/OfflineGeometry/Hecton8.World.OfflineGeometry.asmdef
+{
+    "name": "Hecton8.World.OfflineGeometry",
+    "rootNamespace": "Hecton8.World.OfflineGeometry",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/OfflineHadalArchBaker/Hecton8.World.OfflineHadalArchBaker.asmdef
+{
+    "name": "Hecton8.World.OfflineHadalArchBaker",
+    "rootNamespace": "Hecton8.World.OfflineHadalArchBaker",
+    "references": [
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Hecton8.World.OfflineHadalTrenchBaker.asmdef
+{
+    "name": "Hecton8.World.OfflineHadalTrenchBaker",
+    "rootNamespace": "Hecton8.World.OfflineHadalTrenchBaker",
+    "references": [
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/OfflineWreckageBaker/Hecton8.World.OfflineWreckageBaker.asmdef
+{
+    "name": "Hecton8.World.OfflineWreckageBaker",
+    "rootNamespace": "Hecton8.World.OfflineWreckageBaker",
+    "references": [
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/Outposts/Hecton8.World.Outposts.asmdef
+{
+    "name": "Hecton8.World.Outposts",
+    "rootNamespace": "Hecton8.World.Outposts",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Logistics.Grid.Contracts",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/ProceduralCoral/Hecton8.World.ProceduralCoral.asmdef
+{
+    "name": "Hecton8.World.ProceduralCoral",
+    "rootNamespace": "Hecton8.World.ProceduralCoral",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/ProceduralWreckage/Hecton8.World.ProceduralWreckage.asmdef
+{
+    "name": "Hecton8.World.ProceduralWreckage",
+    "rootNamespace": "Hecton8.World.ProceduralWreckage",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/Resources/Hecton8.World.Economy.asmdef
+{
+    "name": "Hecton8.World.Economy",
+    "rootNamespace": "Hecton8.World",
+    "references": [
+        "Hecton8.PureLogic",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Core.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/SeedShipAnomaly/Hecton8.SeedShipAnomaly.Runtime.asmdef
+{
+    "name": "Hecton8.SeedShipAnomaly.Runtime",
+    "rootNamespace": "Hecton8.World.SeedShipAnomaly",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/ShinobuBiomimetic/Hecton8.World.ShinobuBiomimetic.asmdef
+{
+    "name": "Hecton8.World.ShinobuBiomimetic",
+    "rootNamespace": "Hecton8.World.ShinobuBiomimetic",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/SpaceEngine098/Hecton8.SpaceEngine098Terrain.asmdef
+{
+    "name": "Hecton8.SpaceEngine098Terrain",
+    "rootNamespace": "Hecton8.World",
+    "references": [
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/StaticCaveSdfBaker/Hecton8.World.StaticCaveSdfBaker.asmdef
+{
+    "name": "Hecton8.World.StaticCaveSdfBaker",
+    "rootNamespace": "Hecton8.World.StaticCaveSdfBaker",
+    "references": [
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/Streaming/Hecton8.World.Streaming.asmdef
+{
+    "name": "Hecton8.World.Streaming",
+    "rootNamespace": "Hecton8.World",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.addressables",
+            "expression": "2.7.6",
+            "define": "UNITY_ADDRESSABLES_EXIST"
+        }
+    ],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/VoxelSurfaceNets/Hecton8.World.VoxelSurfaceNets.asmdef
+{
+    "name": "Hecton8.World.VoxelSurfaceNets",
+    "rootNamespace": "Hecton8.World.VoxelSurfaceNets",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Hecton8.World.VoxelTerrainSeamBinder.asmdef
+{
+    "name": "Hecton8.World.VoxelTerrainSeamBinder",
+    "rootNamespace": "Hecton8.World.VoxelTerrainSeamBinder",
+    "references": [
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/Hecton8.World.VoxelTerrainSeamBinder.Editor.asmdef
+{
+    "name": "Hecton8.World.VoxelTerrainSeamBinder.Editor",
+    "rootNamespace": "Hecton8.World.VoxelTerrainSeamBinder.Editor",
+    "references": [
+        "Hecton8.World.VoxelTerrainSeamBinder",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/VoxelSurfaceNets/Editor/Hecton8.World.VoxelSurfaceNets.Editor.asmdef
+{
+    "name": "Hecton8.World.VoxelSurfaceNets.Editor",
+    "rootNamespace": "Hecton8.World.VoxelSurfaceNets.Editor",
+    "references": [
+        "Hecton8.World.VoxelSurfaceNets",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/StaticCaveSdfBaker/Editor/Hecton8.World.StaticCaveSdfBaker.Editor.asmdef
+{
+    "name": "Hecton8.World.StaticCaveSdfBaker.Editor",
+    "rootNamespace": "Hecton8.World.StaticCaveSdfBaker.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.World.StaticCaveSdfBaker",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/ShinobuBiomimetic/Editor/Hecton8.World.ShinobuBiomimetic.Editor.asmdef
+{
+    "name": "Hecton8.World.ShinobuBiomimetic.Editor",
+    "rootNamespace": "Hecton8.World.ShinobuBiomimetic.Editor",
+    "references": [
+        "Hecton8.World.ShinobuBiomimetic",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/SeedShipAnomaly/Editor/Hecton8.SeedShipAnomaly.Editor.asmdef
+{
+    "name": "Hecton8.SeedShipAnomaly.Editor",
+    "rootNamespace": "Hecton8.World.SeedShipAnomaly.Editor",
+    "references": [
+        "Hecton8.SeedShipAnomaly.Runtime",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/Resources/Editor/Hecton8.World.Economy.Editor.asmdef
+{
+    "name": "Hecton8.World.Economy.Editor",
+    "rootNamespace": "Hecton8.World.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.Contracts",
+        "Hecton8.World.Economy",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/ProceduralWreckage/Editor/Hecton8.World.ProceduralWreckage.Editor.asmdef
+{
+    "name": "Hecton8.World.ProceduralWreckage.Editor",
+    "rootNamespace": "Hecton8.World.ProceduralWreckage.Editor",
+    "references": [
+        "Hecton8.World.ProceduralWreckage",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/ProceduralCoral/Editor/Hecton8.World.ProceduralCoral.Editor.asmdef
+{
+    "name": "Hecton8.World.ProceduralCoral.Editor",
+    "rootNamespace": "Hecton8.World.ProceduralCoral.Editor",
+    "references": [
+        "Hecton8.World.ProceduralCoral",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/OfflineWreckageBaker/Editor/Hecton8.World.OfflineWreckageBaker.Editor.asmdef
+{
+    "name": "Hecton8.World.OfflineWreckageBaker.Editor",
+    "rootNamespace": "Hecton8.World.OfflineWreckageBaker.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.World.OfflineWreckageBaker",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/Hecton8.World.OfflineHadalTrenchBaker.Editor.asmdef
+{
+    "name": "Hecton8.World.OfflineHadalTrenchBaker.Editor",
+    "rootNamespace": "Hecton8.World.OfflineHadalTrenchBaker.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.OfflineHadalTrenchBaker",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/OfflineHadalArchBaker/Editor/Hecton8.World.OfflineHadalArchBaker.Editor.asmdef
+{
+    "name": "Hecton8.World.OfflineHadalArchBaker.Editor",
+    "rootNamespace": "Hecton8.World.OfflineHadalArchBaker.Editor",
+    "references": [
+        "Hecton8.World.OfflineHadalArchBaker",
+        "Hecton8.Project.Editor",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/BiotaDensityMapBaker/Editor/Hecton8.World.BiotaDensityMapBaker.Editor.asmdef
+{
+    "name": "Hecton8.World.BiotaDensityMapBaker.Editor",
+    "rootNamespace": "Hecton8.World.BiotaDensityMapBaker.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/World/BiomeWeightMapBaker/Editor/Hecton8.World.BiomeWeightMapBaker.Editor.asmdef
+{
+    "name": "Hecton8.World.BiomeWeightMapBaker.Editor",
+    "rootNamespace": "Hecton8.World.BiomeWeightMapBaker.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/VFX/Bioluminescence/Hecton8.VFX.Bioluminescence.Runtime.asmdef
+{
+    "name": "Hecton8.VFX.Bioluminescence.Runtime",
+    "rootNamespace": "Hecton8.VFX.Bioluminescence",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.Profiling.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/VFX/Debris/Hecton8.VFX.Debris.asmdef
+{
+    "name": "Hecton8.VFX.Debris",
+    "rootNamespace": "Hecton8.VFX.Debris",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Tools.ToolKinematics.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/VFX/JacobianFoam/Hecton8.VFX.JacobianFoam.Runtime.asmdef
+{
+    "name": "Hecton8.VFX.JacobianFoam.Runtime",
+    "rootNamespace": "Hecton8.VFX",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/VFX/Materials/Hecton8.VFX.Materials.asmdef
+{
+    "name": "Hecton8.VFX.Materials",
+    "rootNamespace": "Hecton8.VFX.Materials",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/VFX/Parasites/Hecton8.VFX.Parasites.Runtime.asmdef
+{
+    "name": "Hecton8.VFX.Parasites.Runtime",
+    "rootNamespace": "Hecton8.VFX.Parasites",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/VFX/PlasmaBeam/Hecton8.VFX.PlasmaBeam.Runtime.asmdef
+{
+    "name": "Hecton8.VFX.PlasmaBeam.Runtime",
+    "rootNamespace": "Hecton8.VFX.PlasmaBeam",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.Profiling.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/VFX/Sonar/Hecton8.VFX.Sonar.asmdef
+{
+    "name": "Hecton8.VFX.Sonar",
+    "rootNamespace": "Hecton8.VFX.Sonar",
+    "references": [
+        "Hecton8.Core.Contracts"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/VFX/PlasmaBeam/Editor/Hecton8.VFX.PlasmaBeam.Editor.asmdef
+{
+    "name": "Hecton8.VFX.PlasmaBeam.Editor",
+    "rootNamespace": "Hecton8.VFX.PlasmaBeam.Editor",
+    "references": [
+        "Hecton8.VFX.PlasmaBeam.Runtime",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/VFX/Parasites/Editor/Hecton8.VFX.Parasites.Editor.asmdef
+{
+    "name": "Hecton8.VFX.Parasites.Editor",
+    "rootNamespace": "Hecton8.VFX.Parasites.Editor",
+    "references": [
+        "Hecton8.VFX.Parasites.Runtime",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/VFX/JacobianFoam/Editor/Hecton8.VFX.JacobianFoam.Editor.asmdef
+{
+    "name": "Hecton8.VFX.JacobianFoam.Editor",
+    "rootNamespace": "Hecton8.EditorTools",
+    "references": [
+        "Hecton8.VFX.JacobianFoam.Runtime",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/VFX/Bioluminescence/Editor/Hecton8.VFX.Bioluminescence.Editor.asmdef
+{
+    "name": "Hecton8.VFX.Bioluminescence.Editor",
+    "rootNamespace": "Hecton8.VFX.Bioluminescence.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.VFX.Bioluminescence.Runtime",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Vehicles/VFX/Hecton8.Vehicles.VFX.asmdef
+{
+  "name": "Hecton8.Vehicles.VFX",
+  "rootNamespace": "Hecton8.Vehicles.VFX",
+  "references": [
+    "Hecton8.Core.Contracts",
+    "Hecton8.Core",
+    "Hecton8.Core.Memory",
+    "Unity.Collections",
+    "Unity.Mathematics",
+    "Unity.Profiling.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Vehicles/Physics/Contracts/Hecton8.Vehicles.Physics.Contracts.asmdef
+{
+    "name": "Hecton8.Vehicles.Physics.Contracts",
+    "rootNamespace": "Hecton8.Vehicles.Physics.Contracts",
+    "references": [
+        "Unity.Mathematics",
+        "Hecton8.Core.Contracts"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/UI/Diegetic/Hecton8.UI.Diegetic.asmdef
+{
+    "name": "Hecton8.UI.Diegetic",
+    "rootNamespace": "Hecton8.UI.Diegetic",
+    "references": [
+        "Hecton8.UI.Diegetic.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/UI/Editor/Hecton8.UI.Editor.asmdef
+{
+    "name": "Hecton8.UI.Editor",
+    "rootNamespace": "Hecton8.UI.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/UI/Localization/Hecton8.UI.Localization.asmdef
+{
+    "name": "Hecton8.UI.Localization",
+    "rootNamespace": "Hecton8.UI.Localization",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/UI/Navigation/Hecton8.UI.Navigation.asmdef
+{
+    "name": "Hecton8.UI.Navigation",
+    "rootNamespace": "Hecton8.UI.Navigation",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/UI/Tools/Hecton8.UI.Tools.asmdef
+{
+    "name": "Hecton8.UI.Tools",
+    "rootNamespace": "Hecton8.UI",
+    "references": [
+        "Unity.TextMeshPro",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/UI/VR/Hecton8.UI.VR.asmdef
+{
+    "name": "Hecton8.UI.VR",
+    "rootNamespace": "Hecton8.UI.VR",
+    "references": [
+        "Hecton8.UI.VR.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Bootstrap.Contracts",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/UI/VR/Contracts/Hecton8.UI.VR.Contracts.asmdef
+{
+    "name": "Hecton8.UI.VR.Contracts",
+    "rootNamespace": "Hecton8.UI.VR.Contracts",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/UI/TerminalOS/Editor/Hecton8.UI.TerminalOS.Editor.asmdef
+{
+    "name": "Hecton8.UI.TerminalOS.Editor",
+    "rootNamespace": "Hecton8.UI.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/UI/Diegetic/Contracts/Hecton8.UI.Diegetic.Contracts.asmdef
+{
+    "name": "Hecton8.UI.Diegetic.Contracts",
+    "rootNamespace": "Hecton8.UI.Diegetic.Contracts",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Tools/ToolKinematics/Hecton8.Tools.ToolKinematics.asmdef
+{
+    "name": "Hecton8.Tools.ToolKinematics",
+    "rootNamespace": "Hecton8.Tools.ToolKinematics",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Tools.ToolKinematics.Contracts",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Tools/ToolKinematics/Contracts/Hecton8.Tools.ToolKinematics.Contracts.asmdef
+{
+    "name": "Hecton8.Tools.ToolKinematics.Contracts",
+    "rootNamespace": "Hecton8.Tools.ToolKinematics.Contracts",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Tools/ToolKinematics/Editor/Hecton8.Tools.ToolKinematics.Editor.asmdef
+{
+    "name": "Hecton8.Tools.ToolKinematics.Editor",
+    "rootNamespace": "Hecton8.Tools.ToolKinematics.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Tools.ToolKinematics",
+        "Hecton8.Tools.ToolKinematics.Contracts",
+        "Unity.Mathematics",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Tools/Scanner/Contracts/Hecton8.Tools.Scanner.Contracts.asmdef
+{
+    "name": "Hecton8.Tools.Scanner.Contracts",
+    "rootNamespace": "Hecton8.Tools.Scanner.Contracts",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/SaveSystem/Tests/Hecton8.SaveSystem.Tests.asmdef
+{
+    "name": "Hecton8.SaveSystem.Tests",
+    "rootNamespace": "Hecton8.SaveSystem.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Hecton8.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Rendering/BilateralDrs/Hecton8.Rendering.BilateralDrs.asmdef
+{
+    "name": "Hecton8.Rendering.BilateralDrs",
+    "rootNamespace": "Hecton8.Rendering",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Rendering/Editor/Hecton8.Rendering.Editor.asmdef
+{
+    "name": "Hecton8.Rendering.Editor",
+    "rootNamespace": "Hecton8.Rendering.Editor",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Rendering/OceanSinglePass/Hecton8.Rendering.OceanSinglePass.asmdef
+{
+    "name": "Hecton8.Rendering.OceanSinglePass",
+    "rootNamespace": "Hecton8.Rendering.OceanSinglePass",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Habitat.Deformation.Contracts",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Rendering/WaterOptics/Hecton8.Rendering.WaterOptics.asmdef
+{
+    "name": "Hecton8.Rendering.WaterOptics",
+    "rootNamespace": "Hecton8.Rendering.WaterOptics",
+    "references": [
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.Contracts",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Rendering/WaterOptics/Editor/Hecton8.Rendering.WaterOptics.Editor.asmdef
+{
+    "name": "Hecton8.Rendering.WaterOptics.Editor",
+    "rootNamespace": "Hecton8.Rendering.WaterOptics.Editor",
+    "references": [
+        "Hecton8.Rendering.WaterOptics",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Quest/Tests/Hecton8.Quest.Tests.asmdef
+{
+    "name": "Hecton8.Quest.Tests",
+    "rootNamespace": "Hecton8.Quest.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Hecton8.Core",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/QA/Editor/Hecton8.QA.Editor.asmdef
+{
+    "name": "Hecton8.QA.Editor",
+    "rootNamespace": "Hecton8.QA.Editor",
+    "references": [
+        "Hecton8.QA",
+        "Hecton8.Core",
+        "Unity.Mathematics",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/QA/Headless/Hecton8.QA.Headless.asmdef
+{
+    "name": "Hecton8.QA.Headless",
+    "rootNamespace": "Hecton8.QA.Headless",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/QA/Headless/Editor/Hecton8.QA.Headless.Editor.asmdef
+{
+    "name": "Hecton8.QA.Headless.Editor",
+    "rootNamespace": "Hecton8.QA.Headless.Editor",
+    "references": [
+        "Hecton8.QA.Headless",
+        "Hecton8.Core",
+        "Unity.Mathematics",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/PureLogic/Tests/Hecton8.PureLogic.Tests.asmdef
+{
+    "name":  "Hecton8.PureLogic.Tests",
+    "rootNamespace":  "Hecton8.PureLogic.Tests",
+    "references":  [
+                       "Unity.Collections",
+                       "UnityEngine.TestRunner",
+                       "UnityEditor.TestRunner",
+                       "Hecton8.PureLogic",
+                       "Hecton8.Core.Contracts",
+                       "Hecton8.Core"
+                   ],
+    "includePlatforms":  [
+                             "Editor"
+                         ],
+    "excludePlatforms":  [
+
+                         ],
+    "allowUnsafeCode":  false,
+    "overrideReferences":  true,
+    "precompiledReferences":  [
+                                  "nunit.framework.dll"
+                              ],
+    "autoReferenced":  false,
+    "defineConstraints":  [
+ 
+---
+ASMDEF Assets/_Project/Scripts/PureLogic/Tests/CandiceGOAP/CandiceGOAPStateHasStatesTests.asmdef
+{
+    "name": "CandiceGOAPStateHasStatesTests",
+    "rootNamespace": "",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "CandiceAIforGames.Runtime",
+        "CandiceAIforGames.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Prologue/Space/Hecton8.Prologue.Space.asmdef
+{
+    "name": "Hecton8.Prologue.Space",
+    "rootNamespace": "Hecton8.Prologue.Space",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Audio.Prologue",
+        "Hecton8.Narrative.Prologue",
+        "Hecton8.Prologue.VFX",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Burst",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Prologue/VFX/Hecton8.Prologue.VFX.asmdef
+{
+  "name": "Hecton8.Prologue.VFX",
+  "rootNamespace": "Hecton8.Prologue.VFX",
+  "references": [
+    "Hecton8.Core.Contracts",
+    "Hecton8.Core",
+    "Hecton8.Core.Memory",
+    "Unity.Mathematics",
+    "Unity.Collections",
+    "Unity.Profiling.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": true,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
+
+
+---
+ASMDEF Assets/_Project/Scripts/Power/BatteryChargerLogistics/Hecton8.Power.BatteryChargerLogistics.Runtime.asmdef
+{
+    "name": "Hecton8.Power.BatteryChargerLogistics.Runtime",
+    "rootNamespace": "Hecton8.Power",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Power/Editor/Hecton8.Power.BatteryChargerLogistics.Editor.asmdef
+{
+    "name": "Hecton8.Power.BatteryChargerLogistics.Editor",
+    "rootNamespace": "Hecton8.Power.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Power.BatteryChargerLogistics.Runtime",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Power/Generators/Hecton8.Power.Generators.asmdef
+{
+    "name": "Hecton8.Power.Generators",
+    "rootNamespace": "Hecton8.Power.Generators",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Power.Generators.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Power/Generators/Contracts/Hecton8.Power.Generators.Contracts.asmdef
+{
+    "name": "Hecton8.Power.Generators.Contracts",
+    "rootNamespace": "Hecton8.Power.Generators.Contracts",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Plugins/Crest/Hecton8.Crest.Bridge.asmdef
+{
+    "name": "Hecton8.Crest.Bridge",
+    "rootNamespace": "Hecton8.Crest.Bridge",
+    "references": [
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.Contracts",
+        "Hecton8.Audio.Virtualization.Contracts",
+        "Hecton8.Environment.Fluids.Contracts",
+        "Unity.Collections",
+        "Unity.Burst",
+        "Unity.Mathematics",
+        "Unity.Jobs",
+        "Den.Tools",
+        "MapMagic",
+        "Crest"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Plugins/Crest/Editor/Hecton8.Crest.Bridge.Editor.asmdef
+{
+    "name": "Hecton8.Crest.Bridge.Editor",
+    "rootNamespace": "Hecton8.Editor",
+    "references": [
+        "Hecton8.Crest.Bridge",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.Contracts",
+        "Hecton8.Rendering.BilateralDrs",
+        "Hecton8.Graphics.Scalability",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Environment.Fluids",
+        "Hecton8.Environment.Fluids.Contracts",
+        "Hecton8.Dev.SpaceEngine098",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.Collections",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "Unity.Addressables.Editor",
+        "Unity.InputSystem",
+        "Unity.XR.Management",
+        "Unity.XR.Management.Editor",
+
+---
+ASMDEF Assets/_Project/Scripts/Physiology/Editor/Hecton8.Physiology.Editor.asmdef
+{
+    "name": "Hecton8.Physiology.Editor",
+    "rootNamespace": "Hecton8.Physiology.Editor",
+    "references": [
+        "Hecton8.Physiology",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Physics/Cable132/Hecton8.Physics.Cable132.asmdef
+{
+    "name": "Hecton8.Physics.Cable132",
+    "rootNamespace": "Hecton8.Physics",
+    "references": [
+        "Hecton8.PureLogic",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Physics/CCD/Hecton8.Physics.CCD.asmdef
+{
+    "name": "Hecton8.Physics.CCD",
+    "rootNamespace": "Hecton8.Physics.CCD",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics",
+        "Unity.Burst"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Physics/Determinism/Hecton8.Physics.Determinism.asmdef
+{
+    "name": "Hecton8.Physics.Determinism",
+    "rootNamespace": "Hecton8.Physics.Determinism",
+    "references": [
+        "Hecton8.Core.Contracts"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Physics/Vehicles/Editor/Hecton8.Physics.Vehicles.Editor.asmdef
+{
+    "name": "Hecton8.Physics.Vehicles.Editor",
+    "rootNamespace": "Hecton8.Physics.Vehicles.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Mathematics",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Physics/KCC/Editor/Hecton8.Physics.KCC.Editor.asmdef
+{
+    "name": "Hecton8.Physics.KCC.Editor",
+    "rootNamespace": "Hecton8.Physics.KCC.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/Hecton8.Physics.Buoyancy.Runtime.asmdef
+{
+    "name": "Hecton8.Physics.Buoyancy.Runtime",
+    "rootNamespace": "Hecton8.Physics",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.Contracts",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Physics/Buoyancy/Editor/Hecton8.Physics.Buoyancy.Editor.asmdef
+{
+    "name": "Hecton8.Physics.Buoyancy.Editor",
+    "rootNamespace": "Hecton8.Physics.Buoyancy.Editor",
+    "references": [
+        "Hecton8.Physics.Buoyancy.Runtime",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Mathematics",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Optimization/Editor/Hecton8.Optimization.Editor.asmdef
+{
+    "name": "Hecton8.Optimization.Editor",
+    "rootNamespace": "Hecton8.Optimization.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Narrative/Camera/Hecton8.Narrative.Camera.asmdef
+{
+    "name": "Hecton8.Narrative.Camera",
+    "rootNamespace": "Hecton8.Narrative.Camera",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Narrative/Campaign/Hecton8.Narrative.Campaign.asmdef
+{
+    "name": "Hecton8.Narrative.Campaign",
+    "rootNamespace": "Hecton8.Narrative.Campaign",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Bootstrap.Contracts",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Narrative/Prologue/Hecton8.Narrative.Prologue.asmdef
+{
+    "name": "Hecton8.Narrative.Prologue",
+    "rootNamespace": "Hecton8.Narrative.Prologue",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Hecton8.Core.Contracts",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Logistics/Grid/Contracts/Hecton8.Logistics.Grid.Contracts.asmdef
+{
+    "name": "Hecton8.Logistics.Grid.Contracts",
+    "rootNamespace": "Hecton8.Logistics.Grid.Contracts",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Lighting/Editor/Hecton8.Lighting.Editor.asmdef
+{
+    "name": "Hecton8.Lighting.Editor",
+    "rootNamespace": "Hecton8.Lighting.Editor",
+    "references": [
+        "Hecton8.Lighting",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Inventory/Tests/Hecton8.Inventory.Tests.asmdef
+{
+    "name": "Hecton8.Inventory.Tests",
+    "rootNamespace": "Hecton8.Inventory.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Hecton8.Core",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Inventory/Corrosion/Contracts/Hecton8.Inventory.Corrosion.Contracts.asmdef
+{
+    "name": "Hecton8.Inventory.Corrosion.Contracts",
+    "rootNamespace": "Hecton8.Inventory.Corrosion.Contracts",
+    "references": [
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Input/Determinism/Hecton8.Input.Determinism.asmdef
+{
+    "name": "Hecton8.Input.Determinism",
+    "rootNamespace": "Hecton8.Input.Determinism",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Habitat/Deformation/Contracts/Hecton8.Habitat.Deformation.Contracts.asmdef
+{
+    "name": "Hecton8.Habitat.Deformation.Contracts",
+    "rootNamespace": "Hecton8.Habitat.Deformation.Contracts",
+    "references": [
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Habitat/Deformation/Editor/Hecton8.Habitat.Deformation.Editor.asmdef
+{
+    "name": "Hecton8.Habitat.Deformation.Editor",
+    "rootNamespace": "Hecton8.Habitat.Deformation.Editor",
+    "references": [
+        "Hecton8.Habitat.Deformation.Contracts",
+        "Hecton8.Habitat.Deformation",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Habitat/Deformation/Runtime/Hecton8.Habitat.Deformation.asmdef
+{
+    "name": "Hecton8.Habitat.Deformation",
+    "rootNamespace": "Hecton8.Habitat.Deformation",
+    "references": [
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.PureLogic",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Habitat.Deformation.Contracts",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.Profiling.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Habitat/Deformation/Editor/DamageBake/Hecton8.Habitat.Deformation.DamageBake.Editor.asmdef
+{
+    "name": "Hecton8.Habitat.Deformation.DamageBake.Editor",
+    "rootNamespace": "Hecton8.Habitat.Deformation.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Habitat.Deformation.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Graphics/Culling/Hecton8.Graphics.Culling.asmdef
+{
+    "name": "Hecton8.Graphics.Culling",
+    "rootNamespace": "Hecton8.Graphics.Culling",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Graphics/Materials/Hecton8.Graphics.Materials.asmdef
+{
+    "name": "Hecton8.Graphics.Materials",
+    "rootNamespace": "Hecton8.Graphics.Materials",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Hecton8.Habitat.Deformation.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Graphics/Scalability/Hecton8.Graphics.Scalability.asmdef
+{
+    "name": "Hecton8.Graphics.Scalability",
+    "rootNamespace": "Hecton8.Graphics.Scalability",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Bootstrap.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Graphics/Scalability/Tests/Hecton8.Graphics.Scalability.Tests.asmdef
+{
+    "name": "Hecton8.Graphics.Scalability.Tests",
+    "rootNamespace": "Hecton8.Graphics.Scalability.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Hecton8.Graphics.Scalability",
+        "Hecton8.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Graphics/Materials/Editor/Hecton8.Graphics.Materials.Editor.asmdef
+{
+    "name": "Hecton8.Graphics.Materials.Editor",
+    "rootNamespace": "Hecton8.Graphics.Materials.Editor",
+    "references": [
+        "Hecton8.Graphics.Materials",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Graphics/Culling/Editor/Hecton8.Graphics.Culling.Editor.asmdef
+{
+    "name": "Hecton8.Graphics.Culling.Editor",
+    "rootNamespace": "Hecton8.Graphics.Culling.Editor",
+    "references": [
+        "Hecton8.Graphics.Culling",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+
+---
+ASMDEF Assets/_Project/Scripts/Global/Contracts/Hecton8.Global.Contracts.asmdef
+{
+    "name": "Hecton8.Global.Contracts",
+    "rootNamespace": "Hecton8.Global.Contracts",
+    "references": [
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.burst",
+            "expression": "1.8.0",
+            "define": "H8_BURST_FUNCTION_POINTERS"
+        },
+        {
+            "name": "com.unity.render-pipelines.universal",
+            "expression": "17.0.0",
+            "define": "H8_QUALITY_ROUTING_URP17"
+        }
+    ],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Global/MockDomain/Authoring/Hecton8.MockDomain.Authoring.asmdef
+{
+    "name": "Hecton8.MockDomain.Authoring",
+    "rootNamespace": "Hecton8.MockDomain.Authoring",
+    "references": [
+        "Hecton8.Global.Contracts",
+        "Hecton8.MockDomain.Contracts",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Global/MockDomain/Contracts/Hecton8.MockDomain.Contracts.asmdef
+{
+    "name": "Hecton8.MockDomain.Contracts",
+    "rootNamespace": "Hecton8.MockDomain.Contracts",
+    "references": [
+        "Hecton8.Global.Contracts",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Global/MockDomain/Runtime/Hecton8.MockDomain.Runtime.asmdef
+{
+    "name": "Hecton8.MockDomain.Runtime",
+    "rootNamespace": "Hecton8.MockDomain.Runtime",
+    "references": [
+        "Hecton8.Global.Contracts",
+        "Hecton8.MockDomain.Contracts",
+        "Unity.Burst",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.burst",
+            "expression": "1.8.0",
+            "define": "H8_BURST_FUNCTION_POINTERS"
+        }
+    ],
+    "noEngineReferences": true
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Global/FutureSeams/Authoring/Hecton8.Global.FutureSeams.Authoring.asmdef
+{
+    "name": "Hecton8.Global.FutureSeams.Authoring",
+    "rootNamespace": "Hecton8.Global.FutureSeams.Authoring",
+    "references": [
+        "Hecton8.Global.Contracts"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Global/FutureSeams/Editor/Hecton8.Global.FutureSeams.Editor.asmdef
+{
+    "name": "Hecton8.Global.FutureSeams.Editor",
+    "rootNamespace": "Hecton8.Global.FutureSeams.Editor",
+    "references": [
+        "Hecton8.Global.Contracts",
+        "Hecton8.Global.FutureSeams.Authoring"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Gameplay/Loot/Hecton8.Gameplay.Loot.asmdef
+{
+    "name": "Hecton8.Gameplay.Loot",
+    "rootNamespace": "Hecton8.Gameplay.Loot",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Gameplay.Loot.Contracts",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Gameplay/Mining/Hecton8.Gameplay.Mining.asmdef
+{
+    "name": "Hecton8.Gameplay.Mining",
+    "rootNamespace": "Hecton8.Gameplay.Mining",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Gameplay.Mining.Contracts",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Gameplay/Mining/Contracts/Hecton8.Gameplay.Mining.Contracts.asmdef
+{
+    "name": "Hecton8.Gameplay.Mining.Contracts",
+    "rootNamespace": "Hecton8.Gameplay.Mining.Contracts",
+    "references": [
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Gameplay/Loot/Contracts/Hecton8.Gameplay.Loot.Contracts.asmdef
+{
+    "name": "Hecton8.Gameplay.Loot.Contracts",
+    "rootNamespace": "Hecton8.Gameplay.Loot.Contracts",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Environment/Editor/Hecton8.Environment.Editor.asmdef
+{
+    "name": "Hecton8.Environment.Editor",
+    "rootNamespace": "Hecton8.Environment.Editor",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Environment/Fluids/Hecton8.Environment.Fluids.asmdef
+{
+    "name": "Hecton8.Environment.Fluids",
+    "rootNamespace": "Hecton8.Environment.Fluids",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Environment.Fluids.Contracts",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Environment/Fluids/Contracts/Hecton8.Environment.Fluids.Contracts.asmdef
+{
+    "name": "Hecton8.Environment.Fluids.Contracts",
+    "rootNamespace": "Hecton8.Environment.Fluids",
+    "references": [
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/DataMonolith/Hecton8.DataMonolith.Editor.asmdef
+{
+    "name": "Hecton8.DataMonolith.Editor",
+    "rootNamespace": "Hecton8.EditorValidation",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/FloraAmbientSway/Hecton8.World.FloraAmbientSway.Editor.asmdef
+{
+    "name": "Hecton8.World.FloraAmbientSway.Editor",
+    "rootNamespace": "Hecton8.Editor.FloraAmbientSway",
+    "references": [
+        "Hecton8.World.FloraAmbientSway",
+        "Hecton8.Core",
+        "Hecton8.Bootstrap.Contracts",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/GeographySanity/Hecton8.World.GeographySanity.Editor.asmdef
+{
+    "name": "Hecton8.World.GeographySanity.Editor",
+    "rootNamespace": "Hecton8.Editor.GeographySanity",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/GeologyForge/Hecton8.World.OfflineGeology.Editor.asmdef
+{
+    "name": "Hecton8.World.OfflineGeology.Editor",
+    "rootNamespace": "Hecton8.Editor.GeologyForge",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Project.Editor",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/InventoryRouting/Hecton8.InventoryRouting.Editor.asmdef
+{
+    "name": "Hecton8.InventoryRouting.Editor",
+    "rootNamespace": "Hecton8.EditorTools.InventoryRouting",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Burst"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/NutrientDrift/Hecton8.Ecosystem.NutrientDrift.Editor.asmdef
+{
+    "name": "Hecton8.Ecosystem.NutrientDrift.Editor",
+    "rootNamespace": "Hecton8.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Hecton8.HabitatInteriorClutterForge.Editor.asmdef
+{
+    "name": "Hecton8.HabitatInteriorClutterForge.Editor",
+    "rootNamespace": "Hecton8.Editor.OfflineGeometry",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/ProceduralGen/Hecton8.Editor.ProceduralGen.asmdef
+{
+    "name": "Hecton8.Editor.ProceduralGen",
+    "rootNamespace": "Hecton8.Editor.ProceduralGen",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Project.Editor",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Burst"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/SaveSystem/Hecton8.SaveSystem.Editor.asmdef
+{
+    "name": "Hecton8.SaveSystem.Editor",
+    "rootNamespace": "Hecton8.SaveSystem.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/TextureChannelPacker/Hecton8.Rendering.TexturePacker.Editor.asmdef
+{
+    "name": "Hecton8.Rendering.TexturePacker.Editor",
+    "rootNamespace": "Hecton8.EditorTools",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/OfflineGeometryBaker/Shinobu213/Hecton8.World.OfflineGeometry.Editor.asmdef
+{
+    "name": "Hecton8.World.OfflineGeometry.Editor",
+    "rootNamespace": "Hecton8.Editor.OfflineGeometry",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.OfflineGeometry",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Editor/HydraulicErosionForge/Shinobu242/Hecton8.World.HydraulicErosionForge.Editor.asmdef
+{
+    "name": "Hecton8.World.HydraulicErosionForge.Editor",
+    "rootNamespace": "Hecton8.Editor.HydraulicErosionForge",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Dev/SpaceEngine098/Hecton8.Dev.SpaceEngine098.asmdef
+{
+    "name": "Hecton8.Dev.SpaceEngine098",
+    "rootNamespace": "Hecton8.Dev",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.SpaceEngine098Terrain",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/BootstrapContracts/Hecton8.Bootstrap.Contracts.asmdef
+{
+    "name": "Hecton8.Bootstrap.Contracts",
+    "rootNamespace": "Hecton8.Core",
+    "references": [
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Bucketing/Hecton8.Core.Bucketing.asmdef
+{
+    "name": "Hecton8.Core.Bucketing",
+    "rootNamespace": "Hecton8.Core.Bucketing",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Contracts/Hecton8.Core.Contracts.asmdef
+{
+    "name": "Hecton8.Core.Contracts",
+    "rootNamespace": "Hecton8.Core.Contracts",
+    "references": [
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Database/Hecton8.Core.Database.asmdef
+{
+    "name": "Hecton8.Core.Database",
+    "rootNamespace": "Hecton8.Core.Database",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Hardware/Hecton8.Core.Hardware.asmdef
+{
+    "name": "Hecton8.Core.Hardware",
+    "rootNamespace": "Hecton8.Core.Hardware",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Bootstrap.Contracts",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Profiling.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Memory/Hecton8.Core.Memory.asmdef
+{
+    "name": "Hecton8.Core.Memory",
+    "rootNamespace": "Hecton8.Core.Memory",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Persistence/Hecton8.Core.Persistence.asmdef
+{
+    "name": "Hecton8.Core.Persistence",
+    "rootNamespace": "Hecton8.Core.Persistence",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Scheduling/Hecton8.Core.Scheduling.asmdef
+{
+  "name": "Hecton8.Core.Scheduling",
+  "rootNamespace": "Hecton8.Core.Scheduling",
+  "references": [
+    "Hecton8.Core.Contracts",
+    "Hecton8.Core.Memory",
+    "Unity.Burst",
+    "Unity.Collections",
+    "Unity.Jobs",
+    "Unity.Mathematics"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Tests/Hecton8.Core.Tests.asmdef
+{
+    "name": "Hecton8.Core.Tests",
+    "rootNamespace": "Hecton8.Core.Tests",
+    "references": [
+        "Hecton8.Core",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Time/Hecton8.Core.Time.asmdef
+{
+  "name": "Hecton8.Core.Time",
+  "rootNamespace": "Hecton8.Core.Time",
+  "references": [
+    "Hecton8.Bootstrap.Contracts"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Persistence/Paging/Hecton8.Core.Persistence.Paging.asmdef
+{
+    "name": "Hecton8.Core.Persistence.Paging",
+    "rootNamespace": "Hecton8.Core.Persistence.Paging",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Memory/Defrag/Hecton8.Core.Memory.Defrag.asmdef
+{
+    "name": "Hecton8.Core.Memory.Defrag",
+    "rootNamespace": "Hecton8.Core.Memory.Defrag",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Memory/Editor/Hecton8.Core.Memory.Editor.asmdef
+{
+    "name": "Hecton8.Core.Memory.Editor",
+    "rootNamespace": "Hecton8.Core.Memory.Editor",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Content/Editor/Hecton8.Core.Content.Editor.asmdef
+{
+    "name": "Hecton8.Core.Content.Editor",
+    "rootNamespace": "Hecton8.Core.Content.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Project.Editor",
+        "Unity.Addressables",
+        "Unity.Addressables.Editor",
+        "Unity.ResourceManager"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.addressables",
+            "expression": "2.7.6",
+            "define": "UNITY_ADDRESSABLES_EXIST"
+        }
+    ],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Core/Bridge/Editor/Hecton8.Core.Bridge.Editor.asmdef
+{
+    "name": "Hecton8.Core.Bridge.Editor",
+    "rootNamespace": "Hecton8.Core.Bridge.EditorTools",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "Unity.InputSystem",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.addressables",
+            "expression": "2.7.6",
+            "define": "UNITY_ADDRESSABLES_EXIST"
+        }
+    ],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Construction/Tests/Hecton8.Construction.Tests.asmdef
+{
+    "name": "Hecton8.Construction.Tests",
+    "rootNamespace": "Hecton8.Construction.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Hecton8.Core",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Cartography/Editor/Hecton8.Cartography.Editor.asmdef
+{
+    "name": "Hecton8.Cartography.Editor",
+    "rootNamespace": "Hecton8.Cartography.Editor",
+    "references": [
+        "Hecton8.Core",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Audio/Echolocation/Hecton8.Audio.Echolocation.asmdef
+{
+    "name": "Hecton8.Audio.Echolocation",
+    "rootNamespace": "Hecton8.Audio.Echolocation",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.PureLogic",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Audio/Prologue/Hecton8.Audio.Prologue.asmdef
+{
+    "name": "Hecton8.Audio.Prologue",
+    "rootNamespace": "Hecton8.Audio.Prologue",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Unity.Mathematics",
+        "Unity.Collections",
+        "Unity.Profiling.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Audio/Synthesis/Hecton8.Audio.Synthesis.asmdef
+{
+    "name": "Hecton8.Audio.Synthesis",
+    "rootNamespace": "Hecton8.Audio.Synthesis",
+    "references": [
+        "Hecton8.PureLogic",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Audio/Virtualization/Contracts/Hecton8.Audio.Virtualization.Contracts.asmdef
+{
+    "name": "Hecton8.Audio.Virtualization.Contracts",
+    "rootNamespace": "Hecton8.Audio.Virtualization",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Audio/Synthesis/Editor/Hecton8.Audio.Synthesis.Editor.asmdef
+{
+    "name": "Hecton8.Audio.Synthesis.Editor",
+    "rootNamespace": "Hecton8.Audio.Synthesis.Editor",
+    "references": [
+        "Hecton8.Audio.Synthesis",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Audio/Echolocation/Tests/Hecton8.Audio.Echolocation.Tests.asmdef
+{
+    "name": "Hecton8.Audio.Echolocation.Tests",
+    "rootNamespace": "Hecton8.Audio.Echolocation.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Hecton8.Audio.Echolocation",
+        "Hecton8.Core.Contracts",
+        "Hecton8.PureLogic",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Atmosphere/StormPropagation/Hecton8.Atmosphere.StormPropagation.Runtime.asmdef
+{
+    "name": "Hecton8.Atmosphere.StormPropagation.Runtime",
+    "rootNamespace": "Hecton8.Atmosphere",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.World.Contracts",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Atmosphere/StormPropagation/Editor/Hecton8.Atmosphere.StormPropagation.Editor.asmdef
+{
+    "name": "Hecton8.Atmosphere.StormPropagation.Editor",
+    "rootNamespace": "Hecton8.Atmosphere.Editor",
+    "references": [
+        "Hecton8.Atmosphere.StormPropagation.Runtime",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Animation/FaunaProcedural/Hecton8.Animation.FaunaProcedural.asmdef
+{
+    "name": "Hecton8.Animation.FaunaProcedural",
+    "rootNamespace": "Hecton8.Animation.FaunaProcedural",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Animation/FaunaProcedural/Editor/Hecton8.Animation.FaunaProcedural.Editor.asmdef
+{
+    "name": "Hecton8.Animation.FaunaProcedural.Editor",
+    "rootNamespace": "Hecton8.Animation.FaunaProcedural.Editor",
+    "references": [
+        "Hecton8.Animation.FaunaProcedural",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/Animation/FaunaProcedural/Tests/Hecton8.Animation.FaunaProcedural.Tests.asmdef
+{
+    "name": "Hecton8.Animation.FaunaProcedural.Tests",
+    "rootNamespace": "Hecton8.Animation.FaunaProcedural.Tests",
+    "references": [
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Hecton8.Animation.FaunaProcedural",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+---
+ASMDEF Assets/_Project/Scripts/AI/Ambient/Hecton8.AI.Ambient.asmdef
+{
+    "name": "Hecton8.AI.Ambient",
+    "rootNamespace": "Hecton8.AI.Ambient",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/AI/Cognition/Hecton8.AI.Cognition.asmdef
+{
+    "name": "Hecton8.AI.Cognition",
+    "rootNamespace": "Hecton8.AI.Cognition",
+    "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/AI/Foveated/Hecton8.AI.Foveated.asmdef
+{
+    "name": "Hecton8.AI.Foveated",
+    "rootNamespace": "Hecton8.AI.Foveated",
+    "references": [
+        "Hecton8.Core.Contracts"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/AI/Pathfinding/Hecton8.AI.Pathfinding.asmdef
+{
+    "name": "Hecton8.AI.Pathfinding",
+    "rootNamespace": "Hecton8.AI.Pathfinding",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/AI/Pathfinding/Editor/Hecton8.AI.Pathfinding.Editor.asmdef
+{
+    "name": "Hecton8.AI.Pathfinding.Editor",
+    "rootNamespace": "Hecton8.AI.Pathfinding.Editor",
+    "references": [
+        "Hecton8.AI.Pathfinding",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Scripts/AI/Cognition/Editor/Hecton8.AI.Cognition.Editor.asmdef
+{
+    "name": "Hecton8.AI.Cognition.Editor",
+    "rootNamespace": "Hecton8.AI.Cognition.Editor",
+    "references": [
+        "Hecton8.AI.Cognition",
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Editor/Generators/Fauna/Hecton8.Editor.Generators.Fauna.asmdef
+{
+    "name": "Hecton8.Editor.Generators.Fauna",
+    "rootNamespace": "Hecton8.EditorTools.Generators.Fauna",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.Animation.FaunaProcedural",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Microsoft.CodeAnalysis.dll",
+        "Microsoft.CodeAnalysis.CSharp.dll",
+        "System.Collections.Immutable.dll",
+        "System.Reflection.Metadata.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": []
+---
+ASMDEF Assets/_Project/Editor/Generators/Geology/Hecton8.AbyssalGeology1606.Editor.asmdef
+{
+    "name": "Hecton8.AbyssalGeology1606.Editor",
+    "rootNamespace": "Hecton8.Editor.Generators.Geology",
+    "references": [
+        "Hecton8.Core",
+        "Hecton8.Project.Editor",
+        "Hecton8.World.OfflineGeology.Editor",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/_Project/Editor/Generators/World/Hecton8.AbyssalScatter1614.Editor.asmdef
+{
+    "name": "Hecton8.AbyssalScatter1614.Editor",
+    "rootNamespace": "Hecton8.Editor.Generators.World",
+    "references": [
+        "Hecton8.Core",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+
+---
+ASMDEF Assets/MeshBaker/scripts/MeshBakerCore.asmdef
+{
+    "name": "MeshBakerCore",
+    "references": [
+        "GUID:65d6e1e69ebbde8418716e338cd47019"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+---
+ASMDEF Assets/MapMagic/Core/MapMagic.asmdef
+{
+    "name": "MapMagic",
+    "references": [
+        "GUID:f916027ffe7a29c4dbc7d2ba84359bf4"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+---
+ASMDEF Assets/MapMagic/Core/Editor/MapMagic.Editor.asmdef
+{
+    "name": "MapMagic.Editor",
+    "references": [
+        "GUID:10c2c8b9f42fe8c43bbe8dae22545979",
+        "GUID:f916027ffe7a29c4dbc7d2ba84359bf4",
+        "GUID:6ae3db819e0d8ab47bd0d57c99dbf2c6"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "!NET_STANDARD_2_0"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+---
+ASMDEF Assets/MapMagic/Core/Plugins/MapMagic.Settings.asmdef
+{
+    "name": "MapMagic.Settings",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
+---
+FO refs in runner:
+265:                HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+288:                HectonFloatingOrigin.UnregisterListener(this);
+459:                HectonFloatingOrigin.RegisterListener(this);
+669:            bool foFlushClean = HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();

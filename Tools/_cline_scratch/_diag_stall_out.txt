@@ -1,0 +1,191 @@
+SystemDispatcher=Assets\_Project\Scripts\Core\SystemDispatcher.cs
+SD ShouldSkipLaneDuringBootstrap count=10
+SD IsGameReady count=1
+SD IsOriginShiftBootstrapLocked count=6
+SD PriorityLayer.Player count=2
+SD RunDispatcherLateFrame count=4
+SD BootstrapPresence count=0
+SD IsBootstrapActive count=0
+---ShouldSkipLaneDuringBootstrap---
+private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
+        {
+            if (!blockGameplayLanes)
+                return false;
+
+            // Bootstrap gates the player lane only. World/environment systems must keep
+            // ticking so startup queues, residency, and spawn drains can complete.
+            return laneIndex == GetLaneIndex(PriorityLayer.Player);
+        }
+BootstrapState.cs cands=['Assets\\_Project\\Scripts\\Core\\BootstrapContracts\\BootstrapState.cs']
+  PublishGameReady count=1
+  IsGameReady count=3
+  PublishBootstrapPresence count=1
+  IsBootstrap count=0
+---BootstrapState.cs PublishGameReady@2097---
+ootstrap completes and gameplay may proceed.</param>
+        public static void PublishGameReady(bool isGameReady)
+        {
+            IsGameReady = isGameReady;
+        }
+
+        /// <summary>
+        /// Publishes the current player reference for runtime consumers.
+        /// </summary>
+        /// <param name="playerObject">Resolved player object, or null.</param>
+        public static void PublishCurrentPlayerObject(Ga
+---BootstrapState.cs IsGameReady@817---
+ion, and world-ready handoff.
+        /// </summary>
+        public static bool IsGameReady { get; private set; }
+
+        /// <summary>
+        /// A live GameBootstrapper instance currently owns scene startup.
+        /// </summary>
+        public static bool HasActiveInstance { get; private set; }
+
+        /// <summary>
+        /// Last known player GameObject published by bootstrap.
+        /// </summary>
+        public st
+---BootstrapState.cs IsGameReady@2154---
+    public static void PublishGameReady(bool isGameReady)
+        {
+            IsGameReady = isGameReady;
+        }
+
+        /// <summary>
+        /// Publishes the current player reference for runtime consumers.
+        /// </summary>
+        /// <param name="playerObject">Resolved player object, or null.</param>
+        public static void PublishCurrentPlayerObject(GameObject playerObject)
+        {
+            CurrentPlaye
+---BootstrapState.cs IsGameReady@3702---
+        /// </summary>
+        public static void Reset()
+        {
+            IsGameReady = false;
+            HasActiveInstance = false;
+            CurrentPlayerObject = null;
+        }
+
+        /// <summary>
+        /// Validates that the object owns production player authority without referencing gameplay assemblies.
+        /// </summary>
+        /// <param name="playerObject">Candidate player object.</param>
+        //
+---BootstrapState.cs PublishBootstrapPresence@1748---
+hile GameBootstrapper owns scene activation.</param>
+        public static void PublishBootstrapPresence(bool hasActiveInstance)
+        {
+            HasActiveInstance = hasActiveInstance;
+        }
+
+        /// <summary>
+        /// Publishes the world-ready handoff state.
+        /// </summary>
+        /// <param name="isGameReady">True after bootstrap completes and gameplay may proceed.</param>
+        public static void P
+BootstrapStatus.cs cands=['Assets\\_Project\\Scripts\\Core\\BootstrapContracts\\BootstrapStatus.cs']
+  PublishGameReady count=0
+  IsGameReady count=0
+  PublishBootstrapPresence count=0
+  IsBootstrap count=0
+FO cands=['Assets\\_Project\\Scripts\\HectonFloatingOrigin.cs', 'Assets\\GPUInstancer\\Scripts\\GPUInstancerFloatingOriginHandler.cs', 'Assets\\Crest\\Crest\\Scripts\\Helpers\\FloatingOrigin.cs']
+---TryMarkEcologyReady---
+private void TryMarkEcologyReady()
+        {
+            IEcosystemDirectorService ecosystem = GlobalRegistry.EcosystemDirector;
+            bool readyNow = ecosystem != null && ecosystem.IsInitialized;
+
+            // Stamp the wall clock the first time simulation actually starts advancing, so the result file can
+            // report the dilation it DELIVERED rather than the one it was configured with. Those two numbers
+            // are far apart and the gap is the single most useful thing this harness can tell its operator —
+            // see the deliveredTimeDilation note in WriteResult.
+            if (readyNow && !_ecologyReady)
+            {
+                _simulationStartRealtime = Time.realtimeSinceStartupAsDouble;
+
+                // Muzzle Debug.Log HERE, not in ForceHeadlessRuntimePolicy. The filter exists so a 100-day
+                // run's log is not drowned in first-party per-frame spam, and every source of that spam is
+                // in the simulation loop that begins at this exact transition. Boot, by contrast, logs a
+                // BOUNDED number of lines once and they are the most useful diagnostic this project has:
+                // the [GameBoots
+R85:        private const float TimeDilationScalar = 100f;
+R124:        private double _simulatedSeconds;
+R127:        private float _daySeconds = DefaultDaySeconds;
+R301:                _simulatedSeconds += safeDelta;
+R380:            while (_dayAccumulatorSeconds >= _daySeconds &&
+R385:                _dayAccumulatorSeconds -= _daySeconds;
+R444:                GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+R448:                    LogRunnerLifecycle("runtime lanes registered; dilation requested");
+R571:            _daySeconds = math.max(1f, TryReadFloat(args, DaySecondsArg, DefaultDaySeconds));
+R633:            // report the dilation it DELIVERED rather than the one it was configured with. Those two numbers
+R635:            // see the deliveredTimeDilation note in WriteResult.
+R663:        private double DeliveredTimeDilation
+R671:                return elapsed > 0.0 ? _simulatedSeconds / elapsed : 0.0;
+R1324:                writer.Write(",\"simulatedSeconds\":");
+R1325:                WriteInvariant(writer, _simulatedSeconds);
+R1326:                // Two dilations, and reporting only the first is how this harness lied about itself. The
+R1327:                // nominal scalar is what Time.timeScale was set to; the delivered one is what the dispatcher
+R1331:                // 1/60. So delivered dilation is 4 * fps / 60 = fps / 15, and reaching a nominal 100 would
+R1332:                // need 1500 fps of full-world player loop. A reader who saw only "timeDilation": 100 would
+R1335:                writer.Write(",\"timeDilationNominal\":");
+R1336:                WriteInvariant(writer, TimeDilationScalar);
+R1337:                writer.Write(",\"timeDilationDelivered\":");
+R1338:                WriteInvariant(writer, (float)DeliveredTimeDilation);
+R1861:            double simulatedSeconds,
+R1866:            float t = (float)(simulatedSeconds * 0.001d);
+LOG size=326286
+log_hits=51
+1675:Opening scene 'Assets/_Project/Scenes/00_BOOTSTRAP.unity'
+1676:Loaded scene 'Assets/_Project/Scenes/00_BOOTSTRAP.unity'
+1787:[HEADLESS] runner installed and started
+1799:[HEADLESS] waiting for dispatcher
+1827:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node SystemDispatcher
+1869:[GameBootstrapper] Waiting for heartbeat for node SystemDispatcher
+1911:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node GameTickManager
+1953:[GameBootstrapper] Waiting for heartbeat for node GameTickManager
+1995:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node SaveManager
+2037:[GameBootstrapper] Waiting for heartbeat for node SaveManager
+2079:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node ObjectPoolManager
+2121:[GameBootstrapper] Waiting for heartbeat for node ObjectPoolManager
+2163:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node RenderDispatcher
+2205:[GameBootstrapper] Waiting for heartbeat for node RenderDispatcher
+2247:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node SceneRuntimeService
+2289:[GameBootstrapper] Waiting for heartbeat for node SceneRuntimeService
+2331:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node EquipmentInteractionHandler
+2373:[GameBootstrapper] Waiting for heartbeat for node EquipmentInteractionHandler
+2415:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node ModWorldPersistenceManager
+2457:[GameBootstrapper] Waiting for heartbeat for node ModWorldPersistenceManager
+2501:[HEADLESS] dispatcher acquired
+2514:[HEADLESS] runtime lanes registered; dilation requested
+2527:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node HectonFloatingOrigin
+2569:[GameBootstrapper] Waiting for heartbeat for node HectonFloatingOrigin
+2611:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node EnvironmentRuntimeContextService
+2653:[GameBootstrapper] Waiting for heartbeat for node EnvironmentRuntimeContextService
+2695:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node EcosystemDirector
+2737:[GameBootstrapper] Waiting for heartbeat for node EcosystemDirector
+2779:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node SpatialAudioManager
+2821:[GameBootstrapper] Waiting for heartbeat for node SpatialAudioManager
+2863:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node PowerGridManager
+2905:[GameBootstrapper] Waiting for heartbeat for node PowerGridManager
+2947:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node ConnectionSplineBatchRenderer
+2989:[GameBootstrapper] Waiting for heartbeat for node ConnectionSplineBatchRenderer
+3031:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node GlobalPhysicsStateManager
+3073:[GameBootstrapper] Waiting for heartbeat for node GlobalPhysicsStateManager
+3115:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node OceanKinematicsRuntimeService
+3157:[GameBootstrapper] Waiting for heartbeat for node OceanKinematicsRuntimeService
+3199:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node ConstructionManager
+3241:[GameBootstrapper] Waiting for heartbeat for node ConstructionManager
+3283:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node PhysicsApplySystem
+3325:[GameBootstrapper] Waiting for heartbeat for node PhysicsApplySystem
+3367:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node DebrisManager
+3409:[GameBootstrapper] DebrisManager is declared as a bootstrap dependency but is NOT installed. GlobalRegistry.Debris is empty and nothing calls DebrisManager.EnsureRuntimeInstance, so there is no debris owner this session 
+3454:[GameBootstrapper] Waiting for heartbeat for node DebrisManager
+3496:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node FaunaSimulation
+3538:[GameBootstrapper] Waiting for heartbeat for node FaunaSimulation
+3580:[GameBootstrapper-DEBUG] InitializeSceneActivatePhaseAsync: activeScene=00_BOOTSTRAP headless=True
+3616:[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached + PublishGameReady on bootstrap
+3666:[HEADLESS] fail exitCode=1 status=[BOOTSTRAP_TIMEOUT]
+3674:Hecton8.QA.Headless.HeadlessSimulationRunner:FailAndQuit (int,uint,string) (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:1149)

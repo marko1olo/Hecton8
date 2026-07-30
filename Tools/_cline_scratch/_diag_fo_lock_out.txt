@@ -1,0 +1,325 @@
+FILE Assets\_Project\Scripts\HectonFloatingOrigin.cs hits=['OriginShiftBootstrapLock', 'ReleaseOriginShiftBootstrap', 'TryFlushInitialSceneRebaseBeforeTicks']
+  OriginShiftBootstrapLock L2182:
+         if (_sceneRebaseTickLockHeld)
+                return;
+
+            SystemDispatcher.RequestOriginShiftBootstrapLock();
+            _sceneRebaseTickLockHeld = true;
+        }
+
+        private void ReleaseSceneRebaseTickLock()
+        {
+            if (!_sceneRebaseTickLockHeld)
+                return;
+
+            _sceneRebaseTickLockHeld = false;
+            SystemDisp
+  OriginShiftBootstrapLock L2192:
+         return;
+
+            _sceneRebaseTickLockHeld = false;
+            SystemDispatcher.ReleaseOriginShiftBootstrapLock();
+        }
+
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            _shiftTargetsDirty = true;
+            SynchronizeSceneOriginShiftRegistries(scene);
+            QueuePendingLoadedScene(scene);
+        }
+
+       
+  ReleaseOriginShiftBootstrap L2192:
+                return;
+
+            _sceneRebaseTickLockHeld = false;
+            SystemDispatcher.ReleaseOriginShiftBootstrapLock();
+        }
+
+        private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            _shiftTargetsDirty = true;
+            SynchronizeSceneOriginShiftRegistries(scene);
+            QueuePendingLoadedScene(scene);
+        }
+
+
+  TryFlushInitialSceneRebaseBeforeTicks L313:
+hysicsResumeFrame = SystemDispatcher.CurrentFrameIndex + 1;
+        }
+
+        internal static bool TryFlushInitialSceneRebaseBeforeTicks()
+        {
+            HectonFloatingOrigin origin = s_activeRuntime;
+            if (origin == null)
+                return true;
+
+            if (origin._isShiftInProgress || origin._physicsPauseActive)
+                return false;
+
+     
+FILE Assets\_Project\Scripts\Core\SystemDispatcher.cs hits=['OriginShiftBootstrapLock', 'originShiftBootstrapLock', '_originShiftBootstrapLockCount', 'ReleaseOriginShiftBootstrap', 'TryFlushInitialSceneRebaseBeforeTicks']
+  OriginShiftBootstrapLock L617:
+static SystemDispatcher ActiveRuntimeInstance { get; private set; }
+
+        internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+
+        internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == CurrentFrameIndex;
+
+        public float TimeDilationScalar => _timeDilat
+  OriginShiftBootstrapLock L1722:
+     _foveatedSimulationManager.ResetRuntimeState();
+        }
+
+        internal static void RequestOriginShiftBootstrapLock()
+        {
+            Interlocked.Increment(ref _originShiftBootstrapLockCount);
+        }
+
+        internal static void RequestOriginShiftFrameLock(int frame)
+        {
+            Volatile.Write(ref _originShiftFrameLockFrame, frame);
+            Syst
+  OriginShiftBootstrapLock L1916:
+eExtension.DelayDilated(seconds, cancellationToken);
+        }
+
+        internal static void ReleaseOriginShiftBootstrapLock()
+        {
+            int current = Volatile.Read(ref _originShiftBootstrapLockCount);
+            while (current > 0)
+            {
+                int next = current - 1;
+                int observed = Interlocked.CompareExchange(ref _originShiftBoots
+  OriginShiftBootstrapLock L4682:
+ == dispatcherFrameId)
+                flags |= DispatcherBlackBoxFlagAupBarrier;
+            if (IsOriginShiftBootstrapLocked || IsOriginShiftFrameLockedForCurrentFrame)
+                flags |= DispatcherBlackBoxFlagOriginShiftLock;
+            if (nonFinite)
+                flags |= DispatcherBlackBoxFlagNonFinite;
+            if (_coreTickDilationFramesRemaining > 0 || _cor
+  OriginShiftBootstrapLock L5230:
+ulationBucketer simulationBucketer = _simulationBucketer;
+                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+                                        IsOriginShiftFrameLockedForCurrentFrame ||
+                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+                if (simulationBucketer != null && simulationBucketer.IsInitializ
+  OriginShiftBootstrapLock L5246:
+   PublishFramePacingWarningIfNeeded(in bucketFrameState);
+                }
+
+                if (IsOriginShiftBootstrapLocked)
+                {
+                    if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
+                        return;
+
+                    if (IsOriginShiftBootstrapLocked)
+                        return;
+                }
+
+         
+  originShiftBootstrapLock L570:
+= -1;
+        private static int _lastFramePacingHomeostasisFrame = -1;
+        private static int _originShiftBootstrapLockCount;
+        private static int _originShiftFrameLockFrame = -1;
+        private static int _criticalMemoryPressureDefragRequested;
+        private static int _streamingStorageDebtMilli;
+        private static int _streamingStorageDebtSequence;
+        p
+  originShiftBootstrapLock L617:
+et; private set; }
+
+        internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+
+        internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == CurrentFrameIndex;
+
+        public float TimeDilationScalar => _timeDilationScalar;
+
+        public static ulong KillSwitc
+  originShiftBootstrapLock L816:
+;
+            Volatile.Write(ref _streamingStorageDebtSequence, 0);
+            Volatile.Write(ref _originShiftBootstrapLockCount, 0);
+            Volatile.Write(ref _originShiftFrameLockFrame, -1);
+            _lastFramePacingWarningFrame = -1;
+            _lastFramePacingHomeostasisFrame = -1;
+            Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);
+            Shad
+  originShiftBootstrapLock L1724:
+rnal static void RequestOriginShiftBootstrapLock()
+        {
+            Interlocked.Increment(ref _originShiftBootstrapLockCount);
+        }
+
+        internal static void RequestOriginShiftFrameLock(int frame)
+        {
+            Volatile.Write(ref _originShiftFrameLockFrame, frame);
+            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+            if (dispatcher 
+  originShiftBootstrapLock L1918:
+tatic void ReleaseOriginShiftBootstrapLock()
+        {
+            int current = Volatile.Read(ref _originShiftBootstrapLockCount);
+            while (current > 0)
+            {
+                int next = current - 1;
+                int observed = Interlocked.CompareExchange(ref _originShiftBootstrapLockCount, next, current);
+                if (observed == current)
+          
+  originShiftBootstrapLock L1922:
+            int next = current - 1;
+                int observed = Interlocked.CompareExchange(ref _originShiftBootstrapLockCount, next, current);
+                if (observed == current)
+                    return;
+
+                current = observed;
+            }
+        }
+
+        private void SetTimeDilationScalar(float scalar, uint reasonHash, bool publishImmediate)
+     
+  _originShiftBootstrapLockCount L570:
+ = -1;
+        private static int _lastFramePacingHomeostasisFrame = -1;
+        private static int _originShiftBootstrapLockCount;
+        private static int _originShiftFrameLockFrame = -1;
+        private static int _criticalMemoryPressureDefragRequested;
+        private static int _streamingStorageDebtMilli;
+        private static int _streamingStorageDebtSequence;
+        
+  _originShiftBootstrapLockCount L617:
+get; private set; }
+
+        internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+
+        internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == CurrentFrameIndex;
+
+        public float TimeDilationScalar => _timeDilationScalar;
+
+        public static ulong KillSwit
+  _originShiftBootstrapLockCount L816:
+);
+            Volatile.Write(ref _streamingStorageDebtSequence, 0);
+            Volatile.Write(ref _originShiftBootstrapLockCount, 0);
+            Volatile.Write(ref _originShiftFrameLockFrame, -1);
+            _lastFramePacingWarningFrame = -1;
+            _lastFramePacingHomeostasisFrame = -1;
+            Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);
+            Sha
+  _originShiftBootstrapLockCount L1724:
+ernal static void RequestOriginShiftBootstrapLock()
+        {
+            Interlocked.Increment(ref _originShiftBootstrapLockCount);
+        }
+
+        internal static void RequestOriginShiftFrameLock(int frame)
+        {
+            Volatile.Write(ref _originShiftFrameLockFrame, frame);
+            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+            if (dispatcher
+  _originShiftBootstrapLockCount L1918:
+static void ReleaseOriginShiftBootstrapLock()
+        {
+            int current = Volatile.Read(ref _originShiftBootstrapLockCount);
+            while (current > 0)
+            {
+                int next = current - 1;
+                int observed = Interlocked.CompareExchange(ref _originShiftBootstrapLockCount, next, current);
+                if (observed == current)
+         
+  _originShiftBootstrapLockCount L1922:
+             int next = current - 1;
+                int observed = Interlocked.CompareExchange(ref _originShiftBootstrapLockCount, next, current);
+                if (observed == current)
+                    return;
+
+                current = observed;
+            }
+        }
+
+        private void SetTimeDilationScalar(float scalar, uint reasonHash, bool publishImmediate)
+    
+  ReleaseOriginShiftBootstrap L1916:
+waitableExtension.DelayDilated(seconds, cancellationToken);
+        }
+
+        internal static void ReleaseOriginShiftBootstrapLock()
+        {
+            int current = Volatile.Read(ref _originShiftBootstrapLockCount);
+            while (current > 0)
+            {
+                int next = current - 1;
+                int observed = Interlocked.CompareExchange(ref _originShi
+  TryFlushInitialSceneRebaseBeforeTicks L5248:
+  if (IsOriginShiftBootstrapLocked)
+                {
+                    if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
+                        return;
+
+                    if (IsOriginShiftBootstrapLocked)
+                        return;
+                }
+
+                if (IsOriginShiftFrameLockedForCurrentFrame)
+                    return;
+
+           
+---short-circuit ctx---
+r
+                        // (HeadlessSimulationRunner), so ecology never advances without this.
+                        // Full ExecuteSceneActivationAsync publishes GameReady~7749; headless must mirror.
+                        BootstrapState.PublishGameReady(true);
+                        BootstrapState.PublishBootstrapPresence(false);
+                        Debug.Log("[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached + PublishGameReady on bootstrap");
+                        return true;
+                    }
+
+                    if (TryResolveBootstrapGameplayHandoffScene(out string gameplaySceneName))
+                    {
+                        Debug.Log("[GameBootstrapper-DEBUG] LoadGameplaySceneFromBootstrapHandoffAsync");
+                        return await LoadGameplaySceneFromBootstrapHandoffAsync(gameplaySceneName, ct);
+                    
+PublishGameReady(true) count=2 pos=[140598, 343839]
+---PublishGameReady(true) L3165---
+adless short-circuit previously only MarkMainMenuReached.
+                        // SystemDispatcher.ShouldSkipLaneDuringBootstrap skips PriorityLayer.Player
+                        // while !BootstrapState.IsGameReady. LateFrame biomass drain is on Player
+                        // (HeadlessSimulationRunner), so ecology never advances without this.
+                        // Full ExecuteSceneActivationAsync publishes GameReady~7749; headless must mirror.
+                        BootstrapState.PublishGameReady(true);
+                        BootstrapState.PublishBootstrapPresence(false);
+                        Debug.Log("[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached + PublishGameReady on bootstrap");
+                        return true;
+                    }
+
+                    if (TryResolveBootstrapGameplayHandoffScene(out string gameplaySceneNam
+---PublishGameReady(true) L7756---
+       SetSceneActivationStep("Step 8.95: Scene Graph Guard");
+                if (!TryValidateSceneRootBudget(activeScene, "game-bootstrapper-scene-activation"))
+                {
+                    FailSceneActivation("Scene graph corruption guard aborted activation.");
+                    return false;
+                }
+
+                ActivatePlayer();
+
+                SetSceneActivationStep("Complete");
+                _debugSceneActivationCompleted = true;
+                BootstrapState.PublishGameReady(true);
+                BootstrapState.PublishBootstrapPresence(false);
+                RaiseGameReadyEvent();
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                BootstrapState.PublishGameReady(false);
+                BootstrapState.PublishBootstrapPresence(false);
+                if (this == null || destroyCancel
+BP OriginShift count=0
+BP FloatingOrigin count=19
+BP BootstrapLock count=0
+BP FlushInitial count=0
+BP Rebase count=0
+BP UnlockOrigin count=0

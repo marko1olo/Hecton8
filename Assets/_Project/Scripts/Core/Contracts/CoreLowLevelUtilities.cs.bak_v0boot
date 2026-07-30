@@ -122,12 +122,6 @@ namespace Hecton8.Core
             try
             {
                 payload = new NativeArray<byte>(byteCount, allocator, options);
-                // Tracking is optional diagnostics infrastructure. When the bridge is not installed
-                // (domain reload / batchmode install race / player without sentinel wiring), still
-                // hand back a usable payload so telemetry dumps cannot kill Environment bootstrap.
-                if (!Hecton8.Core.Contracts.NativeMemoryTrackingBridge.IsInstalled)
-                    return payload;
-
                 payloadPointer = ResolveTransientPayloadPointer(payload);
                 registered = TryRegisterTransientNativeArrayPayload(payload, owner, label, allocator);
                 if (!registered)
@@ -168,24 +162,13 @@ namespace Hecton8.Core
             if (!payload.IsCreated)
                 return;
 
-            // Untracked payloads (bridge down at Create time, or never registered) still must free.
-            if (!Hecton8.Core.Contracts.NativeMemoryTrackingBridge.IsInstalled)
-            {
-                payload.Dispose();
-                payload = default;
-                return;
-            }
-
             IntPtr payloadPointer = ResolveTransientPayloadPointer(payload);
             int registrationId = TryGetTransientPayloadRegistrationId(payloadPointer);
             if (registrationId <= 0)
             {
-                // Payload existed without a remembered registration id (bridge raced, or create
-                // returned untracked). Dispose the native memory; do not elevate dump cleanup into
-                // a hard failure that can abort LateFrameTick / Environment bootstrap.
                 payload.Dispose();
                 payload = default;
-                return;
+                throw new InvalidOperationException(TransientPayloadUnregistrationFailureMessage);
             }
 
             try

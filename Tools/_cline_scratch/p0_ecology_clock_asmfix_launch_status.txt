@@ -1,0 +1,2 @@
+launching at 2026-07-31 00:09:31
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\python.exe C:\hades\Hecton8\Tools\RunUnityBatchGate.py --method Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner.Run --log C:\hades\Hecton8\Docs\AgentLogs\headless_smoke_20260731_p0_ecology_clock_asmfix.log --timeout 900 --max-cpu 85 -- -h8headless -h8headlessDays 5 -h8headlessDaySeconds 60 -h8headlessStartupTimeout 600

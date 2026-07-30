@@ -1,0 +1,51 @@
+size 318549
+PublishGameReady on bootstrap: 1
+MarkMainMenuReached + PublishGameReady: 1
+dispatcher acquired: 1
+runtime lanes: 1
+ecologySampled: 0
+BOOTSTRAP_TIMEOUT: 0
+BATCH_TIMEOUT: 0
+error CS: 0
+IsGameReady: 0
+PublishGameReady: 1
+waiting for dispatcher: 1
+Headless SceneActivate: 1
+ECOLOGY: 0
+timeDilation: 0
+FailAndQuit: 0
+ecology ready: 0
+LateFrame: 0
+lanes registered: 1
+GameReady: 1
+biomass: 0
+---TAIL---
+rap/GameBootstrapper.cs:3088)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeEnvironmentPhaseAsync>d__390>:DoMoveNext ()
+UnityEngine.Awaitable:RunOrScheduleContinuation (UnityEngine.Awaitable/AwaiterCompletionThreadAffinity,System.Action)
+UnityEngine.Awaitable:RaiseManagedCompletion ()
+Hecton8.Core.AwaitableDebtMonitor/<NextFrameAsync>d__11:MoveNext () (at Assets/_Project/Scripts/Core/InputDispatcher.cs:5711)
+UnityEngine.Awaitable/AwaitableAsyncMethodBuilder/StateMachineBox`1<Hecton8.Core.AwaitableDebtMonitor/<NextFrameAsync>d__11>:DoMoveNext ()
+System.Runtime.CompilerServices.YieldAwaitable/YieldAwaiter:RunAction (object)
+UnityEngine.UnitySynchronizationContext/WorkRequest:Invoke ()
+UnityEngine.UnitySynchronizationContext:Exec ()
+UnityEngine.UnitySynchronizationContext:ExecuteTasks ()
+
+(Filename: Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs Line: 3167)
+
+[AgentWorkCementer] Cemented working tree. [main e08089409] chore(auto): cement working tree 2026-07-30 22:14:08
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.EditorTools.HectonAgentWorkCementer/<>c:<TryCement>b__24_1 (Hecton8.EditorTools.HectonAgentWorkCementer/GitResult) (at Assets/_Project/Scripts/Editor/HectonAgentWorkCementer.cs:174)
+Hecton8.EditorTools.HectonAgentWorkCementer/<>c__DisplayClass29_0:<RunGitAsync>g__Pump|1 () (at Assets/_Project/Scripts/Editor/HectonAgentWorkCementer.cs:279)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: Assets/_Project/Scripts/Editor/HectonAgentWorkCementer.cs Line: 174)
+
+TrimDiskCacheJob: Current cache size 0mb
+
+RESULT NONE

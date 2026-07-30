@@ -3814,24 +3814,6 @@ namespace Hecton8.Environment
             catch (UnauthorizedAccessException)
             {
             }
-            catch (InvalidOperationException exception)
-            {
-                // Diagnostics-only dump. A failed NativeFaultDumpWriter registration must never
-                // escape LateFrameTick and kill Environment bootstrap / ocean init.
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
-                    "[HectonSeismicTideDirector] Celestial telemetry dump skipped (InvalidOperation). " +
-                    exception.Message);
-#endif
-            }
-            catch (Exception exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
-                    "[HectonSeismicTideDirector] Celestial telemetry dump skipped. " +
-                    exception.GetType().Name + ": " + exception.Message);
-#endif
-            }
         }
 
         private unsafe void WriteCelestialTelemetryDump(string path, NativeArray<CelestialTelemetryEntry>.ReadOnly telemetry)

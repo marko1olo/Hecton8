@@ -1,0 +1,25 @@
+mtime=Thu Jul 30 22:14:32 2026 size=322214
+hit_count=21
+20:Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner.Run
+276:UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface:EmitExceptionAsError<UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus> (System.Func`1<UnityEditor.Scripting.ScriptCompilation.EditorCompilation/Compil
+1353:Exception while executing InitializeOnLoad for GUITimeHelper.Init
+1362:MissingFieldException: Field not found: System.Action`1<UnityEngine.UIElements.IMGUIContainer> UnityEngine.UIElements.UIElementsUtility.s_BeginContainerCallback Due to: Could not find field in class
+1364:  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+1366:Rethrow as TargetInvocationException: Exception has been thrown by the target of an invocation.
+1378:Exception while executing InitializeOnLoad for ImguiElementUtils.Init
+1387:MissingFieldException: Field not found: System.Action`1<UnityEngine.UIElements.IMGUIContainer> UnityEngine.UIElements.UIElementsUtility.s_BeginContainerCallback Due to: Could not find field in class
+1389:  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+1391:Rethrow as TargetInvocationException: Exception has been thrown by the target of an invocation.
+1675:Opening scene 'Assets/_Project/Scenes/00_BOOTSTRAP.unity'
+1676:Loaded scene 'Assets/_Project/Scenes/00_BOOTSTRAP.unity'
+1797:(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1184)
+1799:[HEADLESS] waiting for dispatcher
+1810:(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1184)
+2501:[HEADLESS] dispatcher acquired
+2512:(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1184)
+2514:[HEADLESS] runtime lanes registered; dilation requested
+2525:(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1184)
+3580:[GameBootstrapper-DEBUG] InitializeSceneActivatePhaseAsync: activeScene=00_BOOTSTRAP headless=True
+3616:[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached + PublishGameReady on bootstrap
+RESULT=NONE
+GATE=

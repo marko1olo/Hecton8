@@ -1,0 +1,318 @@
+===== Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs (2126 lines) =====
+18:    public sealed class HeadlessSimulationRunner : MonoBehaviour, IFastTickable, IFrostTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+27:        private const string StartupTimeoutArg = "-h8headlessStartupTimeout";
+42:        // the ecology schedules work until the frame's LateFrameTick completes it, because a Burst job owns
+47:        // RunFrostTick (:5267); the ecology's SlowTick calls ScheduleSectorSolve (EcosystemDirector.cs:2729),
+49:        // reached from the ecology's LateFrameTick (:2792), which the dispatcher runs in a LATER player-loop
+51:        // scheduled the solve, every FrostTick that follows it in that same frame - including this runner's,
+63:        // FIX 2026-07-30: day-boundary biomass sampling no longer runs in FrostTick. FrostTick only
+64:        // accumulates completed-day debt (_pendingDayAudits). The sample itself runs in LateFrameTick,
+65:        // AFTER ecology's Environment-lane LateFrameTick has called CompleteScheduledSimulation and
+80:        private const int MaxDailyAuditsPerFrostTick = 4;
+84:        private const float DefaultStartupTimeoutSeconds = 180f;
+126:        private double _startupTime;
+128:        private float _startupTimeoutSeconds = DefaultStartupTimeoutSeconds;
+137:        // Day boundaries detected in FrostTick; biomass sample deferred to LateFrameTick (post job fence).
+159:        private bool _started;
+168:        private bool _ecologyReady;
+202:            BeginStartup();
+205:        private void BeginStartup()
+216:                // either, because ColdTick only runs after RegisterRuntimeLanes.
+218:                _startupTime = Time.realtimeSinceStartupAsDouble;
+221:                TryCompleteDispatcherWait();
+226:                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+231:                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+236:                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+241:                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+245:        private void Update()
+253:            // BATCH_TIMEOUT with zero BOOTSTRAP_TIMEOUT — ticks were starved
+255:            // Poll here so a stall always produces a named FailAndQuit instead of
+257:            if (_started &&
+258:                !_ecologyReady &&
+259:                Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+261:                FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
+268:            TryCompleteDispatcherWait();
+291:            if (!_started || _finished)
+299:            if (safeDelta > 0f && _ecologyReady)
+311:                    FailAndQuit(1, DataVaultUnavailableHash, "[GHOST_BUFFER_UNAVAILABLE]");
+327:        public void LateFrameTick()
+329:            if (!_started || _finished)
+339:                    FailAndQuit(1, DataVaultUnavailableHash, "[GHOST_BUFFER_WRITE_FAILED]");
+349:                    FailAndQuit(1, NaNHash, "[NAN_DETECTED]");
+356:            if (_ecologyReady && _pendingDayAudits > 0)
+360:        public void FrostTick()
+362:            if (!_started || _finished)
+365:            TryMarkEcologyReady();
+366:            if (!_ecologyReady)
+371:                FailAndQuit(1, GasInvalidHash, "[GAS_INVALID]");
+376:            // same dispatcher update, and the job fence stays up until ecology's LateFrameTick. Queue
+377:            // day debt only; LateFrameTick drains it after the fence clears.
+382:                   auditsThisTick < MaxDailyAuditsPerFrostTick &&
+397:            if (!_started)
+400:            if (!_ecologyReady && Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+402:                FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
+411:        private void TryCompleteDispatcherWait()
+418:                if (Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+421:                    FailAndQuit(1, TimeoutHash, "[DISPATCHER_TIMEOUT]");
+436:                    FailAndQuit(1, DataVaultUnavailableHash, "[DATAVAULT_UNAVAILABLE]");
+440:                RegisterRuntimeLanes();
+444:                GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+445:                if (!_started)
+446:                    FailAndQuit(1, TimeoutHash, "[RUNNER_REGISTRATION_FAILED]");
+453:                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+458:                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+463:                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+468:                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+472:        private void RegisterRuntimeLanes()
+481:            _registeredFrost = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Core);
+484:            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+485:            _started = _registeredFast && _registeredFrost && _registeredCold && _registeredLate;
+486:            if (!_started)
+500:                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Core);
+512:                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+516:            _started = false;
+526:                if (_started || _finished)
+547:            RegisterRuntimeLanes();
+572:            _startupTimeoutSeconds = math.max(1f, TryReadFloat(args, StartupTimeoutArg, DefaultStartupTimeoutSeconds));
+603:            // ecology-ready transition instead - see TryMarkEcologyReady. This method runs the instant the
+627:        private void TryMarkEcologyReady()
+636:            if (readyNow && !_ecologyReady)
+656:            _ecologyReady = readyNow;
+695:        /// Drains day-boundary audits deferred from FrostTick. Invoked only from LateFrameTick so the
+703:                   auditsThisTick < MaxDailyAuditsPerFrostTick &&
+726:                FailAndQuit(1, LeakHash, "[LEAK_DETECTED]");
+738:                    FailAndQuit(1, DataVaultUnavailableHash, "[MEMORY_WINDOW_UNAVAILABLE]");
+767:                    FailAndQuit(1, EcologyCollapseHash, "[ECOLOGY_UNAVAILABLE]");
+788:                FailAndQuit(1, EcologyCollapseHash, "[ECOLOGY_COLLAPSE]");
+800:        /// Sampling now runs in LateFrameTick after the ecology job fence clears, so the 2026-07-29
+814:                FailAndQuit(1, EcologyNeverSampledHash, "[ECOLOGY_NEVER_SAMPLED]");
+1033:                    FailAndQuit(1, CsvWriteHash, "[CSV_WRITE_FAILED]");
+1043:                FailAndQuit(1, CsvWriteHash, "[CSV_WRITE_FAILED]");
+1050:                FailAndQuit(1, CsvWriteHash, "[CSV_WRITE_FAILED]");
+1057:                FailAndQuit(1, CsvWriteHash, "[CSV_WRITE_FAILED]");
+1064:                FailAndQuit(1, CsvWriteHash, "[CSV_WRITE_FAILED]");
+1142:        private void FailAndQuit(int exitCode, uint reasonHash, string status)
+1169:            // TryMarkEcologyReady sets Debug.unityLogger.filterLogType = LogType.Warning (:574) so
+1173:            // also eating this method's own verdict line. In the 2026-07-29 run, FailAndQuit wrote
+1369:                // was the opposite: TryMarkEcologyReady sets filterLogType = LogType.Warning (:574)
+===== Assets/_Project/Scripts/Core/SystemDispatcher.cs (7580 lines) =====
+570:        private static int _originShiftBootstrapLockCount;
+617:        internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+816:            Volatile.Write(ref _originShiftBootstrapLockCount, 0);
+874:                RunDispatcherLateFrameFromPlayerLoop);
+995:        private static void RunDispatcherLateFrameFromPlayerLoop()
+1001:            dispatcher.RunDispatcherLateFrame();
+1722:        internal static void RequestOriginShiftBootstrapLock()
+1724:            Interlocked.Increment(ref _originShiftBootstrapLockCount);
+1916:        internal static void ReleaseOriginShiftBootstrapLock()
+1918:            int current = Volatile.Read(ref _originShiftBootstrapLockCount);
+1922:                int observed = Interlocked.CompareExchange(ref _originShiftBootstrapLockCount, next, current);
+4682:            if (IsOriginShiftBootstrapLocked || IsOriginShiftFrameLockedForCurrentFrame)
+5230:                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+5246:                if (IsOriginShiftBootstrapLocked)
+5248:                    if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
+5251:                    if (IsOriginShiftBootstrapLocked)
+5260:                    RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
+5274:                bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&
+5284:                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+5318:                RunFastTick(deltaTime, blockGameplayLanes);
+5319:                RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+5320:                RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+5321:                RunBucketedSlowTick(blockGameplayLanes);
+5322:                RunSlowTick(deltaTime, blockGameplayLanes);
+5323:                RunColdTick(deltaTime, blockGameplayLanes);
+5324:                RunFrostTick(deltaTime, blockGameplayLanes);
+5510:        private void RunDispatcherLateFrame()
+5517:            if (IsOriginShiftBootstrapLocked)
+6181:        private void RunFixedStepAccumulator(float dilatedDeltaTime, bool blockGameplayLanes)
+6224:                DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
+6240:        private void DispatchFixedStep(float fixedDeltaTime, bool blockGameplayLanes)
+6253:                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6284:                            if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6365:        private void RunFastTick(float deltaTime, bool blockGameplayLanes)
+6384:                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6422:        private void RunUnscaledFastTick(float unscaledDeltaTime, bool blockGameplayLanes)
+6439:                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6474:        private void RunSlowTick(float deltaTime, bool blockGameplayLanes)
+6498:                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6780:        private void RunBucketedSlowTick(bool blockGameplayLanes)
+6796:                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6845:        private void RunColdTick(float deltaTime, bool blockGameplayLanes)
+6866:                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6902:        private void RunFrostTick(float deltaTime, bool blockGameplayLanes)
+6920:                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+7115:        private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
+7117:            if (!blockGameplayLanes)
+===== Assets/_Project/Scripts/World/EcosystemDirector.cs (10013 lines) =====
+208:    public sealed class EcosystemDirector : MonoBehaviour, ISlowTickable, IFrostTickable, ILateFrameTickable, IEcosystemDirectorService, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+1520:        private VaultBufferView<SectorPopulationState> _sectorFrontStates;
+1521:        private VaultBufferView<SectorPopulationState> _sectorBackStates;
+1556:        private bool _sectorFoodIsHashReported;
+1593:        private VaultBufferView<EcosystemIndexEntry> _sectorIndexEntries;
+1780:        public bool IsInitialized =>
+1781:            _sectorFrontStates.IsCreated &&
+1782:            _sectorBackStates.IsCreated &&
+1799:            _sectorIndexEntries.IsCreated;
+1802:        public ServiceHeartbeatState HeartbeatState => IsServiceReady ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+1805:        public bool IsServiceReady => _registeredService && IsInitialized && ReferenceEquals(GlobalRegistry.EcosystemDirector, this);
+1835:        //    IsAIEcologyBuffer(_sectorFoodHeatmapR8, ...) among its MANDATORY views. Because the view was
+2178:        /// <see cref="HasPendingSimulationJob"/> bail: <c>_sectorFrontStates</c> is one of the buffers the
+2185:            if (!IsInitialized || HasPendingSimulationJob())
+2194:            if (!_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates) ||
+2652:            if (!IsInitialized)
+2666:                if (_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates))
+2725:            if (!IsInitialized)
+2734:                NativeArray<EcosystemIndexEntry> sectorIndexEntries = _sectorIndexEntries.Resolve();
+2735:                NativeArray<SectorPopulationState> sectorFrontStates = _sectorFrontStates.Resolve();
+2736:                NativeArray<SectorPopulationState> sectorBackStates = _sectorBackStates.Resolve();
+2794:                if (_activeSectorCount >= _sectorFrontStates.Length)
+2829:                    NativeArray<EcosystemIndexEntry> sectorIndexEntries = _sectorIndexEntries.Resolve();
+2830:                    NativeArray<SectorPopulationState> sectorFrontStates = _sectorFrontStates.Resolve();
+2831:                    NativeArray<SectorPopulationState> sectorBackStates = _sectorBackStates.Resolve();
+2925:        internal void InitializeService()
+3103:            if (!IsInitialized)
+3180:                // Installed from here rather than from InitializeService/OnEnable on purpose. The director's
+3182:                // no-op when GlobalRegistry.Dispatcher is still null (:1948) - at InitializeService time it
+3188:                // Keeping it out of OnEnable/InitializeService also means a throw out of the fauna actuator
+3205:            if (!IsInitialized || _macroSwarmTravelScheduled || HasPendingSimulationJob())
+3316:                _sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates))
+3512:                SectorPopulationState state = _sectorFrontStates[slotIndex];
+3520:                _sectorFrontStates[slotIndex] = state;
+3521:                _sectorBackStates[slotIndex] = state;
+3547:            if (IsInitialized)
+3566:            if (!IsInitialized)
+3578:            if (!_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates) ||
+3614:            if (!IsInitialized || HasPendingSimulationJob())
+3876:            if (!IsInitialized)
+4178:            if (!IsInitialized ||
+4540:            if (!IsInitialized || HasPendingSimulationJob())
+4546:            if (!_sectorIndexEntries.TryResolveReadOnly(out NativeArray<EcosystemIndexEntry>.ReadOnly sectorIndexEntries) ||
+4547:                !_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates) ||
+4563:            if (!IsInitialized ||
+4606:            if (!IsInitialized || preyConsumed <= 0)
+4626:                SectorPopulationState state = _sectorFrontStates[slotIndex];
+4630:                _sectorFrontStates[slotIndex] = state;
+4631:                _sectorBackStates[slotIndex] = state;
+4645:            if (!IsInitialized)
+4661:            if (!IsInitialized || HasPendingSimulationJob())
+4676:                SectorPopulationState state = _sectorFrontStates[slotIndex];
+4684:                _sectorFrontStates[slotIndex] = state;
+4685:                _sectorBackStates[slotIndex] = state;
+4699:            if (!IsInitialized)
+4978:            int count = math.min(_activeSectorCount, _sectorFrontStates.IsCreated ? _sectorFrontStates.Length : 0);
+4982:                SectorPopulationState state = _sectorFrontStates[i];
+5077:            if (_sectorFrontStates.IsCreated)
+5086:            _sectorFrontStates = VaultBufferView<SectorPopulationState>.Create(vault, vault.EnsureGenerationHandle<SectorPopulationState>(BufferID.EcosystemSectorFrontStates, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+5087:            _sectorBackStates = VaultBufferView<SectorPopulationState>.Create(vault, vault.EnsureGenerationHandle<SectorPopulationState>(BufferID.EcosystemSectorBackStates, maxTrackedSectors, SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+5133:            _sectorIndexEntries = VaultBufferView<EcosystemIndexEntry>.Create(vault, vault.EnsureGenerationHandle<EcosystemIndexEntry>(BufferID.EcosystemSectorIndexEntries, ResolveVaultIndexCapacity(maxTrackedSectors), SystemID.AIEcology, NativeArrayOptions.ClearMemory));
+5488:            _sectorFrontStates = default;
+5489:            _sectorBackStates = default;
+5523:            _sectorIndexEntries = default;
+5860:                int expansionCeiling = math.max(1, _sectorFrontStates.Length - MigrationNeighborSectorReserve);
+5863:                    SectorPopulationState sourceState = _sectorFrontStates[sectorIndex];
+5915:            if (_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates))
+6091:            IHectonOceanKinematics oceanKinematics = oceanKinematicsService != null && oceanKinematicsService.IsInitialized
+6155:            if (!_sectorFoodIsHashReported)
+6157:                _sectorFoodIsHashReported = true;
+6193:                    FrontStates = _sectorFrontStates,
+6196:                    BackStates = _sectorBackStates,
+6223:                    States = _sectorBackStates,
+6312:            return IsAIEcologyBuffer(_sectorFrontStates, BufferID.EcosystemSectorFrontStates) &&
+6320:                   IsAIEcologyBuffer(_sectorBackStates, BufferID.EcosystemSectorBackStates) &&
+6323:                   IsAIEcologyBuffer(_sectorIndexEntries, BufferID.EcosystemSectorIndexEntries) &&
+6565:                VaultBufferView<SectorPopulationState> stateSwap = _sectorFrontStates;
+6566:                _sectorFrontStates = _sectorBackStates;
+6567:                _sectorBackStates = stateSwap;
+6696:                !activeBiota.IsInitialized ||
+6780:            if (activeBiota == null || !activeBiota.IsInitialized)
+6982:                    float speed = i < _sectorFrontStates.Length ? _sectorFrontStates[i].SpeedMultiplier : 1f;
+8254:            if (!_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates))
+8286:            NativeArray<EcosystemIndexEntry> sectorIndexEntries = _sectorIndexEntries.Resolve();
+8287:            NativeArray<SectorPopulationState> sectorFrontStates = _sectorFrontStates.Resolve();
+8288:            NativeArray<SectorPopulationState> sectorBackStates = _sectorBackStates.Resolve();
+8420:            if (!_sectorIndexEntries.TryResolveReadOnly(out NativeArray<EcosystemIndexEntry>.ReadOnly sectorIndexEntries) ||
+8421:                !_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates))
+8491:            if (!IsInitialized || !math.isfinite(amount) || amount <= 0f)
+9286:                int capacity = _sectorFrontStates.IsCreated ? _sectorFrontStates.Length : 0;
+===== LOG size=3754 =====
+1787:[HEADLESS] runner installed and started
+2501:[HEADLESS] dispatcher acquired
+2514:[HEADLESS] runtime lanes registered; dilation requested
+2527:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node HectonFloatingOrigin
+2569:[GameBootstrapper] Waiting for heartbeat for node HectonFloatingOrigin
+2695:[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node EcosystemDirector
+2737:[GameBootstrapper] Waiting for heartbeat for node EcosystemDirector
+3616:[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached + PublishGameReady on bootstrap
+3666:[HEADLESS] fail exitCode=1 status=[BOOTSTRAP_TIMEOUT]
+===== LOG HEAD/TAIL time-ish =====
+H1:[Licensing::Module] Trying to connect to existing licensing client channel...
+H2:Built from '6000.5/staging' branch; Version is '6000.5.0f1 (88b47c5e7076) revision 8959100'; Using compiler version '194234433'; Build Type 'Release'
+H3:[Licensing::IpcConnector] Channel LicenseClient-Admin doesn't exist
+H4:OS: 'Windows 11  (10.0.26200) Professional' Language: 'ru' Physical Memory: 32492 MB
+H5:BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+H6:System  architecture: x64
+H7:Process architecture: x64
+H8:Date: 2026-07-30T18:12:23Z
+H9:[Licensing::Module] Successfully launched the LicensingClient (PId: 30392)
+H10:
+H11:COMMAND LINE ARGUMENTS:
+H12:C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Unity.exe
+H13:-batchmode
+H14:-projectPath
+H15:C:\hades\Hecton8
+H16:-logFile
+H17:C:\hades\Hecton8\Docs\AgentLogs\headless_smoke_20260730_p0_gameready.log
+H18:-nographics
+H19:-executeMethod
+H20:Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner.Run
+H21:-h8headless
+H22:-h8headlessDays
+H23:5
+H24:-h8headlessDaySeconds
+H25:60
+H26:Successfully changed project path to: C:\hades\Hecton8
+H27:C:/hades/Hecton8
+H28:[UnityMemory] Configuration Parameters - Can be set up in boot.config
+H29:    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+H30:    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+---
+T3715:MonoPathRemapper: Attempts to remap: 238102; Successful remaps: 284
+T3716:Serialized file version minimum: 22, current 23
+T3717:<b><color=#2EA3FF>MCP-FOR-UNITY</color></b>: No process found listening on port 8088
+T3718:UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+T3719:UnityEngine.StackTraceUtility:ExtractStackTrace ()
+T3720:UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+T3721:UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+T3722:UnityEngine.Logger:Log (UnityEngine.LogType,object)
+T3723:UnityEngine.Debug:Log (object)
+T3724:MCPForUnity.Editor.Helpers.McpLog:Info (string,bool) (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Helpers/McpLog.cs:40)
+T3725:MCPForUnity.Editor.Services.ServerManagementService:StopLocalHttpServerInternal (bool,System.Nullable`1<int>,bool) (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/Serve
+T3726:MCPForUnity.Editor.Services.ServerManagementService:StopLocalHttpServer () (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/ServerManagementService.cs:349)
+T3727:MCPForUnity.Editor.Services.McpEditorShutdownCleanup:OnEditorQuitting () (at ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Services/McpEditorShutdownCleanup.cs:60)
+T3728:UnityEditor.EditorApplication:Internal_EditorApplicationQuit ()
+T3729:Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner:CompleteAfterPlayStopped (int) (at Assets/_Project/Scripts/QA/Headless/Editor/HeadlessSimulationBatchRunner.cs:403)
+T3730:Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner:PollRunState () (at Assets/_Project/Scripts/QA/Headless/Editor/HeadlessSimulationBatchRunner.cs:256)
+T3731:Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner:Tick () (at Assets/_Project/Scripts/QA/Headless/Editor/HeadlessSimulationBatchRunner.cs:215)
+T3732:UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+T3733:
+T3734:(Filename: ./Library/PackageCache/com.coplaydev.unity-mcp@edb7113971fc/Editor/Helpers/McpLog.cs Line: 40)
+T3735:
+T3736:Importing 'GUID: 8ce5c3ce78cc12749a7c905a6d8c86fe - Path: Assets/XR/Settings/OpenXRPackageSettings.asset' with importer (NativeFormatImporter)
+T3737:Imported 'GUID: 8ce5c3ce78cc12749a7c905a6d8c86fe' -> (Import Result ID: 'f7538dea6a6cc78bc26f3919de85edd3') in 0.002 seconds [static dependencies only]. Details - ImportResultOutputID=5c57ac83c1adf789
+T3738:Refreshing native plugins compatible for Editor in 8.35 ms, found 37 plugins.
+T3739:Asset Pipeline Refresh (id=e219915d08daa5441b2c0ec0aa6db83b): Total: 0.209 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+T3740:[Physics::Module] Cleanup current backend.
+T3741:[Physics::Module] Id: 0xf2b8ea05
+T3742:Input System module state changed to: ShutdownInProgress.
+T3743:Input Polling Thread exited.
+T3744:Input System module state changed to: Shutdown.
+T3745:[Licensing::IpcConnector] LicenseClient-Admin-notifications channel disconnected successfully.
+T3746:[Licensing::IpcConnector] LicenseClient-Admin channel disconnected successfully.
+T3747:AcceleratorClientConnectionCallback - disconnected - :0
+T3748:Cleanup mono
+T3749:CodeReloadManager destroyed
+T3750:Leak Detected : Persistent allocates 44 individual allocations. To find out more please enable 'Preferences > Jobs > Leak Detection Level > Enabled With Stack Trace' and reproduce the leak again.
+T3751:Checking for leaked weakptr:
+T3752:  Found no leaked weakptrs.
+T3753:[Package Manager] Server process was shutdown
+T3754:##utp:{"type":"MemoryLeaks","version":2,"phase":"Immediate","time":1785435424332,"processId":23216,"allocatedMemory":33306573,"memoryLabels":[{"Default":373472},{"Permanent":15516},{"NewDelete":69053}

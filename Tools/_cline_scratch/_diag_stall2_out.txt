@@ -1,0 +1,426 @@
+blockGameplayLanes=29
+ShouldSkipLaneDuringBootstrap=10
+IsGameReady=1
+IsOriginShiftBootstrapLocked=6
+---blockGameplayLanes@230266---
+rameLockedForCurrentFrame)
+                    return;
+
+                if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+                {
+                    RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
+                    return;
+                }
+
+                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+                RunMasterSimulationPhase(in masterTiming);
+#if UNITY_EDITOR
+                long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
+#endif
+                _foveatedSimulationManager.BeginDi
+---blockGameplayLanes@230936---
+erPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
+#endif
+                PredatorCognitionDomain.BeginDispatcherFrame(CurrentFrameIndex);
+                bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&
+                                          BootstrapState.HasActiveInstance &&
+                                          !BootstrapState.IsGameReady;
+                long bucketWorkStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+
+                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                {
+   
+---blockGameplayLanes@231493---
+neCount; laneIndex++)
+                {
+                    if (SignalBusRegistry.IsSimulationHalted)
+                        return;
+
+                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+                        continue;
+
+                    RegistryBucket<IUpdatable> lane = _priorityLanes[laneIndex];
+#if UNITY_EDITOR
+                    lane.ValidateNoDestroyedEntriesDebug(nameof(IUpdatable));
+#endif
+                    using (_updateLaneProfilerMarkers[laneIndex].Auto())
+                    {
+                        int count = lane.Count;
+
+                 
+---blockGameplayLanes@233006---
+(deltaTime);
+                PredatorCognitionDomain.ScheduleFrameEvaluation(CurrentFrameIndex);
+                _foveatedSimulationManager.ScheduleFrameJobs();
+                RunFastTick(deltaTime, blockGameplayLanes);
+                RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+                RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+                RunBucketedSlowTick(blockGameplayLanes);
+                RunSlowTick(deltaTime, blockGameplayLanes);
+                RunColdTick(deltaTime, blockGameplayLanes);
+                RunFrostTick(deltaT
+---blockGameplayLanes@233094---
+eIndex);
+                _foveatedSimulationManager.ScheduleFrameJobs();
+                RunFastTick(deltaTime, blockGameplayLanes);
+                RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+                RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+                RunBucketedSlowTick(blockGameplayLanes);
+                RunSlowTick(deltaTime, blockGameplayLanes);
+                RunColdTick(deltaTime, blockGameplayLanes);
+                RunFrostTick(deltaTime, blockGameplayLanes);
+                ScheduleDispatcherSurfaceProbes();
+           
+---blockGameplayLanes@233173---
+          RunFastTick(deltaTime, blockGameplayLanes);
+                RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+                RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+                RunBucketedSlowTick(blockGameplayLanes);
+                RunSlowTick(deltaTime, blockGameplayLanes);
+                RunColdTick(deltaTime, blockGameplayLanes);
+                RunFrostTick(deltaTime, blockGameplayLanes);
+                ScheduleDispatcherSurfaceProbes();
+                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentF
+---blockGameplayLanes@233230---
+             RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+                RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+                RunBucketedSlowTick(blockGameplayLanes);
+                RunSlowTick(deltaTime, blockGameplayLanes);
+                RunColdTick(deltaTime, blockGameplayLanes);
+                RunFrostTick(deltaTime, blockGameplayLanes);
+                ScheduleDispatcherSurfaceProbes();
+                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+                RunMasterPostSimu
+---blockGameplayLanes@233290---
+me, blockGameplayLanes: false);
+                RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+                RunBucketedSlowTick(blockGameplayLanes);
+                RunSlowTick(deltaTime, blockGameplayLanes);
+                RunColdTick(deltaTime, blockGameplayLanes);
+                RunFrostTick(deltaTime, blockGameplayLanes);
+                ScheduleDispatcherSurfaceProbes();
+                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+                RunMasterPostSimulationPhase(in masterTiming);
+                IModdingBridge
+---blockGameplayLanes@233350---
+Accumulator(deltaTime, blockGameplayLanes);
+                RunBucketedSlowTick(blockGameplayLanes);
+                RunSlowTick(deltaTime, blockGameplayLanes);
+                RunColdTick(deltaTime, blockGameplayLanes);
+                RunFrostTick(deltaTime, blockGameplayLanes);
+                ScheduleDispatcherSurfaceProbes();
+                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+                RunMasterPostSimulationPhase(in masterTiming);
+                IModdingBridge moddingBridge = _moddingBridgeProjectionRuntime;
+          
+---blockGameplayLanes@233411---
+unBucketedSlowTick(blockGameplayLanes);
+                RunSlowTick(deltaTime, blockGameplayLanes);
+                RunColdTick(deltaTime, blockGameplayLanes);
+                RunFrostTick(deltaTime, blockGameplayLanes);
+                ScheduleDispatcherSurfaceProbes();
+                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+                RunMasterPostSimulationPhase(in masterTiming);
+                IModdingBridge moddingBridge = _moddingBridgeProjectionRuntime;
+                if (moddingBridge != null)
+                    moddingB
+---blockGameplayLanes@271696---
+           _dominantLateFrameCircuitBreakerLaneCount = 1;
+                }
+
+                return;
+            }
+        }
+
+        private void RunFixedStepAccumulator(float dilatedDeltaTime, bool blockGameplayLanes)
+        {
+            if (SignalBusRegistry.IsSimulationHalted)
+                return;
+
+            if (dilatedDeltaTime <= 0f)
+            {
+                _temporalCompressionActive = false;
+                RefreshFixedInterpolationAlpha();
+                return;
+            }
+
+            double maxAccumulatedTime = FixedStepSeconds * MaxFixedSubstepsPerFrame;
+           
+---blockGameplayLanes@273732---
+substepCount < MaxFixedSubstepsPerFrame)
+            {
+                if (SignalBusRegistry.IsSimulationHalted)
+                    break;
+
+                DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
+                _fixedStepAccumulator -= FixedStepSeconds;
+                substepCount++;
+            }
+
+            if (substepCount >= MaxFixedSubstepsPerFrame && _fixedStepAccumulator >= FixedStepSeconds)
+                _fixedStepAccumulator = 0d;
+
+            RefreshFixedInterpolationAlpha();
+        }
+
+        private void RefreshFixedInterpolationAlpha()
+        {
+    
+---IsOriginShiftBootstrapLocked@37618---
+lationAlpha { get; private set; }
+
+        internal static SystemDispatcher ActiveRuntimeInstance { get; private set; }
+
+        internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+
+        internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == CurrentFrameIndex;
+
+        public float TimeDilationScalar => _timeDilationScalar;
+
+        public static ulong KillSwitchMask => unchecked(
+---IsOriginShiftBootstrapLocked@202485---
+FlagPaused;
+            if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+                flags |= DispatcherBlackBoxFlagAupBarrier;
+            if (IsOriginShiftBootstrapLocked || IsOriginShiftFrameLockedForCurrentFrame)
+                flags |= DispatcherBlackBoxFlagOriginShiftLock;
+            if (nonFinite)
+                flags |= DispatcherBlackBoxFlagNonFinite;
+            if (_coreTickDilationFramesRemaining > 0 || _coreTickDilationRestorePending)
+                flags |= DispatcherBlac
+---IsOriginShiftBootstrapLocked@228801---
+agnostics.Stopwatch.Frequency);
+                ISimulationBucketer simulationBucketer = _simulationBucketer;
+                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+                                        IsOriginShiftFrameLockedForCurrentFrame ||
+                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+                if (simulationBucketer != null && simulationBucketer.IsInitialized)
+                {
+                    simulationBucketer.ReportP
+---IsOriginShiftBootstrapLocked@229759---
+onBucketSync(in bucketFrameState);
+                    PublishFramePacingWarningIfNeeded(in bucketFrameState);
+                }
+
+                if (IsOriginShiftBootstrapLocked)
+                {
+                    if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
+                        return;
+
+                    if (IsOriginShiftBootstrapLocked)
+                        return;
+                }
+
+                if (IsOriginShiftFrameLockedForCurrentFrame)
+                
+---IsOriginShiftBootstrapLocked@229951---
+    {
+                    if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
+                        return;
+
+                    if (IsOriginShiftBootstrapLocked)
+                        return;
+                }
+
+                if (IsOriginShiftFrameLockedForCurrentFrame)
+                    return;
+
+                if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+                {
+                    RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
+       
+---IsOriginShiftBootstrapLocked@243243---
+ispatcherLateFrame);
+            long completeDispatcherTimestamp = 0L;
+            bool dispatcherPhaseTimingStarted = false;
+#endif
+            if (IsOriginShiftBootstrapLocked)
+                return;
+            if (IsOriginShiftFrameLockedForCurrentFrame)
+            {
+                _dataVault?.UnlockAllocationsAfterAupShift(_aupPreShiftPauseSequence);
+                return;
+            }
+
+            try
+            {
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+          
+---RunDispatcherLateFrame first---
+RunDispatcherLateFrameFromPlayerLoop);
+
+            if (updateReady && lateReady)
+            {
+                PlayerLoop.SetPlayerLoop(root);
+                _dispatcherPlayerLoopInstalled = true;
+                return;
+            }
+
+            PublishDispatcherComplianceViolation(_PlayerLoopInstallFailureHash, _SystemDispatcherHash, 4, 0);
+            GlobalTelemetryBus.PublishPerformanceWarning(_PlayerLoopInstallFailureHash, _SystemDispatcherHash, 1f);
+        }
+
+        private static bool TryEnsurePlayerLoopNode(
+            ref PlayerLoopSystem root,
+            System.Type parentType,
+            System.Type beforeType,
+            System.Type nodeType,
+            PlayerLoopSystem.UpdateFunction updateFunction)
+        {
+            if (ContainsPlayerLoopNode(root, nodeType))
+                return true;
+
+            PlayerLoopSystem node = new PlayerLoopSystem
+            {
+
+FO has Unlock
+FO has Lock
+R27:        private const string StartupTimeoutArg = "-h8headlessStartupTimeout";
+R84:        private const float DefaultStartupTimeoutSeconds = 180f;
+R126:        private double _startupTime;
+R128:        private float _startupTimeoutSeconds = DefaultStartupTimeoutSeconds;
+R202:            BeginStartup();
+R205:        private void BeginStartup()
+R218:                _startupTime = Time.realtimeSinceStartupAsDouble;
+R259:                Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+R400:            if (!_ecologyReady && Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+R418:                if (Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+R444:                GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+R572:            _startupTimeoutSeconds = math.max(1f, TryReadFloat(args, StartupTimeoutArg, DefaultStartupTimeoutSeconds));
+---BeginStartup---
+private void BeginStartup()
+        {
+            try
+            {
+                InitializeColdState();
+                // Do NOT await NextFrameAsync for the dispatcher gate. In -batchmode
+                // AwaitableDebtMonitor.NextFrameAsync is Task.Yield + MainThreadAsync; the
+                // runner continuation is not guaranteed to resume while bootstrap holds the
+                // main await chain. Evidence: headless_smoke_20260730_p0fix.log logs
+                // "waiting for dispatcher" then SystemDispatcher init + SceneActivate
+                // short-circuit, then silence until BATCH_TIMEOUT — no DISPATCHER_TIMEOUT
+                // either, because ColdTick only runs after RegisterRuntimeLanes.
+                // Player-loop Update always runs in editor playmode; poll there instead.
+                _startupTime = Time.realtimeSinceStartupAsDouble;
+                _awaitingDispatcher = true;
+                LogRunnerLifecycle("waiting for dispatcher");
+                TryCompleteDispatcherWait();
+            }
+            catch (IOException exception)
+            {
+                if (!_finished)
+                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                if (!_finished)
+                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+            }
+            catch (InvalidOperationException exception)
+            {
+               
+---TryCompleteDispatcherWait---
+private void TryCompleteDispatcherWait()
+        {
+            if (!_awaitingDispatcher || _finished)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+            {
+                if (Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+                {
+                    _awaitingDispatcher = false;
+                    FailAndQuit(1, TimeoutHash, "[DISPATCHER_TIMEOUT]");
+                }
+
+                return;
+            }
+
+            _awaitingDispatcher = false;
+            LogRunnerLifecycle("dispatcher acquired");
+
+            try
+            {
+                ForceHeadlessRuntimePolicy();
+                CacheDataVaultCold();
+                if (!EnsureVaultBuffersCold() || !TryInitializeGhostState())
+                {
+                    FailAndQuit(1, DataVaultUnavailableHash, "[DATAVAULT_UNAVAILABLE]");
+                    return;
+                }
+
+                RegisterRuntimeLanes();
+                TryRegisterHotSwapListener();
+                HectonFloatingOrigin.RegisterListener(this);
+                _originListenerRegistered = true;
+                GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+                if (!_started)
+                    FailAndQuit(1, TimeoutHash, "[RUNNER_REGISTRATION_FAILED]");
+                else
+                    LogRunnerLifecycle("runtime lanes registered; dilation requested");
+            }
+            catch (IOException exception)
+            {
+                if (!_finished)
+                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                if (!_finished)
+                    FailAndQuit(1, TimeoutHash, exception.GetType().Name);
+            }
+            catch (InvalidOperationException exception)
+            {
+                if (!_finished)
+                    FailAndQuit(1, TimeoutHash, exception.Get
+eco_cands=['Assets\\_Project\\Tests\\Editor\\EcosystemDirectorTeardownFenceEditTests.cs', 'Assets\\_Project\\Scripts\\World\\EcosystemDirector.cs']
+---Assets\_Project\Scripts\World\EcosystemDirector.cs IsInitialized---
+e state is allocated and registered.
+        /// </summary>
+        public bool IsInitialized =>
+            _sectorFrontStates.IsCreated &&
+            _sectorBackStates.IsCreated &&
+            _preyFrontCounts.IsCreated &&
+            _preyBackCounts.IsCreated &&
+            _predatorFrontCounts.IsCreated &&
+            _pred
+ /// <inheritdoc />
+        public bool IsServiceReady => _registeredService && IsInitialized && ReferenceEquals(GlobalRegistry.EcosystemDirector, this);
+
+        /// <summary>
+        /// Normalized biome hostility score exposed to UI and pacing systems.
+        /// </summary>
+        public float BiomeHostility01 => ResolveCom
+float foodDensity01)
+        {
+            foodDensity01 = 0f;
+            if (!IsInitialized || HasPendingSimulationJob())
+                return false;
+
+            if (!TryQuantizeSector(worldPosition, out int2 sectorCoord))
+                return false;
+
+            if (!TryResolveSectorSlotReadOnly(sectorCoord, out int slot
+SectorCount = 0;
+            _saveSnapshotBiomassRunCount = 0;
+            if (!IsInitialized)
+                return;
+
+            CompleteScheduledSimulation(forceComplete: true);
+            CompleteScheduledMacroSwarmTravel(forceComplete: true);
+            ApplyPendingBiomassImpacts();
+            SyncPendingHibernatedFauna
+log 'runner installed' idx=118724
+'-0.002 ms\n\tTotal Operation Time:   2569.900 ms\n[Licensing::Client] Successfully resolved entitlement details\n[HEADLESS] runner installed and started\nUnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,i'
+log 'waiting for dispatcher' idx=119536
+'ationRunner.cs:201)\n\n(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1184)\n\n[HEADLESS] waiting for dispatcher\nUnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,str'
+log 'dispatcher acquired' idx=194003
+'e. Took: 0.032s, timestamps: [91.096 - 91.129]\n[Licensing::Client] Successfully resolved entitlement details\n[HEADLESS] dispatcher acquired\nUnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string'
+log 'runtime lanes registered' idx=194954
+'ationRunner.cs:268)\n\n(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1184)\n\n[HEADLESS] runtime lanes registered; dilation requested\nUnityEngine.Debug:ExtractStackTrace'
+log 'PublishGameReady on bootstrap' idx=313918
+'p/GameBootstrapper.cs Line: 3144)\n\n[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached + PublishGameReady on bootstrap\nUnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,'
+log 'BOOTSTRAP_TIMEOUT' idx=318584
+'itor/HectonAgentWorkCementer.cs Line: 174)\n\nTrimDiskCacheJob: Current cache size 0mb\n[HEADLESS] fail exitCode=1 status=[BOOTSTRAP_TIMEOUT]\nUnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)'
+log 'fail exitCode' idx=318560
+'sets/_Project/Scripts/Editor/HectonAgentWorkCementer.cs Line: 174)\n\nTrimDiskCacheJob: Current cache size 0mb\n[HEADLESS] fail exitCode=1 status=[BOOTSTRAP_TIMEOUT]\nUnityEngine.Debug:ExtractStackTraceNo'
