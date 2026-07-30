@@ -81,11 +81,12 @@ Analyzed 2026-07-30 (STATIC luminance / dominant-channel pass on disk PNGs). All
 
 | ID | Path | Kind | Timestamp | Result | Notes |
 |---|---|---|---|---|---|
-| V0-L01 | `Docs/AgentLogs/H8_V0_PLAYTEST_SMOKE_GATE.json` | KCC headless gate | PENDING | PENDING | Does not claim WORLD; blocked while Unity headless ecology holds lock |
+| V0-L01 | `Docs/AgentLogs/H8_V0_PLAYTEST_SMOKE_GATE.json` (+ `v0_kcc_gate_2026-07-30.log`) | KCC headless gate | 2026-07-30 11:32Z | MEASURED FAIL | `overallPass:false` `claimsWorldPlayable:false`. Flags `0x00000042` = Escape\|SdfInvalid. `kccFailureCount=743920`. PrecisionDrift clear. Cone contract pass. **Not WORLD playable.** |
 | V0-L02 | `Docs/AgentLogs/worldroot_report_2026-07-30.log` | ReportOnly WORLD root | 2026-07-30 ~15:18 | MEASURED OK | `active:1/inactive:0`; REFUSED re-lift (expected post-APPLY). No APPLY run. |
 | V0-L03 | `Docs/AgentLogs/worldroot_apply4.log` | Historical APPLY attempt | 2026-07-29 | HISTORICAL | APPLY landed in git `d7e461e67` |
 | V0-L04 | `Docs/AgentLogs/worldroot_report.log` | Historical REPORT | 2026-07-29 | HISTORICAL | Pre-APPLY: active:0, buried under DEPRECATED_STUFF |
-| V0-L05 | `Docs/AgentLogs/headless_smoke_20260730_p0fix.log` | Headless ecology batch | 2026-07-30 ~15:19+ | IN FLIGHT | Short-circuit hit: `Headless SceneActivate short-circuit: MarkMainMenuReached on bootstrap`. Not PLAYER. |
+| V0-L05 | `Docs/AgentLogs/headless_smoke_20260730_p0fix.log` | Headless ecology batch | 2026-07-30 ~15:19–15:27 | MEASURED finished | Short-circuit MEASURED: `Headless SceneActivate short-circuit: MarkMainMenuReached on bootstrap`. Batch exited via `CompleteAfterPlayStopped`. **No biomass / ecology-day PASS lines** in log. Not PLAYER; does not close checklist. |
+
 
 ---
 
@@ -162,11 +163,13 @@ Player production authority: `HectonPlayerMovement` as `IBootstrapProductionPlay
 ## Next real-game actions (ordered)
 
 1. ~~ReportOnly WORLD root (no APPLY) — log to V0-L02.~~ **DONE** MEASURED 2026-07-30 (active:1, REFUSED expected).
-2. Human or instrumented Play Mode: boot → WORLD; capture V0-S01..S03 under `Docs/Screenshots/V0_Playtest/`.
-3. One tool use + one fauna sighting + death/respawn + save roundtrip; capture V0-S04..S07.
-4. Run KCC V0 gate for regression lock only (V0-L01) — blocked until Unity lock free (headless ecology PID holds project).
-5. Only after PLAYER rows pass: integrate missing systems that block those rows (colliders, fauna placement, FaunaBrain host, save HUD failure path).
-6. Git: `pull --no-rebase` (merge diverged main ahead/behind) then push — no force. Allowlist docs already cemented in `75c883fd4`; keep denylist out of future commits.
+2. Human or instrumented Play Mode: boot → WORLD; capture V0-S01..S03 under `Docs/Screenshots/V0_Playtest/`. **OWED — dir empty; checklist still all open.**
+3. One tool use + one fauna sighting + death/respawn + save roundtrip; capture V0-S04..S07. **OWED.**
+4. ~~Run KCC V0 gate (V0-L01).~~ **DONE** MEASURED FAIL 2026-07-30 11:32Z — flags Escape\|SdfInvalid (`0x42`), failureCount 743920, PrecisionDrift clear, `claimsWorldPlayable:false`. Log + JSON under `Docs/AgentLogs/`.
+5. KCC regression debt (not playability): diagnose Escape+SdfInvalid mass failures in Shinobu355 smoke — separate from PLAYER route.
+6. Only after PLAYER rows pass: integrate missing systems that block those rows (colliders, fauna placement, FaunaBrain host, save HUD failure path).
+7. ~~Git: `pull --no-rebase` then push.~~ **DONE** merge `277b44d6c` → pushed `gitlab/main`. Further allowlist commit for V0-L01 artifacts pending this turn.
+8. Headless ecology (V0-L05): finished; short-circuit OK; **no non-zero biomass proof** — ecology PLAY proof still open (not PLAYER).
 
 ---
 
@@ -176,3 +179,6 @@ Player production authority: `HectonPlayerMovement` as `IBootstrapProductionPlay
 |---|---|
 | 2026-07-30 | Ledger created. Checklist all open. Historical screenshots catalogued as non-closing. Meta-freeze + README + BUILD_PLAYTEST honesty + V0 KCC gate added in working tree. |
 | 2026-07-30 15:18 | ReportOnly ran (V0-L02): active WORLD root confirmed; tool REFUSED re-lift (expected). Historical PNG analysis: 2/10 near-black, all pre-APPLY. Headless bootstrap handoff short-circuit in `GameBootstrapper` (stale PlayerPrefs no longer deadlocks batch ecology). |
+| 2026-07-30 15:27 | Headless ecology batch finished (V0-L05): short-circuit MEASURED; CompleteAfterPlayStopped; no biomass PASS. |
+| 2026-07-30 11:32Z / 15:33 local | V0 KCC gate ran (V0-L01): MEASURED FAIL flags `0x42` Escape\|SdfInvalid; claimsWorldPlayable false. Captain checklist unchanged (all open). |
+
