@@ -908,7 +908,9 @@ namespace Hecton8.Editor
                     // A positive authored LOD0 vertex count is the presence test. The block exists only on
                     // packages whose family renders through a baked VAT, and requiring a real count rather than
                     // mere non-nullness keeps an empty or default-constructed block from granting anything.
-                    manifest.vatReadiness != null && manifest.vatReadiness.vertexCountLOD0 > 0);
+                    // ResolveVatReadiness checks both the root field (old manifests) and extra.vatReadiness
+                    // (current forge output) so neither placement is silently missed.
+                    ResolveVatReadiness(manifest) != null && ResolveVatReadiness(manifest).vertexCountLOD0 > 0);
                 return true;
             }
 
