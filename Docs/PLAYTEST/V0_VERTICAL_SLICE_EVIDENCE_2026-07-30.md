@@ -233,3 +233,60 @@ Player production authority: `HectonPlayerMovement` as `IBootstrapProductionPlay
 1. Re-run playprobe **without** forceMenuLoad; expect Boot beyond Environment (menu eligible or WORLD).
 2. Graphics-on Boot→Menu→New Game→WORLD; capture V0-S01..S03 under `Docs/Screenshots/V0_Playtest/`.
 3. Swim ~30s (V0-S03), one tool (V0-S04), one fauna (V0-S05); then death/save.
+
+
+## V0-L07 — P0 bootfix re-probe (MEASURED progress) — 2026-07-30T20:29Z
+
+| Field | Value |
+| --- | --- |
+| Evidence class | **MEASURED** (batchmode playprobe, graphics flags ON / no `-nographics`; not PLAYER PNGs) |
+| HEAD | `1b1596859` (P0 product + bak quarantine on main; pushed gitlab+origin) |
+| Artifact log | `Docs/AgentLogs/h8_playprobe_v0_L07.log` |
+| Artifact JSON | `Docs/AgentLogs/h8_playprobe_v0_L07.json` (probe claimed write; verify on disk) |
+| executeMethod | `Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe.Run` |
+| forceMenuLoad | **false** (correct) |
+| -nographics | **not passed** |
+| -h8headless | **not passed** as play proof |
+| activeScene end | `02_HECTON_WORLD` |
+| Captain checklist | **still all open** — zero PLAYER PNGs under `Docs/Screenshots/V0_Playtest/` |
+
+### Route moments (from log)
+
+| Moment | Result | Notes |
+| --- | --- | --- |
+| Boot | **PASS** | allSystemsReady=True gameReady=True activationStep=Complete activeScene=02_HECTON_WORLD |
+| WorldLoad | **PASS** | 02_HECTON_WORLD loaded ~10s; 01_MAIN_MENU unloading |
+| FirstExit | NOT_EXERCISED | CONTENT-BLOCKED — no life-pod/drop-pod prefab sites |
+| Swim | **FAIL** | 93935 input overrides; movementIntent01max=0.000; depth span=0; immersionMax=1.000 — input plumbing / intent not reaching movement |
+| Resource | BLOCKED | node nearly depleted (260→0.444) but not closed |
+| Tool | BLOCKED | slotCount=4 but IsToolAvailableInSlot false all slots; inventory version stuck 0 |
+| CraftRepairBuild | BLOCKED | fabricator live; 0 recipes craftable (no resource delivery) |
+| Mission | BLOCKED | 12 quests authored; 0 completions |
+| Hazard | NOT_EXERCISED | CONTENT-BLOCKED — no hazard AddComponent sites |
+| SaveLoad | PARTIAL | save half observed (slot_0 file change); load half not exercised |
+| Proof | PARTIAL | log + phase table; determinism NeverSampled |
+
+Aggregate: pass=2 partial=2 fail=1 blocked=4 notExercised=2 / 11. RESULT failures=1 (Swim).
+
+### Ocean / Environment (P0 gate)
+
+- L06: Environment died on `OceanKinematicsRuntimeService` (exception text swallowed) + concurrent celestial dump throw.
+- L07: `TryInitializeBootstrapDependencyNodeWithFallback for node OceanKinematicsRuntimeService` + `Waiting for heartbeat for node OceanKinematicsRuntimeService` — **no** `Bootstrap dependency exception` / phase fail for Ocean.
+- Boot moment PASS with activation Complete ⇒ Environment phase completed. P0 logger + dump hardenings held for this route.
+- Critique stance retained historically: L06 dump≠proven Ocean root; L07 now **measures** boot past Environment without needing forceMenuLoad.
+
+### Explicit non-claims
+
+- Not PLAYER. `Docs/Screenshots/V0_Playtest/` still **empty**.
+- Swim FAIL means vertical slice is **not** playable for captain row 3.
+- Tool/fauna/death rows remain open.
+- Batchmode + world-driver input overrides ≠ human control proof.
+- Unity ended with mono/native fatal during teardown after moments (log notes); does not erase moment PASS lines already emitted.
+
+### Next product work (ordered)
+
+1. **Swim/input plumbing** — movementIntent stays 0 despite driver overrides (`INPUTHOP` overrideRejected high; publishGuardFail). Fix intent path so Swim can PASS on re-probe.
+2. **Tool loadout** — make at least one slot `IsToolAvailableInSlot=true` on New Game spawn (inventory version should move).
+3. **Graphics PLAYER PNGs** — Boot→WORLD V0-S01..S03 under `Docs/Screenshots/V0_Playtest/` (human or non-nographics capture that writes pixels).
+4. Then fauna ×1, death/respawn, save/load roundtrip.
+

@@ -71,3 +71,16 @@ Flags:
 - Prior L06 evidence if not already on remote: `h8_playprobe_v0_L06.json`, `V0_L06_PROBE_RUNBOOK.md`, KCC gate JSON/log (optional; large .log may stay local)
 
 Denylist: `Tools/_cline_scratch/**`, `*.bak_v0boot`, tokens, Library, XR noise.
+
+
+## L07 MEASURED result (post-run)
+
+UTC ~2026-07-30T20:29Z | HEAD `1b1596859`
+
+- executeMethod corrected to `Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe.Run` (not `Hecton8.Editor.Diagnostics...RunFromCommandLine`).
+- **Boot PASS**, **WorldLoad PASS**, scene `02_HECTON_WORLD`.
+- OceanKinematics initialized (heartbeat wait; no dependency exception).
+- Swim **FAIL** (movementIntent01max=0). Tool/Resource/Craft/Mission BLOCKED. Save PARTIAL.
+- PLAYER PNGs: still zero. Captain checklist remains open.
+- Log: `Docs/AgentLogs/h8_playprobe_v0_L07.log`
+
