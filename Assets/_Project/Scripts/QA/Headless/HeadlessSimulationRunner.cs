@@ -244,7 +244,25 @@ namespace Hecton8.QA.Headless
 
         private void Update()
         {
-            if (!_awaitingDispatcher || _finished)
+            if (_finished)
+                return;
+
+            // Wall-clock ecology/bootstrap timeout must NOT depend on ColdTick.
+            // ColdTick only fires after lanes are registered AND dispatcher cadence
+            // is unlocked. p0_dispfix (2026-07-30) proved lanes registered then
+            // BATCH_TIMEOUT with zero BOOTSTRAP_TIMEOUT — ticks were starved
+            // (Player LateFrame gated on !IsGameReady; possible origin-shift lock).
+            // Poll here so a stall always produces a named FailAndQuit instead of
+            // letting the batch runner win with BATCH_TIMEOUT.
+            if (_started &&
+                !_ecologyReady &&
+                Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+            {
+                FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
+                return;
+            }
+
+            if (!_awaitingDispatcher)
                 return;
 
             TryCompleteDispatcherWait();

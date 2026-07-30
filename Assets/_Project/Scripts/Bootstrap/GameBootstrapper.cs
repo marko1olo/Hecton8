@@ -3157,7 +3157,14 @@ namespace Hecton8.Bootstrap
 
                         GameStartContextHolder.Reset();
                         BootstrapStatus.MarkMainMenuReached();
-                        Debug.Log("[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached on bootstrap");
+                        // Headless short-circuit previously only MarkMainMenuReached.
+                        // SystemDispatcher.ShouldSkipLaneDuringBootstrap skips PriorityLayer.Player
+                        // while !BootstrapState.IsGameReady. LateFrame biomass drain is on Player
+                        // (HeadlessSimulationRunner), so ecology never advances without this.
+                        // Full ExecuteSceneActivationAsync publishes GameReady~7749; headless must mirror.
+                        BootstrapState.PublishGameReady(true);
+                        BootstrapState.PublishBootstrapPresence(false);
+                        Debug.Log("[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached + PublishGameReady on bootstrap");
                         return true;
                     }
 
