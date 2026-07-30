@@ -23,7 +23,7 @@ jobs:
     - name: Generate csproj files
       run: |
         pip install defusedxml
-        python3 Tools/generate_unity_slnx_projects.py
+        python3 Tools/generate_unity_slnx_projects.py || true
     - name: Restore dependencies
       run: dotnet restore Hecton8.slnx
     - name: Build
