@@ -1,0 +1,116 @@
+===== V0_L06 POLL 30.07.2026 20:28:03,17 =====
+LOCK_YES
+---LAUNCH_STATUS---
+start 30.07.2026 20:27:38,52
+repo=C:\hades\Hecton8
+LOCK_NO
+UNITY_OK
+launching
+method=Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe.Run
+log=Docs\AgentLogs\h8_playprobe_v0_L06.log
+artifact=Docs\AgentLogs\h8_playprobe_v0_L06.json
+flags=-h8StartGame 1 -h8TimeoutSeconds 900 -h8MenuSeconds 120 -h8SettleSeconds 180 -h8GameplaySeconds 90
+NO_QUIT=
+PID=568
+start_time=30.07.2026 20:27:38,74
+launched
+PIDFILE=
+Ошибка: Фильтр поиска не опознан.
+---UNITY_TASKLIST---
+
+Имя образа:     Unity.exe
+PID:            568
+Имя сессии:     Console
+№ сеанса:       1
+Память:         3 447 608 КБ
+---LOG---
+LOG_EXISTS
+LOG_BYTES=25362
+---LOG_TAIL_80---
+    com.unity.modules.uielements@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.modules.umbra@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.umbra)
+    com.unity.modules.unityanalytics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unityanalytics)
+    com.unity.modules.unitywebrequest@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequest)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestassetbundle)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestaudio)
+    com.unity.modules.unitywebrequesttexture@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequesttexture)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.unitywebrequestwww)
+    com.unity.modules.vectorgraphics@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vectorgraphics)
+    com.unity.modules.vehicles@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.vehicles)
+    com.unity.modules.video@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.video)
+    com.unity.modules.wind@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.wind)
+    com.unity.modules.xr@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.xr)
+    com.unity.render-pipelines.core@17.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.core@f43b729f1f6e)
+    com.unity.modules.subsystems@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.subsystems)
+    com.unity.modules.hierarchycore@1.0.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.render-pipelines.universal-config@17.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.render-pipelines.universal-config@fdda01c80fe3)
+    com.unity.collections@6.5.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.collections@a43cabe808ca)
+    com.unity.mathematics@1.4.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.mathematics@981956d94fb6)
+    com.unity.test-framework@1.7.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.test-framework@f3e6c9a02477)
+    com.unity.ext.nunit@2.1.0 (location: C:\hades\Hecton8\Library\PackageCache\com.unity.ext.nunit@44f7d31723bd)
+  Embedded packages:
+    com.unity.xr.management@file:C:\hades\Hecton8\Packages\com.unity.xr.management (location: C:\hades\Hecton8\Packages\com.unity.xr.management)
+    com.jbooth.microsplat.core@file:C:\hades\Hecton8\Packages\com.jbooth.microsplat.core (location: C:\hades\Hecton8\Packages\com.jbooth.microsplat.core)
+    com.jbooth.microsplat.urp2022@file:C:\hades\Hecton8\Packages\com.jbooth.microsplat.urp2022 (location: C:\hades\Hecton8\Packages\com.jbooth.microsplat.urp2022)
+    com.unity.shadergraph@file:C:\hades\Hecton8\Packages\com.unity.shadergraph (location: C:\hades\Hecton8\Packages\com.unity.shadergraph)
+  Git packages:
+    com.coplaydev.unity-mcp@https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#beta (location: C:\hades\Hecton8\Library\PackageCache\com.coplaydev.unity-mcp@edb7113971fc)
+[Subsystems] Looking for new subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c
+[Subsystems] Novel subsystem found at Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/hades/Hecton8/Assets
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.meta-openxr@dae986a05b5c
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] No descriptors matched for  inputs in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] No descriptors matched for  displays in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'meshings' descriptors matched in Library/PackageCache/com.unity.xr.meta-openxr@dae986a05b5c/Runtime/UnitySubsystemsManifest.json
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.openxr@58837b2992e0
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.openxr@58837b2992e0/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'inputs' descriptors matched in Library/PackageCache/com.unity.xr.openxr@58837b2992e0/Runtime/UnitySubsystemsManifest.json
+[Subsystems] 1 'displays' descriptors matched in Library/PackageCache/com.unity.xr.openxr@58837b2992e0/Runtime/UnitySubsystemsManifest.json
+[Subsystems] No descriptors matched for  meshings in Library/PackageCache/com.unity.xr.openxr@58837b2992e0/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] Discovering subsystems at path C:\hades\Hecton8\Library\PackageCache\com.unity.xr.arfoundation@13d2457b468b
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'inputs' descriptors matched in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json
+[Subsystems] No descriptors matched for  displays in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'meshings' descriptors matched in Library/PackageCache/com.unity.xr.arfoundation@13d2457b468b/Runtime/UnitySubsystemsManifest.json
+[Package Manager] Done registering packages in 0.03 seconds
+Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+Assembly for Assembly Definition File 'Assets/Feel/MMTools/Editor/MMMaintenance/Tests/MoreMountains.Tools.Editor.Tests.asmdef' will not be compiled, because it has no scripts associated with it.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:LogFormat (UnityEngine.LogType,string,object[])
+UnityEngine.Debug:LogWarningFormat (string,object[])
+UnityEditor.Scripting.ScriptCompilation.EditorCompilation:WarnIfThereAreAssembliesWithoutAnyScripts (UnityEditor.Scripting.ScriptCompilation.ScriptAssemblySettings,UnityEditor.Scripting.ScriptCompilation.ScriptAssembly[])
+UnityEditor.Scripting.ScriptCompilation.EditorCompilation:CompileScriptsWithSettings (UnityEditor.Scripting.ScriptCompilation.ScriptAssemblySettings)
+UnityEditor.Scripting.ScriptCompilation.EditorCompilation:CompileScripts (UnityEditor.Scripting.ScriptCompilation.EditorScriptCompilationOptions,UnityEditor.BuildTarget,int,string[])
+UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface/<>c__DisplayClass21_0:<CompileScripts>b__0 ()
+UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface:EmitExceptionAsError<UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus> (System.Func`1<UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus>,UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus)
+UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface:CompileScripts (UnityEditor.Scripting.ScriptCompilation.EditorScriptCompilationOptions,UnityEditor.BuildTarget,int,string[])
+
+Starting: C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: C:/hades/Hecton8
+DisplayProgressbar: Compiling Scripts
+ExitCode: 0 Duration: 1s81ms
+[2858/3945  0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+*** Tundra build success (1.05 seconds), 1 items updated, 3945 evaluated
+AssetDatabase: script compilation time: 1.613253s
+Begin MonoManager ReloadAssembly
+Assembly reference Packages/com.unity.cinemachine/Editor/Samples/ExposeHDRPInternals/HDRP-Editor-ref.asmref has no target assembly definition
+'Packages/com.unity.cinemachine/Editor/Editors/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+'Packages/com.unity.cinemachine/Editor/Obsolete/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+Refreshing native plugins compatible for Editor in 11.32 ms, found 37 plugins.
+Native extension for LinuxStandalone target not found
+Native extension for WindowsStandalone target not found
+Native extension for OSXStandalone target not found
+Refreshing native plugins compatible for Editor in 7.41 ms, found 37 plugins.
+---LOG_MARKERS---
+-h8TimeoutSeconds
+- Finished resetting the current domain, in  6.128 seconds
+---ARTIFACT---
+ARTIFACT_MISSING
+---SCREENSHOTS_V0---
+done 30.07.2026 20:28:03,52
