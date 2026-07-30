@@ -1,0 +1,165 @@
+=== UNITY ===
+??????: ?????, ????? ??????? ?????, ??????????.
+unity_alive=False
+=== LOG ===
+exists True size 236322
+marker 'error CS': 174
+marker 'Exception': 33
+marker 'Scripts have compiler errors': 1
+--- LOG TAIL ---
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(16,13): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(16,53): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(22,24): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(25,141): error CS0103: The name 'VaultHandleOptions' does not exist in the current context
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(26,24): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(29,24): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(35,53): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\BuildTestTests.cs(12,41): error CS0103: The name 'BuildTest' does not exist in the current context
+Assets\_Project\Tests\Editor\H8BlackboxUtilsExceptionTests.cs(17,31): error CS0246: The type or namespace name 'H8Utils' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\H8BlackboxUtilsExceptionTests.cs(43,26): error CS0103: The name 'H8Utils' does not exist in the current context
+Assets\_Project\Tests\Editor\ObjectPoolManagerOnServiceShutdownTests.cs(63,28): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerOnServiceShutdownTests.cs(64,58): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerOnServiceShutdownTests.cs(70,42): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(41,54): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(79,43): error CS0117: 'ObjectPoolManager' does not contain a definition for 'ActiveRuntimeInstance'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(104,40): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(130,40): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(131,43): error CS0117: 'ObjectPoolManager' does not contain a definition for 'ActiveRuntimeInstance'
+Assets\_Project\Tests\Editor\QuestDagResolverEditTests.cs(365,37): error CS0103: The name 'NativeMemorySentinel' does not exist in the current context
+Assets\_Project\Tests\Editor\QuestDagResolverEditTests.cs(365,124): error CS0103: The name 'NativeAllocationLifetime' does not exist in the current context
+Assets\_Project\Tests\Editor\QuestDagResolverEditTests.cs(384,29): error CS0103: The name 'NativeMemorySentinel' does not exist in the current context
+Assets\_Project\Tests\Editor\TerrainChunkSignalContractEditTests.cs(928,25): error CS0103: The name 'systemDispatcher' does not exist in the current context
+Assets\_Project\Tests\Editor\TerrainChunkSignalContractEditTests.cs(934,25): error CS0103: The name 'bootstrap' does not exist in the current context
+Assets\_Project\Tests\Editor\TerrainChunkSignalContractEditTests.cs(935,25): error CS0103: The name 'scatter' does not exist in the current context
+
+Assets\_Project\Scripts\SaveData.cs(1018,66): warning UAC1001: Field 'position' type 'Hecton8.World.AbsoluteUniversePositionBlit128' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+Assets\_Project\Scripts\SaveData.cs(153,42): warning UAC1009: Field 'toolDurabilityMap' uses an unsupported type 'System.Collections.Generic.Dictionary<string, float>'. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1009)
+Assets\_Project\Scripts\SaveData.cs(156,41): warning UAC1009: Field 'toolBrokenMap' uses an unsupported type 'System.Collections.Generic.Dictionary<string, bool>'. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1009)
+Assets\_Project\Scripts\SaveData.cs(159,29): warning UAC1009: Field 'discoveredBiomeIds' uses an unsupported type 'System.Collections.Generic.HashSet<int>'. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1009)
+Assets\_Project\Scripts\SaveData.cs(365,43): warning UAC1009: Field 'CustomModData' uses an unsupported type 'System.Collections.Generic.Dictionary<string, string>'. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1009)
+Assets\_Project\Scripts\Inventory\CargoTransferDebugGizmo.cs(15,63): warning UAC1010: Field 'sourceAup' type 'Hecton8.World.AbsoluteUniversePositionBlit' is not [Serializable]; [SerializeField] is ignored. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1010)
+Assets\_Project\Scripts\Inventory\CargoTransferDebugGizmo.cs(16,63): warning UAC1010: Field 'destinationAup' type 'Hecton8.World.AbsoluteUniversePositionBlit' is not [Serializable]; [SerializeField] is ignored. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1010)
+Assets\_Project\Scripts\Construction\NetworkNodeData.cs(137,41): warning UAC1001: Field 'NodeAup' type 'Hecton8.World.AbsoluteUniversePosition' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+Assets\_Project\Scripts\Gameplay\PlayerActionController.cs(89,55): warning UAC1010: Field 'cameraJuiceProcessor' type 'Hecton8.Gameplay.CameraJuiceProcessor' is not [Serializable]; [SerializeField] is ignored. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1010)
+Assets\_Project\Scripts\World\ProceduralWreckGenerator.cs(169,31): warning UAC1001: Field 'NavigationBuild' type 'UnityEngine.AsyncOperation' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+Assets\_Project\Scripts\WorldFaunaSpawnRegistry.cs(16,45): warning UAC1001: Field 'positionAup' type 'Hecton8.World.AbsoluteUniversePosition' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+Assets\_Project\Scripts\Plugins\MapMagic\HectonRockOutput.cs(86,25): warning UAC1002: Type 'Hecton8.World.HectonRockOutput' hierarchy is incomplete: 'MapMagic.Nodes.OutputGenerator' lacks the [Serializable] attribute. Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1002)
+Assets\_Project\Scripts\Habitat\Deformation\Editor\DamageBake\HabitatDamageBakePipeline.cs(1050,46): warning UAC1001: Field 'StateMappings' type 'Hecton8.Habitat.Deformation.Contracts.ModuleDamageStateMappingDTO' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+Assets\_Project\Scripts\Habitat\Deformation\Editor\DamageBake\HabitatDamageBakePipeline.cs(1053,39): warning UAC1001: Field 'CollisionHulls' type 'Hecton8.Habitat.Deformation.Contracts.HabitatDamageHullDTO' is skipped by serialization (missing the [Serializable] attribute). Refer to the Serialization rules analyzer reference. (https://docs.unity3d.com/6000.5/Documentation/Manual/script-serialization-analyzer.html#uac1001)
+Assets\_Project\Tests\Editor\NiceVibrations\JNIHelpersTests.cs(16,64): error CS0234: The type or namespace name 'JNIHelpers' does not exist in the namespace 'Lofelt.NiceVibrations' (are you missing an assembly reference?)
+Assets\_Project\Tests\Editor\Gameplay\CameraJuiceProcessorInitializeIssueTests.cs(14,33): error CS0246: The type or namespace name 'CameraJuiceProcessor' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\Gameplay\CameraJuiceProcessorInitializeIssueTests.cs(15,31): error CS0246: The type or namespace name 'CameraJuiceProcessor' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\MapMagicGraphCatchBlockEditTests.cs(15,57): error CS0246: The type or namespace name 'Graph' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\MapMagicGraphCatchBlockEditTests.cs(16,45): error CS0234: The type or namespace name 'Products' does not exist in the namespace 'MapMagic' (are you missing an assembly reference?)
+Assets\_Project\Tests\Editor\PowerGridRemoveNodeTests.cs(102,63): error CS0122: 'PowerGrid.CachedOverloadServices' is inaccessible due to its protection level
+Assets\_Project\Tests\Editor\PowerGridRemoveNodeTests.cs(104,51): error CS0122: 'PowerGrid.CachedOverloadServices' is inaccessible due to its protection level
+Assets\_Project\Tests\Editor\Blackbox\H8BlackboxRunnerTests.cs(18,13): error CS0103: The name 'H8Runner' does not exist in the current context
+Assets\_Project\Tests\Editor\Blackbox\H8BlackboxRunnerTests.cs(28,13): error CS0103: The name 'H8Runner' does not exist in the current context
+Assets\_Project\Tests\Editor\Blackbox\H8BlackboxRunnerTests.cs(28,39): error CS0246: The type or namespace name 'H8DiagnosticOptions' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\Blackbox\H8BlackboxRunnerTests.cs(34,13): error CS0103: The name 'H8Runner' does not exist in the current context
+Assets\_Project\Tests\Editor\Blackbox\H8BlackboxRunnerTests.cs(42,13): error CS0103: The name 'H8Runner' does not exist in the current context
+Assets\_Project\Tests\Editor\Blackbox\H8BlackboxRunnerTests.cs(52,13): error CS0103: The name 'H8Runner' does not exist in the current context
+Assets\_Project\Tests\Editor\Blackbox\H8BlackboxRunnerTests.cs(52,38): error CS0246: The type or namespace name 'H8DiagnosticOptions' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\Blackbox\H8BlackboxRunnerTests.cs(58,13): error CS0103: The name 'H8Runner' does not exist in the current context
+Assets\_Project\Tests\Editor\Optimization\AssetLifecycleGovernorDumpTests.cs(22,45): error CS0122: 'AssetHeapTelemetryEntry' is inaccessible due to its protection level
+Assets\_Project\Tests\Editor\HectonVoxelEngineClearAllVolumesTests.cs(26,79): error CS0246: The type or namespace name 'HectonVoxelVolume' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\HectonVoxelEngineClearAllVolumesTests.cs(27,68): error CS0246: The type or namespace name 'HectonVoxelVolume' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\Optimization\AssetLoadDispatcherTests.cs(48,42): error CS0122: 'AssetPriorityTier' is inaccessible due to its protection level
+Assets\_Project\Tests\Editor\Optimization\AssetLoadDispatcherTests.cs(48,25): error CS1061: 'AssetLoadDispatcher' does not contain a definition for 'Enqueue' and no accessible extension method 'Enqueue' accepting a first argument of type 'AssetLoadDispatcher' could be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\PowerGridSplitPerformanceTests.cs(66,17): error CS0117: 'LogisticsNetworkGraph.TopologySummary' does not contain a definition for 'HasCycles'
+Assets\_Project\Tests\Editor\Optimization\AssetLoadDispatcherTests.cs(81,42): error CS0122: 'AssetPriorityTier' is inaccessible due to its protection level
+Assets\_Project\Tests\Editor\Optimization\AssetLoadDispatcherTests.cs(81,25): error CS1061: 'AssetLoadDispatcher' does not contain a definition for 'Enqueue' and no accessible extension method 'Enqueue' accepting a first argument of type 'AssetLoadDispatcher' could be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\QuestGraphEvaluatorTests.cs(15,36): error CS0122: 'QuestStateManager' is inaccessible due to its protection level
+Assets\_Project\Tests\Editor\QuestGraphEvaluatorTests.cs(17,33): error CS0122: 'QuestGraphEvaluator' is inaccessible due to its protection level
+Assets\_Project\Tests\Editor\QuestGraphEvaluatorTests.cs(20,42): error CS0122: 'QuestGraphEvaluator' is inaccessible due to its protection level
+Assets\_Project\Tests\Editor\QuestGraphEvaluatorTests.cs(40,82): error CS0122: 'QuestGraphEvaluator.Dispose()' is inaccessible due to its protection level
+Assets\_Project\Tests\Editor\QuestGraphEvaluatorTests.cs(47,30): error CS0122: 'QuestStateManager.Dispose()' is inaccessible due to its protection level
+Assets\_Project\Tests\Editor\Optimization\AssetLoadDispatcherBenchmark.cs(20,33): error CS0266: Cannot implicitly convert type 'float' to 'long'. An explicit conversion exists (are you missing a cast?)
+Assets\_Project\Tests\Editor\HectonVoxelEnginePurgeTests.cs(30,95): error CS0246: The type or namespace name 'HectonVoxelVolume' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\HectonVoxelEnginePurgeTests.cs(31,57): error CS0246: The type or namespace name 'HectonVoxelVolume' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\HectonVoxelEnginePurgeTests.cs(33,57): error CS0246: The type or namespace name 'HectonVoxelVolume' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\HectonVoxelEnginePurgeTests.cs(35,57): error CS0246: The type or namespace name 'HectonVoxelVolume' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\BakeryShaderGUITests.cs(25,27): error CS0246: The type or namespace name 'BakeryShaderGUI' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(16,13): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(16,53): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(22,24): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(25,141): error CS0103: The name 'VaultHandleOptions' does not exist in the current context
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(26,24): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(29,24): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(35,53): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\BuildTestTests.cs(12,41): error CS0103: The name 'BuildTest' does not exist in the current context
+Assets\_Project\Tests\Editor\H8BlackboxUtilsExceptionTests.cs(17,31): error CS0246: The type or namespace name 'H8Utils' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\H8BlackboxUtilsExceptionTests.cs(43,26): error CS0103: The name 'H8Utils' does not exist in the current context
+Assets\_Project\Tests\Editor\ObjectPoolManagerOnServiceShutdownTests.cs(63,28): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerOnServiceShutdownTests.cs(64,58): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerOnServiceShutdownTests.cs(70,42): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(41,54): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(79,43): error CS0117: 'ObjectPoolManager' does not contain a definition for 'ActiveRuntimeInstance'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(104,40): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(130,40): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(131,43): error CS0117: 'ObjectPoolManager' does not contain a definition for 'ActiveRuntimeInstance'
+Assets\_Project\Tests\Editor\QuestDagResolverEditTests.cs(365,37): error CS0103: The name 'NativeMemorySentinel' does not exist in the current context
+Assets\_Project\Tests\Editor\QuestDagResolverEditTests.cs(365,124): error CS0103: The name 'NativeAllocationLifetime' does not exist in the current context
+Assets\_Project\Tests\Editor\QuestDagResolverEditTests.cs(384,29): error CS0103: The name 'NativeMemorySentinel' does not exist in the current context
+Assets\_Project\Tests\Editor\TerrainChunkSignalContractEditTests.cs(928,25): error CS0103: The name 'systemDispatcher' does not exist in the current context
+Assets\_Project\Tests\Editor\TerrainChunkSignalContractEditTests.cs(934,25): error CS0103: The name 'bootstrap' does not exist in the current context
+Assets\_Project\Tests\Editor\TerrainChunkSignalContractEditTests.cs(935,25): error CS0103: The name 'scatter' does not exist in the current context
+AssetDatabase: script compilation time: 63.151943s
+Scripts have compiler errors.
+Exiting without the bug reporter. Application will terminate with return code 1
+=== RESULT ===
+exists False
+=== DAILY CSV ===
+exists False size 0
+=== GIT ===
+## main...gitlab/main [ahead 37, behind 27]
+ D Assets/XR.meta
+ D Assets/XR/Loaders.meta
+ D Assets/XR/Loaders/OpenXRLoader.asset
+ D Assets/XR/Loaders/OpenXRLoader.asset.meta
+ D Assets/XR/Loaders/SimulationLoader.asset
+ D Assets/XR/Loaders/SimulationLoader.asset.meta
+ D Assets/XR/Resources.meta
+ D Assets/XR/Resources/XRSimulationRuntimeSettings.asset
+ D Assets/XR/Resources/XRSimulationRuntimeSettings.asset.meta
+ D Assets/XR/Settings.meta
+ D "Assets/XR/Settings/OpenXR Editor Settings.asset"
+ D "Assets/XR/Settings/OpenXR Editor Settings.asset.meta"
+ D "Assets/XR/Settings/OpenXR Package Settings.asset"
+ D "Assets/XR/Settings/OpenXR Package Settings.asset.meta"
+ D Assets/XR/UserSimulationSettings.meta
+ D Assets/XR/UserSimulationSettings/Resources.meta
+ D Assets/XR/UserSimulationSettings/Resources/XRSimulationPreferences.asset
+ D Assets/XR/UserSimulationSettings/Resources/XRSimulationPreferences.asset.meta
+ D Assets/XR/UserSimulationSettings/SimulationEnvironmentAssetsManager.asset
+ D Assets/XR/UserSimulationSettings/SimulationEnvironmentAssetsManager.asset.meta
+ M Assets/_Project/Art/Fauna/Raw/MANIFEST_Fauna_Fish_2207_00.json.meta
+ M Assets/_Project/Art/Fauna/Raw/MESH_Fauna_Fish_2207_00.fbx.meta
+ M Docs/Reports/HEADLESS_WAL_FAILURES.csv
+ M Docs/Reports/QA_OPTIMIZATION_REPORT.json
+ M ProjectSettings/EditorBuildSettings.asset
+ M ProjectSettings/ProjectSettings.asset
+?? Docs/Reports/HEADLESS_KCC_FAILURES.csv
+?? Tools/_cline_apply_ecology_audit_fix.py
+?? Tools/_cline_probe_geo.py
+?? Tools/_cline_probe_out.txt
+?? Tools/_cline_probe_status.py
+?? Tools/_cline_slice.py
+?? Tools/_cline_slice2.py
+?? Tools/_cline_slice3.py
+?? Tools/_cline_slice3_out.txt
+?? Tools/_cline_slice4.py
+?? Tools/_cline_slice4_out.txt
+?? Tools/_cline_slice5.py
+?? Tools/_cline_slice5_out.txt
+?? Tools/_cline_slice_out.txt
+?? Tools/_cline_verify_ecology.py
+e29ab1438 fix(tests): restore NEVER_COMPILE_TESTS on EditModeTests asmdef
+eb3d66c51 docs(tools): correct my own overstated geology claim from 135566f61
+11357a08b fix(headless): sample biomass audit in LateFrame after ecology job fence
+135566f61 fix(tools): geology probe crashed in all three search modes on a bad kwarg
+d5689745e fix(tests): enable EditMode/PlayMode asmdefs via UNITY_INCLUDE_TESTS
+fence commit:
+11357a08b fix(headless): sample biomass audit in LateFrame after ecology job fence
+show fence file in tip:
+11357a08b fix(headless): sample biomass audit in LateFrame after ecology job fence

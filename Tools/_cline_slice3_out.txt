@@ -1,0 +1,602 @@
+=== RUNNER symbols ===
+126|        private int _ecologySampleFailureStreak;
+127|        private int _ecologySampledDayCount;
+158|        private bool _ecologyReady;
+253|            if (safeDelta > 0f && _ecologyReady)
+308|            TryMarkEcologyReady();
+309|            if (!_ecologyReady)
+338|            if (!_ecologyReady && Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+356|            // this component can help: ColdTick only runs once RegisterRuntimeLanes has succeeded, which
+385|            RegisterRuntimeLanes();
+394|        private void RegisterRuntimeLanes()
+402|            _registeredFast = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Core);
+403|            _registeredFrost = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Core);
+404|            _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Core);
+405|            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+415|                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Core);
+421|                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Core);
+427|                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Core);
+433|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+468|            RegisterRuntimeLanes();
+524|            // ecology-ready transition instead - see TryMarkEcologyReady. This method runs the instant the
+548|        private void TryMarkEcologyReady()
+557|            if (readyNow && !_ecologyReady)
+577|            _ecologyReady = readyNow;
+660|                _ecologySampleFailureStreak++;
+661|                if (_ecologySampleFailureStreak >= MaxConsecutiveEcologySampleFailures)
+678|            _ecologySampleFailureStreak = 0;
+679|            _ecologySampledDayCount++;
+712|            if (_ecologySampledDayCount <= 0)
+1069|            // TryMarkEcologyReady sets Debug.unityLogger.filterLogType = LogType.Warning (:574) so
+1262|                WriteInvariant(writer, _ecologySampledDayCount);
+1269|                // was the opposite: TryMarkEcologyReady sets filterLogType = LogType.Warning (:574)
+
+===== runner 546-628 =====
+546|        }
+547|
+548|        private void TryMarkEcologyReady()
+549|        {
+550|            IEcosystemDirectorService ecosystem = GlobalRegistry.EcosystemDirector;
+551|            bool readyNow = ecosystem != null && ecosystem.IsInitialized;
+552|
+553|            // Stamp the wall clock the first time simulation actually starts advancing, so the result file can
+554|            // report the dilation it DELIVERED rather than the one it was configured with. Those two numbers
+555|            // are far apart and the gap is the single most useful thing this harness can tell its operator —
+556|            // see the deliveredTimeDilation note in WriteResult.
+557|            if (readyNow && !_ecologyReady)
+558|            {
+559|                _simulationStartRealtime = Time.realtimeSinceStartupAsDouble;
+560|
+561|                // Muzzle Debug.Log HERE, not in ForceHeadlessRuntimePolicy. The filter exists so a 100-day
+562|                // run's log is not drowned in first-party per-frame spam, and every source of that spam is
+563|                // in the simulation loop that begins at this exact transition. Boot, by contrast, logs a
+564|                // BOUNDED number of lines once and they are the most useful diagnostic this project has:
+565|                // the [GameBootstrapper] dependency-node trace. Installing the filter at dispatcher-ready
+566|                // threw that away for nothing - the 2026-07-29 run's log goes managed-silent immediately
+567|                // after node 8 of the CoreServices phase, and both investigations of the resulting
+568|                // [ECOLOGY_UNAVAILABLE] verdict misread that silence as a stall and blamed the ecology,
+569|                // which turned out to be fully initialised and registered the whole time.
+570|                //
+571|                // Lifecycle lines survive either way: LogRunnerLifecycle uses LogWarning precisely because
+572|                // this filter once ate the harness's own verdict (`[HEADLESS] fail` appeared zero times in
+573|                // 27,107 lines while the result JSON sat on disk).
+574|                Debug.unityLogger.filterLogType = LogType.Warning;
+575|            }
+576|
+577|            _ecologyReady = readyNow;
+578|        }
+579|
+580|        /// <summary>
+581|        /// Simulated seconds advanced per real second, measured rather than assumed. Zero until simulation
+582|        /// starts advancing.
+583|        /// </summary>
+584|        private double DeliveredTimeDilation
+585|        {
+586|            get
+587|            {
+588|                if (_simulationStartRealtime <= 0.0)
+589|                    return 0.0;
+590|
+591|                double elapsed = Time.realtimeSinceStartupAsDouble - _simulationStartRealtime;
+592|                return elapsed > 0.0 ? _simulatedSeconds / elapsed : 0.0;
+593|            }
+594|        }
+595|
+596|        private void DrainSignals()
+597|        {
+598|            int drained = 0;
+599|            while (drained < MaxSignalsDrainedPerFrame && SignalBus<ProgressionEventSignal>.TryConsumeFrame(out ProgressionEventSignal progression))
+600|            {
+601|                _progressionSignalCount++;
+602|                _lastProgressionHash = progression.PoiHash != 0u ? progression.PoiHash : progression.QuestHash;
+603|                drained++;
+604|            }
+605|
+606|            drained = 0;
+607|            while (drained < MaxSignalsDrainedPerFrame && SignalBus<CrashTelemetrySignal>.TryConsumeFrame(out CrashTelemetrySignal crash))
+608|            {
+609|                _crashSignalCount++;
+610|                _lastCrashReasonHash = crash.ReasonHash;
+611|                drained++;
+612|            }
+613|        }
+614|
+615|        private void ExecuteDailyAudit()
+616|        {
+617|            _completedDays++;
+618|            long nativeBytes = GlobalRegistry.NativeTrackedBytes;
+619|            long h8Bytes = H8Memory.TotalBytes;
+620|            int nativeAllocations = GlobalRegistry.NativeAllocationCount;
+621|            int h8Allocations = H8Memory.ActiveAllocationCount;
+622|            _lastMemoryBytes = nativeBytes;
+623|            _lastH8MemoryBytes = h8Bytes;
+624|
+625|            if (DetectTenDayMemoryGrowth(nativeBytes, h8Bytes, h8Allocations, out bool memoryWindowUnavailable))
+626|            {
+627|                // A leak verdict is worthless without the owner-level allocation table, so dump it before quitting.
+628|                TryDumpH8MemoryTable();
+
+eco total 10013
+1652|        private int _activeBiomassCellCount;
+1700|        private bool _solveScheduled;
+1837|        //    failed and ScheduleSectorSolve returned before scheduling anything: the Lotka-Volterra solve,
+2178|        /// <see cref="HasPendingSimulationJob"/> bail: <c>_sectorFrontStates</c> is one of the buffers the
+2185|            if (!IsInitialized || HasPendingSimulationJob())
+2739|                _solveScheduled = false;
+3096|        /// capacity argument in TryResolveSeedObserverAup below. The SOLVE is slower than the tick that
+3097|        /// hosts it: ScheduleSectorSolve sits behind coldTickIntervalSeconds = 5f (:1347), i.e. 0.2 Hz,
+3098|        /// while EnsurePlayerSectorRegistered runs on every slow tick. Two different rates in one
+3114|            EnsurePlayerSectorRegistered();
+3143|                if (HasPendingSimulationJob())
+3150|                // EnsurePlayerSectorRegistered seeds a five-cell plus-shape on the BIOMASS lane
+3161|                // Both calls below MUST stay ahead of ScheduleSectorSolve. That method deliberately keeps
+3164|                // them read-only would be the job-safety violation TryGetGlobalBiomassAudit avoids with its
+3165|                // HasPendingSimulationJob guard (:3415), and allocating new vault handles could move
+3166|                // buffers out from under the running job. Here HasPendingSimulationJob was just verified
+3196|                ScheduleSectorSolve();
+3205|            if (!IsInitialized || _macroSwarmTravelScheduled || HasPendingSimulationJob())
+3315|            if (!HasPendingSimulationJob() &&
+3369|                " biomassCells=" + _activeBiomassCellCount +
+3437|        /// which is the same dependency documented at length on <see cref="TryResolveSeedObserverAup"/>.
+3452|            if (HasPendingSimulationJob())
+3569|            if (HasPendingSimulationJob())
+3614|            if (!IsInitialized || HasPendingSimulationJob())
+4175|        public bool TryGetGlobalBiomassAudit(out EcosystemBiomassAuditSample sample)
+4179|                HasPendingSimulationJob() ||
+4187|            int count = math.min(_activeBiomassCellCount, math.min(preyFront.Length, predatorFront.Length));
+4540|            if (!IsInitialized || HasPendingSimulationJob())
+4611|            if (HasPendingSimulationJob())
+4661|            if (!IsInitialized || HasPendingSimulationJob())
+5165|            _activeBiomassCellCount = 0;
+5208|            _solveScheduled = false;
+5466|            JobHandle disposeDependency = _solveScheduled ? _scheduledSolveHandle : default;
+5537|            _activeBiomassCellCount = 0;
+5587|            _solveScheduled = false;
+5756|        /// headless run. With no observer, EnsurePlayerSectorRegistered returned before seeding anything,
+5757|        /// _activeBiomassCellCount stayed 0, and TryGetGlobalBiomassAudit failed its count &lt;= 0 gate
+5763|        /// WHY IT IS GATED ON _activeBiomassCellCount == 0 RATHER THAN APPLIED EVERY TICK. Sector slots are
+5797|        private bool TryResolveSeedObserverAup(out AbsoluteUniversePosition observerAup)
+5802|            if (_activeBiomassCellCount > 0)
+5808|        private void EnsurePlayerSectorRegistered()
+5810|            if (HasPendingSimulationJob())
+5813|            if (!TryResolveSeedObserverAup(out AbsoluteUniversePosition playerAup))
+5838|        /// the single sector <see cref="EnsurePlayerSectorRegistered"/> seeds.
+5842|            if (HasPendingSimulationJob())
+5855|                // for every new coordinate, including the one EnsurePlayerSectorRegistered needs when the
+5958|                " biomassCells=" + _activeBiomassCellCount +
+6132|        private void ScheduleSectorSolve()
+6134|            if (_activeSectorCount <= 0 || _solveScheduled)
+6231|                if (_activeBiomassCellCount > 0)
+6251|                    _scheduledSolveHandle = biomassJob.Schedule(_activeBiomassCellCount, ResolveBiomassJobBatchSize(_activeBiomassCellCount), _scheduledSolveHandle);
+6253|                _solveScheduled = true;
+6263|        private bool HasPendingSimulationJob()
+6265|            return _solveScheduled ||
+6317|                   // its view was never created, so every ScheduleSectorSolve bailed at
+6551|            CompleteScheduledSolve(forceComplete);
+6554|        private void CompleteScheduledSolve(bool forceComplete)
+6556|            if (!_solveScheduled)
+6574|                if (_activeBiomassCellCount > 0)
+6583|                _solveScheduled = false;
+6599|            _debugBiomassCellCount = _activeBiomassCellCount;
+6605|            if (_lastSectorResidencySignalDrainFrame == frame || HasPendingSimulationJob() || _macroSwarmTravelScheduled)
+6795|            if (!_macroSwarms.IsCreated || _activeBiomassCellCount <= 0)
+6799|            for (int targetIndex = 0; targetIndex < _activeBiomassCellCount && _activeMacroSwarmCount < cap; targetIndex++)
+6825|                sourceSlot >= _activeBiomassCellCount)
+6862|                    slotIndex >= _activeBiomassCellCount)
+8382|            if (_activeBiomassCellCount >= preyFront.Length ||
+8383|                _activeBiomassCellCount >= preyBack.Length ||
+8384|                _activeBiomassCellCount >= predatorFront.Length ||
+8385|                _activeBiomassCellCount >= predatorBack.Length ||
+8386|                _activeBiomassCellCount >= carryingCapacity.Length ||
+8387|                _activeBiomassCellCount >= biomassMacroCellCoords.Length ||
+8388|                _activeBiomassCellCount >= biomassSumScratch.Length ||
+8389|                _activeBiomassCellCount >= biomassCellFlags.Length)
+8394|            int slotIndex = _activeBiomassCellCount;
+8395|            _activeBiomassCellCount++;
+8398|                _activeBiomassCellCount--;
+8447|            return (uint)slotIndex < (uint)_activeBiomassCellCount &&
+8494|            if (HasPendingSimulationJob())
+8712|            for (int i = 0; i < _activeBiomassCellCount; i++)
+8756|            _debugBiomassCellCount = _activeBiomassCellCount;
+8793|                StateHash = MixBiomassStateHash(globalSum, preySum, predatorSum, _activeBiomassCellCount),
+8794|                ActiveCellCount = _activeBiomassCellCount,
+8871|            if (_activeBiomassCellCount <= 0)
+8874|            float avgPrey01 = preySum * math.rcp(math.max(1f, _activeBiomassCellCount));
+8922|                    _activeBiomassCellCount,
+9104|                for (int offset = 0; offset < count && _activeBiomassCellCount < _preyBiomassFront.Length; offset++)
+9169|            _activeBiomassCellCount = 0;
+
+===== eco TryGetGlobalBiomassAudit @4175 4170-4255 =====
+4170|            };
+4171|            SignalBus<FaunaStateChangedSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
+4172|        }
+4173|
+4174|        /// <inheritdoc />
+4175|        public bool TryGetGlobalBiomassAudit(out EcosystemBiomassAuditSample sample)
+4176|        {
+4177|            sample = default;
+4178|            if (!IsInitialized ||
+4179|                HasPendingSimulationJob() ||
+4180|                !_preyBiomassFront.TryResolveReadOnly(out NativeArray<float>.ReadOnly preyFront) ||
+4181|                !_predatorBiomassFront.TryResolveReadOnly(out NativeArray<float>.ReadOnly predatorFront))
+4182|            {
+4183|                return false;
+4184|            }
+4185|
+4186|            bool hasCapacity = _biomassCarryingCapacity.TryResolveReadOnly(out NativeArray<float>.ReadOnly carryingCapacity);
+4187|            int count = math.min(_activeBiomassCellCount, math.min(preyFront.Length, predatorFront.Length));
+4188|            if (count <= 0)
+4189|                return false;
+4190|
+4191|            float preySum = 0f;
+4192|            float predatorSum = 0f;
+4193|            float capacitySum = 0f;
+4194|            uint flags = 0u;
+4195|            for (int i = 0; i < count; i++)
+4196|            {
+4197|                float prey = preyFront[i];
+4198|                float predator = predatorFront[i];
+4199|                float capacity = hasCapacity && i < carryingCapacity.Length
+4200|                    ? carryingCapacity[i]
+4201|                    : 0f;
+4202|                bool finite = math.isfinite(prey) && math.isfinite(predator) && math.isfinite(capacity);
+4203|                if (!finite || prey < 0f || predator < 0f || capacity < 0f)
+4204|                {
+4205|                    flags |= 1u;
+4206|                    continue;
+4207|                }
+4208|
+4209|                preySum += prey;
+4210|                predatorSum += predator;
+4211|                capacitySum += capacity;
+4212|            }
+4213|
+4214|            sample = new EcosystemBiomassAuditSample
+4215|            {
+4216|                PreyBiomassSum = preySum,
+4217|                PredatorBiomassSum = predatorSum,
+4218|                CarryingCapacitySum = capacitySum,
+4219|                ActiveCellCount = count,
+4220|                Sequence = ReadDispatcherFrameId(),
+4221|                Flags = flags
+4222|            };
+4223|            return sample.IsFinite();
+4224|        }
+4225|
+4226|        /// <inheritdoc />
+4227|        public bool TryCopyMacroSwarms(NativeArray<MacroSwarm> destination, out int copiedCount)
+4228|        {
+4229|            copiedCount = 0;
+4230|            if (!destination.IsCreated ||
+4231|                !_macroSwarms.TryResolveReadOnly(out NativeArray<MacroSwarm>.ReadOnly macroSwarms) ||
+4232|                _activeMacroSwarmCount <= 0 ||
+4233|                _macroSwarmTravelScheduled)
+4234|            {
+4235|                return false;
+4236|            }
+4237|
+4238|            copiedCount = math.min(destination.Length, math.min(_activeMacroSwarmCount, macroSwarms.Length));
+4239|            for (int i = 0; i < copiedCount; i++)
+4240|                destination[i] = macroSwarms[i];
+4241|            return copiedCount > 0;
+4242|        }
+4243|
+4244|        /// <inheritdoc />
+4245|        public bool TryCopyMacroSwarmRadarPings(NativeArray<float4> destination, float3 probeOrigin, float radiusMeters, out int copiedCount)
+4246|        {
+4247|            copiedCount = 0;
+4248|            if (!destination.IsCreated ||
+4249|                !_macroSwarms.TryResolveReadOnly(out NativeArray<MacroSwarm>.ReadOnly macroSwarms) ||
+4250|                _activeMacroSwarmCount <= 0 ||
+4251|                _macroSwarmTravelScheduled)
+4252|            {
+4253|                return false;
+4254|            }
+4255|
+
+===== eco HasPendingSimulationJob @6263 6258-6343 =====
+6258|                if (!keepLocksForScheduledJob)
+6259|                    UnlockSectorSolveJobBuffers();
+6260|            }
+6261|        }
+6262|
+6263|        private bool HasPendingSimulationJob()
+6264|        {
+6265|            return _solveScheduled ||
+6266|                   _genomeMutationScheduled ||
+6267|                   _macroSwarmTravelScheduled ||
+6268|                   _apexTerritoryOverlapScheduled;
+6269|        }
+6270|
+6271|        private bool TryLockSectorSolveJobBuffers()
+6272|        {
+6273|            IDataVault vault = _dataVault;
+6274|            if (vault == null || _solveJobLocksHeld)
+6275|                return false;
+6276|
+6277|            if (!vault.TryAcquireMutationGuard(SectorSolveMutationGuardMask))
+6278|                return false;
+6279|
+6280|            bool keepGuard = false;
+6281|            try
+6282|            {
+6283|                if (!HasSectorSolveJobViews())
+6284|                    return false;
+6285|
+6286|                _solveJobLocksHeld = true;
+6287|                _solveJobGuardVault = vault;
+6288|                keepGuard = true;
+6289|                return true;
+6290|            }
+6291|            finally
+6292|            {
+6293|                if (!keepGuard)
+6294|                    vault.ReleaseMutationGuard(SectorSolveMutationGuardMask);
+6295|            }
+6296|        }
+6297|
+6298|        private void UnlockSectorSolveJobBuffers()
+6299|        {
+6300|            if (!_solveJobLocksHeld)
+6301|                return;
+6302|
+6303|            IDataVault vault = _solveJobGuardVault;
+6304|            if (vault != null)
+6305|                vault.ReleaseMutationGuard(SectorSolveMutationGuardMask);
+6306|            _solveJobLocksHeld = false;
+6307|            _solveJobGuardVault = null;
+6308|        }
+6309|
+6310|        private bool HasSectorSolveJobViews()
+6311|        {
+6312|            return IsAIEcologyBuffer(_sectorFrontStates, BufferID.EcosystemSectorFrontStates) &&
+6313|                   IsAIEcologyBuffer(_preyFrontCounts, BufferID.EcosystemPreyFrontCounts) &&
+6314|                   IsAIEcologyBuffer(_predatorFrontCounts, BufferID.EcosystemPredatorFrontCounts) &&
+6315|                   // NOTE: EcosystemSectorFoodHeatmapR8 was listed here and was the reason this predicate
+6316|                   // could never return true. It was an OPTIONAL, caller-owned buffer with no producer, so
+6317|                   // its view was never created, so every ScheduleSectorSolve bailed at
+6318|                   // TryLockSectorSolveJobBuffers and the sector/migration/biomass jobs never ran. Do not
+6319|                   // re-add an optional buffer to this list - every entry here is a job-mandatory view.
+6320|                   IsAIEcologyBuffer(_sectorBackStates, BufferID.EcosystemSectorBackStates) &&
+6321|                   IsAIEcologyBuffer(_preyBackCounts, BufferID.EcosystemPreyBackCounts) &&
+6322|                   IsAIEcologyBuffer(_predatorBackCounts, BufferID.EcosystemPredatorBackCounts) &&
+6323|                   IsAIEcologyBuffer(_sectorIndexEntries, BufferID.EcosystemSectorIndexEntries) &&
+6324|                   IsAIEcologyBuffer(_headlessEntities.Positions, BufferID.EcosystemHeadlessPositions) &&
+6325|                   IsAIEcologyBuffer(_headlessEntities.SpeciesID, BufferID.EcosystemHeadlessSpeciesId) &&
+6326|                   IsAIEcologyBuffer(_headlessEntities.Hunger, BufferID.EcosystemHeadlessHunger) &&
+6327|                   IsAIEcologyBuffer(_headlessEntities.SectorCoord, BufferID.EcosystemHeadlessSectorCoord) &&
+6328|                   IsAIEcologyBuffer(_headlessEntities.SectorID, BufferID.EcosystemHeadlessSectorId) &&
+6329|                   IsAIEcologyBuffer(_headlessEntities.FaunaGenomes, BufferID.EcosystemHeadlessFaunaGenomes) &&
+6330|                   IsAIEcologyBuffer(_headlessEntities.MutationStableHashes, BufferID.EcosystemHeadlessMutationStableHashes) &&
+6331|                   IsAIEcologyBuffer(_preyBiomassFront, BufferID.EcosystemPreyBiomassFront) &&
+6332|                   IsAIEcologyBuffer(_predatorBiomassFront, BufferID.EcosystemPredatorBiomassFront) &&
+6333|                   IsAIEcologyBuffer(_biomassCarryingCapacity, BufferID.EcosystemBiomassCarryingCapacity) &&
+6334|                   IsAIEcologyBuffer(_biomassMacroCellCoords, BufferID.EcosystemBiomassMacroCellCoords) &&
+6335|                   IsAIEcologyBuffer(_biomassIndexEntries, BufferID.EcosystemBiomassIndexEntries) &&
+6336|                   IsAIEcologyBuffer(_preyBiomassBack, BufferID.EcosystemPreyBiomassBack) &&
+6337|                   IsAIEcologyBuffer(_predatorBiomassBack, BufferID.EcosystemPredatorBiomassBack) &&
+6338|                   IsAIEcologyBuffer(_biomassSumScratch, BufferID.EcosystemBiomassSumScratch) &&
+6339|                   IsAIEcologyBuffer(_biomassCellFlags, BufferID.EcosystemBiomassCellFlags) &&
+6340|                   IsAIEcologyBuffer(_biomassBlackBox, BufferID.EcosystemBiomassBlackBox);
+6341|        }
+6342|
+6343|        private bool TryLockGenomeMutationJobBuffers()
+
+===== eco EnsurePlayerSectorRegistered @5808 5803-5888 =====
+5803|                return false;
+5804|
+5805|            return TryResolveAupFromRuntimeOrigin(Vector3.zero, out observerAup);
+5806|        }
+5807|
+5808|        private void EnsurePlayerSectorRegistered()
+5809|        {
+5810|            if (HasPendingSimulationJob())
+5811|                return;
+5812|
+5813|            if (!TryResolveSeedObserverAup(out AbsoluteUniversePosition playerAup))
+5814|                return;
+5815|
+5816|            if (!TryLockSectorSolveJobBuffers())
+5817|                return;
+5818|
+5819|            try
+5820|            {
+5821|                ResolveOrCreateSectorSlot(QuantizeSector(in playerAup), seedWithBaseline: true);
+5822|                int2 macroCell = QuantizeBiomassMacroCell(in playerAup);
+5823|                ResolveOrCreateBiomassCellSlot(macroCell, seedWithBaseline: true);
+5824|                ResolveOrCreateBiomassCellSlot(macroCell + new int2(1, 0), seedWithBaseline: false);
+5825|                ResolveOrCreateBiomassCellSlot(macroCell + new int2(-1, 0), seedWithBaseline: false);
+5826|                ResolveOrCreateBiomassCellSlot(macroCell + new int2(0, 1), seedWithBaseline: false);
+5827|                ResolveOrCreateBiomassCellSlot(macroCell + new int2(0, -1), seedWithBaseline: false);
+5828|            }
+5829|            finally
+5830|            {
+5831|                UnlockSectorSolveJobBuffers();
+5832|            }
+5833|        }
+5834|
+5835|        /// <summary>
+5836|        /// Expands the populated sector frontier one ring outward from every already-populated sector so
+5837|        /// migration has registered neighbours to move into and the creature-record world is wider than
+5838|        /// the single sector <see cref="EnsurePlayerSectorRegistered"/> seeds.
+5839|        /// </summary>
+5840|        private void EnsureMigrationNeighborSectorsRegistered()
+5841|        {
+5842|            if (HasPendingSimulationJob())
+5843|                return;
+5844|
+5845|            int seedSectorCount = _activeSectorCount;
+5846|            if (!TryLockSectorSolveJobBuffers())
+5847|                return;
+5848|
+5849|            try
+5850|            {
+5851|                // Nothing in this class ever frees a sector slot - the only decrement of
+5852|                // _activeSectorCount is the failed-upsert rollback in ResolveOrCreateSectorSlot (:7458).
+5853|                // Ring expansion therefore runs to capacity and stays there, so it must not be allowed
+5854|                // to consume the LAST slots: once the table is full ResolveOrCreateSectorSlot returns -1
+5855|                // for every new coordinate, including the one EnsurePlayerSectorRegistered needs when the
+5856|                // player walks into virgin sectors, and the player would end up standing in a sector with
+5857|                // no population record at all. Reserving a fixed tail keeps travel working, and it is
+5858|                // reserved against the resolved buffer length rather than maxTrackedSectors because a
+5859|                // vault generation can hand back a shorter array than the requested capacity.
+5860|                int expansionCeiling = math.max(1, _sectorFrontStates.Length - MigrationNeighborSectorReserve);
+5861|                for (int sectorIndex = 0; sectorIndex < seedSectorCount && _activeSectorCount < expansionCeiling; sectorIndex++)
+5862|                {
+5863|                    SectorPopulationState sourceState = _sectorFrontStates[sectorIndex];
+5864|                    if (sourceState.PreyPopulationRounded <= 0 && sourceState.PredatorPopulationRounded <= 0)
+5865|                        continue;
+5866|
+5867|                    int2 sectorCoord = sourceState.SectorCoord;
+5868|                    ResolveOrCreateSectorSlot(sectorCoord + new int2(1, 0), seedWithBaseline: false);
+5869|                    if (_activeSectorCount >= expansionCeiling)
+5870|                        break;
+5871|
+5872|                    ResolveOrCreateSectorSlot(sectorCoord + new int2(-1, 0), seedWithBaseline: false);
+5873|                    if (_activeSectorCount >= expansionCeiling)
+5874|                        break;
+5875|
+5876|                    ResolveOrCreateSectorSlot(sectorCoord + new int2(0, 1), seedWithBaseline: false);
+5877|                    if (_activeSectorCount >= expansionCeiling)
+5878|                        break;
+5879|
+5880|                    ResolveOrCreateSectorSlot(sectorCoord + new int2(0, -1), seedWithBaseline: false);
+5881|                }
+5882|            }
+5883|            finally
+5884|            {
+5885|                UnlockSectorSolveJobBuffers();
+5886|            }
+5887|        }
+5888|
+
+===== eco TryResolveSeedObserverAup @5797 5792-5877 =====
+5792|        /// WHAT THIS DOES NOT DO: it does not make the ecology follow an observer that has no player. After
+5793|        /// the single seeding event the fallback stops, so a headless run evolves the cells it was given
+5794|        /// rather than tracking the QA ghost. Making the ecology follow a playerless observer needs slot
+5795|        /// recycling first, and that is a separate change.
+5796|        /// </remarks>
+5797|        private bool TryResolveSeedObserverAup(out AbsoluteUniversePosition observerAup)
+5798|        {
+5799|            if (TryResolvePlayerAup(out observerAup))
+5800|                return true;
+5801|
+5802|            if (_activeBiomassCellCount > 0)
+5803|                return false;
+5804|
+5805|            return TryResolveAupFromRuntimeOrigin(Vector3.zero, out observerAup);
+5806|        }
+5807|
+5808|        private void EnsurePlayerSectorRegistered()
+5809|        {
+5810|            if (HasPendingSimulationJob())
+5811|                return;
+5812|
+5813|            if (!TryResolveSeedObserverAup(out AbsoluteUniversePosition playerAup))
+5814|                return;
+5815|
+5816|            if (!TryLockSectorSolveJobBuffers())
+5817|                return;
+5818|
+5819|            try
+5820|            {
+5821|                ResolveOrCreateSectorSlot(QuantizeSector(in playerAup), seedWithBaseline: true);
+5822|                int2 macroCell = QuantizeBiomassMacroCell(in playerAup);
+5823|                ResolveOrCreateBiomassCellSlot(macroCell, seedWithBaseline: true);
+5824|                ResolveOrCreateBiomassCellSlot(macroCell + new int2(1, 0), seedWithBaseline: false);
+5825|                ResolveOrCreateBiomassCellSlot(macroCell + new int2(-1, 0), seedWithBaseline: false);
+5826|                ResolveOrCreateBiomassCellSlot(macroCell + new int2(0, 1), seedWithBaseline: false);
+5827|                ResolveOrCreateBiomassCellSlot(macroCell + new int2(0, -1), seedWithBaseline: false);
+5828|            }
+5829|            finally
+5830|            {
+5831|                UnlockSectorSolveJobBuffers();
+5832|            }
+5833|        }
+5834|
+5835|        /// <summary>
+5836|        /// Expands the populated sector frontier one ring outward from every already-populated sector so
+5837|        /// migration has registered neighbours to move into and the creature-record world is wider than
+5838|        /// the single sector <see cref="EnsurePlayerSectorRegistered"/> seeds.
+5839|        /// </summary>
+5840|        private void EnsureMigrationNeighborSectorsRegistered()
+5841|        {
+5842|            if (HasPendingSimulationJob())
+5843|                return;
+5844|
+5845|            int seedSectorCount = _activeSectorCount;
+5846|            if (!TryLockSectorSolveJobBuffers())
+5847|                return;
+5848|
+5849|            try
+5850|            {
+5851|                // Nothing in this class ever frees a sector slot - the only decrement of
+5852|                // _activeSectorCount is the failed-upsert rollback in ResolveOrCreateSectorSlot (:7458).
+5853|                // Ring expansion therefore runs to capacity and stays there, so it must not be allowed
+5854|                // to consume the LAST slots: once the table is full ResolveOrCreateSectorSlot returns -1
+5855|                // for every new coordinate, including the one EnsurePlayerSectorRegistered needs when the
+5856|                // player walks into virgin sectors, and the player would end up standing in a sector with
+5857|                // no population record at all. Reserving a fixed tail keeps travel working, and it is
+5858|                // reserved against the resolved buffer length rather than maxTrackedSectors because a
+5859|                // vault generation can hand back a shorter array than the requested capacity.
+5860|                int expansionCeiling = math.max(1, _sectorFrontStates.Length - MigrationNeighborSectorReserve);
+5861|                for (int sectorIndex = 0; sectorIndex < seedSectorCount && _activeSectorCount < expansionCeiling; sectorIndex++)
+5862|                {
+5863|                    SectorPopulationState sourceState = _sectorFrontStates[sectorIndex];
+5864|                    if (sourceState.PreyPopulationRounded <= 0 && sourceState.PredatorPopulationRounded <= 0)
+5865|                        continue;
+5866|
+5867|                    int2 sectorCoord = sourceState.SectorCoord;
+5868|                    ResolveOrCreateSectorSlot(sectorCoord + new int2(1, 0), seedWithBaseline: false);
+5869|                    if (_activeSectorCount >= expansionCeiling)
+5870|                        break;
+5871|
+5872|                    ResolveOrCreateSectorSlot(sectorCoord + new int2(-1, 0), seedWithBaseline: false);
+5873|                    if (_activeSectorCount >= expansionCeiling)
+5874|                        break;
+5875|
+5876|                    ResolveOrCreateSectorSlot(sectorCoord + new int2(0, 1), seedWithBaseline: false);
+5877|                    if (_activeSectorCount >= expansionCeiling)
+
+===== eco LateFrameTick 3543-3583 =====
+3543|        public void LateFrameTick()
+3544|        {
+3545|            CompleteScheduledSimulation(forceComplete: false);
+3546|            CompleteScheduledMacroSwarmTravel(forceComplete: false);
+3547|            if (IsInitialized)
+3548|            {
+3549|                PushMacroSwarmHeartbeatBlackBox();
+3550|                PushFaunaGeneticsTelemetryFrame();
+3551|            }
+3552|            DrainSectorResidencySignalSnapshots();
+3553|            DrainBiomassSignalSnapshots();
+3554|            PublishScannerEcologyWarningIfNeeded();
+3555|            CompleteScheduledApexTerritoryOverlap(forceComplete: false);
+3556|            FlushQueuedEcosystemVisuals();
+3557|            FaunaSpatialHashRegistry.RunDeferredCleanupFrame();
+3558|        }
+3559|
+3560|        /// <summary>
+3561|        /// Resolves predator/prey counts for the 1 km sector containing the supplied world position.
+3562|        /// </summary>
+3563|        public bool TryGetSectorPopulation(Vector3 worldPosition, out EcosystemSectorPopulationSample sample)
+3564|        {
+3565|            sample = default;
+3566|            if (!IsInitialized)
+3567|                return false;
+3568|
+3569|            if (HasPendingSimulationJob())
+3570|                return false;
+3571|
+3572|            if (!TryQuantizeSector(worldPosition, out int2 sectorCoord))
+3573|                return false;
+3574|
+3575|            if (!TryResolveSectorSlotReadOnly(sectorCoord, out int slotIndex))
+3576|                return false;
+3577|
+3578|            if (!_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates) ||
+3579|                (uint)slotIndex >= (uint)sectorFrontStates.Length)
+3580|            {
+3581|                return false;
+3582|            }
+3583|

@@ -1,2 +1,2 @@
 phase,error_flags,error_code,offset,sector_hash,first_mismatch,csv_failure_rows,managed_alloc_bytes_current_thread,merkle_replay_bytes,merkle_block_count
-wal_integrity,258,16,5242896,-450971566151,0,1,0,0,0
+wal_integrity,256,32,-1,-450971566151,0,1,0,0,0

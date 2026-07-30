@@ -1,0 +1,16 @@
+HF attrs ['grain', 'height_m', 'joint', 'lamina', 'metres_per_pixel', 'pit', 'range_m', 'report', 'shell']
+extract dict_keys(['report', 'structuralExtent', 'spallCoverage'])
+cfg count=44 width=0.05-0.16 p95_mean=0.6297 p95_max=0.7129 p95_min=0.5781 eros_mean=0.2631 eros_max=0.3139 all_run_met=False all_eros_met=True
+cfg count=52 width=0.05-0.16 p95_mean=0.6254 p95_max=0.7974 p95_min=0.5517 eros_mean=0.3017 eros_max=0.3461 all_run_met=False all_eros_met=True
+cfg count=60 width=0.05-0.16 p95_mean=0.6138 p95_max=0.8066 p95_min=0.5438 eros_mean=0.3264 eros_max=0.3569 all_run_met=False all_eros_met=True
+cfg count=68 width=0.05-0.16 p95_mean=0.5725 p95_max=0.7227 p95_min=0.5174 eros_mean=0.3612 eros_max=0.3793 all_run_met=False all_eros_met=True
+cfg count=72 width=0.05-0.16 p95_mean=0.5781 p95_max=0.7227 p95_min=0.4853 eros_mean=0.3786 eros_max=0.4270 all_run_met=False all_eros_met=True
+cfg count=80 width=0.05-0.14 p95_mean=0.5548 p95_max=0.8017 p95_min=0.4277 eros_mean=0.3833 eros_max=0.4430 all_run_met=False all_eros_met=True
+cfg count=56 width=0.05-0.18 p95_mean=0.5947 p95_max=0.7832 p95_min=0.5282 eros_mean=0.3373 eros_max=0.3753 all_run_met=False all_eros_met=True
+cfg count=64 width=0.05-0.18 p95_mean=0.5941 p95_max=0.7930 p95_min=0.5117 eros_mean=0.3533 eros_max=0.3979 all_run_met=False all_eros_met=True
+cfg count=64 width=0.05-0.2 p95_mean=0.5769 p95_max=0.7645 p95_min=0.4853 eros_mean=0.3774 eros_max=0.4244 all_run_met=False all_eros_met=True
+cfg count=56 width=0.06-0.18 p95_mean=0.5925 p95_max=0.7832 p95_min=0.5282 eros_mean=0.3553 eros_max=0.3944 all_run_met=False all_eros_met=True
+cfg count=48 width=0.06-0.2 p95_mean=0.6235 p95_max=0.7166 p95_min=0.5556 eros_mean=0.3264 eros_max=0.3757 all_run_met=False all_eros_met=True
+cfg count=56 width=0.04-0.14 p95_mean=0.6280 p95_max=0.8242 p95_min=0.5534 eros_mean=0.2757 eros_max=0.3128 all_run_met=False all_eros_met=True
+BEST {'label': 'cfg', 'count': 44, 'wmin': 0.05, 'wmax': 0.16, 'p95_mean': 0.629744, 'p95_max': 0.71289, 'eros_mean': 0.263138, 'eros_max': 0.31388, 'all_run_met': False, 'all_eros_met': True}
+wrote C:\hades\Hecton8\Tools\_cline_geo_sweep_out.txt

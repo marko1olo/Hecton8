@@ -1,0 +1,78 @@
+budget run<=0.55 eros>=0.18
+baseline c=44 w=0.05-0.16 j=11 p=orig p95_mean=0.6297 p95_max=0.7129 p95_min=0.5781 eros_mean=0.2631 eros_max=0.3139 all_run=False all_eros=True
+  {"seed": 0, "p95": 0.57812, "erosional": 0.27932, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.26902, "dt": 4.887}
+  {"seed": 1, "p95": 0.61699, "erosional": 0.21025, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.20055, "dt": 6.104}
+  {"seed": 2, "p95": 0.71289, "erosional": 0.20844, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.19791, "dt": 6.776}
+  {"seed": 7, "p95": 0.65801, "erosional": 0.31388, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.30476, "dt": 7.431}
+  {"seed": 13, "p95": 0.58271, "erosional": 0.3038, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.29387, "dt": 6.532}
+strat44 c=44 w=0.05-0.16 j=11 p=strat p95_mean=0.6635 p95_max=0.7581 p95_min=0.5840 eros_mean=0.2229 eros_max=0.2408 all_run=False all_eros=True
+  {"seed": 0, "p95": 0.58398, "erosional": 0.24077, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.22963, "dt": 5.995}
+  {"seed": 1, "p95": 0.75811, "erosional": 0.20979, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.19898, "dt": 5.071}
+  {"seed": 2, "p95": 0.65713, "erosional": 0.23397, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.22399, "dt": 6.604}
+  {"seed": 7, "p95": 0.68359, "erosional": 0.22779, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.21712, "dt": 5.09}
+  {"seed": 13, "p95": 0.63477, "erosional": 0.20206, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.19089, "dt": 5.308}
+strat56 c=56 w=0.05-0.16 j=11 p=strat p95_mean=0.6294 p95_max=0.6719 p95_min=0.5605 eros_mean=0.2695 eros_max=0.2847 all_run=False all_eros=True
+  {"seed": 0, "p95": 0.56055, "erosional": 0.26955, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.25937, "dt": 5.058}
+  {"seed": 1, "p95": 0.65518, "erosional": 0.27155, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.26147, "dt": 5.145}
+  {"seed": 2, "p95": 0.65322, "erosional": 0.28474, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.27532, "dt": 4.705}
+  {"seed": 7, "p95": 0.67188, "erosional": 0.27555, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.26589, "dt": 2.755}
+  {"seed": 13, "p95": 0.60635, "erosional": 0.24604, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.23577, "dt": 4.87}
+strat68 c=68 w=0.05-0.14 j=11 p=strat p95_mean=0.5662 p95_max=0.6024 p95_min=0.5449 eros_mean=0.2976 eros_max=0.3411 all_run=False all_eros=True
+  {"seed": 0, "p95": 0.57617, "erosional": 0.26163, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.25123, "dt": 5.909}
+  {"seed": 1, "p95": 0.5541, "erosional": 0.34113, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.33297, "dt": 6.105}
+  {"seed": 2, "p95": 0.55361, "erosional": 0.31004, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.3006, "dt": 5.371}
+  {"seed": 7, "p95": 0.54492, "erosional": 0.31849, "runBudgetMet": true, "erosionalCoverageMet": true, "spallCoverage": 0.30896, "dt": 5.228}
+  {"seed": 13, "p95": 0.60244, "erosional": 0.25696, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.2469, "dt": 5.898}
+strat56j16 c=56 w=0.05-0.16 j=16 p=strat p95_mean=0.6321 p95_max=0.6949 p95_min=0.5801 eros_mean=0.2737 eros_max=0.3079 all_run=False all_eros=True
+  {"seed": 0, "p95": 0.58008, "erosional": 0.29481, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.28347, "dt": 6.861}
+  {"seed": 1, "p95": 0.59268, "erosional": 0.30792, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.29817, "dt": 5.213}
+  {"seed": 2, "p95": 0.69492, "erosional": 0.25392, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.24334, "dt": 5.403}
+  {"seed": 7, "p95": 0.65322, "erosional": 0.28061, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.26939, "dt": 5.567}
+  {"seed": 13, "p95": 0.63955, "erosional": 0.2314, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.22051, "dt": 5.815}
+strat64j16 c=64 w=0.05-0.14 j=16 p=strat p95_mean=0.5617 p95_max=0.6044 p95_min=0.4794 eros_mean=0.2979 eros_max=0.3175 all_run=False all_eros=True
+  {"seed": 0, "p95": 0.56533, "erosional": 0.28595, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.27538, "dt": 6.596}
+  {"seed": 1, "p95": 0.47939, "erosional": 0.30237, "runBudgetMet": true, "erosionalCoverageMet": true, "spallCoverage": 0.29232, "dt": 8.74}
+  {"seed": 2, "p95": 0.60439, "erosional": 0.29799, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.28877, "dt": 10.366}
+  {"seed": 7, "p95": 0.58711, "erosional": 0.28566, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.27476, "dt": 6.645}
+  {"seed": 13, "p95": 0.57227, "erosional": 0.31753, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.30735, "dt": 5.905}
+strat72j18 c=72 w=0.04-0.12 j=18 p=strat p95_mean=0.5738 p95_max=0.6376 p95_min=0.5308 eros_mean=0.2780 eros_max=0.2979 all_run=False all_eros=True
+  {"seed": 0, "p95": 0.5625, "erosional": 0.2715, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.26046, "dt": 5.201}
+  {"seed": 1, "p95": 0.54688, "erosional": 0.29789, "runBudgetMet": true, "erosionalCoverageMet": true, "spallCoverage": 0.28743, "dt": 5.727}
+  {"seed": 2, "p95": 0.6376, "erosional": 0.27394, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.26376, "dt": 4.88}
+  {"seed": 7, "p95": 0.53076, "erosional": 0.28867, "runBudgetMet": true, "erosionalCoverageMet": true, "spallCoverage": 0.27816, "dt": 4.905}
+  {"seed": 13, "p95": 0.59141, "erosional": 0.25811, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.24681, "dt": 2.033}
+strat48j14 c=48 w=0.06-0.18 j=14 p=strat p95_mean=0.6396 p95_max=0.7049 p95_min=0.5820 eros_mean=0.2557 eros_max=0.2655 all_run=False all_eros=True
+  {"seed": 0, "p95": 0.58203, "erosional": 0.25617, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.24498, "dt": 1.635}
+  {"seed": 1, "p95": 0.58877, "erosional": 0.26548, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.2553, "dt": 1.647}
+  {"seed": 2, "p95": 0.64844, "erosional": 0.2396, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.22927, "dt": 1.606}
+  {"seed": 7, "p95": 0.67383, "erosional": 0.25526, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.245, "dt": 1.59}
+  {"seed": 13, "p95": 0.70488, "erosional": 0.26175, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.25082, "dt": 1.729}
+strat60j14w c=60 w=0.05-0.18 j=14 p=strat p95_mean=0.6226 p95_max=0.7841 p95_min=0.5566 eros_mean=0.3021 eros_max=0.3204 all_run=False all_eros=True
+  {"seed": 0, "p95": 0.57227, "erosional": 0.2841, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.27348, "dt": 1.799}
+  {"seed": 1, "p95": 0.78408, "erosional": 0.28359, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.27444, "dt": 1.849}
+  {"seed": 2, "p95": 0.59658, "erosional": 0.31462, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.30494, "dt": 1.816}
+  {"seed": 7, "p95": 0.60352, "erosional": 0.30765, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.29781, "dt": 1.709}
+  {"seed": 13, "p95": 0.55664, "erosional": 0.32037, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.31096, "dt": 1.67}
+orig56j16 c=56 w=0.05-0.16 j=16 p=orig p95_mean=0.5753 p95_max=0.6610 p95_min=0.5115 eros_mean=0.3245 eros_max=0.3623 all_run=False all_eros=True
+  {"seed": 0, "p95": 0.56445, "erosional": 0.3623, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.35433, "dt": 1.597}
+  {"seed": 1, "p95": 0.51152, "erosional": 0.31184, "runBudgetMet": true, "erosionalCoverageMet": true, "spallCoverage": 0.30353, "dt": 1.636}
+  {"seed": 2, "p95": 0.66104, "erosional": 0.2872, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.2776, "dt": 1.755}
+  {"seed": 7, "p95": 0.62285, "erosional": 0.30122, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.29247, "dt": 1.748}
+  {"seed": 13, "p95": 0.5165, "erosional": 0.36012, "runBudgetMet": true, "erosionalCoverageMet": true, "spallCoverage": 0.35041, "dt": 1.808}
+orig68j16 c=68 w=0.05-0.14 j=16 p=orig p95_mean=0.5437 p95_max=0.6649 p95_min=0.3984 eros_mean=0.3464 eros_max=0.3730 all_run=False all_eros=True
+  {"seed": 0, "p95": 0.53506, "erosional": 0.36358, "runBudgetMet": true, "erosionalCoverageMet": true, "spallCoverage": 0.35421, "dt": 1.743}
+  {"seed": 1, "p95": 0.5751, "erosional": 0.37298, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.36466, "dt": 1.894}
+  {"seed": 2, "p95": 0.66494, "erosional": 0.29172, "runBudgetMet": false, "erosionalCoverageMet": true, "spallCoverage": 0.28234, "dt": 1.951}
+  {"seed": 7, "p95": 0.39844, "erosional": 0.36097, "runBudgetMet": true, "erosionalCoverageMet": true, "spallCoverage": 0.35188, "dt": 2.229}
+  {"seed": 13, "p95": 0.54492, "erosional": 0.34281, "runBudgetMet": true, "erosionalCoverageMet": true, "spallCoverage": 0.33317, "dt": 1.896}
+=== PASSING ===
+none fully passing; nearest by p95_max with eros_met and eros_max<0.50
+{"label": "strat68", "p95_mean": 0.5662480000000001, "p95_max": 0.60244, "eros_mean": 0.29764999999999997, "eros_max": 0.34113, "all_run_met": false, "all_eros_met": true, "count": 68, "wmin": 0.05, "wmax": 0.14, "joints": 11, "place": "strat"}
+{"label": "strat64j16", "p95_mean": 0.561698, "p95_max": 0.60439, "eros_mean": 0.2979, "eros_max": 0.31753, "all_run_met": false, "all_eros_met": true, "count": 64, "wmin": 0.05, "wmax": 0.14, "joints": 16, "place": "strat"}
+{"label": "strat72j18", "p95_mean": 0.57383, "p95_max": 0.6376, "eros_mean": 0.278022, "eros_max": 0.29789, "all_run_met": false, "all_eros_met": true, "count": 72, "wmin": 0.04, "wmax": 0.12, "joints": 18, "place": "strat"}
+{"label": "orig56j16", "p95_mean": 0.575272, "p95_max": 0.66104, "eros_mean": 0.324536, "eros_max": 0.3623, "all_run_met": false, "all_eros_met": true, "count": 56, "wmin": 0.05, "wmax": 0.16, "joints": 16, "place": "orig"}
+{"label": "orig68j16", "p95_mean": 0.543692, "p95_max": 0.66494, "eros_mean": 0.346412, "eros_max": 0.37298, "all_run_met": false, "all_eros_met": true, "count": 68, "wmin": 0.05, "wmax": 0.14, "joints": 16, "place": "orig"}
+{"label": "strat56", "p95_mean": 0.629436, "p95_max": 0.67188, "eros_mean": 0.269486, "eros_max": 0.28474, "all_run_met": false, "all_eros_met": true, "count": 56, "wmin": 0.05, "wmax": 0.16, "joints": 11, "place": "strat"}
+{"label": "strat56j16", "p95_mean": 0.63209, "p95_max": 0.69492, "eros_mean": 0.273732, "eros_max": 0.30792, "all_run_met": false, "all_eros_met": true, "count": 56, "wmin": 0.05, "wmax": 0.16, "joints": 16, "place": "strat"}
+{"label": "strat48j14", "p95_mean": 0.63959, "p95_max": 0.70488, "eros_mean": 0.255652, "eros_max": 0.26548, "all_run_met": false, "all_eros_met": true, "count": 48, "wmin": 0.06, "wmax": 0.18, "joints": 14, "place": "strat"}
+BEST {"label": "strat68", "p95_mean": 0.5662480000000001, "p95_max": 0.60244, "eros_mean": 0.29764999999999997, "eros_max": 0.34113, "all_run_met": false, "all_eros_met": true, "count": 68, "wmin": 0.05, "wmax": 0.14, "joints": 11, "place": "strat"}

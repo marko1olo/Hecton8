@@ -1,0 +1,20 @@
+SPALL_SCAR_COUNT=44
+SPALL_WIDTH=0.05-0.16
+GEOLOGY_LAMINA_MAX_RUN_FRACTION=0.55
+GEOLOGY_MIN_EROSIONAL_COVERAGE=0.18
+texture symbols with Geology: ['GeologyTextureSpec', 'bake_geology_family']
+candidate bake_geology_family
+candidate build_lamina_stack
+def measure_structural_extent @ line ~948
+def build_lamina_stack @ line ~1118
+def build_height_field @ line ~1424
+def bake_geology_family @ line ~3132
+Spec fields: ['set_name', 'seed', 'quality', 'resolution', 'tile_m', 'process', 'hero']
+caller of measure_structural_extent: build_height_field
+using bake=build_height_field
+{"seed": 0, "res": 512, "dt": 5.499, "structuralExtent": {"note": "family structural metric, NOT one of the eleven section 9 gates", "longestIntactRunFraction": {"p50": 0.36719, "p95": 0.57812, "max": 0.90625}, "longestIntactRunM": 0.7227, "runBudgetFraction": 0.55, "runBudgetMet": false, "erosionalCoverage": 0.27932, "erosionalCoverageMin": 0.18, "erosionalCoverageMet": true, "interruptedBy": "spall scars, joint traces, the single fault wall and the low-angle unconformity boundaries; grain and vugs roughen a bed without truncating it"}, "spallCoverage": null, "runBudgetMet": false, "p95": 0.57812, "erosional": 0.27932}
+{"seed": 1, "res": 512, "dt": 5.359, "structuralExtent": {"note": "family structural metric, NOT one of the eleven section 9 gates", "longestIntactRunFraction": {"p50": 0.44043, "p95": 0.61699, "max": 0.84766}, "longestIntactRunM": 0.7712, "runBudgetFraction": 0.55, "runBudgetMet": false, "erosionalCoverage": 0.21025, "erosionalCoverageMin": 0.18, "erosionalCoverageMet": true, "interruptedBy": "spall scars, joint traces, the single fault wall and the low-angle unconformity boundaries; grain and vugs roughen a bed without truncating it"}, "spallCoverage": null, "runBudgetMet": false, "p95": 0.61699, "erosional": 0.21025}
+{"seed": 2, "res": 512, "dt": 4.998, "structuralExtent": {"note": "family structural metric, NOT one of the eleven section 9 gates", "longestIntactRunFraction": {"p50": 0.46094, "p95": 0.71289, "max": 0.99805}, "longestIntactRunM": 0.8911, "runBudgetFraction": 0.55, "runBudgetMet": false, "erosionalCoverage": 0.20844, "erosionalCoverageMin": 0.18, "erosionalCoverageMet": true, "interruptedBy": "spall scars, joint traces, the single fault wall and the low-angle unconformity boundaries; grain and vugs roughen a bed without truncating it"}, "spallCoverage": null, "runBudgetMet": false, "p95": 0.71289, "erosional": 0.20844}
+{"seed": 7, "res": 512, "dt": 4.634, "structuralExtent": {"note": "family structural metric, NOT one of the eleven section 9 gates", "longestIntactRunFraction": {"p50": 0.32617, "p95": 0.65801, "max": 0.99805}, "longestIntactRunM": 0.8225, "runBudgetFraction": 0.55, "runBudgetMet": false, "erosionalCoverage": 0.31388, "erosionalCoverageMin": 0.18, "erosionalCoverageMet": true, "interruptedBy": "spall scars, joint traces, the single fault wall and the low-angle unconformity boundaries; grain and vugs roughen a bed without truncating it"}, "spallCoverage": null, "runBudgetMet": false, "p95": 0.65801, "erosional": 0.31388}
+{"seed": 13, "res": 512, "dt": 4.629, "structuralExtent": {"note": "family structural metric, NOT one of the eleven section 9 gates", "longestIntactRunFraction": {"p50": 0.32617, "p95": 0.58271, "max": 0.68359}, "longestIntactRunM": 0.7284, "runBudgetFraction": 0.55, "runBudgetMet": false, "erosionalCoverage": 0.3038, "erosionalCoverageMin": 0.18, "erosionalCoverageMet": true, "interruptedBy": "spall scars, joint traces, the single fault wall and the low-angle unconformity boundaries; grain and vugs roughen a bed without truncating it"}, "spallCoverage": null, "runBudgetMet": false, "p95": 0.58271, "erosional": 0.3038}
+SUMMARY n=5 p95_min=0.5781 p95_max=0.7129 p95_mean=0.6297 budget=0.55 all_met=False

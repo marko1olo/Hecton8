@@ -1,0 +1,337 @@
+FOUND C:/hades/Hecton8\Assets\_Project\Scripts\Core\SystemDispatcher.cs lines 7580
+150|        private const int MaxLateFrameEventsPerFrame = 1000;
+153|        private const int LateFrameCircuitBreakerLaneCapacity = 32;
+157|        private const double LateFrameEventFlushBudgetMilliseconds = 2.0;
+158|        private const double LateFrameFlushPassSpikeMilliseconds = 0.5;
+199|        private static readonly ProfilerMarker _lateFrameProfilerMarker = new ProfilerMarker("H8.Dispatcher.LateFrame");
+201|        private static readonly ProfilerMarker _lateFrameCommandQueueDrainProfilerMarker = new ProfilerMarker("H8.Dispatcher.CommandQueue.Drain");
+218|        private const uint _LateFrameTickablesQueueHash = 1655194628u;
+219|        private const uint _LateFrameBudgetWarningHash = 3118918745u;
+367|        private static readonly RegistryBucket<ILateFrameTickable>[] _lateFramePriorityLanes =
+369|            new RegistryBucket<ILateFrameTickable>(128),
+370|            new RegistryBucket<ILateFrameTickable>(128),
+371|            new RegistryBucket<ILateFrameTickable>(96),
+372|            new RegistryBucket<ILateFrameTickable>(128),
+392|        private static readonly object[] _masterSortedSystems = new object[MasterDispatcherMaxSystems];
+422|        private static int _masterSortedSystemCount;
+443|        private static readonly uint[] _lateFrameCircuitBreakerLaneHashes = new uint[LateFrameCircuitBreakerLaneCapacity];
+445|        private static readonly ushort[] _lateFrameCircuitBreakerLaneCounts = new ushort[LateFrameCircuitBreakerLaneCapacity];
+554|        private static int _lateFrameEventDispatchBudget;
+555|        private static bool _lateFrameEventBudgetActive;
+556|        private static bool _lateFrameCircuitBreakerTripped;
+557|        private static bool _lateFrameTimeBudgetExhausted;
+558|        private static uint _activeLateFrameEventLaneHash;
+559|        private static uint _dominantLateFrameCircuitBreakerLaneHash;
+560|        private static long _lateFrameEventBudgetStartTimestamp;
+653|        private static ushort _dominantLateFrameCircuitBreakerLaneCount;
+785|            _lateFrameEventDispatchBudget = 0;
+786|            _lateFrameEventBudgetActive = false;
+787|            _lateFrameCircuitBreakerTripped = false;
+788|            _lateFrameTimeBudgetExhausted = false;
+789|            _activeLateFrameEventLaneHash = 0u;
+790|            _dominantLateFrameCircuitBreakerLaneHash = 0u;
+791|            _lateFrameEventBudgetStartTimestamp = 0L;
+792|            _dominantLateFrameCircuitBreakerLaneCount = 0;
+794|            System.Array.Clear(_lateFrameCircuitBreakerLaneHashes, 0, _lateFrameCircuitBreakerLaneHashes.Length);
+795|            System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
+853|        private struct DispatcherLateFramePlayerLoopNode
+873|                typeof(DispatcherLateFramePlayerLoopNode),
+874|                RunDispatcherLateFrameFromPlayerLoop);
+995|        private static void RunDispatcherLateFrameFromPlayerLoop()
+1001|            dispatcher.RunDispatcherLateFrame();
+1226|        private static IDispatcherSystem GetMasterSortedSystemAt(int index)
+1228|            return _masterSortedSystems[index] as IDispatcherSystem;
+1248|        public static RegistryBucket<IUpdatable> GetLane(PriorityLayer layer)
+1256|        public static RegistryBucket<IFastTickable> GetFastLane(PriorityLayer layer)
+1266|        public static RegistryBucket<IFixedTickable> GetFixedLane(PriorityLayer layer)
+1276|        public static RegistryBucket<ISlowTickable> GetSlowLane(PriorityLayer layer)
+1284|        public static RegistryBucket<IColdTickable> GetColdLane(PriorityLayer layer)
+1294|        public static RegistryBucket<IFrostTickable> GetFrostLane(PriorityLayer layer)
+1304|        public static RegistryBucket<ILateFrameTickable> GetLateFrameLane(PriorityLayer layer)
+1306|            return _lateFramePriorityLanes[GetLaneIndex(layer)];
+1314|        public static RegistryBucket<IPostFixedTickable> GetPostFixedLane(PriorityLayer layer)
+1322|        public static RegistryBucket<IUnscaledFastTickable> GetUnscaledFastLane(PriorityLayer layer)
+1332|        public static bool Register(IUpdatable item, PriorityLayer layer)
+1349|        public static bool Register(IFastTickable item, PriorityLayer layer)
+1362|        public static bool Register(IFixedTickable item, PriorityLayer layer)
+1375|        public static bool Register(ISlowTickable item, PriorityLayer layer)
+1392|        public static bool Register(IColdTickable item, PriorityLayer layer)
+1405|        public static bool Register(IFrostTickable item, PriorityLayer layer)
+1418|        public static bool Register(ILateFrameTickable item, PriorityLayer layer)
+1423|            return GetLateFrameLane(layer).TryRegister(item);
+1431|        public static bool Register(IPostFixedTickable item, PriorityLayer layer)
+1442|        public static bool Register(IUnscaledFastTickable item, PriorityLayer layer)
+1513|        public static void Unregister(IUpdatable item, PriorityLayer layer)
+1527|        public static void Unregister(IFastTickable item, PriorityLayer layer)
+1540|        public static void Unregister(IFixedTickable item, PriorityLayer layer)
+1553|        public static void Unregister(ISlowTickable item, PriorityLayer layer)
+1565|        public static void Unregister(IColdTickable item, PriorityLayer layer)
+1578|        public static void Unregister(IFrostTickable item, PriorityLayer layer)
+1591|        public static void Unregister(ILateFrameTickable item, PriorityLayer layer)
+1596|            GetLateFrameLane(layer).TryUnregister(item);
+1605|        public static void UnregisterLateFrameTickableDirect(ILateFrameTickable item, PriorityLayer layer)
+1615|        public static void Unregister(IPostFixedTickable item, PriorityLayer layer)
+1626|        public static void Unregister(IUnscaledFastTickable item, PriorityLayer layer)
+1691|                _lateFramePriorityLanes[i].Clear();
+1700|                _masterSortedSystems[i] = null;
+1714|            _masterSortedSystemCount = 0;
+2214|            _dispatcherState.SortedSystemCount = unchecked((uint)math.max(0, _masterSortedSystemCount));
+2530|                _masterSortedSystems[i] = null;
+2573|                _masterSortedSystems[sortedCount++] = provider;
+2598|            _masterSortedSystemCount = sortedCount;
+2609|            sortedSystemCount = math.clamp(_masterSortedSystemCount, 0, MasterDispatcherMaxSystems);
+2738|        private static int FindSortedMasterSystemIndex(uint systemHash)
+2740|            for (int i = 0; i < _masterSortedSystemCount; i++)
+2742|                IDispatcherSystem system = GetMasterSortedSystemAt(i);
+2802|            state.SortedSystemCount = unchecked((uint)math.max(0, _masterSortedSystemCount));
+2862|                for (int i = 0; i < _masterSortedSystemCount; i++)
+2867|                    IDispatcherSystem system = GetMasterSortedSystemAt(i);
+2935|                for (int sortedIndex = 0; sortedIndex < _masterSortedSystemCount; sortedIndex++)
+2940|                    IDispatcherSystem system = GetMasterSortedSystemAt(sortedIndex);
+3014|                for (int i = 0; i < _masterSortedSystemCount; i++)
+3019|                    IDispatcherSystem system = GetMasterSortedSystemAt(i);
+3073|                for (int i = 0; i < _masterSortedSystemCount; i++)
+3078|                    IDispatcherSystem system = GetMasterSortedSystemAt(i);
+3227|                int sortedIndex = FindSortedMasterSystemIndex(dependencyHash);
+3802|                IDispatcherSystem system = GetMasterSortedSystemAt(i);
+3854|                IDispatcherSystem system = GetMasterSortedSystemAt(systemIndex);
+5510|        private void RunDispatcherLateFrame()
+5513|            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherLateFrame);
+5527|            DispatcherJobFence.BeginLateFrameSwapWindow();
+5549|                BeginLateFrameEventBudget();
+5550|                SetActiveLateFrameEventLane(_LateFrameTickablesQueueHash);
+5551|                using (_lateFrameProfilerMarker.Auto())
+5555|                        RegistryBucket<ILateFrameTickable> lane = _lateFramePriorityLanes[laneIndex];
+5557|                        lane.ValidateNoDestroyedEntriesDebug(nameof(ILateFrameTickable));
+5561|                            lane.GetAt(itemIndex).LateFrameTick();
+5564|                PredatorCognitionDomain.LateFrameTick();
+5565|                CombatDamageRuntime.LateFrameTick();
+5570|                DispatcherJobFence.EndLateFrameSwapWindow();
+5573|            using (_lateFrameCommandQueueDrainProfilerMarker.Auto())
+5575|                SetActiveLateFrameEventLane(_ThreadSafeCommandQueueHash);
+5576|                ReportLateFrameQueueDepth(_ThreadSafeCommandQueueHash, ThreadSafeCommandQueue.PendingCount);
+5578|                    MarkLateFrameEventDispatchDeferred();
+5580|            SetActiveLateFrameEventLane(_StorageReservationCommitResolvedQueueHash);
+5581|            ReportLateFrameQueueDepth(_StorageReservationCommitResolvedQueueHash, ThreadSafeCommandQueue.PendingStorageReservationCommitResolvedCount);
+5583|                MarkLateFrameEventDispatchDeferred();
+5584|            SetActiveLateFrameEventLane(_ModCommandDispatcherQueueHash);
+5585|            Hecton8.Modding.ModCommandDispatcher.DrainLateFrame();
+5597|                ClearActiveLateFrameEventLane();
+5598|                if (_lateFrameEventBudgetActive)
+5599|                    EndLateFrameEventBudget();
+5603|                    GlobalTelemetryBus.LateFrameUpdate(UnityEngine.Time.unscaledTime);
+5604|                    WorldSpatialHashGrid.LateFrameMaintenance(CurrentFrameIndex);
+5620|            long passStartTimestamp = BeginLateFrameFlushPass();
+5623|                SetActiveLateFrameEventLane(_CoreEventsArteryHash);
+5624|                ReportLateFrameQueueDepth(
+5652|                EndLateFrameFlushPass(_CoreEventsArteryHash, passStartTimestamp);
+5658|            long passStartTimestamp = BeginLateFrameFlushPass();
+5661|                SetActiveLateFrameEventLane(_EnvironmentEventsArteryHash);
+5662|                ReportLateFrameQueueDepth(
+5670|                    ResolvePhysicsLateFramePendingCount() +
+5689|                FlushPhysicsLateFrameEvents();
+5691|                if (ShouldDropAmbientLateFrameEvents(_EnvironmentEventsArteryHash))
+5716|                EndLateFrameFlushPass(_EnvironmentEventsArteryHash, passStartTimestamp);
+5720|        private static int ResolvePhysicsLateFramePendingCount()
+5723|            return physics != null ? physics.PendingLateFrameEventCount : 0;
+5726|        private static void FlushPhysicsLateFrameEvents()
+5729|            physics?.FlushLateFrameEvents();
+5734|            long passStartTimestamp = BeginLateFrameFlushPass();
+5737|                SetActiveLateFrameEventLane(_PlayerEventsArteryHash);
+5739|                ReportLateFrameQueueDepth(
+5769|                if (ShouldDropAmbientLateFrameEvents(_PlayerEventsArteryHash))
+5784|                EndLateFrameFlushPass(_PlayerEventsArteryHash, passStartTimestamp);
+5790|            long passStartTimestamp = BeginLateFrameFlushPass();
+5793|                SetActiveLateFrameEventLane(_BaseEventsArteryHash);
+5794|                ReportLateFrameQueueDepth(
+5804|                if (ShouldDropAmbientLateFrameEvents(_BaseEventsArteryHash))
+5812|                EndLateFrameFlushPass(_BaseEventsArteryHash, passStartTimestamp);
+5818|            long passStartTimestamp = BeginLateFrameFlushPass();
+5821|                SetActiveLateFrameEventLane(_AIEventsArteryHash);
+5822|                ReportLateFrameQueueDepth(
+5834|                EndLateFrameFlushPass(_AIEventsArteryHash, passStartTimestamp);
+5842|        public static bool TryConsumeLateFrameEventDispatch()
+5844|            return TryReserveLateFrameEventDispatches(1);
+5851|        public static bool TryReserveLateFrameEventDispatches(int dispatchCount)
+5856|            if (!_lateFrameEventBudgetActive)
+5859|            if (LateFrameFlushBudgetExhausted)
+5861|                _lateFrameCircuitBreakerTripped = true;
+5862|                RecordLateFrameCircuitBreakerLane(_activeLateFrameEventLaneHash);
+5863|                if (!_lateFrameTimeBudgetExhausted)
+5865|                    _lateFrameTimeBudgetExhausted = true;
+5866|                    CrashTelemetryBuffer.ReportLateFrameLoadShedding(
+5867|                        _activeLateFrameEventLaneHash,
+5868|                        _lateFrameEventDispatchBudget);
+5874|            if (_lateFrameEventDispatchBudget >= dispatchCount)
+5876|                _lateFrameEventDispatchBudget -= dispatchCount;
+5880|            _lateFrameCircuitBreakerTripped = true;
+5881|            RecordLateFrameCircuitBreakerLane(_activeLateFrameEventLaneHash);
+5888|        public static bool IsLateFrameAmbientEventSheddingActive =>
+5889|            _lateFrameEventBudgetActive && LateFrameFlushBudgetExhausted;
+5922|        internal static void MarkLateFrameEventDispatchDeferred()
+5924|            if (_lateFrameEventBudgetActive)
+5926|                _lateFrameCircuitBreakerTripped = true;
+5927|                RecordLateFrameCircuitBreakerLane(_activeLateFrameEventLaneHash);
+5931|        private static void SetActiveLateFrameEventLane(uint queueHash)
+5933|            _activeLateFrameEventLaneHash = queueHash;
+5936|        private static void ClearActiveLateFrameEventLane()
+5938|            _activeLateFrameEventLaneHash = 0u;
+5941|        private static void ReportLateFrameQueueDepth(uint queueHash, int pendingCount)
+5946|        private static long BeginLateFrameFlushPass()
+5951|        private static void EndLateFrameFlushPass(uint laneHash, long passStartTimestamp)
+5959|            if (elapsedMilliseconds <= LateFrameFlushPassSpikeMilliseconds || _criticalPerformanceSpikeReported)
+5997|        private static bool ShouldDropAmbientLateFrameEvents(uint laneHash)
+5999|            if (!_lateFrameEventBudgetActive || !LateFrameFlushBudgetExhausted)
+6002|            _lateFrameCircuitBreakerTripped = true;
+6003|            RecordLateFrameCircuitBreakerLane(laneHash);
+6004|            if (!_lateFrameTimeBudgetExhausted)
+6006|                _lateFrameTimeBudgetExhausted = true;
+6007|                CrashTelemetryBuffer.ReportLateFrameLoadShedding(laneHash, _lateFrameEventDispatchBudget);
+6016|                laneHash == _EnvironmentEventsArteryHash ? 1f : _lateFrameEventDispatchBudget);
+6075|            uint budgetHash = unchecked((uint)_lateFrameEventDispatchBudget * 2891336453u);
+6097|        private static void BeginLateFrameEventBudget()
+6099|            _lateFrameEventDispatchBudget = MaxLateFrameEventsPerFrame;
+6100|            _lateFrameCircuitBreakerTripped = false;
+6101|            _lateFrameTimeBudgetExhausted = false;
+6102|            _lateFrameEventBudgetActive = true;
+6103|            _activeLateFrameEventLaneHash = 0u;
+6104|            _dominantLateFrameCircuitBreakerLaneHash = 0u;
+6105|            _dominantLateFrameCircuitBreakerLaneCount = 0;
+6106|            _lateFrameEventBudgetStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+6107|            System.Array.Clear(_lateFrameCircuitBreakerLaneHashes, 0, _lateFrameCircuitBreakerLaneHashes.Length);
+6108|            System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
+6111|        private static void EndLateFrameEventBudget()
+6113|            bool circuitBreakerTripped = _lateFrameCircuitBreakerTripped;
+6114|            _lateFrameEventBudgetActive = false;
+6115|            _lateFrameEventDispatchBudget = 0;
+6116|            _lateFrameCircuitBreakerTripped = false;
+6117|            _lateFrameTimeBudgetExhausted = false;
+6118|            _lateFrameEventBudgetStartTimestamp = 0L;
+6124|                    _LateFrameBudgetWarningHash,
+6125|                    _dominantLateFrameCircuitBreakerLaneHash,
+6126|                    _dominantLateFrameCircuitBreakerLaneCount);
+6130|        private static bool LateFrameFlushBudgetExhausted
+6134|                if (_lateFrameEventBudgetStartTimestamp == 0L)
+6137|                long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _lateFrameEventBudgetStartTimestamp;
+6139|                return elapsedMilliseconds >= LateFrameEventFlushBudgetMilliseconds;
+6143|        private static void RecordLateFrameCircuitBreakerLane(uint queueHash)
+6148|            for (int i = 0; i < LateFrameCircuitBreakerLaneCapacity; i++)
+6150|                uint recordedHash = _lateFrameCircuitBreakerLaneHashes[i];
+6153|                    ushort nextCount = _lateFrameCircuitBreakerLaneCounts[i] == ushort.MaxValue
+6155|                        : (ushort)(_lateFrameCircuitBreakerLaneCounts[i] + 1);
+6156|                    _lateFrameCircuitBreakerLaneCounts[i] = nextCount;
+6157|                    if (nextCount >= _dominantLateFrameCircuitBreakerLaneCount)
+6159|                        _dominantLateFrameCircuitBreakerLaneHash = queueHash;
+6160|                        _dominantLateFrameCircuitBreakerLaneCount = nextCount;
+6169|                _lateFrameCircuitBreakerLaneHashes[i] = queueHash;
+6170|                _lateFrameCircuitBreakerLaneCounts[i] = 1;
+6171|                if (_dominantLateFrameCircuitBreakerLaneCount == 0)
+6173|                    _dominantLateFrameCircuitBreakerLaneHash = queueHash;
+6174|                    _dominantLateFrameCircuitBreakerLaneCount = 1;
+7122|            return laneIndex == GetLaneIndex(PriorityLayer.Player);
+7125|        private static int GetLaneIndex(PriorityLayer layer)
+7129|                case PriorityLayer.Core:
+7131|                case PriorityLayer.Environment:
+7133|                case PriorityLayer.Player:
+7135|                case PriorityLayer.UI:
+7190|                        GlobalTelemetryBus.ComputeContextHash("LateFrameComplete"),
+D 995|        private static void RunDispatcherLateFrameFromPlayerLoop()
+D 996|        {
+D 997|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+D 998|            if (dispatcher == null || !dispatcher._serviceRegistered || !dispatcher.isActiveAndEnabled)
+D 999|                return;
+D 1000|
+D 1001|            dispatcher.RunDispatcherLateFrame();
+D 1002|        }
+D 1003|
+D 1004|        private static void PublishDispatcherComplianceViolation(uint ruleHash, uint contextHash, byte severity, byte flags)
+D 1005|        {
+D 1006|            ComplianceViolationSignal signal = default;
+D 1007|            signal.RuleHash = ruleHash;
+D 1008|            signal.SystemHash = _SystemDispatcherHash;
+D 1009|            signal.ContextHash = contextHash;
+D 1010|            signal.Frame = ReadPublishedDispatcherFrameId();
+D 1011|            signal.Severity = severity;
+D 1012|            signal.Flags = flags;
+D 1013|            SignalBus<ComplianceViolationSignal>.TryPushTracked(in signal, ref s_x001SystemDispatcherSignalPushDropCount);
+D 1014|        }
+D 1015|
+D 1016|        internal static uint ReadPublishedDispatcherFrameId()
+D 1017|        {
+D 1018|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+D 1019|            if (dispatcher != null && dispatcher._currentDispatcherFrameId != 0u)
+D 1020|                return dispatcher._currentDispatcherFrameId;
+D 1021|
+D 1022|            return TimeSliceScheduler.CurrentFrameId;
+D 1023|        }
+D 1024|
+D 1025|        public static uint CurrentFrameId => TimeSliceScheduler.CurrentFrameId;
+D 1026|
+D 1027|        public static int CurrentFrameIndex => (int)(ReadPublishedDispatcherFrameId() & 0x7FFFFFFFu);
+D 1028|
+D 1029|        internal static void ApplyHomeostasisKillSwitch(
+D 1030|            ulong mask,
+D 1031|            byte pressureLevel,
+D 1032|            byte foveatedTier,
+D 1033|            bool slowTick2Hz,
+D 1034|            bool forceTimeDilation09,
+D 1035|            uint reasonHash)
+D 1036|        {
+D 1037|            Volatile.Write(ref _homeostasisKillSwitchMaskBits, unchecked((long)mask));
+D 1038|            Volatile.Write(ref _homeostasisPressureLevel, pressureLevel);
+D 1039|            Volatile.Write(ref _homeostasisSlowTick2Hz, slowTick2Hz ? 1 : 0);
+D 1040|            Volatile.Write(ref _homeostasisFoveatedTier, foveatedTier);
+D 1041|            _foveatedSimulationManager.ApplyHomeostasisPressureTier(foveatedTier);
+D 1042|
+D 1043|            if (forceTimeDilation09 && ActiveRuntimeInstance != null)
+D 1044|                ActiveRuntimeInstance.RequestCoreTickDilation(0.9f, 2, reasonHash);
+D 1045|        }
+D 1046|
+D 1047|        /// <summary>
+D 1048|        /// Drops same-frame habitat damage/stress cascades once one IslandID exceeds the hard budget.
+D 1049|        /// </summary>
+D 1050|        /// <param name="islandId">Logistics component IslandID. Negative values are coerced to zero.</param>
+D 1051|        /// <param name="eventHash">Stable event hash for telemetry context.</param>
+D 1052|        /// <returns>True when the caller may process this cascade event.</returns>
+D 1053|        internal static bool TryConsumeBaseStressCascadeEvent(int islandId, uint eventHash)
+D 1054|        {
+D 1055|            int currentFrame = CurrentFrameIndex;
+
+GR C:/hades/Hecton8\Assets\_Project\Scripts\Core\GlobalRegistry.cs
+6495|        public static void RegisterFastTickable(IFastTickable item, PriorityLayer layer)
+6503|        public static bool TryRegisterFastTickable(IFastTickable item, PriorityLayer layer)
+6530|        public static void RegisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+6541|        public static bool TryRegisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+6568|        public static void RegisterSlowTickable(ISlowTickable item, PriorityLayer layer)
+6579|        public static bool TryRegisterSlowTickable(ISlowTickable item, PriorityLayer layer)
+6604|        public static void RegisterColdTickable(IColdTickable item, PriorityLayer layer)
+6612|        public static bool TryRegisterColdTickable(IColdTickable item, PriorityLayer layer)
+6639|        public static void RegisterFrostTickable(IFrostTickable item, PriorityLayer layer)
+6650|        public static bool TryRegisterFrostTickable(IFrostTickable item, PriorityLayer layer)
+6675|        public static void RegisterUnscaledFastTickable(IUnscaledFastTickable item, PriorityLayer layer)
+6683|        public static bool TryRegisterUnscaledFastTickable(IUnscaledFastTickable item, PriorityLayer layer)
+6710|        public static void RegisterLateFrameTickable(ILateFrameTickable item, PriorityLayer layer)
+6712|            TryRegisterLateFrameTickable(item, layer);
+6721|        public static bool TryRegisterLateFrameTickable(ILateFrameTickable item, PriorityLayer layer)
+6740|        public static void RegisterPostFixedTickable(IPostFixedTickable item, PriorityLayer layer)
+6751|        public static bool TryRegisterPostFixedTickable(IPostFixedTickable item, PriorityLayer layer)
+6844|        public static void UnregisterFastTickable(IFastTickable item, PriorityLayer layer)
+6858|        public static void UnregisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+6872|        public static void UnregisterSlowTickable(ISlowTickable item, PriorityLayer layer)
+6884|        public static void UnregisterColdTickable(IColdTickable item, PriorityLayer layer)
+6898|        public static void UnregisterFrostTickable(IFrostTickable item, PriorityLayer layer)
+6910|        public static void UnregisterUnscaledFastTickable(IUnscaledFastTickable item, PriorityLayer layer)
+6924|        public static void UnregisterLateFrameTickable(ILateFrameTickable item, PriorityLayer layer)
+6937|        public static void UnregisterPostFixedTickable(IPostFixedTickable item, PriorityLayer layer)
+7624|                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+7947|        ///    SystemDispatcher.TryConsumeLateFrameEventDispatch, so nothing dequeues until the dispatcher
+
+GR C:/hades/Hecton8\Assets\_Project\Scripts\Core\GlobalRegistryContracts.cs
+81|    public interface ILateFrameTickable
+86|        void LateFrameTick();
+108|        void DispatchLateFrame();
+1347|        int PendingLateFrameEventCount { get; }
+1352|        void FlushLateFrameEvents();
+
+GR C:/hades/Hecton8\Assets\_Project\Tests\Editor\GlobalRegistryHotSwapLaneEditTests.cs
+17|            new DispatcherLaneContract("LateFrameTickable", "ILateFrameTickable", "SystemDispatcher.UnregisterLateFrameTickableDirect("),

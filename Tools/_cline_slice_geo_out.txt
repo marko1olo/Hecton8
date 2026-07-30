@@ -1,0 +1,511 @@
+==== SPALL consts 690 780 ====
+690|# parallelogram sharing the same two orientations, packed densely enough to read as crazy
+691|# paving or parquet -- assembled stone panels rather than one weathered face. Angular was
+692|# the right instruction; angular AND dense AND identically oriented is masonry.
+693|# TUNED AT THE SHIPPED 2048 LANE, and it has to be. The structural-extent statistics are
+694|# RESOLUTION-DEPENDENT because periodic_fbm and periodic_worley consume resolution-sized
+695|# draws from the shared rng, so the scar layout for one seed differs between lanes: count 22
+696|# measured erosional coverage 0.195 at 512 and 0.141 at 2048, passing the family requirement
+697|# at one lane and failing it at the other. Tuning at 512 and trusting 2048 is therefore
+698|# invalid. The clean fix is a per-generator rng stream seeded from a hash rather than one
+699|# shared stream -- generators/rock.py has the same property -- and that is outstanding debt,
+700|# not something to change under a texture task.
+701|SPALL_SCAR_COUNT = 44
+702|SPALL_PACKAGE_LAMINAE_MIN = 1
+703|SPALL_PACKAGE_LAMINAE_MAX = 4
+704|# NARROW AND DENSE beats wide and sparse. At 0.08-0.30 width the scars met the run
+705|# budget only by covering 49.6 percent of the tile -- half the face became scar and the
+706|# bedding it was meant to interrupt had little left to interrupt. Narrow scars act as
+707|# TRUNCATIONS rather than removals, which is the geometry that breaks a run.
+708|SPALL_WIDTH_MIN_FRACTION = 0.05
+709|SPALL_WIDTH_MAX_FRACTION = 0.16
+710|SPALL_OFFSET_MIN_FRACTION = 0.60
+711|SPALL_OFFSET_MAX_FRACTION = 2.20
+712|# A flake is SHALLOW -- one package thick -- but can be wide. Depth is kept modest on purpose
+713|# so widening the scars to break lamina continuity cannot push spall above parting in the RMS
+714|# hierarchy, which is the requirement this family already declares.
+715|SPALL_STEP_FRACTION = 0.24
+716|
+717|# Competence band. Hardness of exactly 0 is a lamina with no resistance at all, which
+718|# drives the differential-relief term to its full depth in one lamina and produces a
+719|# trench rather than a recess.
+720|LAMINA_HARDNESS_MIN = 0.08
+721|LAMINA_HARDNESS_MAX = 0.95
+722|
+723|
+724|@dataclass
+725|class LaminaStack:
+726|    """Per-pixel lithology, sampled from a periodic stack of laminae."""
+727|
+728|    index: np.ndarray          # integer lamina id
+729|    across: np.ndarray         # 0..1 position across the lamina, 0 at its base
+730|    hardness: np.ndarray       # competence: resists weathering, stands proud
+731|    carbonate: np.ndarray      # pale carbonate cement fraction
+732|    organic: np.ndarray        # dark organic/clay fraction; hosts pyrite
+733|    porosity: np.ndarray       # where dissolution can open a vug at all
+734|    spall: np.ndarray          # 0..1 inside a flake scar, sharp at the rim
+735|    fault_gouge: np.ndarray    # 0..1 on the single high-angle fault wall
+736|    unconformity: np.ndarray   # 0..1 on a low-angle unconformity boundary
+737|    contact: np.ndarray        # 1.0 exactly on a lamina contact, falling off
+738|    count: int
+739|    thicknesses_m: np.ndarray
+740|
+741|    @property
+742|    def softness(self) -> np.ndarray:
+743|        return 1.0 - self.hardness
+744|
+745|
+746|# TWO SEPARATE MECHANISMS, and conflating them was the defect that produced a masonry wall.
+747|#
+748|# The previous version had one construct called "fault/unconformity blocks" and built four of
+749|# them, all oriented on the JOINT SET -- two conjugate directions about a 24-degree stress
+750|# axis. So all four were STEEP and NEAR-PARALLEL, at roughly regular spacing, cutting
+751|# horizontal beds. Steep near-parallel walls at a regular interval crossing horizontal bedding
+752|# is a rectangular grid BY CONSTRUCTION, which is why the tile read as brick courses. It is the
+753|# same class of error as the Voronoi partition: ORTHOGONAL STRUCTURE AT A REGULAR INTERVAL
+754|# READS AS MANUFACTURED, however the individual elements are shaped.
+755|#
+756|# They are not one thing:
+757|#
+758|#   A FAULT is HIGH-ANGLE. It cuts across bedding steeply, offsets it, and DRAWS A STEEP LINE.
+759|#   An UNCONFORMITY is LOW-ANGLE -- a former depositional or erosional surface. It truncates
+760|#   beds OBLIQUELY and shallowly, and the beds above sit at a different dip from those below.
+761|#
+762|# So the low-angle mechanism is primary, and there is AT MOST ONE fault whose azimuth is forced
+763|# away from every joint direction so nothing is parallel to anything else. Neither mechanism
+764|# uses regular spacing: both draw position, thickness and orientation per instance.
+765|#
+766|# An unconformity is implemented as a PACKAGE bounded above and below by two low-angle
+767|# surfaces, which is what a depositional sequence actually is -- and it is also what makes the
+768|# construct periodic. On a torus "everything above a surface" is not a well-defined region,
+769|# while "within half a band thickness of an undulating level" is.
+770|UNCONFORMITY_COUNT = 2
+771|UNCONFORMITY_THICKNESS_MIN_FRACTION = 0.18
+772|UNCONFORMITY_THICKNESS_MAX_FRACTION = 0.42
+773|# Undulation amplitude as a fraction of the tile, with ONE harmonic, so the boundary slope
+774|# stays low: slope = 2*pi*amplitude, i.e. 0.22 (12.4 degrees) at 0.035. Low-angle by
+775|# construction rather than by tuning, which is the point of separating this from the fault.
+776|UNCONFORMITY_UNDULATION_MIN = 0.022
+777|UNCONFORMITY_UNDULATION_MAX = 0.040
+778|UNCONFORMITY_DISCORDANCE_MIN = 0.010
+779|UNCONFORMITY_DISCORDANCE_MAX = 0.028
+780|UNCONFORMITY_OFFSET_MIN_FRACTION = 1.5
+==== measure_longest 930 1020 ====
+930|def _longest_wrapped_run(row: np.ndarray) -> int:
+931|    """Longest run of True in a row, treating the row as a CIRCLE.
+932|
+933|    Wrapping matters because the tile wraps: a bed that is interrupted at pixel 3 and at
+934|    pixel 2045 still runs almost the full width once tiled, and a non-wrapped scan would
+935|    report two short runs and call it broken.
+936|    """
+937|    if not row.any():
+938|        return 0
+939|    if row.all():
+940|        return int(row.size)
+941|    rotated = np.roll(row, -int(np.argmin(row)))
+942|    padded = np.concatenate(([0], rotated.astype(np.int8), [0]))
+943|    edges = np.flatnonzero(np.diff(padded))
+944|    starts, ends = edges[::2], edges[1::2]
+945|    return int((ends - starts).max()) if starts.size else 0
+946|
+947|
+948|def measure_structural_extent(lamina: LaminaStack, joint: np.ndarray,
+949|                              tile_m: float) -> dict:
+950|    """How far the bedding RUNS before something erosional interrupts it.
+951|
+952|    THIS IS THE OTHER HALF OF THE HIERARCHY CONSTRAINT. Declaring a depth for every relief
+953|    term fixed the ordering; it said nothing about extent, and a bed crossing the entire tile
+954|    at constant thickness makes the same kind of unstated claim a rank-one vug did. Sawn
+955|    timber and weathered rock can share a relief hierarchy and differ only in run length.
+956|
+957|    Interruption means a spall scar or a joint trace -- the two erosional structures in the
+958|    field. Grain and vugs are not interruptions: they roughen a bed without truncating it.
+959|
+960|    Reported against ``law.GEOLOGY_LAMINA_MAX_RUN_FRACTION`` and
+961|    ``law.GEOLOGY_MIN_EROSIONAL_COVERAGE``. Declared as a FAMILY STRUCTURAL METRIC and kept
+962|    out of the section 9 gate list: the playbook names eleven gates and inventing a twelfth
+963|    inside that table would misrepresent the authority. It is reported beside them instead.
+964|    """
+965|    interrupted = ((lamina.spall > 0.5) | (joint > 0.5)
+966|                   | (lamina.fault_gouge > 0.5) | (lamina.unconformity > 0.5))
+967|    intact = ~interrupted
+968|    runs = np.array([_longest_wrapped_run(intact[row]) for row in range(intact.shape[0])],
+969|                    dtype=np.float64)
+970|    width = float(intact.shape[1])
+971|    fractions = runs / width
+972|    erosional = float(interrupted.mean())
+973|    p95 = float(np.percentile(fractions, 95))
+974|    return {
+975|        "note": "family structural metric, NOT one of the eleven section 9 gates",
+976|        "longestIntactRunFraction": {
+977|            "p50": round(float(np.percentile(fractions, 50)), 5),
+978|            "p95": round(p95, 5),
+979|            "max": round(float(fractions.max()), 5),
+980|        },
+981|        "longestIntactRunM": round(p95 * tile_m, 4),
+982|        "runBudgetFraction": law.GEOLOGY_LAMINA_MAX_RUN_FRACTION,
+983|        "runBudgetMet": bool(p95 <= law.GEOLOGY_LAMINA_MAX_RUN_FRACTION),
+984|        "erosionalCoverage": round(erosional, 5),
+985|        "erosionalCoverageMin": law.GEOLOGY_MIN_EROSIONAL_COVERAGE,
+986|        "erosionalCoverageMet": bool(erosional >= law.GEOLOGY_MIN_EROSIONAL_COVERAGE),
+987|        "interruptedBy": "spall scars, joint traces, the single fault wall and the "
+988|                         "low-angle unconformity boundaries; grain and vugs roughen a bed "
+989|                         "without truncating it",
+990|    }
+991|
+992|
+993|def _build_spall_scars(spec: GeologyTextureSpec,
+994|                       base_coordinate: np.ndarray, boundaries: np.ndarray,
+995|                       thicknesses: np.ndarray,
+996|                       joint_traces: Optional[list]) -> tuple:
+997|    """Angular flake scars bounded by partings and clipped to real joint lines.
+998|
+999|    Each scar is the intersection of
+1000|
+1001|      * a BED PACKAGE: the bedding coordinate lying between two lamina boundaries taken
+1002|        straight out of ``boundaries``, so the top and bottom edges sit exactly on partings
+1003|        rather than near them;
+1004|      * a SLAB bounded by an ACTUAL joint line and a parallel line at a drawn distance, so
+1005|        one lateral edge terminates on a fracture that exists elsewhere in the tile.
+1006|
+1007|    Every edge is therefore a structure already present in the rock, which is what makes the
+1008|    outline angular. The previous Worley construction could not be angular at all: a Voronoi
+1009|    cell is a smooth convex region unrelated to bedding or jointing, and it rendered as an
+1010|    oval stain.
+1011|
+1012|    Periodicity comes from minimum-imaging the offset from the joint's own start point,
+1013|    the same device the joint traces use. It can select a wrong image only for samples far
+1014|    from the line, and those fall outside the slab in every image, so the mask is zero there
+1015|    regardless.
+1016|
+1017|    Returns ``(mask, offset_m)``. The OFFSET is what actually interrupts the laminae: inside
+1018|    a scar the bedding coordinate is displaced by more than one lamina thickness, so the beds
+1019|    exposed in the scar floor do not line up with the beds outside it. That discontinuity at
+1020|    the rim is the feature, not an artefact.
+==== spall apply 1020 1160 ====
+1020|    the rim is the feature, not an artefact.
+1021|    """
+1022|    rng = substream(spec.seed, "spall")
+1023|    field_rng = substream(spec.seed, "spall.field")
+1024|    resolution = spec.resolved_resolution()
+1025|    axis = (np.arange(resolution) + 0.5) / resolution * spec.tile_m
+1026|    py, px = np.meshgrid(axis, axis, indexing="ij")
+1027|
+1028|    lamina_count = len(thicknesses)
+1029|    mean_thickness = float(thicknesses.mean())
+1030|
+1031|    # Prefer joints that actually cut ACROSS bedding. A trace running nearly parallel to the
+1032|    # bedding plane would give a lateral edge indistinguishable from the parting edges, and
+1033|    # the scar would degenerate back into a plain horizontal band.
+1034|    usable = []
+1035|    for trace in (joint_traces or ()):
+1036|        if abs(float(trace.get("dirRow", 0.0))) > 0.35:
+1037|            usable.append(trace)
+1038|    if not usable:
+1039|        usable = list(joint_traces or ())
+1040|
+1041|    mask = np.zeros((resolution, resolution), dtype=np.float64)
+1042|    offset = np.zeros((resolution, resolution), dtype=np.float64)
+1043|    # One SHARED edge-jitter field, so every scar's walls are roughened by the same rock
+1044|    # fabric rather than by independent noise per scar.
+1045|    edge_jitter = periodic_warp(field_rng, resolution, spec.tile_m,
+1046|                                wavelength_m=0.055, amplitude=0.007)
+1047|
+1048|    # SCAR PLACEMENT IS STRATIFIED ACROSS THE COLUMN, not uniformly random, and the
+1049|    # difference is measurable rather than cosmetic. With random starts the first measurement
+1050|    # of ``longestIntactRunFraction`` came back at p95 = 1.00 -- some bed packages were never
+1051|    # crossed by any scar, so those rows ran the full tile width and the surface still read as
+1052|    # sawn timber even with 22 percent erosional coverage. Stratifying guarantees every part of
+1053|    # the stack is attacked; the jitter keeps the scars from landing on a visible ladder.
+1054|    total = max(1, SPALL_SCAR_COUNT)
+1055|    for _index in range(total):
+1056|        # --- bed package: two real parting positions -----------------------------
+1057|        stratum = (_index + rng.random()) / float(total)
+1058|        start_lamina = int(min(lamina_count - 1, stratum * lamina_count))
+1059|        package = int(rng.integers(SPALL_PACKAGE_LAMINAE_MIN,
+1060|                                   SPALL_PACKAGE_LAMINAE_MAX + 1))
+1061|        lo = float(boundaries[start_lamina])
+1062|        hi = float(boundaries[min(start_lamina + package, lamina_count)])
+1063|        if hi <= lo:
+1064|            continue
+1065|        # Wrapped band test: the package may straddle the tile's bedding wrap.
+1066|        if hi <= spec.tile_m:
+1067|            in_package = (base_coordinate >= lo) & (base_coordinate < hi)
+1068|        else:
+1069|            in_package = ((base_coordinate >= lo)
+1070|                          | (base_coordinate < (hi - spec.tile_m)))
+1071|
+1072|        # --- lateral slab: one edge on a real joint line -------------------------
+1073|        if usable:
+1074|            trace = usable[int(rng.integers(0, len(usable)))]
+1075|            origin = np.array([trace["startRow"], trace["startCol"]])
+1076|            direction = np.array([trace["dirRow"], trace["dirCol"]])
+1077|        else:
+1078|            angle = math.radians(JOINT_STRESS_AZIMUTH_DEG + JOINT_CONJUGATE_DEG)
+1079|            origin = rng.random(2) * spec.tile_m
+1080|            direction = np.array([math.sin(angle), math.cos(angle)])
+1081|        norm = float(np.hypot(direction[0], direction[1]))
+1082|        if norm < 1e-9:
+1083|            continue
+1084|        direction = direction / norm
+1085|        # Perpendicular, so a positive value is "this far to one side of the joint".
+1086|        normal = np.array([direction[1], -direction[0]])
+1087|
+1088|        offset_row = py - origin[0]
+1089|        offset_col = px - origin[1]
+1090|        offset_row = offset_row - spec.tile_m * np.rint(offset_row / spec.tile_m)
+1091|        offset_col = offset_col - spec.tile_m * np.rint(offset_col / spec.tile_m)
+1092|        lateral = offset_row * normal[0] + offset_col * normal[1]
+1093|        # RAGGED, not ruled. A flake's lateral edge follows the joint it terminated against,
+1094|        # but rock does not break along a drafting line -- and perfectly straight edges are
+1095|        # what made the dense version read as cut masonry. Perturbing the lateral coordinate
+1096|        # roughens both walls at the centimetre scale while leaving the edge's overall
+1097|        # orientation on the joint.
+1098|        lateral = lateral + edge_jitter
+1099|
+1100|        width = float(rng.uniform(SPALL_WIDTH_MIN_FRACTION,
+1101|                                  SPALL_WIDTH_MAX_FRACTION)) * spec.tile_m
+1102|        side = 1.0 if rng.random() < 0.5 else -1.0
+1103|        in_slab = (lateral * side >= 0.0) & (lateral * side < width)
+1104|
+1105|        scar = in_package & in_slab
+1106|        if not scar.any():
+1107|            continue
+1108|        scar_offset = mean_thickness * float(rng.uniform(SPALL_OFFSET_MIN_FRACTION,
+1109|                                                         SPALL_OFFSET_MAX_FRACTION))
+1110|        # Later scars overwrite earlier ones where they overlap, which is how a real face
+1111|        # accumulates: a younger flake removes part of an older scar.
+1112|        offset = np.where(scar, scar_offset, offset)
+1113|        mask = np.where(scar, 1.0, mask)
+1114|
+1115|    return mask, offset
+1116|
+1117|
+1118|def build_lamina_stack(spec: GeologyTextureSpec,
+1119|                       joint_traces: Optional[list] = None) -> LaminaStack:
+1120|    """Build the sedimentary column and sample it per pixel.
+1121|
+1122|    Exactly periodic in V by construction: an integer lamina count whose thicknesses are
+1123|    renormalised to sum to exactly ``tile_m``. Approximating that with a modulo of a
+1124|    float stack leaves a partial lamina at the wrap, which is a visible stripe of the
+1125|    wrong width once tiled -- the seam gate would catch it, but only after the fact.
+1126|
+1127|    The undulation is applied to the bedding COORDINATE rather than to the boundaries, so
+1128|    laminae bend together and never cross. Crossing laminae would make the lithology
+1129|    index non-physical, and the resulting colour field would read as marbling rather than
+1130|    as bedding.
+1131|    """
+1132|    rng = substream(spec.seed, "lamina")
+1133|    field_rng = substream(spec.seed, "lamina.field")
+1134|    resolution = spec.resolved_resolution()
+1135|
+1136|    # Row 0 is the TOP of the image. V increases upward, so a lamina's "base" is below it
+1137|    # in image terms. Getting this backwards inverts the whole stack's younging direction,
+1138|    # which is invisible on its own but puts overhang runoff on the wrong side of a ledge.
+1139|    v_up = 1.0 - (np.arange(resolution) + 0.5) / resolution
+1140|    depth_m = (v_up * spec.tile_m)[:, None] * np.ones((1, resolution))
+1141|
+1142|    mean_thickness = 0.5 * (LAMINA_THICKNESS_MIN_M + LAMINA_THICKNESS_MAX_M)
+1143|    count = max(3, int(round(spec.tile_m / mean_thickness)))
+1144|    raw = rng.uniform(LAMINA_THICKNESS_MIN_M, LAMINA_THICKNESS_MAX_M, size=count)
+1145|    thicknesses = raw * (spec.tile_m / raw.sum())
+1146|    boundaries = np.concatenate([[0.0], np.cumsum(thicknesses)])
+1147|
+1148|    # Undulation, at TWO scales. A single 0.0045 m term was measured too weak: the first
+1149|    # preview render showed laminae running dead straight across the whole tile and reading
+1150|    # as corduroy or stacked planks -- the same "stack of discs" failure ``rock.py``
+1151|    # documents for its beds, and a pattern rather than a rock.
+1152|    #
+1153|    # A long, larger term bends whole packages of laminae; a shorter, smaller one gives each
+1154|    # one its own waviness. The FOLD LIMIT is what bounds them: the warp's derivative along
+1155|    # the bedding coordinate must stay well under 1 or the mapping becomes non-monotonic and
+1156|    # laminae fold through each other. For a sinusoid of amplitude ``a`` and wavelength
+1157|    # ``L`` that derivative is ``2*pi*a/L``, so 0.011 m at 0.94 m gives 0.074 and 0.004 m at
+1158|    # 0.18 m gives 0.14 -- together 0.21, safely inside the limit.
+1159|    #
+1160|    # A THIRD, FINE TERM MAKES THE LAMINA EDGES RAGGED, and it fixes a defect the two smooth
+==== report 1640 1710 ====
+1640|        "pitCells": pit_cells,
+1641|        "pitSecondLayerCells": second_cells,
+1642|        "pitWavelengthM": round(spec.tile_m / pit_cells, 5),
+1643|        "pitWitnessDepthM": law.GEOLOGY_PIT_DEPTH_M,
+1644|        "pitWitnessRole": "depth of the RAREST LARGEST vug, not of every vug; depth scales "
+1645|                          "with radius at constant aspect ratio",
+1646|        "pitDepthRangeM": [round(float(np.min(np.minimum(depth_a, depth_b))), 6),
+1647|                           round(float(np.max(np.maximum(depth_a, depth_b))), 6)],
+1648|        "pitRadiusDistribution": "bounded Pareto alpha={a}, radii {lo}-{hi} cell units"
+1649|                                 .format(a=VUG_PARETO_ALPHA, lo=VUG_RADIUS_MIN,
+1650|                                         hi=VUG_RADIUS_MAX),
+1651|        "pitPorosityGate": [VUG_POROSITY_LOW, VUG_POROSITY_HIGH],
+1652|        "pitCoverage": round(float((pit > 0.5).mean()), 5),
+1653|        "jointGenerator": "sparse conjugate trace set (NOT a Worley partition)",
+1654|        "jointTraceCount": JOINT_TRACE_COUNT,
+1655|        "jointStressAzimuthDeg": JOINT_STRESS_AZIMUTH_DEG,
+1656|        "jointConjugateDeg": JOINT_CONJUGATE_DEG,
+1657|        "jointTraces": joint_traces,
+1658|        "jointWidthM": JOINT_WIDTH_M,
+1659|        "jointBedConfined": True,
+1660|        "jointCoverage": round(float((joint > 0.5).mean()), 5),
+1661|        "shellCoverage": round(float((shell > 0.5).mean()), 5),
+1662|        "heightRangeM": [round(float(height.min()), 6), round(float(height.max()), 6)],
+1663|        "heightPeakToPeakM": round(float(height.max() - height.min()), 6),
+1664|        "termAmplitudesM": {
+1665|            "beddingRecess": round(float(recess.max() - recess.min()), 6),
+1666|            "partingIncision": round(float(parting.max() - parting.min()), 6),
+1667|            "grain": round(float(grain.max() - grain.min()), 6),
+1668|            "dissolutionVugs": round(float(pit_relief.max() - pit_relief.min()), 6),
+1669|            "joints": round(float(joint_relief.max() - joint_relief.min()), 6),
+1670|            "bioclasts": round(float(shell_relief.max() - shell_relief.min()), 6),
+1671|            "spallScars": round(float(spall_relief.max() - spall_relief.min()), 6),
+1672|            "faultGouge": round(float(fault_relief.max() - fault_relief.min()), 6),
+1673|            "unconformityTrace": round(
+1674|                float(unconformity_relief.max() - unconformity_relief.min()), 6),
+1675|        },
+1676|        "spallCoverage": round(float((lamina.spall > 0.5).mean()), 5),
+1677|        "spallScarCount": SPALL_SCAR_COUNT,
+1678|        "unconformityCount": UNCONFORMITY_COUNT,
+1679|        "unconformities": lamina.unconformity_report,
+1680|        "fault": lamina.fault_report,
+1681|        "mechanismSeparation":
+1682|            "FAULT is high-angle and draws a steep line; UNCONFORMITY is low-angle and "
+1683|            "truncates beds obliquely. Four steep near-parallel walls at regular spacing "
+1684|            "against horizontal bedding is a rectangular grid by construction, which is why "
+1685|            "the previous single conflated mechanism read as masonry.",
+1686|        "spallGeometry": "angular: top/bottom edges snapped to real parting positions, one lateral edge clipped to an actual joint line, opposite edge parallel",
+1687|        "structuralExtent": measure_structural_extent(lamina, joint, spec.tile_m),
+1688|        # THE HIERARCHY IS PUBLISHED AS A RANKING so an inversion is visible in the manifest
+1689|        # instead of only in a render. The family was rejected once for shipping
+1690|        # vugs 11.0 / grain 8.2 / recess 7.3 / joints 4.5 / parting 3.5 / bioclasts 2.2 mm --
+1691|        # numerically inverted for a laminated rock, with bedding fifth. Every subordinate
+1692|        # term is now a declared FRACTION of BEDDING_RECESS_M, so the ordering is structural.
+1693|        "reliefHierarchy": {
+1694|            "primary": "beddingRecess",
+1695|            "basisM": BEDDING_RECESS_M,
+1696|            "declaredFractions": {
+1697|                "partingIncision": PARTING_DEPTH_FRACTION,
+1698|                "joints": JOINT_DEPTH_FRACTION,
+1699|                "dissolutionVugsTypical": VUG_TYPICAL_DEPTH_FRACTION,
+1700|                "bioclasts": SHELL_RELIEF_FRACTION,
+1701|                "grain": round(grain_ratio, 5),
+1702|            },
+1703|            # RANKED BY AREA-WEIGHTED RMS, NOT BY PEAK-TO-PEAK, and the choice of statistic
+1704|            # is itself a correction. Peak-to-peak is a MAX statistic: one rare deep cavity
+1705|            # covering 0.4 percent of the tile put the vug term at rank two while bedding,
+1706|            # which displaces the whole surface, ranked below it. That is the same error as
+1707|            # judging a tile seam from one row-pair against a population mean -- an extreme
+1708|            # compared against a distribution. "Primary relief" means what dominates the
+1709|            # surface READ, so the ranking uses RMS, which weights each term by how much of
+1710|            # the surface it actually displaces. Peak-to-peak stays published beside it,
+==== law GEOLOGY ====
+696|# collapsed fracture faces", and a bed with no truncation shows deposition without any of
+697|# the erosion that followed it.
+698|GEOLOGY_LAMINA_MAX_RUN_FRACTION = 0.55
+699|
+700|# Minimum share of the surface that must be interrupted by erosional structure -- spall
+701|# scars and joints -- or the face reads as deposited-and-never-weathered.
+702|GEOLOGY_MIN_EROSIONAL_COVERAGE = 0.18
+703|
+---
+==== existing probes ====
+Tools/_cline_probe_geo.py exists 2934
+Tools/_cline_probe_out.txt exists 23091
+Tools/_cline_slice5_out.txt exists 24709
+---- Tools/_cline_probe_out.txt ----
+=== UNITY ===
+??????: ?????, ????? ??????? ?????, ??????????.
+unity_alive=False
+=== LOG ===
+exists True size 236322
+marker 'error CS': 174
+marker 'Exception': 33
+marker 'Scripts have compiler errors': 1
+--- LOG TAIL ---
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(16,13): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(16,53): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(22,24): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(25,141): error CS0103: The name 'VaultHandleOptions' does not exist in the current context
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(26,24): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(29,24): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\AudioLogSystemMutationGuardExceptionTests.cs(35,53): error CS0246: The type or namespace name 'AudioLogSystem' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\BuildTestTests.cs(12,41): error CS0103: The name 'BuildTest' does not exist in the current context
+Assets\_Project\Tests\Editor\H8BlackboxUtilsExceptionTests.cs(17,31): error CS0246: The type or namespace name 'H8Utils' could not be found (are you missing a using directive or an assembly reference?)
+Assets\_Project\Tests\Editor\H8BlackboxUtilsExceptionTests.cs(43,26): error CS0103: The name 'H8Utils' does not exist in the current context
+Assets\_Project\Tests\Editor\ObjectPoolManagerOnServiceShutdownTests.cs(63,28): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerOnServiceShutdownTests.cs(64,58): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerOnServiceShutdownTests.cs(70,42): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(41,54): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(79,43): error CS0117: 'ObjectPoolManager' does not contain a definition for 'ActiveRuntimeInstance'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(104,40): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(130,40): error CS0117: 'GlobalRegistry' does not contain a definition for 'ObjectPoolRuntimeMirror'
+Assets\_Project\Tests\Editor\ObjectPoolManagerTryResolveActiveRuntimeTests.cs(131,43): error CS0117: 'ObjectPoolManager' does not contain a definition for 'ActiveRuntimeInstance'
+Assets\_Project\Tests\Editor\QuestDagResolverEditTests.cs(365,37): error CS0103: The name 'NativeMemorySentinel' does not exist in the current context
+Assets\_Project\Tests\Editor\QuestDagResolverEditTests.cs(365,124): error CS0103: The name 'NativeAllocationLifetime' does not exist in the current context
+Assets\_Project\Tests\Editor\QuestDagResolverEditTests.cs(384,29): error CS0103: The name 'NativeMemorySenti
+---- Tools/_cline_slice5_out.txt ----
+FOUND C:/hades/Hecton8\Assets\_Project\Scripts\Core\SystemDispatcher.cs lines 7580
+150|        private const int MaxLateFrameEventsPerFrame = 1000;
+153|        private const int LateFrameCircuitBreakerLaneCapacity = 32;
+157|        private const double LateFrameEventFlushBudgetMilliseconds = 2.0;
+158|        private const double LateFrameFlushPassSpikeMilliseconds = 0.5;
+199|        private static readonly ProfilerMarker _lateFrameProfilerMarker = new ProfilerMarker("H8.Dispatcher.LateFrame");
+201|        private static readonly ProfilerMarker _lateFrameCommandQueueDrainProfilerMarker = new ProfilerMarker("H8.Dispatcher.CommandQueue.Drain");
+218|        private const uint _LateFrameTickablesQueueHash = 1655194628u;
+219|        private const uint _LateFrameBudgetWarningHash = 3118918745u;
+367|        private static readonly RegistryBucket<ILateFrameTickable>[] _lateFramePriorityLanes =
+369|            new RegistryBucket<ILateFrameTickable>(128),
+370|            new RegistryBucket<ILateFrameTickable>(128),
+371|            new RegistryBucket<ILateFrameTickable>(96),
+372|            new RegistryBucket<ILateFrameTickable>(128),
+392|        private static readonly object[] _masterSortedSystems = new object[MasterDispatcherMaxSystems];
+422|        private static int _masterSortedSystemCount;
+443|        private static readonly uint[] _lateFrameCircuitBreakerLaneHashes = new uint[LateFrameCircuitBreakerLaneCapacity];
+445|        private static readonly ushort[] _lateFrameCircuitBreakerLaneCounts = new ushort[LateFrameCircuitBreakerLaneCapacity];
+554|        private static int _lateFrameEventDispatchBudget;
+555|        private static bool _lateFrameEventBudgetActive;
+556|        private static bool _lateFrameCircuitBreakerTripped;
+557|        private static bool _lateFrameTimeBudgetExhausted;
+558|        private static uint _activeLateFrameEventLaneHash;
+559|        private static uint _dominantLateFrameCircuitBreakerLaneHash;
+560|        private static long _lateFrameEventBudgetStartTimestamp;
+653|        private static ushort _dominantLateFrameCircuitBreakerLaneCount;
+785|            _lateFrameEventDispatchBudget = 0;
+786|            _lateFrameEventBudgetActive = false;
+787|            _lateFrameCircuitBreakerTripped = false;
+788|            _lateFrameTimeBudgetExhausted = false;
+789|            _activeLateFrameEventLaneHash = 0u;
+790|            _dominantLateFrameCircuitBreakerLaneHash = 0u;
+791|            _lateFrameEventBudgetStartTimestamp = 0L;
+792|            _dominantLateFrameCircuitBreakerLaneCount = 0;
+794|            System.Array.Clear(_lateFrameCircuitBreakerLaneHashes, 0, _lateFrameCircuitBreakerLaneHashes.Length);
+795|            System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
+853|        private struct DispatcherLateFramePlayerLoopNode
+873|                typeof(DispatcherLateFramePlayerLoopNode),
+874|                RunDispatcherLateFrameFromPlayerLoop);
+995|        private static void RunDispatcherLateFrameFromPlayerLoop()
+1001|            dispatcher.RunDispatcherLateFrame();
+1226|        private static IDispatcherSystem GetMasterSortedSystemAt(int index)
+1228|            return _masterSortedSystems[index] as IDispatcherSystem;
+1248|        public static RegistryBucket<IUpdatable> GetLane(PriorityLayer layer)
+1256|        public static RegistryBucket<IFastTickable> GetFastLane(PriorityLayer layer)
+1266|        public static RegistryBucket<IFixedTickable> GetFixedLane(PriorityLayer layer)
+1276|        public static RegistryBucket<ISlowTickable> GetSlowLane(PriorityLayer layer)
+1284|        public static RegistryBucket<IColdTickable> GetColdLane(PriorityLayer layer)
+1294|        public static RegistryBucket<IFrostTickable> GetFrostLane(PriorityLayer layer)
+1304|        public static RegistryBucket<ILateFrameTickable> GetLateFrameLane(PriorityLayer layer)
+1306|            return _lateFramePriorityLanes[GetLaneIndex(layer)];
+1314|        public static RegistryBucket<IP
+==== bg gate early ====
+preflight 1/2 blocked: CPU at 59%, above the 50% preflight ceiling
+preflight 2/2 blocked: CPU at 79%, above the 50% preflight ceiling
+BUILD_GATE_BLOCKED: CPU at 79%, above the 50% preflight ceiling. Nothing was launched. Per AGENTS.md this is reported, not polled - rerun when the other lane is done.
+
+
+[EXIT_CODE] Process exited with code 75
+
+==== git log geology ====
+f3ecc8091 fix(core): add missing UnityEditor using to SaveManager, finalize Claude Opus 5 handoff
+10bd4c228 law: texture band ceilings for the five families after geology
+f6252ffb5 forge(texture): scars now cut along real partings and joints, and a shared RNG stream makes the metric lane-dependent
+8062c184c forge(texture): vugs went rank 1 to rank 5, and a MAX statistic had been outranking the whole surface
+08c362239 forge: the texture module the pipeline never had, 12/12 gates, and noise appears exactly once
+

@@ -1,0 +1,260 @@
+
+PRIORITY C:/hades/Hecton8\Assets\_Project\Scripts\Core\GlobalRegistryContracts.cs
+57|    public enum PriorityLayer : byte
+58|    {
+59|        Core = 0x00,
+60|        Environment = 0x20,
+61|        Player = 0x40,
+62|        UI = 0x60,
+63|    }
+64|
+65|    /// <summary>
+66|    /// Zero-allocation update contract used by <see cref="SystemDispatcher"/>.
+67|    /// </summary>
+68|    public interface IUpdatable
+69|    {
+70|        /// <summary>
+71|        /// Executes one dispatcher step.
+72|        /// </summary>
+73|        /// <param name="deltaTime">Scaled frame delta supplied by the dispatcher.</param>
+74|        void Tick(float deltaTime);
+75|    }
+76|
+77|    /// <summary>
+78|    /// End-of-frame callback executed by <see cref="SystemDispatcher"/> after the main update lanes.
+79|    /// Intended for deferred job ownership recovery and readback commits that must stay out of hot-path ticks.
+80|    /// </summary>
+81|    public interface ILateFrameTickable
+82|    {
+83|        /// <summary>
+84|        /// Executes the owner's end-of-frame swap-window work.
+85|        /// </summary>
+86|        void LateFrameTick();
+87|    }
+88|
+89|    /// <summary>
+90|    /// Registry-owned bridge between first-party native signal lanes and managed mod callbacks.
+91|    /// First-party producers must stay on <see cref="GlobalSignals"/> / <see cref="SignalBus{T}"/> lanes.
+92|    /// </summary>
+93|    public interface IModdingBridge : ISystem
+94|    {
+95|        /// <summary>True after the bridge allocated its native projection queues and registered dispatcher ownership.</summary>
+96|        bool IsInitialized { get; }
+97|
+
+=== eco register late ===
+208|    public sealed class EcosystemDirector : MonoBehaviour, ISlowTickable, IFrostTickable, ILateFrameTickable, IEcosystemDirectorService, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+1698|        private bool _registeredLateFrameTickable;
+2883|            TryRegisterSlowTickable();
+2884|            TryRegisterFrostTickable();
+2885|            TryRegisterLateFrameTickable();
+2911|            TryUnregisterLateFrameTickable();
+2933|            TryRegisterSlowTickable();
+2934|            TryRegisterFrostTickable();
+2935|            TryRegisterLateFrameTickable();
+3189|                // cannot abort this director's own TryRegisterService/TryRegisterSlowTickable sequence,
+3543|        public void LateFrameTick()
+5626|        private void TryRegisterSlowTickable()
+5634|            _registeredSlowTickable = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+5646|        private void TryRegisterFrostTickable()
+5654|            _registeredFrostTickable = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
+5666|        private void TryRegisterLateFrameTickable()
+5668|            if (_registeredLateFrameTickable || !Application.isPlaying)
+5674|            _registeredLateFrameTickable = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+5677|        private void TryUnregisterLateFrameTickable()
+5679|            if (!_registeredLateFrameTickable)
+5682|            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+5683|            _registeredLateFrameTickable = false;
+P 2885|            TryRegisterLateFrameTickable();
+P 2935|            TryRegisterLateFrameTickable();
+P 5634|            _registeredSlowTickable = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+P 5642|            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+P 5654|            _registeredFrostTickable = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
+P 5662|            GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Environment);
+P 5666|        private void TryRegisterLateFrameTickable()
+P 5674|            _registeredLateFrameTickable = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+P 5682|            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+
+=== eco SlowTick seed region ===
+3084|                : (float)elapsedSeconds;
+3085|            _debugSlowTickDeltaSeconds = deltaSeconds;
+3086|            return deltaSeconds;
+3087|        }
+3088|
+3089|        /// <summary>
+3090|        /// Advances the sector population solve using a Burst job.
+3091|        /// </summary>
+3092|        /// <remarks>
+3093|        /// Cadence, corrected 2026-07-29: SlowTick itself runs every 0.1 SECONDS (10 Hz) -
+3094|        /// SystemDispatcher.cs:72 `SlowTickIntervalSeconds = 0.1`, mirrored here at :260. This summary
+3095|        /// previously said "0.1 Hz", which is 100x too slow and is the number that produced a wrong
+3096|        /// capacity argument in TryResolveSeedObserverAup below. The SOLVE is slower than the tick that
+3097|        /// hosts it: ScheduleSectorSolve sits behind coldTickIntervalSeconds = 5f (:1347), i.e. 0.2 Hz,
+3098|        /// while EnsurePlayerSectorRegistered runs on every slow tick. Two different rates in one
+3099|        /// method, which is exactly why one number in a summary line was misleading.
+3100|        /// </remarks>
+3101|        public void SlowTick()
+3102|        {
+3103|            if (!IsInitialized)
+3104|                return;
+3105|
+3106|            float slowTickDeltaSeconds = ResolveSlowTickDeltaSeconds();
+3107|
+3108|            RefreshMacroSwarmScalabilityCache();
+3109|            RefreshMacroEcosystemVaultHandlesCold(ResolveDataVault());
+3110|            DrainBiomeGradientSignal();
+3111|            DecayBiomeHostility();
+3112|            UpdateSpawnCreditBudget(slowTickDeltaSeconds);
+3113|            SyncPendingHibernatedFaunaPopulationRecords();
+3114|            EnsurePlayerSectorRegistered();
+3115|            TickEclipsePredatorShallowMigration(slowTickDeltaSeconds);
+3116|            TickCampaignToxicityPressure(slowTickDeltaSeconds);
+3117|            EvaluateAlgaeBloomTrigger(slowTickDeltaSeconds);
+3118|            EcosystemLiveHeartbeat(slowTickDeltaSeconds);
+3119|            if (TryResolvePlayerRuntimePosition(out Vector3 playerPosition))
+3120|            {
+3121|                PublishFloraPredatorAupBuffer(playerPosition);
+3122|                ScheduleApexTerritoryOverlap(playerPosition);
+3123|                EmitWhaleFallAcousticImpulseSlowTick();
+3124|            }
+3125|            else
+3126|            {
+3127|                PublishFloraPredatorAupGlobals(0);
+3128|                PublishApexPresenceFake(false);
+3129|            }
+3130|
+3131|            // This accumulator is why the delta has to be measured rather than assumed, and why it must be
+3132|            // measured ONCE per frame. It is not a decay rate - it is the trip rate of a gate that hands
+3133|            // SectorPopulationSolveJob a FIXED DeltaSeconds = coldTickIntervalSeconds of 5 s (:5968, :6009).
+3134|            // So whatever this accumulator advances at, the ecology advances at: when the constant was 0.5f
+3135|            // the gate tripped every 10 invocations and integrated 5 s per real second, and when the measured
+3136|            // delta carried a 0.1 s floor into substeps that observed no elapsed time it integrated up to
+3137|            // 1.75 s per real second in the 2.5-10 fps band. Credited once per frame, the 5 s the job
+3138|            // integrates corresponds to 5 s that actually elapsed, bounded by MaxSlowTickDeltaSeconds on a
+3139|            // frame longer than 1 s. Full per-regime rates: ResolveSlowTickDeltaSeconds.
+3140|            _coldTickAccumulator += slowTickDeltaSeconds;
+3141|            if (_coldTickAccumulator >= coldTickIntervalSeconds)
+3142|            {
+3143|                if (HasPendingSimulationJob())
+3144|                    return;
+3145|
+3146|                _coldTickAccumulator -= coldTickIntervalSeconds;
+3147|                SyncPendingHibernatedFaunaPopulationRecords();
+3148|
+3149|                // EnsureMigrationNeighborSectorsRegistered had ZERO callers anywhere in the project.
+3150|                // EnsurePlayerSectorRegistered seeds a five-cell plus-shape on the BIOMASS lane
+3151|                // (:4982-4986) but only ONE slot on the SECTOR lane (:4980), so the creature-record
+3152|                // world was exactly one 1 km sector wide: ResolveBucketTablePopulation (:8548) hands a
+3153|                // sector either grazerPopulationPerSector prey or leviathanPopulationPerSector
+3154|                // predators, never both, so with a single sector the world held 10 grazers and no apex
+3155|                // or 1 apex and no grazers depending on the player's sector hash. HeadlessThresholdMigrationJob
+3156|                // (:1184) can only move a headless entity into a sector that already has a slot, so
+3157|                // migration had nowhere to go either. This is the sector-lane counterpart of the biomass
+3158|                // plus-shape and it is the reason the ecology never grew past its seed.
+3159|                EnsureMigrationNeighborSectorsRegistered();
+3160|
+3161|                // Both calls below MUST stay ahead of ScheduleSectorSolve. That method deliberately keeps
+3162|                // the sector solve write locks held for its scheduled job (keepLocksForScheduledJob), so
+3163|                // after it returns _solveJobLocksHeld is true and a Burst job owns those buffers: reading
+3164|                // them read-only would be the job-safety violation TryGetGlobalBiomassAudit avoids with its
+
+=== HasPending body ===
+6263|        private bool HasPendingSimulationJob()
+6264|        {
+6265|            return _solveScheduled ||
+6266|                   _genomeMutationScheduled ||
+6267|                   _macroSwarmTravelScheduled ||
+6268|                   _apexTerritoryOverlapScheduled;
+6269|        }
+6270|
+6271|        private bool TryLockSectorSolveJobBuffers()
+6272|        {
+6273|            IDataVault vault = _dataVault;
+6274|            if (vault == null || _solveJobLocksHeld)
+6275|                return false;
+6276|
+6277|            if (!vault.TryAcquireMutationGuard(SectorSolveMutationGuardMask))
+6278|                return false;
+
+=== runner fields 100-180 ===
+100|        private const BufferID MemoryWindowBytesBufferId = BufferID.HeadlessSimulationMemoryWindowBytes;
+101|        private const BufferID MemoryWindowH8BytesBufferId = BufferID.HeadlessSimulationMemoryWindowH8Bytes;
+102|        private const BufferID MemoryWindowAllocationCountsBufferId = BufferID.HeadlessSimulationMemoryWindowAllocationCounts;
+103|
+104|        private static HeadlessSimulationRunner _instance;
+105|
+106|        private VaultGenerationHandle<GhostState> _ghostStateHandle;
+107|        private VaultGenerationHandle<HeadlessTelemetryEntry> _blackboxHandle;
+108|        private VaultGenerationHandle<long> _memoryWindowBytesHandle;
+109|        private VaultGenerationHandle<long> _memoryWindowH8BytesHandle;
+110|        private VaultGenerationHandle<int> _memoryWindowAllocationCountsHandle;
+111|        private IDataVault _dataVault;
+112|        private HeadlessCsvWriter _csvWriter;
+113|        private string _resultPath;
+114|        private string _blackboxPath;
+115|        private double _ghostSeconds;
+116|        private double _simulatedSeconds;
+117|        private double _dayAccumulatorSeconds;
+118|        private double _startupTime;
+119|        private float _daySeconds = DefaultDaySeconds;
+120|        private float _startupTimeoutSeconds = DefaultStartupTimeoutSeconds;
+121|        private int _targetDays = DefaultTargetDays;
+122|        private int _completedDays;
+123|        private int _memoryWindowCursor;
+124|        private int _memoryWindowCount;
+125|        private int _memoryWindowFailureStreak;
+126|        private int _ecologySampleFailureStreak;
+127|        private int _ecologySampledDayCount;
+128|        private int _ecologyUnsampledDayCount;
+129|        private int _blackboxCursor;
+130|        private int _progressionSignalCount;
+131|        private int _crashSignalCount;
+132|        private int _gasInvalidRoomId = -1;
+133|        private int _debugLogDeliveredCount;
+134|        private int _previousTargetFrameRate;
+135|        private int _previousVSyncCount;
+136|        private int _previousCaptureFramerate;
+137|        private long _lastMemoryBytes;
+138|        private long _lastH8MemoryBytes;
+139|        private float _lastPreyBiomass;
+140|        private float _lastPredatorBiomass;
+141|        private GhostState _pendingGhostState;
+142|        private LogType _previousLogFilter;
+143|        private uint _lastProgressionHash;
+144|        private uint _lastCrashReasonHash;
+145|        private uint _lastSyntheticShiftSequence;
+146|        private uint _actualOriginShiftCount;
+147|        private uint _evidenceFailureFlags;
+148|        private bool _previousRunInBackground;
+149|        private bool _started;
+150|        private bool _registeredFast;
+151|        private bool _registeredFrost;
+152|        private bool _registeredCold;
+153|        private bool _registeredLate;
+154|        private bool _registeredHotSwap;
+155|        private bool _originListenerRegistered;
+156|        private bool _ghostStepPending;
+157|        private bool _ghostStateInitialized;
+158|        private bool _ecologyReady;
+159|        private double _simulationStartRealtime;
+160|        private bool _finished;
+161|        private bool _runtimePolicyCaptured;
+162|
+163|        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+164|        private static void AutoCreate()
+165|        {
+166|            if (_instance != null || !ShouldRunStatic())
+167|                return;
+168|
+169|            GameObject root = new GameObject(RuntimeRootName);
+170|            _instance = root.AddComponent<HeadlessSimulationRunner>();
+171|            DontDestroyOnLoad(root);
+172|        }
+173|
+174|        private void Start()
+175|        {
+176|            if (!ShouldRunStatic())
+177|            {
+178|                Destroy(gameObject);
+179|                return;
+180|            }

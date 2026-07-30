@@ -1,0 +1,462 @@
+exists True
+total 2026
+18|    public sealed class HeadlessSimulationRunner : MonoBehaviour, IFastTickable, IFrostTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+39|        // "not right now" rather than "never". IEcosystemDirectorService.TryGetGlobalBiomassAudit returns
+41|        // and one of them is a transient job fence: HasPendingSimulationJob() (:3407) is true from the frame
+42|        // the ecology schedules work until the frame's LateFrameTick completes it, because a Burst job owns
+43|        // the biomass buffers and reading them would be the job-safety violation that guard exists to avoid.
+46|        // SystemDispatcher.RunDispatcherUpdate (SystemDispatcher.cs:5106) RunSlowTick (:5265) runs BEFORE
+47|        // RunFrostTick (:5267); the ecology's SlowTick calls ScheduleSectorSolve (EcosystemDirector.cs:2729),
+48|        // which sets _solveScheduled = true; _solveScheduled is cleared only in CompleteScheduledSolve,
+49|        // reached from the ecology's LateFrameTick (:2792), which the dispatcher runs in a LATER player-loop
+51|        // scheduled the solve, every FrostTick that follows it in that same frame - including this runner's,
+54|        // The two _solveScheduled sites are named rather than numbered on purpose: they moved 53 lines during
+60|        // CONSECUTIVE unsampled days still fail, and FinishRunIfTargetReached refuses to report SUCCESS for a
+63|        // CSV Flags bit for "this day produced no biomass sample at all". Deliberately NOT bit 0: bit 0 is
+64|        // the only bit EcosystemBiomassAuditSample.Flags can ever carry (EcosystemDirector.cs:3422 seeds
+66|        // negative". The old code wrote 1u for the unsampled row too, which was harmless only while an
+67|        // unsampled day killed the run immediately and could therefore only ever be the last row. Now that
+68|        // unsampled days are tolerated and interleave with good ones, a reader has to be able to tell
+72|        private const int MaxDailyAuditsPerFrostTick = 4;
+86|        // biomass sample must not be indistinguishable from one whose predators actually died out.
+128|        private int _ecologyUnsampledDayCount;
+139|        private float _lastPreyBiomass;
+140|        private float _lastPredatorBiomass;
+281|        public void LateFrameTick()
+303|        public void FrostTick()
+321|                   auditsThisTick < MaxDailyAuditsPerFrostTick &&
+325|                ExecuteDailyAudit();
+403|            _registeredFrost = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Core);
+405|            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+421|                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Core);
+433|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+568|                // [ECOLOGY_UNAVAILABLE] verdict misread that silence as a stall and blamed the ecology,
+615|        private void ExecuteDailyAudit()
+651|            if (ecosystem == null || !ecosystem.TryGetGlobalBiomassAudit(out EcosystemBiomassAuditSample biomass))
+653|                // The CSV row goes out FIRST and unconditionally, for every unsampled day, tolerated or not.
+656|                _ecologyUnsampledDayCount++;
+664|                    // surface: with -h8headless there is no player, so _activeBiomassCellCount stays 0 and
+665|                    // EVERY day is unsampled - that run still dies here, on day 3, with the same verdict.
+666|                    FailAndQuit(1, EcologyCollapseHash, "[ECOLOGY_UNAVAILABLE]");
+670|                // Must still run on this path. The day loop in FrostTick stops once _completedDays reaches
+671|                // _targetDays, so a tolerated unsampled FINAL day would otherwise never reach any terminal
+680|            _lastPreyBiomass = biomass.PreyBiomassSum;
+681|            _lastPredatorBiomass = biomass.PredatorBiomassSum;
+682|            if (!TryWriteDailyCsv(biomass, nativeBytes, h8Bytes, nativeAllocations, h8Allocations, biomass.Flags))
+685|            if (biomass.PredatorBiomassSum <= 0f)
+696|        /// obtaining a single biomass sample fails instead.
+701|        /// with -h8headlessDays 1 the single day is unsampled, the streak is 1 of 3 and therefore tolerated,
+907|            EcosystemBiomassAuditSample biomass,
+921|                    biomass.PreyBiomassSum,
+922|                    biomass.PredatorBiomassSum,
+923|                    biomass.CarryingCapacitySum,
+1074|            // [ECOLOGY_UNAVAILABLE] to the result JSON at :1025 and logged it at :1026; the JSON is on disk
+1131|                    PreyBiomass = _lastPreyBiomass,
+1132|                    PredatorBiomass = _lastPredatorBiomass,
+1196|                    writer.Write(entry.PreyBiomass);
+1197|                    writer.Write(entry.PredatorBiomass);
+1257|                // Days that produced a real biomass sample versus days that produced none. Reported because
+1258|                // the run can now COMPLETE with unsampled days in it: without these two numbers a reader
+1263|                writer.Write(",\"ecologyUnsampledDays\":");
+1264|                WriteInvariant(writer, _ecologyUnsampledDayCount);
+1749|            public float PreyBiomass;
+1751|            public float PredatorBiomass;
+1805|                AppendAscii("Day,PreyBiomass,PredatorBiomass,CarryingCapacity,NativeBytes,H8Bytes,NativeAllocations,H8Allocations,Flags\n");
+
+===== 1-80 =====
+1|using System;
+2|using System.Globalization;
+3|using System.IO;
+4|using System.Runtime.InteropServices;
+5|using System.Threading;
+6|using Hecton8.Core;
+7|using Hecton8.Core.Memory;
+8|using Hecton8.Core.Contracts.Signals;
+9|using Hecton8.World;
+10|using Unity.Collections;
+11|using Unity.Mathematics;
+12|using UnityEngine;
+13|
+14|namespace Hecton8.QA.Headless
+15|{
+16|    [DisallowMultipleComponent]
+17|    [DefaultExecutionOrder(-9000)]
+18|    public sealed class HeadlessSimulationRunner : MonoBehaviour, IFastTickable, IFrostTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+19|    {
+20|        private static int s_x001HeadlessSimulationRunnerSignalPushDropCount;
+21|        private const string RunnerName = "HEADLESS_SIMULATION_RUNNER";
+22|        private const string RuntimeRootName = "[HeadlessSimulationRunner]";
+23|        private const string CommandLineArg = "-h8headless";
+24|        private const string LegacyCommandLineArg = "-headless";
+25|        private const string DaysArg = "-h8headlessDays";
+26|        private const string DaySecondsArg = "-h8headlessDaySeconds";
+27|        private const string StartupTimeoutArg = "-h8headlessStartupTimeout";
+28|        private const string EnvironmentFlagName = "H8_HEADLESS_SIMULATION";
+29|        private const string FlagRelativePath = "Temp/H8_HEADLESS_SIMULATION.flag";
+30|        private const string CsvRelativePath = "Docs/AgentLogs/HeadlessSimulationDaily_HEADLESS_SIMULATION_RUNNER.csv";
+31|        private const string ResultRelativePath = "Docs/AgentLogs/HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json";
+32|        private const string H8MemoryDumpRelativePath = "Docs/AgentLogs/H8Memory_HEADLESS_SIMULATION_RUNNER.txt";
+33|        private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_SIMULATION_RUNNER.bin";
+34|        private const int BlackboxFrameCapacity = 300;
+35|        private const int BlackboxEntrySizeBytes = 64;
+36|        private const int MemoryWindowDays = 10;
+37|        private const int MaxConsecutiveMemoryWindowFailures = 3;
+38|        // Same shape and same number as the memory window above, for the same reason: the answer can be
+39|        // "not right now" rather than "never". IEcosystemDirectorService.TryGetGlobalBiomassAudit returns
+40|        // false for six distinct conditions (EcosystemDirector.cs:3406-3417 and the IsFinite tail at :3451)
+41|        // and one of them is a transient job fence: HasPendingSimulationJob() (:3407) is true from the frame
+42|        // the ecology schedules work until the frame's LateFrameTick completes it, because a Burst job owns
+43|        // the biomass buffers and reading them would be the job-safety violation that guard exists to avoid.
+44|        //
+45|        // That fence is not rare, and the dispatcher makes it deterministic rather than unlucky. Inside ONE
+46|        // SystemDispatcher.RunDispatcherUpdate (SystemDispatcher.cs:5106) RunSlowTick (:5265) runs BEFORE
+47|        // RunFrostTick (:5267); the ecology's SlowTick calls ScheduleSectorSolve (EcosystemDirector.cs:2729),
+48|        // which sets _solveScheduled = true; _solveScheduled is cleared only in CompleteScheduledSolve,
+49|        // reached from the ecology's LateFrameTick (:2792), which the dispatcher runs in a LATER player-loop
+50|        // phase (RunDispatcherLateFrame, SystemDispatcher.cs:5453). So on any frame where a slow tick
+51|        // scheduled the solve, every FrostTick that follows it in that same frame - including this runner's,
+52|        // which is where the day boundary is evaluated - is guaranteed to be told "unavailable".
+53|        //
+54|        // The two _solveScheduled sites are named rather than numbered on purpose: they moved 53 lines during
+55|        // the writing of this comment (5405 -> 5458 for the set, 5731 -> 5784 for the clear) because
+56|        // EcosystemDirector.cs is under concurrent edit. Search the symbol, not the line.
+57|        //
+58|        // Treating that identically to a dead ecology meant one day boundary landing inside a job fence
+59|        // aborted the whole run and blamed the ecology. Tolerance is bounded, never unbounded: three
+60|        // CONSECUTIVE unsampled days still fail, and FinishRunIfTargetReached refuses to report SUCCESS for a
+61|        // run that never sampled once.
+62|        private const int MaxConsecutiveEcologySampleFailures = 3;
+63|        // CSV Flags bit for "this day produced no biomass sample at all". Deliberately NOT bit 0: bit 0 is
+64|        // the only bit EcosystemBiomassAuditSample.Flags can ever carry (EcosystemDirector.cs:3422 seeds
+65|        // flags = 0u, :3433 is the single `flags |= 1u`), and it means "a sampled cell was non-finite or
+66|        // negative". The old code wrote 1u for the unsampled row too, which was harmless only while an
+67|        // unsampled day killed the run immediately and could therefore only ever be the last row. Now that
+68|        // unsampled days are tolerated and interleave with good ones, a reader has to be able to tell
+69|        // "no sample" from "sampled, one bad cell" - so the marker gets its own bit.
+70|        private const uint CsvFlagEcologySampleUnavailable = 1u << 8;
+71|        private const int MaxSignalsDrainedPerFrame = 128;
+72|        private const int MaxDailyAuditsPerFrostTick = 4;
+73|        private const int DefaultTargetDays = 100;
+74|        private const int AupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
+75|        private const float DefaultDaySeconds = 3600f;
+76|        private const float DefaultStartupTimeoutSeconds = 180f;
+77|        private const float TimeDilationScalar = 100f;
+78|        private const float GhostSpeedMetersPerSecond = 85f;
+79|        private const float NativeBytesToMegabytes = 1f / (1024f * 1024f);
+80|        private const uint RunnerHash = 0x48385141u;
+
+===== 250-380 =====
+250|            if (safeDelta > 0f)
+251|                _ghostSeconds += safeDelta;
+252|
+253|            if (safeDelta > 0f && _ecologyReady)
+254|            {
+255|                _simulatedSeconds += safeDelta;
+256|                _dayAccumulatorSeconds += safeDelta;
+257|            }
+258|
+259|            if (!_ghostStepPending)
+260|            {
+261|                if (!TryReadGhostState(out NativeArray<GhostState>.ReadOnly ghostState) ||
+262|                    !ghostState.IsCreated ||
+263|                    ghostState.Length <= 0)
+264|                {
+265|                    FailAndQuit(1, DataVaultUnavailableHash, "[GHOST_BUFFER_UNAVAILABLE]");
+266|                    return;
+267|                }
+268|
+269|                GhostState current = ghostState[0];
+270|                _pendingGhostState = ResolveNextGhostState(
+271|                    in current,
+272|                    safeDelta,
+273|                    _ghostSeconds,
+274|                    GhostSpeedMetersPerSecond);
+275|                _ghostStepPending = true;
+276|            }
+277|
+278|            RecordBlackbox(0u);
+279|        }
+280|
+281|        public void LateFrameTick()
+282|        {
+283|            if (!_started || _finished || !_ghostStepPending)
+284|                return;
+285|
+286|            _ghostStepPending = false;
+287|            if (!TryCommitPendingGhostState(out GhostState previous, out GhostState next))
+288|            {
+289|                FailAndQuit(1, DataVaultUnavailableHash, "[GHOST_BUFFER_WRITE_FAILED]");
+290|                return;
+291|            }
+292|
+293|            HandleSyntheticAupShift(in previous, in next);
+294|            if (!math.all(math.isfinite(next.AbsoluteMeters)) ||
+295|                !math.isfinite(next.RuntimeMeters.x) ||
+296|                !math.isfinite(next.RuntimeMeters.y) ||
+297|                !math.isfinite(next.RuntimeMeters.z))
+298|            {
+299|                FailAndQuit(1, NaNHash, "[NAN_DETECTED]");
+300|            }
+301|        }
+302|
+303|        public void FrostTick()
+304|        {
+305|            if (!_started || _finished)
+306|                return;
+307|
+308|            TryMarkEcologyReady();
+309|            if (!_ecologyReady)
+310|                return;
+311|
+312|            if (!AuditGasPressureFinite())
+313|            {
+314|                FailAndQuit(1, GasInvalidHash, "[GAS_INVALID]");
+315|                return;
+316|            }
+317|
+318|            int auditsThisTick = 0;
+319|            while (_dayAccumulatorSeconds >= _daySeconds &&
+320|                   _completedDays < _targetDays &&
+321|                   auditsThisTick < MaxDailyAuditsPerFrostTick &&
+322|                   !_finished)
+323|            {
+324|                _dayAccumulatorSeconds -= _daySeconds;
+325|                ExecuteDailyAudit();
+326|                auditsThisTick++;
+327|            }
+328|        }
+329|
+330|        public void ColdTick()
+331|        {
+332|            if (_finished)
+333|                return;
+334|
+335|            if (!_started)
+336|                return;
+337|
+338|            if (!_ecologyReady && Time.realtimeSinceStartupAsDouble - _startupTime > _startupTimeoutSeconds)
+339|            {
+340|                FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
+341|            }
+342|        }
+343|
+344|        public void OnOriginShift(in OriginShiftEventData shiftData)
+345|        {
+346|            _actualOriginShiftCount++;
+347|        }
+348|
+349|        private async Awaitable WaitForDispatcherAndStart(CancellationToken cancellationToken)
+350|        {
+351|            // Logged before the wait, not after, because the wait itself is the suspect. In batchmode
+352|            // AwaitableDebtMonitor.NextFrameAsync resolves through Task.Yield() rather than a real frame
+353|            // boundary, so a loop that awaits "next frame" is not guaranteed a frame at all - which means
+354|            // the deadline below is only re-evaluated if something else pumps the player loop. If this
+355|            // marker appears with no matching quit marker, the loop never resumed, and no watchdog inside
+356|            // this component can help: ColdTick only runs once RegisterRuntimeLanes has succeeded, which
+357|            // happens after this method returns. That watchdog has to live in the batch runner.
+358|            LogRunnerLifecycle("waiting for dispatcher");
+359|            _startupTime = Time.realtimeSinceStartupAsDouble;
+360|            while (GlobalRegistry.Dispatcher == null && Time.realtimeSinceStartupAsDouble - _startupTime <= _startupTimeoutSeconds)
+361|            {
+362|                if (cancellationToken.IsCancellationRequested || _finished)
+363|                    return;
+364|
+365|                await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
+366|            }
+367|
+368|            if (cancellationToken.IsCancellationRequested || _finished)
+369|                return;
+370|
+371|            if (GlobalRegistry.Dispatcher == null)
+372|            {
+373|                FailAndQuit(1, TimeoutHash, "[DISPATCHER_TIMEOUT]");
+374|                return;
+375|            }
+376|
+377|            ForceHeadlessRuntimePolicy();
+378|            CacheDataVaultCold();
+379|            if (!EnsureVaultBuffersCold() || !TryInitializeGhostState())
+380|            {
+
+===== 580-760 =====
+580|        /// <summary>
+581|        /// Simulated seconds advanced per real second, measured rather than assumed. Zero until simulation
+582|        /// starts advancing.
+583|        /// </summary>
+584|        private double DeliveredTimeDilation
+585|        {
+586|            get
+587|            {
+588|                if (_simulationStartRealtime <= 0.0)
+589|                    return 0.0;
+590|
+591|                double elapsed = Time.realtimeSinceStartupAsDouble - _simulationStartRealtime;
+592|                return elapsed > 0.0 ? _simulatedSeconds / elapsed : 0.0;
+593|            }
+594|        }
+595|
+596|        private void DrainSignals()
+597|        {
+598|            int drained = 0;
+599|            while (drained < MaxSignalsDrainedPerFrame && SignalBus<ProgressionEventSignal>.TryConsumeFrame(out ProgressionEventSignal progression))
+600|            {
+601|                _progressionSignalCount++;
+602|                _lastProgressionHash = progression.PoiHash != 0u ? progression.PoiHash : progression.QuestHash;
+603|                drained++;
+604|            }
+605|
+606|            drained = 0;
+607|            while (drained < MaxSignalsDrainedPerFrame && SignalBus<CrashTelemetrySignal>.TryConsumeFrame(out CrashTelemetrySignal crash))
+608|            {
+609|                _crashSignalCount++;
+610|                _lastCrashReasonHash = crash.ReasonHash;
+611|                drained++;
+612|            }
+613|        }
+614|
+615|        private void ExecuteDailyAudit()
+616|        {
+617|            _completedDays++;
+618|            long nativeBytes = GlobalRegistry.NativeTrackedBytes;
+619|            long h8Bytes = H8Memory.TotalBytes;
+620|            int nativeAllocations = GlobalRegistry.NativeAllocationCount;
+621|            int h8Allocations = H8Memory.ActiveAllocationCount;
+622|            _lastMemoryBytes = nativeBytes;
+623|            _lastH8MemoryBytes = h8Bytes;
+624|
+625|            if (DetectTenDayMemoryGrowth(nativeBytes, h8Bytes, h8Allocations, out bool memoryWindowUnavailable))
+626|            {
+627|                // A leak verdict is worthless without the owner-level allocation table, so dump it before quitting.
+628|                TryDumpH8MemoryTable();
+629|                FailAndQuit(1, LeakHash, "[LEAK_DETECTED]");
+630|                return;
+631|            }
+632|
+633|            // A vault write refusal means the memory window could not be sampled, NOT that memory leaked.
+634|            // Transient refusals (compaction fence, mutation guard, generation bump) are tolerated for a
+635|            // bounded number of consecutive days so one defrag tick cannot abort a 100-day run.
+636|            if (memoryWindowUnavailable)
+637|            {
+638|                _memoryWindowFailureStreak++;
+639|                if (_memoryWindowFailureStreak >= MaxConsecutiveMemoryWindowFailures)
+640|                {
+641|                    FailAndQuit(1, DataVaultUnavailableHash, "[MEMORY_WINDOW_UNAVAILABLE]");
+642|                    return;
+643|                }
+644|            }
+645|            else
+646|            {
+647|                _memoryWindowFailureStreak = 0;
+648|            }
+649|
+650|            IEcosystemDirectorService ecosystem = GlobalRegistry.EcosystemDirector;
+651|            if (ecosystem == null || !ecosystem.TryGetGlobalBiomassAudit(out EcosystemBiomassAuditSample biomass))
+652|            {
+653|                // The CSV row goes out FIRST and unconditionally, for every unsampled day, tolerated or not.
+654|                // The day counter has already advanced (:594) so a skipped row would leave a hole in the
+655|                // series and a reader could not tell a tolerated fence from a missing measurement.
+656|                _ecologyUnsampledDayCount++;
+657|                if (!TryWriteDailyCsv(default, nativeBytes, h8Bytes, nativeAllocations, h8Allocations, CsvFlagEcologySampleUnavailable))
+658|                    return;
+659|
+660|                _ecologySampleFailureStreak++;
+661|                if (_ecologySampleFailureStreak >= MaxConsecutiveEcologySampleFailures)
+662|                {
+663|                    // Bounded, so the tolerance cannot hide the defect this harness currently exists to
+664|                    // surface: with -h8headless there is no player, so _activeBiomassCellCount stays 0 and
+665|                    // EVERY day is unsampled - that run still dies here, on day 3, with the same verdict.
+666|                    FailAndQuit(1, EcologyCollapseHash, "[ECOLOGY_UNAVAILABLE]");
+667|                    return;
+668|                }
+669|
+670|                // Must still run on this path. The day loop in FrostTick stops once _completedDays reaches
+671|                // _targetDays, so a tolerated unsampled FINAL day would otherwise never reach any terminal
+672|                // state: no completion, no failure, and the batch runner's watchdog left to notice hours
+673|                // later. This is the only exit for that case.
+674|                FinishRunIfTargetReached();
+675|                return;
+676|            }
+677|
+678|            _ecologySampleFailureStreak = 0;
+679|            _ecologySampledDayCount++;
+680|            _lastPreyBiomass = biomass.PreyBiomassSum;
+681|            _lastPredatorBiomass = biomass.PredatorBiomassSum;
+682|            if (!TryWriteDailyCsv(biomass, nativeBytes, h8Bytes, nativeAllocations, h8Allocations, biomass.Flags))
+683|                return;
+684|
+685|            if (biomass.PredatorBiomassSum <= 0f)
+686|            {
+687|                FailAndQuit(1, EcologyCollapseHash, "[ECOLOGY_COLLAPSE]");
+688|                return;
+689|            }
+690|
+691|            FinishRunIfTargetReached();
+692|        }
+693|
+694|        /// <summary>
+695|        /// The only path to SUCCESS in this runner. A run that reached its target day count without ever
+696|        /// obtaining a single biomass sample fails instead.
+697|        /// </summary>
+698|        /// <remarks>
+699|        /// Tolerating transient job fences is only safe while this asymmetry holds. Without it, the tolerance
+700|        /// added for MaxConsecutiveEcologySampleFailures would turn the 2026-07-29 failure into a green run:
+701|        /// with -h8headlessDays 1 the single day is unsampled, the streak is 1 of 3 and therefore tolerated,
+702|        /// and the target day count is already met - so the previous "if (_completedDays >= _targetDays)
+703|        /// CompleteAndQuit()" would have written status SUCCESS for a run that never once measured the
+704|        /// ecology. A harness that can report success without evidence is worse than one that over-reports
+705|        /// failure, so the sample count gates the verdict, not the day count alone.
+706|        /// </remarks>
+707|        private void FinishRunIfTargetReached()
+708|        {
+709|            if (_completedDays < _targetDays)
+710|                return;
+711|
+712|            if (_ecologySampledDayCount <= 0)
+713|            {
+714|                FailAndQuit(1, EcologyNeverSampledHash, "[ECOLOGY_NEVER_SAMPLED]");
+715|                return;
+716|            }
+717|
+718|            CompleteAndQuit();
+719|        }
+720|
+721|        private bool AuditGasPressureFinite()
+722|        {
+723|            IGasDynamicsSolver gas = GlobalRegistry.GasDynamics;
+724|            if (gas == null || !gas.IsInitialized)
+725|                return true;
+726|
+727|            int count = math.max(0, gas.RoomCount);
+728|            for (int i = 0; i < count; i++)
+729|            {
+730|                if (!gas.TryGetRoomSnapshot(i, out GasRoomSnapshot snapshot))
+731|                {
+732|                    _gasInvalidRoomId = i;
+733|                    return false;
+734|                }
+735|
+736|                float pressure = snapshot.PressureKPa;
+737|                if (!math.isfinite(pressure) || pressure < 0f)
+738|                {
+739|                    _gasInvalidRoomId = i;
+740|                    return false;
+741|                }
+742|            }
+743|
+744|            return true;
+745|        }
+746|
+747|        private bool DetectTenDayMemoryGrowth(
+748|            long nativeBytes,
+749|            long h8Bytes,
+750|            int h8Allocations,
+751|            out bool sampleUnavailable)
+752|        {
+753|            sampleUnavailable = false;
+754|            if (!EnsureVaultBuffersCold())
+755|            {
+756|                sampleUnavailable = true;
+757|                return false;
+758|            }
+759|
+760|            int slot = _memoryWindowCursor % MemoryWindowDays;
