@@ -123,7 +123,10 @@ def main():
     if args.print_build_command:
         print('"C:/Program Files/Unity/Hub/Editor/6000.5.0f1/Editor/Data/DotNetSdk/dotnet.exe" build '
               '%s.csproj -p:UnityEditorManagedDir="C:%sProgram Files%sUnity%sHub%sEditor%s6000.5.0f1'
-              '%sEditor%sData%sManaged" -v:minimal --nologo' % ((name,) + (BS,) * 9))
+              # 9 placeholders total: 1 for the assembly name, 8 for the backslashes in the Managed path.
+              # Was (BS,) * 9, i.e. 10 arguments for 9 slots, which made --print-build-command raise
+              # TypeError on every invocation - the flag had never once produced output.
+              '%sEditor%sData%sManaged" -v:minimal --nologo' % ((name,) + (BS,) * 8))
         return
 
     asmdef_path, asmdef = find_asmdef(name)
