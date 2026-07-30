@@ -128,42 +128,9 @@ namespace UnityEditor.ShaderGraph
 
         private void AddSlotFromControlType(bool attemptToModifyExisting = true)
         {
-            // TODO: this should really just use callbacks. then we wouldn't need this switch to make a copy
-            var stageCapability = m_Descriptor.shaderStage.GetShaderStageCapability();
-            switch (descriptor.control)
-            {
-                case PositionControl positionControl:
-                    AddSlot(new PositionMaterialSlot(0, descriptor.displayName, descriptor.name, positionControl.space, stageCapability), attemptToModifyExisting);
-                    break;
-                case NormalControl normalControl:
-                    AddSlot(new NormalMaterialSlot(0, descriptor.displayName, descriptor.name, normalControl.space, stageCapability), attemptToModifyExisting);
-                    break;
-                case TangentControl tangentControl:
-                    AddSlot(new TangentMaterialSlot(0, descriptor.displayName, descriptor.name, tangentControl.space, stageCapability), attemptToModifyExisting);
-                    break;
-                case VertexColorControl vertexColorControl:
-                    AddSlot(new VertexColorMaterialSlot(0, descriptor.displayName, descriptor.name, stageCapability), attemptToModifyExisting);
-                    break;
-                case ColorControl colorControl:
-                    var colorMode = colorControl.hdr ? ColorMode.HDR : ColorMode.Default;
-                    AddSlot(new ColorRGBMaterialSlot(0, descriptor.displayName, descriptor.name, SlotType.Input, colorControl.value, colorMode, stageCapability), attemptToModifyExisting);
-                    break;
-                case ColorRGBAControl colorRGBAControl:
-                    AddSlot(new ColorRGBAMaterialSlot(0, descriptor.displayName, descriptor.name, SlotType.Input, colorRGBAControl.value, stageCapability), attemptToModifyExisting);
-                    break;
-                case FloatControl floatControl:
-                    AddSlot(new Vector1MaterialSlot(0, descriptor.displayName, descriptor.name, SlotType.Input, floatControl.value, stageCapability), attemptToModifyExisting);
-                    break;
-                case Vector2Control vector2Control:
-                    AddSlot(new Vector2MaterialSlot(0, descriptor.displayName, descriptor.name, SlotType.Input, vector2Control.value, stageCapability), attemptToModifyExisting);
-                    break;
-                case Vector3Control vector3Control:
-                    AddSlot(new Vector3MaterialSlot(0, descriptor.displayName, descriptor.name, SlotType.Input, vector3Control.value, stageCapability), attemptToModifyExisting);
-                    break;
-                case Vector4Control vector4Control:
-                    AddSlot(new Vector4MaterialSlot(0, descriptor.displayName, descriptor.name, SlotType.Input, vector4Control.value, stageCapability), attemptToModifyExisting);
-                    break;
-            }
+            var slot = descriptor.control?.InstantiateSlot(descriptor);
+            if (slot != null)
+                AddSlot(slot, attemptToModifyExisting);
             RemoveSlotsNameNotMatching(new int[] { 0 });
         }
 

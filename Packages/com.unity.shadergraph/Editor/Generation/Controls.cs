@@ -12,6 +12,7 @@ namespace UnityEditor.ShaderGraph
     public interface IControl
     {
         ShaderGraphRequirements GetRequirements();
+        MaterialSlot InstantiateSlot(BlockFieldDescriptor descriptor);
     }
 
     public class PositionControl : IControl
@@ -26,6 +27,11 @@ namespace UnityEditor.ShaderGraph
         public ShaderGraphRequirements GetRequirements()
         {
             return new ShaderGraphRequirements() { requiresPosition = space.ToNeededCoordinateSpace() };
+        }
+
+        public MaterialSlot InstantiateSlot(BlockFieldDescriptor descriptor)
+        {
+            return new PositionMaterialSlot(0, descriptor.displayName, descriptor.name, space, descriptor.shaderStage.GetShaderStageCapability());
         }
     }
 
@@ -42,6 +48,11 @@ namespace UnityEditor.ShaderGraph
         {
             return new ShaderGraphRequirements() { requiresNormal = space.ToNeededCoordinateSpace() };
         }
+
+        public MaterialSlot InstantiateSlot(BlockFieldDescriptor descriptor)
+        {
+            return new NormalMaterialSlot(0, descriptor.displayName, descriptor.name, space, descriptor.shaderStage.GetShaderStageCapability());
+        }
     }
 
     public class TangentControl : IControl
@@ -56,6 +67,11 @@ namespace UnityEditor.ShaderGraph
         public ShaderGraphRequirements GetRequirements()
         {
             return new ShaderGraphRequirements() { requiresTangent = space.ToNeededCoordinateSpace() };
+        }
+
+        public MaterialSlot InstantiateSlot(BlockFieldDescriptor descriptor)
+        {
+            return new TangentMaterialSlot(0, descriptor.displayName, descriptor.name, space, descriptor.shaderStage.GetShaderStageCapability());
         }
     }
 
@@ -74,6 +90,12 @@ namespace UnityEditor.ShaderGraph
         {
             return ShaderGraphRequirements.none;
         }
+
+        public MaterialSlot InstantiateSlot(BlockFieldDescriptor descriptor)
+        {
+            var colorMode = hdr ? ColorMode.HDR : ColorMode.Default;
+            return new ColorRGBMaterialSlot(0, descriptor.displayName, descriptor.name, SlotType.Input, value, colorMode, descriptor.shaderStage.GetShaderStageCapability());
+        }
     }
 
     public class ColorRGBAControl : IControl
@@ -88,6 +110,11 @@ namespace UnityEditor.ShaderGraph
         public ShaderGraphRequirements GetRequirements()
         {
             return ShaderGraphRequirements.none;
+        }
+
+        public MaterialSlot InstantiateSlot(BlockFieldDescriptor descriptor)
+        {
+            return new ColorRGBAMaterialSlot(0, descriptor.displayName, descriptor.name, SlotType.Input, value, descriptor.shaderStage.GetShaderStageCapability());
         }
     }
 
@@ -104,6 +131,11 @@ namespace UnityEditor.ShaderGraph
         {
             return ShaderGraphRequirements.none;
         }
+
+        public MaterialSlot InstantiateSlot(BlockFieldDescriptor descriptor)
+        {
+            return new Vector1MaterialSlot(0, descriptor.displayName, descriptor.name, SlotType.Input, value, descriptor.shaderStage.GetShaderStageCapability());
+        }
     }
 
     public class Vector2Control : IControl
@@ -118,6 +150,11 @@ namespace UnityEditor.ShaderGraph
         public ShaderGraphRequirements GetRequirements()
         {
             return ShaderGraphRequirements.none;
+        }
+
+        public MaterialSlot InstantiateSlot(BlockFieldDescriptor descriptor)
+        {
+            return new Vector2MaterialSlot(0, descriptor.displayName, descriptor.name, SlotType.Input, value, descriptor.shaderStage.GetShaderStageCapability());
         }
     }
 
@@ -134,6 +171,11 @@ namespace UnityEditor.ShaderGraph
         {
             return ShaderGraphRequirements.none;
         }
+
+        public MaterialSlot InstantiateSlot(BlockFieldDescriptor descriptor)
+        {
+            return new Vector3MaterialSlot(0, descriptor.displayName, descriptor.name, SlotType.Input, value, descriptor.shaderStage.GetShaderStageCapability());
+        }
     }
 
     public class Vector4Control : IControl
@@ -149,6 +191,11 @@ namespace UnityEditor.ShaderGraph
         {
             return ShaderGraphRequirements.none;
         }
+
+        public MaterialSlot InstantiateSlot(BlockFieldDescriptor descriptor)
+        {
+            return new Vector4MaterialSlot(0, descriptor.displayName, descriptor.name, SlotType.Input, value, descriptor.shaderStage.GetShaderStageCapability());
+        }
     }
 
     public class VertexColorControl : IControl
@@ -163,6 +210,11 @@ namespace UnityEditor.ShaderGraph
         public ShaderGraphRequirements GetRequirements()
         {
             return new ShaderGraphRequirements() { requiresVertexColor = true };
+        }
+
+        public MaterialSlot InstantiateSlot(BlockFieldDescriptor descriptor)
+        {
+            return new VertexColorMaterialSlot(0, descriptor.displayName, descriptor.name, descriptor.shaderStage.GetShaderStageCapability());
         }
     }
 }
