@@ -1,0 +1,1 @@
+The issue requests unit tests for the public method `HasPool` in `ObjectPoolManager`. However, these tests already exist in `Assets/_Project/Tests/Editor/ObjectPoolManagerHasPoolTests.cs`, which covers all relevant edge cases (null arguments, service shutting down, no pool created, pool created, and the component overload). No further tests are necessary.
