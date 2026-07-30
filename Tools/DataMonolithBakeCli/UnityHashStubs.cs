@@ -76,6 +76,16 @@ namespace Unity.Collections
 {
     public static unsafe partial class xxHash3
     {
+        public static Unity.Mathematics.uint2 Hash64(void* input, long length)
+        {
+            return new Unity.Mathematics.uint2();
+        }
+
+        public static Unity.Mathematics.uint2 Hash64(void* input, long length, ulong seed)
+        {
+            return new Unity.Mathematics.uint2();
+        }
+
         public struct StreamingState
         {
             private byte[] _buffer;
@@ -131,7 +141,7 @@ namespace Unity.Collections
             byte* secret,
             int isHash64)
         {
-            DefaultHashLongInternalLoop(acc, input, dest, length, secret, isHash64);
+            // DefaultHashLongInternalLoop(acc, input, dest, length, secret, isHash64);
         }
     }
 }
