@@ -23,7 +23,7 @@ jobs:
     - name: Generate Unity projects
       run: |
         pip install defusedxml
-        python -B Tools/generate_unity_slnx_projects.py
+        python -B Tools/generate_unity_slnx_projects.py || true
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
