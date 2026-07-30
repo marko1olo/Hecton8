@@ -27,7 +27,9 @@ namespace Unity.Burst.Intrinsics
 
 namespace Unity.Mathematics
 {
+    #pragma warning disable 8981
     public static class math
+#pragma warning restore 8981
     {
         public static uint min(uint x, uint y)
         {
@@ -76,6 +78,16 @@ namespace Unity.Collections
 {
     public static unsafe partial class xxHash3
     {
+
+        public static Unity.Mathematics.uint2 Hash64(void* input, int length)
+        {
+            return new Unity.Mathematics.uint2(0, 0);
+        }
+
+        private static void DefaultHashLongInternalLoop(ulong* acc, byte* input, byte* dest, long length, byte* secret, int isHash64)
+        {
+        }
+
         public struct StreamingState
         {
             private byte[] _buffer;
