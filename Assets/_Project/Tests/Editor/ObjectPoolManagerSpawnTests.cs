@@ -50,7 +50,7 @@ namespace Hecton8.Tests.Editor
             Assert.IsTrue(spawned.name.StartsWith("TestPrefab"), "Spawned object should originate from the correct prefab.");
 
             // Available count should drop
-            bool finalResult = _poolManager.TryGetAvailableCountForPooledInstance(spawned, out int finalCount);
+            bool finalResult = _poolManager.TryGetAvailableCountForPooledInstance(_prefabGo, out int finalCount);
             Assert.IsTrue(finalResult, "Expected to successfully query count for pooled instance.");
             Assert.AreEqual(0, finalCount, "Expected count to be 0 after spawning.");
         }
@@ -59,7 +59,7 @@ namespace Hecton8.Tests.Editor
         public void Spawn_Component_ReturnsValidInstanceAndDecreasesAvailableCount()
         {
             // Arrange
-            Component prefabComponent = _prefabGo.GetComponent<BoxCollider>();
+            Component prefabComponent = _prefabGo.transform;
             _poolManager.Warmup(prefabComponent, 1);
 
             // Initial available count should be 1
@@ -77,7 +77,7 @@ namespace Hecton8.Tests.Editor
             Assert.IsTrue(spawned.name.StartsWith("TestPrefab"), "Spawned object should originate from the correct prefab.");
 
             // Available count should drop
-            bool finalResult = _poolManager.TryGetAvailableCountForPooledInstance(spawned, out int finalCount);
+            bool finalResult = _poolManager.TryGetAvailableCountForPooledInstance(_prefabGo, out int finalCount);
             Assert.IsTrue(finalResult, "Expected to successfully query count for pooled instance.");
             Assert.AreEqual(0, finalCount, "Expected count to be 0 after spawning.");
         }
