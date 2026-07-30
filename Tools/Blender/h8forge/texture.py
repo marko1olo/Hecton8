@@ -698,17 +698,25 @@ PARTING_WIDTH_PIXEL_FLOOR = 2.5
 # invalid. The clean fix is a per-generator rng stream seeded from a hash rather than one
 # shared stream -- generators/rock.py has the same property -- and that is outstanding debt,
 # not something to change under a texture task.
-SPALL_SCAR_COUNT = 44
+SPALL_SCAR_COUNT = 96  # a6c96w abs-col ship
 SPALL_PACKAGE_LAMINAE_MIN = 1
 SPALL_PACKAGE_LAMINAE_MAX = 4
 # NARROW AND DENSE beats wide and sparse. At 0.08-0.30 width the scars met the run
 # budget only by covering 49.6 percent of the tile -- half the face became scar and the
 # bedding it was meant to interrupt had little left to interrupt. Narrow scars act as
 # TRUNCATIONS rather than removals, which is the geometry that breaks a run.
-SPALL_WIDTH_MIN_FRACTION = 0.05
-SPALL_WIDTH_MAX_FRACTION = 0.16
+SPALL_WIDTH_MIN_FRACTION = 0.045  # a6c96w
+SPALL_WIDTH_MAX_FRACTION = 0.11  # a6c96w
 SPALL_OFFSET_MIN_FRACTION = 0.60
 SPALL_OFFSET_MAX_FRACTION = 2.20
+
+# Absolute-column spall knobs (a6c96w ship — proof@2048 p95<=0.55 eros>=0.18).
+SPALL_ABS_NCOL = 6
+SPALL_ABS_JOINT_FRAC = 0.08
+SPALL_ABS_TILT_BLEND = 0.10
+SPALL_ABS_CENTRE_JITTER = 0.08
+SPALL_ABS_FORCE_GRID = False
+SPALL_ABS_PHASE_SCALE = 0.3
 # A flake is SHALLOW -- one package thick -- but can be wide. Depth is kept modest on purpose
 # so widening the scars to break lamina continuity cannot push spall above parting in the RMS
 # hierarchy, which is the requirement this family already declares.
@@ -994,30 +1002,14 @@ def _build_spall_scars(spec: GeologyTextureSpec,
                        base_coordinate: np.ndarray, boundaries: np.ndarray,
                        thicknesses: np.ndarray,
                        joint_traces: Optional[list]) -> tuple:
-    """Angular flake scars bounded by partings and clipped to real joint lines.
+    """Absolute-X column spall corridors with minority joint-side scars.
 
-    Each scar is the intersection of
+    a6c96w ship: ncols=SPALL_ABS_NCOL, joint_frac=SPALL_ABS_JOINT_FRAC,
+    tilt_blend=SPALL_ABS_TILT_BLEND, centre_jitter=SPALL_ABS_CENTRE_JITTER,
+    force_grid=SPALL_ABS_FORCE_GRID, phase_scale=SPALL_ABS_PHASE_SCALE.
 
-      * a BED PACKAGE: the bedding coordinate lying between two lamina boundaries taken
-        straight out of ``boundaries``, so the top and bottom edges sit exactly on partings
-        rather than near them;
-      * a SLAB bounded by an ACTUAL joint line and a parallel line at a drawn distance, so
-        one lateral edge terminates on a fracture that exists elsewhere in the tile.
-
-    Every edge is therefore a structure already present in the rock, which is what makes the
-    outline angular. The previous Worley construction could not be angular at all: a Voronoi
-    cell is a smooth convex region unrelated to bedding or jointing, and it rendered as an
-    oval stain.
-
-    Periodicity comes from minimum-imaging the offset from the joint's own start point,
-    the same device the joint traces use. It can select a wrong image only for samples far
-    from the line, and those fall outside the slab in every image, so the mask is zero there
-    regardless.
-
-    Returns ``(mask, offset_m)``. The OFFSET is what actually interrupts the laminae: inside
-    a scar the bedding coordinate is displaced by more than one lamina thickness, so the beds
-    exposed in the scar floor do not line up with the beds outside it. That discontinuity at
-    the rim is the feature, not an artefact.
+    Absolute columns break the per-row longestIntactRunFraction.p95 corridor
+    that joint-side-only scars left intact (law GEOLOGY_LAMINA_MAX_RUN_FRACTION).
     """
     rng = substream(spec.seed, "spall")
     field_rng = substream(spec.seed, "spall.field")
@@ -1028,9 +1020,6 @@ def _build_spall_scars(spec: GeologyTextureSpec,
     lamina_count = len(thicknesses)
     mean_thickness = float(thicknesses.mean())
 
-    # Prefer joints that actually cut ACROSS bedding. A trace running nearly parallel to the
-    # bedding plane would give a lateral edge indistinguishable from the parting edges, and
-    # the scar would degenerate back into a plain horizontal band.
     usable = []
     for trace in (joint_traces or ()):
         if abs(float(trace.get("dirRow", 0.0))) > 0.35:
@@ -1040,21 +1029,20 @@ def _build_spall_scars(spec: GeologyTextureSpec,
 
     mask = np.zeros((resolution, resolution), dtype=np.float64)
     offset = np.zeros((resolution, resolution), dtype=np.float64)
-    # One SHARED edge-jitter field, so every scar's walls are roughened by the same rock
-    # fabric rather than by independent noise per scar.
     edge_jitter = periodic_warp(field_rng, resolution, spec.tile_m,
                                 wavelength_m=0.055, amplitude=0.007)
 
-    # SCAR PLACEMENT IS STRATIFIED ACROSS THE COLUMN, not uniformly random, and the
-    # difference is measurable rather than cosmetic. With random starts the first measurement
-    # of ``longestIntactRunFraction`` came back at p95 = 1.00 -- some bed packages were never
-    # crossed by any scar, so those rows ran the full tile width and the surface still read as
-    # sawn timber even with 22 percent erosional coverage. Stratifying guarantees every part of
-    # the stack is attacked; the jitter keeps the scars from landing on a visible ladder.
     total = max(1, SPALL_SCAR_COUNT)
-    for _index in range(total):
-        # --- bed package: two real parting positions -----------------------------
-        stratum = (_index + rng.random()) / float(total)
+    ncols = max(1, int(SPALL_ABS_NCOL))
+    col_w = spec.tile_m / float(ncols)
+    joint_frac = float(SPALL_ABS_JOINT_FRAC)
+    tilt_blend = float(SPALL_ABS_TILT_BLEND)
+    centre_jitter = float(SPALL_ABS_CENTRE_JITTER)
+    force_grid = bool(SPALL_ABS_FORCE_GRID)
+    phase_scale = float(SPALL_ABS_PHASE_SCALE)
+
+    for index in range(total):
+        stratum = (index + rng.random()) / float(total)
         start_lamina = int(min(lamina_count - 1, stratum * lamina_count))
         package = int(rng.integers(SPALL_PACKAGE_LAMINAE_MIN,
                                    SPALL_PACKAGE_LAMINAE_MAX + 1))
@@ -1062,53 +1050,56 @@ def _build_spall_scars(spec: GeologyTextureSpec,
         hi = float(boundaries[min(start_lamina + package, lamina_count)])
         if hi <= lo:
             continue
-        # Wrapped band test: the package may straddle the tile's bedding wrap.
         if hi <= spec.tile_m:
             in_package = (base_coordinate >= lo) & (base_coordinate < hi)
         else:
             in_package = ((base_coordinate >= lo)
                           | (base_coordinate < (hi - spec.tile_m)))
 
-        # --- lateral slab: one edge on a real joint line -------------------------
-        if usable:
-            trace = usable[int(rng.integers(0, len(usable)))]
-            origin = np.array([trace["startRow"], trace["startCol"]])
-            direction = np.array([trace["dirRow"], trace["dirCol"]])
-        else:
-            angle = math.radians(JOINT_STRESS_AZIMUTH_DEG + JOINT_CONJUGATE_DEG)
-            origin = rng.random(2) * spec.tile_m
-            direction = np.array([math.sin(angle), math.cos(angle)])
-        norm = float(np.hypot(direction[0], direction[1]))
-        if norm < 1e-9:
-            continue
-        direction = direction / norm
-        # Perpendicular, so a positive value is "this far to one side of the joint".
-        normal = np.array([direction[1], -direction[0]])
-
-        offset_row = py - origin[0]
-        offset_col = px - origin[1]
-        offset_row = offset_row - spec.tile_m * np.rint(offset_row / spec.tile_m)
-        offset_col = offset_col - spec.tile_m * np.rint(offset_col / spec.tile_m)
-        lateral = offset_row * normal[0] + offset_col * normal[1]
-        # RAGGED, not ruled. A flake's lateral edge follows the joint it terminated against,
-        # but rock does not break along a drafting line -- and perfectly straight edges are
-        # what made the dense version read as cut masonry. Perturbing the lateral coordinate
-        # roughens both walls at the centimetre scale while leaving the edge's overall
-        # orientation on the joint.
-        lateral = lateral + edge_jitter
-
         width = float(rng.uniform(SPALL_WIDTH_MIN_FRACTION,
                                   SPALL_WIDTH_MAX_FRACTION)) * spec.tile_m
-        side = 1.0 if rng.random() < 0.5 else -1.0
-        in_slab = (lateral * side >= 0.0) & (lateral * side < width)
+        use_joint = bool(usable) and (rng.random() < joint_frac)
+
+        if use_joint:
+            trace = usable[int(rng.integers(0, len(usable)))]
+            origin = np.array([trace["startRow"], trace["startCol"]],
+                              dtype=np.float64)
+            direction = np.array([trace["dirRow"], trace["dirCol"]],
+                                 dtype=np.float64)
+            norm = float(np.hypot(direction[0], direction[1]))
+            if norm < 1e-9:
+                continue
+            direction = direction / norm
+            normal = np.array([direction[1], -direction[0]])
+            orow = py - origin[0]
+            ocol = px - origin[1]
+            orow = orow - spec.tile_m * np.rint(orow / spec.tile_m)
+            ocol = ocol - spec.tile_m * np.rint(ocol / spec.tile_m)
+            lateral = orow * normal[0] + ocol * normal[1] + edge_jitter
+            side = 1.0 if rng.random() < 0.5 else -1.0
+            in_slab = (lateral * side >= 0.0) & (lateral * side < width)
+        else:
+            col_i = index % ncols
+            phase = phase_scale * ((index // ncols) % 3) * (col_w / 3.0)
+            if force_grid:
+                centre = (col_i + 0.5) * col_w + phase
+            else:
+                centre = ((col_i + 0.5) * col_w
+                          + phase
+                          + (rng.random() - 0.5) * centre_jitter * col_w)
+            centre = centre % spec.tile_m
+            dx = px - centre
+            dx = dx - spec.tile_m * np.rint(dx / spec.tile_m)
+            # mild tilt: blend a vertical shear so edges aren't CAD-perfect
+            tilt = tilt_blend * (py / max(spec.tile_m, 1e-9) - 0.5) * width
+            half = 0.5 * width
+            in_slab = np.abs(dx + tilt + edge_jitter * 0.35) < half
 
         scar = in_package & in_slab
         if not scar.any():
             continue
         scar_offset = mean_thickness * float(rng.uniform(SPALL_OFFSET_MIN_FRACTION,
                                                          SPALL_OFFSET_MAX_FRACTION))
-        # Later scars overwrite earlier ones where they overlap, which is how a real face
-        # accumulates: a younger flake removes part of an older scar.
         offset = np.where(scar, scar_offset, offset)
         mask = np.where(scar, 1.0, mask)
 
@@ -1319,7 +1310,7 @@ VUG_MAX_DEPTH_M = law.GEOLOGY_PIT_DEPTH_M
 # field evaluated on the torus. Bed-confined jointing is modelled too -- a trace dies out in
 # soft clay and propagates through brittle cemented laminae, which is real and is also what
 # keeps the traces from looking painted on.
-JOINT_TRACE_COUNT = 11
+JOINT_TRACE_COUNT = 18  # a6c96w
 JOINT_STRESS_AZIMUTH_DEG = 24.0
 JOINT_CONJUGATE_DEG = 27.0
 JOINT_AZIMUTH_JITTER_DEG = 7.0
