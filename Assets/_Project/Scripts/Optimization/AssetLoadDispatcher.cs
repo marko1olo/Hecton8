@@ -863,26 +863,68 @@ namespace Hecton8.Optimization
             switch (band)
             {
                 case 0:
-                    return ResolveContinuousLoadSlots(Tier01Slots, math.max(1, Tier01Slots >> 1), quality, pressure, 0.90f, 1f);
+                    return ResolveContinuousLoadSlots(new ContinuousLoadConfig
+                    {
+                        MaxSlots = Tier01Slots,
+                        MinSlots = math.max(1, Tier01Slots >> 1),
+                        Quality = quality,
+                        Pressure = pressure,
+                        PressureStart = 0.90f,
+                        PressureEnd = 1f
+                    });
 
                 case 1:
-                    return ResolveContinuousLoadSlots(Tier2Slots, 1, quality, pressure, 0.75f, 0.98f);
+                    return ResolveContinuousLoadSlots(new ContinuousLoadConfig
+                    {
+                        MaxSlots = Tier2Slots,
+                        MinSlots = 1,
+                        Quality = quality,
+                        Pressure = pressure,
+                        PressureStart = 0.75f,
+                        PressureEnd = 0.98f
+                    });
 
                 case 2:
-                    return ResolveContinuousLoadSlots(Tier34Slots, Tier34CriticalSlots, quality, pressure, 0.55f, 0.95f);
+                    return ResolveContinuousLoadSlots(new ContinuousLoadConfig
+                    {
+                        MaxSlots = Tier34Slots,
+                        MinSlots = Tier34CriticalSlots,
+                        Quality = quality,
+                        Pressure = pressure,
+                        PressureStart = 0.55f,
+                        PressureEnd = 0.95f
+                    });
 
                 default:
-                    return ResolveContinuousLoadSlots(Tier56Slots, Tier56WarningSlots, quality, pressure, 0.35f, 0.85f);
+                    return ResolveContinuousLoadSlots(new ContinuousLoadConfig
+                    {
+                        MaxSlots = Tier56Slots,
+                        MinSlots = Tier56WarningSlots,
+                        Quality = quality,
+                        Pressure = pressure,
+                        PressureStart = 0.35f,
+                        PressureEnd = 0.85f
+                    });
             }
         }
 
-        private static int ResolveContinuousLoadSlots(int maxSlots, int minSlots, float quality, float pressure, float pressureStart, float pressureEnd)
+        private struct ContinuousLoadConfig
         {
-            float pressureCollapse = math.smoothstep(pressureStart, pressureEnd, pressure);
-            float qualityCollapse = 1f - math.smoothstep(0.15f, 0.85f, quality);
+            public int MaxSlots;
+            public int MinSlots;
+            public float Quality;
+            public float Pressure;
+            public float PressureStart;
+            public float PressureEnd;
+        }
+
+        private static int ResolveContinuousLoadSlots(in ContinuousLoadConfig config)
+        {
+            float pressureCollapse = math.smoothstep(config.PressureStart, config.PressureEnd, config.Pressure);
+            float qualityCollapse = 1f - math.smoothstep(0.15f, 0.85f, config.Quality);
             float collapse = math.saturate(math.lerp(pressureCollapse, math.max(pressureCollapse, qualityCollapse), 0.5f));
-            float rawSlots = math.lerp(maxSlots, minSlots, collapse);
-            return math.max(minSlots, (int)math.round(rawSlots));
+            float rawSlots = math.lerp(config.MaxSlots, config.MinSlots, collapse);
+            return math.max(config.MinSlots, (int)math.round(rawSlots));
         }
 
         public static long ResolveUploadBudgetBytesForAudit(float qualityWeight, float pressureFactor)
