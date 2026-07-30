@@ -221,9 +221,7 @@ namespace Hecton8.Tools
                 GameObject found = GameObject.FindWithTag("Player");
                 if (found == null)
                 {
-                    var movement = UnityEngine.Object.FindAnyObjectByType<Hecton8.Gameplay.HectonPlayerMovement>();
-                    if (movement != null)
-                        found = movement.gameObject;
+                    found = Hecton8.Core.GlobalRegistry.PlayerMotor?.gameObject;
                 }
 
                 if (found != null)
