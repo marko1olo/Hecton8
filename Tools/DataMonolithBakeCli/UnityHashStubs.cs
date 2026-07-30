@@ -131,7 +131,31 @@ namespace Unity.Collections
             byte* secret,
             int isHash64)
         {
-            DefaultHashLongInternalLoop(acc, input, dest, length, secret, isHash64);
+        }
+
+        public static Unity.Mathematics.uint2 Hash64(void* input, long length)
+        {
+            if (input == null || length <= 0) return new Unity.Mathematics.uint2(0, 0);
+
+            // Simple hash for the standalone stub. Real code uses native xxHash3.
+            ulong hash1 = 0xcbf29ce484222325;
+            ulong hash2 = 0xcbf29ce484222325;
+            byte* p = (byte*)input;
+            for (long i = 0; i < length; i++)
+            {
+                if (i % 2 == 0)
+                {
+                    hash1 ^= p[i];
+                    hash1 *= 1099511628211;
+                }
+                else
+                {
+                    hash2 ^= p[i];
+                    hash2 *= 1099511628211;
+                }
+            }
+
+            return new Unity.Mathematics.uint2((uint)hash1, (uint)(hash1 >> 32) ^ (uint)hash2);
         }
     }
 }
