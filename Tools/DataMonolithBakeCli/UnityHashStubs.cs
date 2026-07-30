@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace Unity.Burst
 {
@@ -132,6 +133,26 @@ namespace Unity.Collections
             int isHash64)
         {
             DefaultHashLongInternalLoop(acc, input, dest, length, secret, isHash64);
+        }
+
+        private static void DefaultHashLongInternalLoop(
+            ulong* acc,
+            byte* input,
+            byte* dest,
+            long length,
+            byte* secret,
+            int isHash64)
+        {
+        }
+
+        public static Unity.Mathematics.uint2 Hash64(byte* ptr, int length)
+        {
+            return new Unity.Mathematics.uint2(0, 0);
+        }
+
+        public static Unity.Mathematics.uint2 Hash64(void* ptr, int length)
+        {
+            return new Unity.Mathematics.uint2(0, 0);
         }
     }
 }
