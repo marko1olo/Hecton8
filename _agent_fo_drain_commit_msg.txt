@@ -1,0 +1,6 @@
+fix(fo): drain scene-rebase bootstrap lock under physics pause (P0 ecology)
+
+ProcessPending/TryPrepare no longer early-return on physics pause; TryFlush drives
+ResumePhysicsAfterShift and stuck scene-rebase barrier completion so
+IsOriginShiftBootstrapLocked can clear and FrostTick can mark ecology ready.
+Headless wait-progress diag logs foLock/physicsPause/pendingScenes every 15s.

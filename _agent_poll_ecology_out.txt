@@ -1,0 +1,50 @@
+utc=2026-07-30T21:35:16.138252+00:00
+meta={
+  "pid": 34504,
+  "log": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\headless_smoke_20260731_p0_fo_lock_drain_20260730_213321.log",
+  "result": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json",
+  "startedUtc": "2026-07-30T21:33:22.864551+00:00",
+  "head": "411715153e3d617bb854938ff27b32c97739ba6f"
+}
+=== unity procs ===
+��� ��ࠧ�                     PID ��� ��ᨨ          � ᥠ��       ������
+========================= ======== ================ =========== ============
+Unity.exe                    34504 Console                    1 5�016�164 ��
+Unity.exe                    32076 Console                    1 1�475�868 ��
+result_exists=False
+runner_status=2026-07-30T21:35:12.2266785Z started
+latest_log=headless_smoke_20260731_p0_fo_lock_drain_20260730_213321.log size=323911
+key_hits=2
+4161|Opening scene 'Assets/_Project/Scenes/00_BOOTSTRAP.unity'
+4162|Loaded scene 'Assets/_Project/Scenes/00_BOOTSTRAP.unity'
+=== log_tail ===
+(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1294)
+
+[HEADLESS] waiting for dispatcher
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+Hecton8.QA.Headless.HeadlessSimulationRunner:LogRunnerLifecycle (string) (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:1294)
+Hecton8.QA.Headless.HeadlessSimulationRunner:BeginStartup () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:226)
+Hecton8.QA.Headless.HeadlessSimulationRunner:Start () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:208)
+
+(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1294)
+
+[H8_LIFETIME] ARMED frame=1
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+Hecton8.EditorTools.Diagnostics.H8_PlayerLifetimeProbe:HookSceneEvents () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_PlayerLifetimeProbe.cs:78)
+Hecton8.EditorTools.Diagnostics.H8_PlayerLifetimeProbe:HandlePlayModeStateChanged (UnityEditor.PlayModeStateChange) (at Assets/_Project/Scripts/Editor/Diagnostics/H8_PlayerLifetimeProbe.cs:58)
+UnityEditor.EditorApplication:Internal_PlayModeStateChanged (UnityEditor.PlayModeStateChange)
+
+(Filename: Assets/_Project/Scripts/Editor/Diagnostics/H8_PlayerLifetimeProbe.cs Line: 78)
+
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Client] Successfully resolved entitlement details
