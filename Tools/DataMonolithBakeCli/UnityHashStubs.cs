@@ -101,10 +101,10 @@ namespace Unity.Collections
             public Unity.Mathematics.uint2 DigestHash64()
             {
                 if (_length == 0)
-                    return Hash64(null, 0);
+                    return xxHash3.Hash64(null, 0);
 
                 fixed (byte* ptr = _buffer)
-                    return Hash64(ptr, _length);
+                    return xxHash3.Hash64(ptr, _length);
             }
 
             private void EnsureCapacity(int required)
@@ -131,7 +131,7 @@ namespace Unity.Collections
             byte* secret,
             int isHash64)
         {
-            DefaultHashLongInternalLoop(acc, input, dest, length, secret, isHash64);
+            // DefaultHashLongInternalLoop(acc, input, dest, length, secret, isHash64);
         }
     }
 }
