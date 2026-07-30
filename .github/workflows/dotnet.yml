@@ -16,13 +16,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Setup python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - name: Install defusedxml
+      run: pip install defusedxml
+    - name: Generate csproj
+      run: python Tools/generate_unity_slnx_projects.py
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore Hecton8.slnx
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build Hecton8.slnx --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test Hecton8.slnx --no-build --verbosity normal
