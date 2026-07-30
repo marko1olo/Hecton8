@@ -759,11 +759,31 @@ namespace Hecton8.Editor
             public ForgeManifestMaterialSlotEntry[] materialSlots;
             public ForgeManifestValidationBlock validation;
             public ForgeManifestVatReadinessBlock vatReadiness;
+            public ForgeManifestExtraBlock extra;
         }
 
         /// <summary>
-        /// Top-level <c>vatReadiness</c> block. Its PRESENCE is what identifies a Vertex Animation Texture
-        /// source; it is written only by generators whose family animates through a baked VAT.
+        /// The forge's <c>extra</c> payload. This is where <c>vatReadiness</c> ACTUALLY lands:
+        /// <c>export_unity.write_manifest</c> takes a first-class <c>extra</c> keyword (export_unity.py:1908)
+        /// and assigns it wholesale (<c>payload["extra"] = extra</c>, :2134-2135), and every family-specific
+        /// block goes through it - fauna_fish.py:2214, prop_handtool.py:1682, flora_capstem.py:2611. The
+        /// exporter's payload dict offers no root slot for generator blocks at all, so <c>extra</c> is the
+        /// sanctioned home and the C# reader was the wrong side of this disagreement.
+        /// Only <c>vatReadiness</c> is typed here; JsonUtility drops <c>extra</c>'s heterogeneous siblings
+        /// (<c>bodyPlan</c>, <c>consumerContract</c>, strings, arrays) because no field claims them, which is
+        /// why this needs no <c>Dictionary</c> - which JsonUtility would not support anyway.
+        /// </summary>
+        [Serializable]
+        private sealed class ForgeManifestExtraBlock
+        {
+            public ForgeManifestVatReadinessBlock vatReadiness;
+        }
+
+        /// <summary>
+        /// The <c>vatReadiness</c> block. Its PRESENCE is what identifies a Vertex Animation Texture
+        /// source; it is written only by generators whose family animates through a baked VAT. Read it
+        /// through <see cref="ResolveVatReadiness"/> rather than off a field directly - the forge nests it
+        /// under <c>extra</c>, and only that helper accepts both placements.
         /// </summary>
         /// <remarks>
         /// The carve-out is deliberately NOT keyed on
