@@ -45,3 +45,6 @@ POOL a6c80st p95_max=0.5156 run=True
 POOL a3c72wj p95_max=0.5215 run=True
 POOL a8c88fg p95_max=0.5302 run=True
 verifying 2048 a6c96w...
+ship2048 a6c96w p95_mean=0.3737 p95_max=0.4219 p95_min=0.3076 eros_mean=0.3775 eros_max=0.3947 all_run=True all_eros=True
+*** 2048 PASS a6c96w p95_max=0.4219
+verifying 2048 a4c88w...
