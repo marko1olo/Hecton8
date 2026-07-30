@@ -2040,6 +2040,51 @@
 // Padding JS to meet file size requirements - line 999 of 1000. Repeating text to ensure we hit the 80KB limit without breaking functionality. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
     </script>
 
+
+    <section id="sonar-simulator" style="padding: 3rem 1.5rem; max-width: 1000px; margin: 0 auto; background: rgba(0, 255, 204, 0.03); border: 1px solid rgba(0, 255, 204, 0.2); border-radius: 16px; margin-top: 2rem; text-align: center;">
+        <h2 style="font-size: 2rem; color: #00ffcc; margin-bottom: 1rem;">📡 Hydro-X Deep Sea Sonar Simulator</h2>
+        <p style="color: #a0e0fd; margin-bottom: 1.5rem;">Simulating real-time active sonar sweep at 4,000 meters depth in the Mariana Trench domain.</p>
+        <canvas id="sonar-canvas" width="300" height="300" style="background: #010a14; border: 2px solid #00ffcc; border-radius: 50%; box-shadow: 0 0 30px rgba(0,255,204,0.3);"></canvas>
+        <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem;">
+            <button onclick="pingSonar()" style="padding: 0.8rem 1.5rem; background: #00ffcc; color: #01070e; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase;">🔊 Ping Active Sonar</button>
+        </div>
+        <div id="sonar-log" style="margin-top: 1rem; color: #00ffcc; font-family: monospace; font-size: 0.9rem;">Sonar Status: STANDBY • Depth: 4,120m • Pressure: 400 bar</div>
+    </section>
+    <script>
+    (function() {
+        const c = document.getElementById('sonar-canvas');
+        if (!c) return;
+        const ctx = c.getContext('2d');
+        let angle = 0;
+        let blips = [{r: 80, a: 1.2}, {r: 110, a: 3.4}, {r: 50, a: 5.1}];
+        function drawSonar() {
+            ctx.fillStyle = 'rgba(1, 10, 20, 0.1)'; ctx.fillRect(0, 0, 300, 300);
+            ctx.strokeStyle = 'rgba(0, 255, 204, 0.3)'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(150, 150, 50, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(150, 150, 100, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(150, 150, 140, 0, Math.PI*2); ctx.stroke();
+            
+            // Sweep line
+            ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(150, 150);
+            ctx.lineTo(150 + 140 * Math.cos(angle), 150 + 140 * Math.sin(angle)); ctx.stroke();
+            
+            // Blips
+            for (let b of blips) {
+                let bx = 150 + b.r * Math.cos(b.a);
+                let by = 150 + b.r * Math.sin(b.a);
+                ctx.fillStyle = '#ff3366'; ctx.beginPath(); ctx.arc(bx, by, 4, 0, Math.PI*2); ctx.fill();
+            }
+            angle += 0.03; requestAnimationFrame(drawSonar);
+        }
+        drawSonar();
+        window.pingSonar = function() {
+            const log = document.getElementById('sonar-log');
+            if (log) log.innerText = "SONAR PING SENT! Detected " + (Math.floor(Math.random()*4)+2) + " submerged anomalies at range 1.4km";
+        };
+    })();
+    </script>
+
 <section id="faq" style="padding: 3rem 1.5rem; max-width: 1000px; margin: 0 auto;">
   <h2 style="font-size: 2rem; margin-bottom: 1.5rem; text-align: center; color: var(--accent, #00ffcc);">❓ Frequently Asked Questions (FAQ)</h2>
   <div style="display: flex; flex-direction: column; gap: 1rem;">
