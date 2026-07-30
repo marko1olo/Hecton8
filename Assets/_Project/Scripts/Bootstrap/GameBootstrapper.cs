@@ -7526,7 +7526,6 @@ namespace Hecton8.Bootstrap
             {
                 EnsureExtendedRegistryCoverageForActiveScene();
                 bool req = RequiresGameplaySceneActivation(scene);
-                Debug.Log($"[GameBootstrapper-DEBUG] HandleSceneLoadedGuard: _isBootstrapComplete=true, scene={scene.name}, RequiresGameplaySceneActivation={req}");
                 if (req)
                     RequestSceneActivation();
 
