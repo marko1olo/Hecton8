@@ -7117,9 +7117,14 @@ namespace Hecton8.Core
             if (!blockGameplayLanes)
                 return false;
 
-            // Bootstrap gates the player lane only. World/environment systems must keep
-            // ticking so startup queues, residency, and spawn drains can complete.
-            return laneIndex == GetLaneIndex(PriorityLayer.Player);
+            // L14: Player fixed/update locomotion is input-authoritative simulation, not optional
+            // bootstrap garnish. Skipping PriorityLayer.Player while !BootstrapState.IsGameReady
+            // starves HPM.FixedTick -> Sample -> GetState (hop2) even when InputDispatcher already
+            // holds non-zero MoveDelta (L12/L13 LIVE: hop1 healthy, hop2 ABSENT, intent=0).
+            // World/environment systems still run; Player lane must also run once registered so
+            // scripted and human locomotion can sample the open input path during handoff.
+            // (Previously: return laneIndex == GetLaneIndex(PriorityLayer.Player);)
+            return false;
         }
 
         private static int GetLaneIndex(PriorityLayer layer)

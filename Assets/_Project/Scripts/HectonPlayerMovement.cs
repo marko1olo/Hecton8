@@ -5477,6 +5477,12 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
+            // L14: sticky false -> TryRegister once. sticky true -> leave registered.
+            // Do NOT Unregister+Register every Ensure: WorldDriver calls Ensure every settle/swim
+            // tick; thrash would drop HPM from the fixed lane mid-hold. RegistryBucket.TryRegister
+            // returns false when Contains (not idempotent-true), so re-call alone cannot heal a
+            // missing entry either - membership loss is rare; SD L14 no longer bootstrap-skips
+            // Player lane, so once registered FixedTick runs for hop2/Sample/intent.
             if (!_registeredTick)
             {
                 _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
@@ -5486,6 +5492,7 @@ namespace Hecton8.Gameplay
             {
                 _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
             }
+
 
             if (!_registeredColdTick)
             {
@@ -8227,11 +8234,18 @@ namespace Hecton8.Gameplay
                 _inputVertical = 0f;
                 _mouseXDelta = 0f;
                 SetSprintingState(false);
+                // L14: menu block zeros intent metric so CurrentMovementIntent01 tracks Sample,
+                // not a stale post-suit PrepareTransport write from a prior frame.
+                _lastPlayerKinematicsIntendedMovement = default;
                 return;
             }
 
             ProcessPlayerInputFrame();
             ProcessWipeoutInputOverride();
+            // L14: publish raw locomotion intent at Sample (pre-suit). hop2/GetState already ran
+            // inside ProcessPlayerInputFrame; CurrentMovementIntent01 must reflect this frame even
+            // when suit==null early-outs before PrepareTransportAndFrameState.
+            _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
         }
 
         private void ProcessLocomotionPresentationAndJuice(float deltaTime, SuitData suit)
