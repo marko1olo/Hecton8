@@ -5463,6 +5463,15 @@ namespace Hecton8.Gameplay
             _sargassumMovementInfluence?.ApplyOriginShiftOffset(shiftOffset);
         }
 
+        /// <summary>
+        /// L13: Product entry so gameplay bootstrap / headless route can re-assert Player fixed+update
+        /// lane registration if OnEnable raced an empty Dispatcher. Does not mock input.
+        /// </summary>
+        public void EnsureDispatcherRegistration()
+        {
+            TryRegisterToDispatchers();
+        }
+
         private void TryRegisterToDispatchers()
         {
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -9920,16 +9929,19 @@ namespace Hecton8.Gameplay
 
         public void FixedTick(float fixedDeltaTime)
         {
+            // L13: Sample locomotion BEFORE suit/juice physics gates. hop2 (GetState) must not
+            // depend on suit asset or juice processor being ready — L12 proved dispatcher already
+            // holds non-zero MoveDelta while movementIntent01max stayed 0 because these early-outs
+            // skipped SampleGameplayLocomotionInputForFixedStep for the whole Swim window.
+            EnsureJuiceProcessor();
+            SampleGameplayLocomotionInputForFixedStep();
+
             SuitData suit = currentSuitData;
-            if (suit == null) return;
-            if (_juiceProcessor == null) return;
+            if (suit == null)
+                return;
 
             using (_fixedTickProfilerMarker.Auto())
             {
-                // Fixed-step locomotion must sample input here. Render Tick is not guaranteed
-                // before each FixedTick (batchmode / catch-up), and PrepareTransportAndFrameState
-                // snapshots intent from _input* immediately below.
-                SampleGameplayLocomotionInputForFixedStep();
 
                 PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
 
