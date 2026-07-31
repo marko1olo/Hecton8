@@ -33,7 +33,11 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetActiveRuntimeForSubsystemRegistration()
         {
+            // Domain reload may be disabled (Editor Enter Play Mode Options).
+            // Sticky open-count must not leak across play sessions - otherwise
+            // IsAnyOpen stays true, HPM SampleGameplay zeros input without GetState (hop2 starve).
             ActiveRuntimeInstance = null;
+            _openMenuCount = 0;
         }
 
         private enum PauseSection

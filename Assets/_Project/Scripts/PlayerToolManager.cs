@@ -327,7 +327,7 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterToTickManager()
         {
-            if ((_registeredToTick && _registeredToLateFrame) || !Application.isPlaying)
+            if ((_registeredToTick && _registeredToLateFrame && _registeredToFixedTick) || !Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
@@ -353,7 +353,7 @@ namespace Hecton8.Gameplay
 
         private void TryUnregisterFromTickManager(bool clearPendingPresentation = true)
         {
-            if (!_registeredToTick && !_registeredToLateFrame)
+            if (!_registeredToTick && !_registeredToLateFrame && !_registeredToFixedTick)
                 return;
 
             if (_registeredToTick)

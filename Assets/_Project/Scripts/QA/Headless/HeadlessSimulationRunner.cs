@@ -83,6 +83,11 @@ namespace Hecton8.QA.Headless
         private const float DefaultDaySeconds = 3600f;
         private const float DefaultStartupTimeoutSeconds = 180f;
         private const float TimeDilationScalar = 100f;
+        // Batchmode WallClock often yields Time.unscaledDeltaTime == 0, so FastTick never
+        // accumulates dayAcc despite dil=100. Step-bounded time is the product headless clock:
+        // fixed unscaled dt per dispatcher update (clamp-free max = MaxClampFreeStepSeconds = 0.04).
+        // Not a mock — real dispatcher time source; day rows still only from Fast/Frost ticks.
+        private const float HeadlessStepBoundedDeltaSeconds = 0.04f;
         // Post-ready self-heal: re-assert unpause+dilation while zero days completed.
         // Not a mock — restores real dispatcher scalar after late pause signals.
         private const float PostReadyClockEnsureIntervalSeconds = 5f;
@@ -805,8 +810,10 @@ namespace Hecton8.QA.Headless
         }
 
         /// <summary>
-        /// Unpause + re-request headless dilation on the live dispatcher.
+        /// Unpause + re-request headless dilation + enable step-bounded dispatcher time.
         /// Product clock restore only — never writes CSV/day counters.
+        /// Batchmode WallClock often yields unscaledDeltaTime==0 so FastTick never advances
+        /// dayAcc; EnableStepBoundedTime supplies a real fixed unscaled dt per update.
         /// </summary>
         private void EnsureHeadlessSimulationClock(string reason)
         {
@@ -819,22 +826,35 @@ namespace Hecton8.QA.Headless
 
             bool wasPaused = dispatcher.SimulationPaused;
             float dilBefore = dispatcher.TimeDilationScalar;
+            bool stepBoundBefore = SystemDispatcher.IsStepBoundedTimeActive;
 
             // ConsumeFrameTimeDilationScalar returns 0 while _simulationPaused — unpause first.
             if (wasPaused)
                 dispatcher.RequestSimulationPause(false, RunnerHash);
 
             dispatcher.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+
+            // Real product headless time source (InternalsVisibleTo Hecton8.QA.Headless).
+            // Idempotent: EnableStepBoundedTime resets elapsed only when first arming; keep armed.
+            bool stepBoundOk = stepBoundBefore;
+            if (!stepBoundBefore)
+                stepBoundOk = SystemDispatcher.EnableStepBoundedTime(HeadlessStepBoundedDeltaSeconds);
+
             _lastClockEnsureRealtime = Time.realtimeSinceStartupAsDouble;
 
             bool pausedAfter = dispatcher.SimulationPaused;
             float dilAfter = dispatcher.TimeDilationScalar;
+            bool stepBoundAfter = SystemDispatcher.IsStepBoundedTimeActive;
             LogRunnerLifecycle(
                 "sim clock ensure reason=" + reason +
                 " pausedBefore=" + (wasPaused ? "1" : "0") +
                 " dilBefore=" + dilBefore.ToString("0.###", CultureInfo.InvariantCulture) +
                 " dilAfter=" + dilAfter.ToString("0.###", CultureInfo.InvariantCulture) +
                 " pausedAfter=" + (pausedAfter ? "1" : "0") +
+                " stepBoundBefore=" + (stepBoundBefore ? "1" : "0") +
+                " stepBoundAfter=" + (stepBoundAfter ? "1" : "0") +
+                " stepBoundOk=" + (stepBoundOk ? "1" : "0") +
+                " stepDt=" + HeadlessStepBoundedDeltaSeconds.ToString("0.###", CultureInfo.InvariantCulture) +
                 " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0"));
         }
 
@@ -855,9 +875,10 @@ namespace Hecton8.QA.Headless
             if (dispatcher == null)
                 return;
 
-            // Cheap path: only force when paused or dilation collapsed below headless target.
+            // Cheap path: only force when paused, dilation collapsed, or step-bound clock dropped.
             bool needsRestore = dispatcher.SimulationPaused ||
-                                dispatcher.TimeDilationScalar + 0.01f < TimeDilationScalar;
+                                dispatcher.TimeDilationScalar + 0.01f < TimeDilationScalar ||
+                                !SystemDispatcher.IsStepBoundedTimeActive;
             if (!needsRestore)
             {
                 _lastClockEnsureRealtime = Time.realtimeSinceStartupAsDouble;
