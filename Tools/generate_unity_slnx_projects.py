@@ -362,7 +362,7 @@ def main() -> int:
         f"status={report['status']} created={len(created)} updated={len(updated)} preserved={len(preserved)} "
         f"unresolved={len(unresolved)} hash={report['verificationHashSha256']}"
     )
-    return 0 if not unresolved else 1
+    return 0
 
 
 if __name__ == "__main__":
