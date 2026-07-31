@@ -121,6 +121,19 @@ namespace Hecton8.Animation.Fauna
         [FieldOffset(112)] public float4 Padding1;
     }
 
+    public struct TentacleWriteContext
+    {
+        public float3 RootWorld;
+        public float3 Wrap0;
+        public float3 Wrap1;
+        public float3 Forward;
+        public float3 Up;
+        public float BodyRadius;
+        public float SegmentLength;
+        public float VisualOverkillWeight01;
+        public int RequestedBoneCount;
+    }
+
     /// <summary>
     /// Burst-only jaw and appendage bite solver. Inputs are AUP + bounds packets; outputs mutate the shared Leviathan bone SOA.
     /// </summary>
@@ -248,7 +261,18 @@ namespace Hecton8.Animation.Fauna
             {
                 resultFlags |= ProceduralBiteIkConstants.ResultFlagQualityWrap;
                 ResolveWrapAnchors(targetLocalCenter, extents, target.CylinderRadiusMeters, targetRightLocal, targetUpLocal, targetForwardLocal, right, up, forward, out wrap0, out wrap1);
-                WriteTentacleBones(rootWorld, wrap0, wrap1, aimWorld, up, bodyRadius, segmentLength, visualOverkillWeight, wrapBoneCount);
+                WriteTentacleBones(new TentacleWriteContext
+                {
+                    RootWorld = rootWorld,
+                    Wrap0 = wrap0,
+                    Wrap1 = wrap1,
+                    Forward = aimWorld,
+                    Up = up,
+                    BodyRadius = bodyRadius,
+                    SegmentLength = segmentLength,
+                    VisualOverkillWeight01 = visualOverkillWeight,
+                    RequestedBoneCount = wrapBoneCount
+                });
             }
 
             float contactDistance = math.max(0f, distanceMeters - jawReach);
@@ -406,13 +430,13 @@ namespace Hecton8.Animation.Fauna
             wrap1 = LocalToWorldDelta(local1, right, up, forward) + PredatorPosition;
         }
 
-        private void WriteTentacleBones(float3 rootWorld, float3 wrap0, float3 wrap1, float3 forward, float3 up, float bodyRadius, float segmentLength, float visualOverkillWeight01, int requestedBoneCount)
+        private void WriteTentacleBones(in TentacleWriteContext ctx)
         {
-            int maxCount = math.min(ProceduralBiteIkConstants.MaxTentacleBones, math.min(math.max(0, TentacleBoneCount), math.max(0, requestedBoneCount)));
+            int maxCount = math.min(ProceduralBiteIkConstants.MaxTentacleBones, math.min(math.max(0, TentacleBoneCount), math.max(0, ctx.RequestedBoneCount)));
             if (maxCount <= 0)
                 return;
 
-            float visualWeight = math.saturate(math.select(0f, visualOverkillWeight01, math.isfinite(visualOverkillWeight01)));
+            float visualWeight = math.saturate(math.select(0f, ctx.VisualOverkillWeight01, math.isfinite(ctx.VisualOverkillWeight01)));
             float radiusScale = math.lerp(0.18f, 0.35f, visualWeight);
             float lengthScale = math.lerp(0.32f, 0.5f, visualWeight);
             int first = math.max(0, FirstTentacleBoneIndex);
@@ -423,9 +447,9 @@ namespace Hecton8.Animation.Fauna
                     break;
 
                 float t = (i + 1f) * math.rcp(maxCount + 1f);
-                float3 target = (i & 1) == 0 ? wrap0 : wrap1;
-                float3 position = math.lerp(rootWorld, target, t * visualWeight);
-                WriteBone(boneIndex, position, target - position, up, bodyRadius * radiusScale, segmentLength * lengthScale);
+                float3 target = (i & 1) == 0 ? ctx.Wrap0 : ctx.Wrap1;
+                float3 position = math.lerp(ctx.RootWorld, target, t * visualWeight);
+                WriteBone(boneIndex, position, target - position, ctx.Up, ctx.BodyRadius * radiusScale, ctx.SegmentLength * lengthScale);
             }
         }
 
