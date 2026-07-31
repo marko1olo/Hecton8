@@ -32,7 +32,7 @@ jobs:
         sed -i '/Unity.RenderPipelines.Universal.Editor.csproj/d' Hecton8.slnx
         sed -i '/Unity.RenderPipelines.Universal.Runtime.csproj/d' Hecton8.slnx
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 9.0.x
     - name: Generate csproj files
