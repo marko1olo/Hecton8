@@ -1,17 +1,29 @@
 # Hecton8 Backlog
 
-## Open — P0 ecology-ready Frost starve (2026-07-31)
-- **Symptom (live smoke after FO lock-drain):** foLock=0 ecoInit=1 from t=0 through t=480s+; `_ecologyReady` never set; BOOTSTRAP_TIMEOUT / BATCH_TIMEOUT.
-- **Root:** `TryMarkEcologyReady` only invoked from `FrostTick`. Frost never delivered while wait clock ran (dispatcher master-sim path starved or deltaTime<=0). Ready predicate (`ecosystem.IsInitialized`) was true the entire wait.
-- **Fix applied:** call `TryMarkEcologyReady` from runner `Update` wait path (starvation-proof gate, same pattern as wait-clock move off ColdTick). Lifecycle log on first ready. Wait-progress adds frostReg + dispFrameLocked.
-- **Not a mock:** ready-mark is a harness gate; day audits still require Frost/LateFrame once ready. Frost starve root for day advance remains open if dilation/pause zeros master sim.
-- Evidence: Docs/AgentLogs/p0_ecology_ready_frost_starve_20260731.md
+## Open - P0 ecology day-advance / post-ready clock (2026-07-31)
+
+- **Ready gate PROVED** (`80b2d9764`): `[HEADLESS] ecology ready (ecosystem initialized)` on live smoke.
+- **Post-ready day-advance was DEAD** after ready: smoke pid 21516 ~495s wall, CSV header-only, batch stub `BATCH_TIMEOUT` (zero Fast/Frost dt).
+- **Product fix applied (this commit):** `HeadlessSimulationRunner.EnsureHeadlessSimulationClock` - unpause + `RequestHeadlessTimeDilation(100)` at `lanes-registered` / `ecology-ready` / `game-ready`; sustain every 5s while days==0; post-ready Warning diag every 15s (`post-ready t=... dil=... dayAcc=...`).
+- **Not a mock:** restores real dispatcher scalar only; never writes CSV/day counters/SUCCESS.
+- **DoD OPEN until smoke:** status not in `{ECOLOGY_UNAVAILABLE,BATCH_TIMEOUT,BOOTSTRAP_TIMEOUT}` AND `ecologySampledDays>0` AND `timeDilationDelivered>0`.
+- Evidence: `Docs/AgentLogs/p0_ecology_day_advance_clock_20260731.md`
+- Handoff: `Docs/AgentLogs/HANDOFF_p0_ecology_day_advance_20260731.md`
+- Real-game screenshots still REQUIRED (headless green alone = DECLINED).
+
+## Prior - P0 ecology-ready Frost starve (2026-07-31) - ready gate CLOSED
+- **Symptom:** foLock=0 ecoInit=1; `_ecologyReady` never set; BOOTSTRAP_TIMEOUT / BATCH_TIMEOUT.
+- **Root:** `TryMarkEcologyReady` Frost-only while Frost starved.
+- **Fix:** call from runner `Update` wait path (`80b2d9764`) - PROVED ready line.
+- Day-advance after ready tracked above (clock restore).
 
 ## Completed
 - [x] P0 | ship a6c96w abs-col spall into texture.py | Tools/Blender/h8forge/texture.py | proof@2048 seeds 0,1,2,7,13 p95_max=0.4590 eros_min=0.3417 all_run all_eros PASS | 568a19cca (cement auto-bundled product+scratch; do not amend)
+- [x] P0 | FO lock-drain under physics pause | HectonFloatingOrigin | foLock=0 proved | 411715153
+- [x] P0 | ecology ready-mark on Update wait path | HeadlessSimulationRunner | ready line proved | 80b2d9764
 
 ## Open P0
-- [ ] P0 | headless ecology post-GameReady FO bootstrap-lock soft-deadlock | root: QueuePendingLoadedScene acquires SceneRebaseTickLock while ProcessPending/TryFlush early-return on _physicsPauseActive; FO.Tick (ResumePhysics) starved by SystemDispatcher.IsOriginShiftBootstrapLocked => FrostTick never runs, TryMarkEcologyReady never sees EcosystemDirector.IsInitialized | FIX APPLIED 2026-07-30 21:26 UTC: HectonFloatingOrigin drain under physics pause (ProcessPending+TryPrepare+TryFlush resume/barrier complete); HeadlessSimulationRunner wait progress diag foLock/physicsPause/pendingScenes | DoD still OPEN until smoke: status not in ECOLOGY_UNAVAILABLE|BATCH_TIMEOUT|BOOTSTRAP_TIMEOUT AND ecologySampledDays>0 AND timeDilationDelivered>0 | prior FAIL evidence: Docs/AgentLogs/headless_smoke_20260731_p0_ecology_clock_asmfix.log + BATCH_TIMEOUT stub JSON | real-game screenshots still REQUIRED (headless green alone = DECLINED)
+- [ ] P0 | headless ecology day-advance post-ready | EnsureHeadlessSimulationClock unpause+dilation + sustain + post-ready diag | DoD OPEN until smoke ecologySampledDays>0 AND timeDilationDelivered>0 AND status not timeout | prior FAIL: ready green then 0 CSV rows BATCH_TIMEOUT | real-game screenshots still REQUIRED
 - [ ] P0 | DECLINED until real-game: Geology@2048 headless-only; KCC FAIL 0x42; Debris EXEMPT; RuntimeSmokeTester; README art; V0 Swim; Docs/Screenshots/V0_Playtest empty
 
 ## Salvaged fix from closed PR #1714

@@ -83,6 +83,10 @@ namespace Hecton8.QA.Headless
         private const float DefaultDaySeconds = 3600f;
         private const float DefaultStartupTimeoutSeconds = 180f;
         private const float TimeDilationScalar = 100f;
+        // Post-ready self-heal: re-assert unpause+dilation while zero days completed.
+        // Not a mock — restores real dispatcher scalar after late pause signals.
+        private const float PostReadyClockEnsureIntervalSeconds = 5f;
+        private const float PostReadyDiagIntervalSeconds = 15f;
         private const float GhostSpeedMetersPerSecond = 85f;
         private const float NativeBytesToMegabytes = 1f / (1024f * 1024f);
         private const uint RunnerHash = 0x48385141u;
@@ -130,6 +134,8 @@ namespace Hecton8.QA.Headless
         // dispatcher FrostTick — p0_gameready 2026-07-30 BOOTSTRAP_TIMEOUT at short-circuit.
         private double _ecologyWaitStartRealtime;
         private int _ecologyWaitDiagBucket = -1;
+        private int _postReadyDiagBucket = -1;
+        private double _lastClockEnsureRealtime;
         private float _daySeconds = DefaultDaySeconds;
         private float _startupTimeoutSeconds = DefaultStartupTimeoutSeconds;
         private int _targetDays = DefaultTargetDays;
@@ -267,19 +273,31 @@ namespace Hecton8.QA.Headless
                 // TryMarkEcologyReady never ran (Frost-only). Same starvation-proof pattern as
                 // moving the wait clock off ColdTick onto Update.
                 TryMarkEcologyReady();
-                if (_ecologyReady)
-                    return;
-                // Keep FO scene-rebase barrier draining while we wait — dispatcher early-returns
-                // all Frost/LateFrame while IsOriginShiftBootstrapLocked holds.
-                HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
-                MaybeLogEcologyWaitProgress();
-                if (_ecologyWaitStartRealtime > 0.0 &&
-                    Time.realtimeSinceStartupAsDouble - _ecologyWaitStartRealtime > _startupTimeoutSeconds)
+                if (!_ecologyReady)
                 {
-                    LogEcologyBootstrapTimeoutDiagnostics();
-                    FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
-                    return;
+                    // Keep FO scene-rebase barrier draining while we wait — dispatcher early-returns
+                    // all Frost/LateFrame while IsOriginShiftBootstrapLocked holds.
+                    HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+                    MaybeLogEcologyWaitProgress();
+                    if (_ecologyWaitStartRealtime > 0.0 &&
+                        Time.realtimeSinceStartupAsDouble - _ecologyWaitStartRealtime > _startupTimeoutSeconds)
+                    {
+                        LogEcologyBootstrapTimeoutDiagnostics();
+                        FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
+                        return;
+                    }
                 }
+            }
+
+            // Post-ready: keep FO draining, re-assert unpause+dilation against late pause, emit diag.
+            // Smoke 80b2d9764: ready green then ~495s wall with 0 CSV rows — Fast/Frost got dt<=0.
+            if (_started && _ecologyReady && !_finished)
+            {
+                // GameReady may land after ecoInit; arm wait clock + open Player LateFrame path.
+                TryArmEcologyWaitClock();
+                MaybeEnsureHeadlessSimulationClockSustain();
+                MaybeLogPostReadyProgress();
+                HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
             }
 
             if (!_awaitingDispatcher)
@@ -468,7 +486,8 @@ namespace Hecton8.QA.Headless
                 TryRegisterHotSwapListener();
                 HectonFloatingOrigin.RegisterListener(this);
                 _originListenerRegistered = true;
-                GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+                // Unpause+dilation at register. Re-asserted again at ecology-ready / GameReady.
+                EnsureHeadlessSimulationClock("lanes-registered");
                 if (!_started)
                     FailAndQuit(1, TimeoutHash, "[RUNNER_REGISTRATION_FAILED]");
                 else
@@ -669,6 +688,9 @@ namespace Hecton8.QA.Headless
 
             _ecologyWaitStartRealtime = Time.realtimeSinceStartupAsDouble;
             LogRunnerLifecycle("ecology wait clock armed (GameReady)");
+            // GameReady opens Player LateFrame (day-audit drain). Re-assert clock here so a pause
+            // taken during bootstrap cannot leave dilation at 0/pre-pause after short-circuit.
+            EnsureHeadlessSimulationClock("game-ready");
         }
 
         private void LogEcologyBootstrapTimeoutDiagnostics()
@@ -772,9 +794,126 @@ namespace Hecton8.QA.Headless
                 // this filter once ate the harness's own verdict (`[HEADLESS] fail` appeared zero times in
                 // 27,107 lines while the result JSON sat on disk).
                 Debug.unityLogger.filterLogType = LogType.Warning;
+
+                // Day machine needs dilated Fast/Frost deltaTime > 0. Dilation is requested once at
+                // lane register; any later pause zeros scalar and unpause restores pre-pause (often 1).
+                // Re-assert real dispatcher clock at the ready gate — not fake day rows.
+                EnsureHeadlessSimulationClock("ecology-ready");
             }
 
             _ecologyReady = readyNow;
+        }
+
+        /// <summary>
+        /// Unpause + re-request headless dilation on the live dispatcher.
+        /// Product clock restore only — never writes CSV/day counters.
+        /// </summary>
+        private void EnsureHeadlessSimulationClock(string reason)
+        {
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            if (dispatcher == null)
+            {
+                LogRunnerLifecycle("sim clock ensure reason=" + reason + " dispatcher=null");
+                return;
+            }
+
+            bool wasPaused = dispatcher.SimulationPaused;
+            float dilBefore = dispatcher.TimeDilationScalar;
+
+            // ConsumeFrameTimeDilationScalar returns 0 while _simulationPaused — unpause first.
+            if (wasPaused)
+                dispatcher.RequestSimulationPause(false, RunnerHash);
+
+            dispatcher.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+            _lastClockEnsureRealtime = Time.realtimeSinceStartupAsDouble;
+
+            bool pausedAfter = dispatcher.SimulationPaused;
+            float dilAfter = dispatcher.TimeDilationScalar;
+            LogRunnerLifecycle(
+                "sim clock ensure reason=" + reason +
+                " pausedBefore=" + (wasPaused ? "1" : "0") +
+                " dilBefore=" + dilBefore.ToString("0.###", CultureInfo.InvariantCulture) +
+                " dilAfter=" + dilAfter.ToString("0.###", CultureInfo.InvariantCulture) +
+                " pausedAfter=" + (pausedAfter ? "1" : "0") +
+                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0"));
+        }
+
+        /// <summary>
+        /// While ecology is ready and no day has completed, periodically re-assert the real clock
+        /// against late SimulationPauseSignal / pause-menu / desync paths. Stops once days advance.
+        /// </summary>
+        private void MaybeEnsureHeadlessSimulationClockSustain()
+        {
+            if (!_ecologyReady || _finished || _completedDays > 0)
+                return;
+
+            if (_lastClockEnsureRealtime > 0.0 &&
+                Time.realtimeSinceStartupAsDouble - _lastClockEnsureRealtime < PostReadyClockEnsureIntervalSeconds)
+                return;
+
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            if (dispatcher == null)
+                return;
+
+            // Cheap path: only force when paused or dilation collapsed below headless target.
+            bool needsRestore = dispatcher.SimulationPaused ||
+                                dispatcher.TimeDilationScalar + 0.01f < TimeDilationScalar;
+            if (!needsRestore)
+            {
+                _lastClockEnsureRealtime = Time.realtimeSinceStartupAsDouble;
+                return;
+            }
+
+            EnsureHeadlessSimulationClock("post-ready-sustain");
+        }
+
+        /// <summary>
+        /// Throttled post-ready Warning diag so BATCH_TIMEOUT still leaves pause/dilation/dayAcc on disk.
+        /// </summary>
+        private void MaybeLogPostReadyProgress()
+        {
+            if (!_ecologyReady || _finished || _simulationStartRealtime <= 0.0)
+                return;
+
+            double waited = Time.realtimeSinceStartupAsDouble - _simulationStartRealtime;
+            int bucket = (int)(waited / PostReadyDiagIntervalSeconds);
+            if (bucket <= _postReadyDiagBucket)
+                return;
+
+            _postReadyDiagBucket = bucket;
+
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            bool paused = dispatcher != null && dispatcher.SimulationPaused;
+            float dil = dispatcher != null ? dispatcher.TimeDilationScalar : -1f;
+            HectonFloatingOrigin.CopyBootstrapDrainSnapshot(
+                out bool foHasOrigin,
+                out bool foShift,
+                out bool foPhysicsPause,
+                out bool foLock,
+                out int foPendingScenes,
+                out bool foTargetsDirty,
+                out bool foBarrier);
+
+            LogRunnerLifecycle(
+                "post-ready t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
+                "s paused=" + (paused ? "1" : "0") +
+                " dil=" + dil.ToString("0.###", CultureInfo.InvariantCulture) +
+                " dayAcc=" + _dayAccumulatorSeconds.ToString("0.###", CultureInfo.InvariantCulture) +
+                " pending=" + _pendingDayAudits.ToString(CultureInfo.InvariantCulture) +
+                " days=" + _completedDays.ToString(CultureInfo.InvariantCulture) +
+                " simS=" + _simulatedSeconds.ToString("0.###", CultureInfo.InvariantCulture) +
+                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0") +
+                " frostReg=" + (_registeredFrost ? "1" : "0") +
+                " lateReg=" + (_registeredLate ? "1" : "0") +
+                " foHasOrigin=" + (foHasOrigin ? "1" : "0") +
+                " foShift=" + (foShift ? "1" : "0") +
+                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+                " foLock=" + (foLock ? "1" : "0") +
+                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+                " foBarrier=" + (foBarrier ? "1" : "0") +
+                " dispBoot=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
+                " dispFrame=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0"));
         }
 
         /// <summary>
