@@ -1473,9 +1473,21 @@ namespace Hecton8.EditorTools.Diagnostics
                 if (!EvaluateScheduleCeilings())
                     return;
 
+                // L12 product fix: AdvancePhase authors _intent for the current hold, THEN publish.
+                // Previous order published the prior tick's intent (often default/zero on the first
+                // hold tick and one frame stale thereafter), so Swim holds could ship MoveDelta=0
+                // while phase code had already written (0,1). Consume is destructive (maxFrameAge=2);
+                // a zero publish poisons CaptureState for the locomotion consumer window.
                 SampleObservables();
-                PublishLocomotionIntent();
                 AdvancePhase();
+                PublishLocomotionIntent();
+                // Drop intent after ship when the phase that just ran does not author input.
+                // Exit paths used to clear _intent inside AdvancePhase BEFORE publish; with
+                // advance-then-publish that would zero the last hold tick. Clear here instead so
+                // the final authored frame still reaches the dispatcher, and verdict/resource
+                // phases do not keep re-publishing stale MoveDelta/PrimaryFire/verb bits.
+                if (!PhaseAuthorsInputIntent(_phase))
+                    _intent = default;
             }
             catch (System.Exception ex)
             {
@@ -1923,6 +1935,25 @@ namespace Hecton8.EditorTools.Diagnostics
                 case 14: return PlayerInputSignalCommands.ToolSlot4;
                 case 15: return PlayerInputSignalCommands.Flashlight;
                 default: return 0;
+            }
+        }
+
+        /// <summary>
+        /// Phases that write locomotion/tool/verb bits into <see cref="_intent"/> each tick.
+        /// Used after publish to drop stale intent when the schedule is on a non-authoring phase
+        /// (verdict, resource, craft, settle, done, ...) without zeroing the last hold frame.
+        /// </summary>
+        private static bool PhaseAuthorsInputIntent(DrivePhase phase)
+        {
+            switch (phase)
+            {
+                case DrivePhase.SwimSurface:
+                case DrivePhase.SwimDive:
+                case DrivePhase.ToolUse:
+                case DrivePhase.VerbSweep:
+                    return true;
+                default:
+                    return false;
             }
         }
 
@@ -2819,7 +2850,8 @@ namespace Hecton8.EditorTools.Diagnostics
 
             if (PhaseCeilingReached())
             {
-                _intent = default;
+                // Do not clear _intent here: Tick publishes after AdvancePhase, so the last dive
+                // frame must still ship MoveDelta. Non-authoring phases clear after publish.
                 EnterPhase(DrivePhase.SwimVerdict, HoldYield());
             }
         }
@@ -3331,8 +3363,8 @@ namespace Hecton8.EditorTools.Diagnostics
             // formatted exactly like a measurement.
             double heldSeconds = PhaseElapsed;
 
-            _intent = default;
-
+            // Intent clear deferred to post-publish (PhaseAuthorsInputIntent) so the final
+            // PrimaryFire frame still reaches CaptureState this tick.
             Hecton8.Gameplay.PlayerToolManager manager = _toolManager;
             Hecton8.Gameplay.PlayerTool current = manager != null ? manager.CurrentTool : null;
             _durabilityAfterToolUse = current != null ? current.CurrentDurability : _durabilityAtToolUse;
@@ -4042,12 +4074,12 @@ namespace Hecton8.EditorTools.Diagnostics
         /// Presses the 17 <see cref="PlayerInputAction"/> bits in eight fixed groups of two steps each.
         ///
         /// TWO STEPS PER GROUP IS NOT PADDING. The dispatcher's discrete producer is an edge detector over the
-        /// RESOLVED input state (InputDispatcher.cs:1050), and this file publishes its intent at the TOP of a
-        /// tick (PublishLocomotionIntent runs before AdvancePhase), so a mask written on step k is not
-        /// published until step k+1 and cannot be read back out of IInputService.CurrentInputState before step
-        /// k+2. A one-step-per-group sweep would clear each bit before its own arrival could be observed and
-        /// would report all fifteen verbs dead on a perfectly healthy input path - the exact false negative
-        /// this phase exists to rule out.
+        /// RESOLVED input state (InputDispatcher.cs:1050). Tick advances the phase (authors the mask) then
+        /// PublishLocomotionIntent ships it the same driver tick; LateFrame CaptureState folds the override
+        /// after that. SampleVerbSweepObservables still runs at the START of the phase body, so it reads the
+        /// prior frame's resolved state - a mask written on step k is first observable on step k+1, and a
+        /// stable edge needs the bit held through step k+1. A one-step-per-group sweep would drop each bit
+        /// before its arrival could be observed and would report all fifteen verbs dead on a healthy path.
         ///
         /// The mask is ASSIGNED, never OR-ed, so entering a new group drops the previous group's bits in the
         /// same step. That is deliberate: the drop is what makes the next press of an already-pressed bit a
@@ -4075,7 +4107,7 @@ namespace Hecton8.EditorTools.Diagnostics
 
             if (step >= VerbSweepStepCount)
             {
-                _intent = default;
+                // Intent clear deferred to post-publish after EnterPhase(Done).
                 FlushVerbSweepLog(false);
 
                 // HoldYield, not a bare Completed. The sweep is a fixed-length hold, so reaching its last step
