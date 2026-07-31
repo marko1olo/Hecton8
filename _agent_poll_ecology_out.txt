@@ -1,70 +1,30 @@
-utc=2026-07-30T21:37:15.702195+00:00
-meta={
-  "pid": 34504,
-  "log": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\headless_smoke_20260731_p0_fo_lock_drain_20260730_213321.log",
-  "result": "C:\\hades\\Hecton8\\Docs\\AgentLogs\\HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json",
-  "startedUtc": "2026-07-30T21:33:22.864551+00:00",
-  "head": "411715153e3d617bb854938ff27b32c97739ba6f"
+poll start max_wait=1200s interval=25s pid=21516 log=C:\hades\Hecton8\Docs\AgentLogs\headless_smoke_20260731_p0_ecology_ready_20260731_014953.log
+t=0s unity_alive=True result=False log_sz=154448 hits={'error CS': 0, '[HEADLESS]': 4, 'ecology ready': 0, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=25s unity_alive=True result=False log_sz=256988 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=50s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=75s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=100s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=125s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=150s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=175s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=200s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=225s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=250s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=275s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=300s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=325s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=350s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=375s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=400s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=425s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=450s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=475s unity_alive=True result=False log_sz=257030 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+t=500s unity_alive=True result=True log_sz=260726 hits={'error CS': 0, '[HEADLESS]': 5, 'ecology ready': 1, 'ecology wait clock armed': 0, 'ecology wait progress': 0, 'BOOTSTRAP_TIMEOUT': 0, 'runtime lanes registered': 1, 'GameReady': 0, 'Compilation failed': 0, 'fail exitCode': 0, 'complete exitCode': 0}
+RESULT_RAW {"agent":"HEADLESS_SIMULATION_RUNNER","status":"BATCH_TIMEOUT","exitCode":2,"source":"HeadlessSimulationBatchRunner"}
+RESULT_JSON {
+  "agent": "HEADLESS_SIMULATION_RUNNER",
+  "status": "BATCH_TIMEOUT",
+  "exitCode": 2,
+  "source": "HeadlessSimulationBatchRunner"
 }
-=== unity procs ===
-��� ��ࠧ�                     PID ��� ��ᨨ          � ᥠ��       ������
-========================= ======== ================ =========== ============
-Unity.exe                    34504 Console                    1 4�991�788 ��
-Unity.exe                    32076 Console                    1 1�854�928 ��
-result_exists=False
-runner_status=2026-07-30T21:35:12.2266785Z started
-latest_log=headless_smoke_20260731_p0_fo_lock_drain_20260730_213321.log size=532650
-key_hits=22
-4161|Opening scene 'Assets/_Project/Scenes/00_BOOTSTRAP.unity'
-4162|Loaded scene 'Assets/_Project/Scenes/00_BOOTSTRAP.unity'
-6041|[GameBootstrapper-DEBUG] InitializeSceneActivatePhaseAsync: activeScene=00_BOOTSTRAP headless=True
-6077|[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached + PublishGameReady on bootstrap
-6113|[HEADLESS] ecology wait clock armed (GameReady)
-6121|Hecton8.QA.Headless.HeadlessSimulationRunner:TryArmEcologyWaitClock () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:663)
-6126|[HEADLESS] ecology wait progress t=0.0s ecoNull=0 ecoInit=1 foHasOrigin=1 foShift=0 foPhysicsPause=0 foLock=0 foPendingScenes=0 foTargetsDirty=0 foBarrier=0 dispBootstrapLocked=0
-6134|Hecton8.QA.Headless.HeadlessSimulationRunner:MaybeLogEcologyWaitProgress () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:723)
-6152|[HEADLESS] ecology wait progress t=15.0s ecoNull=0 ecoInit=1 foHasOrigin=1 foShift=0 foPhysicsPause=0 foLock=0 foPendingScenes=0 foTargetsDirty=0 foBarrier=0 dispBootstrapLocked=0
-6160|Hecton8.QA.Headless.HeadlessSimulationRunner:MaybeLogEcologyWaitProgress () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:723)
-6166|[HEADLESS] ecology wait progress t=30.0s ecoNull=0 ecoInit=1 foHasOrigin=1 foShift=0 foPhysicsPause=0 foLock=0 foPendingScenes=0 foTargetsDirty=0 foBarrier=0 dispBootstrapLocked=0
-6174|Hecton8.QA.Headless.HeadlessSimulationRunner:MaybeLogEcologyWaitProgress () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:723)
-6179|[HEADLESS] ecology wait progress t=45.0s ecoNull=0 ecoInit=1 foHasOrigin=1 foShift=0 foPhysicsPause=0 foLock=0 foPendingScenes=0 foTargetsDirty=0 foBarrier=0 dispBootstrapLocked=0
-6187|Hecton8.QA.Headless.HeadlessSimulationRunner:MaybeLogEcologyWaitProgress () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:723)
-6192|[HEADLESS] ecology wait progress t=60.1s ecoNull=0 ecoInit=1 foHasOrigin=1 foShift=0 foPhysicsPause=0 foLock=0 foPendingScenes=0 foTargetsDirty=0 foBarrier=0 dispBootstrapLocked=0
-6200|Hecton8.QA.Headless.HeadlessSimulationRunner:MaybeLogEcologyWaitProgress () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:723)
-6205|[HEADLESS] ecology wait progress t=75.0s ecoNull=0 ecoInit=1 foHasOrigin=1 foShift=0 foPhysicsPause=0 foLock=0 foPendingScenes=0 foTargetsDirty=0 foBarrier=0 dispBootstrapLocked=0
-6213|Hecton8.QA.Headless.HeadlessSimulationRunner:MaybeLogEcologyWaitProgress () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:723)
-6218|[HEADLESS] ecology wait progress t=90.0s ecoNull=0 ecoInit=1 foHasOrigin=1 foShift=0 foPhysicsPause=0 foLock=0 foPendingScenes=0 foTargetsDirty=0 foBarrier=0 dispBootstrapLocked=0
-6226|Hecton8.QA.Headless.HeadlessSimulationRunner:MaybeLogEcologyWaitProgress () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:723)
-6231|[HEADLESS] ecology wait progress t=105.0s ecoNull=0 ecoInit=1 foHasOrigin=1 foShift=0 foPhysicsPause=0 foLock=0 foPendingScenes=0 foTargetsDirty=0 foBarrier=0 dispBootstrapLocked=0
-6239|Hecton8.QA.Headless.HeadlessSimulationRunner:MaybeLogEcologyWaitProgress () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:723)
-=== log_tail ===
-Hecton8.QA.Headless.HeadlessSimulationRunner:Update () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:267)
-
-(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1294)
-
-[HEADLESS] ecology wait progress t=90.0s ecoNull=0 ecoInit=1 foHasOrigin=1 foShift=0 foPhysicsPause=0 foLock=0 foPendingScenes=0 foTargetsDirty=0 foBarrier=0 dispBootstrapLocked=0
-UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
-UnityEngine.StackTraceUtility:ExtractStackTrace ()
-UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
-UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
-UnityEngine.Logger:Log (UnityEngine.LogType,object)
-UnityEngine.Debug:LogWarning (object)
-Hecton8.QA.Headless.HeadlessSimulationRunner:LogRunnerLifecycle (string) (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:1294)
-Hecton8.QA.Headless.HeadlessSimulationRunner:MaybeLogEcologyWaitProgress () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:723)
-Hecton8.QA.Headless.HeadlessSimulationRunner:Update () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:267)
-
-(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1294)
-
-[HEADLESS] ecology wait progress t=105.0s ecoNull=0 ecoInit=1 foHasOrigin=1 foShift=0 foPhysicsPause=0 foLock=0 foPendingScenes=0 foTargetsDirty=0 foBarrier=0 dispBootstrapLocked=0
-UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
-UnityEngine.StackTraceUtility:ExtractStackTrace ()
-UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
-UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
-UnityEngine.Logger:Log (UnityEngine.LogType,object)
-UnityEngine.Debug:LogWarning (object)
-Hecton8.QA.Headless.HeadlessSimulationRunner:LogRunnerLifecycle (string) (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:1294)
-Hecton8.QA.Headless.HeadlessSimulationRunner:MaybeLogEcologyWaitProgress () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:723)
-Hecton8.QA.Headless.HeadlessSimulationRunner:Update () (at Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:267)
-
-(Filename: Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs Line: 1294)
-
+DoD=FAIL status=BATCH_TIMEOUT ecologySampledDays=0 timeDilationDelivered=0
