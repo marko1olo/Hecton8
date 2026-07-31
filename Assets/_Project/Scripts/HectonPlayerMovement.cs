@@ -5477,27 +5477,26 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            // L14: sticky false -> TryRegister once. sticky true -> leave registered.
-            // Do NOT Unregister+Register every Ensure: WorldDriver calls Ensure every settle/swim
-            // tick; thrash would drop HPM from the fixed lane mid-hold. RegistryBucket.TryRegister
-            // returns false when Contains (not idempotent-true), so re-call alone cannot heal a
-            // missing entry either - membership loss is rare; SD L14 no longer bootstrap-skips
-            // Player lane, so once registered FixedTick runs for hop2/Sample/intent.
+            // L15: sticky alone is insufficient. Soft-reset / dispatcher lane Clear can leave
+            // GlobalRegistry containing HPM while the Player fixed lane does not (dual-register
+            // desync). WorldDriver calls Ensure every settle/swim tick — do NOT Unregister+
+            // Register thrash; instead verify actual lane membership and re-TryRegister when
+            // sticky is false OR lane is missing. GR L15 heals desync when global Contains.
+            // FixedTick on Player lane is the only path to hop2 (GetState) + movementIntent01.
+            if (_registeredTick && !SystemDispatcher.GetLane(PriorityLayer.Player).Contains(this))
+                _registeredTick = false;
             if (!_registeredTick)
-            {
                 _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
-            }
 
+            if (_registeredFixedTick && !SystemDispatcher.GetFixedLane(PriorityLayer.Player).Contains(this))
+                _registeredFixedTick = false;
             if (!_registeredFixedTick)
-            {
                 _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
-            }
 
-
+            if (_registeredColdTick && !SystemDispatcher.GetColdLane(PriorityLayer.Player).Contains(this))
+                _registeredColdTick = false;
             if (!_registeredColdTick)
-            {
                 _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
-            }
 
             TryRegisterLateFrameTickable();
 

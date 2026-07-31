@@ -6477,12 +6477,19 @@ namespace Hecton8.Core
 
             if (!TryEnsureDispatcherRegistration())
                 return false;
-            if (!_updatables.TryRegister(item))
+
+            // L15: dual-register heal (same pattern as TryRegisterFixedTickable).
+            bool addedToGlobal = _updatables.TryRegister(item);
+            if (!addedToGlobal && !_updatables.Contains(item))
                 return false;
+
+            if (SystemDispatcher.GetLane(layer).Contains(item))
+                return true;
 
             if (!SystemDispatcher.Register(item, layer))
             {
-                _updatables.Unregister(item);
+                if (addedToGlobal)
+                    _updatables.Unregister(item);
                 return false;
             }
 
@@ -6548,12 +6555,25 @@ namespace Hecton8.Core
 
             if (!TryEnsureDispatcherRegistration())
                 return false;
-            if (!_fixedTickables.TryRegister(item))
+
+            // L15: dual-register heal. RegistryBucket.TryRegister returns false when
+            // Contains — previously that aborted BEFORE SystemDispatcher.Register, so a
+            // desync (global bucket has item, fixed lane cleared / never healed) left the
+            // owner permanently off the dispatch path. Soft-reset / lane Clear can create
+            // that split. If global already contains, still ensure the dispatcher lane.
+            bool addedToGlobal = _fixedTickables.TryRegister(item);
+            if (!addedToGlobal && !_fixedTickables.Contains(item))
                 return false;
+
+            if (SystemDispatcher.GetFixedLane(layer).Contains(item))
+                return true;
 
             if (!SystemDispatcher.Register(item, layer))
             {
-                _fixedTickables.Unregister(item);
+                // Only roll back a registration we just added; do not strip a pre-existing
+                // global entry that may still be valid for another lane heal attempt.
+                if (addedToGlobal)
+                    _fixedTickables.Unregister(item);
                 return false;
             }
 
@@ -6619,12 +6639,19 @@ namespace Hecton8.Core
 
             if (!TryEnsureDispatcherRegistration())
                 return false;
-            if (!_coldTickables.TryRegister(item))
+
+            // L15: dual-register heal (same pattern as TryRegisterFixedTickable).
+            bool addedToGlobal = _coldTickables.TryRegister(item);
+            if (!addedToGlobal && !_coldTickables.Contains(item))
                 return false;
+
+            if (SystemDispatcher.GetColdLane(layer).Contains(item))
+                return true;
 
             if (!SystemDispatcher.Register(item, layer))
             {
-                _coldTickables.Unregister(item);
+                if (addedToGlobal)
+                    _coldTickables.Unregister(item);
                 return false;
             }
 
