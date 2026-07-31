@@ -1,0 +1,333 @@
+=== SystemDispatcher symbol hits ===
+--- RequestHeadlessTimeDilation (1) ---
+1742|        public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+--- ConsumeFrameTimeDilationScalar (2) ---
+4995|        private float ConsumeFrameTimeDilationScalar()
+5210|                float frameDilationScalar = ConsumeFrameTimeDilationScalar();
+--- SimulationPaused (7) ---
+629|        public bool SimulationPaused => _simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon;
+1762|            if (SimulationPaused)
+1976|            dilationSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+1985|            visualSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+4678|            if (SimulationPaused)
+5587|            if (!SimulationPaused)
+6031|            bool paused = dispatcher != null && dispatcher.SimulationPaused;
+--- IsOriginShiftBootstrapLocked (6) ---
+617|        internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+4682|            if (IsOriginShiftBootstrapLocked || IsOriginShiftFrameLockedForCurrentFrame)
+5230|                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+5246|                if (IsOriginShiftBootstrapLocked)
+5251|                    if (IsOriginShiftBootstrapLocked)
+5517|            if (IsOriginShiftBootstrapLocked)
+--- IsOriginShiftFrameLockedForCurrentFrame (6) ---
+619|        internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == CurrentFrameIndex;
+4682|            if (IsOriginShiftBootstrapLocked || IsOriginShiftFrameLockedForCurrentFrame)
+5231|                                        IsOriginShiftFrameLockedForCurrentFrame ||
+5255|                if (IsOriginShiftFrameLockedForCurrentFrame)
+5306|                            if (IsOriginShiftFrameLockedForCurrentFrame)
+5519|            if (IsOriginShiftFrameLockedForCurrentFrame)
+--- RunDispatcherUpdate (4) ---
+868|                RunDispatcherUpdateFromPlayerLoop);
+986|        private static void RunDispatcherUpdateFromPlayerLoop()
+992|            dispatcher.RunDispatcherUpdate();
+5158|        private void RunDispatcherUpdate()
+--- RunFrostTick (2) ---
+5324|                RunFrostTick(deltaTime, blockGameplayLanes);
+6902|        private void RunFrostTick(float deltaTime, bool blockGameplayLanes)
+--- RunFastTick (2) ---
+5318|                RunFastTick(deltaTime, blockGameplayLanes);
+6365|        private void RunFastTick(float deltaTime, bool blockGameplayLanes)
+--- FrostTickIntervalSeconds (4) ---
+75|        private const double FrostTickIntervalSeconds = 5.0;
+4517|                (float)FrostTickIntervalSeconds,
+6908|            if (_frostTickAccumulator < FrostTickIntervalSeconds)
+6911|            _frostTickAccumulator -= FrostTickIntervalSeconds;
+--- aupPreShiftPause (11) ---
+505|        private uint _aupPreShiftPauseSequence;
+506|        private uint _aupPreShiftPauseFrameId;
+1814|            _aupPreShiftPauseSequence = shiftFrameId;
+1815|            _aupPreShiftPauseFrameId = ResolveCurrentDispatcherFrameId();
+2092|            _aupPreShiftPauseSequence = 0u;
+2093|            _aupPreShiftPauseFrameId = 0u;
+4680|            if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+4709|            entry.AupPreShiftSequence = _aupPreShiftPauseSequence;
+5232|                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+5258|                if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+5521|                _dataVault?.UnlockAllocationsAfterAupShift(_aupPreShiftPauseSequence);
+--- _headlessTimeDilation (0) ---
+--- Time.timeScale (0) ---
+--- MaxCadenceSubstepsPerFrame (11) ---
+76|        private const int MaxCadenceSubstepsPerFrame = 4;
+89|        //   Fast/unscaled-fast lane: the clamp trips at (MaxCadenceSubstepsPerFrame + 1) intervals, and the
+99|        private const double MaxClampFreeCadenceStepSeconds = FastTickIntervalSeconds * MaxCadenceSubstepsPerFrame;
+6372|            while (_fastTickAccumulator >= FastTickIntervalSeconds && substeps < MaxCadenceSubstepsPerFrame)
+6406|            if (substeps == MaxCadenceSubstepsPerFrame && _fastTickAccumulator >= FastTickIntervalSeconds)
+6429|            while (_unscaledFastTickAccumulator >= FastTickIntervalSeconds && substeps < MaxCadenceSubstepsPerFrame)
+6460|            if (substeps == MaxCadenceSubstepsPerFrame && _unscaledFastTickAccumulator >= FastTickIntervalSeconds)
+6482|            while (_slowTickAccumulator >= slowTickIntervalSeconds && substeps < MaxCadenceSubstepsPerFrame)
+6528|            if (substeps == MaxCadenceSubstepsPerFrame && _slowTickAccumulator >= slowTickIntervalSeconds)
+6852|            while (_coldTickAccumulator >= ColdTickIntervalSeconds && substeps < MaxCadenceSubstepsPerFrame)
+6888|            if (substeps == MaxCadenceSubstepsPerFrame && _coldTickAccumulator >= ColdTickIntervalSeconds)
+
+=== RunDispatcherUpdate region ===
+        private void RunDispatcherUpdate()
+        {
+            AdvanceDispatcherFrameId();
+            FrameTimeWatchdog.TickMathPrecisionTransition(CurrentFrameIndex);
+#if UNITY_EDITOR
+            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherUpdate);
+#endif
+            using (_updateProfilerMarker.Auto())
+            {
+#if UNITY_EDITOR
+                NativeAllocationTrackerRuntimeBridge.NotifyDispatcherHeartbeat();
+#endif
+                ApplyPendingCoreTickDilationRestore();
+                if (BootstrapStatus.TryTriggerSafeHalt())
+                    BootstrapBiosErrorOverlay.Show(BootstrapStatus.SafeHaltDisplayMessage);
+
+                long dispatcherTickStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                long preSimulationStartTimestamp = dispatcherTickStartTimestamp;
+                HectonXRRuntimeState.RefreshFrameState(CurrentFrameIndex);
+                float unscaledDeltaTime = ResolveDispatcherUnscaledDeltaTime();
+                if (!math.isfinite(unscaledDeltaTime) || unscaledDeltaTime < 0f)
+                    unscaledDeltaTime = 0f;
+                bool previousFrameMissedBudget = CurrentFrameUnscaledDeltaTime > JobAdmissionFrameBudgetMissThresholdSeconds;
+                CurrentFrameUnscaledDeltaTime = unscaledDeltaTime;
+                HomeostasisBrain.PreSimulationTick(unscaledDeltaTime);
+
+                // Self-heal before reading. The cold resolve in InitializeService runs while the registry's
+                // Input slot is still empty, and first registration notifies nobody, so without this the
+                // guard below is false for the entire session and the input tick never runs at all.
+                EnsureInputDeterminismResolved();
+                IInputDeterminismService inputDeterminism = _inputDeterminism;
+                if (inputDeterminism != null && inputDeterminism.IsInitialized)
+                    inputDeterminism.PreSimulationInputTick(unscaledDeltaTime);
+                SignalCorridorRuntime.PreSimulationHeartbeat();
+                if (SignalBusRegistry.IsSimulationHalted)
+                    return;
+
+                float globalQualityWeight01 = RefreshScalabilityQualityWeight();
+                RecordMemoryBlackBoxHeartbeat();
+                RunPreSimulationMemoryDefrag(unscaledDeltaTime);
+                IJobAdmissionService jobAdmission = _jobAdmission;
+                byte globalQualityWeightByte = EncodeGlobalQualityWeightByte(globalQualityWeight01);
+                if (jobAdmission != null && jobAdmission.IsInitialized)
+                {
+                    jobAdmission.Refill(
+                        globalQualityWeightByte,
+                        unscaledDeltaTime,
+                        previousFrameMissedBudget);
+                }
+                Hecton8.Modding.ModCommandDispatcher.DrainPreSimulation();
+                DrainSimulationPauseSignals();
+                DrainAdrenalineDilationSignals(unscaledDeltaTime);
+                float frameDilationScalar = ConsumeFrameTimeDilationScalar();
+                if (!math.isfinite(frameDilationScalar) || frameDilationScalar < 0f)
+                    frameDilationScalar = 0f;
+
+                float deltaTime = unscaledDeltaTime * frameDilationScalar;
+                if (!math.isfinite(deltaTime) || deltaTime < 0f)
+                    deltaTime = 0f;
+                CurrentFrameDeltaTime = deltaTime;
+                DispatcherTimingDTO masterTiming = BuildMasterDispatcherTiming(deltaTime, unscaledDeltaTime);
+                uint dispatcherFrameId = masterTiming.FrameId;
+                RunMasterPreSimulationPhase(in masterTiming);
+                UpdateH8TimeState(deltaTime, unscaledDeltaTime);
+                PublishTimeDilationState(0u);
+                IDataVault dispatcherDataVault = _dataVault;
+                if (dispatcherDataVault == null && TryResolveCachedDataVault(out dispatcherDataVault))
+                    _dataVault = dispatcherDataVault;
+                RecordDispatcherBlackBoxHeartbeat(dispatcherDataVault);
+                float preSimulationCostMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - preSimulationStartTimestamp) * 1000.0 /
+                                                    System.Diagnostics.Stopwatch.Frequency);
+                ISimulationBucketer simulationBucketer = _simulationBucketer;
+                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+                                        IsOriginShiftFrameLoc
+
+=== ConsumeFrameTimeDilationScalar region ===
+private float ConsumeFrameTimeDilationScalar()
+        {
+            if (_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon)
+                return 0f;
+
+            if (_coreTickDilationFramesRemaining <= 0)
+                return _timeDilationScalar;
+
+            float scalar = _coreTickDilationScalar;
+            _coreTickDilationFramesRemaining--;
+            if (_coreTickDilationFramesRemaining == 0)
+            {
+                _coreTickDilationScalar = 1f;
+                _coreTickDilationRestorePending = true;
+            }
+
+            return scalar;
+        }
+
+        private float ResolvePauseRestoreScalar()
+        {
+            float restoreScalar = _coreTickDilationFramesRemaining > 0 || _coreTickDilationRestorePending
+                ? _coreTickDilationRestoreScalar
+                : _timeDilationScalar;
+            return math.isfinite(restoreScalar)
+                ? math.max(TimeDilationPausedEpsilon, restoreScalar)
+                : 1f;
+        }
+
+        private void ClearCoreTickDilationBurst()
+        {
+            _coreTickDilationScalar = 1f;
+            _coreTickDilationRestoreScalar = 1f;
+            _coreTickDilationFramesRemaining = 0;
+            _coreTickDilationReasonHash = 0
+
+=== RequestHeadlessTimeDilation region ===
+public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+        {
+            ClearCoreTickDilationBurst();
+            ClearAdrenalineDilation();
+            SetTimeDilationScalar(
+                scalar,
+                TimeDilationMinimumScalar,
+                HeadlessTimeDilationMaximumScalar,
+                reasonHash,
+                publishImmediate: true);
+        }
+
+        /// <summary>
+        /// Requests an exact frame-count core tick dilation burst.
+        /// </summary>
+        public void RequestCoreTickDilation(float scalar, int frameCount, uint reasonHash = 0u)
+        {
+            if (frameCount <= 0)
+                return;
+
+            if (SimulationPaused)
+                return;
+
+            float safeScalar = math.isfinite(scalar)
+                ? math.clamp(scalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+                : 1f;
+
+            if (_coreTickDilationRestorePending)
+            {
+                _coreTickDilationRestorePending = false;
+            }
+            else if (_coreTickDilationFramesRemaining <= 0)
+            {
+                _coreTickDilationRestoreScalar = _timeDilationScalar;
+            }
+
+            _coreTickDilationScalar = safeScalar;
+            _coreTickDilationFramesRemaining = math.max(_coreTickDilationFramesRemaining, frameCount);
+            _coreTickDilationReasonHash = reasonHash;
+            SetTimeDilationScalar(safeScalar, reasonHash, publishImmediate: true);
+        }
+
+        public void SetThermalCriticalSlow
+
+=== RunFrostTick region ===
+private void RunFrostTick(float deltaTime, bool blockGameplayLanes)
+        {
+            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
+                return;
+
+            _frostTickAccumulator += deltaTime;
+            if (_frostTickAccumulator < FrostTickIntervalSeconds)
+                return;
+
+            _frostTickAccumulator -= FrostTickIntervalSeconds;
+
+            using (_frostTickProfilerMarker.Auto())
+            {
+                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                {
+                    if (SignalBusRegistry.IsSimulationHalted)
+                        return;
+
+                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+                        continue;
+
+                    RegistryBucket<IFrostTickable> lane = _frostPriorityLanes[laneIndex];
+#if UNITY_EDITOR
+                    lane.ValidateNoDestroyedEntriesDebug(nameof(IFrostTickable));
+#endif
+                    using (_frostLaneProfilerMarkers[laneIndex].Auto())
+                    {
+                        int count = lane.Count;
+
+                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                        {
+                            lane.GetAt(itemIndex).FrostTick();
+                            if (SignalBusRegistry.IsSimulationHalted)
+                                return;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void EnsureDispatcherSurfaceProbeBuffers()
+        {
+            if (!TryResolveCachedDataVault(out IDataVault dataVault))
+                return;
+
+            TryEnsureDispatcherVaultBuffer(
+                dataVault,
+                ref _scheduledDispatcherSurfaceProbeHitsHandle,
+                BufferID.DispatcherRaycastHits,
+                MaxQueuedDispatcherSurfaceProbes,
+                NativeArrayOptions.ClearMemory,
+                out NativeArray<KinematicSurfaceHit> _);
+        }
+
+        private static bool TryResol
+
+=== HeadlessSimulationBatchRunner timeout ===
+--- BATCH_TIMEOUT (4) ---
+32|        // HasTimedOut -> WriteFallbackResult(2, "BATCH_TIMEOUT") -> RequestStop(2, "timeout") was already
+39|        // therefore guaranteed to end in BATCH_TIMEOUT with roughly zero days simulated.
+270|                WriteFallbackResult(2, "BATCH_TIMEOUT");
+610|        /// the full `420 + simulatedSpan/4`, and writes `BATCH_TIMEOUT` over a run that had already
+--- timeout (4) ---
+32|        // HasTimedOut -> WriteFallbackResult(2, "BATCH_TIMEOUT") -> RequestStop(2, "timeout") was already
+247|        ///    result file removed it entirely: infinite 0.25 s polling, no timeout, Unity slot held. The
+271|                RequestStop(2, "timeout");
+618|        /// It remains good practice, but it is no longer the difference between a verdict and a timeout.
+--- Timeout (6) ---
+60|        private const double TimeoutFixedSeconds = 420.0;
+62|        private const double TimeoutCeilingSeconds = 6.0 * 60.0 * 60.0;
+64|        private static double ResolveTimeoutSeconds()
+67|            double budget = TimeoutFixedSeconds + (simulatedSpan / PessimisticDilation);
+68|            return budget > TimeoutCeilingSeconds ? TimeoutCeilingSeconds : budget;
+310|            return EditorApplication.timeSinceStartup - startTime > ResolveTimeoutSeconds();
+--- PollRunState (3) ---
+215|            PollRunState();
+250|        private static void PollRunState()
+357|        /// The latch lives here as well as in PollRunState's branch order so the "requested once" property is
+
+=== ITickDispatcher / RequestHeadlessTimeDilation callers ===
+Assets/_Project/Scripts/ITickable.cs:70|bool SimulationPaused { get; }
+Assets/_Project/Scripts/ITickable.cs:76|void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u);
+Assets/_Project/Scripts/Core/SceneRuntimeService.cs:1070|if (dispatcher != null && dispatcher.SimulationPaused)
+Assets/_Project/Scripts/Core/SystemDispatcher.cs:629|public bool SimulationPaused => _simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon;
+Assets/_Project/Scripts/Core/SystemDispatcher.cs:1742|public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+Assets/_Project/Scripts/Core/SystemDispatcher.cs:1976|dilationSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+Assets/_Project/Scripts/Core/SystemDispatcher.cs:1985|visualSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+Assets/_Project/Scripts/Core/SystemDispatcher.cs:6031|bool paused = dispatcher != null && dispatcher.SimulationPaused;
+Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:1883|_dispatcher?.RequestHeadlessTimeDilation(10f, ReasonGhostReplayHash);
+Assets/_Project/Scripts/Core/Signals/GlobalSignals.State.cs:224|public static bool SimulationPaused => SignalBridgeState.SimulationPaused;
+Assets/_Project/Scripts/Core/Signals/SignalBridgeRoutes.cs:57|public static bool SimulationPaused => SignalBridgeState.SimulationPaused;
+Assets/_Project/Scripts/Core/Signals/SignalBridgeState.cs:30|public static bool SimulationPaused => Volatile.Read(ref s_simulationPaused) != 0;
+Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs:222|bool simulationPaused = SimulationSignalRoute.SimulationPaused;
+Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs:1837|if (dispatcher != null && dispatcher.SimulationPaused)
+Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityRuntime.cs:1553|if (dispatcher != null && dispatcher.SimulationPaused)
+Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:471|GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs:964|dispatcher.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+Assets/_Project/Scripts/Tools/PauseSystemVerifier.cs:268|bool simulationPaused = IsSimulationPaused();
+Assets/_Project/Scripts/Tools/PauseSystemVerifier.cs:286|bool simulationResumed = !IsSimulationPaused();
+Assets/_Project/Scripts/Tools/PauseSystemVerifier.cs:330|return _pauseMenu != null && _pauseMenu.IsOpen && IsSimulationPaused();
+Assets/_Project/Scripts/Tools/PauseSystemVerifier.cs:336|return dispatcher != null ? dispatcher.SimulationPaused : SimulationSignalRoute.SimulationPaused;
+Assets/_Project/Scripts/Tools/StateRecoveryVerifier.cs:437|return dispatcher != null ? dispatcher.SimulationPaused : SimulationSignalRoute.SimulationPaused;
+Assets/_Project/Scripts/UI/PauseMenuAudioIntegration.cs:154|return dispatcher != null ? dispatcher.SimulationPaused : SimulationSignalRoute.SimulationPaused;

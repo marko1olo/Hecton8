@@ -1,0 +1,710 @@
+
+=== RunDispatcherUpdate barrier+ticks (5220-5360) ===
+5220|                RunMasterPreSimulationPhase(in masterTiming);
+5221|                UpdateH8TimeState(deltaTime, unscaledDeltaTime);
+5222|                PublishTimeDilationState(0u);
+5223|                IDataVault dispatcherDataVault = _dataVault;
+5224|                if (dispatcherDataVault == null && TryResolveCachedDataVault(out dispatcherDataVault))
+5225|                    _dataVault = dispatcherDataVault;
+5226|                RecordDispatcherBlackBoxHeartbeat(dispatcherDataVault);
+5227|                float preSimulationCostMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - preSimulationStartTimestamp) * 1000.0 /
+5228|                                                    System.Diagnostics.Stopwatch.Frequency);
+5229|                ISimulationBucketer simulationBucketer = _simulationBucketer;
+5230|                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+5231|                                        IsOriginShiftFrameLockedForCurrentFrame ||
+5232|                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+5233|                if (simulationBucketer != null && simulationBucketer.IsInitialized)
+5234|                {
+5235|                    simulationBucketer.ReportPreSimulationCostMs(preSimulationCostMs);
+5236|                    simulationBucketer.AdvanceFrame(
+5237|                        globalQualityWeightByte,
+5238|                        unscaledDeltaTime,
+5239|                        jobAdmission != null ? jobAdmission.CriticalDebtFrameCount : 0,
+5240|                        aupBarrierActive);
+5241|                    SimulationBucketFrameState bucketFrameState = simulationBucketer.CaptureFrameState();
+5242|                    PublishSimulationBucketSync(in bucketFrameState);
+5243|                    PublishFramePacingWarningIfNeeded(in bucketFrameState);
+5244|                }
+5245|
+5246|                if (IsOriginShiftBootstrapLocked)
+5247|                {
+5248|                    if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
+5249|                        return;
+5250|
+5251|                    if (IsOriginShiftBootstrapLocked)
+5252|                        return;
+5253|                }
+5254|
+5255|                if (IsOriginShiftFrameLockedForCurrentFrame)
+5256|                    return;
+5257|
+5258|                if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+5259|                {
+5260|                    RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
+5261|                    return;
+5262|                }
+5263|
+5264|                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+5265|                RunMasterSimulationPhase(in masterTiming);
+5266|#if UNITY_EDITOR
+5267|                long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
+5268|#endif
+5269|                _foveatedSimulationManager.BeginDispatcherFrame(deltaTime);
+5270|#if UNITY_EDITOR
+5271|                EndDispatcherPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
+5272|#endif
+5273|                PredatorCognitionDomain.BeginDispatcherFrame(CurrentFrameIndex);
+5274|                bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&
+5275|                                          BootstrapState.HasActiveInstance &&
+5276|                                          !BootstrapState.IsGameReady;
+5277|                long bucketWorkStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+5278|
+5279|                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+5280|                {
+5281|                    if (SignalBusRegistry.IsSimulationHalted)
+5282|                        return;
+5283|
+5284|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+5285|                        continue;
+5286|
+5287|                    RegistryBucket<IUpdatable> lane = _priorityLanes[laneIndex];
+5288|#if UNITY_EDITOR
+5289|                    lane.ValidateNoDestroyedEntriesDebug(nameof(IUpdatable));
+5290|#endif
+5291|                    using (_updateLaneProfilerMarkers[laneIndex].Auto())
+5292|                    {
+5293|                        int count = lane.Count;
+5294|
+5295|                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+5296|                        {
+5297|                            IUpdatable updatable = lane.GetAt(itemIndex);
+5298|                            if (!_foveatedSimulationManager.TryAdvanceTick(updatable, deltaTime, out float effectiveDeltaTime))
+5299|                                continue;
+5300|
+5301|                            updatable.Tick(effectiveDeltaTime);
+5302|                            _foveatedSimulationManager.NotifyTickCompleted(updatable);
+5303|                            if (SignalBusRegistry.IsSimulationHalted)
+5304|                                return;
+5305|
+5306|                            if (IsOriginShiftFrameLockedForCurrentFrame)
+5307|                                return;
+5308|                        }
+5309|                    }
+5310|                }
+5311|
+5312|                if (SignalBusRegistry.IsSimulationHalted)
+5313|                    return;
+5314|
+5315|                CombatDamageRuntime.FrameTick(deltaTime);
+5316|                PredatorCognitionDomain.ScheduleFrameEvaluation(CurrentFrameIndex);
+5317|                _foveatedSimulationManager.ScheduleFrameJobs();
+5318|                RunFastTick(deltaTime, blockGameplayLanes);
+5319|                RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+5320|                RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+5321|                RunBucketedSlowTick(blockGameplayLanes);
+5322|                RunSlowTick(deltaTime, blockGameplayLanes);
+5323|                RunColdTick(deltaTime, blockGameplayLanes);
+5324|                RunFrostTick(deltaTime, blockGameplayLanes);
+5325|                ScheduleDispatcherSurfaceProbes();
+5326|                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+5327|                RunMasterPostSimulationPhase(in masterTiming);
+5328|                IModdingBridge moddingBridge = _moddingBridgeProjectionRuntime;
+5329|                if (moddingBridge != null)
+5330|                    moddingBridge.ProjectPostSimulation();
+5331|                if (simulationBucketer != null)
+5332|                {
+5333|                    float activeBucketLoadMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - bucketWorkStartTimestamp) * 1000.0 /
+5334|                                                       System.Diagnostics.Stopwatch.Frequency);
+5335|                    simulationBucketer.ReportActiveBucketLoadMs(activeBucketLoadMs);
+5336|                    SimulationBucketFrameState bucketFrameState = simulationBucketer.CaptureFrameState();
+5337|                    PublishFramePacingWarningIfNeeded(in bucketFrameState);
+5338|                    CrashTelemetryBuffer.ReportSimulationBucketFrame(bucketFrameState);
+5339|                }
+5340|
+5341|                double tickOverheadMilliseconds =
+5342|                    (System.Diagnostics.Stopwatch.GetTimestamp() - dispatcherTickStartTimestamp) * 1000.0 /
+5343|                    System.Diagnostics.Stopwatch.Frequency;
+5344|                CrashTelemetryBuffer.ReportTimeDilationState(_timeDilationScalar, tickOverheadMilliseconds);
+5345|            }
+5346|        }
+5347|
+5348|        private void PublishSimulationBucketSync(in SimulationBucketFrameState frameState)
+5349|        {
+5350|            float alpha = math.isfinite(frameState.SimulationBucketInterpolationAlpha)
+5351|                ? math.saturate(frameState.SimulationBucketInterpolationAlpha)
+5352|                : 0f;
+5353|            _pendingSimulationBucketInterpolationAlpha = alpha;
+5354|            _hasPendingSimulationBucketInterpolationAlpha = true;
+5355|
+5356|            SimulationBucketSyncSignal signal = default;
+5357|            signal.InterpolationAlpha = alpha;
+5358|            signal.Frame = unchecked((uint)math.max(0, frameState.CurrentFrameCount));
+5359|            signal.ActiveSlowBucket = frameState.ActiveSlowBucket;
+5360|            signal.SlowBucketMask = frameState.SlowBucketMask;
+
+=== SetTimeDilationScalar vicinity 1930 (1930-2009) ===
+1930|        private void SetTimeDilationScalar(float scalar, uint reasonHash, bool publishImmediate)
+1931|        {
+1932|            SetTimeDilationScalar(
+1933|                scalar,
+1934|                TimeDilationMinimumScalar,
+1935|                TimeDilationMaximumScalar,
+1936|                reasonHash,
+1937|                publishImmediate);
+1938|        }
+1939|
+1940|        private void SetTimeDilationScalar(
+1941|            float scalar,
+1942|            float minimumScalar,
+1943|            float maximumScalar,
+1944|            uint reasonHash,
+1945|            bool publishImmediate)
+1946|        {
+1947|            float safeScalar = math.isfinite(scalar)
+1948|                ? math.clamp(scalar, minimumScalar, maximumScalar)
+1949|                : 1f;
+1950|            if (math.abs(_timeDilationScalar - safeScalar) <= 0.0001f)
+1951|                return;
+1952|
+1953|            _timeDilationScalar = safeScalar;
+1954|            _timeDilationSequence++;
+1955|            if (_timeDilationSequence == 0u)
+1956|                _timeDilationSequence = 1u;
+1957|
+1958|            if (publishImmediate)
+1959|                PublishTimeDilationState(reasonHash);
+1960|        }
+1961|
+1962|        private void PublishTimeDilationState(uint reasonHash)
+1963|        {
+1964|            if (_lastPublishedTimeDilationSequence == _timeDilationSequence)
+1965|                return;
+1966|
+1967|            _lastPublishedTimeDilationSequence = _timeDilationSequence;
+1968|            float scalar = _timeDilationScalar;
+1969|            uint frame = ResolveCurrentDispatcherFrameId();
+1970|            TimeDilationSignal dilationSignal = default;
+1971|            dilationSignal.Scalar = scalar;
+1972|            dilationSignal.UnscaledDeltaTime = CurrentFrameUnscaledDeltaTime;
+1973|            dilationSignal.Sequence = _timeDilationSequence;
+1974|            dilationSignal.Frame = frame;
+1975|            dilationSignal.ReasonHash = reasonHash;
+1976|            dilationSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+1977|            SimulationSignalRoute.TryQueueTimeDilation(in dilationSignal);
+1978|
+1979|            BulletTimeVisualSignal visualSignal = default;
+1980|            visualSignal.Intensity01 = math.saturate((BulletTimePostScalarThreshold - scalar) / BulletTimePostScalarThreshold);
+1981|            visualSignal.Scalar = scalar;
+1982|            visualSignal.Frame = frame;
+1983|            visualSignal.Sequence = _timeDilationSequence;
+1984|            visualSignal.QualityWeightBits = math.asuint(_globalQualityWeight01);
+1985|            visualSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+1986|            SimulationSignalRoute.TryQueueBulletTimeVisual(in visualSignal);
+1987|        }
+1988|
+1989|        private void DrainSimulationPauseSignals()
+1990|        {
+1991|            while (SignalBus<SimulationPauseSignal>.TryConsumeFrame(out SimulationPauseSignal signal))
+1992|            {
+1993|                if (signal.Paused == 0 && math.isfinite(signal.RestoreScalar) && signal.RestoreScalar > 0f)
+1994|                    _prePauseTimeDilationScalar = signal.RestoreScalar;
+1995|
+1996|                RequestSimulationPause(signal.Paused != 0, signal.SourceHash);
+1997|            }
+1998|        }
+1999|
+2000|        private void Awake()
+2001|        {
+2002|            if (ActiveRuntimeInstance == null)
+2003|                ActiveRuntimeInstance = this;
+2004|
+2005|            _runtimeGameplayBootstrapGateActive = Application.isPlaying;
+2006|            _slowTickAccumulator = 0f;
+2007|            _fixedStepAccumulator = 0f;
+2008|            _fastTickAccumulator = 0f;
+2009|            _coldTickAccumulator = 0f;
+
+=== SetTimeDilationScalar method ===
+private void SetTimeDilationScalar(float scalar, uint reasonHash, bool publishImmediate)
+        {
+            SetTimeDilationScalar(
+                scalar,
+                TimeDilationMinimumScalar,
+                TimeDilationMaximumScalar,
+                reasonHash,
+                publishImmediate);
+        }
+
+        private void SetTimeDilationScalar(
+            float scalar,
+            float minimumScalar,
+            float maximumScalar,
+            uint reasonHash,
+            bool publishImmediate)
+        {
+            float safeScalar = math.isfinite(scalar)
+                ? math.clamp(scalar, minimumScalar, maximumScalar)
+                : 1f;
+            if (math.abs(_timeDilationScalar - safeScalar) <= 0.0001f)
+                return;
+
+            _timeDilationScalar = safeScalar;
+            _timeDilationSequence++;
+            if (_timeDilationSequence == 0u)
+                _timeDilationSequence = 1u;
+
+            if (publishImmediate)
+                PublishTimeDilationState(reasonHash);
+        }
+
+        private void PublishTimeDilationState(uint reasonHash)
+        {
+            if (_lastPublishedTimeDilationSequence == _timeDilationSequence)
+                return;
+
+            _lastPublishedTimeDilationSequence = _timeDilationSequence;
+            float scalar = _timeDilationScalar;
+            uint frame = ResolveCurrentDispatcherFrameId();
+            TimeDilationSignal dilationSignal = default;
+            dilationSignal.Scalar = scalar;
+            dilationSignal.UnscaledDeltaTime = CurrentFrameUnscaledDeltaTime;
+            dilationSignal.Sequence = _timeDilationSequence;
+            dilationSignal.Frame = frame;
+            dilationSignal.ReasonHash = reasonHash;
+            dilationSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+            SimulationSignalRoute.TryQueueTimeDilation(in dilationSignal);
+
+            BulletTimeVisualSignal visualSignal = default;
+            visualSignal.Intensity01 = math.saturate((BulletTimePostScalarThreshold - scalar) / BulletTimePostScalarThreshold);
+            visualSignal.Scalar = scalar;
+            visualSignal.Frame = frame;
+            visualSignal.Sequence = _timeDilationSequence;
+            visualSignal.QualityWeightBits = math.asuint(_globalQualityWeight01);
+            visualSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+            SimulationSignalRoute.TryQueueBulletTimeVisual(in visualSignal);
+        }
+
+        private void DrainSimulationPauseSignals()
+        {
+            while (SignalBus<Simulati
+
+=== DrainSimulationPauseSignals ===
+private void DrainSimulationPauseSignals()
+        {
+            while (SignalBus<SimulationPauseSignal>.TryConsumeFrame(out SimulationPauseSignal signal))
+            {
+                if (signal.Paused == 0 && math.isfinite(signal.RestoreScalar) && signal.RestoreScalar > 0f)
+                    _prePauseTimeDilationScalar = signal.RestoreScalar;
+
+                RequestSimulationPause(signal.Paused != 0, signal.SourceHash);
+            }
+        }
+
+        private void Awake()
+        {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
+            _runtimeGameplayBootstrapGateActive = Application.isPlaying;
+            _slowTickAccumulator = 0f;
+            _fixedStepAccumulator = 0f;
+            _fastTickAccumulator = 0f;
+            _coldTickAccumulator = 0f;
+            _frostTickAccumulator = 0f;
+            _memoryDefragAccumulator = 0f;
+            _unscaledFastTickAccumulator = 0f;
+            _timeDilationScalar = 1f;
+            _prePauseTimeDilationScalar = 1f;
+            _coreTickDilationScalar = 1f;
+            _coreTickDilationRestoreScalar = 1f;
+            _coreTickDilationFramesRemaining = 0;
+            _coreTickDilationReasonHash = 0u;
+            ClearAdrenalineDilation();
+            _coreTickDilationRestorePending = false;
+            _simulationPaused = false;
+            _thermalCriticalSlowTickActive = false;
+            _timeSnapshot = default;
+            _dispatcherBlackBoxSequence = 0u;
+            _dispatcherBlackBoxViolationPublished = false;
+            CurrentFixedInterpolationAlpha = 0f;
+        }
+
+        private void OnEnable()
+        {
+            if (!TryClaimActiveRuntimeAfterReloadCold())
+                return;
+
+            _runtimeGameplayBootstrapGateActive = Application.isPlaying;
+            if (Application.isPlaying)
+                InitializeService();
+            else if (_serviceRegistered)
+                GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void OnDisable()
+        {
+   
+
+=== _simulationPaused / _timeDilationScalar writes ===
+492|private float _timeDilationScalar = 1f;
+621|public float TimeDilationScalar => _timeDilationScalar;
+629|public bool SimulationPaused => _simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon;
+1775|_coreTickDilationRestoreScalar = _timeDilationScalar;
+1800|_simulationPaused = true;
+1805|_simulationPaused = false;
+1950|if (math.abs(_timeDilationScalar - safeScalar) <= 0.0001f)
+1953|_timeDilationScalar = safeScalar;
+1968|float scalar = _timeDilationScalar;
+2013|_timeDilationScalar = 1f;
+2021|_simulationPaused = false;
+2086|_timeDilationScalar = 1f;
+2088|_simulationPaused = false;
+4700|entry.TimeDilationScalar = math.isfinite(_timeDilationScalar)
+4997|if (_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon)
+5085|float currentScalar = math.isfinite(_timeDilationScalar)
+5100|_adrenalineDilationStartScalar = math.isfinite(_timeDilationScalar)
+
+=== TimeDilation constants ===
+109|private const float TimeDilationMinimumScalar = 0f;
+110|private const float TimeDilationMaximumScalar = 4f;
+111|private const float HeadlessTimeDilationMaximumScalar = 100f;
+112|private const float TimeDilationPausedEpsilon = 0.0001f;
+144|private const float AdrenalineTargetTimeDilationScalar = 0.5f;
+629|public bool SimulationPaused => _simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon;
+1742|public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+1748|TimeDilationMinimumScalar,
+1749|HeadlessTimeDilationMaximumScalar,
+1766|? math.clamp(scalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+1934|TimeDilationMinimumScalar,
+1935|TimeDilationMaximumScalar,
+4701|? math.clamp(_timeDilationScalar, TimeDilationMinimumScalar, HeadlessTimeDilationMaximumScalar)
+4997|if (_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon)
+5020|? math.max(TimeDilationPausedEpsilon, restoreScalar)
+5086|? math.clamp(_timeDilationScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+5101|? math.clamp(_timeDilationScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+5141|? math.clamp(_adrenalineDilationRestoreScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+
+=== ShouldSkipLaneDuringBootstrap ===
+ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+                        continue;
+
+                    RegistryBucket<IUpdatable> lane = _priorityLanes[laneIndex];
+#if UNITY_EDITOR
+                    lane.ValidateNoDestroyedEntriesDebug(nameof(IUpdatable));
+#endif
+                    using (_updateLaneProfilerMarkers[laneIndex].Auto())
+                    {
+                        int count = lane.Count;
+
+                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                        {
+                            IUpdatable updatable = lane.GetAt(itemIndex);
+                            if (!_foveatedSimulationManager.TryAdvanceTick(updatable, deltaTime, out float effectiveDeltaTime))
+                                continue;
+
+                            updatable.Tick(effect
+
+=== blockGameplayLanes / master sim early returns ===
+5230|                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+5232|                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+5240|                        aupBarrierActive);
+5258|                if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+5260|                    RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
+5274|                bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&
+5284|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+5318|                RunFastTick(deltaTime, blockGameplayLanes);
+5319|                RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+5320|                RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+5321|                RunBucketedSlowTick(blockGameplayLanes);
+5322|                RunSlowTick(deltaTime, blockGameplayLanes);
+5323|                RunColdTick(deltaTime, blockGameplayLanes);
+5324|                RunFrostTick(deltaTime, blockGameplayLanes);
+
+=== ResolveDispatcherUnscaledDeltaTime ===
+ResolveDispatcherUnscaledDeltaTime();
+                if (!math.isfinite(unscaledDeltaTime) || unscaledDeltaTime < 0f)
+                    unscaledDeltaTime = 0f;
+                bool previousFrameMissedBudget = CurrentFrameUnscaledDeltaTime > JobAdmissionFrameBudgetMissThresholdSeconds;
+                CurrentFrameUnscaledDeltaTime = unscaledDeltaTime;
+                HomeostasisBrain.PreSimulationTick(unscaledDeltaTime);
+
+                // Self-heal before reading. The cold resolve in InitializeService runs while the registry's
+                // Input slot is still empty, and first registration notifies nobody, so without 
+
+=== Pause request sites across scripts ===
+Assets/_Project/Scripts/ITickable.cs:78|void RequestSimulationPause(bool paused, uint reasonHash = 0u);
+Assets/_Project/Scripts/Core/SceneRuntimeService.cs:1071|dispatcher.RequestSimulationPause(false);
+Assets/_Project/Scripts/Core/SystemDispatcher.cs:1791|public void RequestSimulationPause(bool paused, uint reasonHash = 0u)
+Assets/_Project/Scripts/Core/SystemDispatcher.cs:1996|RequestSimulationPause(signal.Paused != 0, signal.SourceHash);
+Assets/_Project/Scripts/Core/SystemDispatcher.cs:1800|_simulationPaused = true;
+Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:1519|_dispatcher?.RequestSimulationPause(true, ReasonDesyncHash);
+Assets/_Project/Scripts/UI/PauseMenuController.cs:247|dispatcher.RequestSimulationPause(paused, PauseMenuSignalSourceHash);
+
+=== StressFractureBot dilation context ===
+90|        private const float TimeDilationScalar = 100f;
+165|        private float _previousTimeDilationScalar = 1f;
+183|        private bool _headlessTimeDilationApplied;
+194|        private int _headlessTimeDilationRestored;
+371|            ApplyHeadlessTimeDilation();
+433|                        ApplyHeadlessTimeDilation();
+954|            RestoreHeadlessTimeDilation();
+957|        private void ApplyHeadlessTimeDilation()
+963|            _previousTimeDilationScalar = dispatcher.TimeDilationScalar;
+964|            dispatcher.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+965|            _headlessTimeDilationApplied = true;
+966|            _headlessTimeDilationRestored = 0;
+969|        private void RestoreHeadlessTimeDilation()
+971|            if (!_headlessTimeDilationApplied)
+977|                dispatcher.RequestTimeDilation(_previousTimeDilationScalar, RunnerHash);
+978|                _headlessTimeDilationRestored = 1;
+981|            _headlessTimeDilationApplied = false;
+1264|                writer.Write("\",\"headlessTimeDilationRestored\":");
+1265|                WriteInvariant(writer, _headlessTimeDilationRestored);
+1314|                    writer.Write(",\"headlessTimeDilationScalar\":");
+1315|                    WriteInvariant(writer, TimeDilationScalar);
+1316|                    writer.Write(",\"previousTimeDilationScalar\":");
+1317|                    WriteInvariant(writer, _previousTimeDilationScalar);
+1318|                    writer.Write(",\"headlessTimeDilationRestored\":");
+1319|                    WriteInvariant(writer, _headlessTimeDilationRestored);
+
+=== BatchRunner header comments 1-80 ===
+#if UNITY_EDITOR
+using System;
+using System.Globalization;
+using System.IO;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+
+namespace Hecton8.QA.Headless.Editor
+{
+    [InitializeOnLoad]
+    public static class HeadlessSimulationBatchRunner
+    {
+        private const string ActiveKey = "H8.QA.Headless.Active";
+        private const string StartTimeKey = "H8.QA.Headless.StartTime";
+        private const string ExitRequestedKey = "H8.QA.Headless.ExitRequested";
+        private const string ExitCodeKey = "H8.QA.Headless.ExitCode";
+        private const string BootstrapScenePath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
+        private const string FlagRelativePath = "Temp/H8_HEADLESS_SIMULATION.flag";
+        private const string CsvRelativePath = "Docs/AgentLogs/HeadlessSimulationDaily_HEADLESS_SIMULATION_RUNNER.csv";
+        private const string ResultRelativePath = "Docs/AgentLogs/HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json";
+        private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_SIMULATION_RUNNER.bin";
+        private const string RunnerStatusRelativePath = "Docs/AgentLogs/HeadlessSimulationBatchRunner_HEADLESS_SIMULATION_RUNNER.txt";
+        // Two hours was long enough that a hung run looked like a working one. This poll loop is the ONLY
+        // watchdog that can survive the runtime runner failing to start: the runner's own ColdTick check
+        // cannot fire until RegisterRuntimeLanes has succeeded, and in batchmode
+        // AwaitableDebtMonitor.NextFrameAsync resolves through Task.Yield() rather than a frame boundary, so
+        // the runner's startup wait can park without ever re-evaluating its deadline. When that happened,
+        // Application.Quit was a no-op in the Editor and play mode simply carried on running the main menu
+        // for 45 minutes with no result file, no CSV rows and no log line.
+        //
+        // HasTimedOut -> WriteFallbackResult(2, "BATCH_TIMEOUT") -> RequestStop(2, "timeout") was already
+        // written and is independent of the runtime runner. It just never got to run.
+        //
+        // THE OLD CONSTANT COULD NOT PASS ITS OWN DEFAULT RUN, and that is very likely why this harness has
+        // never been run to completion. It was 600 s with a comment claiming ten minutes "covers a cold Bee
+        // compile plus a full 100-day run at ~36 real seconds per simulated day" — but 100 days x 36 s is
+        // 3600 s by that comment's own arithmetic, six times the budget it was justifying. A default run was
+        // therefore guaranteed to end in BATCH_TIMEOUT with roughly zero days simulated.
+        //
+        // The real delivered rate is worse again, and it is a dispatcher property rather than anything this
+        // file controls. SystemDispatcher.RunFastTick is a FIXED-STEP substep loop: it accumulates the dilated
+        // frame delta but calls FastTick(1.0/60.0) at most MaxCadenceSubstepsPerFrame = 4 times per frame and
+        // then DISCARDS the overflow (SystemDispatcher.cs:6245-6246 clamps the accumulator back to one
+        // interval). The runner advances its day counter by that fixed 1/60, so simulated seconds per real
+        // second is 4 * fps / 60 = fps / 15 — reaching the runner's nominal TimeDilationScalar of 100 would
+        // need 1500 fps of full-world player loop. At a realistic batchmode 60-200 fps the harness delivers
+        // 4x-13x, so the 100-day default is 7.5 to 25 hours of wall clock, not one.
+        //
+        // So the watchdog now DERIVES from the workload it is watching instead of asserting a number. A
+        // watchdog that does not know what it guards is not a safety net, it is a coin flip: too small and
+        // every honest run is killed, too large and a hang costs a night. The fixed part covers a cold Bee
+        // compile and play-mode entry; the variable part is the simulated span converted at a deliberately
+        // PESSIMISTIC 4x, because being killed at the finish line destroys the whole run while overshooting
+        // only costs idle minutes on a genuine hang.
+        //
+        // Practical consequence, worth stating because it is the difference between a useful first run and a
+        // no-op: pass -h8headlessDays 5 -h8headlessDaySeconds 60 for a smoke run. That is 300 simulated
+        // seconds, minutes rather than hours, and it exercises every lane the 100-day run does.
+        private const double TimeoutFixedSeconds = 420.0;
+        private const double PessimisticDilation = 4.0;
+        private const double TimeoutCeilingSeconds = 6.0 * 60.0 * 60.0;
+
+        private static double ResolveTimeoutSeconds()
+        {
+            double simulatedSpan = ReadSimulatedSpanSecondsFromArgs();
+            double budget = TimeoutFixedSeconds + (simulatedSpan / PessimisticDilation);
+            return budget > TimeoutCeilingSeconds ? TimeoutCeilingSeconds : budget;
+        }
+        private const double PollIntervalSeconds = 0.25;
+        private const int ResultReadBufferSize = 4096;
+        // COLD ALLOC: byte[1] - batch flag file payload, editor-only setup path - owner: HeadlessSimulationBatchRunner
+        private static readonly byte[] FlagBytes = { (byte)'1' };
+        private static readonly byte[] ResultReadBuffer = new byte[ResultReadBufferSize];
+        private static readonly byte[] ExitCodeJsonKeyBytes = { (byte)'"', (byte)'e', (byte)'x', (byte)'i', (byte)'t', (byte)'C', (byte)'o', (byte)'d', (byte)'e', (byte)'"' };
+        private static double _nextPollTime;
+
+        static HeadlessSimulationBatchRunner()
+        {
+            if (SessionState.GetBool(ActiveKey, false))
+
+=== BatchRunner ResolveTimeout ===
+55|        // only costs idle minutes on a genuine hang.
+56|        //
+57|        // Practical consequence, worth stating because it is the difference between a useful first run and a
+58|        // no-op: pass -h8headlessDays 5 -h8headlessDaySeconds 60 for a smoke run. That is 300 simulated
+59|        // seconds, minutes rather than hours, and it exercises every lane the 100-day run does.
+60|        private const double TimeoutFixedSeconds = 420.0;
+61|        private const double PessimisticDilation = 4.0;
+62|        private const double TimeoutCeilingSeconds = 6.0 * 60.0 * 60.0;
+63|
+64|        private static double ResolveTimeoutSeconds()
+65|        {
+66|            double simulatedSpan = ReadSimulatedSpanSecondsFromArgs();
+67|            double budget = TimeoutFixedSeconds + (simulatedSpan / PessimisticDilation);
+68|            return budget > TimeoutCeilingSeconds ? TimeoutCeilingSeconds : budget;
+69|        }
+70|        private const double PollIntervalSeconds = 0.25;
+71|        private const int ResultReadBufferSize = 4096;
+72|        // COLD ALLOC: byte[1] - batch flag file payload, editor-only setup path - owner: HeadlessSimulationBatchRunner
+73|        private static readonly byte[] FlagBytes = { (byte)'1' };
+74|        private static readonly byte[] ResultReadBuffer = new byte[ResultReadBufferSize];
+75|        private static readonly byte[] ExitCodeJsonKeyBytes = { (byte)'"', (byte)'e', (byte)'x', (byte)'i', (byte)'t', (byte)'C', (byte)'o', (byte)'d', (byte)'e', (byte)'"' };
+76|        private static double _nextPollTime;
+77|
+78|        static HeadlessSimulationBatchRunner()
+79|        {
+80|            if (SessionState.GetBool(ActiveKey, false))
+81|                Attach();
+82|        }
+83|
+84|        /// <summary>
+85|        /// True when `-h8headless` (or `-headless`) is on this process's command line, which is the ONLY
+86|        /// thing that puts GameBootstrapper into headless boot mode.
+87|        /// </summary>
+88|        /// <remarks>
+89|        /// The two sides of this harness read DIFFERENT triggers, and the asymmetry silently produced a
+90|        /// 45-minute no-op run. HeadlessSimulationRunner.ShouldRunStatic accepts argv OR the
+240|        ///    recompile", `:21578`, `:25738`) while Tick correctly bailed on isCompiling/isUpdating (:137).
+241|        ///    The duplicate is the fingerprint of the missing latch, not the cost of it.
+242|        ///
+243|        /// 2. The latent one is worse. TryResolveExitCode returns false on IOException and
+244|        ///    UnauthorizedAccessException, and the old branch returned anyway - so while a result file existed
+245|        ///    but could not be read, HasTimedOut() was never evaluated. That is the ONLY watchdog able to
+246|        ///    survive the runtime runner dying (see the constant block above), and a persistently locked
+247|        ///    result file removed it entirely: infinite 0.25 s polling, no timeout, Unity slot held. The
+248|        ///    unreadable case therefore falls THROUGH to the watchdog now instead of returning.
+249|        /// </remarks>
+250|        private static void PollRunState()
+251|        {
+252|            // First, not third. Once the stop is latched the only remaining job is to reach the terminal
+253|            // path, and nothing below may pre-empt it or re-decide the exit code.
+254|            if (SessionState.GetBool(ExitRequestedKey, false))
+255|            {
+256|                CompleteAfterPlayStopped(SessionState.GetInt(ExitCodeKey, 1));
+257|                return;
+258|            }
+259|
+260|            string resultPath = ResolveProjectPath(ResultRelativePath);
+261|            bool resultExists = File.Exists(resultPath);
+262|            if (resultExists && TryResolveExitCode(resultPath, out int exitCode))
+263|            {
+264|                RequestStop(exitCode, exitCode == 0 ? "completed" : "runtime_fault");
+265|                return;
+266|            }
+267|
+268|            if (HasTimedOut())
+269|            {
+270|                WriteFallbackResult(2, "BATCH_TIMEOUT");
+271|                RequestStop(2, "timeout");
+272|                return;
+273|            }
+274|
+275|            // Reached only when the result file exists and is unreadable. Falling through this far kept the
+276|            // watchdog alive; falling further would re-enter play mode on top of a run that has already
+277|            // produced a verdict, so this is where that case stops.
+278|            if (resultExists)
+279|                return;
+280|
+281|            if (!EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
+282|            {
+283|                if (!TryEnsureBootstrapScene())
+284|                {
+285|                    WriteFallbackResult(1, "BOOTSTRAP_SCENE_UNAVAILABLE");
+286|                    RequestStop(1, "bootstrap_scene_unavailable");
+287|                    return;
+288|                }
+289|
+290|                EditorApplication.isPlaying = true;
+291|            }
+292|        }
+293|
+294|        private static bool ShouldPollNow()
+295|        {
+296|            double now = EditorApplication.timeSinceStartup;
+297|            if (now < _nextPollTime)
+298|                return false;
+299|
+300|            _nextPollTime = now + PollIntervalSeconds;
+301|            return true;
+302|        }
+303|
+304|        private static bool HasTimedOut()
+305|        {
+306|            string raw = SessionState.GetString(StartTimeKey, "0");
+307|            if (!double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out double startTime))
+308|                startTime = EditorApplication.timeSinceStartup;
+309|
+310|            return EditorApplication.timeSinceStartup - startTime > ResolveTimeoutSeconds();
+311|        }
+312|
+313|        /// <summary>
+314|        /// Simulated span the runtime runner was asked for, in simulated seconds, read from the same argv the
+315|        /// runner parses. Returns the default 100 x 3600 when the args are absent.
+316|        /// </summary>
+317|        /// <remarks>
+318|        /// Parsed here rather than read off the runner because this is the EDITOR side and it has to size its
+319|        /// watchdog before play mode exists, so there is no runner instance to ask. The defaults are duplicated
+320|        /// from HeadlessSimulationRunner.DefaultTargetDays / DefaultDaySeconds; if those change and this does
+600|        /// </summary>
+601|        /// <remarks>
+602|        /// WAS `Directory.GetCurrentDirectory()`, and that made this class disagree with the runtime half of
+603|        /// the same harness. `HeadlessSimulationRunner.ResolveProjectPathStatic` uses
+604|        /// `Path.GetFullPath(Path.Combine(Application.dataPath, ".."))`, which is the real project root and
+605|        /// does not care where the process was launched from. Two resolvers for one question is one too
+606|        /// many, and the failure it produced was silent and expensive: launch Unity with `-projectPath`
+607|        /// from any other working directory and (a) the flag file lands outside the project, so
+608|        /// `ShouldRunStatic`'s file check misses it, and (b) the runtime runner writes the result JSON under
+609|        /// the project while this class's poll loop watches the CWD - so it never sees the verdict, waits out
+610|        /// the full `420 + simulatedSpan/4`, and writes `BATCH_TIMEOUT` over a run that had already
+611|        /// succeeded. The artifacts then say the harness timed out when what actually happened is that the
+612|        /// two halves wrote into different trees.
+613|        ///
+614|        /// `Application.dataPath` is valid in the Editor - it returns `&lt;project&gt;/Assets` - so this needs no
+615|        /// editor-only special case and now matches the runtime side exactly.
+616|        ///
+617|        /// Consequence worth knowing: "cd to the project root before launching" stops being load-bearing.
+618|        /// It remains good practice, but it is no longer the difference between a verdict and a timeout.
+619|        /// </remarks>
+620|        private static string ResolveProjectPath(string relativePath)
+621|        {
+622|            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+623|            return Path.Combine(projectRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+624|        }
+625|
+626|        private static void WriteRunnerStatus(string status)
+627|        {
+628|            try
+629|            {
+630|                string path = ResolveProjectPath(RunnerStatusRelativePath);
+631|                Directory.CreateDirectory(Path.GetDirectoryName(path));
+632|                using (StreamWriter writer = new StreamWriter(path, true))
+633|                {
+634|                    writer.Write(DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture));
+635|                    writer.Write(' ');
+636|                    writer.Write(status);
+637|                    writer.Write(System.Environment.NewLine);
+638|                }
+639|            }
+640|            catch (Exception)

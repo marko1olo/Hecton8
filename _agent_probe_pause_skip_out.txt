@@ -1,0 +1,365 @@
+=== RequestSimulationPause (1791-1840) ===
+1791|        public void RequestSimulationPause(bool paused, uint reasonHash = 0u)
+1792|        {
+1793|            if (paused)
+1794|            {
+1795|                if (!_simulationPaused)
+1796|                    _prePauseTimeDilationScalar = ResolvePauseRestoreScalar();
+1797|
+1798|                ClearCoreTickDilationBurst();
+1799|                ClearAdrenalineDilation();
+1800|                _simulationPaused = true;
+1801|                SetTimeDilationScalar(0f, reasonHash, publishImmediate: true);
+1802|                return;
+1803|            }
+1804|
+1805|            _simulationPaused = false;
+1806|            SetTimeDilationScalar(_prePauseTimeDilationScalar, reasonHash, publishImmediate: true);
+1807|        }
+1808|
+1809|        public void RequestAupPreShiftPause(uint shiftFrameId)
+1810|        {
+1811|            SetAupJobAdmissionBarrier(active: true);
+1812|            _dataVault?.LockAllocationsForAupShift(shiftFrameId);
+1813|            ForceCompleteMasterFencesForAupRebase(shiftFrameId);
+1814|            _aupPreShiftPauseSequence = shiftFrameId;
+1815|            _aupPreShiftPauseFrameId = ResolveCurrentDispatcherFrameId();
+1816|        }
+1817|
+1818|        public void ReleaseAupPreShiftPause(uint shiftFrameId)
+1819|        {
+1820|            SetAupJobAdmissionBarrier(active: false);
+1821|        }
+1822|
+1823|        private void SetAupJobAdmissionBarrier(bool active)
+1824|        {
+1825|            IJobAdmissionService jobAdmission = _jobAdmission;
+1826|            if (jobAdmission == null || !jobAdmission.IsInitialized)
+1827|                return;
+1828|
+1829|            jobAdmission.SetAupBarrierActive(active);
+1830|        }
+1831|
+1832|        public static void RequestDebugAupHardFence()
+1833|        {
+1834|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+1835|            if (dispatcher == null)
+1836|                return;
+1837|
+1838|            dispatcher.RequestAupPreShiftPause(dispatcher.ResolveCurrentDispatcherFrameId());
+1839|        }
+1840|
+=== ShouldSkipLaneDuringBootstrap def (7115-7154) ===
+7115|        private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
+7116|        {
+7117|            if (!blockGameplayLanes)
+7118|                return false;
+7119|
+7120|            // Bootstrap gates the player lane only. World/environment systems must keep
+7121|            // ticking so startup queues, residency, and spawn drains can complete.
+7122|            return laneIndex == GetLaneIndex(PriorityLayer.Player);
+7123|        }
+7124|
+7125|        private static int GetLaneIndex(PriorityLayer layer)
+7126|        {
+7127|            switch (layer)
+7128|            {
+7129|                case PriorityLayer.Core:
+7130|                    return 0;
+7131|                case PriorityLayer.Environment:
+7132|                    return 1;
+7133|                case PriorityLayer.Player:
+7134|                    return 2;
+7135|                case PriorityLayer.UI:
+7136|                    return 3;
+7137|                default:
+7138|                    return 0;
+7139|            }
+7140|        }
+7141|
+7142|        private static long BeginDispatcherPhaseTiming()
+7143|        {
+7144|#if UNITY_EDITOR
+7145|            return System.Diagnostics.Stopwatch.GetTimestamp();
+7146|#else
+7147|            return 0L;
+7148|#endif
+7149|        }
+7150|
+7151|        private static void EndDispatcherPhaseTiming(long startTimestamp, string phaseName)
+7152|        {
+7153|#if UNITY_EDITOR
+7154|            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+=== ShouldSkipLaneDuringBootstrap regex ===
+private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
+        {
+            if (!blockGameplayLanes)
+                return false;
+
+            // Bootstrap gates the player lane only. World/environment systems must keep
+            // ticking so startup queues, residency, and spawn drains can complete.
+            return laneIndex == GetLaneIndex(PriorityLayer.Player);
+        }
+
+        private static int GetLaneIndex(PriorityLayer layer)
+        {
+            switch (layer)
+            {
+                case PriorityLayer.Core:
+                    return 0;
+                case PriorityLayer.Environment:
+                    return 1;
+                case PriorityLayer.Player:
+                    return 2;
+                case PriorityLayer.UI:
+                    return 3;
+                default:
+                    return 0;
+            }
+        }
+
+        private static long BeginDispatcherPhas
+late hit 874|RunDispatcherLateFrameFromPlayerLoop);
+late hit 995|private static void RunDispatcherLateFrameFromPlayerLoop()
+late hit 1001|dispatcher.RunDispatcherLateFrame();
+late hit 5510|private void RunDispatcherLateFrame()
+=== RunDispatcherLateFrame ===
+private void RunDispatcherLateFrame()
+        {
+#if UNITY_EDITOR
+            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherLateFrame);
+            long completeDispatcherTimestamp = 0L;
+            bool dispatcherPhaseTimingStarted = false;
+#endif
+            if (IsOriginShiftBootstrapLocked)
+                return;
+            if (IsOriginShiftFrameLockedForCurrentFrame)
+            {
+                _dataVault?.UnlockAllocationsAfterAupShift(_aupPreShiftPauseSequence);
+                return;
+            }
+
+            try
+            {
+            DispatcherJobFence.BeginLateFrameSwapWindow();
+            try
+            {
+                CompleteDispatcherSurfaceProbes();
+                UpdatePauseFreezeFrameDitherState();
+                UpdateVisualStaticGlitchState();
+                TickPauseDepthOfField(UnityEngine.Time.unscaledTime);
+#if UNITY_EDITOR
+                completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
+                dispatcherPhaseTimingStarted = true;
+#endif
+                CompleteFoveatedFrameJobs();
+                _foveatedSimulationManager.VisualSyncTick();
+                FlushSimulationBucketVisualSync();
+                HectonXRRuntimeState.FlushVisu
+=== LateFrameFromPlayerLoop ===
+private static void RunDispatcherLateFrameFromPlayerLoop()
+        {
+            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+            if (dispatcher == null || !dispatcher._serviceRegistered || !dispatcher.isActiveAndEnabled)
+                return;
+
+            dispatcher.RunDispatcherLateFrame();
+        }
+
+        private static void PublishDispatcherComplianceViolation(uint ruleHash, uint contextHash, byte severity, byte flags)
+        
+=== LateFrame region ~5450 (5450-5580) ===
+5450|        }
+5451|
+5452|        private static float SanitizeNonNegativeMilliseconds(float milliseconds)
+5453|        {
+5454|            return math.isfinite(milliseconds) && milliseconds > 0f ? milliseconds : 0f;
+5455|        }
+5456|
+5457|        private static byte ResolveFramePacingSeverity(uint flags, float currentFrameMs, float preSimulationMs)
+5458|        {
+5459|            byte severity = 1;
+5460|            if ((flags & SimulationBucketPacingFlags.PreSimulationOverBudget) != 0u ||
+5461|                preSimulationMs > SimulationBucketConstants.PreSimulationBudgetMilliseconds)
+5462|                severity = 2;
+5463|            if ((flags & SimulationBucketPacingFlags.Impossible60Fps) != 0u ||
+5464|                currentFrameMs > SimulationBucketConstants.TargetFrameMilliseconds)
+5465|                severity = 3;
+5466|            if ((flags & SimulationBucketPacingFlags.NonFiniteCost) != 0u)
+5467|                severity = 4;
+5468|
+5469|            return severity;
+5470|        }
+5471|
+5472|        private static void RefreshPauseDepthOfFieldTarget()
+5473|        {
+5474|            bool active = _pauseMenuDepthOfFieldRequested || _pdaDepthOfFieldRequested;
+5475|            float targetWeight = active ? 1f : 0f;
+5476|            if (_pauseDepthOfFieldTargetActive == active &&
+5477|                math.abs(_pauseDepthOfFieldTargetWeight - targetWeight) <= 0.0001f)
+5478|                return;
+5479|
+5480|            float now = UnityEngine.Time.unscaledTime;
+5481|            _pauseDepthOfFieldBlendStartWeight = ResolvePauseDepthOfFieldWeight(now);
+5482|            _pauseDepthOfFieldWeight = _pauseDepthOfFieldBlendStartWeight;
+5483|            _pauseDepthOfFieldTargetWeight = targetWeight;
+5484|            _pauseDepthOfFieldBlendStartTime = now;
+5485|            _pauseDepthOfFieldTargetActive = active;
+5486|        }
+5487|
+5488|        private static float ResolvePauseDepthOfFieldWeight(float unscaledTime)
+5489|        {
+5490|            float normalized = PauseDepthOfFieldBlendSeconds > 0f
+5491|                ? math.saturate((unscaledTime - _pauseDepthOfFieldBlendStartTime) / PauseDepthOfFieldBlendSeconds)
+5492|                : 1f;
+5493|            return math.lerp(_pauseDepthOfFieldBlendStartWeight, _pauseDepthOfFieldTargetWeight, normalized);
+5494|        }
+5495|
+5496|        private static ICameraJuiceSystem ResolveCameraJuiceSystem()
+5497|        {
+5498|            return _cachedCameraJuiceSystem;
+5499|        }
+5500|
+5501|        private static void TickPauseDepthOfField(float unscaledTime)
+5502|        {
+5503|            _pauseDepthOfFieldWeight = ResolvePauseDepthOfFieldWeight(unscaledTime);
+5504|
+5505|            ICameraJuiceSystem cameraJuice = ResolveCameraJuiceSystem();
+5506|            if (cameraJuice != null)
+5507|                cameraJuice.ApplyPauseDepthOfFieldWeight(_pauseDepthOfFieldWeight);
+5508|        }
+5509|
+5510|        private void RunDispatcherLateFrame()
+5511|        {
+5512|#if UNITY_EDITOR
+5513|            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherLateFrame);
+5514|            long completeDispatcherTimestamp = 0L;
+5515|            bool dispatcherPhaseTimingStarted = false;
+5516|#endif
+5517|            if (IsOriginShiftBootstrapLocked)
+5518|                return;
+5519|            if (IsOriginShiftFrameLockedForCurrentFrame)
+5520|            {
+5521|                _dataVault?.UnlockAllocationsAfterAupShift(_aupPreShiftPauseSequence);
+5522|                return;
+5523|            }
+5524|
+5525|            try
+5526|            {
+5527|            DispatcherJobFence.BeginLateFrameSwapWindow();
+5528|            try
+5529|            {
+5530|                CompleteDispatcherSurfaceProbes();
+5531|                UpdatePauseFreezeFrameDitherState();
+5532|                UpdateVisualStaticGlitchState();
+5533|                TickPauseDepthOfField(UnityEngine.Time.unscaledTime);
+5534|#if UNITY_EDITOR
+5535|                completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
+5536|                dispatcherPhaseTimingStarted = true;
+5537|#endif
+5538|                CompleteFoveatedFrameJobs();
+5539|                _foveatedSimulationManager.VisualSyncTick();
+5540|                FlushSimulationBucketVisualSync();
+5541|                HectonXRRuntimeState.FlushVisualSyncShaderState();
+5542|                WfcLaserCutRuntime.FlushVisualSync();
+5543|                HectonShaderGlobalDataVaultBridge.FlushFallbackVisualSync();
+5544|                GlobalRegistry.FlushMathPrecisionShaderState();
+5545|                DistanceMath.FlushVisualSyncShaderState();
+5546|                ConnectionSplineBatchRenderer.FlushVisualSyncShaderState();
+5547|                HomeostasisBrain.FlushVisualSyncShaderState();
+5548|                RunMasterVisualSyncPhase();
+5549|                BeginLateFrameEventBudget();
+5550|                SetActiveLateFrameEventLane(_LateFrameTickablesQueueHash);
+5551|                using (_lateFrameProfilerMarker.Auto())
+5552|                {
+5553|                    for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+5554|                    {
+5555|                        RegistryBucket<ILateFrameTickable> lane = _lateFramePriorityLanes[laneIndex];
+5556|#if UNITY_EDITOR
+5557|                        lane.ValidateNoDestroyedEntriesDebug(nameof(ILateFrameTickable));
+5558|#endif
+5559|                        int count = lane.Count;
+5560|                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+5561|                            lane.GetAt(itemIndex).LateFrameTick();
+5562|                    }
+5563|                }
+5564|                PredatorCognitionDomain.LateFrameTick();
+5565|                CombatDamageRuntime.LateFrameTick();
+5566|                VoxelDynamicNavGridRuntime.CompletePendingDynamicObstacleUpdates();
+5567|            }
+5568|            finally
+5569|            {
+5570|                DispatcherJobFence.EndLateFrameSwapWindow();
+5571|            }
+5572|
+5573|            using (_lateFrameCommandQueueDrainProfilerMarker.Auto())
+5574|            {
+5575|                SetActiveLateFrameEventLane(_ThreadSafeCommandQueueHash);
+5576|                ReportLateFrameQueueDepth(_ThreadSafeCommandQueueHash, ThreadSafeCommandQueue.PendingCount);
+5577|                if (!ThreadSafeCommandQueue.DrainMainThread())
+5578|                    MarkLateFrameEventDispatchDeferred();
+5579|            }
+5580|            SetActiveLateFrameEventLane(_StorageReservationCommitResolvedQueueHash);
+=== GameReady / headless short-circuit sites ===
+Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:1642|BootstrapState.PublishGameReady(false);
+Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3165|BootstrapState.PublishGameReady(true);
+Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3167|Debug.Log("[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached + PublishGameReady on bootstrap");
+Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3451|BootstrapState.PublishGameReady(false);
+Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:7661|BootstrapState.PublishGameReady(false);
+Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:7787|BootstrapState.PublishGameReady(true);
+Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:7794|BootstrapState.PublishGameReady(false);
+Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:7804|BootstrapState.PublishGameReady(false);
+Assets/_Project/Scripts/Core/BootstrapContracts/BootstrapState.cs:53|public static void PublishGameReady(bool isGameReady)
+Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs:259|// dependency chain burned ~180s; short-circuit PublishGameReady then immediate
+=== SceneRuntimeService pause context ===
+SRS1056|                abyssalAmbientSnapshot.TransitionTo(AudioSnapshotDiveCrossfadeSeconds);
+SRS1057|        }
+SRS1058|
+SRS1059|        private void ResetWorldEntryFreezeState()
+SRS1060|        {
+SRS1061|            ResetWorldEntryFreezeStateFromCache();
+SRS1062|
+SRS1063|            Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);
+SRS1064|            Shader.SetGlobalFloat(_GamePausedId, 0f);
+SRS1065|        }
+SRS1066|
+SRS1067|        private void ResetWorldEntryFreezeStateFromCache()
+SRS1068|        {
+SRS1069|            ITickDispatcher dispatcher = _tickDispatcher;
+SRS1070|            if (dispatcher != null && dispatcher.SimulationPaused)
+SRS1071|                dispatcher.RequestSimulationPause(false);
+SRS1072|        }
+SRS1073|
+SRS1074|        private void BeginWorldDroneCrossfade()
+SRS1075|        {
+SRS1076|            ISceneTransitionAudioBridge spatialAudio = ResolveSceneTransitionAudioBridge();
+SRS1077|            if (spatialAudio == null)
+SRS1078|                return;
+SRS1079|
+SRS1080|            spatialAudio.BeginWorldDroneTransition(
+SRS1081|                WorldDroneLoadDb,
+SRS1082|                WorldDroneRuntimeDb,
+SRS1083|                TransitionDissolveSeconds);
+SRS1084|        }
+SRS1085|
+SRS1086|        private void UpdateWorldDroneCrossfade(float normalized)
+SRS1087|        {
+SRS1088|            ISceneTransitionAudioBridge spatialAudio = ResolveSceneTransitionAudioBridge();
+SRS1089|            if (spatialAudio != null)
+SRS1090|                spatialAudio.SetWorldDroneTransitionProgress(normalized);
+=== BootstrapState ===
+Assets\_Project\Scripts\Core\BootstrapContracts\BootstrapState.cs
+22|        public static bool IsGameReady { get; private set; }
+27|        public static bool HasActiveInstance { get; private set; }
+41|        /// Publishes whether bootstrap currently owns runtime startup.
+44|        public static void PublishBootstrapPresence(bool hasActiveInstance)
+46|            HasActiveInstance = hasActiveInstance;
+50|        /// Publishes the world-ready handoff state.
+52|        /// <param name="isGameReady">True after bootstrap completes and gameplay may proceed.</param>
+53|        public static void PublishGameReady(bool isGameReady)
+55|            IsGameReady = isGameReady;
+59|        /// Publishes the current player reference for runtime consumers.
+62|        public static void PublishCurrentPlayerObject(GameObject playerObject)
+93|            IsGameReady = false;
+94|            HasActiveInstance = false;
+Assets\_Project\Scripts\Core\BootstrapContracts\BootstrapState.cs.meta
