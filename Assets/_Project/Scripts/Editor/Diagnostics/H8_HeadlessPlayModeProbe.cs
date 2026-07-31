@@ -227,6 +227,20 @@ namespace Hecton8.EditorTools.Diagnostics
         /// convert a starved row into a TIMEOUT line that loses every verdict the run did produce.</summary>
         private const double GraceHardTimeoutMarginSeconds = 20.0;
 
+        // L16: batchmode WallClock often yields unscaledDeltaTime==0 so RunFixedStepAccumulator
+        // early-outs and HPM.FixedTick never runs (hop2 ABSENT, movementIntent01max=0) despite the
+        // world driver publishing hot overrides. Mirror HeadlessSimulationRunner.EnsureHeadlessSimulationClock:
+        // unpause + headless dilation + EnableStepBoundedTime so the product dispatcher supplies a
+        // real fixed unscaled dt per update. Probe is INPUT PRODUCER only via WorldDriver; this is
+        // the simulation CLOCK arm, not a mock hop2 path.
+        private const float ProbeTimeDilationScalar = 100f;
+        private const float ProbeStepBoundedDeltaSeconds = 0.04f;
+        private const float ProbeClockEnsureIntervalSeconds = 5f;
+        private const uint ProbeSimClockHash = 0x48385043u; // 'H8PC'
+
+        private static double _lastProbeClockEnsureRealtime;
+        private static bool _probeSimClockArmed;
+
         private static int _worldDriverGraceTicks;
         private static bool _graceOpenedLogged;
         private static bool _graceClosedLogged;
@@ -749,6 +763,10 @@ namespace Hecton8.EditorTools.Diagnostics
                                 "would have come straight out of the driver's schedule and truncated its " +
                                 "last phase.");
                         }
+
+                        // L16: arm product step-bounded clock before any WorldDriver.Begin so FixedTick
+                        // can consume locomotion overrides (hop2 path) under batchmode WallClock dt=0.
+                        EnsureProbeSimulationClock("gameplay-window-start");
                     }
 
                     // Content before measurement. This runs BEFORE the driver starts and OUTSIDE the
@@ -783,6 +801,8 @@ namespace Hecton8.EditorTools.Diagnostics
                         if (!_worldDriverStarted)
                         {
                             _worldDriverStarted = true;
+                            // L16: re-assert clock immediately before Begin in case dispatcher arrived late.
+                            EnsureProbeSimulationClock("worlddriver-begin");
                             H8_HeadlessWorldDriver.Begin();
                             Debug.Log(
                                 $"{Marker} WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> " +
@@ -791,7 +811,14 @@ namespace Hecton8.EditorTools.Diagnostics
                                 $"{_gameplaySeconds:F0}s gameplay window");
                         }
 
+                        // L16: sustain against late pause / dilation collapse / step-bound drop.
+                        MaybeEnsureProbeSimulationClockSustain();
                         H8_HeadlessWorldDriver.Tick();
+                    }
+                    else
+                    {
+                        // Undriven measurement still needs FixedTick for hop2/depth observability.
+                        MaybeEnsureProbeSimulationClockSustain();
                     }
 
                     if (EditorApplication.timeSinceStartup - _gameplayWindowStartedAt >= _gameplaySeconds)
@@ -3643,6 +3670,95 @@ namespace Hecton8.EditorTools.Diagnostics
         /// would otherwise inherit the first run's phase table, moment verdicts and rejected-service
         /// list and report them as its own.
         /// </summary>
+
+        /// <summary>
+        /// L16 product clock arm for the playmode probe route.
+        /// Unpause + re-request headless dilation + enable step-bounded dispatcher time.
+        /// Mirrors <c>HeadlessSimulationRunner.EnsureHeadlessSimulationClock</c>.
+        /// Batchmode WallClock often yields unscaledDeltaTime==0 so RunFixedStepAccumulator
+        /// early-outs and HPM.FixedTick never runs; EnableStepBoundedTime supplies a real fixed
+        /// unscaled dt per update. Does not mock hop2, does not call FixedTick/GetState from the probe.
+        /// </summary>
+        private static void EnsureProbeSimulationClock(string reason)
+        {
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            if (dispatcher == null)
+            {
+                Debug.Log($"{Marker} SIMCLOCK ensure reason={reason} dispatcher=null");
+                return;
+            }
+
+            bool wasPaused = dispatcher.SimulationPaused;
+            float dilBefore = dispatcher.TimeDilationScalar;
+            bool stepBoundBefore = SystemDispatcher.IsStepBoundedTimeActive;
+
+            // ConsumeFrameTimeDilationScalar returns 0 while _simulationPaused — unpause first.
+            if (wasPaused)
+                dispatcher.RequestSimulationPause(false, ProbeSimClockHash);
+
+            dispatcher.RequestHeadlessTimeDilation(ProbeTimeDilationScalar, ProbeSimClockHash);
+
+            // Real product headless time source (InternalsVisibleTo Hecton8.Editor).
+            // Idempotent: EnableStepBoundedTime resets elapsed only when first arming; keep armed.
+            bool stepBoundOk = stepBoundBefore;
+            if (!stepBoundBefore)
+                stepBoundOk = SystemDispatcher.EnableStepBoundedTime(ProbeStepBoundedDeltaSeconds);
+
+            _lastProbeClockEnsureRealtime = EditorApplication.timeSinceStartup;
+            _probeSimClockArmed = stepBoundOk || SystemDispatcher.IsStepBoundedTimeActive;
+
+            bool pausedAfter = dispatcher.SimulationPaused;
+            float dilAfter = dispatcher.TimeDilationScalar;
+            bool stepBoundAfter = SystemDispatcher.IsStepBoundedTimeActive;
+            Debug.Log(
+                $"{Marker} SIMCLOCK ensure reason={reason}" +
+                " pausedBefore=" + (wasPaused ? "1" : "0") +
+                " dilBefore=" + dilBefore.ToString("0.###", CultureInfo.InvariantCulture) +
+                " dilAfter=" + dilAfter.ToString("0.###", CultureInfo.InvariantCulture) +
+                " pausedAfter=" + (pausedAfter ? "1" : "0") +
+                " stepBoundBefore=" + (stepBoundBefore ? "1" : "0") +
+                " stepBoundAfter=" + (stepBoundAfter ? "1" : "0") +
+                " stepBoundOk=" + (stepBoundOk ? "1" : "0") +
+                " stepDt=" + ProbeStepBoundedDeltaSeconds.ToString("0.###", CultureInfo.InvariantCulture) +
+                " armed=" + (_probeSimClockArmed ? "1" : "0"));
+        }
+
+        /// <summary>
+        /// During GameplayWarmup, periodically re-assert the real clock against late
+        /// SimulationPauseSignal / pause-menu / desync paths that drop step-bound or dilation.
+        /// </summary>
+        private static void MaybeEnsureProbeSimulationClockSustain()
+        {
+            if (_lastProbeClockEnsureRealtime > 0.0 &&
+                EditorApplication.timeSinceStartup - _lastProbeClockEnsureRealtime < ProbeClockEnsureIntervalSeconds)
+            {
+                // Cheap path between throttle windows: still force if step-bound dropped.
+                if (SystemDispatcher.IsStepBoundedTimeActive)
+                {
+                    ITickDispatcher d = GlobalRegistry.TickDispatcher;
+                    if (d != null &&
+                        !d.SimulationPaused &&
+                        d.TimeDilationScalar + 0.01f >= ProbeTimeDilationScalar)
+                        return;
+                }
+            }
+
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            if (dispatcher == null)
+                return;
+
+            bool needsRestore = dispatcher.SimulationPaused ||
+                                dispatcher.TimeDilationScalar + 0.01f < ProbeTimeDilationScalar ||
+                                !SystemDispatcher.IsStepBoundedTimeActive;
+            if (!needsRestore)
+            {
+                _lastProbeClockEnsureRealtime = EditorApplication.timeSinceStartup;
+                return;
+            }
+
+            EnsureProbeSimulationClock("gameplay-sustain");
+        }
+
         private static void ResetRunState()
         {
             _phase = Phase.Idle;
@@ -3724,6 +3840,8 @@ namespace Hecton8.EditorTools.Diagnostics
             _graceOpenedLogged = false;
             _graceClosedLogged = false;
             _gameplayWindowStartedAt = 0.0;
+            _lastProbeClockEnsureRealtime = 0.0;
+            _probeSimClockArmed = false;
             H8_HeadlessWorldDriver.Reset();
         }
 
