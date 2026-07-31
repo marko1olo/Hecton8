@@ -2610,6 +2610,55 @@ namespace Hecton8.EditorTools.Diagnostics
         ///     nonzero mask is a third, separately named failure.
         /// A settle that gives up now names the gate that was shut instead of printing one ambiguous flag.
         /// </summary>
+
+        /// <summary>
+        /// Product-correct locomotion readiness for scripted swim/route holds:
+        /// force-close PDA / fabricator / pause via their real close APIs (restoring player maps),
+        /// then always SwitchToPlayerInput. Called every settle and swim hold tick so a mid-window
+        /// SwitchToUIInput or sticky IsOpen cannot starve hop2 (GetState) for the whole phase.
+        /// </summary>
+        private static void EnsureGameplayLocomotionInputReady()
+        {
+            // PDA — public ForceClose restores player input map.
+            if (Hecton8.UI.PlayerPDA.IsOpen)
+            {
+                Hecton8.UI.PlayerPDA pda = Hecton8.UI.PlayerPDA.ActiveRuntimeInstance;
+                if (pda == null)
+                {
+                    IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+                    if (player != null)
+                        pda = player.PlayerPDA as Hecton8.UI.PlayerPDA;
+                }
+
+                if (pda != null)
+                    pda.ForceClose();
+            }
+
+            // Pause — public Close -> ApplyClosedState(restorePlayerInput: true).
+            if (Hecton8.UI.PauseMenuController.IsAnyOpen)
+            {
+                Hecton8.UI.PauseMenuController pause = Hecton8.UI.PauseMenuController.ActiveRuntimeInstance;
+                if (pause != null)
+                    pause.Close();
+            }
+
+            // Fabricator — public ForceCloseMenu (product API added for this path).
+            if (Hecton8.UI.HectonFabricatorUI.IsMenuOpen)
+            {
+                Hecton8.UI.HectonFabricatorUI fab =
+                    UnityEngine.Object.FindFirstObjectByType<Hecton8.UI.HectonFabricatorUI>();
+                if (fab != null)
+                    fab.ForceCloseMenu();
+            }
+
+            IInputService input = GlobalRegistry.RegisteredInput;
+            if (input != null)
+            {
+                input.SwitchToPlayerInput();
+                _switchedToPlayerInput = true;
+            }
+        }
+
         private static void TickSettle()
         {
             IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
@@ -2625,12 +2674,13 @@ namespace Hecton8.EditorTools.Diagnostics
 
             TryResolveInteraction();
 
+            // Force-close any leftover menu (PDA/Fab/Pause) and re-assert the player action map
+            // every settle tick. L10 measured hop2-starve: SampleGameplayLocomotionInputForFixedStep
+            // short-circuits on IsGameplayInputBlockedByMenu without calling GetState, and a single
+            // SwitchToPlayerInput at first settle loses to later SwitchToUIInput (MainMenu bind,
+            // sticky IsOpen). Product close APIs only — no mock input path.
+            EnsureGameplayLocomotionInputReady();
             IInputService input = GlobalRegistry.RegisteredInput;
-            if (input != null && !_switchedToPlayerInput)
-            {
-                input.SwitchToPlayerInput();
-                _switchedToPlayerInput = true;
-            }
 
             bool ready = _survival != null && _movement != null && input != null;
             if (!ready)
@@ -2735,6 +2785,10 @@ namespace Hecton8.EditorTools.Diagnostics
 
         private static void TickSwimSurface()
         {
+            // Keep menus closed and player map enabled for the whole hold. One-shot settle is not
+            // enough if anything re-opens UI mid-window (L10: hop2 never fired).
+            EnsureGameplayLocomotionInputReady();
+
             // Forward plus ascend. VerticalDelta is the surface/dive axis
             // (HectonPlayerInputHandler.cs:37-53 reads it straight off the snapshot).
             _intent.MoveDelta = new Vector2(0f, 1f);
@@ -2754,6 +2808,8 @@ namespace Hecton8.EditorTools.Diagnostics
 
         private static void TickSwimDive()
         {
+            EnsureGameplayLocomotionInputReady();
+
             _intent.MoveDelta = new Vector2(0f, 1f);
             _intent.LookDelta = SweepLookDelta();
             _intent.VerticalDelta = -1f;
@@ -2817,7 +2873,13 @@ namespace Hecton8.EditorTools.Diagnostics
                 .Append("] inputServiceRegistered=").Append(_inputServiceEverObserved)
                 .Append(" inputEnabled=").Append(_inputEnabledEverObserved)
                 .Append(" switchToPlayerInputCalled=").Append(_switchedToPlayerInput)
-                .Append(" blockMask=0x").Append(_inputBlockMaskLast.ToString("X8", CultureInfo.InvariantCulture));
+                .Append(" blockMask=0x").Append(_inputBlockMaskLast.ToString("X8", CultureInfo.InvariantCulture))
+                .Append(" pdaOpen=").Append(Hecton8.UI.PlayerPDA.IsOpen)
+                .Append(" fabOpen=").Append(Hecton8.UI.HectonFabricatorUI.IsMenuOpen)
+                .Append(" pauseOpen=").Append(Hecton8.UI.PauseMenuController.IsAnyOpen)
+                .Append(" inputEnabledNow=").Append(
+                    GlobalRegistry.RegisteredInput != null &&
+                    GlobalRegistry.RegisteredInput.IsPlayerInputEnabled);
 
             if (!_inputServiceEverObserved)
             {

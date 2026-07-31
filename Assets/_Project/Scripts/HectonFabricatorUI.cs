@@ -620,6 +620,19 @@ namespace Hecton8.UI
             CloseMenu();
         }
 
+        /// <summary>
+        /// Public entry for systems that must restore locomotion input when the fabricator
+        /// menu is still open (e.g. headless probe settle). Routes through the real close path
+        /// so IsMenuOpen, UI maps, and cursor state stay coherent — not a harness mock.
+        /// </summary>
+        public void ForceCloseMenu()
+        {
+            if (!_isOpen && !IsMenuOpen)
+                return;
+
+            CloseMenu();
+        }
+
         private void CloseMenu()
         {
             _isOpen = false;
