@@ -8189,6 +8189,42 @@ namespace Hecton8.Gameplay
             }
         }
 
+        /// <summary>
+        /// Samples MoveDelta / vertical / sprint into the fixed-step locomotion fields that
+        /// <see cref="ResolveRawInputIntentVector"/> and swim thrust read.
+        ///
+        /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+        /// render IUpdatable.Tick path. Batchmode and physics-heavy schedules (headless V0 probe,
+        /// long fixed steps) drive locomotion almost entirely through FixedTick while render Tick
+        /// rarely runs, so _inputH/_inputV/_inputVertical stayed zero even when InputDispatcher
+        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+        /// mocking input or bypassing menu / vehicle / wipeout gates.
+        ///
+        /// Look / juice / cursor remain render-owned on Tick. Menu block zeros locomotion only -
+        /// full HandleMenuBlockedInput stays on Tick so camera/cursor presentation is not driven
+        /// from the physics step.
+        /// </summary>
+        private void SampleGameplayLocomotionInputForFixedStep()
+        {
+            ResolveInputManagerBinding();
+
+            if (IsGameplayInputBlockedByMenu())
+            {
+                _currentInputState = default;
+                _pendingLookInput = Vector2.zero;
+                _inputH = 0f;
+                _inputV = 0f;
+                _inputVertical = 0f;
+                _mouseXDelta = 0f;
+                SetSprintingState(false);
+                return;
+            }
+
+            ProcessPlayerInputFrame();
+            ProcessWipeoutInputOverride();
+        }
+
         private void ProcessLocomotionPresentationAndJuice(float deltaTime, SuitData suit)
         {
             ConsumeKinematicRepairTargetProbe();
@@ -9890,6 +9926,11 @@ namespace Hecton8.Gameplay
 
             using (_fixedTickProfilerMarker.Auto())
             {
+                // Fixed-step locomotion must sample input here. Render Tick is not guaranteed
+                // before each FixedTick (batchmode / catch-up), and PrepareTransportAndFrameState
+                // snapshots intent from _input* immediately below.
+                SampleGameplayLocomotionInputForFixedStep();
+
                 PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
 
                 float previousWaterImmersionRatio = _waterImmersionRatio;

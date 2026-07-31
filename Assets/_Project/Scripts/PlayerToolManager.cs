@@ -42,7 +42,7 @@ namespace Hecton8.Gameplay
 #endif
 
     [DisallowMultipleComponent]
-    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, IFixedTickable, ILateFrameTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
     {
         private static int s_x001PlayerToolManagerSignalPushDropCount;
         // ══════════════════════════════════════════════════════════
@@ -165,6 +165,7 @@ namespace Hecton8.Gameplay
         private const int RuntimeStartToolGrantRefusalStride = 15;
         private bool _handlingEquippedToolBreak;
         private bool _registeredToTick;
+        private bool _registeredToFixedTick;
         private bool _registeredToLateFrame;
         private bool _pendingSwapExecution;
         private bool _pendingCurrentToolDespawn;
@@ -339,6 +340,15 @@ namespace Hecton8.Gameplay
 
             if (!_registeredToLateFrame)
                 _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            if (!_registeredToFixedTick)
+            {
+                // Starter grant retry must not depend on render Tick alone. Batchmode / V0 probe
+                // schedules few IUpdatable ticks while FixedTick runs continuously; without this
+                // lane STARTERGRANT stays deferred (L08 refusalMask 0x1E) and IsToolAvailableInSlot
+                // never becomes true before ToolEquip latches Blocked.
+                _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+            }
+
         }
 
         private void TryUnregisterFromTickManager(bool clearPendingPresentation = true)
@@ -348,6 +358,12 @@ namespace Hecton8.Gameplay
 
             if (_registeredToTick)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+
+            if (_registeredToFixedTick)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+                _registeredToFixedTick = false;
+            }
             if (_registeredToLateFrame)
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
 
@@ -470,6 +486,17 @@ namespace Hecton8.Gameplay
             _debugStateName   = GetSwapStateDebugName(_swapState);
 #endif
         }
+
+        /// <summary>
+        /// Fixed-step grant retry. Render <see cref="Tick"/> still owns slot input and swap
+        /// presentation; this lane only keeps <see cref="RetryRuntimeStartToolGrantIfPending"/>
+        /// alive when the dispatcher is physics-heavy and IUpdatable rarely runs (batchmode V0).
+        /// </summary>
+        public void FixedTick(float fixedDeltaTime)
+        {
+            RetryRuntimeStartToolGrantIfPending();
+        }
+
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
