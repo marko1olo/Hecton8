@@ -1,38 +1,43 @@
-# NEXT_CHAT — V0 L13 residual / continue
+# NEXT CHAT — L13 / L13.1 Swim residual
 
-## Done this session
+## State (do not claim Swim PASS)
 
-1. **L13 product fix APPLIED+COMMITTED**:
-   - `HectonPlayerMovement.FixedTick`: Sample locomotion BEFORE suit/juice physics gates; `EnsureJuiceProcessor` soft; public `EnsureDispatcherRegistration`
-   - `H8_HeadlessWorldDriver.EnsureGameplayLocomotionInputReady`: force HPM dispatcher re-register
-2. Docs: `Docs/V0_Playtest/V0_L13_FIXEDTICK_SAMPLE_BEFORE_SUIT.md`
-3. Probe launcher: `Tools/_cline_scratch/launch_v0_L13_sample_before_suit_probe.bat`
-4. L12 LIVE already on main (`f01ae3426` + `8e02edf3f`) — publish path proven; hop2 residual owned by L13
+| Layer | Status |
+|-------|--------|
+| L12 publish-after-AdvancePhase | SHIPPED LIVE: lastOverrideMove=(0,1), hop2 ABSENT, movementIntent01max=0 |
+| L13 sample-before-suit + EnsureDispatcherRegistration | CODE in `8a8290c81` |
+| L13.1 CS0246 FQN WorldDriver | CODE fix applied; commit/push then LIVE probe |
+| Swim LIVE | **NOT PASS** until movementIntent01max>0 |
 
-## NOT done until probe says so
+## Immediate next steps
 
-- **Swim PASS not claimed** without `movementIntent01max>0` (+ ideally hop2 + depth).
-- Live L13 probe must complete and be extracted.
+1. Confirm HEAD includes L13.1 FQN fix on `H8_HeadlessWorldDriver.cs` Ensure block.
+2. `git pull --rebase gitlab main && git push gitlab main` if not pushed.
+3. Kill stale Unity; clear `Temp/UnityLockfile` if stale.
+4. Launch `Tools/_cline_scratch/launch_v0_L13_sample_before_suit_probe.bat`
+   - log: `Docs/AgentLogs/h8_playprobe_v0_L13.log`
+   - flags: batchmode, h8StartGame 1, NO -quit, NO -nographics, NO forceMenuLoad
+5. Poll `Tools/_cline_scratch/_l13_poll.py`
+6. Verdict gates:
+   - compile OK (no CS0246)
+   - hop2 present in INPUTHOP census
+   - movementIntent01max > 0
+   - depth span if schedule allows
 
-## Immediate next
+## If LIVE still FAIL
 
-```
-1. Confirm no UnityLockfile / no stray Unity.exe
-2. Tools\_cline_scratch\launch_v0_L13_sample_before_suit_probe.bat
-3. Poll Docs\AgentLogs\h8_playprobe_v0_L13.log for Swim + INPUTHOP hop2 + movementIntent01max
-4. Branch:
-   - hop2 OK intent>0 depth>0 → Swim PASS; daemon next route row
-   - hop2 OK intent=0 → L14 kinematics / PrepareTransport / vehicle wipe
-   - hop2 ABSENT → L14 SystemDispatcher Player lane / FixedTick registration
-   - intent>0 depth=0 → L14 swim physics / SwimSurface tick budget (L12 had only 2 surface ticks)
-5. git pull --rebase gitlab main && push if needed
-6. Document LIVE numbers under Docs/V0_Playtest/; subagent .mem.json under AgentLogs/scratch
-```
+- hop2 OK intent 0 → PrepareTransport / kinematics / vehicle / schedule length
+- hop2 ABSENT → FixedTick not on Player lane / blockGameplayLanes
+- Subagents mandatory; write `.mem.json` under Docs/AgentLogs/scratch/
 
-## Least confidence
+## Key paths
 
-Sample-before-suit is necessary given L12 evidence; may be insufficient if FixedTick never runs on Player lane.
+- `Assets/_Project/Scripts/HectonPlayerMovement.cs` FixedTick sample-before-suit
+- `Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs` EnsureGameplayLocomotionInputReady
+- Docs: `V0_L13_FIXEDTICK_SAMPLE_BEFORE_SUIT.md`, `V0_L13_1_CS0246_FQN.md`
 
-## Biggest miss for human
+## Repo
 
-L12 non-zero CurrentInputState ≠ HPM sampled GetState. immersionMax=1 ≠ Sample ran. Feature without live probe numbers is DECLINED.
+- `C:\hades\Hecton8` remote `gitlab` branch `main`
+- Unity 6000.5.0f1
+- Probe: `Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe.Run`

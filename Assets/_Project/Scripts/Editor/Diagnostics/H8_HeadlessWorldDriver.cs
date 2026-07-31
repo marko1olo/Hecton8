@@ -2692,9 +2692,10 @@ namespace Hecton8.EditorTools.Diagnostics
             // L13: Re-assert HPM Player fixed-tick registration so SampleGameplay/GetState (hop2)
             // runs during Swim. Suit/juice no longer gate sampling (HPM FixedTick L13), but a
             // missed TryRegisterFixedTickable still starves the entire locomotion read path.
-            HectonPlayerMovement movement =
-                _movement as HectonPlayerMovement
-                ?? UnityEngine.Object.FindFirstObjectByType<HectonPlayerMovement>();
+            // Fully-qualify type: editor asm has no using Hecton8.Gameplay (CS0246 on bare name).
+            Hecton8.Gameplay.HectonPlayerMovement movement =
+                _movement
+                ?? UnityEngine.Object.FindFirstObjectByType<Hecton8.Gameplay.HectonPlayerMovement>();
             if (movement != null)
             {
                 movement.EnsureDispatcherRegistration();
