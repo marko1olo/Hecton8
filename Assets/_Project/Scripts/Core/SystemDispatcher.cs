@@ -5514,8 +5514,19 @@ namespace Hecton8.Core
             long completeDispatcherTimestamp = 0L;
             bool dispatcherPhaseTimingStarted = false;
 #endif
+            // L17: parity with RunDispatcherUpdate — TryFlush before bootstrap-lock hard-return.
+            // LateFrame previously returned without draining FO; when SceneRebaseTickLock stuck,
+            // InputDispatcher lateFrameTick/pumpFired froze while PreSim still advanced (L16 LIVE:
+            // lateFrameTick=49 pumpFired=1 sticky). External TryFlush is the designed drain path
+            // (FO.Tick itself is on master lanes blocked by the same lock).
             if (IsOriginShiftBootstrapLocked)
-                return;
+            {
+                if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
+                    return;
+
+                if (IsOriginShiftBootstrapLocked)
+                    return;
+            }
             if (IsOriginShiftFrameLockedForCurrentFrame)
             {
                 _dataVault?.UnlockAllocationsAfterAupShift(_aupPreShiftPauseSequence);

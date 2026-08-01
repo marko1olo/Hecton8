@@ -241,6 +241,16 @@ namespace Hecton8.EditorTools.Diagnostics
         private static double _lastProbeClockEnsureRealtime;
         private static bool _probeSimClockArmed;
 
+        // L17: HSR drains FO scene-rebase every Update while bootstrap lock can starve FixedTick
+        // (RunDispatcherUpdate returns after PreSim when IsOriginShiftBootstrapLocked and TryFlush
+        // cannot clear; LateFrame hard-returns on the same lock without TryFlush). Probe never
+        // called TryFlush — hop1/presim advanced while lateFrameTick/pumpFired froze and hop2
+        // stayed ABSENT. Mirror HSR FO drain + throttled FODRAIN snapshot (not a hop2 mock).
+        private const double ProbeFoDrainDiagIntervalSeconds = 5.0;
+        private static double _lastProbeFoDrainDiagRealtime;
+        private static int _probeFoDrainCalls;
+        private static int _probeFoDrainCleanCount;
+
         private static int _worldDriverGraceTicks;
         private static bool _graceOpenedLogged;
         private static bool _graceClosedLogged;
@@ -767,6 +777,8 @@ namespace Hecton8.EditorTools.Diagnostics
                         // L16: arm product step-bounded clock before any WorldDriver.Begin so FixedTick
                         // can consume locomotion overrides (hop2 path) under batchmode WallClock dt=0.
                         EnsureProbeSimulationClock("gameplay-window-start");
+                        // L17: drain FO bootstrap lock before first driver tick (HSR parity).
+                        DrainProbeFloatingOriginBootstrap("gameplay-window-start");
                     }
 
                     // Content before measurement. This runs BEFORE the driver starts and OUTSIDE the
@@ -803,6 +815,8 @@ namespace Hecton8.EditorTools.Diagnostics
                             _worldDriverStarted = true;
                             // L16: re-assert clock immediately before Begin in case dispatcher arrived late.
                             EnsureProbeSimulationClock("worlddriver-begin");
+                            // L17: FO drain before Begin so FixedTick path is not permanently early-out.
+                            DrainProbeFloatingOriginBootstrap("worlddriver-begin");
                             H8_HeadlessWorldDriver.Begin();
                             Debug.Log(
                                 $"{Marker} WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> " +
@@ -813,12 +827,15 @@ namespace Hecton8.EditorTools.Diagnostics
 
                         // L16: sustain against late pause / dilation collapse / step-bound drop.
                         MaybeEnsureProbeSimulationClockSustain();
+                        // L17: HSR-parity FO drain every gameplay tick (FixedTick starvation root).
+                        DrainProbeFloatingOriginBootstrap("gameplay-tick");
                         H8_HeadlessWorldDriver.Tick();
                     }
                     else
                     {
                         // Undriven measurement still needs FixedTick for hop2/depth observability.
                         MaybeEnsureProbeSimulationClockSustain();
+                        DrainProbeFloatingOriginBootstrap("gameplay-tick-undriven");
                     }
 
                     if (EditorApplication.timeSinceStartup - _gameplayWindowStartedAt >= _gameplaySeconds)
@@ -3759,6 +3776,65 @@ namespace Hecton8.EditorTools.Diagnostics
             EnsureProbeSimulationClock("gameplay-sustain");
         }
 
+        /// <summary>
+        /// L17 product FO drain for the playmode probe route.
+        /// Mirrors <c>HeadlessSimulationRunner.Update</c> calling
+        /// <c>HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks</c> every tick while
+        /// <c>IsOriginShiftBootstrapLocked</c> can starve FixedTick after PreSim and freeze LateFrame.
+        /// Probe is still INPUT PRODUCER only via WorldDriver; this is external FO drain (designed
+        /// product path — FO.Tick itself is blocked by the same lock). Does not mock hop2.
+        /// </summary>
+        private static void DrainProbeFloatingOriginBootstrap(string reason)
+        {
+            bool flushClean = HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+            _probeFoDrainCalls++;
+            if (flushClean)
+                _probeFoDrainCleanCount++;
+
+            double now = EditorApplication.timeSinceStartup;
+            bool forceFirst = _lastProbeFoDrainDiagRealtime <= 0.0;
+            bool intervalDue = forceFirst ||
+                               (now - _lastProbeFoDrainDiagRealtime) >= ProbeFoDrainDiagIntervalSeconds;
+            // Always emit when lock still held after a drain attempt so LIVE can prove residual.
+            bool lockHeld = SystemDispatcher.IsOriginShiftBootstrapLocked;
+            if (!intervalDue && !lockHeld)
+                return;
+
+            _lastProbeFoDrainDiagRealtime = now;
+
+            HectonFloatingOrigin.CopyBootstrapDrainSnapshot(
+                out bool foHasOrigin,
+                out bool foShift,
+                out bool foPhysicsPause,
+                out bool foLock,
+                out int foPendingScenes,
+                out bool foTargetsDirty,
+                out bool foBarrier);
+
+            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+            bool paused = dispatcher != null && dispatcher.SimulationPaused;
+            float dil = dispatcher != null ? dispatcher.TimeDilationScalar : -1f;
+
+            Debug.Log(
+                $"{Marker} FODRAIN reason={reason}" +
+                " flushClean=" + (flushClean ? "1" : "0") +
+                " calls=" + _probeFoDrainCalls.ToString(CultureInfo.InvariantCulture) +
+                " clean=" + _probeFoDrainCleanCount.ToString(CultureInfo.InvariantCulture) +
+                " foHasOrigin=" + (foHasOrigin ? "1" : "0") +
+                " foShift=" + (foShift ? "1" : "0") +
+                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+                " foLock=" + (foLock ? "1" : "0") +
+                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+                " foBarrier=" + (foBarrier ? "1" : "0") +
+                " dispBoot=" + (lockHeld ? "1" : "0") +
+                " dispFrame=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0") +
+                " paused=" + (paused ? "1" : "0") +
+                " dil=" + dil.ToString("0.###", CultureInfo.InvariantCulture) +
+                " stepBound=" + (SystemDispatcher.IsStepBoundedTimeActive ? "1" : "0") +
+                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0"));
+        }
+
         private static void ResetRunState()
         {
             _phase = Phase.Idle;
@@ -3842,6 +3918,9 @@ namespace Hecton8.EditorTools.Diagnostics
             _gameplayWindowStartedAt = 0.0;
             _lastProbeClockEnsureRealtime = 0.0;
             _probeSimClockArmed = false;
+            _lastProbeFoDrainDiagRealtime = 0.0;
+            _probeFoDrainCalls = 0;
+            _probeFoDrainCleanCount = 0;
             H8_HeadlessWorldDriver.Reset();
         }
 
