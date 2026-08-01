@@ -90,7 +90,8 @@ namespace Hecton8.EditorTools
             AppendGate(Report, "service.EnsureRuntimeInstance", hasEnsure);
             AppendGate(Report, "service.AddComponent<DockingAutopilotService>", hasAdd);
             AppendGate(Report, "bootstrap.DockingAutopilotService.EnsureRuntimeInstance", hasBootstrapCall);
-            AppendGate(Report, "service.RegisterDockingAutopilot", hasRegister);
+            AppendGate(Report, "service.RegisterDockingAutopilotService", hasRegister);
+
             Report.AppendLine();
 
             Report.Append("serviceExists=").Append(serviceExists ? 1 : 0);
