@@ -8604,6 +8604,15 @@ namespace Hecton8.Bootstrap
                 // Factory + call here after DestructibleOrganicManager so signal
                 // owners publish with world harvest already available.
                 Hecton8.AtlasSignal.AtlasSignalSystem.EnsureRuntimeInstance();
+                // AtlasSignalDecoder is the sole GlobalRegistry.AtlasSignalDecoder owner
+                // (Atlas-6 phase decode / quest handoff).
+                // GUID bca3aaf40fff8ea459345f06a7f5592b has ZERO live scene/prefab hits.
+                // HectonLoreSystemsRoot only constructs via editor ContextMenu.
+                // No Ensure existed; OnEnable only registers when already present.
+                // Phase/quest consumers hit permanent null.
+                // Factory + call here after AtlasSignalSystem so decoder binds to
+                // the published signal read-model.
+                Hecton8.AtlasSignal.AtlasSignalDecoder.EnsureRuntimeInstance();
             }
 
 

@@ -530,6 +530,35 @@ namespace Hecton8.AtlasSignal
             Destroy(gameObject);
         }
 
+
+        /// <summary>
+        /// Resolve-or-create the sole AtlasSignalDecoder runtime owner for
+        /// GlobalRegistry.AtlasSignalDecoder (Atlas-6 phase decode / quest handoff).
+        /// Script GUID bca3aaf40fff8ea459345f06a7f5592b has ZERO live scene/prefab hits.
+        /// HectonLoreSystemsRoot.SetupAllSystems is editor ContextMenu-only.
+        /// No Ensure existed; OnEnable only registers when already present.
+        /// Phase/quest consumers hit permanent null without this path.
+        /// </summary>
+        public static AtlasSignalDecoder EnsureRuntimeInstance()
+        {
+            AtlasSignalDecoder registered = GlobalRegistry.AtlasSignalDecoder;
+            if (IsAtlasSignalDecoderRuntimeUsable(registered))
+                return registered;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterAtlasSignalDecoderRuntime(registered);
+                registered._serviceRegistered = false;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[AtlasSignalDecoder]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<AtlasSignalDecoder>();
+        }
+
         private static bool IsAtlasSignalDecoderRuntimeUsable(AtlasSignalDecoder decoder)
         {
             return !ReferenceEquals(decoder, null) &&
