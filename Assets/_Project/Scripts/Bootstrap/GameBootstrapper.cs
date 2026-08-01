@@ -8526,6 +8526,13 @@ namespace Hecton8.Bootstrap
                 // present; call here after player/HUD publication so AfterSceneLoad cannot
                 // race an empty canvas set.
                 Hecton8.UI.SubtitleManager.EnsureRuntimeInstance();
+
+                // CameraJuiceSystem is the sole ICameraJuiceSystem / GlobalRegistry.CameraJuice owner.
+                // GUID 394c096b405b1e745b881283ae9a05c6 has ZERO scene/prefab hits. No Ensure existed;
+                // Awake/OnEnable only register when already present. SceneRuntimeService BeginInputReclaimFov
+                // and SystemDispatcher consumers hit permanent null. Factory + call here after player
+                // publication so TryResolveCamera can bind PlayerCamera.
+                Hecton8.VFX.CameraJuiceSystem.EnsureRuntimeInstance();
             }
 
 
