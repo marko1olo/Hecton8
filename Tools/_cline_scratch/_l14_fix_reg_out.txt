@@ -1,0 +1,17 @@
+size 828016 crlf 0 lf 15336
+match True span (310066, 311199)
+MATCHED HEAD: '            // L14: sticky bools alone are insufficient. A prior true with a missing bucket entry\n            // (OnEnable raced empty Dispatcher, unregister partial, domain reload'
+MATCHED TAIL: ';\n            }\n            _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);\n'
+subs 1
+has non-thrash comment True
+no UnregisterUpdatable thrash False
+has sample intent True
+           return;
+
+            // L14: sticky false -> TryRegister once. sticky true -> leave registered.
+            // Do NOT Unregister+Register every Ensure: WorldDriver calls Ensure every settle/swim
+            // tick; thrash would drop HPM from the fixed lane mid-hold. RegistryBucket.TryRegister
+            // returns false when Contains (not idempotent-true), so re-call alone cannot heal a
+            // missing entry either - membership loss is rare; SD L14 no longer bootstrap-skips
+            // Player lane, so once registered FixedTick runs for hop2/Sample/intent.
+     

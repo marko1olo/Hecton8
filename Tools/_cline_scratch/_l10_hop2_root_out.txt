@@ -1,0 +1,451 @@
+ID 330:        // DiagRecordReadObservation for why the census is emitted from a read accessor and not from a tick.
+ID 503:        public InputState CurrentInputState
+ID 510:                DiagRecordReadObservation(1);
+ID 789:        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+ID 831:        // arrivedInResolvedSnapshot all from IInputService.CurrentInputState, which is _currentInputState.
+ID 865:        // the useless outcome. probe5 PROVES the driver read CurrentInputState (it printed atFrame and
+ID 1204:        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+ID 1207:        private void DiagRecordReadObservation(int readHop)
+ID 1359:        public PlayerInputState GetState()
+ID 1361:            DiagRecordReadObservation(2);
+ID 3203:        public bool TryGetCurrentInputStateDto(out InputStateDTO state)
+=== GetState ===
+1359:        public PlayerInputState GetState()
+1360:        {
+1361:            DiagRecordReadObservation(2);
+1362:            return _currentState;
+1363:        }
+=== HectonPlayerInputHandler full ===
+1:using Hecton8.Core;
+2:using Unity.Mathematics;
+3:using UnityEngine;
+4:
+5:namespace Hecton8.Gameplay
+6:{
+7:    /// <summary>
+8:    /// Zero-allocation reader for frame-cached player input snapshots.
+9:    /// </summary>
+10:    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+11:    internal struct HectonPlayerInputHandler
+12:    {
+13:        public bool TryReadFrame(
+14:            IInputService inputService,
+15:            float jumpBufferSeconds,
+16:            out HectonPlayerInputFrame frame,
+17:            out bool jumpBuffered)
+18:        {
+19:            return TryReadFrame(
+20:                inputService,
+21:                jumpBufferSeconds,
+22:                consumeBufferedJump: true,
+23:                out frame,
+24:                out jumpBuffered);
+25:        }
+26:
+27:        public bool TryReadFrame(
+28:            IInputService inputService,
+29:            float jumpBufferSeconds,
+30:            bool consumeBufferedJump,
+31:            out HectonPlayerInputFrame frame,
+32:            out bool jumpBuffered)
+33:        {
+34:            frame = default;
+35:            jumpBuffered = false;
+36:
+37:            if (inputService == null || !inputService.IsPlayerInputEnabled)
+38:                return false;
+39:
+40:            PlayerInputState state = inputService.GetState();
+41:            Vector2 moveInput = state.MoveDelta;
+42:            Vector2 lookInput = state.LookDelta;
+43:            float verticalInput = state.VerticalDelta;
+44:            if (!IsFinite(moveInput) || !IsFinite(lookInput) || !math.isfinite(verticalInput))
+45:                return false;
+46:
+47:            frame = new HectonPlayerInputFrame(
+48:                state,
+49:                ClampUnitInput(moveInput),
+50:                lookInput,
+51:                math.clamp(verticalInput, -1f, 1f),
+52:                state.HasAction(PlayerInputAction.Sprint));
+53:            jumpBuffered = consumeBufferedJump && inputService.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferSeconds);
+54:            return true;
+55:        }
+56:
+57:        public static float ResolveVerticalInput(in PlayerInputState state)
+58:        {
+59:            return math.clamp(state.VerticalDelta, -1f, 1f);
+60:        }
+61:
+62:        private static bool IsFinite(Vector2 value)
+63:        {
+64:            return math.isfinite(value.x) && math.isfinite(value.y);
+65:        }
+66:
+67:        private static Vector2 ClampUnitInput(Vector2 value)
+68:        {
+69:            float lengthSq = (value.x * value.x) + (value.y * value.y);
+70:            if (lengthSq <= 1f)
+71:                return value;
+72:
+73:            float inverseLength = math.rsqrt(lengthSq);
+74:            return new Vector2(value.x * inverseLength, value.y * inverseLength);
+75:        }
+76:    }
+77:
+78:    /// <summary>
+79:    /// Value snapshot consumed by the locomotion orchestrator after input service reads.
+80:    /// </summary>
+81:    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+82:    internal readonly struct HectonPlayerInputFrame
+83:    {
+84:        public HectonPlayerInputFrame(
+85:            PlayerInputState state,
+86:            Vector2 moveInput,
+87:            Vector2 lookInput,
+88:            float verticalInput,
+89:            bool sprintHeld)
+90:        {
+91:            State = state;
+92:            MoveInput = moveInput;
+93:            LookInput = lookInput;
+94:            VerticalInput = verticalInput;
+95:            SprintHeld = sprintHeld ? (byte)1 : (byte)0;
+96:        }
+97:
+98:        public readonly PlayerInputState State;
+99:        public readonly Vector2 MoveInput;
+100:        public readonly Vector2 LookInput;
+101:        public readonly float VerticalInput;
+102:        public readonly byte SprintHeld;
+103:    }
+104:}
+HPM[TryRegisterFixed] 5478:                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+HPM[RegisterFixedTickable] 5478:                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+HPM[_registeredFixed] 1606:        private bool _registeredFixedTick;
+HPM[_registeredFixed] 4732:            _registeredFixedTick = false;
+HPM[_registeredFixed] 4808:            if (_registeredTick && _registeredFixedTick && _registeredLateFrameTick) return;
+HPM[_registeredFixed] 5026:            if (_registeredFixedTick)
+HPM[_registeredFixed] 5029:                _registeredFixedTick = false;
+HPM[_registeredFixed] 5476:            if (!_registeredFixedTick)
+HPM[_registeredFixed] 5478:                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+HPM[_registeredFixed] 5510:            if (_registeredFixedTick)
+HPM[_registeredFixed] 5513:                _registeredFixedTick = false;
+HPM[IFixedTickable] 58:    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, ISargassumGlobalDragEventListener
+HPM[currentSuitData =] 1753:            currentSuitData = newSuit;
+HPM[currentSuitData =] 12483:            if (currentSuitData == null) return;
+HPM[_juiceProcessor =] 4749:            _juiceProcessor = new CameraJuiceProcessor();
+HPM[_juiceProcessor =] 8071:            if (_juiceProcessor == null) return;
+HPM[_juiceProcessor =] 8466:            if (_juiceProcessor == null)
+HPM[_juiceProcessor =] 8529:            if (_juiceProcessor == null)
+HPM[_juiceProcessor =] 9925:            if (_juiceProcessor == null) return;
+HPM[ResolveInputManagerBinding] 4262:            ResolveInputManagerBinding();
+HPM[ResolveInputManagerBinding] 4740:            ResolveInputManagerBinding();
+HPM[ResolveInputManagerBinding] 4754:            ResolveInputManagerBinding();
+HPM[ResolveInputManagerBinding] 4780:            ResolveInputManagerBinding();
+HPM[ResolveInputManagerBinding] 4812:            ResolveInputManagerBinding();
+HPM[ResolveInputManagerBinding] 8007:        private void ResolveInputManagerBinding()
+HPM[ResolveInputManagerBinding] 8210:            ResolveInputManagerBinding();
+HPM[IsGameplayInputBlockedByMenu] 8090:                if (IsGameplayInputBlockedByMenu())
+HPM[IsGameplayInputBlockedByMenu] 8212:            if (IsGameplayInputBlockedByMenu())
+HPM[IsGameplayInputBlockedByMenu] 9765:        private static bool IsGameplayInputBlockedByMenu()
+HPM[movementIntent01] 8200:        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+HPM[_inputManager] 1189:        private IInputService _inputManager;
+HPM[_inputManager] 7965:            if (_inputManager == null || _subscribedInputManager == _inputManager)
+HPM[_inputManager] 7968:            _subscribedInputManager = _inputManager;
+HPM[_inputManager] 7969:            SeedInputStateFromService(_inputManager);
+HPM[_inputManager] 8003:        /// _inputManager null, which every consumer here already null-checks, and the next call rebinds.
+HPM[_inputManager] 8012:                ReferenceEquals(_inputManager, currentManager) &&
+HPM[_inputManager] 8019:            _inputManager = currentManager;
+HPM[_inputManager] 8132:            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+HPM[_inputManager] 8135:                    _inputManager,
+FXREG 5023:                _registeredTick = false;
+FXREG 5024:            }
+FXREG 5025:
+FXREG 5026:            if (_registeredFixedTick)
+FXREG 5027:            {
+FXREG 5028:                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+FXREG 5029:                _registeredFixedTick = false;
+FXREG 5030:            }
+FXREG 5031:
+FXREG 5032:            if (_registeredColdTick)
+FXREG 5033:            {
+FXREG 5034:                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+FXREG 5035:                _registeredColdTick = false;
+FXREG 5036:            }
+FXREG 5037:
+FXREG 5038:            if (_registeredLateFrameTick)
+FXREG 5039:            {
+FXREG 5040:                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+FXREG 5041:                _registeredLateFrameTick = false;
+FXREG 5042:            }
+FXREG 5473:                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+FXREG 5474:            }
+FXREG 5475:
+FXREG 5476:            if (!_registeredFixedTick)
+FXREG 5477:            {
+FXREG 5478:                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+FXREG 5479:            }
+FXREG 5480:
+FXREG 5481:            if (!_registeredColdTick)
+FXREG 5482:            {
+FXREG 5483:                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+FXREG 5484:            }
+FXREG 5485:
+FXREG 5486:            TryRegisterLateFrameTickable();
+FXREG 5487:
+FXREG 5488:            if (!_registeredPlayerMovementContracts)
+FXREG 5489:            {
+FXREG 5490:                IPlayerMovementContracts currentContracts = GlobalRegistry.PlayerMovementContracts;
+FXREG 5491:                if (currentContracts == null)
+FXREG 5492:                    GlobalRegistry.RegisterPlayerMovementContracts(this);
+FXREG 5507:                _registeredTick = false;
+FXREG 5508:            }
+FXREG 5509:
+FXREG 5510:            if (_registeredFixedTick)
+FXREG 5511:            {
+FXREG 5512:                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+FXREG 5513:                _registeredFixedTick = false;
+FXREG 5514:            }
+FXREG 5515:
+FXREG 5516:            if (_registeredColdTick)
+FXREG 5517:            {
+FXREG 5518:                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+FXREG 5519:                _registeredColdTick = false;
+FXREG 5520:            }
+FXREG 5521:
+FXREG 5522:            if (_registeredLateFrameTick)
+FXREG 5523:            {
+FXREG 5524:                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+FXREG 5525:                _registeredLateFrameTick = false;
+FXREG 5526:            }
+=== ResolveInputManagerBinding ===
+8007:        private void ResolveInputManagerBinding()
+8008:        {
+8009:            IInputService currentManager = GlobalRegistry.RegisteredInput;
+8010:            _inputServiceRuntime = currentManager;
+8011:            if (_resolvedInputManager &&
+8012:                ReferenceEquals(_inputManager, currentManager) &&
+8013:                ReferenceEquals(_subscribedInputManager, currentManager))
+8014:            {
+8015:                return;
+8016:            }
+8017:
+8018:            UnsubscribeFromInput();
+8019:            _inputManager = currentManager;
+8020:            _resolvedInputManager = true;
+8021:            SubscribeToInput();
+8022:        }
+=== IsGameplayInputBlockedByMenu ===
+9765:        private static bool IsGameplayInputBlockedByMenu()
+9766:        {
+9767:            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+9768:        }
+SUITSET 1753:            currentSuitData = newSuit;
+SUITSET 1927:        public SuitData CurrentSuit => currentSuitData;
+SUITSET 8069:            SuitData suit = currentSuitData;
+SUITSET 8532:            if (collisionImpulse > 0f && currentSuitData != null)
+SUITSET 9923:            SuitData suit = currentSuitData;
+SUITSET 11455:            if (currentSuitData != null)
+SUITSET 12485:            _rb.mass = currentSuitData.mass;
+SUITSET 12492:                _currentLinearDamping = IsInDryInterior() ? 0f : currentSuitData.walkDrag;
+SUITSET 13088:            else if (currentSuitData != null)
+SUITSET 13185:            else if (currentSuitData != null)
+SUITSET 14813:            _debugSuitName = currentSuitData != null ? currentSuitData.name : "NONE";
+=== OnEnable ===
+4766:        private void OnEnable()
+4767:        {
+4768:            SargassumGlobalDragManager.Register(this);
+4769:            SpectrumEvents.RegisterSonarPingListener(this);
+4770:            OnRegister();
+4771:            OnDependencyInject();
+4772:            TryRegisterDependencyRebinds();
+4773:            if (_survivalSystem == null)
+4774:                TryGetComponent(out _survivalSystem);
+4775:            BindInventoryLoadSource();
+4776:            ResolvePlayerToolManagerCold();
+4777:            ResolvePlayerTransportCoordinatorCold();
+4778:            ResolveSwimPresentationControllerCold();
+4779:            ResolveUnderwaterVisualsCold();
+4780:            ResolveInputManagerBinding();
+4781:            EnsurePlayerRuntimeSubsystems();
+4782:            EnsurePlayerKinematicsNativeState();
+4783:            EnsureCinematicFocusBlackBox();
+4784:            RefreshCinematicFocusTierGateCold();
+4785:            _playerKinematicsTelemetryDumpedThisFault = false;
+4786:            if (_rb != null)
+4787:            {
+4788:                _playerState.SyncKinematic(ResolveBodyRuntimePosition(), ResolveAuthoritativeLinearVelocity(Vector3.zero));
+4789:                RecordLastValidAup(_playerState.AbsolutePosition);
+4790:            }
+4791:            if (_cameraRig != null)
+4792:                _cameraRig.Bind(playerCamera, _cameraComponent);
+4793:            ToggleBuoyancy(true);
+4794:            if (!_registeredOriginShiftListener)
+4795:            {
+4796:                HectonFloatingOrigin.RegisterListener(this);
+4797:                _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
+4798:            }
+4799:            TryRegisterToDispatchers();
+4800:        }
+PROBE C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessPlayModeProbe.cs
+  290:        private const string MomentSwim = "Swim";
+  558:            // The world driver is the only producer for the Swim/Resource/Tool/Craft rows in a headless
+  588:                        "shorter window and leave Swim/Resource/Tool/CraftRepairBuild NOT_EXERCISED");
+  2035:                RecordMoment(MomentSwim, MomentVerdict.NotExercised, reason);
+  2060:            RecordDriverRow(H8_HeadlessWorldDriver.RowSwim, MomentSwim);
+  2126:            // publishes: in Logs/omega_route20.log it published 47,344 input overrides and the Swim row
+  2127:            // reported FAIL with movementIntent01max=0.000. Read literally that says the input route is
+  2354:            AddRouteMoment(MomentSwim, "navigate, surface/dive, read oxygen/pressure/depth");
+=== L09 key full lines ===
+L12320:[PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one assigned quick-slot tool item. The grant is now retried from the tick lane until the inventory can accept, so this line is printed once. refused=4 granted=0 firstSlot=0 firstItemHash=-1760594330 refusalMask=0x1E (bit0 componentDisabled, bit1 gridMissing, bit2 stackLaneDead, bit3 simStackLaneDead, bit4 simOccupanc
+L13156:[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) currentInputStateFrame=363 standardInputFrame=364 inp
+L13174:[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) currentInputStateFrame=363 standardInputFrame=364 in
+L13192:[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBufferFail=0 publishOk=380 | currentStateMove=(0,1) currentInputStateFrame=379 standardInputFrame=380 i
+L23666:[H8_PLAYPROBE] MOMENT   PASS          Boot               allSystemsReady=True gameReady=True Dispatcher=True TickManager=True Save=True ObjectPool=True activeScene='02_HECTON_WORLD' activationStep='Complete' activationCompleted=True
+L23680:[H8_PLAYPROBE] MOMENT   PASS          WorldLoad          active gameplay scene '02_HECTON_WORLD' finished loading after 10s; loaded scenes=2; unloading in background=01_MAIN_MENU
+L23694:[H8_PLAYPROBE] MOMENT   NOT_EXERCISED FirstExit          CONTENT-BLOCKED: no life-pod or drop-pod prefab exists in the project. LifePodSeatStrapLatch, DropPodSeatController and LifePodTactilePrologueController are referenced by zero scenes and zero prefabs, so there is no exit to drive. A driver cannot open this row - the pod has to be authored first.
+L23708:[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInputCalled=True blockMask=0x00000000 - FAIL: the inpu
+L23722:[H8_PLAYPROBE] MOMENT   BLOCKED       Resource           node 'rn_0_0_90001' would not deplete: health=260.000->0.444 normalized=0.002 vulnerabilityMask=0x00000020[Laser] requiredToolClass=Laser after 8.871s / 69690 driver ticks - driverEffect=PlasmaCut capability=0x00000031[Cut|Burn|Laser] pulses=69836 landed=146 - damage landed and then a pulse stopped changing integrity, which is the failed-Try
+L23736:[H8_PLAYPROBE] MOMENT   BLOCKED       Tool               PlayerToolManager reports slotCount=4 and IsToolAvailableInSlot is false for every slot, so no tool could be selected on this route [INVENTORY inventoryComponent=present enabled=True gridBound=True version 0->0 InventoryChangedSignal lane=0 - UPSTREAM LIVE: the inventory is enabled with its grid bound, so an empty loadout or an ineffective t
+L23750:[H8_PLAYPROBE] MOMENT   BLOCKED       CraftRepairBuild   Fabricator is live with visibleRecipes=0 totalRecipes=0 lockedRecipes=0 but CanCraft is false for all of them; the Resource leg delivered nothing, so no recipe/repair can consume a resource on this route [SCHEDULE phase=Craft wall=8.773s ticks=172036 tickFloor=4 tickBox=172036 granted=14.000s of a 14.000s nominal budget; run elapsed 29.716s 
+L23764:[H8_PLAYPROBE] MOMENT   BLOCKED       Mission            12 quests are authored and the graph is ready, but nothing completed. authored=12 graphReady=True autoActivated=2 activations=2 completions=0 reverts=0 transitionsLogged=2 genuineCompletions=0 selfCompletions=0
+L23778:[H8_PLAYPROBE] MOMENT   NOT_EXERCISED Hazard             CONTENT-BLOCKED: no hazard is ever instantiated. RadiationHazardGrid, EnvironmentalHazard, ThermalVentRuntime, HectonHazardSource and HostileFlora have zero AddComponent call sites anywhere, so no hazard exists to create a decision. A driver cannot open this row - a hazard has to be placed first.
+L23792:[H8_PLAYPROBE] MOMENT   PARTIAL       SaveLoad           save half observed: TryRequestSave(slot 'slot_0') changed 1 file(s) under 'C:/Users/Admin/AppData/LocalLow/Danat Games/Hecton8' in 1,0s (byteDelta=0). The LOAD half of this row is not exercised by this probe, so the row is not accepted.
+L23806:[H8_PLAYPROBE] MOMENT   PARTIAL       Proof              run log + per-phase clock table + save directory diff written to 'C:\hades\Hecton8\Docs\AgentLogs\h8_playprobe_v0_L09.json'; run-repeatability now has a producer as well - no comparable state hash this run (state=NeverSampled), slowTickDiscardedSeconds=0.000 over 0 discard events - which is what a second run of the same seed diffs against, b
+L23820:[H8_PLAYPROBE] MOMENTS pass=2 partial=2 fail=1 blocked=4 notExercised=2 of 11 Required Route rows. Only pass is acceptance; partial means one half of a two-part row was observed and the row is NOT accepted.
+L23834:[H8_PLAYPROBE] RESULT 1 Required Route row(s) reported FAIL on a run that was asked to start the game, so the exit code now reflects them. Read the MOMENT lines above for which rows and why.
+=== L08 ===
+# V0 L08 MEASURED — Playable Loop Probe Ledger
+
+**Date:** 2026-07-31  
+**Probe:** `h8_playprobe_v0_L08`  
+**HEAD at probe:** `2e0d5e3d3` (blackbox vault guard release P0)  
+**Log:** `Docs/AgentLogs/h8_playprobe_v0_L08.log` (~2.2MB)  
+**JSON result:** MISSING (teardown crash)  
+**Screenshots:** `Docs/Screenshots/V0_Playtest/` EMPTY — no PLAYER PNGs  
+**Policy:** Feature without gameplay is DECLINED. No mocks. Real product fixes only.
+
+---
+
+## PASS / FAIL Matrix (L08 measured)
+
+| Gate | Status | Evidence |
+|------|--------|----------|
+| Boot | PASS | Probe reached world/player attach |
+| WorldLoad | PASS | World driver phases advanced |
+| Input publish path open | PARTIAL | `publishOk=404/4420`; `publishGuardFail=4016` residue |
+| SwitchToPlayerInput | PASS | `switchToPlayerInputCalled=True`, `inputEnabled=True`, `blockMask=0` |
+| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+| Tool slots available | **FAIL** | `available=0` BLOCKED |
+| STARTERGRANT | **FAIL** | Deferred once with `refusalMask=0x1E` (bits 1–4) |
+| Inventory gridBound | PARTIAL | `gridBound=True`, `inventoryVersion 0→0` (empty, not proof of live lanes) |
+| Fauna encounter | UNPROVEN | Systems exist; route not exercised under L08 |
+| Death / save bridge | PARTIAL | SaveLoad PARTIAL; death not route-proven |
+| PLAYER PNGs V0-S01..S03 | **FAIL** | Zero screenshots captured |
+
+---
+
+## Root causes (product, not probe)
+
+### 1. Swim intent zero — FIXED (product)
+
+**Cause (~90–95% confidence):**  
+`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` → `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+`FixedTick` applied locomotion/kinematics from stale `_input*` and **never** called `ProcessPlayerInputFrame`.
+
+Batchmode / physics-heavy probe floods `FixedTick` while render `Tick` rarely runs → `CurrentMovementIntent01` stays 0 even when publish path is open (`publishOk>0`).
+
+**Call chain (intended):**  
+`Publish` / automation override → `InputDispatcher` state → `TryReadFrame` → `_inputH/_inputV` → `ResolveRawInputIntentVector` → `_lastPlayerKinematicsIntendedMovement` → `CurrentMovementIntent01`.
+
+**Product fix applied (this session, pre-commit):**
+- New `SampleGameplayLocomotionInputForFixedStep()` ~L8208  
+- Called at start of `FixedTick` ~L9932 before `PrepareTransportAndFrameState`  
+- Look/juice/cursor remain render-Tick owned; menu zeros locomotion on fixed path only  
+
+**File:** `Assets/_Project/Scripts/HectonPlayerMovement.cs`
+
+### 2. STARTERGRANT / tool slots — FIXED drive path (product); residual vault risk
+
+**Cause:**  
+`RetryRuntimeStartToolGrantIfPending` ran only from render `Tick` → same batchmode starvation.  
+Early grant hit `CanServiceItemAdds=false` → `DescribeAddRefusalMask=0x1E`:
+- bit1 gridMissing  
+- bit2 stackLaneDead  
+- bit3 simStackLaneDead  
+- bit4 simOccupancyLaneDead  
+
+Vault lanes can go stale after other vault allocs (meta.Version stamp); recovery is all-or-nothing via `TryRecoverRuntimeStorageCold`.
+
+**Product fix applied (this session, pre-commit):**
+- `PlayerToolManager` implements `IFixedTickable`  
+- Registers/unregisters via `GlobalRegistry.TryRegisterFixedTickable` / `UnregisterFixedTickable`  
+- `FixedTick` calls `RetryRuntimeStartToolGrantIfPending()` (also still from Tick)  
+
+**File:** `Assets/_Project/Scripts/PlayerToolManager.cs`
+
+**Residual risk for L09:** If vault never becomes `CanServiceItemAdds=true` after recover, grant still fails. FixedTick only multiplies retry opportunities — does not invent live lanes. Watch L09 for `STARTERGRANT applied` + STORAGE lines + `IsToolAvailableInSlot≥1`.
+
+### 3. Secondary (not fixed this commit)
+
+- `publishGuardFail=4016` still high (lock conflicts) — separate from intent-zero when `publishOk>0`.  
+- PNG capture path never proven under V0 probe.  
+- JSON missing after crash teardown.
+
+---
+
+## Architectural note (architect)
+
+V0 probe is physics/batchmode-heavy. **Any gameplay that only hooks `IUpdatable.Tick` is effectively unwired in the probe** (and weak under catch-up frames in real play). Two systems hit this class of bug in L08: movement input sampling + tool grant retry.
+
+Diagnostics showing “path open” without fixed-step consumers produced false confidence.
+
+`gridBound=True` + `inventoryVersion=0` means empty inventory, **not** healthy service lanes. `NativeArray.IsCreated` can flip false after other vault allocs without a callback.
+
+---
+
+## Implemented but NOT gameplay-integrated (DECLINED until proven)
+
+| Feature | Code exists | Wired into spawn→swim→tools→fauna→death/save |
+|---------|-------------|-----------------------------------------------|
+| Fauna AI / spawn | Yes | Route not proven under probe |
+| Death bridge | Yes | Partial; not end-to-end proven |
+| Save/Load | Partial | SaveLoad PARTIAL only |
+| Screenshot / V0-S01..S03 | Pipeline present | Zero PNGs |
+| FirstExit / Hazard | Content-gated | Blocked |
+| Craft / loot | Upstream | Blocked on tools/loot spawn |
+| Tick-only systems under batchmode | Many | Effectively unwired in probe |
+
+---
+
+## Verify (pre-commit)
+
+| Check | Result |
+|-------|--------|
+| HPM braces | delta 0 |
+| HPM `SampleGameplayLocomotionInputForFixedStep` | def L8208, call L9932, count=2 |
+| PTM braces | delta 0 |
+| PTM `IFixedTickable` | class + register + unregister + FixedTick |
+| PTM `RetryRuntimeStartToolGrantIfPending` from FixedTick | yes (Tick + FixedTick) |
+
+---
+
+## L09 acceptance (real game, no mocks)
+
+1. `movementIntent01max > 0` during Swim hold  
+2. `IsToolAvailableInSlot` ≥ 1 after runtime start; STARTERGRANT applied (not stuck 0x1E)  
+3. Fauna / death / save: log evidence of route exercise  
+4. PLAYER PNGs under `Docs/Screenshots/V0_Playtest/` V0-S01..S03 regenerated and analyzed  
+5. RESULT JSON present or explicit teardown reason documented  
+
+---
+
+## Commit allowlist (this wave)
+
+- `Assets/_Project/Scripts/HectonPlayerMovement.cs`  
+- `Assets/_Project/Scripts/PlayerToolManager.cs`  
+- This ledger  
+
+**DO NOT commit:** Desktop scratch, `_agent_*`, `_eco_*`, `_slice*`, `HeadlessSimulationRunner.cs` local dirty unless reviewed as intentional product.
+

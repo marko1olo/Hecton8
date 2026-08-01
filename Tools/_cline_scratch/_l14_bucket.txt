@@ -1,0 +1,152 @@
+FILE C:\hades\Hecton8\Assets\_Project\Scripts\WorldProceduralScatterDirector.cs
+bool TryRegisterDesiredPlacement(
+            ScatterPlacement placement,
+            in ScatterPlacementRegistrationContext registrationContext)
+        {
+            if (placement == null || placement.Key == 0L)
+                return false;
+
+            if (placement.IsPooled)
+                return false;
+
+            if (proceduralStateRegistry != null && proceduralStateRegistry.IsPlacementSuppressed(placement.Key))
+                return false;
+
+            EnsurePlacementRuntimeStateResolved(placement);
+
+            Dictionary<long, ScatterPlacement> desiredPlacements = registrationContext.DesiredPlacements;
+            Dictionary<long, ScatterPlacement> retainedPlacements = registrationContext.RetainedPlacements;
+            Dictionary<long, float> placementLastSeenTimes = registrationContext.PlacementLastSeenTimes;
+            bool alreadyRegistered = desiredPlacements.TryGetVal
+====
+FILE C:\hades\Hecton8\Assets\_Project\Scripts\Core\GlobalRegistry.cs
+bool TryRegisterDispatcherSystem(IDispatcherSystem item)
+        {
+            if (item == null)
+                return false;
+
+            if (!Application.isPlaying)
+                return false;
+
+            if (!TryEnsureDispatcherRegistration())
+                return false;
+
+            return SystemDispatcher.Register(item);
+        }
+
+        /// <summary>
+        /// Registers a fixed-only master dispatcher system without mixing it into frame jobs.
+        /// </summary>
+        public static bool TryRegisterDispatcherFixedSystem(IDispatcherFixedSystem item)
+        {
+            if (item == null)
+                return false;
+
+            if (!Application.isPlaying)
+                return false;
+
+            if (!TryEnsureDispatcherRegistration())
+                return false;
+
+            return SystemDispatcher.Register(item);
+        }
+
+        /// <summary>
+        /// Regi
+====
+FILE C:\hades\Hecton8\Assets\_Project\Scripts\Core\RegistryBucket.cs
+bool TryRegister(T item)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (item == null)
+            {
+                if (!_nullRegistrationLogged)
+                {
+                    Hecton8.Core.H8Debug.LogError(
+                        $"[RegistryBucket<{typeof(T).Name}>] Null registration is forbidden.");
+                    _nullRegistrationLogged = true;
+                }
+                return false;
+            }
+
+            if (_count >= _capacity)
+            {
+                if (!_capacityErrorLogged)
+                {
+                    Hecton8.Core.H8Debug.LogError(
+                        $"[GlobalRegistry] RegistryBucket<{typeof(T).Name}> capacity ({_capacity}) exceeded.");
+                    _capacityErrorLogged = true;
+                }
+                return false;
+            }
+
+            if (Contains(item))
+                return false;
+#else
+  
+====
+FILE C:\hades\Hecton8\Assets\_Project\Scripts\Interaction\EquipmentInteractionHandler.cs
+bool TryRegisterEquipmentSockets(
+            EquipmentMetadata metadata,
+            Transform equipmentRoot,
+            out int startIndex,
+            out int slotCount)
+        {
+            startIndex = -1;
+            slotCount = 0;
+            if (metadata == null ||
+                equipmentRoot == null ||
+                _dataVault == null ||
+                _dataVault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            if (!TryPrepareEquipmentSocketScratch(metadata, equipmentRoot, out int socketCount))
+                return false;
+
+            if (!TryReserveEquipmentSocketSlots(metadata, socketCount, out startIndex))
+                return false;
+
+            slotCount = socketCount;
+            if (!TryWritePreparedEquipmentSocketRange(startIndex, slotCount, socketCount, out int written) ||
+                written != socketCount)
+
+====
+FILE C:\hades\Hecton8\Assets\_Project\Scripts\VFX\Debris\CarveDebrisComputeRenderer.cs
+bool TryRegisterComputeService()
+        {
+            if (_runtimeOwnerAborted)
+                return false;
+
+            if (_computeServiceRegistered)
+                return true;
+
+            if (Application.isPlaying && TryAbortForUsableExistingRuntime())
+                return false;
+
+            IDebrisComputeService registered = GlobalRegistry.DebrisCompute;
+            if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
+            {
+                CarveDebrisComputeRenderer staleRenderer = registered as CarveDebrisComputeRenderer;
+                if (ReferenceEquals(staleRenderer, null))
+                {
+                    if (Application.isPlaying)
+                    {
+                        _runtimeOwnerAborted = true;
+                        Destroy(gameObject);
+                    }
+
+                    return false;
+                }
+
+      
+====
+FILE C:\hades\Hecton8\Assets\_Project\Scripts\Audio\Editor\AdvancedAcousticsSmokeTester.cs
+bool TryRegisterNoOpAudioFallback(");
+                string audioUsable = ExtractMethodBody(gameBootstrapper, "private static bool IsBootstrapAudioServiceUsable(");
+                AssertContains(heartbeatReady, "if (node == BootstrapDependencyNode.SpatialAudioManager)", "Bootstrap heartbeat readiness handles spatial audio before generic heartbeat", builder, ref failureCount);
+                AssertContains(heartbeatReady, "return _headlessBootMode || IsBootstrapAudioServiceUsable(service as IAudioService)", "Bootstrap heartbeat readiness validates spatial audio usability", builder, ref failureCount);
+                AssertTextBefore(heartbeatReady, "if (node == BootstrapDependencyNode.SpatialAudioManager)", "if (service is IServiceHeartbeat heartbeat)", "Bootstrap spatial audio readiness is checked before generic heartbeat readiness", builder, ref failureCount);
+                AssertC
+====

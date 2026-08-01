@@ -1,0 +1,122 @@
+1|=== immersion / waterImmersion assignments ===
+2|1933|        public float WaterImmersionRatio => _waterImmersionRatio;
+3|1982|            if (IsInDryInterior() || _waterImmersionRatio <= 0.01f)
+4|3057|            flags |= math.select(0u, 2u, _waterImmersionRatio > 0.01f);
+5|3058|            flags |= math.select(0u, 4u, _lastPlayerKinematicsDragCoefficient > 0f && _waterImmersionRatio > 0.01f);
+6|4160|            bool applySubmergedEnvironment = !IsInDryInterior() && (_waterImmersionRatio > 0.02f || exosuitActive);
+7|4597|            _waterImmersionRatio = ComputeImmersionRatio();
+8|4598|            _smoothedImmersionRatio = _waterImmersionRatio;
+9|4602|                _waterImmersionRatio = 0f;
+10|4603|                _smoothedImmersionRatio = 0f;
+11|4606|            _isWalking = _waterImmersionRatio < swimTransitionThreshold;
+12|4608|            _currentLocomotionMode = ResolveLocomotionMode(_smoothedImmersionRatio);
+13|8650|            _juiceInput.immersionRatio = _waterImmersionRatio;
+14|8964|            float immersion = (!_isWalking && !IsInDryInterior())
+15|8978|            if (immersion <= 0.0001f || thrustIntent <= 0.0001f)
+16|8998|            float targetWeight = immersion * thrustIntent * speedPresence;
+17|9044|                immersion <= 0.35f ||
+18|9936|                float previousWaterImmersionRatio = _waterImmersionRatio;
+19|9965|                float physicsImmersion = _smoothedImmersionRatio;
+20|10145|            _waterImmersionRatio = ComputeImmersionRatio();
+21|10151|                _waterImmersionRatio = 0f;
+22|10152|                _smoothedImmersionRatio = 0f;
+23|10161|                _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, enterT);
+24|10166|                _smoothedImmersionRatio = math.lerp(_smoothedImmersionRatio, _waterImmersionRatio, exitT);
+25|10821|                float immersionDepthT = math.saturate(_currentDepth / math.max(dynamicCollisionImmersionDepthForFull, 0.01f));
+26|10822|                targetTuck = math.max(downhillSlopeT, descentPoseT) * immersionDepthT * _surfaceLockBlend * _shoreBuoyancyBlend;
+27|12265|            if (IsInDryInterior() || wasGroundedLastFixedTick || previousWaterImmersionRatio > 0.01f || _waterImmersionRatio <= 0.01f)
+28|12304|            bool enteredWater = previousWaterImmersionRatio <= 0.01f && _waterImmersionRatio > 0.01f;
+29|12332|            if (_waterImmersionRatio <= 0.01f && _currentDepth <= 0f)
+30|12519|                    float wadeFactor = 1f + _waterImmersionRatio * suit.wadeSlowdownFactor;
+31|12667|            float shorelineSnapDistance = (!_isWalking && _smoothedImmersionRatio < swimTransitionThreshold)
+32|14433|            float wadeMultiplier = exosuitActive ? 1f : 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
+33|14490|            return _waterImmersionRatio <= 0.01f;
+34|14531|            float ambientAdvectionScale = _waterImmersionRatio * currentInfluenceScale * shoreCurrentScale;
+35|14697|                float wadeMultiplier = exosuitActive ? 1f : 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
+36|14849|            _debugImmersionRatio = _waterImmersionRatio;
+37|14850|            _debugSmoothedImmersion = _smoothedImmersionRatio;
+38|15221|                float immersedHeight = playerHeight * _waterImmersionRatio;
+40|=== driver movementIntent / LocomotionHold blocks ===
+44|W291|            LocomotionHoldInProgress,
+86|W933|        private static float _maxMovementIntent;
+87|W934|        private static float _maxImmersion;
+100|W1310|            _maxMovementIntent = 0f;
+101|W1311|            _maxImmersion = 0f;
+143|W1622|                if (intent > _maxMovementIntent)
+144|W1623|                    _maxMovementIntent = intent;
+146|W1625|                float immersion = movement.WaterImmersionRatio;
+147|W1626|                if (immersion > _maxImmersion)
+148|W1627|                    _maxImmersion = immersion;
+156|W1622|                if (intent > _maxMovementIntent)
+157|W1623|                    _maxMovementIntent = intent;
+159|W1625|                float immersion = movement.WaterImmersionRatio;
+160|W1626|                if (immersion > _maxImmersion)
+161|W1627|                    _maxImmersion = immersion;
+169|W1622|                if (intent > _maxMovementIntent)
+170|W1623|                    _maxMovementIntent = intent;
+172|W1625|                float immersion = movement.WaterImmersionRatio;
+173|W1626|                if (immersion > _maxImmersion)
+174|W1627|                    _maxImmersion = immersion;
+184|W2740|            _intent.MoveDelta = new Vector2(0f, 1f);
+193|W2749|            _waitReason = WaitReason.LocomotionHoldInProgress;
+198|W2749|            _waitReason = WaitReason.LocomotionHoldInProgress;
+206|W2757|            _intent.MoveDelta = new Vector2(0f, 1f);
+212|W2757|            _intent.MoveDelta = new Vector2(0f, 1f);
+217|W2762|            _waitReason = WaitReason.LocomotionHoldInProgress;
+226|W2762|            _waitReason = WaitReason.LocomotionHoldInProgress;
+240|W2773|        ///   1. the driver's MoveDelta reached the locomotion owner (CurrentMovementIntent01 moved),
+254|W2796|            bool intentReachedMovement = _maxMovementIntent >= MinMovementIntent01;
+268|W2807|                .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
+269|W2808|                .Append(" immersionMax=").Append(F(_maxImmersion))
+282|W2844|            // BlockDiscrete leave MoveDelta and VerticalDelta untouched (InputDispatcher.cs:3121-3141), so
+287|W2849|                    .Append("and ApplyInputBlockMask (InputDispatcher.cs:3121) zeroes MoveDelta and ")
+296|W2849|                    .Append("and ApplyInputBlockMask (InputDispatcher.cs:3121) zeroes MoveDelta and ")
+310|W2881|            _detail.Append(" - FAIL: the input path was open but the driver's MoveDelta never reached ")
+324|W3255|            _intent.MoveDelta = Vector2.zero;
+352|W4029|            _intent.MoveDelta = Vector2.zero;
+394|W4687|                case WaitReason.LocomotionHoldInProgress:
+405|===== WD-loco 2680-2850 =====
+412|2686|                    .Append("slot is empty, so IsPlayerInputEnabled was never reachable and the leading ")
+421|2695|                _detail.Append(" - BLOCKER GATE 2 (service present, map closed): SwitchToPlayerInput was ")
+422|2696|                    .Append("invoked on the registered service and IsPlayerInputEnabled still never read ")
+454|2728|        /// through VerticalDelta, and pitching the camera would fight the immersion and depth sampling the
+466|2740|            _intent.MoveDelta = new Vector2(0f, 1f);
+475|2749|            _waitReason = WaitReason.LocomotionHoldInProgress;
+483|2757|            _intent.MoveDelta = new Vector2(0f, 1f);
+488|2762|            _waitReason = WaitReason.LocomotionHoldInProgress;
+499|2773|        ///   1. the driver's MoveDelta reached the locomotion owner (CurrentMovementIntent01 moved),
+522|2796|            bool intentReachedMovement = _maxMovementIntent >= MinMovementIntent01;
+533|2807|                .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
+534|2808|                .Append(" immersionMax=").Append(F(_maxImmersion))
+551|2825|                    .Append("window. No IInputService was ever registered, so IsPlayerInputEnabled was ")
+562|2836|                    .Append("IInputService.IsPlayerInputEnabled was false for the whole window, so ")
+570|2844|            // BlockDiscrete leave MoveDelta and VerticalDelta untouched (InputDispatcher.cs:3121-3141), so
+575|2849|                    .Append("and ApplyInputBlockMask (InputDispatcher.cs:3121) zeroes MoveDelta and ")
+578|===== WD-sample 1120-1200 =====
+661|===== WD-wait 4650-4820 =====
+699|4687|                case WaitReason.LocomotionHoldInProgress:
+800|4788|                .Append(" waitingOn=").Append(_phaseWaitReason[index].ToString());
+834|=== SwitchToPlayer / BindNative / IsPlayerInputEnabled consumers ===
+835|537|        public bool IsPlayerInputEnabled => _nativeInputManager != null && _nativeInputManager.IsPlayerInputEnabled;
+839|3237|        public void SwitchToPlayerInput()
+840|3241|                _nativeInputManager.SwitchToPlayerInput();
+847|3687|        /// IsPlayerInputEnabled was ever asked.
+849|3849|                if (inputManager.IsPlayerInputEnabled)
+851|===== DISP-enabled 530-580 =====
+859|537|        public bool IsPlayerInputEnabled => _nativeInputManager != null && _nativeInputManager.IsPlayerInputEnabled;
+904|===== DISP-switch 3220-3310 =====
+922|3237|        public void SwitchToPlayerInput()
+926|3241|                _nativeInputManager.SwitchToPlayerInput();
+997|===== DISP-persist 3688-3720 =====
+999|3689|        /// Identical call and identical purpose to WorldStateManager.cs:85. PersistRuntimeService is inert
+1004|3694|        private void TryPersistRuntimeOwner()
+1006|3696|            Hecton8.Bootstrap.GameBootstrapper.PersistRuntimeService(this);
+1032|FILE Assets\_Project\Scripts\Input\InputManager.cs
+1033|  39|    public class InputManager : MonoBehaviour, INativeInputManagerRuntime
+1034|  277|        public bool IsPlayerInputEnabled => TryGetActionMapEnabled(_playerActionMap);
+1036|=== L08 MEASURED head ===
+1056|| SwitchToPlayerInput | PASS | `switchToPlayerInputCalled=True`, `inputEnabled=True`, `blockMask=0` |
+1057|| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+1072|`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` ? `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+1081|- New `SampleGameplayLocomotionInputForFixedStep()` ~L8208  
+1136|=== architect_answers ===

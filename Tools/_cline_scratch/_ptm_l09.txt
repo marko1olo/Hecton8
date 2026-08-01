@@ -1,0 +1,247 @@
+
+===== 40-55 =====
+40|#if UNITY_EDITOR
+41|    using UnityEditor;
+42|#endif
+43|
+44|    [DisallowMultipleComponent]
+45|    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, IFixedTickable, ILateFrameTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
+46|    {
+47|        private static int s_x001PlayerToolManagerSignalPushDropCount;
+48|        // ══════════════════════════════════════════════════════════
+49|        //  INSPECTOR
+50|        // ══════════════════════════════════════════════════════════
+51|
+52|        [Header("── References ────────────────────────────────")]
+53|        [Tooltip("Transform tochki krepleniya instrumenta (docherniy obekt kamery).")]
+54|        [SerializeField] private Transform handAnchor;
+55|
+
+===== 160-180 =====
+160|        // Cold storage repair is ~54 vault lane binds. Asking more often than this does not make a dead
+161|        // inventory live; it only burns the tick lane.
+162|        private const int RuntimeStartToolGrantRecoveryStride = 60;
+163|        // Storage live but the add still refused: re-ask 4x/second, not 60x. TryAddItem's preflight copies
+164|        // the whole stack lane and the occupancy mask, which is cheap but not free.
+165|        private const int RuntimeStartToolGrantRefusalStride = 15;
+166|        private bool _handlingEquippedToolBreak;
+167|        private bool _registeredToTick;
+168|        private bool _registeredToFixedTick;
+169|        private bool _registeredToLateFrame;
+170|        private bool _pendingSwapExecution;
+171|        private bool _pendingCurrentToolDespawn;
+172|        private bool _flushingToolLifecyclePresentation;
+173|        private bool _pendingToolSpawnExecution;
+174|        private GameObject _pendingToolSpawnPrefab;
+175|        private int _pendingToolSpawnSlotIndex;
+176|        private bool _pendingToolPoolDespawn;
+177|        private GameObject _pendingToolPoolDespawnInstance;
+178|        private IObjectPoolService _pendingToolPoolDespawnOwner;
+179|        private Transform _pendingToolPoseTransform;
+180|        private PhysicalToolGripOffsets _pendingToolGripOffsets;
+
+===== 300-390 =====
+300|            // managed exception out of Instantiate and takes the remainder of OnEnable with it. Measured on
+301|            // the headless route: slot 0 (Tool_Scanner_Held) carries DataArchaeologyRuntime, whose Awake
+302|            // asserts "requires an authored reconstruction mesh", and that throw landed on the warmup call
+303|            // that used to sit directly above this line. Warmup is a pure pre-allocation optimisation, so it
+304|            // goes last - one unauthored prefab must not be able to deny the player the entire starter
+305|            // loadout, which is exactly what IsToolAvailableInSlot reports on.
+306|            TryGrantAssignedToolItemsOnRuntimeStart();
+307|            BaselineInventoryChangedSignalRevision();
+308|            WarmRuntimePoolsIfNeeded();
+309|        }
+310|
+311|        private void OnDisable()
+312|        {
+313|            ToolHitUtility.ClearPlayerToolManagerCold(this);
+314|            ToolHitUtility.ClearPhysicsServiceCold(_physicsService);
+315|            ToolHitUtility.ClearPlayerMovementForceSinkCold(_playerMovementForceSink);
+316|            TryUnregisterFromTickManager();
+317|            UnsubscribeModuleStatusEvents();
+318|            ClearInteriorCarrierCache();
+319|            TryUnregisterHotSwapListener();
+320|            ClearCachedFieldLoadoutAdvice();
+321|
+322|            // Despavnim tekuschiy instrument pri otklyuchenii menedzhera
+323|            _flushingToolLifecyclePresentation = true;
+324|            DespawnCurrentToolImmediate();
+325|            _flushingToolLifecyclePresentation = false;
+326|        }
+327|
+328|        private void TryRegisterToTickManager()
+329|        {
+330|            if ((_registeredToTick && _registeredToLateFrame) || !Application.isPlaying)
+331|                return;
+332|
+333|            if (GlobalRegistry.Dispatcher == null)
+334|                return;
+335|
+336|            if (!_registeredToTick)
+337|            {
+338|                _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+339|            }
+340|
+341|            if (!_registeredToLateFrame)
+342|                _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+343|            if (!_registeredToFixedTick)
+344|            {
+345|                // Starter grant retry must not depend on render Tick alone. Batchmode / V0 probe
+346|                // schedules few IUpdatable ticks while FixedTick runs continuously; without this
+347|                // lane STARTERGRANT stays deferred (L08 refusalMask 0x1E) and IsToolAvailableInSlot
+348|                // never becomes true before ToolEquip latches Blocked.
+349|                _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+350|            }
+351|
+352|        }
+353|
+354|        private void TryUnregisterFromTickManager(bool clearPendingPresentation = true)
+355|        {
+356|            if (!_registeredToTick && !_registeredToLateFrame)
+357|                return;
+358|
+359|            if (_registeredToTick)
+360|                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+361|
+362|            if (_registeredToFixedTick)
+363|            {
+364|                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+365|                _registeredToFixedTick = false;
+366|            }
+367|            if (_registeredToLateFrame)
+368|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+369|
+370|            _registeredToTick = false;
+371|            _registeredToLateFrame = false;
+372|            if (clearPendingPresentation)
+373|            {
+374|                _pendingToolPoseFlush = false;
+375|                _pendingToolPoseTransform = null;
+376|                _pendingToolGripOffsets = null;
+377|                _hasPendingHandAnchorLocalPosition = false;
+378|            }
+379|        }
+380|
+381|        // ══════════════════════════════════════════════════════════
+382|        //  ITickable — MAIN LOOP (vyzyvaetsya kazhdyy kadr)
+383|        // ══════════════════════════════════════════════════════════
+384|
+385|        /// <summary>
+386|        /// Glavnyy tsikl menedzhera instrumentov.
+387|        /// Poryadok: Input → SwapAnimation → ToolTick → UseInput.
+388|        /// </summary>
+389|        public void Tick(float deltaTime)
+390|        {
+
+===== 450-560 =====
+450|            // ── 3. Esli instrument aktiven i animatsiya zavershena — obnovlyaem ──
+451|            if (_currentTool != null && _swapState == SwapState.Idle)
+452|            {
+453|                // ── Tick instrumenta (idle-animatsiya, pokachivanie) ──
+454|                if (TryBeginBatterySiphonLockoutIfNeeded())
+455|                {
+456|                    PublishRuntimeContextState();
+457|#if UNITY_EDITOR
+458|                    _debugCurrentSlot = _currentSlotIndex;
+459|                    _debugStateName   = GetSwapStateDebugName(_swapState);
+460|#endif
+461|                    return;
+462|                }
+463|
+464|                _currentTool.ToolTick(deltaTime);
+465|
+466|                IInputService inputService = _inputService;
+467|                PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+468|                    ? inputService.GetState()
+469|                    : default;
+470|
+471|                if (inputState.HasAction(PlayerInputAction.PrimaryFire))
+472|                {
+473|                    _currentTool.UsePrimary(deltaTime);
+474|                }
+475|
+476|                if (inputState.HasAction(PlayerInputAction.SecondaryFire))
+477|                {
+478|                    _currentTool.UseSecondary(deltaTime);
+479|                }
+480|            }
+481|
+482|            PublishRuntimeContextState();
+483|
+484|#if UNITY_EDITOR
+485|            _debugCurrentSlot = _currentSlotIndex;
+486|            _debugStateName   = GetSwapStateDebugName(_swapState);
+487|#endif
+488|        }
+489|
+490|        /// <summary>
+491|        /// Fixed-step grant retry. Render <see cref="Tick"/> still owns slot input and swap
+492|        /// presentation; this lane only keeps <see cref="RetryRuntimeStartToolGrantIfPending"/>
+493|        /// alive when the dispatcher is physics-heavy and IUpdatable rarely runs (batchmode V0).
+494|        /// </summary>
+495|        public void FixedTick(float fixedDeltaTime)
+496|        {
+497|            RetryRuntimeStartToolGrantIfPending();
+498|        }
+499|
+500|
+501|        // ══════════════════════════════════════════════════════════
+502|        //  PUBLIC API
+503|        // ══════════════════════════════════════════════════════════
+504|
+505|        public void LateFrameTick()
+506|        {
+507|            _flushingToolLifecyclePresentation = true;
+508|            FlushPendingCurrentToolDespawn();
+509|            FlushPendingSwapExecution();
+510|            FlushPendingToolSpawnExecution();
+511|            FlushPendingToolPoolDespawn();
+512|            _flushingToolLifecyclePresentation = false;
+513|            FlushPendingHandAnchorPose();
+514|            FlushPendingToolPose();
+515|            RefreshFieldLoadoutAdviceForVisualSync();
+516|        }
+517|
+518|        /// <summary>
+519|        /// Programmnoe pereklyuchenie na slot po indeksu (0-3).
+520|        /// Mozhno vyzvat iz drugih sistem (naprimer, pri potere instrumenta).
+521|        /// </summary>
+522|        /// <param name="slotIndex">Indeks slota (0-based). -1 = ubrat instrument.</param>
+523|        public void SwitchToSlot(int slotIndex)
+524|        {
+525|            if (_externallyDockedTool != null)
+526|                return;
+527|
+528|            if (slotIndex < -1 || slotIndex >= toolPrefabs.Length)
+529|                return;
+530|
+531|            if (slotIndex >= 0 && (IsHandheldToolUsageBlocked() || IsBatterySiphonLockoutActive))
+532|                return;
+533|
+534|            RequestSwap(slotIndex);
+535|        }
+536|
+537|        /// <summary>
+538|        /// Prinuditelno ubiraet tekuschiy instrument iz ruk.
+539|        /// Zapuskaet animatsiyu opuskaniya, posle chego despavnit.
+540|        /// </summary>
+541|        public void Holster()
+542|        {
+543|            if (_externallyDockedTool != null)
+544|                return;
+545|
+546|            RequestSwap(-1);
+547|        }
+548|
+549|        /// <summary>Tekuschiy aktivnyy instrument (mozhet byt null).</summary>
+550|        public PlayerTool CurrentTool => _currentTool;
+551|
+552|        public uint CurrentActiveToolHash => _currentActiveToolHash;
+553|
+554|        public bool TryBeginExternalToolDock(PlayerTool tool)
+555|        {
+556|            if (tool == null ||
+557|                _currentTool == null ||
+558|                !ReferenceEquals(tool, _currentTool) ||
+559|                _swapState != SwapState.Idle ||
+560|                _externallyDockedTool != null)

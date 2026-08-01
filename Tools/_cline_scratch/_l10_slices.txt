@@ -1,0 +1,185 @@
+
+##### HITS C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs #####
+ 1157|                RefreshPlayerInventoryVaultHandlesCold();
+ 1241|        /// <see cref="CanServiceItemAdds"/>). This method must never be the thing that decides storage is
+ 1247|        private void RefreshPlayerInventoryVaultHandlesCold()
+ 1515|        // recomputed in EVERY Awake - 24 Marshal.OffsetOf reflection lookups plus 3 size intrinsics per
+ 1570|                    "asserted field offsets in place. Awake did NOT bail here, so an empty inventory this " +
+ 1659|        private void Awake()
+ 1677|                // as written and Awake reaches the grid construction below. The surviving suspect for an
+ 1678|                // empty inventory is the vault lane bind - see TryBindRuntimeStorageCold and its
+ 1680|                // not registered yet at Awake time.
+ 1681|                enabled = false;
+ 1683|                    "[PlayerInventory] DISABLED at Awake: DTO layout validation failed (see the layout " +
+ 1693|            // The lane bind and the cold scratch allocation live in TryBindRuntimeStorageCold so the SAME
+ 1695|            // `enabled = false; return;` - and because Awake disabling the component also means OnEnable
+ 1700|            // empty inventory rather than a broken one. TryBindRuntimeStorageCold now names the failing step
+ 1701|            // once, and TryRecoverRuntimeStorageCold lets the consumer that noticed re-arm it.
+ 1702|            if (!TryBindRuntimeStorageCold())
+ 1704|                enabled = false;
+ 1712|        private void OnEnable()
+ 1790|                    RefreshPlayerInventoryVaultHandlesCold();
+ 2394|        /// <c>_stackCounts</c>, are vault-backed and bound exactly once in <c>Awake</c> via
+ 2395|        /// <c>BindPlayerInventoryVaultBuffers</c>. If that bind fails, <c>Awake</c> sets <c>enabled = false</c>
+ 2396|        /// and the loss is PERMANENT for the session: <c>Awake</c> never re-runs on
+ 2397|        /// <c>SetActive(true)</c>, <c>OnEnable</c> never runs so the hot-swap listener is never registered, and
+ 2468|        /// <see cref="TryRecoverRuntimeStorageCold"/>, which re-arms every lane together.
+ 2470|        internal bool CanServiceItemAdds()
+ 2486|        /// WHY THIS HAS TO BE DRIVEN FROM OUTSIDE. <c>Awake</c> binds these lanes exactly once and sets
+ 2487|        /// <c>enabled = false</c> on any refusal. That also guarantees <c>OnEnable</c> never runs, so
+ 2499|        /// that the failed <c>Awake</c> skipped.
+ 2503|        /// <c>Awake</c> before <c>_grid</c> is constructed.
+ 2505|        internal bool TryRecoverRuntimeStorageCold()
+ 2507|            if (CanServiceItemAdds())
+ 2510|            // _grid == null means Awake has not completed its grid construction. Do not build the grid here:
+ 2514|            // This used to be documented as "Awake bailed on the editor-only DTO layout guard", i.e. as a
+ 2516|            // satisfied by construction (see the note in Awake) and cannot fail, so the reachable meaning of
+ 2517|            // _grid == null is that Awake has not RUN yet - a consumer polled this component before its
+ 2518|            // Awake, which is ordinary on the AddComponent bootstrap route. Returning false is still correct,
+ 2524|            if (!TryBindRuntimeStorageCold())
+ 2530|            return CanServiceItemAdds();
+ 2535|        /// Idempotent and re-entrant: the single owner of this sequence, called by <c>Awake</c> for the first
+ 2536|        /// bind and by <see cref="TryRecoverRuntimeStorageCold"/> for every re-arm after that.
+ 2538|        private bool TryBindRuntimeStorageCold()
+ 2570|            // TryRecoverRuntimeStorageCold, and a re-bind of buffers that already hold live data returns the
+ 2596|            InitializeSoaQueryEngine(cellCount);
+ 2600|            // guard and the clear above see live lanes; this one exists because InitializeSoaQueryEngine calls
+ 2603|            // scratch guard passes, this method returns true, and CanServiceItemAdds still reports false at the
+ 2608|            RefreshPlayerInventoryVaultHandlesCold();
+ 2618|        /// <c>Awake</c> now has exactly ONE vault-bind bailout and it DOES route through here, because
+ 2619|        /// <see cref="TryBindRuntimeStorageCold"/> announces before every one of its three false returns
+ 2624|        /// <see cref="TryRecoverRuntimeStorageCold"/> leaves one stale error in the log with no paired
+
+##### HITS C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs #####
+   13|        public bool TryReadFrame(
+   19|            return TryReadFrame(
+   27|        public bool TryReadFrame(
+   40|            PlayerInputState state = inputService.GetState();
+   41|            Vector2 moveInput = state.MoveDelta;
+
+##### HITS C:\hades\Hecton8\Assets\_Project\Scripts\PlayerToolManager.cs #####
+  147|        private uint _lastRuntimeStartToolGrantRefusalMask;
+  168|        private bool _registeredToFixedTick;
+  306|            TryGrantAssignedToolItemsOnRuntimeStart();
+  343|            if (!_registeredToFixedTick)
+  347|                // lane STARTERGRANT stays deferred (L08 refusalMask 0x1E) and IsToolAvailableInSlot
+  349|                _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+  362|            if (_registeredToFixedTick)
+  365|                _registeredToFixedTick = false;
+  395|            RetryRuntimeStartToolGrantIfPending();
+  492|        /// presentation; this lane only keeps <see cref="RetryRuntimeStartToolGrantIfPending"/>
+  497|            RetryRuntimeStartToolGrantIfPending();
+ 1298|        /// That is the whole reason the Tool row stayed blocked with <c>STARTERGRANT deferred</c> logged
+ 1302|        /// The real retry now lives on <see cref="RetryRuntimeStartToolGrantIfPending"/>, driven from
+ 1307|        private void TryGrantAssignedToolItemsOnRuntimeStart()
+ 1331|            uint firstRefusalMask = 0u;
+ 1362|                    // DescribeAddRefusalMask runs the full physical-capacity fold and its own doc comment
+ 1364|                    // RetryRuntimeStartToolGrantIfPending. The deferral latch is therefore part of the gate,
+ 1372|                        firstRefusalMask = playerInventory.DescribeAddRefusalMask(itemHash);
+ 1396|                // ONCE, not once per attempt. RetryRuntimeStartToolGrantIfPending now calls this method from
+ 1403|                _lastRuntimeStartToolGrantRefusalMask = firstRefusalMask;
+ 1407|                    "[PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one " +
+ 1414|                    " refusalMask=0x" + firstRefusalMask.ToString("X") +
+ 1422|                    "[PlayerToolManager] STARTERGRANT applied - the assigned quick-slot tool items are owned." +
+ 1428|                    "[PlayerToolManager] STARTERGRANT satisfied - every assigned quick-slot tool item was " +
+ 1439|        /// <see cref="TryGrantAssignedToolItemsOnRuntimeStart"/>. So any inventory condition that was not
+ 1451|        private void RetryRuntimeStartToolGrantIfPending()
+ 1501|            TryGrantAssignedToolItemsOnRuntimeStart();
+ 1511|        /// retries gave up. <c>DescribeAddRefusalMask</c> runs a full capacity fold and is banned from tick
+ 1538|                    probedMask = playerInventory.DescribeAddRefusalMask(itemHash);
+ 1544|                "[PlayerToolManager] STARTERGRANT ABANDONED - the player inventory refused every assigned " +
+ 1549|                " currentRefusalMask=0x" + probedMask.ToString("X") +
+ 1551|                " firstRefusalMask=0x" + _lastRuntimeStartToolGrantRefusalMask.ToString("X") +
+ 1747|            TryGrantAssignedToolItemsOnRuntimeStart();
+
+##### HITS C:\hades\Hecton8\Assets\_Project\Scripts\HectonPlayerMovement.cs #####
+  235|        [SerializeField] private SuitData currentSuitData;
+ 1330|        private CameraJuiceProcessor _juiceProcessor;
+ 1753|            currentSuitData = newSuit;
+ 1756|            _juiceProcessor.Initialize(leanIntoTurn);
+ 1927|        public SuitData CurrentSuit => currentSuitData;
+ 1957|        public float CurrentRoll => _juiceProcessor != null ? _juiceProcessor.CurrentRoll : 0f;
+ 4262|            ResolveInputManagerBinding();
+ 4585|            _juiceProcessor.Initialize(leanIntoTurn);
+ 4740|            ResolveInputManagerBinding();
+ 4746|            if (_juiceProcessor != null)
+ 4749|            _juiceProcessor = new CameraJuiceProcessor();
+ 4754|            ResolveInputManagerBinding();
+ 4780|            ResolveInputManagerBinding();
+ 4812|            ResolveInputManagerBinding();
+ 5916|            Vector3 localVelocity = IsAuthoritativeVehicleTransportActive()
+ 6040|        private bool IsAuthoritativeVehicleTransportActive()
+ 8007|        private void ResolveInputManagerBinding()
+ 8069|            SuitData suit = currentSuitData;
+ 8071|            if (_juiceProcessor == null) return;
+ 8090|                if (IsGameplayInputBlockedByMenu())
+ 8124|            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+ 8156|                if (IsAuthoritativeVehicleTransportActive())
+ 8210|            ResolveInputManagerBinding();
+ 8212|            if (IsGameplayInputBlockedByMenu())
+ 8249|            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+ 8262|            if (_juiceProcessor.SplashThisFrame)
+ 8265|                    _juiceProcessor.SplashIntensity,
+ 8266|                    _juiceProcessor.IsSubmerged,
+ 8271|                    _juiceProcessor.IsSubmerged,
+ 8272|                    _juiceProcessor.SplashIntensity,
+ 8277|            if (_juiceProcessor.SubmergeChangedThisFrame)
+ 8281|                    _juiceProcessor.IsSubmerged,
+ 8282|                    _juiceProcessor.IsSubmerged ? 1f : 0.65f,
+ 8287|            if (_juiceProcessor.ExhaleThisFrame)
+ 8466|            if (_juiceProcessor == null)
+ 8469|            _juiceProcessor.RegisterWaterEntryFovImpulse(expand, compress, duration);
+ 8529|            if (_juiceProcessor == null)
+ 8532|            if (collisionImpulse > 0f && currentSuitData != null)
+ 8533|                _juiceProcessor.RegisterCollisionImpulse(collisionImpulse, currentSuitData);
+ 8536|                _juiceProcessor.RegisterEntanglementStrain(entanglementStrain);
+ 8539|                _juiceProcessor.RegisterSonarPingImpulse(sonarPing);
+ 8542|                _juiceProcessor.RegisterExternalRollImpulse(externalRoll);
+ 9765|        private static bool IsGameplayInputBlockedByMenu()
+ 9923|            SuitData suit = currentSuitData;
+ 9925|            if (_juiceProcessor == null) return;
+ 9955|                _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
+11455|            if (currentSuitData != null)
+12105|            if (_juiceProcessor != null)
+12106|                _juiceProcessor.RegisterSplash(1f, currentSuitData);
+12483|            if (currentSuitData == null) return;
+12484|            CacheAuthoritativeBodyMassKg(currentSuitData.mass);
+12485|            _rb.mass = currentSuitData.mass;
+12492|                _currentLinearDamping = IsInDryInterior() ? 0f : currentSuitData.walkDrag;
+13088|            else if (currentSuitData != null)
+13185|            else if (currentSuitData != null)
+13188|                    currentSuitData.collisionShakeThreshold + 0.01f,
+13691|            if (_juiceProcessor != null)
+13692|                _juiceProcessor.RegisterLandJumpLaunch();
+14813|            _debugSuitName = currentSuitData != null ? currentSuitData.name : "NONE";
+14848|            _debugCurrentRoll = _juiceProcessor != null ? _juiceProcessor.CurrentRoll : 0f;
+14861|            _debugSplashThisFrame = _juiceProcessor != null && _juiceProcessor.SplashThisFrame;
+14862|            _debugExhaleThisFrame = _juiceProcessor != null && _juiceProcessor.ExhaleThisFrame;
+
+##### HITS C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs #####
+  330|        // DiagRecordReadObservation for why the census is emitted from a read accessor and not from a tick.
+  445|        private InputState _currentInputState;
+  503|        public InputState CurrentInputState
+  510|                DiagRecordReadObservation(1);
+  511|                return _currentInputState;
+  789|        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+  831|        // arrivedInResolvedSnapshot all from IInputService.CurrentInputState, which is _currentInputState.
+  835|        // later (:831). So "_currentInputState was updated" and "an InputStateSignal was pushed" are the same
+  865|        // the useless outcome. probe5 PROVES the driver read CurrentInputState (it printed atFrame and
+ 1203|        /// <param name="readHop">
+ 1204|        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+ 1205|        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+ 1207|        private void DiagRecordReadObservation(int readHop)
+ 1235|            DiagEmitHopCensus(readHop);
+ 1251|        private void DiagEmitHopCensus(int readHop)
+ 1256|                "[H8_INPUTHOP] readHop=" + readHop +
+ 1274|                " currentInputStateFrame=" + _currentInputState.Frame +
+ 1301|                " zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are" +
+ 1359|        public PlayerInputState GetState()
+ 1361|            DiagRecordReadObservation(2);
+ 1449|                _previousInputState = _currentInputState;
+ 1450|                _currentInputState = resolvedState;
+ 1789|                _currentInputState.LookX * InputState.LookInvQuantizeScale,
+ 1790|                _currentInputState.LookY * InputState.LookInvQuantizeScale);
+ 3203|        public bool TryGetCurrentInputStateDto(out InputStateDTO state)
+ 5537|            _currentInputState = default;

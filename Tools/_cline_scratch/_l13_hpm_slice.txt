@@ -1,0 +1,323 @@
+TOTAL_LINES=15307 BYTES=841442
+HIT_FIXED 58:     public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, ISargassumGlo
+HIT_FIXED 120:         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
+HIT_FIXED 164:         private const int SpeculativeHoverFixedTicksAfterAupShift = 1;
+HIT_FIXED 1606:         private bool _registeredFixedTick;
+HIT_JUICE 1755:             EnsureJuiceProcessor();
+HIT_REG 4212:                 TryRegisterToDispatchers();
+HIT_REG 4223:             TryRegisterToDispatchers();
+HIT_REG 4289:                         TryRegisterToDispatchers();
+HIT_JUICE 4584:             EnsureJuiceProcessor();
+HIT_JUICE 4744:         private void EnsureJuiceProcessor()
+HIT_FIXED 4761:         private PlayerTransportPreset PrepareFixedTickDependencies()
+HIT_REG 4799:             TryRegisterToDispatchers();
+HIT_REG 4809:             TryRegisterToDispatchers();
+HIT_REG 5466:         private void TryRegisterToDispatchers()
+HIT_SAMPLE 8208:         private void SampleGameplayLocomotionInputForFixedStep()
+HIT_FIXED 9921:         public void FixedTick(float fixedDeltaTime)
+HIT_SAMPLE 9932:                 SampleGameplayLocomotionInputForFixedStep();
+HIT_FIXED 10226:         private void FinalizeFixedTick(float fixedDeltaTime, SuitData suit, bool exosuitKinematicAuthority)
+HIT_FIXED 12263:         private void TryStartWaterEntryImpact(float previousWaterImmersionRatio, bool wasGroundedLastFixedTick, float entryVerticalVelocity)
+FIXED_LINE=9920
+=== FIXEDTICK 9916-10040 ===
+9916|                return HectonPlayerMotor.SafeVelocity(statePosition);
+9917|
+9918|            return _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.position) : Vector3.zero;
+9919|        }
+9920|
+9921|        public void FixedTick(float fixedDeltaTime)
+9922|        {
+9923|            SuitData suit = currentSuitData;
+9924|            if (suit == null) return;
+9925|            if (_juiceProcessor == null) return;
+9926|
+9927|            using (_fixedTickProfilerMarker.Auto())
+9928|            {
+9929|                // Fixed-step locomotion must sample input here. Render Tick is not guaranteed
+9930|                // before each FixedTick (batchmode / catch-up), and PrepareTransportAndFrameState
+9931|                // snapshots intent from _input* immediately below.
+9932|                SampleGameplayLocomotionInputForFixedStep();
+9933|
+9934|                PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+9935|
+9936|                float previousWaterImmersionRatio = _waterImmersionRatio;
+9937|                bool wasGroundedLastFixedTick = _isGrounded;
+9938|
+9939|                _rb.useGravity = false;
+9940|
+9941|                if (_isWalking)
+9942|                {
+9943|                    _bodyYaw = _cameraYaw;
+9944|                    _bodyYawVelocity = 0f;
+9945|                }
+9946|                else
+9947|                {
+9948|                    float bodyYawOmega = suit.bodyYawSpringOmega *
+9949|                        ResolveHeavyCarryBodyYawSpringMultiplier() *
+9950|                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
+9951|                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
+9952|                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+9953|                }
+9954|
+9955|                _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
+9956|                _wasGroundedLastFrame = _isGrounded;
+9957|
+9958|                GroundCheck();
+9959|                _playerMotor?.SetGroundedState(_isGrounded);
+9960|
+9961|                UpdateWaterImmersion(fixedDeltaTime);
+9962|
+9963|                ApplyLadderSplineSnapFromAsyncProbe(initialExosuitKinematicAuthority);
+9964|
+9965|                float physicsImmersion = _smoothedImmersionRatio;
+9966|                float feetDepth = GetFeetDepthBelowSurface(EffectiveWaterSurfaceY);
+9967|                bool hasImmediateShoreFooting = _isGrounded && feetDepth <= shoreWalkFootDepth;
+9968|                bool isShallowEnoughForShore = physicsImmersion < swimTransitionThreshold || hasImmediateShoreFooting;
+9969|                bool isDryLand = physicsImmersion <= 0.01f;
+9970|
+9971|                if (_isGrounded && isDryLand)
+9972|                {
+9973|                    _dryGroundGraceTimer = dryGroundGraceTime;
+9974|                }
+9975|                else if (_dryGroundGraceTimer > 0f)
+9976|                {
+9977|                    _dryGroundGraceTimer -= fixedDeltaTime;
+9978|                    if (_dryGroundGraceTimer < 0f)
+9979|                        _dryGroundGraceTimer = 0f;
+9980|                }
+9981|
+9982|                if (_isGrounded && isShallowEnoughForShore)
+9983|                {
+9984|                    _shoreGroundGraceTimer = shoreGroundGraceTime;
+9985|                }
+9986|                else if (_shoreGroundGraceTimer > 0f)
+9987|                {
+9988|                    _shoreGroundGraceTimer -= fixedDeltaTime;
+9989|                    if (_shoreGroundGraceTimer < 0f)
+9990|                        _shoreGroundGraceTimer = 0f;
+9991|                }
+9992|
+9993|                AdvanceCooldownTimers(fixedDeltaTime);
+9994|                AdvanceFatalPressureSequence(fixedDeltaTime);
+9995|                UpdateWipeoutState(fixedDeltaTime);
+9996|                UpdateShoreBuoyancyBlend(fixedDeltaTime, physicsImmersion, feetDepth);
+9997|                UpdateVegetationDensityLinearDamping(fixedDeltaTime);
+9998|
+9999|                bool hasDryGroundSupport = _isGrounded || (_dryGroundGraceTimer > 0f && isDryLand);
+10000|                bool hasShoreGroundSupport = hasImmediateShoreFooting || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
+10001|                bool groundedOnDryLand = hasDryGroundSupport && isDryLand;
+10002|                bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
+10003|
+10004|                bool exosuitActive = IsExosuitTransportActive();
+10005|                bool exosuitKinematicAuthority = TrySubmitExosuitKinematicAuthority(exosuitActive);
+10006|
+10007|                ToggleBuoyancy(!exosuitActive);
+10008|                RefreshSurfaceBreachLock(physicsImmersion);
+10009|                UpdateSurfaceDiveCommitTimer(fixedDeltaTime, activeTransportPreset);
+10010|
+10011|                float targetGravityScale = exosuitActive
+10012|                    ? exosuitNegativeBuoyancyScale
+10013|                    : groundedOnShore ? 1f : 1f - math.saturate(physicsImmersion * gravityFadeRate);
+10014|                _gravityScale = ResolveVrComfortGravityScale(targetGravityScale, fixedDeltaTime);
+10015|
+10016|                if (!exosuitKinematicAuthority && _gravityScale > 0.001f)
+10017|                {
+10018|                    float mass = ResolveAuthoritativeBodyMassKg();
+10019|                    _forceVector.x = _cachedGravity.x * mass * _gravityScale;
+10020|                    _forceVector.y = _cachedGravity.y * mass * _gravityScale;
+10021|                    _forceVector.z = _cachedGravity.z * mass * _gravityScale;
+10022|                    QueueEnvironmentalForce(_forceVector);
+10023|                }
+10024|
+10025|                if ((exosuitActive && _isGrounded) || groundedOnShore)
+10026|                {
+10027|                    _snapScale = 1f;
+10028|                }
+10029|                else
+10030|                {
+10031|                    _snapScale = 1f - math.saturate(physicsImmersion * snapFadeRate);
+10032|                }
+10033|
+10034|                bool shouldWalk = ShouldUseLandLocomotion(physicsImmersion, hasShoreGroundSupport, hasImmediateShoreFooting);
+10035|                bool shouldStartSurfaceDiveAssist =
+10036|                    !shouldWalk &&
+10037|                    !IsInDryInterior() &&
+10038|                    physicsImmersion >= surfaceBreachMinImmersion &&
+10039|                    GetHeadDepthBelowSurface(EffectiveWaterSurfaceY) <= surfaceDiveBreakDepth &&
+10040|                    HasCommittedSurfaceDive(activeTransportPreset);
+SAMPLE_LINE_GUESS
+DEF_CAND 8208
+8206|        /// from the physics step.
+8207|        /// </summary>
+8208|        private void SampleGameplayLocomotionInputForFixedStep()
+8209|        {
+8210|            ResolveInputManagerBinding();
+8211|
+8212|            if (IsGameplayInputBlockedByMenu())
+8213|            {
+8214|                _currentInputState = default;
+8215|                _pendingLookInput = Vector2.zero;
+8216|                _inputH = 0f;
+8217|                _inputV = 0f;
+8218|                _inputVertical = 0f;
+8219|                _mouseXDelta = 0f;
+8220|                SetSprintingState(false);
+8221|                return;
+8222|            }
+8223|
+8224|            ProcessPlayerInputFrame();
+8225|            ProcessWipeoutInputOverride();
+8226|        }
+8227|
+8228|        private void ProcessLocomotionPresentationAndJuice(float deltaTime, SuitData suit)
+8229|        {
+8230|            ConsumeKinematicRepairTargetProbe();
+8231|            ScheduleKinematicRepairTargetProbe();
+8232|            UpdateRenderInterpolationState();
+8233|            _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
+8234|            _velocity = _feedbackVelocity;
+8235|            float currentSpeed = ApproximateVectorMagnitude(_velocity);
+8236|            float renderCameraYaw = CameraYaw;
+8237|            float yawDelta = DeltaAngleDegrees(_prevYawForMomentum, renderCameraYaw);
+8238|            UpdateVrComfortSignals(deltaTime, _velocity, yawDelta);
+8239|
+8240|            if (_swimPresentationController != null)
+8241|            {
+8242|                _swimPresentationController.SyncFromLocomotion(deltaTime, true);
+8243|                _debugLastSwimPresentationDriveFrame = SystemDispatcher.CurrentFrameIndex;
+8244|            }
+8245|
+8246|            BuildJuiceInput(deltaTime, suit);
+8247|            _juiceInput.speedDelta = currentSpeed - _prevSpeed;
+8248|            _juiceInput.yawDelta = yawDelta;
+8249|            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+8250|
+8251|            _prevSpeed = currentSpeed;
+8252|            _prevYawForMomentum = renderCameraYaw;
+8253|
+8254|            if (_juiceOutput.stepEvent != 0)
+8255|            {
+8256|                PublishPlayerFootstepSignal();
+8257|                TryEmitSurfaceFootstepAudio();
+8258|                EmitExosuitFootstepSeismicPing();
+8259|                UpdateStepDiagnostics();
+8260|            }
+8261|
+8262|            if (_juiceProcessor.SplashThisFrame)
+8263|            {
+8264|                PublishPlayerWaterSplashSignal(
+8265|                    _juiceProcessor.SplashIntensity,
+8266|                    _juiceProcessor.IsSubmerged,
+8267|                    EffectiveWaterSurfaceY,
+8268|                    math.abs(ResolveAuthoritativeLinearVelocity(Vector3.zero).y));
+8269|                PublishWaterTransitionSignal(
+8270|                    WaterTransitionKind.Splash,
+8271|                    _juiceProcessor.IsSubmerged,
+8272|                    _juiceProcessor.SplashIntensity,
+8273|                    EffectiveWaterSurfaceY,
+8274|                    math.abs(ResolveAuthoritativeLinearVelocity(Vector3.zero).y));
+8275|            }
+8276|
+8277|            if (_juiceProcessor.SubmergeChangedThisFrame)
+8278|            {
+8279|                PublishWaterTransitionSignal(
+8280|                    WaterTransitionKind.SubmergeChanged,
+8281|                    _juiceProcessor.IsSubmerged,
+8282|                    _juiceProcessor.IsSubmerged ? 1f : 0.65f,
+8283|                    EffectiveWaterSurfaceY,
+8284|                    math.abs(ResolveAuthoritativeLinearVelocity(Vector3.zero).y));
+8285|            }
+8286|
+8287|            if (_juiceProcessor.ExhaleThisFrame)
+=== JUICE 4744 ===
+4744|        private void EnsureJuiceProcessor()
+4745|        {
+4746|            if (_juiceProcessor != null)
+4747|                return;
+4748|
+4749|            _juiceProcessor = new CameraJuiceProcessor();
+4750|        }
+4751|
+4752|        private void PrepareRenderTickDependencies()
+4753|        {
+4754|            ResolveInputManagerBinding();
+4755|            ResolveSwimPresentationController();
+4756|            _debugHasSwimPresentationController = _swimPresentationController != null;
+4757|            PlayerTransportPreset activeTransportPreset = ResolveActiveTransportPreset();
+4758|            UpdateRequestedTransportCollisionProfile(activeTransportPreset);
+4759|        }
+4760|
+4761|        private PlayerTransportPreset PrepareFixedTickDependencies()
+4762|        {
+4763|            return ResolveActiveTransportPreset();
+4764|        }
+4765|
+4766|        private void OnEnable()
+4767|        {
+4768|            SargassumGlobalDragManager.Register(this);
+4769|            SpectrumEvents.RegisterSonarPingListener(this);
+4770|            OnRegister();
+4771|            OnDependencyInject();
+4772|            TryRegisterDependencyRebinds();
+4773|            if (_survivalSystem == null)
+4774|                TryGetComponent(out _survivalSystem);
+4775|            BindInventoryLoadSource();
+4776|            ResolvePlayerToolManagerCold();
+4777|            ResolvePlayerTransportCoordinatorCold();
+4778|            ResolveSwimPresentationControllerCold();
+4779|            ResolveUnderwaterVisualsCold();
+4780|            ResolveInputManagerBinding();
+4781|            EnsurePlayerRuntimeSubsystems();
+4782|            EnsurePlayerKinematicsNativeState();
+4783|            EnsureCinematicFocusBlackBox();
+=== REG 5466 ===
+5466|        private void TryRegisterToDispatchers()
+5467|        {
+5468|            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+5469|                return;
+5470|
+5471|            if (!_registeredTick)
+5472|            {
+5473|                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+5474|            }
+5475|
+5476|            if (!_registeredFixedTick)
+5477|            {
+5478|                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+5479|            }
+5480|
+5481|            if (!_registeredColdTick)
+5482|            {
+5483|                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+5484|            }
+5485|
+5486|            TryRegisterLateFrameTickable();
+5487|
+5488|            if (!_registeredPlayerMovementContracts)
+5489|            {
+5490|                IPlayerMovementContracts currentContracts = GlobalRegistry.PlayerMovementContracts;
+5491|                if (currentContracts == null)
+5492|                    GlobalRegistry.RegisterPlayerMovementContracts(this);
+5493|
+5494|                _registeredPlayerMovementContracts = ReferenceEquals(GlobalRegistry.PlayerMovementContracts, this);
+5495|            }
+5496|
+5497|            if (!_registeredHotSwapListener)
+5498|                _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+5499|
+5500|        }
+5501|
+5502|        private void UnregisterDispatcherTicks()
+5503|        {
+5504|            if (_registeredTick)
+5505|            {
+5506|                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+5507|                _registeredTick = false;
+5508|            }
+5509|
+5510|            if (_registeredFixedTick)
+5511|            {
+5512|                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+5513|                _registeredFixedTick = false;
+5514|            }
+5515|

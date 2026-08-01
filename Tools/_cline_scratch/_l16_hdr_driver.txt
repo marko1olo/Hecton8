@@ -1,0 +1,156 @@
+### H8_HeadlessWorldDriver.cs lines=5103
+   22: //   AXIS 2, continuous locomotion: CoreDeterminismSignals.TryPublishInputOverride, which
+   44: //   Driven by the probe's existing EditorApplication.update tick. No Update/LateUpdate/FixedUpdate, no
+   45: //   coroutine, no async. Per-tick work is struct writes, native-ring pushes, ReadOnlySpan scans and
+   84: //     [H8_PLAYPROBE] WORLDDRIVER ticks=60000 phase=ToolEquip elapsed of 79s stopCause=OwnTickCeiling
+   91: //   class of failure rather than that one run:
+  116: internal static class H8_HeadlessWorldDriver
+  432: /// on a clean run is the same class of false evidence the rest of this cycle is removing.
+  565: private const int DriverTicksPerWallSecondCeiling = 12288;
+  592: (int)AllPhaseBudgetSeconds * DriverTicksPerWallSecondCeiling;
+  696: /// hit point is a lie stored in a struct, so the pose is a real 2 m top-down approach on the node.
+  792: private static readonly double[] _phaseWall = new double[(int)DrivePhase.PhaseCount];
+  793: private static readonly double[] _phaseGrant = new double[(int)DrivePhase.PhaseCount];
+  794: private static readonly int[] _phaseTickLedger = new int[(int)DrivePhase.PhaseCount];
+  795: private static readonly PhaseYield[] _phaseYield = new PhaseYield[(int)DrivePhase.PhaseCount];
+  799: private static readonly WaitReason[] _phaseWaitReason = new WaitReason[(int)DrivePhase.PhaseCount];
+  843: //          ResolveNonCriticalVfx (:1666-1682), so this path is excluded by construction.
+  887: // Driver-authored locomotion intent. One struct, mutated in place, republished every tick:
+  896: private static readonly StringBuilder _detail = new StringBuilder(320);
+  989: // inventory makes PlayerToolManager.IsToolAvailableInSlot false for EVERY slot by construction
+ 1048: private static readonly StringBuilder _log = new StringBuilder(512);
+ 1073: internal static string CurrentPhaseName => _phase.ToString();
+ 1077: _startedAt > 0.0 ? EditorApplication.timeSinceStartup - _startedAt : 0.0;
+ 1111: internal static int PhaseLedgerCount => (int)DrivePhase.PhaseCount;
+ 1118: internal static string GetPhaseName(int phase)
+ 1125: internal static double GetPhaseWallSeconds(int phase)
+ 1130: internal static double GetPhaseGrantedSeconds(int phase)
+ 1135: internal static int GetPhaseTicks(int phase)
+ 1140: internal static int GetPhaseMinimumTicks(int phase)
+ 1151: internal static int GetPhaseMaximumTicks(int phase)
+ 1163: internal static string GetPhaseWaitReasonName(int phase)
+ 1171: internal static string CurrentWaitReasonName => _waitReason.ToString();
+ 1175: internal static string WorstTickPhaseName => _worstTickPhase.ToString();
+ 1183: internal static string GetPhaseYieldName(int phase)
+ 1194: internal static bool WasPhaseEntered(int phase)
+ 1203: internal static string WorstPhaseName => _worstPhase.ToString();
+ 1207: internal static string StopCauseName => _stopCause.ToString();
+ 1209: internal static RowVerdict GetVerdict(int row)
+ 1214: internal static string GetDetail(int row)
+ 1227: internal static void Reset()
+ 1408: internal static void Begin()
+ 1412: _startedAt = EditorApplication.timeSinceStartup;
+ 1427: internal static void Stop(StopCause cause)
+ 1457: /// One step of the schedule. Called from the probe's EditorApplication.update tick, once per
+ 1461: internal static void Tick()
+ 1479: // while phase code had already written (0,1). Consume is destructive (maxFrameAge=2);
+ 1483: PublishLocomotionIntent();
+ 1519: private static bool EvaluateScheduleCeilings()
+ 1523: EditorApplication.timeSinceStartup >= _totalDeadline)
+ 1569: /// Reads the OBSERVABLES the rows are judged on. Properties on the owners plus non-destructive
+ 1572: private static void SampleObservables()
+ 1600: // driver's coverage claim, which is the whole class of mistake this ledger exists to avoid.
+ 1715: private static void SampleSignalLaneCensus()
+ 1739: // VerbSweep would leave it false in ToolEquip by construction, which is the phase that needs it.
+ 1771: private static void ResolveInventoryCensus()
+ 1801: private static void RefreshInventoryVersion()
+ 1817: private static void AppendInventoryUpstreamNote()
+ 1860: private static uint VerbBit(int verb)
+ 1885: private static string VerbName(int verb)
+ 1920: private static byte VerbExpectedCommand(int verb)
+ 1946: private static bool PhaseAuthorsInputIntent(DrivePhase phase)
+ 1962: /// InputDispatcher already consumes. One struct copy into a static sidecar
+ 1969: private static void PublishLocomotionIntent()
+ 1971: if (CoreDeterminismSignals.TryPublishInputOverride(in _intent, SystemDispatcher.CurrentFrameId))
+ 1984: private static bool PublishDiscreteCommand(byte command)
+ 2026: private static void CaptureDiscreteRefusal(byte command)
+ 2062: private static void AppendDiscreteRefusalNote()
+ 2072: .Append(" atDriverTick=").Append(_discreteRefusalTick)
+ 2144: private static void EnterPhase(DrivePhase phase, PhaseYield reasonForLeavingCurrent)
+ 2148: double now = EditorApplication.timeSinceStartup;
+ 2159: // a re-based relative test and a clamp by the shared remainder - are avoided here by construction
+ 2175: private static void CloseCurrentPhase(PhaseYield reason)
+ 2185: _phaseWall[index] += EditorApplication.timeSinceStartup - _phaseStartedAt;
+ 2207: private static double PhaseElapsed => EditorApplication.timeSinceStartup - _phaseStartedAt;
+ 2227: private static bool PhaseCeilingReached()
+ 2244: return EditorApplication.timeSinceStartup >= _phaseDeadline;
+ 2255: private static bool PhaseExceededItsTickBox()
+ 2261: private static double BudgetFor(DrivePhase phase)
+ 2298: private static int MinTicksFor(DrivePhase phase)
+ 2359: /// (<see cref="DriverTicksPerWallSecondCeiling"/>).
+ 2379: private static int MaxTicksFor(DrivePhase phase)
+ 2383: return MinTicksFor(phase) + (int)BudgetFor(phase) * DriverTicksPerWallSecondCeiling;
+ 2401: private static bool PhaseExceededItsBox()
+ 2422: private static PhaseYield CeilingYield()
+ 2448: private static PhaseYield HoldYield()
+ 2466: private static void AdvancePhase()
+ 2530: private static void ForceYieldStalledPhase()
+ 2560: /// class of reason. Walking the enum instead would hand each pre-emption to a phase its predecessor
+ 2563: private static DrivePhase CeilingSuccessorOf(DrivePhase phase)
+ 2597: private static int RowOwnedBy(DrivePhase phase)
+ 2649: /// SwitchToUIInput or sticky IsOpen cannot starve hop2 (GetState) for the whole phase.
+ 2651: private static void EnsureGameplayLocomotionInputReady()
+ 2692: // L13: Re-assert HPM Player fixed-tick registration so SampleGameplay/GetState (hop2)
+ 2693: // runs during Swim. Suit/juice no longer gate sampling (HPM FixedTick L13), but a
+ 2694: // missed TryRegisterFixedTickable still starves the entire locomotion read path.
+ 2707: private static void TickSettle()
+ 2723: // every settle tick. L10 measured hop2-starve: SampleGameplayLocomotionInputForFixedStep
+ 2767: private static void LatchSettleBlocked(IInputService input)
+ 2826: private static Vector2 SweepLookDelta()
+ 2831: private static void TickSwimSurface()
+ 2834: // enough if anything re-opens UI mid-window (L10: hop2 never fired).
+ 2854: private static void TickSwimDive()
+ 2881: private static void LatchSwimVerdict()
+ 3005: private static void TickResourceTarget()
+ 3081: private static bool TryAdoptNearbyWorldNode()
+ 3115: private static void TryRegisterDriverSpawnPoint()
+ 3163: private static void TickToolEquip()
+ 3361: private static void TickToolUse()
+ 3429: // "tool use half works". BLOCKED is the probe's word for "attempted and obstructed at runtime"
+ 3477: private static void TickResourceDeplete()
+ 3532: private static void ApplyNodeDamagePulses(Hecton8.Scavenging.ResourceNode node)
+ 3587: /// the metal-vein class, and SeafloorDrillTool publishes it (SeafloorDrillTool.cs:222). The rest are
+ 3594: /// CORRECTED 2026-07-29. This paragraph used to justify itself with "the 2 Salvage-class templates
+ 3595: /// have no interaction verb at all". There are ZERO Salvage-class templates: counting
+ 3603: private static bool TryResolveNodeDamageEffect(
+ 3630: private static Hecton8.Interaction.InteractionEffectType NodeDamageEffectAtPreference(int index)
+ 3669: private static Hecton8.Interaction.InteractionSignal BuildNodeDamageSignal(Vector3 hitPoint)
+ 3701: private static void AppendResourceDepleteDetail(Hecton8.Scavenging.ResourceNode node)
+ 3764: private static void AppendCapabilityNames(uint mask)
+ 3779: private static int AppendCapabilityName(uint mask, uint bit, string name, int written)
+ 3797: private static string ResolveHarvestToolClassName(Hecton8.Scavenging.ResourceNode node)
+ 3820: private static string ResolveEffectTypeName(Hecton8.Interaction.InteractionEffectType effectType)
+ 3841: private static bool NodeTemplateTriggersSteamExplosion(Hecton8.Scavenging.ResourceNode node)
+ 3857: private static void TickResourcePickup()
+ 3940: private static void TickCraft()
+ 3997: double now = EditorApplication.timeSinceStartup;
+ 4092: /// PublishLocomotionIntent ships it the same driver tick; LateFrame CaptureState folds the override
+ 4108: private static void TickVerbSweep()
+ 4158: private static uint VerbSweepGroupMask(int group)
+ 4190: private static void CaptureVerbSweepBaseline()
+ 4209: private static void SampleVerbSweepObservables()
+ 4261: private static void FlushVerbSweepLog(bool truncated)
+ 4270: // written: a throw escaping from here would leave EditorApplication.update carrying an exception
+ 4279: "[H8_WORLDDRIVER] VERBSWEEP log flush threw " + ex.GetType().Name + ": " + ex.Message +
+ 4284: private static void WriteVerbSweepLog(bool truncated)
+ 4322: _log.Append("[H8_WORLDDRIVER] VERBSWEEP ")
+ 4360: private static void ApplyVerbConsumerObservations()
+ 4378: private static void LogVerbRow(int verb)
+ 4387: _log.Append("[H8_WORLDDRIVER] VERB ").Append(VerbName(verb))
+ 4449: private static void AppendVerbConsumerHint(int verb)
+ 4521: private static void LogLaneCensus()
+ 4524: _log.Append("[H8_WORLDDRIVER] LANECENSUS ticks=").Append(_ticks)
+ 4589: private static void TryResolveInteraction()
+ 4603: private static bool TryReadPlayerEye(out Vector3 position, out Vector3 forward)
+ 4647: private static void AppendPhaseCeilingNote()
+ 4699: // the reader to the wrong place. That is the exact class of mistake this note exists to
+ 4769: private static void AppendWaitReasonNote()
+ 4780: private static string WaitReasonExplanation(WaitReason reason)
+ 4880: private static void AppendClosedPhaseNote(DrivePhase phase)
+ 4928: private static void Latch(int row, RowVerdict verdict)
+ 4938: private static void LatchAllUnlatched(RowVerdict verdict, string exceptionType, string message)
+ 4958: private static DrivePhase TerminalPhaseFor(int row)
+ 4984: ///     read at zero places in this class and _startedAt at exactly one - that message - so the
+ 4994: private static void FinaliseUnlatchedRows()
+ 5093: private static string F(float value)
+ 5098: private static string F(double value)

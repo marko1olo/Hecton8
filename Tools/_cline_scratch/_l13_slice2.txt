@@ -1,0 +1,330 @@
+=== ProcessPlayerInputFrame 8130-8189 ===
+8130|        private void ProcessPlayerInputFrame()
+8131|        {
+8132|            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+8133|            {
+8134|                _inputHandler.TryReadFrame(
+8135|                    _inputManager,
+8136|                    jumpBufferTime,
+8137|                    out HectonPlayerInputFrame inputFrame,
+8138|                    out bool jumpBuffered);
+8139|                _currentInputState = inputFrame.State;
+8140|                _cachedMoveInput = inputFrame.MoveInput;
+8141|                _cachedVerticalInput = inputFrame.VerticalInput;
+8142|                _pendingLookInput = inputFrame.LookInput;
+8143|                if (jumpBuffered)
+8144|                {
+8145|                    _jumpRequested = true;
+8146|                    _jumpBufferTimer = jumpBufferTime;
+8147|                }
+8148|
+8149|                Vector2 lookDelta = _pendingLookInput;
+8150|                _pendingLookInput = Vector2.zero;
+8151|                ApplyLookInput(lookDelta);
+8152|
+8153|                _inputH = _cachedMoveInput.x;
+8154|                _inputV = _cachedMoveInput.y;
+8155|                _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+8156|                if (IsAuthoritativeVehicleTransportActive())
+8157|                {
+8158|                    _inputH = 0f;
+8159|                    _inputV = 0f;
+8160|                    _inputVertical = 0f;
+8161|                }
+8162|                SetSprintingState(inputFrame.SprintHeld != 0);
+8163|            }
+8164|            else
+8165|            {
+8166|                _currentInputState = default;
+8167|                _pendingLookInput = Vector2.zero;
+8168|                _inputH = 0f;
+8169|                _inputV = 0f;
+8170|                _inputVertical = 0f;
+8171|                SetSprintingState(false);
+8172|                _mouseXDelta = 0f;
+8173|            }
+8174|        }
+8175|
+8176|        private void ProcessWipeoutInputOverride()
+8177|        {
+8178|            if (_wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f)
+8179|            {
+8180|                _currentInputState = default;
+8181|                _pendingLookInput = Vector2.zero;
+8182|                _mouseXDelta = 0f;
+8183|                _inputH = 0f;
+8184|                _inputV = 0f;
+8185|                _inputVertical = 0f;
+8186|                SetSprintingState(false);
+8187|                _jumpRequested = false;
+8188|                _jumpBufferTimer = 0f;
+8189|            }
+=== IsGameplayInputBlockedByMenu 9765-9789 ===
+9765|        private static bool IsGameplayInputBlockedByMenu()
+9766|        {
+9767|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+9768|        }
+9769|
+9770|        private void RefreshActiveGravity(float fixedDeltaTime)
+9771|        {
+9772|            if (_localGravityOverrideActive && _localGravityOverrideTimer > 0f)
+9773|            {
+9774|                _localGravityOverrideTimer = math.max(0f, _localGravityOverrideTimer - math.max(0f, fixedDeltaTime));
+9775|                _cachedGravity = ResolveBlendedLocalGravity(fixedDeltaTime);
+9776|                if (_localGravityOverrideTimer <= 0f)
+9777|                    _localGravityOverrideActive = false;
+9778|            }
+9779|            else
+9780|            {
+9781|                _cachedGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
+9782|                _localGravityOverrideActive = false;
+9783|                _localGravityOverrideBlendTimer = 0f;
+9784|                _localGravityOverrideBlendStart = _cachedGravity;
+9785|            }
+9786|
+9787|            _cachedGravityMagnitude = MagnitudeFromRsqrt(_cachedGravity);
+9788|            if (_cachedGravityMagnitude <= 0.0001f)
+9789|            {
+SUIT 235:         [SerializeField] private SuitData currentSuitData;
+SUIT 1753:             currentSuitData = newSuit;
+SUIT 1927:         public SuitData CurrentSuit => currentSuitData;
+DRV_HIT 2651:         private static void EnsureGameplayLocomotionInputReady()
+DRV_HIT 2713:             EnsureGameplayLocomotionInputReady();
+DRV_HIT 2821:             EnsureGameplayLocomotionInputReady();
+DRV_HIT 2842:             EnsureGameplayLocomotionInputReady();
+=== EnsureGameplayLocomotionInputReady 2651-2730 ===
+2651|        private static void EnsureGameplayLocomotionInputReady()
+2652|        {
+2653|            // PDA — public ForceClose restores player input map.
+2654|            if (Hecton8.UI.PlayerPDA.IsOpen)
+2655|            {
+2656|                Hecton8.UI.PlayerPDA pda = Hecton8.UI.PlayerPDA.ActiveRuntimeInstance;
+2657|                if (pda == null)
+2658|                {
+2659|                    IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+2660|                    if (player != null)
+2661|                        pda = player.PlayerPDA as Hecton8.UI.PlayerPDA;
+2662|                }
+2663|
+2664|                if (pda != null)
+2665|                    pda.ForceClose();
+2666|            }
+2667|
+2668|            // Pause — public Close -> ApplyClosedState(restorePlayerInput: true).
+2669|            if (Hecton8.UI.PauseMenuController.IsAnyOpen)
+2670|            {
+2671|                Hecton8.UI.PauseMenuController pause = Hecton8.UI.PauseMenuController.ActiveRuntimeInstance;
+2672|                if (pause != null)
+2673|                    pause.Close();
+2674|            }
+2675|
+2676|            // Fabricator — public ForceCloseMenu (product API added for this path).
+2677|            if (Hecton8.UI.HectonFabricatorUI.IsMenuOpen)
+2678|            {
+2679|                Hecton8.UI.HectonFabricatorUI fab =
+2680|                    UnityEngine.Object.FindFirstObjectByType<Hecton8.UI.HectonFabricatorUI>();
+2681|                if (fab != null)
+2682|                    fab.ForceCloseMenu();
+2683|            }
+2684|
+2685|            IInputService input = GlobalRegistry.RegisteredInput;
+2686|            if (input != null)
+2687|            {
+2688|                input.SwitchToPlayerInput();
+2689|                _switchedToPlayerInput = true;
+2690|            }
+2691|        }
+2692|
+2693|        private static void TickSettle()
+2694|        {
+2695|            IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+2696|            if (player != null)
+2697|            {
+2698|                if (_survival == null)
+2699|                    _survival = player.SurvivalSystem;
+2700|                if (_movement == null)
+2701|                    _movement = player.PlayerMovement;
+2702|                if (_toolManager == null)
+2703|                    _toolManager = player.ToolManager;
+2704|            }
+2705|
+2706|            TryResolveInteraction();
+2707|
+2708|            // Force-close any leftover menu (PDA/Fab/Pause) and re-assert the player action map
+2709|            // every settle tick. L10 measured hop2-starve: SampleGameplayLocomotionInputForFixedStep
+2710|            // short-circuits on IsGameplayInputBlockedByMenu without calling GetState, and a single
+2711|            // SwitchToPlayerInput at first settle loses to later SwitchToUIInput (MainMenu bind,
+2712|            // sticky IsOpen). Product close APIs only — no mock input path.
+2713|            EnsureGameplayLocomotionInputReady();
+2714|            IInputService input = GlobalRegistry.RegisteredInput;
+2715|
+2716|            bool ready = _survival != null && _movement != null && input != null;
+2717|            if (!ready)
+2718|            {
+2719|                // Named PER GATE rather than as one "not ready", for the same reason the three booleans this
+2720|                // row used to print were replaced: an empty registry slot and an unassembled player root are
+2721|                // different defects with different owners.
+2722|                _waitReason = input == null
+2723|                    ? WaitReason.InputServiceNotRegistered
+2724|                    : WaitReason.PlayerOwnersNotRegistered;
+2725|
+2726|                if (!PhaseCeilingReached())
+2727|                    return;
+2728|            }
+2729|
+2730|            if (!ready)
+=== EnsureGameplay_ctx 2648-2750 ===
+2648|        /// then always SwitchToPlayerInput. Called every settle and swim hold tick so a mid-window
+2649|        /// SwitchToUIInput or sticky IsOpen cannot starve hop2 (GetState) for the whole phase.
+2650|        /// </summary>
+2651|        private static void EnsureGameplayLocomotionInputReady()
+2652|        {
+2653|            // PDA — public ForceClose restores player input map.
+2654|            if (Hecton8.UI.PlayerPDA.IsOpen)
+2655|            {
+2656|                Hecton8.UI.PlayerPDA pda = Hecton8.UI.PlayerPDA.ActiveRuntimeInstance;
+2657|                if (pda == null)
+2658|                {
+2659|                    IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+2660|                    if (player != null)
+2661|                        pda = player.PlayerPDA as Hecton8.UI.PlayerPDA;
+2662|                }
+2663|
+2664|                if (pda != null)
+2665|                    pda.ForceClose();
+2666|            }
+2667|
+2668|            // Pause — public Close -> ApplyClosedState(restorePlayerInput: true).
+2669|            if (Hecton8.UI.PauseMenuController.IsAnyOpen)
+2670|            {
+2671|                Hecton8.UI.PauseMenuController pause = Hecton8.UI.PauseMenuController.ActiveRuntimeInstance;
+2672|                if (pause != null)
+2673|                    pause.Close();
+2674|            }
+2675|
+2676|            // Fabricator — public ForceCloseMenu (product API added for this path).
+2677|            if (Hecton8.UI.HectonFabricatorUI.IsMenuOpen)
+2678|            {
+2679|                Hecton8.UI.HectonFabricatorUI fab =
+2680|                    UnityEngine.Object.FindFirstObjectByType<Hecton8.UI.HectonFabricatorUI>();
+2681|                if (fab != null)
+2682|                    fab.ForceCloseMenu();
+2683|            }
+2684|
+2685|            IInputService input = GlobalRegistry.RegisteredInput;
+2686|            if (input != null)
+2687|            {
+2688|                input.SwitchToPlayerInput();
+2689|                _switchedToPlayerInput = true;
+2690|            }
+2691|        }
+2692|
+2693|        private static void TickSettle()
+2694|        {
+2695|            IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+2696|            if (player != null)
+2697|            {
+2698|                if (_survival == null)
+2699|                    _survival = player.SurvivalSystem;
+2700|                if (_movement == null)
+2701|                    _movement = player.PlayerMovement;
+2702|                if (_toolManager == null)
+2703|                    _toolManager = player.ToolManager;
+2704|            }
+2705|
+2706|            TryResolveInteraction();
+2707|
+2708|            // Force-close any leftover menu (PDA/Fab/Pause) and re-assert the player action map
+2709|            // every settle tick. L10 measured hop2-starve: SampleGameplayLocomotionInputForFixedStep
+2710|            // short-circuits on IsGameplayInputBlockedByMenu without calling GetState, and a single
+2711|            // SwitchToPlayerInput at first settle loses to later SwitchToUIInput (MainMenu bind,
+2712|            // sticky IsOpen). Product close APIs only — no mock input path.
+2713|            EnsureGameplayLocomotionInputReady();
+2714|            IInputService input = GlobalRegistry.RegisteredInput;
+2715|
+2716|            bool ready = _survival != null && _movement != null && input != null;
+2717|            if (!ready)
+2718|            {
+2719|                // Named PER GATE rather than as one "not ready", for the same reason the three booleans this
+2720|                // row used to print were replaced: an empty registry slot and an unassembled player root are
+2721|                // different defects with different owners.
+2722|                _waitReason = input == null
+2723|                    ? WaitReason.InputServiceNotRegistered
+2724|                    : WaitReason.PlayerOwnersNotRegistered;
+2725|
+2726|                if (!PhaseCeilingReached())
+2727|                    return;
+2728|            }
+2729|
+2730|            if (!ready)
+2731|            {
+2732|                LatchSettleBlocked(input);
+2733|                EnterPhase(DrivePhase.ResourceTarget, CeilingYield());
+2734|                return;
+2735|            }
+2736|
+2737|            _oxygenAtStart = _survival.Oxygen;
+2738|            _pressureAtStart = _survival.Pressure;
+2739|            _swimBaselineTaken = true;
+2740|            EnterPhase(DrivePhase.SwimSurface, PhaseYield.Completed);
+2741|        }
+2742|
+2743|        /// <summary>
+2744|        /// Names the gate the settle phase died on. The previous version printed three bare booleans and
+2745|        /// the third one, labelled "inputService", was the presence check - so a missing service and a
+2746|        /// closed action map produced the SAME text and two cycles of work aimed at the wrong mechanism.
+2747|        /// Every branch below states the mechanism and where its owner lives, because a row detail that
+2748|        /// cannot be acted on is not a diagnostic.
+2749|        ///
+2750|        /// Runs at most once per run: the caller only reaches it after the settle budget expires, and Latch
+=== Tick_publish_order 1466-1506 ===
+1466|            _ticks++;
+1467|
+1468|            try
+1469|            {
+1470|                // Ceilings are evaluated BEFORE the phase runs, so the phase that is about to execute
+1471|                // already knows whether it is spending its own budget or running on the schedule's
+1472|                // minimum - which is what its row detail has to state.
+1473|                if (!EvaluateScheduleCeilings())
+1474|                    return;
+1475|
+1476|                // L12 product fix: AdvancePhase authors _intent for the current hold, THEN publish.
+1477|                // Previous order published the prior tick's intent (often default/zero on the first
+1478|                // hold tick and one frame stale thereafter), so Swim holds could ship MoveDelta=0
+1479|                // while phase code had already written (0,1). Consume is destructive (maxFrameAge=2);
+1480|                // a zero publish poisons CaptureState for the locomotion consumer window.
+1481|                SampleObservables();
+1482|                AdvancePhase();
+1483|                PublishLocomotionIntent();
+1484|                // Drop intent after ship when the phase that just ran does not author input.
+1485|                // Exit paths used to clear _intent inside AdvancePhase BEFORE publish; with
+1486|                // advance-then-publish that would zero the last hold tick. Clear here instead so
+1487|                // the final authored frame still reaches the dispatcher, and verdict/resource
+1488|                // phases do not keep re-publishing stale MoveDelta/PrimaryFire/verb bits.
+1489|                if (!PhaseAuthorsInputIntent(_phase))
+1490|                    _intent = default;
+1491|            }
+1492|            catch (System.Exception ex)
+1493|            {
+1494|                _intent = default;
+1495|                CoreDeterminismSignals.ClearInputOverride();
+1496|                _stopCause = StopCause.Exception;
+1497|                _stoppedInPhase = _phase;
+1498|                _stoppedAtElapsed = ElapsedSeconds;
+1499|                CloseCurrentPhase(PhaseYield.Aborted);
+1500|                LatchAllUnlatched(RowVerdict.Fail, ex.GetType().Name, ex.Message);
+1501|
+1502|                // Stop() early-returns once _stopped is set, so this is the last chance to print the census -
+1503|                // and a run that threw is exactly when a reader needs to know which lanes were alive.
+1504|                FlushVerbSweepLog(_verbSweepEntered && _verbSweepStep < VerbSweepStepCount);
+1505|                _stopped = true;
+1506|            }
+REGFLAG 1606:         private bool _registeredFixedTick;
+REGFLAG 4732:             _registeredFixedTick = false;
+REGFLAG 4808:             if (_registeredTick && _registeredFixedTick && _registeredLateFrameTick) return;
+REGFLAG 5026:             if (_registeredFixedTick)
+REGFLAG 5029:                 _registeredFixedTick = false;
+REGFLAG 5476:             if (!_registeredFixedTick)
+REGFLAG 5478:                 _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+REGFLAG 5510:             if (_registeredFixedTick)
+REGFLAG 5513:                 _registeredFixedTick = false;

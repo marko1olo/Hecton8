@@ -1,0 +1,165 @@
+200|
+201|        // After New Game the world scene load is in flight for a long time in batchmode - 2400
+202|        // gameplay frames were not enough for 02_HECTON_WORLD to report isLoaded. Counting frames
+203|        // measures the wrong thing; wait for the loads to actually finish.
+204|        private static double _settleWaitSeconds = 300.0;
+205|        private static double _gameplaySeconds = 60.0;
+206|        private static double _phaseStartedAt;
+207|
+208|        // Whether H8_HeadlessWorldDriver produces on the input lanes during the gameplay window. See
+209|        // that file's header for why it is a producer and not a state writer.
+210|        private static bool _worldDriverEnabled = true;
+211|        private static bool _worldDriverStarted;
+212|
+213|        // One-shot latch for EnableDisabledPlacementOwnersInMemory. It is what keeps that method's
+214|        // FindObjectsByType call a cold diagnostic step rather than a per-tick hot-path violation.
+215|        private static bool _placementOwnersRepaired;
+216|
+217|        /// <summary>
+218|        /// Hard cap on the tick grace granted after the gameplay window closes. The driver's own tick
+219|        /// floors sum to 24 for the entire schedule, so 48 is two full compressed schedules' worth and
+220|        /// cannot become an open-ended extension. Counted in TICKS on purpose: the driver's remaining work
+221|        /// is a fixed number of handshake steps, and on this harness a tick has cost anywhere from 0.23 s
+222|        /// to 132 s, so no number of seconds expresses the same guarantee.
+223|        /// </summary>
+224|        private const int WorldDriverGraceTickCap = 48;
+225|
+226|        /// <summary>Wall seconds of the hard timeout the grace refuses to eat into, so a grace can never
+227|        /// convert a starved row into a TIMEOUT line that loses every verdict the run did produce.</summary>
+228|        private const double GraceHardTimeoutMarginSeconds = 20.0;
+229|
+---
+727|                case Phase.GameplayWarmup:
+728|                    if (!EditorApplication.isPlaying)
+729|                    {
+730|                        Debug.Log($"{Marker} LEFT PLAY MODE during gameplay warmup at frame {_gameplayFrames}");
+731|                        Finish(1);
+732|                        return;
+733|                    }
+734|
+735|                    _gameplayFrames++;
+736|
+737|                    // The window's clock starts on the first tick that actually pumps gameplay, which is
+738|                    // also the tick that starts the driver. See _gameplayWindowStartedAt for why sharing an
+739|                    // origin with the driver's budget is load-bearing and not tidiness.
+740|                    if (_gameplayWindowStartedAt <= 0.0)
+741|                    {
+742|                        _gameplayWindowStartedAt = EditorApplication.timeSinceStartup;
+743|                        double transitionTail = _gameplayWindowStartedAt - _phaseStartedAt;
+744|                        if (transitionTail > 1.0)
+745|                        {
+746|                            Debug.Log(
+747|                                $"{Marker} GAMEPLAY window clock starts here, {transitionTail:F3}s after " +
+748|                                "the settle transition. Measured from the transition instead, that tail " +
+749|                                "would have come straight out of the driver's schedule and truncated its " +
+750|                                "last phase.");
+751|                        }
+752|                    }
+753|
+754|                    // Content before measurement. This runs BEFORE the driver starts and OUTSIDE the
+755|                    // _worldDriverEnabled branch on purpose: a -h8SkipWorldDriver run is supposed to
+756|                    // measure an UNDRIVEN world, not an EMPTY one, and those are different claims.
+757|                    if (!_placementOwnersRepaired)
+758|                    {
+759|                        _placementOwnersRepaired = true;
+760|                        EnableDisabledPlacementOwnersInMemory();
+761|                    }
+762|
+763|                    // SECOND determinism-owner observation: the world scene has arrived, so every
+764|                    // LoadSceneMode.Single of the boot route has already happened. Comparing this against
+765|                    // the BootWarmup sample brackets the window in which the owner disappeared, in ONE run.
+766|                    // Latched by the sample's own Taken flag; the cold FindObjectsByType inside runs once.
+767|                    if (!_determinismOwnerAtGameplayStart.Taken)
+768|                    {
+769|                        SampleDeterminismOwner(ref _determinismOwnerAtGameplayStart, "FirstGameplayTick");
+770|
+771|                        // Order matters and is not cosmetic: the sample above is the EVIDENCE, and a revive
+772|                        // that ran first would overwrite the one observation that proves the owner is
+773|                        // missing in the shipped route.
+774|                        if (_determinismReviveRequested)
+775|                            TryReviveDeterminismOwner();
+776|                    }
+777|
+778|                    // The world driver rides THIS tick. It gets no Update, no coroutine and no timer of
+779|                    // its own, so the schedule advances only while the probe is genuinely pumping the
+780|                    // engine - the same discipline that stops "yield return null" hanging a batchmode run.
+781|                    if (_worldDriverEnabled)
+782|                    {
+783|                        if (!_worldDriverStarted)
+784|                        {
+785|                            _worldDriverStarted = true;
+786|                            H8_HeadlessWorldDriver.Begin();
+787|                            Debug.Log(
+788|                                $"{Marker} WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> " +
+789|                                "(PLIN) and CoreDeterminismSignals input-override; budget " +
+790|                                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s of the " +
+791|                                $"{_gameplaySeconds:F0}s gameplay window");
+792|                        }
+793|
+794|                        H8_HeadlessWorldDriver.Tick();
+795|                    }
+796|
+797|                    if (EditorApplication.timeSinceStartup - _gameplayWindowStartedAt >= _gameplaySeconds)
+798|                    {
+799|                        // The window is a WALL clock; what the driver still needs is TICKS. Closing on
+800|                        // the wall alone is what turned a schedule that had entered its Craft phase into
+801|                        // a NOT_EXERCISED row: the driver was stopped on the same tick that entered
+802|                        // Craft, so the phase got zero ticks and the mechanic was never looked at.
+803|                        if (_worldDriverStarted && TryGrantWorldDriverGrace())
+804|                            break;
+805|
+806|                        // Release the locomotion lane before the save leg, or the save would capture a
+807|                        // player under synthetic input and the save/load row would measure the driver.
+808|                        if (_worldDriverStarted)
+809|                        {
+810|                            H8_HeadlessWorldDriver.Stop(
+811|                                H8_HeadlessWorldDriver.StopCause.ProbeGameplayWindowClosed);
+812|                        }
+813|
+814|                        SetPhase(_saveLegEnabled ? Phase.SaveRoundTrip : Phase.Reporting);
+815|                    }
+816|
+817|                    break;
+818|
+819|                case Phase.SaveRoundTrip:
+---
+3700|            _determinismSlowTickDiscardedSeconds = 0.0;
+3701|            _determinismSlowTickDiscardEvents = 0;
+3702|
+3703|            // The lifetime trace is cleared for a sharper version of the same reason: a second run in one
+3704|            // editor session that inherited a first run's "the owner existed at boot warmup" sample would
+3705|            // report a lifetime window it never observed. _determinismReviveRequested is safe to clear here
+3706|            // because Run() calls ResetRunState() FIRST and parses -h8ReviveDeterminismOwner afterwards -
+3707|            // reversing that order would make this line eat the argument.
+3708|            _determinismReviveRequested = false;
+3709|            _determinismOwnerAtBootWarmup = default;
+3710|            _determinismOwnerAtGameplayStart = default;
+3711|            _determinismHashBufferDiagnosis = string.Empty;
+3712|            _determinismVaultAllocationLocked = false;
+3713|            _determinismVaultCompactionFenceActive = false;
+3714|            _determinismReviveAttempted = false;
+3715|            _determinismReviveCreated = false;
+3716|            _determinismReviveNote = string.Empty;
+3717|
+3718|            for (int i = 0; i < _determinismCategories.Length; i++)
+3719|                _determinismCategories[i] = default;
+3720|
+3721|            _worldDriverStarted = false;
+3722|            _placementOwnersRepaired = false;
+3723|            _worldDriverGraceTicks = 0;
+3724|            _graceOpenedLogged = false;
+3725|            _graceClosedLogged = false;
+3726|            _gameplayWindowStartedAt = 0.0;
+3727|            H8_HeadlessWorldDriver.Reset();
+3728|        }
+3729|
+3730|        private static string ResolveArtifactPath()
+3731|        {
+3732|            return string.IsNullOrEmpty(_artifactPath) ? ResolveDefaultArtifactPath() : _artifactPath;
+3733|        }
+3734|
+3735|        /// <summary>
+3736|        /// The contract's Proof row (<c>FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md:90</c>) wants
+3737|        /// console, run, profiler, GC, memory, screenshot/clip AND the save directory diff. This run
+3738|        /// produces the run log, the per-phase clock table, the save directory diff and - since
+3739|        /// <see cref="CaptureDeterminismState"/> - a comparable end-of-run state number.

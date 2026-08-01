@@ -1,0 +1,34 @@
+WROTE C:\hades\Hecton8\Tools\_cline_scratch\_l15_extract_final.txt lines=138
+pid=42884 alive=False log_bytes=2197716
+METRICS={'intent': '0.000', 'immersion': '1.000', 'span': '0.000', 'lom': '0,1', 'csm': '0,0', 'hops': [1], 'swim_fail': 1, 'swim_pass': 0, 'result_fail': '1'}
+--- last 30 key ---
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:RecordWorldDriverMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2058)
+[H8_PLAYPROBE] DRIVERPHASE heaviest=Craft at 14,095s of the 91,036s the schedule ran against a 79s budget. A yield of TotalCeiling means that phase was compressed to its tick floor by an earlier overrun and its row is UNMEASURED, not a prod
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportWorldDriverPhaseLedger () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2103)
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:RecordWorldDriverMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2058)
+[H8_PLAYPROBE] MOMENT   PASS          Boot               allSystemsReady=True gameReady=True Dispatcher=True TickManager=True Save=True ObjectPool=True activeScene='02_HECTON_WORLD' activationStep='Complete' activationCompleted=True
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportRouteMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2320)
+[H8_PLAYPROBE] MOMENT   PASS          WorldLoad          active gameplay scene '02_HECTON_WORLD' finished loading after 15s; loaded scenes=2; unloading in background=01_MAIN_MENU
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportRouteMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2320)
+[H8_PLAYPROBE] MOMENT   NOT_EXERCISED FirstExit          CONTENT-BLOCKED: no life-pod or drop-pod prefab exists in the project. LifePodSeatStrapLatch, DropPodSeatController and LifePodTactilePrologueController are referenced by zero scenes 
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportRouteMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2320)
+[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 79931 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vit
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportRouteMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2320)
+[H8_PLAYPROBE] MOMENT   BLOCKED       Resource           node 'rn_0_0_90001' would not deplete: health=260.000->0.444 normalized=0.002 vulnerabilityMask=0x00000020[Laser] requiredToolClass=Laser after 6.002s / 43148 driver ticks - driverEff
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportRouteMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2320)
+[H8_PLAYPROBE] MOMENT   BLOCKED       Tool               PlayerToolManager reports slotCount=4 and IsToolAvailableInSlot is false for every slot, so no tool could be selected on this route [INVENTORY inventoryComponent=present enabled=True 
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportRouteMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2320)
+[H8_PLAYPROBE] MOMENT   BLOCKED       CraftRepairBuild   Fabricator is live with visibleRecipes=0 totalRecipes=0 lockedRecipes=0 but CanCraft is false for all of them; the Resource leg delivered nothing, so no recipe/repair can consume a re
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportRouteMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2320)
+[H8_PLAYPROBE] MOMENT   BLOCKED       Mission            12 quests are authored and the graph is ready, but nothing completed. authored=12 graphReady=True autoActivated=2 activations=2 completions=0 reverts=0 transitionsLogged=2 genuineComp
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportRouteMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2320)
+[H8_PLAYPROBE] MOMENT   NOT_EXERCISED Hazard             CONTENT-BLOCKED: no hazard is ever instantiated. RadiationHazardGrid, EnvironmentalHazard, ThermalVentRuntime, HectonHazardSource and HostileFlora have zero AddComponent call sites an
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportRouteMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2320)
+[H8_PLAYPROBE] MOMENT   PARTIAL       SaveLoad           save half observed: TryRequestSave(slot 'slot_0') changed 1 file(s) under 'C:/Users/Admin/AppData/LocalLow/Danat Games/Hecton8' in 1,0s (byteDelta=0). The LOAD half of this row is not
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportRouteMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2320)
+[H8_PLAYPROBE] MOMENT   PARTIAL       Proof              run log + per-phase clock table + save directory diff written to 'C:\hades\Hecton8\Docs\AgentLogs\h8_playprobe_v0_L15.json'; run-repeatability now has a producer as well - no comparab
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportRouteMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2320)
+[H8_PLAYPROBE] MOMENTS pass=2 partial=2 fail=1 blocked=4 notExercised=2 of 11 Required Route rows. Only pass is acceptance; partial means one half of a two-part row was observed and the row is NOT accepted.
+Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe:ReportRouteMoments () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs:2324)
+[H8_PLAYPROBE] RESULT 1 Required Route row(s) reported FAIL on a run that was asked to start the game, so the exit code now reflects them. Read the MOMENT lines above for which rows and why.
+[H8_PLAYPROBE] RESULT failures=1

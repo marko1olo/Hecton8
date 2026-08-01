@@ -1,0 +1,239 @@
+=== hit RegisterOpenMenu @748 ===
+748|        private static void RegisterOpenMenu()
+749|        {
+750|            if (_openMenuCount < int.MaxValue)
+751|                _openMenuCount++;
+752|        }
+753|
+754|        private static void UnregisterOpenMenu()
+755|        {
+756|            if (_openMenuCount > 0)
+757|                _openMenuCount--;
+758|        }
+
+=== hit UnregisterOpenMenu @754 ===
+754|        private static void UnregisterOpenMenu()
+755|        {
+756|            if (_openMenuCount > 0)
+757|                _openMenuCount--;
+758|        }
+759|
+760|        private bool ShouldRestorePlayerInputOnDisable()
+761|        {
+762|            if (!Application.isPlaying)
+763|                return false;
+764|
+765|            IInputService inputService = _cachedInputService;
+766|            return inputService != null && inputService.IsInitialized;
+767|        }
+
+=== hit Open( @597 ===
+597|        public void Open()
+598|        {
+599|            if (_isOpen)
+600|                return;
+601|
+602|            // TASK 33: Close PDA before opening pause menu if PDA is open
+603|            if (PlayerPDA.IsOpen && playerPDA != null)
+604|            {
+605|                playerPDA.ForceClose();
+606|            }
+607|
+608|            // TASK 33: Close Fabricator before opening pause menu if Fabricator is open
+609|            if (HectonFabricatorUI.IsMenuOpen)
+610|            {
+611|                // Trigger the deferred fabricator-closed payload so HectonFabricatorUI closes through the event lane.
+612|                CraftingEvents.TryRaiseFabricatorClosed();
+613|            }
+614|
+615|            if (!_built)
+616|                return;
+617|
+618|            _pauseRequested = false;
+619|            _cancelRequested = false;
+620|            _isOpen = true;
+621|            RegisterOpenMenu();
+622|            _activeSection = PauseSection.Main;
+623|
+624|            if (pauseTimeScale)
+625|            {
+626|                ITickDispatcher dispatcher = _cachedTickDispatcher;
+627|                _cachedTimeDilationScalar = dispatcher != null
+628|                    ? dispatcher.TimeDilationScalar
+629|                    : 1f;
+630|                PublishPauseState(true);
+631|            }
+632|
+633|            // TASK 33: Ensure correct input mode restoration
+634|            _cachedInputService?.SwitchToUIInput();
+635|            SystemDispatcher.RequestPauseDepthOfField(true);
+636|
+637|            Cursor.lockState = CursorLockMode.None;
+638|            Cursor.visible = true;
+639|
+640|            // Audio feedback for pause menu open
+641|            UIAudioFeedback.PlayPanelOpen();
+642|
+643|            ShowSection(PauseSection.Main);
+644|
+645|            if (_canvasGroup != null)
+646|            {
+
+=== hit Close( @653 ===
+653|        public void Close()
+654|        {
+655|            if (!_isOpen)
+656|                return;
+657|
+658|            CommitPauseVisualSelectionIfNeeded();
+659|
+660|            // Audio feedback for pause menu close
+661|            UIAudioFeedback.PlayPanelClose();
+662|
+663|            ApplyClosedState(restorePlayerInput: true);
+664|        }
+
+=== hit OpenMenu @748 ===
+748|        private static void RegisterOpenMenu()
+749|        {
+750|            if (_openMenuCount < int.MaxValue)
+751|                _openMenuCount++;
+752|        }
+753|
+754|        private static void UnregisterOpenMenu()
+755|        {
+756|            if (_openMenuCount > 0)
+757|                _openMenuCount--;
+758|        }
+
+=== hit OpenMenu @754 ===
+754|        private static void UnregisterOpenMenu()
+755|        {
+756|            if (_openMenuCount > 0)
+757|                _openMenuCount--;
+758|        }
+759|
+760|        private bool ShouldRestorePlayerInputOnDisable()
+761|        {
+762|            if (!Application.isPlaying)
+763|                return false;
+764|
+765|            IInputService inputService = _cachedInputService;
+766|            return inputService != null && inputService.IsInitialized;
+767|        }
+
+=== call sites ===
+621|            RegisterOpenMenu();
+709|                UnregisterOpenMenu();
+748|        private static void RegisterOpenMenu()
+754|        private static void UnregisterOpenMenu()
+1742|                UnregisterOpenMenu();
+=== OnDisable/OnDestroy/OnEnable ===
+327|        private void Awake()
+328|        {
+329|            if (Application.isPlaying)
+330|                ActiveRuntimeInstance = this;
+331|
+332|            CacheRegistryServicesCold();
+333|            NormalizeSaveSlots();
+334|            AutoResolve();
+335|            EnsureBuilt();
+336|            EnsureEventSystem();
+337|            ApplyClosedState(restorePlayerInput: false);
+338|        }
+
+340|        private void OnEnable()
+341|        {
+342|            if (Application.isPlaying)
+343|                ActiveRuntimeInstance = this;
+344|
+345|            NormalizeSaveSlots();
+346|            CacheRegistryServicesCold();
+347|            TryRegisterHotSwapListener();
+348|            TryAcquireSaveStatusBuffer();
+349|            TryRegister();
+350|            EnsureEventSystem();
+351|            BindInputActions();
+352|
+353|            LocalizationEvents.RegisterLanguageListener(this);
+354|            SaveEvents.Register(this);
+355|        }
+
+357|        private void OnDisable()
+358|        {
+359|            if (ReferenceEquals(ActiveRuntimeInstance, this))
+360|                ActiveRuntimeInstance = null;
+361|
+362|            UnbindInputActions();
+363|
+364|            LocalizationEvents.UnregisterLanguageListener(this);
+365|            SaveEvents.Unregister(this);
+366|            TryUnregisterHotSwapListener();
+367|
+368|            TryUnregister();
+369|            CommitPauseVisualSelectionIfNeeded();
+370|            ReleaseSaveStatusBuffer();
+371|            CacheSettingsManagerCold(null);
+372|
+373|            if (_exitToMainMenuInFlight)
+374|            {
+375|                HandleMainMenuExitTransitionDisabled();
+376|                return;
+377|            }
+378|
+379|            bool restorePlayerInput = _isOpen && ShouldRestorePlayerInputOnDisable();
+380|            ApplyClosedState(restorePlayerInput: restorePlayerInput);
+381|        }
+
+383|        private void OnDestroy()
+384|        {
+385|            if (ReferenceEquals(ActiveRuntimeInstance, this))
+386|                ActiveRuntimeInstance = null;
+387|
+388|            TryUnregister();
+389|            TryUnregisterHotSwapListener();
+390|            CommitPauseVisualSelectionIfNeeded();
+391|            ReleaseSaveStatusBuffer();
+392|            CacheSettingsManagerCold(null);
+393|        }
+
+=== rest of pause ascii from GetState ===
+`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` ? `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+=== GetState callers project ===
+FlashlightTool.cs:377|? inputService.GetState()
+HectonPlayerMovement.cs:7995|/// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+LaserCutter.cs:1316|? inputService.GetState()
+LaserCutter.cs:1453|? inputService.GetState()
+LaserCutter.cs:2165|? inputService.GetState()
+PlayerTool.cs:821|PlayerInputState inputState = inputService.GetState();
+PlayerToolManager.cs:468|? inputService.GetState()
+RepairTool.cs:994|? inputService.GetState()
+SalvageSamplerTool.cs:207|? inputService.GetState()
+StunPistolTool.cs:258|? inputService.GetState()
+GlobalRegistry.cs:8640|public PlayerInputState GetState()
+GlobalRegistryContracts.cs:1026|PlayerInputState GetState();
+InputDispatcher.cs:789|/// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+InputDispatcher.cs:1359|public PlayerInputState GetState()
+PrologueSequenceRegistryBridge.cs:738|PlayerInputState state = input.GetState();
+HectonPlayerInputHandler.cs:40|PlayerInputState state = inputService.GetState();
+MantaScooter.cs:659|? inputService.GetState()
+MantaScooter.cs:1277|? inputService.GetState()
+MountablePlayerTransport.cs:495|? inputService.GetState()
+PlayerSwimPresentationController.cs:2419|? _inputService.GetState()
+PlayerSwimPresentationController.cs:2581|? _inputService.GetState()
+KinematicTerminalInteractionBridge.cs:327|PlayerInputState state = _input.GetState();
+HectonAPI.cs:265|return input.GetState().ActionsBitmask;
+OrbitalRelativityDirector.cs:719|PlayerInputState state = _inputService.GetState();
+ToolKinematicsRuntime.cs:602|PlayerInputState inputState = inputService.GetState();
+DiegeticPanelController.cs:2444|PlayerInputState state = _input.GetState();
+DiegeticTooltipSystem.cs:1352|PlayerInputState state = input.GetState();
+PDADecryptionSpectrogramPanel.cs:630|PlayerInputState inputState = input != null ? input.GetState() : default;
+TerminalOsRuntime.cs:3240|PlayerInputState state = _input.GetState();
+OpenXRManualOverrideLever.cs:552|PlayerInputState state = _inputService != null ? _inputService.GetState() : default;
+SargassumCutManager.cs:1393|? inputService.GetState()
+ReentrySequence1603EditTests.cs:274|Assert.That(ContainsOrdinal(skipGetter, "GetState()"), Is.False);
+=== Editor settings domain reload ===
+EditorSettings.asset
+  m_EnableTextureStreamingInPlayMode: 1
+  m_EnterPlayModeOptionsEnabled: 1
+  m_EnterPlayModeOptions: 1

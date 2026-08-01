@@ -1,0 +1,51 @@
+RESET rc=0
+Unstaged changes after reset:
+M	Assets/_Project/Scripts/Core/SystemDispatcher.cs
+M	Assets/_Project/Scripts/HectonPlayerMovement.cs
+M	Docs/V0_Playtest/NEXT_CHAT_L13.md
+
+ADD Assets/_Project/Scripts/Core/SystemDispatcher.cs rc=0
+warning: in the working copy of 'Assets/_Project/Scripts/Core/SystemDispatcher.cs', LF will be replaced by CRLF the next time Git touches it
+ADD Assets/_Project/Scripts/HectonPlayerMovement.cs rc=0
+warning: in the working copy of 'Assets/_Project/Scripts/HectonPlayerMovement.cs', LF will be replaced by CRLF the next time Git touches it
+ADD Docs/V0_Playtest/V0_L14_PLAYER_LANE_AND_SAMPLE_INTENT.md rc=0
+warning: in the working copy of 'Docs/V0_Playtest/V0_L14_PLAYER_LANE_AND_SAMPLE_INTENT.md', LF will be replaced by CRLF the next time Git touches it
+ADD Docs/V0_Playtest/NEXT_CHAT_L14.md rc=0
+warning: in the working copy of 'Docs/V0_Playtest/NEXT_CHAT_L14.md', LF will be replaced by CRLF the next time Git touches it
+CACHED_STAT
+ Assets/_Project/Scripts/Core/SystemDispatcher.cs   | 11 ++-
+ Assets/_Project/Scripts/HectonPlayerMovement.cs    | 14 ++++
+ Docs/V0_Playtest/NEXT_CHAT_L14.md                  | 38 +++++++++
+ .../V0_L14_PLAYER_LANE_AND_SAMPLE_INTENT.md        | 90 ++++++++++++++++++++++
+ 4 files changed, 150 insertions(+), 3 deletions(-)
+
+STAGED ['Assets/_Project/Scripts/Core/SystemDispatcher.cs', 'Assets/_Project/Scripts/HectonPlayerMovement.cs', 'Docs/V0_Playtest/NEXT_CHAT_L14.md', 'Docs/V0_Playtest/V0_L14_PLAYER_LANE_AND_SAMPLE_INTENT.md']
+COMMIT rc=0
+[main 4dcb53307] fix(v0): Player lane always dispatches + Sample publishes intent (L14)
+ 4 files changed, 150 insertions(+), 3 deletions(-)
+ create mode 100644 Docs/V0_Playtest/NEXT_CHAT_L14.md
+ create mode 100644 Docs/V0_Playtest/V0_L14_PLAYER_LANE_AND_SAMPLE_INTENT.md
+
+==========================================
+    THE IRON GATE (Pre-Commit Check)      
+==========================================
+[1/2] Running Gitleaks to protect against secret leakage...
+
+    ○
+    │╲
+    │ ○
+    ○ ░
+    ░    gitleaks
+
+[90m10:51PM[0m [32mINF[0m [1m0 commits scanned.[0m
+[90m10:51PM[0m [32mINF[0m [1mscanned ~7171 bytes (7.17 KB) in 217ms[0m
+[90m10:51PM[0m [32mINF[0m [1mno leaks found[0m
+[2/2] Running Biome to format and lint code...
+Biome not found in PATH, skipping format check.
+✅ All checks passed. Proceeding with commit.
+
+LOG 4dcb53307 fix(v0): Player lane always dispatches + Sample publishes intent (L14)
+PULL rc=128
+
+error: cannot pull with rebase: You have unstaged changes.
+error: Please commit or stash them.

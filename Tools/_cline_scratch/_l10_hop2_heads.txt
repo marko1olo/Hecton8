@@ -1,0 +1,66 @@
+0:ID 330:        // DiagRecordReadObservation for why the census is emitted from a read accessor and not from a tick.
+1:ID 503:        public InputState CurrentInputState
+2:ID 510:                DiagRecordReadObservation(1);
+3:ID 789:        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+4:ID 831:        // arrivedInResolvedSnapshot all from IInputService.CurrentInputState, which is _currentInputState.
+5:ID 865:        // the useless outcome. probe5 PROVES the driver read CurrentInputState (it printed atFrame and
+6:ID 1204:        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+7:ID 1207:        private void DiagRecordReadObservation(int readHop)
+8:ID 1359:        public PlayerInputState GetState()
+9:ID 1361:            DiagRecordReadObservation(2);
+10:ID 3203:        public bool TryGetCurrentInputStateDto(out InputStateDTO state)
+11:=== GetState ===
+17:=== HectonPlayerInputHandler full ===
+122:HPM[TryRegisterFixed] 5478:                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+123:HPM[RegisterFixedTickable] 5478:                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+124:HPM[_registeredFixed] 1606:        private bool _registeredFixedTick;
+125:HPM[_registeredFixed] 4732:            _registeredFixedTick = false;
+126:HPM[_registeredFixed] 4808:            if (_registeredTick && _registeredFixedTick && _registeredLateFrameTick) return;
+127:HPM[_registeredFixed] 5026:            if (_registeredFixedTick)
+128:HPM[_registeredFixed] 5029:                _registeredFixedTick = false;
+129:HPM[_registeredFixed] 5476:            if (!_registeredFixedTick)
+130:HPM[_registeredFixed] 5478:                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+131:HPM[_registeredFixed] 5510:            if (_registeredFixedTick)
+132:HPM[_registeredFixed] 5513:                _registeredFixedTick = false;
+133:HPM[IFixedTickable] 58:    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, ISargassumGlobalDragEventListe
+134:HPM[currentSuitData =] 1753:            currentSuitData = newSuit;
+135:HPM[currentSuitData =] 12483:            if (currentSuitData == null) return;
+181:FXREG 5473:                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+186:FXREG 5478:                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+191:FXREG 5483:                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+194:FXREG 5486:            TryRegisterLateFrameTickable();
+200:FXREG 5492:                    GlobalRegistry.RegisterPlayerMovementContracts(this);
+221:=== ResolveInputManagerBinding ===
+238:=== IsGameplayInputBlockedByMenu ===
+243:SUITSET 1753:            currentSuitData = newSuit;
+244:SUITSET 1927:        public SuitData CurrentSuit => currentSuitData;
+245:SUITSET 8069:            SuitData suit = currentSuitData;
+246:SUITSET 8532:            if (collisionImpulse > 0f && currentSuitData != null)
+247:SUITSET 9923:            SuitData suit = currentSuitData;
+248:SUITSET 11455:            if (currentSuitData != null)
+249:SUITSET 12485:            _rb.mass = currentSuitData.mass;
+250:SUITSET 12492:                _currentLinearDamping = IsInDryInterior() ? 0f : currentSuitData.walkDrag;
+251:SUITSET 13088:            else if (currentSuitData != null)
+252:SUITSET 13185:            else if (currentSuitData != null)
+253:SUITSET 14813:            _debugSuitName = currentSuitData != null ? currentSuitData.name : "NONE";
+254:=== OnEnable ===
+290:PROBE C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessPlayModeProbe.cs
+299:=== L09 key full lines ===
+300:L12320:[PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one assigned quick-slot tool item. The grant is now retried from the tick lane until the inventory can accept, 
+301:L13156:[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOver
+302:L13174:[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOve
+303:L13192:[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOv
+304:L23666:[H8_PLAYPROBE] MOMENT   PASS          Boot               allSystemsReady=True gameReady=True Dispatcher=True TickManager=True Save=True ObjectPool=True activeScene='02_HECTON_WORLD' activationS
+305:L23680:[H8_PLAYPROBE] MOMENT   PASS          WorldLoad          active gameplay scene '02_HECTON_WORLD' finished loading after 10s; loaded scenes=2; unloading in background=01_MAIN_MENU
+306:L23694:[H8_PLAYPROBE] MOMENT   NOT_EXERCISED FirstExit          CONTENT-BLOCKED: no life-pod or drop-pod prefab exists in the project. LifePodSeatStrapLatch, DropPodSeatController and LifePodTactilePr
+307:L23708:[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m ox
+308:L23722:[H8_PLAYPROBE] MOMENT   BLOCKED       Resource           node 'rn_0_0_90001' would not deplete: health=260.000->0.444 normalized=0.002 vulnerabilityMask=0x00000020[Laser] requiredToolClass=Lase
+309:L23736:[H8_PLAYPROBE] MOMENT   BLOCKED       Tool               PlayerToolManager reports slotCount=4 and IsToolAvailableInSlot is false for every slot, so no tool could be selected on this route [INV
+310:L23750:[H8_PLAYPROBE] MOMENT   BLOCKED       CraftRepairBuild   Fabricator is live with visibleRecipes=0 totalRecipes=0 lockedRecipes=0 but CanCraft is false for all of them; the Resource leg delivere
+311:L23764:[H8_PLAYPROBE] MOMENT   BLOCKED       Mission            12 quests are authored and the graph is ready, but nothing completed. authored=12 graphReady=True autoActivated=2 activations=2 completi
+312:L23778:[H8_PLAYPROBE] MOMENT   NOT_EXERCISED Hazard             CONTENT-BLOCKED: no hazard is ever instantiated. RadiationHazardGrid, EnvironmentalHazard, ThermalVentRuntime, HectonHazardSource and Ho
+313:L23792:[H8_PLAYPROBE] MOMENT   PARTIAL       SaveLoad           save half observed: TryRequestSave(slot 'slot_0') changed 1 file(s) under 'C:/Users/Admin/AppData/LocalLow/Danat Games/Hecton8' in 1,0s 
+314:L23806:[H8_PLAYPROBE] MOMENT   PARTIAL       Proof              run log + per-phase clock table + save directory diff written to 'C:\hades\Hecton8\Docs\AgentLogs\h8_playprobe_v0_L09.json'; run-repeata
+315:L23820:[H8_PLAYPROBE] MOMENTS pass=2 partial=2 fail=1 blocked=4 notExercised=2 of 11 Required Route rows. Only pass is acceptance; partial means one half of a two-part row was observed and the row is 
+316:L23834:[H8_PLAYPROBE] RESULT 1 Required Route row(s) reported FAIL on a run that was asked to start the game, so the exit code now reflects them. Read the MOMENT lines above for which rows and why.
+317:=== L08 ===

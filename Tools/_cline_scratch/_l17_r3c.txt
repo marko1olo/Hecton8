@@ -1,0 +1,690 @@
+205|                // step-bounded time this must not happen at all, so say so once and loudly. This sits
+6206|                // inside the already-rare compression branch, so it costs nothing on a normal frame.
+6207|                if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+6208|                {
+6209|                    ReportStepBoundedClamp(
+6210|                        StepBoundedClampLaneFixed,
+6211|                        FixedStepSeconds,
+6212|                        requestedAccumulatedTime - maxAccumulatedTime);
+6213|                }
+6214|            }
+6215|
+6216|            _fixedStepAccumulator = System.Math.Min(requestedAccumulatedTime, maxAccumulatedTime);
+6217|
+6218|            int substepCount = 0;
+6219|            while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
+6220|            {
+6221|                if (SignalBusRegistry.IsSimulationHalted)
+6222|                    break;
+6223|
+6224|                DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
+6225|                _fixedStepAccumulator -= FixedStepSeconds;
+6226|                substepCount++;
+6227|            }
+6228|
+6229|            if (substepCount >= MaxFixedSubstepsPerFrame && _fixedStepAccumulator >= FixedStepSeconds)
+6230|                _fixedStepAccumulator = 0d;
+6231|
+6232|            RefreshFixedInterpolationAlpha();
+6233|        }
+6234|
+6235|        private void RefreshFixedInterpolationAlpha()
+6236|        {
+6237|            CurrentFixedInterpolationAlpha = math.saturate((float)(_fixedStepAccumulator / FixedStepSeconds));
+6238|        }
+6239|
+6240|        private void DispatchFixedStep(float fixedDeltaTime, bool blockGameplayLanes)
+6241|        {
+6242|#if UNITY_EDITOR && HECTON_HEAP_LOCK_GUARD
+6243|            long heapBefore = Profiler.GetMonoUsedSizeLong();
+6244|#endif
+6245|            using (_fixedUpdateProfilerMarker.Auto())
+6246|            {
+6247|                RunMasterFixedSimulationBridge(fixedDeltaTime);
+6248|                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+6249|                {
+6250|                    if (SignalBusRegistry.IsSimulationHalted)
+6251|                        return;
+6252|
+6253|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6254|                        continue;
+6255|
+6256|                    RegistryBucket<IFixedTickable> lane = _fixedPriorityLanes[laneIndex];
+6257|#if UNITY_EDITOR
+6258|                    lane.ValidateNoDestroyedEntriesDebug(nameof(IFixedTickable));
+6259|#endif
+6260|                    using (_fixedLaneProfilerMarkers[laneIndex].Auto())
+6261|                    {
+6262|                        int count = lane.Count;
+6263|
+6264|                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+6265|                        {
+6266|                            lane.GetAt(itemIndex).FixedTick(fixedDeltaTime);
+6267|                            if (SignalBusRegistry.IsSimulationHalted)
+6268|                                return;
+6269|                        }
+6270|                    }
+
+==== Fixed path @6240 ====
+6240|        private void DispatchFixedStep(float fixedDeltaTime, bool blockGameplayLanes)
+6241|        {
+6242|#if UNITY_EDITOR && HECTON_HEAP_LOCK_GUARD
+6243|            long heapBefore = Profiler.GetMonoUsedSizeLong();
+6244|#endif
+6245|            using (_fixedUpdateProfilerMarker.Auto())
+6246|            {
+6247|                RunMasterFixedSimulationBridge(fixedDeltaTime);
+6248|                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+6249|                {
+6250|                    if (SignalBusRegistry.IsSimulationHalted)
+6251|                        return;
+6252|
+6253|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6254|                        continue;
+6255|
+6256|                    RegistryBucket<IFixedTickable> lane = _fixedPriorityLanes[laneIndex];
+6257|#if UNITY_EDITOR
+6258|                    lane.ValidateNoDestroyedEntriesDebug(nameof(IFixedTickable));
+6259|#endif
+6260|                    using (_fixedLaneProfilerMarkers[laneIndex].Auto())
+6261|                    {
+6262|                        int count = lane.Count;
+6263|
+6264|                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+6265|                        {
+6266|                            lane.GetAt(itemIndex).FixedTick(fixedDeltaTime);
+6267|                            if (SignalBusRegistry.IsSimulationHalted)
+6268|                                return;
+6269|                        }
+6270|                    }
+6271|                }
+6272|
+6273|                using (_postFixedProfilerMarker.Auto())
+6274|                {
+6275|                    DispatcherJobFence.BeginPostFixedSwapWindow();
+6276|                    try
+6277|                    {
+6278|                        CompleteMasterFixedSimulationBridge(fixedDeltaTime);
+6279|                        for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+6280|                        {
+6281|                            if (SignalBusRegistry.IsSimulationHalted)
+6282|                                return;
+6283|
+6284|                            if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6285|                                continue;
+6286|
+6287|                            RegistryBucket<IPostFixedTickable> lane = _postFixedPriorityLanes[laneIndex];
+6288|#if UNITY_EDITOR
+6289|                            lane.ValidateNoDestroyedEntriesDebug(nameof(IPostFixedTickable));
+6290|#endif
+6291|                            int count = lane.Count;
+6292|                            for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+6293|                            {
+6294|#if UNITY_EDITOR
+6295|                                IPostFixedTickable postFixedTickable = lane.GetAt(itemIndex);
+6296|                                int gen0Before = System.GC.CollectionCount(0);
+6297|                                _currentPostFixedGcOwner = postFixedTickable;
+6298|                                try
+6299|                                {
+6300|                                    postFixedTickable.PostFixedTick(fixedDeltaTime);
+6301|                                }
+6302|                                finally
+6303|                                {
+6304|                                    int gen0After = System.GC.CollectionCount(0);
+6305|                                    if (gen0After != gen0Before)
+6306|                                    {
+6307|                                        _lastPostFixedGcOwner = postFixedTickable;
+6308|                                        _lastPostFixedGcFrame = CurrentFrameIndex;
+6309|                                        _lastPostFixedGcDelta = gen0After - gen0Before;
+6310|                                        _lastPostFixedGcLaneIndex = laneIndex;
+6311|                                        _lastPostFixedGcItemIndex = itemIndex;
+6312|                                    }
+6313|
+6314|                                    _currentPostFixedGcOwner = null;
+6315|                                }
+6316|#else
+6317|                                lane.GetAt(itemIndex).PostFixedTick(fixedDeltaTime);
+6318|#endif
+6319|                                if (SignalBusRegistry.IsSimulationHalted)
+6320|                                    return;
+6321|                            }
+6322|                        }
+6323|                    }
+6324|                    finally
+6325|                    {
+6326|                        DispatcherJobFence.EndPostFixedSwapWindow();
+6327|                    }
+6328|                }
+6329|
+
+==== RequestHeadlessTimeDilation @1742 ====
+1742|        public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+1743|        {
+1744|            ClearCoreTickDilationBurst();
+1745|            ClearAdrenalineDilation();
+1746|            SetTimeDilationScalar(
+1747|                scalar,
+1748|                TimeDilationMinimumScalar,
+1749|                HeadlessTimeDilationMaximumScalar,
+1750|                reasonHash,
+1751|                publishImmediate: true);
+1752|        }
+1753|
+1754|        /// <summary>
+1755|        /// Requests an exact frame-count core tick dilation burst.
+1756|        /// </summary>
+1757|        public void RequestCoreTickDilation(float scalar, int frameCount, uint reasonHash = 0u)
+1758|        {
+1759|            if (frameCount <= 0)
+1760|                return;
+1761|
+1762|            if (SimulationPaused)
+1763|                return;
+1764|
+1765|            float safeScalar = math.isfinite(scalar)
+1766|                ? math.clamp(scalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+1767|                : 1f;
+1768|
+1769|            if (_coreTickDilationRestorePending)
+1770|            {
+1771|                _coreTickDilationRestorePending = false;
+1772|            }
+1773|            else if (_coreTickDilationFramesRemaining <= 0)
+1774|            {
+1775|                _coreTickDilationRestoreScalar = _timeDilationScalar;
+1776|            }
+
+==== EnableStepBoundedTime @6545 ====
+6545|                // The actual cure is not in this branch: it is EnableStepBoundedTime, which replaces the
+6546|                // wall-clock dt that makes this the steady state. Under a clamp-free step this branch never
+6547|                // runs. If it runs anyway while step-bounded time is active, the step size is too coarse and
+6548|                // ReportStepBoundedClamp says so once, loudly - a step-bounded run that still discards time
+6549|                // is repeatable but is NOT simulating what its step count implies.
+6550|                double discardedSeconds = _slowTickAccumulator - slowTickIntervalSeconds;
+6551|                _slowTickAccumulator = slowTickIntervalSeconds;
+6552|                if (discardedSeconds > 0.0)
+6553|                {
+6554|                    _slowTickDiscardedSeconds += discardedSeconds;
+6555|                    _slowTickDiscardEvents++;
+6556|                    GlobalTelemetryBus.PublishPerformanceWarning(
+6557|                        _SlowTickSurplusDiscardedHash,
+6558|                        _SystemDispatcherHash,
+6559|                        (float)discardedSeconds);
+6560|                    if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+6561|                        ReportStepBoundedClamp(StepBoundedClampLaneSlow, slowTickIntervalSeconds, discardedSeconds);
+6562|                }
+6563|            }
+6564|        }
+6565|
+6566|        /// <summary>
+6567|        /// Total simulation seconds the slow-tick lane was owed and never received. A run reporting a large
+6568|        /// value here has not simulated what its wall clock suggests, and any ecosystem, weather or
+6569|        /// population state it produced is at a different point in time than the frame count implies.
+6570|        /// </summary>
+6571|        internal static double SlowTickDiscardedSeconds =>
+6572|            ActiveRuntimeInstance != null ? ActiveRuntimeInstance._slowTickDiscardedSeconds : 0.0;
+6573|
+6574|        /// <summary>Frames in which slow-tick surplus was discarded.</summary>
+6575|        internal static int SlowTickDiscardEvents =>
+6576|            ActiveRuntimeInstance != null ? ActiveRuntimeInstance._slowTickDiscardEvents : 0;
+6577|
+6578|        // ===========================================================================================
+6579|        // Step-bounded headless time
+6580|        //
+6581|        // The discard counters above made a headless run's divergence VISIBLE. They could not make it go
+6582|        // away, because the cause is not the clamp - the clamp is correct, and removing it trades a wrong
+6583|        // answer for a death spiral. The cause is that dt came from the wall clock, so a headless frame
+6584|        // was ~1.33 s (gameFramesPerWallSecond=0.75) where a player frame is ~0.016 s, and the surplus the
+
+==== EnableStepBoundedTime @6653 ====
+6653|        internal static bool EnableStepBoundedTime(float fixedDeltaSeconds)
+6654|        {
+6655|            if (!math.isfinite(fixedDeltaSeconds) || fixedDeltaSeconds <= 0f)
+6656|            {
+6657|                ReportStepBoundedConfigRejected(fixedDeltaSeconds);
+6658|                return false;
+6659|            }
+6660|
+6661|            _headlessTimeMode = HeadlessTimeMode.StepBounded;
+6662|            _stepBoundedDeltaSeconds = fixedDeltaSeconds;
+6663|            _stepBoundedElapsedSeconds = 0d;
+6664|            _stepBoundedStepIndex = 0L;
+6665|            _stepBoundedClampReportedLanes = 0;
+6666|            if (fixedDeltaSeconds <= MaxStepBoundedDeltaSeconds)
+6667|                return true;
+6668|
+6669|            ReportStepBoundedStepTooCoarse(fixedDeltaSeconds);
+6670|            return false;
+6671|        }
+6672|
+6673|        /// <summary>
+6674|        /// Returns the dispatcher to the wall clock. Player behaviour is the default and does not need this.
+6675|        /// </summary>
+6676|        internal static void DisableStepBoundedTime()
+6677|        {
+6678|            _headlessTimeMode = HeadlessTimeMode.WallClock;
+6679|            _stepBoundedDeltaSeconds = 0f;
+6680|            _stepBoundedElapsedSeconds = 0d;
+6681|            _stepBoundedStepIndex = 0L;
+6682|            _stepBoundedClampReportedLanes = 0;
+6683|        }
+6684|
+6685|        /// <summary>
+6686|        /// Consumes one fixed step. Called once per dispatcher frame from
+6687|        /// <see cref="ResolveDispatcherUnscaledDeltaTime"/>, never from a substep or per-item loop.
+6688|        /// </summary>
+6689|        private static float AdvanceStepBoundedClock()
+6690|        {
+6691|            float step = _stepBoundedDeltaSeconds;
+6692|            _stepBoundedElapsedSeconds += step;
+
+==== EnableStepBoundedTime @6752 ====
+6752|                "[SystemDispatcher] EnableStepBoundedTime rejected a step of " +
+6753|                requestedDeltaSeconds.ToString("F6", System.Globalization.CultureInfo.InvariantCulture) +
+6754|                " s: it must be finite and positive. Time source left as " + _headlessTimeMode.ToString() +
+6755|                "; this run is NOT step-bounded.");
+6756|#endif
+6757|        }
+6758|
+6759|        private static void ReportStepBoundedStepTooCoarse(float requestedDeltaSeconds)
+6760|        {
+6761|            PublishDispatcherComplianceViolation(_StepBoundedTimeConfigHash, _SystemDispatcherHash, 4, 2);
+6762|            GlobalTelemetryBus.PublishPerformanceWarning(
+6763|                _StepBoundedTimeConfigHash,
+6764|                _SystemDispatcherHash,
+6765|                requestedDeltaSeconds);
+6766|#if UNITY_EDITOR
+6767|            System.Globalization.CultureInfo invariant = System.Globalization.CultureInfo.InvariantCulture;
+6768|            UnityEngine.Debug.LogError(
+6769|                "[SystemDispatcher] Step-bounded time ENABLED with a step of " +
+6770|                requestedDeltaSeconds.ToString("F4", invariant) + " s, which EXCEEDS the clamp-free maximum of " +
+6771|                MaxStepBoundedDeltaSeconds.ToString("F4", invariant) +
+6772|                " s. A lane will discard simulation time every frame, so this run is repeatable but still " +
+6773|                "does not simulate what its step count implies. The binding lane is the FIXED-step lane " +
+6774|                "(temporal compression above " + MaxClampFreeFixedStepSeconds.ToString("F4", invariant) +
+6775|                " s), NOT the 0.1 s slow lane and not the fast lane at " +
+6776|                MaxClampFreeCadenceStepSeconds.ToString("F4", invariant) + " s.");
+6777|#endif
+6778|        }
+6779|
+6780|        private void RunBucketedSlowTick(bool blockGameplayLanes)
+6781|        {
+6782|            if (SignalBusRegistry.IsSimulationHalted)
+6783|                return;
+6784|
+6785|            ISimulationBucketer bucketer = _simulationBucketer;
+6786|            if (_bucketedSlowTickableCount <= 0 || bucketer == null || !bucketer.IsInitialized)
+6787|                return;
+6788|
+6789|            using (_slowTickProfilerMarker.Auto())
+6790|            {
+6791|                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+
+==== Probe clock @769 ====
+769|                        EnsureProbeSimulationClock("gameplay-window-start");
+770|                    }
+771|
+772|                    // Content before measurement. This runs BEFORE the driver starts and OUTSIDE the
+773|                    // _worldDriverEnabled branch on purpose: a -h8SkipWorldDriver run is supposed to
+774|                    // measure an UNDRIVEN world, not an EMPTY one, and those are different claims.
+775|                    if (!_placementOwnersRepaired)
+776|                    {
+777|                        _placementOwnersRepaired = true;
+778|                        EnableDisabledPlacementOwnersInMemory();
+779|                    }
+780|
+781|                    // SECOND determinism-owner observation: the world scene has arrived, so every
+782|                    // LoadSceneMode.Single of the boot route has already happened. Comparing this against
+783|                    // the BootWarmup sample brackets the window in which the owner disappeared, in ONE run.
+784|                    // Latched by the sample's own Taken flag; the cold FindObjectsByType inside runs once.
+785|                    if (!_determinismOwnerAtGameplayStart.Taken)
+786|                    {
+787|                        SampleDeterminismOwner(ref _determinismOwnerAtGameplayStart, "FirstGameplayTick");
+788|
+789|                        // Order matters and is not cosmetic: the sample above is the EVIDENCE, and a revive
+790|                        // that ran first would overwrite the one observation that proves the owner is
+791|                        // missing in the shipped route.
+792|                        if (_determinismReviveRequested)
+793|                            TryReviveDeterminismOwner();
+794|                    }
+795|
+796|                    // The world driver rides THIS tick. It gets no Update, no coroutine and no timer of
+797|                    // its own, so the schedule advances only while the probe is genuinely pumping the
+798|                    // engine - the same discipline that stops "yield return null" hanging a batchmode run.
+799|                    if (_worldDriverEnabled)
+800|                    {
+801|                        if (!_worldDriverStarted)
+802|                        {
+803|                            _worldDriverStarted = true;
+804|                            // L16: re-assert clock immediately before Begin in case dispatcher arrived late.
+805|                            EnsureProbeSimulationClock("worlddriver-begin");
+806|                            H8_HeadlessWorldDriver.Begin();
+807|                            Debug.Log(
+808|                                $"{Marker} WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> " +
+809|                                "(PLIN) and CoreDeterminismSignals input-override; budget " +
+810|                                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s of the " +
+811|                                $"{_gameplaySeconds:F0}s gameplay window");
+812|                        }
+813|
+814|                        // L16: sustain against late pause / dilation collapse / step-bound drop.
+815|                        MaybeEnsureProbeSimulationClockSustain();
+816|                        H8_HeadlessWorldDriver.Tick();
+817|                    }
+818|                    else
+
+==== Probe clock @805 ====
+805|                            EnsureProbeSimulationClock("worlddriver-begin");
+806|                            H8_HeadlessWorldDriver.Begin();
+807|                            Debug.Log(
+808|                                $"{Marker} WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> " +
+809|                                "(PLIN) and CoreDeterminismSignals input-override; budget " +
+810|                                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s of the " +
+811|                                $"{_gameplaySeconds:F0}s gameplay window");
+812|                        }
+813|
+814|                        // L16: sustain against late pause / dilation collapse / step-bound drop.
+815|                        MaybeEnsureProbeSimulationClockSustain();
+816|                        H8_HeadlessWorldDriver.Tick();
+817|                    }
+818|                    else
+819|                    {
+820|                        // Undriven measurement still needs FixedTick for hop2/depth observability.
+821|                        MaybeEnsureProbeSimulationClockSustain();
+822|                    }
+823|
+824|                    if (EditorApplication.timeSinceStartup - _gameplayWindowStartedAt >= _gameplaySeconds)
+825|                    {
+826|                        // The window is a WALL clock; what the driver still needs is TICKS. Closing on
+827|                        // the wall alone is what turned a schedule that had entered its Craft phase into
+828|                        // a NOT_EXERCISED row: the driver was stopped on the same tick that entered
+829|                        // Craft, so the phase got zero ticks and the mechanic was never looked at.
+830|                        if (_worldDriverStarted && TryGrantWorldDriverGrace())
+831|                            break;
+832|
+833|                        // Release the locomotion lane before the save leg, or the save would capture a
+834|                        // player under synthetic input and the save/load row would measure the driver.
+835|                        if (_worldDriverStarted)
+836|                        {
+837|                            H8_HeadlessWorldDriver.Stop(
+838|                                H8_HeadlessWorldDriver.StopCause.ProbeGameplayWindowClosed);
+839|                        }
+840|
+841|                        SetPhase(_saveLegEnabled ? Phase.SaveRoundTrip : Phase.Reporting);
+842|                    }
+843|
+844|                    break;
+845|
+846|                case Phase.SaveRoundTrip:
+847|                    TickSaveRoundTrip();
+848|                    break;
+849|
+850|                case Phase.Reporting:
+851|                    RunChecks();
+852|                    SetPhase(Phase.LeavingPlayMode);
+853|                    EditorApplication.ExitPlaymode();
+854|                    break;
+
+==== Probe clock @815 ====
+815|                        MaybeEnsureProbeSimulationClockSustain();
+816|                        H8_HeadlessWorldDriver.Tick();
+817|                    }
+818|                    else
+819|                    {
+820|                        // Undriven measurement still needs FixedTick for hop2/depth observability.
+821|                        MaybeEnsureProbeSimulationClockSustain();
+822|                    }
+823|
+824|                    if (EditorApplication.timeSinceStartup - _gameplayWindowStartedAt >= _gameplaySeconds)
+825|                    {
+826|                        // The window is a WALL clock; what the driver still needs is TICKS. Closing on
+827|                        // the wall alone is what turned a schedule that had entered its Craft phase into
+828|                        // a NOT_EXERCISED row: the driver was stopped on the same tick that entered
+829|                        // Craft, so the phase got zero ticks and the mechanic was never looked at.
+830|                        if (_worldDriverStarted && TryGrantWorldDriverGrace())
+831|                            break;
+832|
+833|                        // Release the locomotion lane before the save leg, or the save would capture a
+834|                        // player under synthetic input and the save/load row would measure the driver.
+835|                        if (_worldDriverStarted)
+836|                        {
+837|                            H8_HeadlessWorldDriver.Stop(
+838|                                H8_HeadlessWorldDriver.StopCause.ProbeGameplayWindowClosed);
+839|                        }
+840|
+841|                        SetPhase(_saveLegEnabled ? Phase.SaveRoundTrip : Phase.Reporting);
+842|                    }
+843|
+844|                    break;
+845|
+846|                case Phase.SaveRoundTrip:
+847|                    TickSaveRoundTrip();
+848|                    break;
+849|
+850|                case Phase.Reporting:
+851|                    RunChecks();
+852|                    SetPhase(Phase.LeavingPlayMode);
+853|                    EditorApplication.ExitPlaymode();
+854|                    break;
+855|
+856|                case Phase.LeavingPlayMode:
+857|                    if (!EditorApplication.isPlaying)
+858|                        Finish(_failures == 0 ? 0 : 1);
+859|                    break;
+860|            }
+861|        }
+862|
+863|        /// <summary>
+864|        /// Enables every authored-but-disabled procedural placement owner, IN MEMORY, on the first
+
+==== Probe clock @821 ====
+821|                        MaybeEnsureProbeSimulationClockSustain();
+822|                    }
+823|
+824|                    if (EditorApplication.timeSinceStartup - _gameplayWindowStartedAt >= _gameplaySeconds)
+825|                    {
+826|                        // The window is a WALL clock; what the driver still needs is TICKS. Closing on
+827|                        // the wall alone is what turned a schedule that had entered its Craft phase into
+828|                        // a NOT_EXERCISED row: the driver was stopped on the same tick that entered
+829|                        // Craft, so the phase got zero ticks and the mechanic was never looked at.
+830|                        if (_worldDriverStarted && TryGrantWorldDriverGrace())
+831|                            break;
+832|
+833|                        // Release the locomotion lane before the save leg, or the save would capture a
+834|                        // player under synthetic input and the save/load row would measure the driver.
+835|                        if (_worldDriverStarted)
+836|                        {
+837|                            H8_HeadlessWorldDriver.Stop(
+838|                                H8_HeadlessWorldDriver.StopCause.ProbeGameplayWindowClosed);
+839|                        }
+840|
+841|                        SetPhase(_saveLegEnabled ? Phase.SaveRoundTrip : Phase.Reporting);
+842|                    }
+843|
+844|                    break;
+845|
+846|                case Phase.SaveRoundTrip:
+847|                    TickSaveRoundTrip();
+848|                    break;
+849|
+850|                case Phase.Reporting:
+851|                    RunChecks();
+852|                    SetPhase(Phase.LeavingPlayMode);
+853|                    EditorApplication.ExitPlaymode();
+854|                    break;
+855|
+856|                case Phase.LeavingPlayMode:
+857|                    if (!EditorApplication.isPlaying)
+858|                        Finish(_failures == 0 ? 0 : 1);
+859|                    break;
+860|            }
+861|        }
+862|
+863|        /// <summary>
+864|        /// Enables every authored-but-disabled procedural placement owner, IN MEMORY, on the first
+865|        /// gameplay tick - before the world driver starts looking for content.
+866|        ///
+867|        /// WHY THIS EXISTS. A scene census on 2026-07-27 found WorldProceduralScatterDirector present
+868|        /// exactly once in 02_HECTON_WORLD, on [MANAGERS]/WorldGen, with the GameObject ACTIVE and the
+869|        /// COMPONENT DISABLED. Every registration that director owns runs from OnEnable
+870|        /// (WorldProceduralScatterDirector.cs:757-777), and Unity never calls OnEnable on a disabled
+
+==== Probe clock @3682 ====
+3682|        private static void EnsureProbeSimulationClock(string reason)
+3683|        {
+3684|            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+3685|            if (dispatcher == null)
+3686|            {
+3687|                Debug.Log($"{Marker} SIMCLOCK ensure reason={reason} dispatcher=null");
+3688|                return;
+3689|            }
+3690|
+3691|            bool wasPaused = dispatcher.SimulationPaused;
+3692|            float dilBefore = dispatcher.TimeDilationScalar;
+3693|            bool stepBoundBefore = SystemDispatcher.IsStepBoundedTimeActive;
+3694|
+3695|            // ConsumeFrameTimeDilationScalar returns 0 while _simulationPaused — unpause first.
+3696|            if (wasPaused)
+3697|                dispatcher.RequestSimulationPause(false, ProbeSimClockHash);
+3698|
+3699|            dispatcher.RequestHeadlessTimeDilation(ProbeTimeDilationScalar, ProbeSimClockHash);
+3700|
+3701|            // Real product headless time source (InternalsVisibleTo Hecton8.Editor).
+3702|            // Idempotent: EnableStepBoundedTime resets elapsed only when first arming; keep armed.
+3703|            bool stepBoundOk = stepBoundBefore;
+3704|            if (!stepBoundBefore)
+3705|                stepBoundOk = SystemDispatcher.EnableStepBoundedTime(ProbeStepBoundedDeltaSeconds);
+3706|
+3707|            _lastProbeClockEnsureRealtime = EditorApplication.timeSinceStartup;
+3708|            _probeSimClockArmed = stepBoundOk || SystemDispatcher.IsStepBoundedTimeActive;
+3709|
+3710|            bool pausedAfter = dispatcher.SimulationPaused;
+3711|            float dilAfter = dispatcher.TimeDilationScalar;
+3712|            bool stepBoundAfter = SystemDispatcher.IsStepBoundedTimeActive;
+3713|            Debug.Log(
+3714|                $"{Marker} SIMCLOCK ensure reason={reason}" +
+3715|                " pausedBefore=" + (wasPaused ? "1" : "0") +
+3716|                " dilBefore=" + dilBefore.ToString("0.###", CultureInfo.InvariantCulture) +
+3717|                " dilAfter=" + dilAfter.ToString("0.###", CultureInfo.InvariantCulture) +
+3718|                " pausedAfter=" + (pausedAfter ? "1" : "0") +
+3719|                " stepBoundBefore=" + (stepBoundBefore ? "1" : "0") +
+3720|                " stepBoundAfter=" + (stepBoundAfter ? "1" : "0") +
+3721|                " stepBoundOk=" + (stepBoundOk ? "1" : "0") +
+3722|                " stepDt=" + ProbeStepBoundedDeltaSeconds.ToString("0.###", CultureInfo.InvariantCulture) +
+3723|                " armed=" + (_probeSimClockArmed ? "1" : "0"));
+3724|        }
+3725|
+3726|        /// <summary>
+3727|        /// During GameplayWarmup, periodically re-assert the real clock against late
+3728|        /// SimulationPauseSignal / pause-menu / desync paths that drop step-bound or dilation.
+3729|        /// </summary>
+3730|        private static void MaybeEnsureProbeSimulationClockSustain()
+3731|        {
+
+==== Probe clock @3730 ====
+3730|        private static void MaybeEnsureProbeSimulationClockSustain()
+3731|        {
+3732|            if (_lastProbeClockEnsureRealtime > 0.0 &&
+3733|                EditorApplication.timeSinceStartup - _lastProbeClockEnsureRealtime < ProbeClockEnsureIntervalSeconds)
+3734|            {
+3735|                // Cheap path between throttle windows: still force if step-bound dropped.
+3736|                if (SystemDispatcher.IsStepBoundedTimeActive)
+3737|                {
+3738|                    ITickDispatcher d = GlobalRegistry.TickDispatcher;
+3739|                    if (d != null &&
+3740|                        !d.SimulationPaused &&
+3741|                        d.TimeDilationScalar + 0.01f >= ProbeTimeDilationScalar)
+3742|                        return;
+3743|                }
+3744|            }
+3745|
+3746|            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+3747|            if (dispatcher == null)
+3748|                return;
+3749|
+3750|            bool needsRestore = dispatcher.SimulationPaused ||
+3751|                                dispatcher.TimeDilationScalar + 0.01f < ProbeTimeDilationScalar ||
+3752|                                !SystemDispatcher.IsStepBoundedTimeActive;
+3753|            if (!needsRestore)
+3754|            {
+3755|                _lastProbeClockEnsureRealtime = EditorApplication.timeSinceStartup;
+3756|                return;
+3757|            }
+3758|
+3759|            EnsureProbeSimulationClock("gameplay-sustain");
+3760|        }
+3761|
+3762|        private static void ResetRunState()
+3763|        {
+3764|            _phase = Phase.Idle;
+3765|            _clockPhase = Phase.Idle;
+3766|            _clockSegmentOpen = false;
+3767|            _clockWallStart = 0.0;
+3768|            _clockGameFrameStart = 0;
+3769|            _clockTickStart = 0;
+3770|            _totalTicks = 0;
+3771|            _phaseSamples.Clear();
+3772|            _rejectedServices.Clear();
+3773|            SeedRouteMoments();
+3774|
+3775|            _frames = 0;
+3776|            _failures = 0;
+3777|            _menuFrames = 0;
+3778|            _settleFrames = 0;
+3779|            _gameplayFrames = 0;
+
+==== Probe clock @3759 ====
+3759|            EnsureProbeSimulationClock("gameplay-sustain");
+3760|        }
+3761|
+3762|        private static void ResetRunState()
+3763|        {
+3764|            _phase = Phase.Idle;
+3765|            _clockPhase = Phase.Idle;
+3766|            _clockSegmentOpen = false;
+3767|            _clockWallStart = 0.0;
+3768|            _clockGameFrameStart = 0;
+3769|            _clockTickStart = 0;
+3770|            _totalTicks = 0;
+3771|            _phaseSamples.Clear();
+3772|            _rejectedServices.Clear();
+3773|            SeedRouteMoments();
+3774|
+3775|            _frames = 0;
+3776|            _failures = 0;
+3777|            _menuFrames = 0;
+3778|            _settleFrames = 0;
+3779|            _gameplayFrames = 0;
+3780|            _menuLoad = null;
+3781|            _phaseStartedAt = 0.0;
+3782|            _playStartedAt = 0.0;
+3783|            _gameFrameAtPlayStart = 0;
+3784|
+3785|            _saveRequestIssued = false;
+3786|            _saveAccepted = false;
+3787|            _saveBusyObserved = false;
+3788|            _saveBusyClearedAt = 0.0;
+3789|            _saveLegStartedAt = 0.0;
+3790|            _saveLastPollAt = 0.0;
+3791|            _saveWaitedSeconds = 0.0;
+3792|            _saveWaitBudget = 0.0;
+3793|            _saveRoot = string.Empty;
+3794|            _saveSlotName = string.Empty;
+3795|            _saveError = string.Empty;
+3796|            _saveBefore = Array.Empty<SaveFileFacts>();
+3797|            _saveFilesAfter = 0;
+3798|            _saveDiff = default;
+3799|
+3800|            _artifactWritten = false;
+3801|
+3802|            // Determinism statics are cleared for the reason this whole method exists: a second run in one
+3803|            // editor session would otherwise inherit the first run's hash and report it as its own, which
+3804|            // is the single worst failure mode available to a determinism instrument - two runs "agreeing"
+3805|            // because one of them never read anything. The category array is kept and re-filled in place.
+3806|            _determinismState = DeterminismCapture.NotRead;
+3807|            _determinismMasterHash = 0UL;
+3808|            _determinismMasterFlags = 0u;
+
+SignalBusRuntime.cs:76|        public static bool IsSimulationHalted => Volatile.Read(ref _simulationHalted) != 0;
+SignalBusRuntime.cs:207|        public static void SetSimulationHalted()
+SignalBusRuntime.cs:213|        public static void ClearSimulationHalt()
+SignalBusRuntime.cs:702|                SignalBusRegistry.SetSimulationHalted();

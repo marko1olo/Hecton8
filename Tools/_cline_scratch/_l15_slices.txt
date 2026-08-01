@@ -1,0 +1,1810 @@
+
+##### Assets\_Project\Scripts\HectonPlayerMovement.cs total=15333 #####
+--- 7980:8280 ---
+7980|        {
+7981|            if (_inputManager == null || _subscribedInputManager == _inputManager)
+7982|                return;
+7983|
+7984|            _subscribedInputManager = _inputManager;
+7985|            SeedInputStateFromService(_inputManager);
+7986|        }
+7987|
+7988|        private void UnsubscribeFromInput()
+7989|        {
+7990|            if (_subscribedInputManager == null)
+7991|                return;
+7992|
+7993|            _subscribedInputManager = null;
+7994|            _currentInputState = default;
+7995|            _cachedMoveInput = Vector2.zero;
+7996|            _cachedVerticalInput = 0f;
+7997|            _pendingLookInput = Vector2.zero;
+7998|            SetSprintingState(false);
+7999|        }
+8000|
+8001|        /// <summary>
+8002|        /// Re-reads the live registry Input slot on every call instead of trusting a one-shot cold resolve.
+8003|        ///
+8004|        /// The previous version latched on its first success: it returned early as soon as
+8005|        /// _resolvedInputManager was set, and the only writers of _inputServiceRuntime are
+8006|        /// OnDependencyInject (:4214) and the GlobalRegistryServiceSlot.Input hot-swap case (:4295).
+8007|        /// GlobalRegistry.Register only queues that hot-swap callback when the slot ALREADY held a service
+8008|        /// (GlobalRegistry.cs:7352-7353), so a FIRST registration into an empty Input slot notifies nobody.
+8009|        /// Any player that resolved input while the slot was empty got GlobalRegistry.Input's non-null
+8010|        /// NoOpInputService null object (GlobalRegistry.cs:920-936) and kept it for the whole session -
+8011|        /// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+8012|        /// returns default (:8450), which sends ProcessPlayerInputFrame (:8079) down its else branch every
+8013|        /// render tick, zeroing _inputH/_inputV/_inputVertical and therefore the intent vector published at
+8014|        /// :10019. The InputDispatcher's own history says this window is real: its Input slot has already
+8015|        /// been observed emptied by a scene transition (InputDispatcher.cs:2838-2863).
+8016|        ///
+8017|        /// RegisteredInput is the raw slot (GlobalRegistry.cs:949) and never substitutes the null object, so
+8018|        /// binding off it cannot latch onto a service that is disabled by construction; a null slot leaves
+8019|        /// _inputManager null, which every consumer here already null-checks, and the next call rebinds.
+8020|        /// Cost is one static field read plus two ReferenceEquals - this method already ran every render
+8021|        /// tick through PrepareRenderTickDependencies (:4722), it just returned early.
+8022|        /// </summary>
+8023|        private void ResolveInputManagerBinding()
+8024|        {
+8025|            IInputService currentManager = GlobalRegistry.RegisteredInput;
+8026|            _inputServiceRuntime = currentManager;
+8027|            if (_resolvedInputManager &&
+8028|                ReferenceEquals(_inputManager, currentManager) &&
+8029|                ReferenceEquals(_subscribedInputManager, currentManager))
+8030|            {
+8031|                return;
+8032|            }
+8033|
+8034|            UnsubscribeFromInput();
+8035|            _inputManager = currentManager;
+8036|            _resolvedInputManager = true;
+8037|            SubscribeToInput();
+8038|        }
+8039|
+8040|        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8041|        //  SPRINT EVENTS (for CameraJuiceSystem integration)
+8042|        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8043|
+8044|        private void SetSprintingState(bool isSprinting)
+8045|        {
+8046|            if (isSprinting)
+8047|            {
+8048|                float stamina = _survivalSystem != null ? _survivalSystem.EnergyNormalized : 1f;
+8049|                isSprinting = Hecton8.PureLogic.Kinematics.SprintStaminaGate.EvaluateGate(stamina, 0.25f, 0.05f, _isSprinting);
+8050|            }
+8051|
+8052|            if (_isSprinting == isSprinting)
+8053|                return;
+8054|
+8055|            _isSprinting = isSprinting;
+8056|            PublishPlayerSprintStateSignal(isSprinting);
+8057|        }
+8058|
+8059|        private void SeedInputStateFromService(IInputService inputService)
+8060|        {
+8061|            if (inputService == null || !inputService.IsPlayerInputEnabled)
+8062|            {
+8063|                _currentInputState = default;
+8064|                _cachedMoveInput = Vector2.zero;
+8065|                _cachedVerticalInput = 0f;
+8066|                _pendingLookInput = Vector2.zero;
+8067|                SetSprintingState(false);
+8068|                return;
+8069|            }
+8070|
+8071|            _inputHandler.TryReadFrame(inputService, jumpBufferTime, false, out HectonPlayerInputFrame frame, out _);
+8072|            _currentInputState = frame.State;
+8073|            _cachedMoveInput = frame.MoveInput;
+8074|            _cachedVerticalInput = frame.VerticalInput;
+8075|            _pendingLookInput = Vector2.zero;
+8076|            SetSprintingState(frame.SprintHeld != 0);
+8077|        }
+8078|
+8079|        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8080|        //  Tick Ã¢â‚¬â€ INPUT + CAMERA (render framerate)
+8081|        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8082|
+8083|        public void Tick(float deltaTime)
+8084|        {
+8085|            SuitData suit = currentSuitData;
+8086|            if (suit == null) return;
+8087|            if (_juiceProcessor == null) return;
+8088|
+8089|            using (_tickProfilerMarker.Auto())
+8090|            {
+8091|                _currentRenderDeltaTime = math.max(0.0001f, deltaTime);
+8092|                RefreshVrComfortSettingsCache();
+8093|                PrepareRenderTickDependencies();
+8094|                if (ConsumeInventoryLoadSignals())
+8095|                    HandleInventoryLoadChanged();
+8096|
+8097|                DrainNarrativeFocusSignals();
+8098|                AdvanceCinematicFocus(deltaTime);
+8099|                if (_activeSonarPingCooldownTimer > 0f)
+8100|                {
+8101|                    _activeSonarPingCooldownTimer -= deltaTime;
+8102|                    if (_activeSonarPingCooldownTimer < 0f)
+8103|                        _activeSonarPingCooldownTimer = 0f;
+8104|                }
+8105|
+8106|                if (IsGameplayInputBlockedByMenu())
+8107|                {
+8108|                    HandleMenuBlockedInput(deltaTime, suit);
+8109|                    return;
+8110|                }
+8111|
+8112|                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+8113|                {
+8114|                    Cursor.lockState = CursorLockMode.Locked;
+8115|                    Cursor.visible = false;
+8116|                    _inputCleared = false;
+8117|                }
+8118|
+8119|                ProcessPlayerInputFrame();
+8120|                ProcessWipeoutInputOverride();
+8121|                ProcessLocomotionPresentationAndJuice(deltaTime, suit);
+8122|            }
+8123|        }
+8124|
+8125|        private void HandleMenuBlockedInput(float deltaTime, SuitData suit)
+8126|        {
+8127|            _currentInputState = default;
+8128|            _pendingLookInput = Vector2.zero;
+8129|            _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
+8130|            SetSprintingState(false);
+8131|            _inputCleared = true;
+8132|            _lastKinematicRepairProbe = default;
+8133|            _lastKinematicRepairSnapPoint = default;
+8134|            _kinematicRepairStateBits &= ~KinematicRepairStateHasSnapBit;
+8135|            ResetKinematicRepairProbeReuseGate();
+8136|            Cursor.lockState = CursorLockMode.None;
+8137|            Cursor.visible = true;
+8138|            UpdateRenderInterpolationState();
+8139|            BuildJuiceInput(deltaTime, suit);
+8140|            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+8141|            UpdateUnderwaterSomaticCameraOffsets(deltaTime);
+8142|            ApplyCameraState();
+8143|            UpdateVrComfortSignals(deltaTime, Vector3.zero, 0f);
+8144|        }
+8145|
+8146|        private void ProcessPlayerInputFrame()
+8147|        {
+8148|            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+8149|            {
+8150|                _inputHandler.TryReadFrame(
+8151|                    _inputManager,
+8152|                    jumpBufferTime,
+8153|                    out HectonPlayerInputFrame inputFrame,
+8154|                    out bool jumpBuffered);
+8155|                _currentInputState = inputFrame.State;
+8156|                _cachedMoveInput = inputFrame.MoveInput;
+8157|                _cachedVerticalInput = inputFrame.VerticalInput;
+8158|                _pendingLookInput = inputFrame.LookInput;
+8159|                if (jumpBuffered)
+8160|                {
+8161|                    _jumpRequested = true;
+8162|                    _jumpBufferTimer = jumpBufferTime;
+8163|                }
+8164|
+8165|                Vector2 lookDelta = _pendingLookInput;
+8166|                _pendingLookInput = Vector2.zero;
+8167|                ApplyLookInput(lookDelta);
+8168|
+8169|                _inputH = _cachedMoveInput.x;
+8170|                _inputV = _cachedMoveInput.y;
+8171|                _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+8172|                if (IsAuthoritativeVehicleTransportActive())
+8173|                {
+8174|                    _inputH = 0f;
+8175|                    _inputV = 0f;
+8176|                    _inputVertical = 0f;
+8177|                }
+8178|                SetSprintingState(inputFrame.SprintHeld != 0);
+8179|            }
+8180|            else
+8181|            {
+8182|                _currentInputState = default;
+8183|                _pendingLookInput = Vector2.zero;
+8184|                _inputH = 0f;
+8185|                _inputV = 0f;
+8186|                _inputVertical = 0f;
+8187|                SetSprintingState(false);
+8188|                _mouseXDelta = 0f;
+8189|            }
+8190|        }
+8191|
+8192|        private void ProcessWipeoutInputOverride()
+8193|        {
+8194|            if (_wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f)
+8195|            {
+8196|                _currentInputState = default;
+8197|                _pendingLookInput = Vector2.zero;
+8198|                _mouseXDelta = 0f;
+8199|                _inputH = 0f;
+8200|                _inputV = 0f;
+8201|                _inputVertical = 0f;
+8202|                SetSprintingState(false);
+8203|                _jumpRequested = false;
+8204|                _jumpBufferTimer = 0f;
+8205|            }
+8206|        }
+8207|
+8208|        /// <summary>
+8209|        /// Samples MoveDelta / vertical / sprint into the fixed-step locomotion fields that
+8210|        /// <see cref="ResolveRawInputIntentVector"/> and swim thrust read.
+8211|        ///
+8212|        /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+8213|        /// render IUpdatable.Tick path. Batchmode and physics-heavy schedules (headless V0 probe,
+8214|        /// long fixed steps) drive locomotion almost entirely through FixedTick while render Tick
+8215|        /// rarely runs, so _inputH/_inputV/_inputVertical stayed zero even when InputDispatcher
+8216|        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+8217|        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+8218|        /// mocking input or bypassing menu / vehicle / wipeout gates.
+8219|        ///
+8220|        /// Look / juice / cursor remain render-owned on Tick. Menu block zeros locomotion only -
+8221|        /// full HandleMenuBlockedInput stays on Tick so camera/cursor presentation is not driven
+8222|        /// from the physics step.
+8223|        /// </summary>
+8224|        private void SampleGameplayLocomotionInputForFixedStep()
+8225|        {
+8226|            ResolveInputManagerBinding();
+8227|
+8228|            if (IsGameplayInputBlockedByMenu())
+8229|            {
+8230|                _currentInputState = default;
+8231|                _pendingLookInput = Vector2.zero;
+8232|                _inputH = 0f;
+8233|                _inputV = 0f;
+8234|                _inputVertical = 0f;
+8235|                _mouseXDelta = 0f;
+8236|                SetSprintingState(false);
+8237|                // L14: menu block zeros intent metric so CurrentMovementIntent01 tracks Sample,
+8238|                // not a stale post-suit PrepareTransport write from a prior frame.
+8239|                _lastPlayerKinematicsIntendedMovement = default;
+8240|                return;
+8241|            }
+8242|
+8243|            ProcessPlayerInputFrame();
+8244|            ProcessWipeoutInputOverride();
+8245|            // L14: publish raw locomotion intent at Sample (pre-suit). hop2/GetState already ran
+8246|            // inside ProcessPlayerInputFrame; CurrentMovementIntent01 must reflect this frame even
+8247|            // when suit==null early-outs before PrepareTransportAndFrameState.
+8248|            _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
+8249|        }
+8250|
+8251|        private void ProcessLocomotionPresentationAndJuice(float deltaTime, SuitData suit)
+8252|        {
+8253|            ConsumeKinematicRepairTargetProbe();
+8254|            ScheduleKinematicRepairTargetProbe();
+8255|            UpdateRenderInterpolationState();
+8256|            _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
+8257|            _velocity = _feedbackVelocity;
+8258|            float currentSpeed = ApproximateVectorMagnitude(_velocity);
+8259|            float renderCameraYaw = CameraYaw;
+8260|            float yawDelta = DeltaAngleDegrees(_prevYawForMomentum, renderCameraYaw);
+8261|            UpdateVrComfortSignals(deltaTime, _velocity, yawDelta);
+8262|
+8263|            if (_swimPresentationController != null)
+8264|            {
+8265|                _swimPresentationController.SyncFromLocomotion(deltaTime, true);
+8266|                _debugLastSwimPresentationDriveFrame = SystemDispatcher.CurrentFrameIndex;
+8267|            }
+8268|
+8269|            BuildJuiceInput(deltaTime, suit);
+8270|            _juiceInput.speedDelta = currentSpeed - _prevSpeed;
+8271|            _juiceInput.yawDelta = yawDelta;
+8272|            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+8273|
+8274|            _prevSpeed = currentSpeed;
+8275|            _prevYawForMomentum = renderCameraYaw;
+8276|
+8277|            if (_juiceOutput.stepEvent != 0)
+8278|            {
+8279|                PublishPlayerFootstepSignal();
+8280|                TryEmitSurfaceFootstepAudio();
+--- 9920:10180 ---
+9920|        }
+9921|
+9922|        private static Vector3 BlendGravityVectorCheap(Vector3 startGravity, Vector3 targetGravity, float blend01)
+9923|        {
+9924|            float t = math.saturate(blend01);
+9925|            Vector3 blended = startGravity + ((targetGravity - startGravity) * t);
+9926|            if (blended.sqrMagnitude > MinLocalGravitySqr)
+9927|                return blended;
+9928|
+9929|            return t < 0.5f ? startGravity : targetGravity;
+9930|        }
+9931|
+9932|        private Vector3 ResolveBodyRuntimePosition()
+9933|        {
+9934|            if (_useFixedFrameSpatialCache && MathGuard.IsFinite(_fixedFrameBodyPosition))
+9935|                return HectonPlayerMotor.SafeVelocity(_fixedFrameBodyPosition);
+9936|
+9937|            Vector3 statePosition = ResolvePlayerAupRuntimePosition();
+9938|            if (MathGuard.IsFinite(statePosition))
+9939|                return HectonPlayerMotor.SafeVelocity(statePosition);
+9940|
+9941|            return _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.position) : Vector3.zero;
+9942|        }
+9943|
+9944|        public void FixedTick(float fixedDeltaTime)
+9945|        {
+9946|            // L13: Sample locomotion BEFORE suit/juice physics gates. hop2 (GetState) must not
+9947|            // depend on suit asset or juice processor being ready — L12 proved dispatcher already
+9948|            // holds non-zero MoveDelta while movementIntent01max stayed 0 because these early-outs
+9949|            // skipped SampleGameplayLocomotionInputForFixedStep for the whole Swim window.
+9950|            EnsureJuiceProcessor();
+9951|            SampleGameplayLocomotionInputForFixedStep();
+9952|
+9953|            SuitData suit = currentSuitData;
+9954|            if (suit == null)
+9955|                return;
+9956|
+9957|            using (_fixedTickProfilerMarker.Auto())
+9958|            {
+9959|
+9960|                PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+9961|
+9962|                float previousWaterImmersionRatio = _waterImmersionRatio;
+9963|                bool wasGroundedLastFixedTick = _isGrounded;
+9964|
+9965|                _rb.useGravity = false;
+9966|
+9967|                if (_isWalking)
+9968|                {
+9969|                    _bodyYaw = _cameraYaw;
+9970|                    _bodyYawVelocity = 0f;
+9971|                }
+9972|                else
+9973|                {
+9974|                    float bodyYawOmega = suit.bodyYawSpringOmega *
+9975|                        ResolveHeavyCarryBodyYawSpringMultiplier() *
+9976|                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
+9977|                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
+9978|                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+9979|                }
+9980|
+9981|                _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
+9982|                _wasGroundedLastFrame = _isGrounded;
+9983|
+9984|                GroundCheck();
+9985|                _playerMotor?.SetGroundedState(_isGrounded);
+9986|
+9987|                UpdateWaterImmersion(fixedDeltaTime);
+9988|
+9989|                ApplyLadderSplineSnapFromAsyncProbe(initialExosuitKinematicAuthority);
+9990|
+9991|                float physicsImmersion = _smoothedImmersionRatio;
+9992|                float feetDepth = GetFeetDepthBelowSurface(EffectiveWaterSurfaceY);
+9993|                bool hasImmediateShoreFooting = _isGrounded && feetDepth <= shoreWalkFootDepth;
+9994|                bool isShallowEnoughForShore = physicsImmersion < swimTransitionThreshold || hasImmediateShoreFooting;
+9995|                bool isDryLand = physicsImmersion <= 0.01f;
+9996|
+9997|                if (_isGrounded && isDryLand)
+9998|                {
+9999|                    _dryGroundGraceTimer = dryGroundGraceTime;
+10000|                }
+10001|                else if (_dryGroundGraceTimer > 0f)
+10002|                {
+10003|                    _dryGroundGraceTimer -= fixedDeltaTime;
+10004|                    if (_dryGroundGraceTimer < 0f)
+10005|                        _dryGroundGraceTimer = 0f;
+10006|                }
+10007|
+10008|                if (_isGrounded && isShallowEnoughForShore)
+10009|                {
+10010|                    _shoreGroundGraceTimer = shoreGroundGraceTime;
+10011|                }
+10012|                else if (_shoreGroundGraceTimer > 0f)
+10013|                {
+10014|                    _shoreGroundGraceTimer -= fixedDeltaTime;
+10015|                    if (_shoreGroundGraceTimer < 0f)
+10016|                        _shoreGroundGraceTimer = 0f;
+10017|                }
+10018|
+10019|                AdvanceCooldownTimers(fixedDeltaTime);
+10020|                AdvanceFatalPressureSequence(fixedDeltaTime);
+10021|                UpdateWipeoutState(fixedDeltaTime);
+10022|                UpdateShoreBuoyancyBlend(fixedDeltaTime, physicsImmersion, feetDepth);
+10023|                UpdateVegetationDensityLinearDamping(fixedDeltaTime);
+10024|
+10025|                bool hasDryGroundSupport = _isGrounded || (_dryGroundGraceTimer > 0f && isDryLand);
+10026|                bool hasShoreGroundSupport = hasImmediateShoreFooting || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
+10027|                bool groundedOnDryLand = hasDryGroundSupport && isDryLand;
+10028|                bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
+10029|
+10030|                bool exosuitActive = IsExosuitTransportActive();
+10031|                bool exosuitKinematicAuthority = TrySubmitExosuitKinematicAuthority(exosuitActive);
+10032|
+10033|                ToggleBuoyancy(!exosuitActive);
+10034|                RefreshSurfaceBreachLock(physicsImmersion);
+10035|                UpdateSurfaceDiveCommitTimer(fixedDeltaTime, activeTransportPreset);
+10036|
+10037|                float targetGravityScale = exosuitActive
+10038|                    ? exosuitNegativeBuoyancyScale
+10039|                    : groundedOnShore ? 1f : 1f - math.saturate(physicsImmersion * gravityFadeRate);
+10040|                _gravityScale = ResolveVrComfortGravityScale(targetGravityScale, fixedDeltaTime);
+10041|
+10042|                if (!exosuitKinematicAuthority && _gravityScale > 0.001f)
+10043|                {
+10044|                    float mass = ResolveAuthoritativeBodyMassKg();
+10045|                    _forceVector.x = _cachedGravity.x * mass * _gravityScale;
+10046|                    _forceVector.y = _cachedGravity.y * mass * _gravityScale;
+10047|                    _forceVector.z = _cachedGravity.z * mass * _gravityScale;
+10048|                    QueueEnvironmentalForce(_forceVector);
+10049|                }
+10050|
+10051|                if ((exosuitActive && _isGrounded) || groundedOnShore)
+10052|                {
+10053|                    _snapScale = 1f;
+10054|                }
+10055|                else
+10056|                {
+10057|                    _snapScale = 1f - math.saturate(physicsImmersion * snapFadeRate);
+10058|                }
+10059|
+10060|                bool shouldWalk = ShouldUseLandLocomotion(physicsImmersion, hasShoreGroundSupport, hasImmediateShoreFooting);
+10061|                bool shouldStartSurfaceDiveAssist =
+10062|                    !shouldWalk &&
+10063|                    !IsInDryInterior() &&
+10064|                    physicsImmersion >= surfaceBreachMinImmersion &&
+10065|                    GetHeadDepthBelowSurface(EffectiveWaterSurfaceY) <= surfaceDiveBreakDepth &&
+10066|                    HasCommittedSurfaceDive(activeTransportPreset);
+10067|
+10068|                if (shouldWalk)
+10069|                {
+10070|                    _surfaceDiveAssistTimer = 0f;
+10071|                }
+10072|                else if (shouldStartSurfaceDiveAssist && _surfaceDiveAssistTimer <= 0f)
+10073|                {
+10074|                    _surfaceDiveAssistTimer = surfaceDiveAssistDuration;
+10075|                }
+10076|
+10077|                bool wasWalkingBeforeModeResolution = _isWalking;
+10078|                if (shouldWalk != _isWalking)
+10079|                {
+10080|                    _isWalking = shouldWalk;
+10081|                    if (_isWalking)
+10082|                        ApplyShorelineWalkHandoffVelocity(wasWalkingBeforeModeResolution, hasShoreGroundSupport, hasImmediateShoreFooting);
+10083|                    ApplyModePhysics(suit);
+10084|                    UpdateModeDiagnostics();
+10085|                }
+10086|
+10087|                _isSurfaceSwimming = !exosuitActive && !_isWalking && ResolveSurfaceSwimState(physicsImmersion, activeTransportPreset);
+10088|                _currentLocomotionMode = ResolveLocomotionMode(physicsImmersion);
+10089|                SyncStateMachineContext(exosuitActive, physicsImmersion, groundedOnDryLand, groundedOnShore);
+10090|                _environmentHandler?.ExecuteStep(fixedDeltaTime, !exosuitKinematicAuthority);
+10091|                ApplyQueuedExternalKinematicForces(fixedDeltaTime, !exosuitKinematicAuthority);
+10092|                ApplyHighSpeedWipeoutSweep(fixedDeltaTime, !exosuitKinematicAuthority);
+10093|                UpdateSurfaceLockState(fixedDeltaTime);
+10094|                UpdateWaterPresentationPose(fixedDeltaTime);
+10095|                UpdateDynamicCollisionProfile(fixedDeltaTime, exosuitKinematicAuthority);
+10096|                UpdateHeavyTowRuntimeResponse(fixedDeltaTime, exosuitKinematicAuthority);
+10097|                UpdateWetLensSignal(fixedDeltaTime);
+10098|                UpdateHeadSurfaceRecovery(fixedDeltaTime);
+10099|                UpdateTransportCriticalBailout();
+10100|                UpdateModeDiagnostics();
+10101|                TryStartWaterEntryImpact(previousWaterImmersionRatio, wasGroundedLastFixedTick, currentVerticalVelocity);
+10102|                TryPlaySurfacePierceSplashAudio(previousWaterImmersionRatio, currentVerticalVelocity);
+10103|                TryStartSurfaceBreachArc(previousWaterImmersionRatio, currentVerticalVelocity);
+10104|                ApplyHydrostaticExitWeighting(previousWaterImmersionRatio);
+10105|
+10106|                SmoothDampingTransition(fixedDeltaTime, suit);
+10107|                TryApplyKinematicWallKick(exosuitKinematicAuthority);
+10108|
+10109|                ProcessJumpInput(fixedDeltaTime, exosuitActive, groundedOnDryLand, groundedOnShore);
+10110|
+10111|                ApplyLocomotionPhysics(fixedDeltaTime, suit, activeTransportPreset, exosuitActive, exosuitKinematicAuthority, groundedOnDryLand, groundedOnShore);
+10112|
+10113|                FinalizeFixedTick(fixedDeltaTime, suit, exosuitKinematicAuthority);
+10114|            }
+10115|        }
+10116|
+10117|        private PlayerTransportPreset PrepareTransportAndFrameState(float fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority)
+10118|        {
+10119|            RefreshVrComfortSettingsCache();
+10120|            AdvanceMovementProbeCacheFrame();
+10121|
+10122|            if (_transportEvaLockTicks > 0)
+10123|                _transportEvaLockTicks--;
+10124|
+10125|            if (_transportBailoutCooldownTimer > 0f)
+10126|            {
+10127|                _transportBailoutCooldownTimer -= fixedDeltaTime;
+10128|                if (_transportBailoutCooldownTimer < 0f)
+10129|                    _transportBailoutCooldownTimer = 0f;
+10130|            }
+10131|
+10132|            _currentFixedDeltaTime = fixedDeltaTime;
+10133|            RefreshActiveGravity(fixedDeltaTime);
+10134|            Vector3 bodyRuntimePosition = ResolveBodyRuntimePosition();
+10135|            Vector3 authoritativeVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
+10136|            currentVerticalVelocity = authoritativeVelocity.y;
+10137|
+10138|            _playerState.SyncKinematic(bodyRuntimePosition, authoritativeVelocity);
+10139|            _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
+10140|            WritePlayerKinematicsSnapshot(bodyRuntimePosition, authoritativeVelocity, _lastPlayerKinematicsIntendedMovement);
+10141|            _useFixedFrameSpatialCache = true;
+10142|
+10143|            PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
+10144|            _stateMachine?.AdvanceFixed(fixedDeltaTime);
+10145|
+10146|            ITransportPlatform previousTransportPlatform = _activeTransportPlatform;
+10147|            Transform previousTransportPlatformTransform = _activeTransportPlatformTransform;
+10148|            ResolveActiveTransportPlatform();
+10149|            if (_transportEvaLockTicks <= 0 &&
+10150|                previousTransportPlatform != null &&
+10151|                _activeTransportPlatform == null)
+10152|            {
+10153|                ExecuteTransportEvaHandoff(previousTransportPlatform, previousTransportPlatformTransform);
+10154|            }
+10155|
+10156|            bool exosuitActive = IsExosuitTransportActive();
+10157|            initialExosuitKinematicAuthority = exosuitActive && ExosuitKinematicAuthority.HasActiveAuthority();
+10158|
+10159|            SyncTransportPlatformRotation();
+10160|            RefreshFixedFrameSpatialCache();
+10161|            ApplyTransportPlatformCarrierMotion(fixedDeltaTime, initialExosuitKinematicAuthority);
+10162|            RefreshFixedFrameSpatialCache();
+10163|            RefreshSharedGroundSweepBuffer();
+10164|
+10165|            return activeTransportPreset;
+10166|        }
+10167|
+10168|        private void UpdateWaterImmersion(float fixedDeltaTime)
+10169|        {
+10170|            UpdateOceanWaterHeight();
+10171|            _waterImmersionRatio = ComputeImmersionRatio();
+10172|            _currentDepth = ComputeDepth();
+10173|            UpdateBottomClearance();
+10174|
+10175|            if (IsInDryInterior())
+10176|            {
+10177|                _waterImmersionRatio = 0f;
+10178|                _smoothedImmersionRatio = 0f;
+10179|                _currentDepth = 0f;
+10180|            }
+--- 5460:5560 ---
+5460|                GlobalTelemetryBus.PublishPerformanceWarning(_cinematicFocusTelemetryHash, _cinematicFocusHash, shiftData.Sequence);
+5461|            }
+5462|
+5463|            _sargassumMovementInfluence?.ApplyOriginShiftOffset(shiftOffset);
+5464|        }
+5465|
+5466|        /// <summary>
+5467|        /// L13: Product entry so gameplay bootstrap / headless route can re-assert Player fixed+update
+5468|        /// lane registration if OnEnable raced an empty Dispatcher. Does not mock input.
+5469|        /// </summary>
+5470|        public void EnsureDispatcherRegistration()
+5471|        {
+5472|            TryRegisterToDispatchers();
+5473|        }
+5474|
+5475|        private void TryRegisterToDispatchers()
+5476|        {
+5477|            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+5478|                return;
+5479|
+5480|            // L14: sticky false -> TryRegister once. sticky true -> leave registered.
+5481|            // Do NOT Unregister+Register every Ensure: WorldDriver calls Ensure every settle/swim
+5482|            // tick; thrash would drop HPM from the fixed lane mid-hold. RegistryBucket.TryRegister
+5483|            // returns false when Contains (not idempotent-true), so re-call alone cannot heal a
+5484|            // missing entry either - membership loss is rare; SD L14 no longer bootstrap-skips
+5485|            // Player lane, so once registered FixedTick runs for hop2/Sample/intent.
+5486|            if (!_registeredTick)
+5487|            {
+5488|                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+5489|            }
+5490|
+5491|            if (!_registeredFixedTick)
+5492|            {
+5493|                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+5494|            }
+5495|
+5496|
+5497|            if (!_registeredColdTick)
+5498|            {
+5499|                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+5500|            }
+5501|
+5502|            TryRegisterLateFrameTickable();
+5503|
+5504|            if (!_registeredPlayerMovementContracts)
+5505|            {
+5506|                IPlayerMovementContracts currentContracts = GlobalRegistry.PlayerMovementContracts;
+5507|                if (currentContracts == null)
+5508|                    GlobalRegistry.RegisterPlayerMovementContracts(this);
+5509|
+5510|                _registeredPlayerMovementContracts = ReferenceEquals(GlobalRegistry.PlayerMovementContracts, this);
+5511|            }
+5512|
+5513|            if (!_registeredHotSwapListener)
+5514|                _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+5515|
+5516|        }
+5517|
+5518|        private void UnregisterDispatcherTicks()
+5519|        {
+5520|            if (_registeredTick)
+5521|            {
+5522|                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+5523|                _registeredTick = false;
+5524|            }
+5525|
+5526|            if (_registeredFixedTick)
+5527|            {
+5528|                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+5529|                _registeredFixedTick = false;
+5530|            }
+5531|
+5532|            if (_registeredColdTick)
+5533|            {
+5534|                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+5535|                _registeredColdTick = false;
+5536|            }
+5537|
+5538|            if (_registeredLateFrameTick)
+5539|            {
+5540|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+5541|                _registeredLateFrameTick = false;
+5542|            }
+5543|        }
+5544|
+5545|        private void TryRegisterLateFrameTickable()
+5546|        {
+5547|            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+5548|                return;
+5549|
+5550|            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+5551|        }
+5552|
+5553|        private void MarkLateFramePresentationDirty()
+5554|        {
+5555|            // Late-frame ticking is lifecycle-registered; hot queues only mutate pending presentation state.
+5556|        }
+5557|
+5558|        public void ColdTick()
+5559|        {
+5560|            if (!Application.isPlaying)
+--- 4720:4820 ---
+4720|            _ladderSplineSnapActive = false;
+4721|            _ladderSplineSnapAxisWorld = Vector3.zero;
+4722|            _aupSpeculativeHoverTicks = 0;
+4723|            _aupSpeculativeHoverHeightMeters = 0f;
+4724|            _lastProcessedKccSlideFeedbackFrame = -1;
+4725|            _thermalUpdraftTraumaCooldownTimer = 0f;
+4726|            _vegetationDensityLinearDamping = 0f;
+4727|            _debugSargassumEntanglementDragRequest = 1f;
+4728|
+4729|            ApplySuitToRigidbody();
+4730|
+4731|            _registeredTick = false;
+4732|            _registeredFixedTick = false;
+4733|            _registeredOriginShiftListener = false;
+4734|            _registeredPlayerMovementContracts = false;
+4735|            _registeredHotSwapListener = false;
+4736|            _useFixedFrameSpatialCache = false;
+4737|            InvalidateMovementProbeCaches();
+4738|            RefreshFixedFrameSpatialCache();
+4739|
+4740|            ResolveInputManagerBinding();
+4741|            UpdateSuitDiagnostics();
+4742|        }
+4743|
+4744|        private void EnsureJuiceProcessor()
+4745|        {
+4746|            if (_juiceProcessor != null)
+4747|                return;
+4748|
+4749|            _juiceProcessor = new CameraJuiceProcessor();
+4750|        }
+4751|
+4752|        private void PrepareRenderTickDependencies()
+4753|        {
+4754|            ResolveInputManagerBinding();
+4755|            ResolveSwimPresentationController();
+4756|            _debugHasSwimPresentationController = _swimPresentationController != null;
+4757|            PlayerTransportPreset activeTransportPreset = ResolveActiveTransportPreset();
+4758|            UpdateRequestedTransportCollisionProfile(activeTransportPreset);
+4759|        }
+4760|
+4761|        private PlayerTransportPreset PrepareFixedTickDependencies()
+4762|        {
+4763|            return ResolveActiveTransportPreset();
+4764|        }
+4765|
+4766|        private void OnEnable()
+4767|        {
+4768|            SargassumGlobalDragManager.Register(this);
+4769|            SpectrumEvents.RegisterSonarPingListener(this);
+4770|            OnRegister();
+4771|            OnDependencyInject();
+4772|            TryRegisterDependencyRebinds();
+4773|            if (_survivalSystem == null)
+4774|                TryGetComponent(out _survivalSystem);
+4775|            BindInventoryLoadSource();
+4776|            ResolvePlayerToolManagerCold();
+4777|            ResolvePlayerTransportCoordinatorCold();
+4778|            ResolveSwimPresentationControllerCold();
+4779|            ResolveUnderwaterVisualsCold();
+4780|            ResolveInputManagerBinding();
+4781|            EnsurePlayerRuntimeSubsystems();
+4782|            EnsurePlayerKinematicsNativeState();
+4783|            EnsureCinematicFocusBlackBox();
+4784|            RefreshCinematicFocusTierGateCold();
+4785|            _playerKinematicsTelemetryDumpedThisFault = false;
+4786|            if (_rb != null)
+4787|            {
+4788|                _playerState.SyncKinematic(ResolveBodyRuntimePosition(), ResolveAuthoritativeLinearVelocity(Vector3.zero));
+4789|                RecordLastValidAup(_playerState.AbsolutePosition);
+4790|            }
+4791|            if (_cameraRig != null)
+4792|                _cameraRig.Bind(playerCamera, _cameraComponent);
+4793|            ToggleBuoyancy(true);
+4794|            if (!_registeredOriginShiftListener)
+4795|            {
+4796|                HectonFloatingOrigin.RegisterListener(this);
+4797|                _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
+4798|            }
+4799|            TryRegisterToDispatchers();
+4800|        }
+4801|
+4802|        private void Start()
+4803|        {
+4804|            if (_survivalSystem == null)
+4805|                TryGetComponent(out _survivalSystem);
+4806|
+4807|            OnDependencyInject();
+4808|            if (_registeredTick && _registeredFixedTick && _registeredLateFrameTick) return;
+4809|            TryRegisterToDispatchers();
+4810|
+4811|            BindInventoryLoadSource();
+4812|            ResolveInputManagerBinding();
+4813|            if (useCrestOceanHeight && !_crestAvailable)
+4814|                InitOceanKinematics();
+4815|        }
+4816|
+4817|        private void OnDisable()
+4818|        {
+4819|            SargassumGlobalDragManager.Unregister(this);
+4820|            SpectrumEvents.UnregisterSonarPingListener(this);
+--- 2970:3020 ---
+2970|        {
+2971|            _cinematicFocusFovQualityWeight01 = SmoothQuality01(ResolveMovementQualityWeight01());
+2972|        }
+2973|
+2974|        private static float ResolveMovementQualityWeight01()
+2975|        {
+2976|            float weight = HomeostasisBrain.GlobalQualityWeight;
+2977|            return math.saturate(math.isfinite(weight) ? weight : 1f);
+2978|        }
+2979|
+2980|        private static float SmoothQuality01(float value)
+2981|        {
+2982|            float t = math.saturate(math.isfinite(value) ? value : 1f);
+2983|            return t * t * (3f - (2f * t));
+2984|        }
+2985|
+2986|        private float3 ResolveRawInputIntentVector()
+2987|        {
+2988|            return new float3(_inputH, _inputVertical, _inputV);
+2989|        }
+2990|
+2991|        private void WritePlayerKinematicsSnapshot(Vector3 position, Vector3 velocity, float3 intendedMovement)
+2992|        {
+2993|            if (!HasPlayerKinematicsNativeState())
+2994|                return;
+2995|
+2996|            float3 position3 = new float3(position.x, position.y, position.z);
+2997|            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
+2998|            if (!math.all(math.isfinite(position3)) ||
+2999|                !math.all(math.isfinite(velocity3)) ||
+3000|                !math.all(math.isfinite(intendedMovement)))
+3001|            {
+3002|                DumpPlayerKinematicsBlackBox(_playerKinematicsNaNHash);
+3003|                return;
+3004|            }
+3005|
+3006|            _playerKinematicsNativeState.WriteKinematicSnapshot(_dataVault, position3, velocity3, intendedMovement);
+3007|        }
+3008|
+3009|        private Vector3 ResolvePlayerKinematicsBurstDragVelocity(
+3010|            Vector3 velocity,
+3011|            float3 intendedMovement,
+3012|            float dragCoefficient,
+3013|            float waterDensityScale,
+3014|            float fixedDeltaTime)
+3015|        {
+3016|            if (fixedDeltaTime <= 0f)
+3017|                return velocity;
+3018|
+3019|            if (!HasPlayerKinematicsNativeState())
+3020|                return velocity;
+--- 1890:1920 ---
+1890|            SetRuntimeInventoryLoadMovementMultiplier(cachedMovementMultiplier);
+1891|        }
+1892|
+1893|        /// <summary>Normalized 0-1 inventory mass load consumed by HUD and locomotion penalties.</summary>
+1894|        public float InventoryLoad01 => _runtimeInventoryLoad01;
+1895|
+1896|        /// <summary>Unclamped carried-mass ratio against the resolved survival carry capacity.</summary>
+1897|        public float InventoryLoadRatio => _runtimeInventoryLoadRatio;
+1898|
+1899|        /// <summary>Runtime-carried inventory mass in kilograms.</summary>
+1900|        public float InventoryCarriedMassKg => _runtimeInventoryTotalMassKg;
+1901|
+1902|        /// <summary>Resolved upward-swim multiplier after inventory mass encumbrance.</summary>
+1903|        public float InventoryUpwardSwimMultiplier => _runtimeInventoryUpwardSwimMultiplier;
+1904|
+1905|        /// <summary>Normalized 0-1 movement intent from the latest kinematic input snapshot.</summary>
+1906|        public float CurrentMovementIntent01 => math.saturate(math.sqrt(math.max(0f, math.lengthsq(_lastPlayerKinematicsIntendedMovement))));
+1907|
+1908|        /// <summary>Movement-owned stamina drain multiplier forwarded to survival.</summary>
+1909|        public float CurrentMovementStaminaDrainMultiplier => MovementStaminaDrainMultiplier;
+1910|
+1911|        /// <summary>Movement-owned emergency encumbrance ratio threshold.</summary>
+1912|        public float CurrentCriticalEncumbranceRatio => CriticalEncumbranceRatio;
+1913|
+1914|        /// <summary>Movement-owned stamina threshold for critical encumbrance failure.</summary>
+1915|        public float CurrentCriticalStaminaFailureThreshold01 => CriticalStaminaFailureThreshold01;
+1916|
+1917|        /// <summary>True when carried inventory mass exceeds the emergency locomotion cutoff.</summary>
+1918|        public bool IsCriticallyEncumbered => _runtimeInventoryLoadRatio >= CriticalEncumbranceRatio;
+1919|
+1920|        public bool IsCriticalStaminaFailureActive => _criticalStaminaFailureTimer > 0f;
+
+##### Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs total=5103 #####
+--- 1560:1700 ---
+1560|
+1561|            return true;
+1562|        }
+1563|
+1564|        // ─────────────────────────────────────────────────────────────────────────────────────────
+1565|        //  PER-TICK: observation and production. Both allocation-free.
+1566|        // ─────────────────────────────────────────────────────────────────────────────────────────
+1567|
+1568|        /// <summary>
+1569|        /// Reads the OBSERVABLES the rows are judged on. Properties on the owners plus non-destructive
+1570|        /// ReadOnlySpan views over the signal lanes — no allocation, no consumption, no mutation.
+1571|        /// </summary>
+1572|        private static void SampleObservables()
+1573|        {
+1574|            // Presence and enablement are recorded SEPARATELY on purpose: they are two different gates with
+1575|            // two different owners, and the run that folded them into one flag pointed a whole cycle of
+1576|            // work at the action map when the registry slot was the empty one.
+1577|            IInputService input = GlobalRegistry.RegisteredInput;
+1578|            if (input != null)
+1579|            {
+1580|                _inputServiceEverObserved = true;
+1581|                if (input.IsPlayerInputEnabled)
+1582|                    _inputEnabledEverObserved = true;
+1583|
+1584|                _inputBlockMaskLast = input.GetInputBlockMask();
+1585|
+1586|                // The AUTHORITATIVE post-fold snapshot, not the driver's own copy of what it asked for.
+1587|                // IInputDeterminismService.CurrentInputState (GlobalRegistryContracts.cs:940) is the state
+1588|                // InputDispatcher resolved after ApplyAutomationOverride and ApplyInputBlockMask, so a bit
+1589|                // present here provably survived both, and the AutomationOverride flag
+1590|                // (InputDispatcher.cs:1112) proves the override lane was actually consumed rather than merely
+1591|                // published. _publishedOverrides only ever proved the latter.
+1592|                InputState resolved = input.CurrentInputState;
+1593|                _verbSweepSnapshotButtonsLast = resolved.ButtonsBitmask;
+1594|                _verbSweepSnapshotFrameLast = resolved.Frame;
+1595|                if (resolved.HasFlag(InputStateFlags.AutomationOverride))
+1596|                    _verbSweepOverrideFlagObserved = true;
+1597|
+1598|                // Credit arrival only for bits the driver is CURRENTLY holding. Without that guard a bit set
+1599|                // by something else - or left over in a stale snapshot - would be laundered into this
+1600|                // driver's coverage claim, which is the whole class of mistake this ledger exists to avoid.
+1601|                uint arrived = resolved.ButtonsBitmask & _intent.ActionsBitmask;
+1602|                if (arrived != 0u && (arrived & ~_verbSweepArrivedMask) != 0u)
+1603|                {
+1604|                    _verbSweepArrivedMask |= arrived;
+1605|                    for (int verb = 0; verb < VerbCount; verb++)
+1606|                    {
+1607|                        if ((arrived & VerbBit(verb)) == 0u ||
+1608|                            (_verbFlags[verb] & VerbFlagArrivedInSnapshot) != 0)
+1609|                            continue;
+1610|
+1611|                        _verbFlags[verb] |= VerbFlagArrivedInSnapshot;
+1612|                        _verbArrivedFrame[verb] = resolved.Frame;
+1613|                    }
+1614|                }
+1615|            }
+1616|
+1617|            Hecton8.Gameplay.HectonSurvivalSystem survival = _survival;
+1618|            if (survival != null)
+1619|            {
+1620|                float depth = survival.Depth;
+1621|                if (depth < _depthMin)
+1622|                    _depthMin = depth;
+1623|                if (depth > _depthMax)
+1624|                    _depthMax = depth;
+1625|
+1626|                _oxygenLast = survival.Oxygen;
+1627|                _pressureLast = survival.Pressure;
+1628|            }
+1629|
+1630|            Hecton8.Gameplay.HectonPlayerMovement movement = _movement;
+1631|            if (movement != null)
+1632|            {
+1633|                float intent = movement.CurrentMovementIntent01;
+1634|                if (intent > _maxMovementIntent)
+1635|                    _maxMovementIntent = intent;
+1636|
+1637|                float immersion = movement.WaterImmersionRatio;
+1638|                if (immersion > _maxImmersion)
+1639|                    _maxImmersion = immersion;
+1640|            }
+1641|
+1642|            System.ReadOnlySpan<SurvivalVitalsChangedSignal> vitals =
+1643|                SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+1644|            for (int i = 0; i < vitals.Length; i++)
+1645|            {
+1646|                uint flags = vitals[i].Flags;
+1647|                if ((flags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u)
+1648|                    _sawVitalsOxygenFlag = true;
+1649|                if ((flags & SurvivalVitalsChangedSignalFlags.Pressure) != 0u)
+1650|                    _sawVitalsPressureFlag = true;
+1651|                if ((flags & SurvivalVitalsChangedSignalFlags.Depth) != 0u)
+1652|                    _sawVitalsDepthFlag = true;
+1653|            }
+1654|
+1655|            System.ReadOnlySpan<ItemAcquiredSignal> acquired =
+1656|                SignalBus<ItemAcquiredSignal>.GetFrameSnapshot();
+1657|            for (int i = 0; i < acquired.Length; i++)
+1658|            {
+1659|                ItemAcquiredSignal signal = acquired[i];
+1660|                if (signal.SourceKind == ItemAcquiredSignalSourceKinds.ManualPickup)
+1661|                {
+1662|                    // Only credit an acquisition the driver actually asked for. An earlier or unrelated
+1663|                    // pickup must not be laundered into this row.
+1664|                    if (_interactPublished && !_sawManualPickupAcquire)
+1665|                    {
+1666|                        _sawManualPickupAcquire = true;
+1667|                        _manualPickupQuantity = signal.Quantity;
+1668|                    }
+1669|                }
+1670|                else if (signal.SourceKind == ItemAcquiredSignalSourceKinds.Fabricator)
+1671|                {
+1672|                    if (_craftAccepted)
+1673|                        _sawFabricatorAcquire = true;
+1674|                }
+1675|            }
+1676|
+1677|            SampleSignalLaneCensus();
+1678|
+1679|            // Field reads on a cached context property (PlayerRuntimeContext.cs:172 is an auto-property, not
+1680|            // a GetComponent), so this is per-tick safe, and the version delta is worth sampling every tick:
+1681|            // a pickup that bumps InventoryVersion is the difference between "an item entered the bag" and
+1682|            // "a signal was published about an item".
+1683|            ResolveInventoryCensus();
+1684|
+1685|            Hecton8.Interaction.PlayerInteraction interaction = _interaction;
+1686|            if (interaction != null && interaction.CurrentHovered is Hecton8.Interaction.PickupItem)
+1687|                _sawPickupHover = true;
+1688|
+1689|            Hecton8.Scavenging.ResourceNode node = _node;
+1690|            if (node != null && node.IsDepleted)
+1691|                _nodeDepleted = true;
+1692|
+1693|            Hecton8.Crafting.Fabricator fabricator = _fabricator;
+1694|            if (fabricator != null)
+1695|            {
+1696|                if (fabricator.IsCrafting)
+1697|                    _craftObservedRunning = true;
+1698|
+1699|                float progress = fabricator.CraftProgress;
+1700|                if (progress > _craftProgressPeak)
+--- 1960:2100 ---
+1960|        /// <summary>
+1961|        /// Publishes the driver-authored locomotion intent onto the automation-override lane that
+1962|        /// InputDispatcher already consumes. One struct copy into a static sidecar
+1963|        /// (CoreDeterminismSignals.cs:55) — no ring push, no allocation.
+1964|        ///
+1965|        /// TryConsumeLatestInputOverride clears the sidecar on read and rejects anything older than two
+1966|        /// dispatcher frames, so this must be republished with the CURRENT frame id every tick. That is
+1967|        /// exactly the cadence the hardware producer runs at.
+1968|        /// </summary>
+1969|        private static void PublishLocomotionIntent()
+1970|        {
+1971|            if (CoreDeterminismSignals.TryPublishInputOverride(in _intent, SystemDispatcher.CurrentFrameId))
+1972|                _publishedOverrides++;
+1973|        }
+1974|
+1975|        /// <summary>
+1976|        /// Pushes one discrete command onto SignalBus&lt;PlayerInputSignal&gt; with the two gates every
+1977|        /// consumer enforces: the "PLIN" source hash and a strictly increasing sequence.
+1978|        ///
+1979|        /// The sequence is lifted above whatever the lane last carried rather than starting at 1.
+1980|        /// Consumers keep ONE _lastPlayerInputSignalSequence per instance and drop anything not newer
+1981|        /// (PlayerInteraction.cs:411), so a driver counter starting behind the real producer's would be
+1982|        /// silently discarded and the row would fail for a reason invisible in the log.
+1983|        /// </summary>
+1984|        private static bool PublishDiscreteCommand(byte command)
+1985|        {
+1986|            if (SignalBus<PlayerInputSignal>.TryGetLatest(out PlayerInputSignal latest, out int laneSequence) &&
+1987|                laneSequence != 0 &&
+1988|                unchecked(latest.Sequence - _discreteSequence) < 0x80000000u)
+1989|            {
+1990|                _discreteSequence = latest.Sequence;
+1991|            }
+1992|
+1993|            _discreteSequence = unchecked(_discreteSequence + 1u);
+1994|            if (_discreteSequence == 0u)
+1995|                _discreteSequence = 1u;
+1996|
+1997|            PlayerInputSignal signal = default;
+1998|            signal.SourceHash = PlayerInputSignalSourceHash;
+1999|            signal.Frame = SystemDispatcher.CurrentFrameId;
+2000|            signal.Sequence = _discreteSequence;
+2001|            signal.Command = command;
+2002|            signal.Flags = 0;
+2003|
+2004|            bool pushed = SignalBus<PlayerInputSignal>.TryPushTracked(in signal, ref _droppedDiscreteSignals);
+2005|            if (pushed)
+2006|            {
+2007|                _publishedDiscreteSignals++;
+2008|                return true;
+2009|            }
+2010|
+2011|            CaptureDiscreteRefusal(command);
+2012|            return false;
+2013|        }
+2014|
+2015|        /// <summary>
+2016|        /// Latches the lane's own state the first time it refuses a push, so the row can name WHICH of the
+2017|        /// four <c>TryPush</c> refusal paths fired instead of asserting one. Everything read here is a public
+2018|        /// static on <c>SignalBus&lt;T&gt;</c> or <c>SignalBusRegistry</c> in
+2019|        /// <c>Hecton8.Core.Contracts.Signals</c>, which this file already imports; nothing internal to the
+2020|        /// signal runtime is touched and nothing is mutated.
+2021|        ///
+2022|        /// One-shot by design. Re-sampling on every refusal would overwrite the failing moment with the last
+2023|        /// one, and the last one is typically a phase-ceiling tick several seconds later whose state no longer
+2024|        /// explains anything. Cost after the latch is a single bool test.
+2025|        /// </summary>
+2026|        private static void CaptureDiscreteRefusal(byte command)
+2027|        {
+2028|            if (_discreteRefusalCaptured)
+2029|                return;
+2030|
+2031|            _discreteRefusalCaptured = true;
+2032|            _discreteRefusalCommand = command;
+2033|            _discreteRefusalTick = _ticks;
+2034|            _discreteRefusalFrame = SystemDispatcher.CurrentFrameId;
+2035|
+2036|            // HasNativeStorage is _ring.IsCreated (SignalBusRuntime.cs:477). FALSE here is the whole answer:
+2037|            // the lane has no ring, so capacity is not the subject and no number of retries can help. TryPush
+2038|            // calls EnsureInitialized on every attempt, so a false reading also means the re-init failed again
+2039|            // on this very tick - the vault was still unbound, allocation-locked or compaction-fenced.
+2040|            _discreteRefusalHadNativeStorage = SignalBus<PlayerInputSignal>.HasNativeStorage;
+2041|            _discreteRefusalSnapshotCount = SignalBus<PlayerInputSignal>.SnapshotCount;
+2042|            _discreteRefusalPeakQueued = SignalBus<PlayerInputSignal>.PeakQueuedLastFlush;
+2043|            _discreteRefusalDroppedLastFlush = SignalBus<PlayerInputSignal>.DroppedLastFlush;
+2044|            _discreteRefusalLoadShedTotal = SignalBus<PlayerInputSignal>.LoadShedTotal;
+2045|            _discreteRefusalCorruptedTotal = SignalBus<PlayerInputSignal>.CorruptedSignalTotal;
+2046|            _discreteRefusalRegisteredLanes = SignalBusRegistry.LaneCount;
+2047|            _discreteRefusalRegistrationOverflow = SignalBusRegistry.RegistrationOverflow;
+2048|            _discreteRefusalSimulationHalted = SignalBusRegistry.IsSimulationHalted;
+2049|        }
+2050|
+2051|        /// <summary>
+2052|        /// Appends the latched refusal forensics and the ONE cause they are consistent with. Cold: called at
+2053|        /// most once per run, from the ToolEquip refusal path.
+2054|        /// <para>
+2055|        /// Writes into <c>_detail</c>, so it must only ever be called between a <c>_detail.Clear()</c> and the
+2056|        /// <c>Latch</c> that consumes it. The census line composes the same facts into <c>_log</c> by hand
+2057|        /// instead of calling this: the two builders are separate on purpose (see the note on <c>_log</c>) and
+2058|        /// routing the census through a <c>_detail</c> helper would let a diagnostic truncate a verdict that is
+2059|        /// mid-compose in the same tick.
+2060|        /// </para>
+2061|        /// </summary>
+2062|        private static void AppendDiscreteRefusalNote()
+2063|        {
+2064|            if (!_discreteRefusalCaptured)
+2065|            {
+2066|                _detail.Append(" [lane=SignalBus<PlayerInputSignal> never refused a push this run]");
+2067|                return;
+2068|            }
+2069|
+2070|            _detail.Append(" [lane=SignalBus<PlayerInputSignal> firstRefusal: command=")
+2071|                .Append(_discreteRefusalCommand)
+2072|                .Append(" atDriverTick=").Append(_discreteRefusalTick)
+2073|                .Append(" atDispatcherFrame=").Append(_discreteRefusalFrame)
+2074|                .Append(" expected=accepted actual=refused")
+2075|                .Append(" | hasNativeStorage=").Append(_discreteRefusalHadNativeStorage)
+2076|                .Append(" snapshotCount=").Append(_discreteRefusalSnapshotCount)
+2077|                .Append(" peakQueuedLastFlush=").Append(_discreteRefusalPeakQueued)
+2078|                .Append(" droppedLastFlush=").Append(_discreteRefusalDroppedLastFlush)
+2079|                .Append(" loadShedTotal=").Append(_discreteRefusalLoadShedTotal)
+2080|                .Append(" corruptedTotal=").Append(_discreteRefusalCorruptedTotal)
+2081|                .Append(" registeredLanes=").Append(_discreteRefusalRegisteredLanes)
+2082|                .Append(" registrationOverflow=").Append(_discreteRefusalRegistrationOverflow)
+2083|                .Append(" simulationHalted=").Append(_discreteRefusalSimulationHalted)
+2084|                .Append(']');
+2085|
+2086|            if (!_discreteRefusalHadNativeStorage)
+2087|            {
+2088|                _detail.Append(" - THE LANE HAS NO NATIVE STORAGE, so this is NOT a capacity fault and no ")
+2089|                    .Append("retry cadence can fix it. SignalBus<PlayerInputSignal>.EnsureInitialized ")
+2090|                    .Append("abandoned the lane without logging: either no IDataVault is bound to ")
+2091|                    .Append("SignalBusRegistry or the bound one is allocation-locked or compaction-fenced, so ")
+2092|                    .Append("TryAcquireFrameSnapshotBuffer failed and the ring was disposed on creation ")
+2093|                    .Append("(SignalBusRuntime.cs:626-631 via :1491-1495). Owner is the vault bind, not the ")
+2094|                    .Append("harness and not PlayerToolManager");
+2095|                return;
+2096|            }
+2097|
+2098|            if (_discreteRefusalRegistrationOverflow)
+2099|            {
+2100|                _detail.Append(" - the lane dispatch table OVERFLOWED, so registered lanes are not all ")
+--- 2630:2900 ---
+2630|        ///     way GlobalRegistry.Input does. Every consumer null-checks it before anything else
+2631|        ///     (HectonPlayerInputHandler.cs:37, HectonPlayerMovement.cs:7992, PlayerToolManager.cs:414), so
+2632|        ///     a null slot suppresses input for a reason that has nothing to do with action maps.
+2633|        ///   GATE 2, IInputService.IsPlayerInputEnabled. Resolves to
+2634|        ///     _nativeInputManager.IsPlayerInputEnabled (InputDispatcher.cs:409) and from there to
+2635|        ///     InputActionMap.enabled (InputManager.cs:277). SwitchToPlayerInput below is the same public
+2636|        ///     entry PauseMenuController.cs:728 and HectonFabricatorUI.cs:644 use when a menu closes - the
+2637|        ///     driver opens the gate the way a human's first input does, and never forces the flag or reads
+2638|        ///     past it.
+2639|        ///   GATE 3, the input block mask, sampled in SampleObservables and printed with the Swim row. It
+2640|        ///     zeroes the folded override AFTER both gates above are open (InputDispatcher.cs:3060), so a
+2641|        ///     nonzero mask is a third, separately named failure.
+2642|        /// A settle that gives up now names the gate that was shut instead of printing one ambiguous flag.
+2643|        /// </summary>
+2644|
+2645|        /// <summary>
+2646|        /// Product-correct locomotion readiness for scripted swim/route holds:
+2647|        /// force-close PDA / fabricator / pause via their real close APIs (restoring player maps),
+2648|        /// then always SwitchToPlayerInput. Called every settle and swim hold tick so a mid-window
+2649|        /// SwitchToUIInput or sticky IsOpen cannot starve hop2 (GetState) for the whole phase.
+2650|        /// </summary>
+2651|        private static void EnsureGameplayLocomotionInputReady()
+2652|        {
+2653|            // PDA — public ForceClose restores player input map.
+2654|            if (Hecton8.UI.PlayerPDA.IsOpen)
+2655|            {
+2656|                Hecton8.UI.PlayerPDA pda = Hecton8.UI.PlayerPDA.ActiveRuntimeInstance;
+2657|                if (pda == null)
+2658|                {
+2659|                    IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+2660|                    if (player != null)
+2661|                        pda = player.PlayerPDA as Hecton8.UI.PlayerPDA;
+2662|                }
+2663|
+2664|                if (pda != null)
+2665|                    pda.ForceClose();
+2666|            }
+2667|
+2668|            // Pause — public Close -> ApplyClosedState(restorePlayerInput: true).
+2669|            if (Hecton8.UI.PauseMenuController.IsAnyOpen)
+2670|            {
+2671|                Hecton8.UI.PauseMenuController pause = Hecton8.UI.PauseMenuController.ActiveRuntimeInstance;
+2672|                if (pause != null)
+2673|                    pause.Close();
+2674|            }
+2675|
+2676|            // Fabricator — public ForceCloseMenu (product API added for this path).
+2677|            if (Hecton8.UI.HectonFabricatorUI.IsMenuOpen)
+2678|            {
+2679|                Hecton8.UI.HectonFabricatorUI fab =
+2680|                    UnityEngine.Object.FindFirstObjectByType<Hecton8.UI.HectonFabricatorUI>();
+2681|                if (fab != null)
+2682|                    fab.ForceCloseMenu();
+2683|            }
+2684|
+2685|            IInputService input = GlobalRegistry.RegisteredInput;
+2686|            if (input != null)
+2687|            {
+2688|                input.SwitchToPlayerInput();
+2689|                _switchedToPlayerInput = true;
+2690|            }
+2691|
+2692|            // L13: Re-assert HPM Player fixed-tick registration so SampleGameplay/GetState (hop2)
+2693|            // runs during Swim. Suit/juice no longer gate sampling (HPM FixedTick L13), but a
+2694|            // missed TryRegisterFixedTickable still starves the entire locomotion read path.
+2695|            // Fully-qualify type: editor asm has no using Hecton8.Gameplay (CS0246 on bare name).
+2696|            Hecton8.Gameplay.HectonPlayerMovement movement =
+2697|                _movement
+2698|                ?? UnityEngine.Object.FindFirstObjectByType<Hecton8.Gameplay.HectonPlayerMovement>();
+2699|            if (movement != null)
+2700|            {
+2701|                movement.EnsureDispatcherRegistration();
+2702|                if (_movement == null)
+2703|                    _movement = movement;
+2704|            }
+2705|        }
+2706|
+2707|        private static void TickSettle()
+2708|        {
+2709|            IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+2710|            if (player != null)
+2711|            {
+2712|                if (_survival == null)
+2713|                    _survival = player.SurvivalSystem;
+2714|                if (_movement == null)
+2715|                    _movement = player.PlayerMovement;
+2716|                if (_toolManager == null)
+2717|                    _toolManager = player.ToolManager;
+2718|            }
+2719|
+2720|            TryResolveInteraction();
+2721|
+2722|            // Force-close any leftover menu (PDA/Fab/Pause) and re-assert the player action map
+2723|            // every settle tick. L10 measured hop2-starve: SampleGameplayLocomotionInputForFixedStep
+2724|            // short-circuits on IsGameplayInputBlockedByMenu without calling GetState, and a single
+2725|            // SwitchToPlayerInput at first settle loses to later SwitchToUIInput (MainMenu bind,
+2726|            // sticky IsOpen). Product close APIs only — no mock input path.
+2727|            EnsureGameplayLocomotionInputReady();
+2728|            IInputService input = GlobalRegistry.RegisteredInput;
+2729|
+2730|            bool ready = _survival != null && _movement != null && input != null;
+2731|            if (!ready)
+2732|            {
+2733|                // Named PER GATE rather than as one "not ready", for the same reason the three booleans this
+2734|                // row used to print were replaced: an empty registry slot and an unassembled player root are
+2735|                // different defects with different owners.
+2736|                _waitReason = input == null
+2737|                    ? WaitReason.InputServiceNotRegistered
+2738|                    : WaitReason.PlayerOwnersNotRegistered;
+2739|
+2740|                if (!PhaseCeilingReached())
+2741|                    return;
+2742|            }
+2743|
+2744|            if (!ready)
+2745|            {
+2746|                LatchSettleBlocked(input);
+2747|                EnterPhase(DrivePhase.ResourceTarget, CeilingYield());
+2748|                return;
+2749|            }
+2750|
+2751|            _oxygenAtStart = _survival.Oxygen;
+2752|            _pressureAtStart = _survival.Pressure;
+2753|            _swimBaselineTaken = true;
+2754|            EnterPhase(DrivePhase.SwimSurface, PhaseYield.Completed);
+2755|        }
+2756|
+2757|        /// <summary>
+2758|        /// Names the gate the settle phase died on. The previous version printed three bare booleans and
+2759|        /// the third one, labelled "inputService", was the presence check - so a missing service and a
+2760|        /// closed action map produced the SAME text and two cycles of work aimed at the wrong mechanism.
+2761|        /// Every branch below states the mechanism and where its owner lives, because a row detail that
+2762|        /// cannot be acted on is not a diagnostic.
+2763|        ///
+2764|        /// Runs at most once per run: the caller only reaches it after the settle budget expires, and Latch
+2765|        /// refuses a second write to a latched row.
+2766|        /// </summary>
+2767|        private static void LatchSettleBlocked(IInputService input)
+2768|        {
+2769|            _detail.Clear();
+2770|            _detail.Append("no drivable player after ").Append(F(PhaseElapsed))
+2771|                .Append("s: survival=").Append(_survival != null)
+2772|                .Append(" movement=").Append(_movement != null)
+2773|                .Append(" inputServiceRegistered=").Append(input != null)
+2774|                .Append(" inputEnabled=").Append(_inputEnabledEverObserved)
+2775|                .Append(" switchToPlayerInputCalled=").Append(_switchedToPlayerInput)
+2776|                .Append(" blockMask=0x").Append(_inputBlockMaskLast.ToString("X8", CultureInfo.InvariantCulture));
+2777|
+2778|            if (input == null)
+2779|            {
+2780|                _detail.Append(" - BLOCKER GATE 1 (service absent, NOT disabled): GlobalRegistry's Input ")
+2781|                    .Append("slot is empty, so IsPlayerInputEnabled was never reachable and the leading ")
+2782|                    .Append("null check in HectonPlayerInputHandler.cs:37 rejected every frame. The slot's ")
+2783|                    .Append("only producer is GameBootstrapper.EnsureInputDispatcherRegistered ")
+2784|                    .Append("(GameBootstrapper.cs:6309), which runs once in BootstrapPhase.Player - if the ")
+2785|                    .Append("dispatcher it creates does not outlive the scene it was created in, ")
+2786|                    .Append("OnDestroy -> TryUnregisterInputService empties the slot and nothing refills it");
+2787|            }
+2788|            else if (!_inputEnabledEverObserved)
+2789|            {
+2790|                _detail.Append(" - BLOCKER GATE 2 (service present, map closed): SwitchToPlayerInput was ")
+2791|                    .Append("invoked on the registered service and IsPlayerInputEnabled still never read ")
+2792|                    .Append("true, so InputManager.EnablePlayerInput did not leave the Player action map ")
+2793|                    .Append("enabled (InputManager.cs:1019 and :277). Nothing this driver may legitimately ")
+2794|                    .Append("do can open that gate - the owner has to");
+2795|            }
+2796|            else
+2797|            {
+2798|                _detail.Append(" - BLOCKER: the input route was OPEN; the missing owner is a player ")
+2799|                    .Append("component (HectonSurvivalSystem / HectonPlayerMovement off ")
+2800|                    .Append("GlobalRegistry.RegisteredPlayer), not input");
+2801|            }
+2802|
+2803|            AppendPhaseCeilingNote();
+2804|            Latch(RowSwim, RowVerdict.Blocked);
+2805|        }
+2806|
+2807|        /// <summary>
+2808|        /// Deterministic yaw sweep for the locomotion phases.
+2809|        /// </summary>
+2810|        /// <remarks>
+2811|        /// LookDelta was hardwired to Vector2.zero in every phase, so the driver never turned the camera and
+2812|        /// content discovery was confined to whatever the spawn orientation happened to face.
+2813|        /// TryAdoptNearbyWorldNode gates on ExistingNodeMinForwardDot 0.5 - a 60 degree half-cone - within
+2814|        /// ExistingNodeMaxDistanceMeters 3.5, and PlayerInteraction's hover raycast follows the same camera.
+2815|        /// A node four metres away or seventy degrees off-axis was invisible, which is why the harness had to
+2816|        /// register its own scatter point 1.75 m dead ahead to make the Resource row reachable at all: the
+2817|        /// success path was content the driver placed for itself.
+2818|        ///
+2819|        /// Derived from the tick counter, never from a clock or Random, so two runs sweep identically -
+2820|        /// determinism is already fragile enough on this lane without the driver adding to it. One full
+2821|        /// revolution per 120 ticks at 3 degrees each, applied as a per-tick yaw delta because LookDelta is
+2822|        /// a mouse-style delta rather than an absolute angle. Pitch stays zero: the vertical axis is driven
+2823|        /// through VerticalDelta, and pitching the camera would fight the immersion and depth sampling the
+2824|        /// Swim row measures.
+2825|        /// </remarks>
+2826|        private static Vector2 SweepLookDelta()
+2827|        {
+2828|            return new Vector2(SweepYawDegreesPerTick, 0f);
+2829|        }
+2830|
+2831|        private static void TickSwimSurface()
+2832|        {
+2833|            // Keep menus closed and player map enabled for the whole hold. One-shot settle is not
+2834|            // enough if anything re-opens UI mid-window (L10: hop2 never fired).
+2835|            EnsureGameplayLocomotionInputReady();
+2836|
+2837|            // Forward plus ascend. VerticalDelta is the surface/dive axis
+2838|            // (HectonPlayerInputHandler.cs:37-53 reads it straight off the snapshot).
+2839|            _intent.MoveDelta = new Vector2(0f, 1f);
+2840|            _intent.LookDelta = SweepLookDelta();
+2841|            _intent.VerticalDelta = 1f;
+2842|            _intent.ActionsBitmask = 0u;
+2843|            _intent.CurrentInputSchemeHash = 0u;
+2844|
+2845|            // A hold is not blocked on anything, and saying so explicitly matters: without it a hold would
+2846|            // report the previous phase's reason, and a reader would chase a precondition on a phase whose
+2847|            // only job is to occupy wall time.
+2848|            _waitReason = WaitReason.LocomotionHoldInProgress;
+2849|
+2850|            if (PhaseCeilingReached())
+2851|                EnterPhase(DrivePhase.SwimDive, HoldYield());
+2852|        }
+2853|
+2854|        private static void TickSwimDive()
+2855|        {
+2856|            EnsureGameplayLocomotionInputReady();
+2857|
+2858|            _intent.MoveDelta = new Vector2(0f, 1f);
+2859|            _intent.LookDelta = SweepLookDelta();
+2860|            _intent.VerticalDelta = -1f;
+2861|            _intent.ActionsBitmask = (uint)PlayerInputAction.Sprint;
+2862|            _intent.CurrentInputSchemeHash = 0u;
+2863|            _waitReason = WaitReason.LocomotionHoldInProgress;
+2864|
+2865|            if (PhaseCeilingReached())
+2866|            {
+2867|                // Do not clear _intent here: Tick publishes after AdvancePhase, so the last dive
+2868|                // frame must still ship MoveDelta. Non-authoring phases clear after publish.
+2869|                EnterPhase(DrivePhase.SwimVerdict, HoldYield());
+2870|            }
+2871|        }
+2872|
+2873|        /// <summary>
+2874|        /// Swim row acceptance. Three independent facts, and the row only passes when all three hold:
+2875|        ///   1. the driver's MoveDelta reached the locomotion owner (CurrentMovementIntent01 moved),
+2876|        ///   2. depth actually spanned a range (surface AND dive happened, not just one),
+2877|        ///   3. oxygen/pressure were readable and moved, corroborated by the vitals lane.
+2878|        /// Anything less is Partial or Blocked with the measured numbers attached, because "the harness
+2879|        /// ran" is not the same claim as "the route is proven".
+2880|        /// </summary>
+2881|        private static void LatchSwimVerdict()
+2882|        {
+2883|            if (_latched[RowSwim])
+2884|                return;
+2885|
+2886|            if (!_swimBaselineTaken)
+2887|                return;
+2888|
+2889|            // Sentinel-safe: _depthMin seeds at float.MaxValue and _depthMax at float.MinValue, so an
+2890|            // unsampled fold reads as ordered-backwards rather than as a 6.8e38 metre span. Reporting the
+2891|            // sentinel as a measurement is exactly the silent-degeneracy trap this project keeps hitting.
+2892|            bool depthSampled = _depthMax >= _depthMin;
+2893|            float depthMinShown = depthSampled ? _depthMin : 0f;
+2894|            float depthMaxShown = depthSampled ? _depthMax : 0f;
+2895|            float depthSpan = depthSampled ? _depthMax - _depthMin : 0f;
+2896|            float oxygenDelta = Mathf.Abs(_oxygenLast - _oxygenAtStart);
+2897|            float pressureDelta = Mathf.Abs(_pressureLast - _pressureAtStart);
+2898|            bool intentReachedMovement = _maxMovementIntent >= MinMovementIntent01;
+2899|            bool depthMoved = depthSpan >= MinDepthSpanMeters;
+2900|            bool vitalsMoved =
+
+##### Assets\_Project\Scripts\Core\SystemDispatcher.cs total=7585 #####
+--- 5260:5330 ---
+5260|                    RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
+5261|                    return;
+5262|                }
+5263|
+5264|                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+5265|                RunMasterSimulationPhase(in masterTiming);
+5266|#if UNITY_EDITOR
+5267|                long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
+5268|#endif
+5269|                _foveatedSimulationManager.BeginDispatcherFrame(deltaTime);
+5270|#if UNITY_EDITOR
+5271|                EndDispatcherPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
+5272|#endif
+5273|                PredatorCognitionDomain.BeginDispatcherFrame(CurrentFrameIndex);
+5274|                bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&
+5275|                                          BootstrapState.HasActiveInstance &&
+5276|                                          !BootstrapState.IsGameReady;
+5277|                long bucketWorkStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+5278|
+5279|                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+5280|                {
+5281|                    if (SignalBusRegistry.IsSimulationHalted)
+5282|                        return;
+5283|
+5284|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+5285|                        continue;
+5286|
+5287|                    RegistryBucket<IUpdatable> lane = _priorityLanes[laneIndex];
+5288|#if UNITY_EDITOR
+5289|                    lane.ValidateNoDestroyedEntriesDebug(nameof(IUpdatable));
+5290|#endif
+5291|                    using (_updateLaneProfilerMarkers[laneIndex].Auto())
+5292|                    {
+5293|                        int count = lane.Count;
+5294|
+5295|                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+5296|                        {
+5297|                            IUpdatable updatable = lane.GetAt(itemIndex);
+5298|                            if (!_foveatedSimulationManager.TryAdvanceTick(updatable, deltaTime, out float effectiveDeltaTime))
+5299|                                continue;
+5300|
+5301|                            updatable.Tick(effectiveDeltaTime);
+5302|                            _foveatedSimulationManager.NotifyTickCompleted(updatable);
+5303|                            if (SignalBusRegistry.IsSimulationHalted)
+5304|                                return;
+5305|
+5306|                            if (IsOriginShiftFrameLockedForCurrentFrame)
+5307|                                return;
+5308|                        }
+5309|                    }
+5310|                }
+5311|
+5312|                if (SignalBusRegistry.IsSimulationHalted)
+5313|                    return;
+5314|
+5315|                CombatDamageRuntime.FrameTick(deltaTime);
+5316|                PredatorCognitionDomain.ScheduleFrameEvaluation(CurrentFrameIndex);
+5317|                _foveatedSimulationManager.ScheduleFrameJobs();
+5318|                RunFastTick(deltaTime, blockGameplayLanes);
+5319|                RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+5320|                RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+5321|                RunBucketedSlowTick(blockGameplayLanes);
+5322|                RunSlowTick(deltaTime, blockGameplayLanes);
+5323|                RunColdTick(deltaTime, blockGameplayLanes);
+5324|                RunFrostTick(deltaTime, blockGameplayLanes);
+5325|                ScheduleDispatcherSurfaceProbes();
+5326|                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+5327|                RunMasterPostSimulationPhase(in masterTiming);
+5328|                IModdingBridge moddingBridge = _moddingBridgeProjectionRuntime;
+5329|                if (moddingBridge != null)
+5330|                    moddingBridge.ProjectPostSimulation();
+--- 6180:6270 ---
+6180|
+6181|        private void RunFixedStepAccumulator(float dilatedDeltaTime, bool blockGameplayLanes)
+6182|        {
+6183|            if (SignalBusRegistry.IsSimulationHalted)
+6184|                return;
+6185|
+6186|            if (dilatedDeltaTime <= 0f)
+6187|            {
+6188|                _temporalCompressionActive = false;
+6189|                RefreshFixedInterpolationAlpha();
+6190|                return;
+6191|            }
+6192|
+6193|            double maxAccumulatedTime = FixedStepSeconds * MaxFixedSubstepsPerFrame;
+6194|            double requestedAccumulatedTime = _fixedStepAccumulator + dilatedDeltaTime;
+6195|            bool compressionActive = requestedAccumulatedTime > maxAccumulatedTime;
+6196|            _temporalCompressionActive = compressionActive;
+6197|            if (compressionActive)
+6198|            {
+6199|                _temporalCompressionFrameCount++;
+6200|                CrashTelemetryBuffer.ReportTemporalCompression();
+6201|
+6202|                // Temporal compression is the fixed lane's version of the slow lane's discarded surplus:
+6203|                // the Math.Min below throws away requested-minus-max seconds of physics and fixed-tick
+6204|                // time, and only a frame COUNT was ever recorded for it - never the seconds lost. Under
+6205|                // step-bounded time this must not happen at all, so say so once and loudly. This sits
+6206|                // inside the already-rare compression branch, so it costs nothing on a normal frame.
+6207|                if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+6208|                {
+6209|                    ReportStepBoundedClamp(
+6210|                        StepBoundedClampLaneFixed,
+6211|                        FixedStepSeconds,
+6212|                        requestedAccumulatedTime - maxAccumulatedTime);
+6213|                }
+6214|            }
+6215|
+6216|            _fixedStepAccumulator = System.Math.Min(requestedAccumulatedTime, maxAccumulatedTime);
+6217|
+6218|            int substepCount = 0;
+6219|            while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
+6220|            {
+6221|                if (SignalBusRegistry.IsSimulationHalted)
+6222|                    break;
+6223|
+6224|                DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
+6225|                _fixedStepAccumulator -= FixedStepSeconds;
+6226|                substepCount++;
+6227|            }
+6228|
+6229|            if (substepCount >= MaxFixedSubstepsPerFrame && _fixedStepAccumulator >= FixedStepSeconds)
+6230|                _fixedStepAccumulator = 0d;
+6231|
+6232|            RefreshFixedInterpolationAlpha();
+6233|        }
+6234|
+6235|        private void RefreshFixedInterpolationAlpha()
+6236|        {
+6237|            CurrentFixedInterpolationAlpha = math.saturate((float)(_fixedStepAccumulator / FixedStepSeconds));
+6238|        }
+6239|
+6240|        private void DispatchFixedStep(float fixedDeltaTime, bool blockGameplayLanes)
+6241|        {
+6242|#if UNITY_EDITOR && HECTON_HEAP_LOCK_GUARD
+6243|            long heapBefore = Profiler.GetMonoUsedSizeLong();
+6244|#endif
+6245|            using (_fixedUpdateProfilerMarker.Auto())
+6246|            {
+6247|                RunMasterFixedSimulationBridge(fixedDeltaTime);
+6248|                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+6249|                {
+6250|                    if (SignalBusRegistry.IsSimulationHalted)
+6251|                        return;
+6252|
+6253|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6254|                        continue;
+6255|
+6256|                    RegistryBucket<IFixedTickable> lane = _fixedPriorityLanes[laneIndex];
+6257|#if UNITY_EDITOR
+6258|                    lane.ValidateNoDestroyedEntriesDebug(nameof(IFixedTickable));
+6259|#endif
+6260|                    using (_fixedLaneProfilerMarkers[laneIndex].Auto())
+6261|                    {
+6262|                        int count = lane.Count;
+6263|
+6264|                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+6265|                        {
+6266|                            lane.GetAt(itemIndex).FixedTick(fixedDeltaTime);
+6267|                            if (SignalBusRegistry.IsSimulationHalted)
+6268|                                return;
+6269|                        }
+6270|                    }
+--- 7105:7140 ---
+7105|            ReleaseDispatcherVaultHandle(dataVault, ref _scheduledDispatcherSurfaceProbeHitsHandle);
+7106|
+7107|            _pendingDispatcherSurfaceProbeCount = 0;
+7108|            _scheduledDispatcherSurfaceProbeCount = 0;
+7109|            System.Array.Clear(_pendingDispatcherSurfaceProbeReceivers, 0, _pendingDispatcherSurfaceProbeReceivers.Length);
+7110|            System.Array.Clear(_pendingDispatcherSurfaceProbeRequestIds, 0, _pendingDispatcherSurfaceProbeRequestIds.Length);
+7111|            System.Array.Clear(_scheduledDispatcherSurfaceProbeReceivers, 0, _scheduledDispatcherSurfaceProbeReceivers.Length);
+7112|            System.Array.Clear(_scheduledDispatcherSurfaceProbeRequestIds, 0, _scheduledDispatcherSurfaceProbeRequestIds.Length);
+7113|        }
+7114|
+7115|        private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
+7116|        {
+7117|            if (!blockGameplayLanes)
+7118|                return false;
+7119|
+7120|            // L14: Player fixed/update locomotion is input-authoritative simulation, not optional
+7121|            // bootstrap garnish. Skipping PriorityLayer.Player while !BootstrapState.IsGameReady
+7122|            // starves HPM.FixedTick -> Sample -> GetState (hop2) even when InputDispatcher already
+7123|            // holds non-zero MoveDelta (L12/L13 LIVE: hop1 healthy, hop2 ABSENT, intent=0).
+7124|            // World/environment systems still run; Player lane must also run once registered so
+7125|            // scripted and human locomotion can sample the open input path during handoff.
+7126|            // (Previously: return laneIndex == GetLaneIndex(PriorityLayer.Player);)
+7127|            return false;
+7128|        }
+7129|
+7130|        private static int GetLaneIndex(PriorityLayer layer)
+7131|        {
+7132|            switch (layer)
+7133|            {
+7134|                case PriorityLayer.Core:
+7135|                    return 0;
+7136|                case PriorityLayer.Environment:
+7137|                    return 1;
+7138|                case PriorityLayer.Player:
+7139|                    return 2;
+7140|                case PriorityLayer.UI:
+
+##### Assets\_Project\Scripts\Core\RegistryBucket.cs total=231 #####
+--- 70:180 ---
+70|            _count = 0;
+71|        }
+72|
+73|        /// <summary>
+74|        /// Appends a new item to the tail of the dense array.
+75|        /// </summary>
+76|        /// <param name="item">Item instance to register.</param>
+77|        public void Register(T item)
+78|        {
+79|            TryRegister(item);
+80|        }
+81|
+82|        /// <summary>
+83|        /// Attempts to append a new item to the tail of the dense array.
+84|        /// </summary>
+85|        /// <param name="item">Item instance to register.</param>
+86|        /// <returns>True when the item was registered.</returns>
+87|        public bool TryRegister(T item)
+88|        {
+89|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+90|            if (item == null)
+91|            {
+92|                if (!_nullRegistrationLogged)
+93|                {
+94|                    Hecton8.Core.H8Debug.LogError(
+95|                        $"[RegistryBucket<{typeof(T).Name}>] Null registration is forbidden.");
+96|                    _nullRegistrationLogged = true;
+97|                }
+98|                return false;
+99|            }
+100|
+101|            if (_count >= _capacity)
+102|            {
+103|                if (!_capacityErrorLogged)
+104|                {
+105|                    Hecton8.Core.H8Debug.LogError(
+106|                        $"[GlobalRegistry] RegistryBucket<{typeof(T).Name}> capacity ({_capacity}) exceeded.");
+107|                    _capacityErrorLogged = true;
+108|                }
+109|                return false;
+110|            }
+111|
+112|            if (Contains(item))
+113|                return false;
+114|#else
+115|            if (item == null || _count >= _capacity || Contains(item))
+116|                return false;
+117|#endif
+118|            _items[_count++] = item;
+119|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+120|            _indexErrorLogged = false;
+121|            _destroyedEntryLogged = false;
+122|#endif
+123|            return true;
+124|        }
+125|
+126|        /// <summary>
+127|        /// Removes an item using O(1) swap-with-last tail compaction.
+128|        /// </summary>
+129|        /// <param name="item">Item instance to remove.</param>
+130|        /// <returns>True when the item was found and removed.</returns>
+131|        public bool Unregister(T item)
+132|        {
+133|            if (TryUnregister(item))
+134|                return true;
+135|
+136|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+137|            if (!_unregisterMissLogged)
+138|            {
+139|                Hecton8.Core.H8Debug.LogWarning(
+140|                    $"[GlobalRegistry] Unregister called for non-registered {typeof(T).Name}.");
+141|                _unregisterMissLogged = true;
+142|            }
+143|#endif
+144|            return false;
+145|        }
+146|
+147|        /// <summary>
+148|        /// Removes an item without emitting a miss warning; used by idempotent lifecycle teardown paths.
+149|        /// </summary>
+150|        /// <param name="item">Item instance to remove.</param>
+151|        /// <returns>True when the item was found and removed.</returns>
+152|        public bool TryUnregister(T item)
+153|        {
+154|            for (int i = 0; i < _count; i++)
+155|            {
+156|                if (!ReferenceEquals(_items[i], item))
+157|                    continue;
+158|
+159|                _count--;
+160|                _items[i] = _items[_count];
+161|                _items[_count] = null;
+162|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+163|                _indexErrorLogged = false;
+164|                _unregisterMissLogged = false;
+165|                _destroyedEntryLogged = false;
+166|#endif
+167|                return true;
+168|            }
+169|
+170|            return false;
+171|        }
+172|
+173|        /// <summary>
+174|        /// Checks whether a given instance is already present in the bucket.
+175|        /// </summary>
+176|        /// <param name="item">Item instance to test.</param>
+177|        /// <returns>True when the instance is present.</returns>
+178|        public bool Contains(T item)
+179|        {
+180|            for (int i = 0; i < _count; i++)
+
+##### Assets\_Project\Scripts\Core\InputDispatcher.cs total=5757 #####
+--- 700:760 ---
+700|            ResetGamepadHaptics();
+701|            ResetXRHaptics();
+702|            UnsubscribeFromDeviceChanges();
+703|            TryUnregisterFromDispatcher();
+704|            TryUnregisterInputService();
+705|            TryUnregisterHotSwapListener();
+706|            ClearFrameState();
+707|            ClearCachedInputDevices();
+708|            _playerContext = null;
+709|            DisposeXRNativeBuffers(default);
+710|            StopInputReplayWriter();
+711|#if UNITY_EDITOR
+712|            DisposeInputProfileCsvWatcher();
+713|#endif
+714|            DisposeDeterministicInputNativeBuffers(default);
+715|
+716|            if (resetInitialization)
+717|            {
+718|                _nativeInputManager = null;
+719|                _isInitialized = false;
+720|            }
+721|
+722|            if (clearSubscribers)
+723|                ClearInputSubscribers();
+724|        }
+725|
+726|        private void ClearCachedInputDevices()
+727|        {
+728|            _cachedGamepad = null;
+729|            SteamDeckInputPal.BindGamepad(null);
+730|            ClearCachedXRControllers();
+731|        }
+732|
+733|        private void ClearInputSubscribers()
+734|        {
+735|            OnInteract = null;
+736|            OnPrimaryAction = null;
+737|            OnSecondaryAction = null;
+738|            OnPDA = null;
+739|            OnInventory = null;
+740|            OnCancel = null;
+741|            OnTabNext = null;
+742|            OnTabPrevious = null;
+743|            OnToolSlot1 = null;
+744|            OnToolSlot2 = null;
+745|            OnToolSlot3 = null;
+746|            OnToolSlot4 = null;
+747|        }
+748|
+749|        public void LateFrameTick()
+750|        {
+751|            DiagRecordLateFrameTick();
+752|            float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
+753|            PumpPreSimulationInputIfDispatcherSkipped();
+754|            UpdateVisualLookInterpolation();
+755|            DrainToolHaptics(deltaTime);
+756|            FlushPendingHapticOutput();
+757|        }
+758|
+759|        /// <summary>
+760|        /// Runs the per-frame input tick from a lane THIS component owns when the dispatcher did not run it.
+--- 1355:1370 ---
+1355|        /// <summary>
+1356|        /// Returns the cached input snapshot for the current frame.
+1357|        /// </summary>
+1358|        /// <returns>Current frame snapshot.</returns>
+1359|        public PlayerInputState GetState()
+1360|        {
+1361|            DiagRecordReadObservation(2);
+1362|            return _currentState;
+1363|        }
+1364|
+1365|        public bool TryGetInputState(uint frame, out InputState state)
+1366|        {
+1367|            if (!TryReadInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out NativeArray<InputState>.ReadOnly inputStateRing))
+1368|            {
+1369|                state = default;
+1370|                return false;

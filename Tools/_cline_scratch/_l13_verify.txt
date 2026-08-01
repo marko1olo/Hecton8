@@ -1,0 +1,49 @@
+FIXED_IDX=517225
+public void FixedTick(float fixedDeltaTime)
+        {
+            // L13: Sample locomotion BEFORE suit/juice physics gates. hop2 (GetState) must not
+            // depend on suit asset or juice processor being ready — L12 proved dispatcher already
+            // holds non-zero MoveDelta while movementIntent01max stayed 0 because these early-outs
+            // skipped SampleGameplayLocomotionInputForFixedStep for the whole Swim window.
+            EnsureJuiceProcessor();
+            SampleGameplayLocomotionInputForFixedStep();
+
+            SuitData suit = currentSuitData;
+            if (suit == null)
+                return;
+
+            using (_fixedTickProfilerMarker.Auto())
+            {
+
+                PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+
+          
+---
+EnsureDispatcherRegistration in HPM: True
+L13 comment in HPM: True
+sample_pos=489 suit_pos=592 sample_before_suit=True juice_early_still=False
+---DRV---
+EnsureDispatcherRegistration count=1
+ still starves the entire locomotion read path.
+            HectonPlayerMovement movement =
+                _movement as HectonPlayerMovement
+                ?? UnityEngine.Object.FindFirstObjectByType<HectonPlayerMovement>();
+            if (movement != null)
+            {
+                movement.EnsureDispatcherRegistration();
+                if (_movement == null)
+                    _movement = movement;
+            }
+        }
+
+        private static void TickSettle()
+        {
+            IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+            if (player != null)
+            {
+                if (_survival == null)
+                    _survival = player.SurvivalSystem;
+                if (_movement == null)
+                    _movement = player.PlayerMovement;
+ 
+MFIELD 900:         private static Hecton8.Gameplay.HectonPlayerMovement _movement;

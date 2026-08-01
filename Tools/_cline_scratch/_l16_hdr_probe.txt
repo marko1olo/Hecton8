@@ -1,0 +1,154 @@
+### H8_HeadlessPlayModeProbe.cs lines=4154
+   28: /// The probe calls EditorApplication.Exit itself: 0 if every check passed, 1 otherwise.
+   49: /// <c>NeverSampled</c> means the buffer is open and the run simply ended before a hash frame - a budget
+   55: /// The slow-tick discard is reported as a first-class COMPARABILITY caveat
+   75: public static class H8_HeadlessPlayModeProbe
+  126: private struct RouteMoment
+  133: private struct PhaseSample
+  142: private struct SaveFileFacts
+  151: private struct SaveDirectoryDiff
+  184: // SECONDS, not ticks. Measured: 3300 EditorApplication.update callbacks advanced the game
+  268: private static readonly List<string> _rejectedServices = new List<string>();
+  278: private static readonly List<PhaseSample> _phaseSamples = new List<PhaseSample>();
+  309: private static readonly List<RouteMoment> _routeMoments = new List<RouteMoment>();
+  336: private static SaveFileFacts[] _saveBefore = Array.Empty<SaveFileFacts>();
+  412: NeverSampled = 5,
+  416: private struct DeterminismCategorySample
+  445: private struct DeterminismOwnerSample
+  496: public static void Run()
+  504: // EditorApplication.Exit(0) - it terminates the editor process with a SUCCESS code. This
+  507: // example: the last probe line is "WORLDDRIVER begin ... budget 63s of the 67s gameplay
+  586: $"{Marker} WORLDDRIVER gameplay window raised {_gameplaySeconds:F0}s -> " +
+  649: _startedAt = EditorApplication.timeSinceStartup;
+  652: EditorApplication.update -= Tick;
+  653: EditorApplication.update += Tick;
+  654: EditorApplication.EnterPlaymode();
+  657: private static void Tick()
+  661: if (EditorApplication.timeSinceStartup - _startedAt > _hardTimeoutSeconds)
+  671: if (EditorApplication.isPlaying)
+  674: _playStartedAt = EditorApplication.timeSinceStartup;
+  676: $"{Marker} PLAYING (entered after {EditorApplication.timeSinceStartup - _startedAt:F1}s) " +
+  677: $"gameFrame={_gameFrameAtPlayStart} timeScale={Time.timeScale}");
+  685: if (!EditorApplication.isPlaying)
+  702: _phaseStartedAt = EditorApplication.timeSinceStartup;
+  717: _phaseStartedAt = EditorApplication.timeSinceStartup;
+  728: if (!EditorApplication.isPlaying)
+  742: _gameplayWindowStartedAt = EditorApplication.timeSinceStartup;
+  788: $"{Marker} WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> " +
+  797: if (EditorApplication.timeSinceStartup - _gameplayWindowStartedAt >= _gameplaySeconds)
+  826: EditorApplication.ExitPlaymode();
+  830: if (!EditorApplication.isPlaying)
+  884: private static void EnableDisabledPlacementOwnersInMemory()
+  972: private static bool TryGrantWorldDriverGrace()
+  987: $"{Marker} WORLDDRIVER grace EXHAUSTED after {_worldDriverGraceTicks} ticks with " +
+  999: if (EditorApplication.timeSinceStartup - _startedAt >
+ 1006: $"{Marker} WORLDDRIVER grace REFUSED with {owed} ticks owed in phase " +
+ 1008: $"{_hardTimeoutSeconds - (EditorApplication.timeSinceStartup - _startedAt):F0}s " +
+ 1020: $"{Marker} WORLDDRIVER the {_gameplaySeconds:F0}s gameplay window closed with the " +
+ 1036: /// The probe counts EditorApplication.update callbacks and calls them "frames". Whether one
+ 1051: private static void ReportClockRates()
+ 1054: double wall = EditorApplication.timeSinceStartup - _playStartedAt;
+ 1060: $"timeScale={Time.timeScale} unscaledTime={Time.unscaledTime:F1} captureFramerate={Time.captureFramerate} " +
+ 1087: private static void SetPhase(Phase next)
+ 1096: _clockWallStart = EditorApplication.timeSinceStartup;
+ 1101: private static void CloseClockSegment()
+ 1110: WallSeconds = EditorApplication.timeSinceStartup - _clockWallStart,
+ 1113: DuringPlay = EditorApplication.isPlaying,
+ 1143: private static void ReportSceneRuntimeService()
+ 1199: private static void TickWaitingForSettle()
+ 1214: double waited = EditorApplication.timeSinceStartup - _phaseStartedAt;
+ 1250: _phaseStartedAt = EditorApplication.timeSinceStartup;
+ 1262: _phaseStartedAt = EditorApplication.timeSinceStartup;
+ 1274: _phaseStartedAt = EditorApplication.timeSinceStartup;
+ 1298: private static void TickLoadingMenu()
+ 1315: $"{EditorApplication.timeSinceStartup - _phaseStartedAt:F0}s of waiting - using the game's own");
+ 1320: double waited = EditorApplication.timeSinceStartup - _phaseStartedAt;
+ 1402: private static bool IsAnySceneLoadInFlight()
+ 1413: private static bool TryFindMainMenu(out Hecton.UI.MainMenu.MainMenuController menu)
+ 1438: private static bool TryStartNewGame()
+ 1499: /// Polling happens on EditorApplication.update callbacks, which is the only thing that advances
+ 1502: private static void TickSaveRoundTrip()
+ 1504: if (!EditorApplication.isPlaying)
+ 1516: private static void BeginSaveRoundTrip()
+ 1519: _saveLegStartedAt = EditorApplication.timeSinceStartup;
+ 1589: private static void PollSaveRoundTrip()
+ 1591: double now = EditorApplication.timeSinceStartup;
+ 1658: private static void FinishSaveLeg(MomentVerdict verdict, string detail, bool countFailure)
+ 1669: private static string ReadSaveServiceError()
+ 1691: private static SaveFileFacts[] SnapshotSaveDirectory(string root, bool hashSaveFiles, out string error)
+ 1759: private static bool IsSaveSlotFile(string fileName)
+ 1768: private static ulong ComputeFileHashFnv1a64(string path, long length, out bool hashed)
+ 1824: private static SaveDirectoryDiff DiffSaveDirectory(SaveFileFacts[] before, SaveFileFacts[] after)
+ 1878: private static void AppendDiffLine(
+ 1902: private static void LogSaveDirectoryListing(string label, SaveFileFacts[] facts)
+ 1930: private static void RunChecks()
+ 2027: private static void RecordWorldDriverMoments()
+ 2047: $"{Marker} WORLDDRIVER ticks={H8_HeadlessWorldDriver.TickCount} " +
+ 2056: $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+ 2080: private static void ReportWorldDriverPhaseLedger()
+ 2117: private static void RecordDriverRow(int driverRow, string momentName)
+ 2134: // at RecordContentBlockedMoments: the route WAS attempted and WAS obstructed at runtime, which
+ 2162: /// and obstructed at runtime; it was never attempted, because there is nothing to attempt.
+ 2184: private static void RecordMissionMoment()
+ 2265: private static void RecordContentBlockedMoments()
+ 2286: /// actually produced. Rows with no producer print <c>NOT_EXERCISED</c> by construction, so the
+ 2288: /// output instead of having to be reconstructed by grepping a megabyte of log.
+ 2290: private static void ReportRouteMoments()
+ 2331: private static string DescribeVerdict(MomentVerdict verdict)
+ 2348: private static void SeedRouteMoments()
+ 2364: private static void AddRouteMoment(string name, string minimumAcceptance)
+ 2380: private static void RecordMoment(string name, MomentVerdict verdict, string detail)
+ 2411: private static void ReportBootstrapReadiness()
+ 2469: /// distinction was the difference between "the world is a shell" and the truth. Reconstructing it
+ 2486: private static string DescribeSceneActivationProgress()
+ 2510: private static void CheckWorldSeed()
+ 2553: private static void ReportRegistryPresence()
+ 2597: /// guessing at activation order is how this class of bug gets made.
+ 2609: private static void InstallRegistryRejectionHook()
+ 2618: private static void OnLogMessage(string condition, string stackTrace, LogType type)
+ 2633: private static void ReportRegistryRejections()
+ 2684: private static void ReportRuntimeComponentCensus()
+ 2795: private static void ReportVegetationVertexInputs()
+ 2828: private static void ReportGlobalVector(string name, string meaning)
+ 2835: private static void ReportGlobalFloat(string name, string meaning)
+ 2854: private static void SampleDeterminismOwner(ref DeterminismOwnerSample sample, string moment)
+ 2856: if (sample.Taken || !EditorApplication.isPlaying)
+ 2912: /// scene load. That is the exact class of thing an instrument must never hide, so the default run
+ 2925: private static void TryReviveDeterminismOwner()
+ 2932: if (!EditorApplication.isPlaying)
+ 2992: private static void CaptureDeterminismState()
+ 3019: if (!EditorApplication.isPlaying)
+ 3166: : DeterminismCapture.NeverSampled;
+ 3174: private static bool TryReadDeterminismBuffer<T>(
+ 3179: where T : struct
+ 3220: private static string DiagnoseDeterminismHashBuffer(Hecton8.Core.Memory.IDataVault vault)
+ 3271: private static void ReportDeterminismState()
+ 3337: else if (_determinismState == DeterminismCapture.NeverSampled)
+ 3394: private static void ReportDeterminismOwnerLifetime()
+ 3463: private static string DescribeOwnerSample(in DeterminismOwnerSample sample)
+ 3489: private static void ReportDeterminismDiscardCaveat()
+ 3513: private static uint SumDeterminismHashedElements()
+ 3526: private static string DescribeDeterminismCoverage()
+ 3552: private static string DescribeDeterminismComparability()
+ 3588: private static string DescribeDeterminismForProof()
+ 3605: private static bool IsAlive(object service)
+ 3613: private static void Finish(int exitCode)
+ 3615: EditorApplication.update -= Tick;
+ 3635: EditorApplication.Exit(exitCode);
+ 3641: /// The class relies on DisableDomainReload to survive the Play Mode transition, which also
+ 3646: private static void ResetRunState()
+ 3730: private static string ResolveArtifactPath()
+ 3752: private static void RecordProofMoment()
+ 3765: private static string ResolveDefaultArtifactPath()
+ 3783: private static void WriteRouteArtifact(int exitCode, Phase finalPhase)
+ 3808: _playStartedAt > 0.0 ? EditorApplication.timeSinceStartup - _playStartedAt : 0.0);
+ 4053: private static void AppendJsonField(StringBuilder builder, string name, string value, string indent = "  ")
+ 4059: private static void AppendJsonFieldLast(StringBuilder builder, string name, string value, string indent = "  ")
+ 4065: private static void AppendJsonNumber(StringBuilder builder, string name, double value, string indent = "  ")
+ 4070: private static void AppendJsonNumber(StringBuilder builder, string name, long value, string indent = "  ")
+ 4076: private static void AppendJsonBool(StringBuilder builder, string name, bool value, string indent = "  ")
+ 4081: private static void AppendJsonBoolLast(StringBuilder builder, string name, bool value, string indent = "  ")
+ 4086: private static string FormatNumber(double value)
+ 4093: private static string EscapeJson(string value)
+ 4132: private static string ReadStringArg(string flag, string fallback)
+ 4146: private static int ReadIntArg(string flag, int fallback)

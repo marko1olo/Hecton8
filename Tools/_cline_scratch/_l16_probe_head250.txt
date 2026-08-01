@@ -1,0 +1,250 @@
+1|using System;
+2|using System.Collections.Generic;
+3|using System.Globalization;
+4|using System.IO;
+5|using System.Text;
+6|using Hecton8.Core;
+7|using UnityEditor;
+8|using UnityEditor.SceneManagement;
+9|using UnityEngine;
+10|
+11|namespace Hecton8.EditorTools.Diagnostics
+12|{
+13|    /// <summary>
+14|    /// Enters Play Mode from batchmode, lets the game boot, reports what the runtime actually
+15|    /// contains, and exits.
+16|    ///
+17|    /// This exists because nothing in the project could prove runtime behaviour. Every static
+18|    /// probe here answers "is it wired", never "does it run". The PlayMode test assembly is
+19|    /// disabled by a NEVER_COMPILE_TESTS define constraint, so no test can execute without
+20|    /// changing project-wide settings, and a headless machine has no other way in. The result was
+21|    /// a steady stream of changes verified by "0 CS errors" and nothing else.
+22|    ///
+23|    /// Usage - note there must be NO -quit, or the editor closes before Play Mode ever starts:
+24|    ///   Unity.exe -batchmode -nographics -projectPath . -logFile Logs/playprobe.log \
+25|    ///             -executeMethod Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe.Run \
+26|    ///             -h8Scene Assets/_Project/Scenes/02_HECTON_WORLD.unity -h8WarmupFrames 240
+27|    ///
+28|    /// The probe calls EditorApplication.Exit itself: 0 if every check passed, 1 otherwise.
+29|    ///
+30|    /// EVERY run leaves one machine-readable artifact, by default at
+31|    /// &lt;projectRoot&gt;/Logs/h8_playprobe_route.json, overridable with -h8RouteArtifact. It carries the
+32|    /// per-phase clock table, the save-directory diff, the determinism block described below, and a
+33|    /// verdict for all ten rows of the First 20 Minutes Required Route - rows with no producer report
+34|    /// NOT_EXERCISED rather than staying silent. Before that artifact existed, four runs on the same day
+35|    /// used four different argument sets, emitted only log text, and could not be compared with one
+36|    /// another.
+37|    ///
+38|    /// The determinism block (console tag <c>DETERMINISM</c>, artifact key <c>determinism</c>) is the
+39|    /// answer to "did two runs of one seed do the same thing": it publishes the master state hash that
+40|    /// LockstepStateValidator already computes, the post-simulation frame it was sampled at, and the
+41|    /// slow-tick time the dispatcher discarded. This probe computes no hash of its own, and the block's
+42|    /// <c>coverage</c> field states in the artifact exactly which four buffers the hash does and does not
+43|    /// cover - read it before quoting a match as proof that two worlds agreed.
+44|    ///
+45|    /// WHEN THERE IS NO HASH, the block says WHICH of three things was wrong, because they have three
+46|    /// different owners and one measured run reported all three identically. <c>OwnerAbsentNoBuffer</c> means
+47|    /// no <c>LockstepStateValidator</c> exists at all - a lifetime defect. <c>OwnerPresentBufferUnopened</c>
+48|    /// means one exists and its vault buffer open failed silently - a vault-timing defect.
+49|    /// <c>NeverSampled</c> means the buffer is open and the run simply ended before a hash frame - a budget
+50|    /// matter. Alongside them the <c>DETERMINISM OWNER TRACE</c> lines sample the owner's existence at the
+51|    /// boot warmup, at the first gameplay tick and at end of run, which brackets the window an owner
+52|    /// disappeared in WITHOUT a second editor run; before that trace existed, separating "never created"
+53|    /// from "created then destroyed by a scene load" cost one full run per hypothesis.
+54|    ///
+55|    /// The slow-tick discard is reported as a first-class COMPARABILITY caveat
+56|    /// (<c>DETERMINISM SLOWTICK DISCARD</c>, artifact <c>runComparable</c> / <c>comparabilityCaveat</c>), not
+57|    /// as one number among a dozen. Two runs of one seed that discarded different amounts of owed simulation
+58|    /// time did not simulate the same world, so a hash difference between them proves nothing. The clamp that
+59|    /// discards the time is CORRECT and stays - it is the anti-death-spiral guard.
+60|    ///
+61|    /// <c>-h8ReviveDeterminismOwner</c> is OPT-IN and off by default: it creates a validator in memory when
+62|    /// the session has none, to answer whether the hash path can produce a number at all. It is deliberately
+63|    /// not the default, because the owner's absence is the only evidence this harness has about it and a
+64|    /// silently manufactured owner would hide that defect behind a hash. See TryReviveDeterminismOwner.
+65|    ///
+66|    /// Save-leg arguments: -h8SaveSeconds (default 60, clamped so the leg cannot push the run past
+67|    /// -h8TimeoutSeconds), -h8SaveSlot (0..2), -h8SkipSaveLeg to disable it. The leg only runs after
+68|    /// a game was actually started and the world scene settled.
+69|    ///
+70|    /// Relies on the project having Enter Play Mode Options set to DisableDomainReload
+71|    /// (ProjectSettings/EditorSettings.asset, m_EnterPlayModeOptions: 1), which is why a plain
+72|    /// static state machine survives the transition. Should that ever change, the statics reset
+73|    /// mid-run and the probe stalls rather than lying - always run it under an external timeout.
+74|    /// </summary>
+75|    public static class H8_HeadlessPlayModeProbe
+76|    {
+77|        private const string Marker = "[H8_PLAYPROBE]";
+78|        private const string DefaultScene = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
+79|
+80|        /// <summary>
+81|        /// Where a New Game run has to start. The normative flow is 00_BOOTSTRAP -> 01_MAIN_MENU ->
+82|        /// 02_HECTON_WORLD (AGENTS.md:162); entering play anywhere else is the recovery scenario, not
+83|        /// the product route.
+84|        /// </summary>
+85|        private const string BootstrapSceneAssetPath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
+86|        private const int DefaultWarmupFrames = 240;
+87|        private static double _hardTimeoutSeconds = 240.0;
+88|
+89|        private enum Phase
+90|        {
+91|            Idle,
+92|            WaitingForPlayMode,
+93|            WarmingUp,
+94|            LoadingMenu,
+95|            MenuWarmup,
+96|            StartingGame,
+97|            WaitingForSettle,
+98|            GameplayWarmup,
+99|            SaveRoundTrip,
+100|            Reporting,
+101|            LeavingPlayMode,
+102|        }
+103|
+104|        /// <summary>
+105|        /// Verdict for one row of the First 20 Minutes Required Route table
+106|        /// (<c>Docs/ARCHITECTURE/FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md:68-90</c>).
+107|        ///
+108|        /// <see cref="Partial"/> is a real state with a narrow meaning: SOME of the row's minimum
+109|        /// acceptance was exercised and observed, and the row is NOT accepted. It exists because the
+110|        /// contract's "Save/load" row is one row covering two operations, and reporting a proven save
+111|        /// with an unattempted load as <see cref="Pass"/> is exactly the half-closed seam this harness
+112|        /// is supposed to expose.
+113|        ///
+114|        /// Declared in ascending severity so <see cref="RecordMoment"/> can enforce "the worse verdict
+115|        /// wins" with a single comparison: an early optimistic reading can never mask a later failure.
+116|        /// </summary>
+117|        private enum MomentVerdict : byte
+118|        {
+119|            NotExercised = 0,
+120|            Pass = 1,
+121|            Partial = 2,
+122|            Blocked = 3,
+123|            Fail = 4,
+124|        }
+125|
+126|        private struct RouteMoment
+127|        {
+128|            public string Name;
+129|            public MomentVerdict Verdict;
+130|            public string Detail;
+131|        }
+132|
+133|        private struct PhaseSample
+134|        {
+135|            public string Phase;
+136|            public double WallSeconds;
+137|            public int GameFrames;
+138|            public int ProbeTicks;
+139|            public bool DuringPlay;
+140|        }
+141|
+142|        private struct SaveFileFacts
+143|        {
+144|            public string Name;
+145|            public long Length;
+146|            public long WriteTicksUtc;
+147|            public ulong ContentHash;
+148|            public bool Hashed;
+149|        }
+150|
+151|        private struct SaveDirectoryDiff
+152|        {
+153|            public int Added;
+154|            public int Removed;
+155|            public int Changed;
+156|            public long ByteDelta;
+157|            public string Lines;
+158|
+159|            public int TotalChanges => Added + Removed + Changed;
+160|        }
+161|
+162|        private const string MenuSceneName = "01_MAIN_MENU";
+163|
+164|        /// <summary>
+165|        /// Scene NAME of the boot scene, as <see cref="UnityEngine.SceneManagement.Scene.name"/>
+166|        /// reports it. <see cref="BootstrapSceneAssetPath"/> is the asset path and does not compare
+167|        /// equal to a live scene's name.
+168|        /// </summary>
+169|        private const string BootstrapSceneName = "00_BOOTSTRAP";
+170|        private const int MenuWarmupFrames = 120;
+171|
+172|        /// <summary>
+173|        /// How long a DISABLED <c>MainMenuController</c> is tolerated before the probe stops waiting for
+174|        /// it to enable itself. Not a timeout in the usual sense - the condition is decided in the first
+175|        /// second and this grace only covers the window where the controller may not have run
+176|        /// <c>Awake</c> yet. Kept short because the alternative, measured, was 201 wall seconds and
+177|        /// 11490 game frames spent waiting for a flag that cannot flip.
+178|        /// </summary>
+179|        private const double DisabledMenuGraceSeconds = 12.0d;
+180|
+181|        // How long to let the game bring up its OWN menu. Default is generous on purpose: the
+182|        // bootstrap -> menu handoff is a Single load with an activation gate, and rushing it is how
+183|        // the earlier versions of this probe went wrong twice.
+184|        // SECONDS, not ticks. Measured: 3300 EditorApplication.update callbacks advanced the game
+185|        // by 19 frames in 13.7s wall - about one game frame per second, with or without -nographics.
+186|        // Boot frames genuinely cost that much in the editor, so every frame budget this probe used
+187|        // before was worth a couple of dozen game frames and proved nothing. Wall time is the only
+188|        // honest unit here.
+189|        private static double _menuWaitSeconds = 300.0;
+190|
+191|        // Loading a menu ourselves is OFF by default. When the probe did it additively on top of a
+192|        // still-active 00_BOOTSTRAP, New Game then issued a Single load that unloaded both scenes,
+193|        // SceneRuntimeService's activation-gate loop exited on isActiveAndEnabled without ever
+194|        // calling ReleaseSceneActivation, and 02_HECTON_WORLD sat at roots=0 isLoaded=false forever.
+195|        // No watchdog or emergency-release line appeared in the log, which is how we know that loop
+196|        // was not running. That deadlock is almost certainly probe-induced - it is a runtime state
+197|        // the game never produces - so it must not be created by default and must not be reported
+198|        // as a game defect.
+199|        private static bool _forceMenuLoad;
+200|
+201|        // After New Game the world scene load is in flight for a long time in batchmode - 2400
+202|        // gameplay frames were not enough for 02_HECTON_WORLD to report isLoaded. Counting frames
+203|        // measures the wrong thing; wait for the loads to actually finish.
+204|        private static double _settleWaitSeconds = 300.0;
+205|        private static double _gameplaySeconds = 60.0;
+206|        private static double _phaseStartedAt;
+207|
+208|        // Whether H8_HeadlessWorldDriver produces on the input lanes during the gameplay window. See
+209|        // that file's header for why it is a producer and not a state writer.
+210|        private static bool _worldDriverEnabled = true;
+211|        private static bool _worldDriverStarted;
+212|
+213|        // One-shot latch for EnableDisabledPlacementOwnersInMemory. It is what keeps that method's
+214|        // FindObjectsByType call a cold diagnostic step rather than a per-tick hot-path violation.
+215|        private static bool _placementOwnersRepaired;
+216|
+217|        /// <summary>
+218|        /// Hard cap on the tick grace granted after the gameplay window closes. The driver's own tick
+219|        /// floors sum to 24 for the entire schedule, so 48 is two full compressed schedules' worth and
+220|        /// cannot become an open-ended extension. Counted in TICKS on purpose: the driver's remaining work
+221|        /// is a fixed number of handshake steps, and on this harness a tick has cost anywhere from 0.23 s
+222|        /// to 132 s, so no number of seconds expresses the same guarantee.
+223|        /// </summary>
+224|        private const int WorldDriverGraceTickCap = 48;
+225|
+226|        /// <summary>Wall seconds of the hard timeout the grace refuses to eat into, so a grace can never
+227|        /// convert a starved row into a TIMEOUT line that loses every verdict the run did produce.</summary>
+228|        private const double GraceHardTimeoutMarginSeconds = 20.0;
+229|
+230|        private static int _worldDriverGraceTicks;
+231|        private static bool _graceOpenedLogged;
+232|        private static bool _graceClosedLogged;
+233|
+234|        /// <summary>
+235|        /// When the gameplay window's clock starts: the FIRST tick of GameplayWarmup, not the phase
+236|        /// transition into it.
+237|        ///
+238|        /// The window used to be measured from _phaseStartedAt, which TickWaitingForSettle sets
+239|        /// immediately before SetPhase(GameplayWarmup) - one editor tick earlier than the tick that calls
+240|        /// H8_HeadlessWorldDriver.Begin(). Those two origins are not the same instant and the difference is
+241|        /// not small: on the measured run the GameplayWarmup phase clock read 165.186s while the driver's
+242|        /// own elapsed read 160.430s, so 4.756s of the window was spent before the driver existed. The
+243|        /// window is 63.0 + 4.0 = 67.0s, which left the driver 62.244s of its 63.0s schedule - the margin
+244|        /// was NEGATIVE before a single frame stalled, and the last phase in the schedule is the one that
+245|        /// pays. That alone produces a NOT_EXERCISED CraftRepairBuild row on a completely smooth run.
+246|        ///
+247|        /// Rebasing here rather than widening the window keeps the fix honest: the window still bounds
+248|        /// 67 seconds of gameplay, it just stops charging the driver for the tail of the scene transition.
+249|        /// Set unconditionally, so a -h8SkipWorldDriver run measures the same window as a driven one.
+250|        /// </summary>

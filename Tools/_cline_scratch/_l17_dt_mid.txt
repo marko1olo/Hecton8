@@ -1,0 +1,226 @@
+ineDilation();
+1800|                _simulationPaused = true;
+1801|                SetTimeDilationScalar(0f, reasonHash, publishImmediate: true);
+1802|                return;
+1803|            }
+1804|
+1805|            _simulationPaused = false;
+1806|            SetTimeDilationScalar(_prePauseTimeDilationScalar, reasonHash, publishImmediate: true);
+1807|        }
+1808|
+1809|        public void RequestAupPreShiftPause(uint shiftFrameId)
+1810|        {
+1811|            SetAupJobAdmissionBarrier(active: true);
+1812|            _dataVault?.LockAllocationsForAupShift(shiftFrameId);
+1813|            ForceCompleteMasterFencesForAupRebase(shiftFrameId);
+1814|            _aupPreShiftPauseSequence = shiftFrameId;
+1815|            _aupPreShiftPauseFrameId = ResolveCurrentDispatcherFrameId();
+1816|        }
+1817|
+1818|        public void ReleaseAupPreShiftPause(uint shiftFrameId)
+1819|        {
+1820|            SetAupJobAdmissionBarrier(active: false);
+1821|        }
+1822|
+1823|        private void SetAupJobAdmissionBarrier(bool active)
+1824|        {
+1825|            IJobAdmissionService jobAdmission = _jobAdmission;
+1826|            if (jobAdmission == null || !jobAdmission.IsInitialized)
+1827|                return;
+1828|
+1829|            jobAdmission.SetAupBarrierActive(active);
+1830|        }
+1831|
+1832|        public static void RequestDebugAupHardFence()
+1833|        {
+1834|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+1835|            if (dispatcher == null)
+1836|                return;
+fixedstep @84: //   residual + dt > FixedStepSeconds * MaxFixedSubstepsPerFrame = 0.02 * 3 = 0.06 s. The residual
+fixedstep @98: private const double MaxClampFreeFixedStepSeconds = FixedStepSeconds * (MaxFixedSubstepsPerFrame - 1);
+fixedstep @148: private const double FixedStepSeconds = 0.02;
+fixedstep @6193: double maxAccumulatedTime = FixedStepSeconds * MaxFixedSubstepsPerFrame;
+fixedstep @6219: while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
+fixedstep @6225: _fixedStepAccumulator -= FixedStepSeconds;
+fixedstep @6229: if (substepCount >= MaxFixedSubstepsPerFrame && _fixedStepAccumulator >= FixedStepSeconds)
+fixedstep @6237: CurrentFixedInterpolationAlpha = math.saturate((float)(_fixedStepAccumulator / FixedStepSeconds));
+WD total=5103
+-- WD /TryRegisterToDispatchers|EnsurePlayer|HectonPlayerMovement|RegisterFixed|EnsureGameplay|_registeredFixed/ [900, 1630, 2631, 2651, 2694, 2696, 2698, 2727, 2799, 2835, 2856, 2990, 4454, 4455]
+==== WD method @2651: private static void EnsureGameplayLocomotionInputReady() ====
+2651|        private static void EnsureGameplayLocomotionInputReady()
+2652|        {
+2653|            // PDA — public ForceClose restores player input map.
+2654|            if (Hecton8.UI.PlayerPDA.IsOpen)
+2655|            {
+2656|                Hecton8.UI.PlayerPDA pda = Hecton8.UI.PlayerPDA.ActiveRuntimeInstance;
+2657|                if (pda == null)
+2658|                {
+2659|                    IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+2660|                    if (player != null)
+2661|                        pda = player.PlayerPDA as Hecton8.UI.PlayerPDA;
+2662|                }
+2663|
+2664|                if (pda != null)
+2665|                    pda.ForceClose();
+2666|            }
+2667|
+2668|            // Pause — public Close -> ApplyClosedState(restorePlayerInput: true).
+2669|            if (Hecton8.UI.PauseMenuController.IsAnyOpen)
+2670|            {
+2671|                Hecton8.UI.PauseMenuController pause = Hecton8.UI.PauseMenuController.ActiveRuntimeInstance;
+2672|                if (pause != null)
+2673|                    pause.Close();
+2674|            }
+2675|
+2676|            // Fabricator — public ForceCloseMenu (product API added for this path).
+2677|            if (Hecton8.UI.HectonFabricatorUI.IsMenuOpen)
+2678|            {
+2679|                Hecton8.UI.HectonFabricatorUI fab =
+2680|                    UnityEngine.Object.FindFirstObjectByType<Hecton8.UI.HectonFabricatorUI>();
+2681|                if (fab != null)
+2682|                    fab.ForceCloseMenu();
+2683|            }
+2684|
+2685|            IInputService input = GlobalRegistry.RegisteredInput;
+2686|            if (input != null)
+2687|            {
+2688|                input.SwitchToPlayerInput();
+2689|                _switchedToPlayerInput = true;
+2690|            }
+2691|
+2692|            // L13: Re-assert HPM Player fixed-tick registration so SampleGameplay/GetState (hop2)
+2693|            // runs during Swim. Suit/juice no longer gate sampling (HPM FixedTick L13), but a
+2694|            // missed TryRegisterFixedTickable still starves the entire locomotion read path.
+2695|            // Fully-qualify type: editor asm has no using Hecton8.Gameplay (CS0246 on bare name).
+2696|            Hecton8.Gameplay.HectonPlayerMovement movement =
+2697|                _movement
+2698|                ?? UnityEngine.Object.FindFirstObjectByType<Hecton8.Gameplay.HectonPlayerMovement>();
+2699|            if (movement != null)
+2700|            {
+2701|                movement.EnsureDispatcherRegistration();
+2702|                if (_movement == null)
+2703|                    _movement = movement;
+2704|            }
+2705|        }
+2706|
+2707|        private static void TickSettle()
+2708|        {
+2709|            IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+2710|            if (player != null)
+2711|            {
+==== WD method @3115: private static void TryRegisterDriverSpawnPoint() ====
+3115|        private static void TryRegisterDriverSpawnPoint()
+3116|        {
+3117|            if (_populator == null)
+3118|            {
+3119|                if (_populatorLookupAttempts >= MaxPopulatorLookupAttempts)
+3120|                    return;
+3121|
+3122|                _populatorLookupAttempts++;
+3123|                _populator = UnityEngine.Object.FindFirstObjectByType<ScavengePopulator>(FindObjectsInactive.Exclude);
+3124|                if (_populator == null)
+3125|                    return;
+3126|            }
+3127|
+3128|            _populatorReady = _populator.IsServiceReady;
+3129|            if (!_populatorReady)
+3130|                return;
+3131|
+3132|            if (!TryReadPlayerEye(out Vector3 eyePosition, out Vector3 eyeForward))
+3133|                return;
+3134|
+3135|            Vector3 spawnPosition = eyePosition + eyeForward * NodePlacementDistanceMeters;
+3136|
+3137|            // Chunk coord uses the populator's own floor-division convention
+3138|            // (ScavengePopulator.WorldToChunkCoord, :1121) with the authored default tile size. The
+3139|            // producer supplies this coord; a mismatch only affects the populator's streaming
+3140|            // bookkeeping, and the node itself is then located through ResourceNode's world-state
+3141|            // registry rather than through that bookkeeping.
+3142|            Vector2Int chunkCoord = new Vector2Int(
+3143|                Mathf.FloorToInt(spawnPosition.x / ScavengeTileSizeMeters),
+3144|                Mathf.FloorToInt(spawnPosition.z / ScavengeTileSizeMeters));
+3145|
+3146|            _populatorNodesAtRegister = _populator.TotalActiveNodes;
+3147|            _populator.RegisterSpawnPoint(
+3148|                spawnPosition,
+3149|                Quaternion.identity,
+3150|                Vector3.one,
+3151|                chunkCoord,
+3152|                ScavengeLocalIndex,
+3153|                Hecton8.Caves.SpawnContext.Surface);
+3154|            _spawnPointRegistered = true;
+3155|        }
+3156|
+3157|        /// <summary>
+3158|        /// Selects a tool slot through the REAL discrete lane. PlayerToolManager consumes
+3159|        /// SignalBus&lt;PlayerInputSignal&gt; ToolSlot1..ToolSlot4 exactly as it does for a key press;
+3160|        /// SwitchToSlot is not called directly, so the swap state machine, availability gate and
+3161|        /// loadout signals all run unmodified.
+3162|        /// </summary>
+3163|        private static void TickToolEquip()
+3164|        {
+3165|            Hecton8.Gameplay.PlayerToolManager manager = _toolManager;
+3166|            if (manager == null)
+3167|            {
+3168|                IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+3169|                manager = player?.ToolManager;
+3170|                _toolManager = manager;
+3171|            }
+3172|
+3173|            if (manager == null)
+3174|            {
+3175|                _waitReason = WaitReason.ToolManagerAbsent;
+WD register-related:
+  2649|/// SwitchToUIInput or sticky IsOpen cannot starve hop2 (GetState) for the whole phase.
+  2692|// L13: Re-assert HPM Player fixed-tick registration so SampleGameplay/GetState (hop2)
+  2693|// runs during Swim. Suit/juice no longer gate sampling (HPM FixedTick L13), but a
+  2694|// missed TryRegisterFixedTickable still starves the entire locomotion read path.
+  2726|// sticky IsOpen). Product close APIs only — no mock input path.
+HeadlessSim files: ['C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Editor\\HeadlessSimulationValidator.cs', 'C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\QA\\Headless\\HeadlessSimulationRunner.cs', 'C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\QA\\Headless\\Editor\\HeadlessSimulationBatchRunner.cs']
+==== C:\hades\Hecton8\Assets\_Project\Scripts\Editor\HeadlessSimulationValidator.cs ====
+==== C:\hades\Hecton8\Assets\_Project\Scripts\QA\Headless\HeadlessSimulationRunner.cs ====
+  85|private const float TimeDilationScalar = 100f;
+  303|MaybeEnsureHeadlessSimulationClockSustain();
+  495|EnsureHeadlessSimulationClock("lanes-registered");
+  698|EnsureHeadlessSimulationClock("game-ready");
+  782|// see the deliveredTimeDilation note in WriteResult.
+  806|EnsureHeadlessSimulationClock("ecology-ready");
+  816|/// dayAcc; EnableStepBoundedTime supplies a real fixed unscaled dt per update.
+  818|private void EnsureHeadlessSimulationClock(string reason)
+  828|float dilBefore = dispatcher.TimeDilationScalar;
+  831|// ConsumeFrameTimeDilationScalar returns 0 while _simulationPaused — unpause first.
+  835|dispatcher.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+  838|// Idempotent: EnableStepBoundedTime resets elapsed only when first arming; keep armed.
+  841|stepBoundOk = SystemDispatcher.EnableStepBoundedTime(HeadlessStepBoundedDeltaSeconds);
+  846|float dilAfter = dispatcher.TimeDilationScalar;
+  865|private void MaybeEnsureHeadlessSimulationClockSustain()
+  880|dispatcher.TimeDilationScalar + 0.01f < TimeDilationScalar ||
+  888|EnsureHeadlessSimulationClock("post-ready-sustain");
+  908|float dil = dispatcher != null ? dispatcher.TimeDilationScalar : -1f;
+  944|private double DeliveredTimeDilation
+  1617|WriteInvariant(writer, TimeDilationScalar);
+  1619|WriteInvariant(writer, (float)DeliveredTimeDilation);
+818|        private void EnsureHeadlessSimulationClock(string reason)
+819|        {
+820|            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+821|            if (dispatcher == null)
+822|            {
+823|                LogRunnerLifecycle("sim clock ensure reason=" + reason + " dispatcher=null");
+824|                return;
+825|            }
+826|
+827|            bool wasPaused = dispatcher.SimulationPaused;
+828|            float dilBefore = dispatcher.TimeDilationScalar;
+829|            bool stepBoundBefore = SystemDispatcher.IsStepBoundedTimeActive;
+830|
+831|            // ConsumeFrameTimeDilationScalar returns 0 while _simulationPaused — unpause first.
+832|            if (wasPaused)
+833|                dispatcher.RequestSimulationPause(false, RunnerHash);
+834|
+835|            dispatcher.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+836|
+837|            // Real product headless time source (InternalsVisibleTo Hecton8.QA.Headless).
+838|            // Idempotent: EnableStepBoundedTime resets elapsed only when first arming; keep armed.
+839|            bool stepBoundOk = stepBoundBefore;
+840|            if (!stepBoundBefore)
+841|                

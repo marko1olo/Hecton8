@@ -1,0 +1,120 @@
+1|using System;
+2|using System.Globalization;
+3|using System.IO;
+4|using System.Runtime.InteropServices;
+5|using System.Threading;
+6|using Hecton8.Core;
+7|using Hecton8.Core.Memory;
+8|using Hecton8.Core.Contracts.Signals;
+9|using Hecton8.World;
+10|using Unity.Collections;
+11|using Unity.Mathematics;
+12|using UnityEngine;
+13|
+14|namespace Hecton8.QA.Headless
+15|{
+16|    [DisallowMultipleComponent]
+17|    [DefaultExecutionOrder(-9000)]
+18|    public sealed class HeadlessSimulationRunner : MonoBehaviour, IFastTickable, IFrostTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+19|    {
+20|        private static int s_x001HeadlessSimulationRunnerSignalPushDropCount;
+21|        private const string RunnerName = "HEADLESS_SIMULATION_RUNNER";
+22|        private const string RuntimeRootName = "[HeadlessSimulationRunner]";
+23|        private const string CommandLineArg = "-h8headless";
+24|        private const string LegacyCommandLineArg = "-headless";
+25|        private const string DaysArg = "-h8headlessDays";
+26|        private const string DaySecondsArg = "-h8headlessDaySeconds";
+27|        private const string StartupTimeoutArg = "-h8headlessStartupTimeout";
+28|        private const string EnvironmentFlagName = "H8_HEADLESS_SIMULATION";
+29|        private const string FlagRelativePath = "Temp/H8_HEADLESS_SIMULATION.flag";
+30|        private const string CsvRelativePath = "Docs/AgentLogs/HeadlessSimulationDaily_HEADLESS_SIMULATION_RUNNER.csv";
+31|        private const string ResultRelativePath = "Docs/AgentLogs/HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json";
+32|        private const string H8MemoryDumpRelativePath = "Docs/AgentLogs/H8Memory_HEADLESS_SIMULATION_RUNNER.txt";
+33|        private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_SIMULATION_RUNNER.bin";
+34|        private const int BlackboxFrameCapacity = 300;
+35|        private const int BlackboxEntrySizeBytes = 64;
+36|        private const int MemoryWindowDays = 10;
+37|        private const int MaxConsecutiveMemoryWindowFailures = 3;
+38|        // Same shape and same number as the memory window above, for the same reason: the answer can be
+39|        // "not right now" rather than "never". IEcosystemDirectorService.TryGetGlobalBiomassAudit returns
+40|        // false for six distinct conditions (EcosystemDirector.cs:3406-3417 and the IsFinite tail at :3451)
+41|        // and one of them is a transient job fence: HasPendingSimulationJob() (:3407) is true from the frame
+42|        // the ecology schedules work until the frame's LateFrameTick completes it, because a Burst job owns
+43|        // the biomass buffers and reading them would be the job-safety violation that guard exists to avoid.
+44|        //
+45|        // That fence is not rare, and the dispatcher makes it deterministic rather than unlucky. Inside ONE
+46|        // SystemDispatcher.RunDispatcherUpdate (SystemDispatcher.cs:5106) RunSlowTick (:5265) runs BEFORE
+47|        // RunFrostTick (:5267); the ecology's SlowTick calls ScheduleSectorSolve (EcosystemDirector.cs:2729),
+48|        // which sets _solveScheduled = true; _solveScheduled is cleared only in CompleteScheduledSolve,
+49|        // reached from the ecology's LateFrameTick (:2792), which the dispatcher runs in a LATER player-loop
+50|        // phase (RunDispatcherLateFrame, SystemDispatcher.cs:5453). So on any frame where a slow tick
+51|        // scheduled the solve, every FrostTick that follows it in that same frame - including this runner's,
+52|        // which is where the day boundary is evaluated - is guaranteed to be told "unavailable".
+53|        //
+54|        // The two _solveScheduled sites are named rather than numbered on purpose: they moved 53 lines during
+55|        // the writing of this comment (5405 -> 5458 for the set, 5731 -> 5784 for the clear) because
+56|        // EcosystemDirector.cs is under concurrent edit. Search the symbol, not the line.
+57|        //
+58|        // Treating that identically to a dead ecology meant one day boundary landing inside a job fence
+59|        // aborted the whole run and blamed the ecology. Tolerance is bounded, never unbounded: three
+60|        // CONSECUTIVE unsampled days still fail, and FinishRunIfTargetReached refuses to report SUCCESS for a
+61|        // run that never sampled once.
+62|        //
+63|        // FIX 2026-07-30: day-boundary biomass sampling no longer runs in FrostTick. FrostTick only
+64|        // accumulates completed-day debt (_pendingDayAudits). The sample itself runs in LateFrameTick,
+65|        // AFTER ecology's Environment-lane LateFrameTick has called CompleteScheduledSimulation and
+66|        // cleared HasPendingSimulationJob. Runner LateFrame is registered at PriorityLayer.Player so
+67|        // the lane order Core -> Environment -> Player -> UI guarantees ecology completes first.
+68|        // Streak only advances on a true dead/empty ecology (audit false with no pending job), never
+69|        // on the deterministic same-frame fence that used to make every day "unsampled".
+70|        private const int MaxConsecutiveEcologySampleFailures = 3;
+71|        // CSV Flags bit for "this day produced no biomass sample at all". Deliberately NOT bit 0: bit 0 is
+72|        // the only bit EcosystemBiomassAuditSample.Flags can ever carry (EcosystemDirector.cs:3422 seeds
+73|        // flags = 0u, :3433 is the single `flags |= 1u`), and it means "a sampled cell was non-finite or
+74|        // negative". The old code wrote 1u for the unsampled row too, which was harmless only while an
+75|        // unsampled day killed the run immediately and could therefore only ever be the last row. Now that
+76|        // unsampled days are tolerated and interleave with good ones, a reader has to be able to tell
+77|        // "no sample" from "sampled, one bad cell" - so the marker gets its own bit.
+78|        private const uint CsvFlagEcologySampleUnavailable = 1u << 8;
+79|        private const int MaxSignalsDrainedPerFrame = 128;
+80|        private const int MaxDailyAuditsPerFrostTick = 4;
+81|        private const int DefaultTargetDays = 100;
+82|        private const int AupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
+83|        private const float DefaultDaySeconds = 3600f;
+84|        private const float DefaultStartupTimeoutSeconds = 180f;
+85|        private const float TimeDilationScalar = 100f;
+86|        // Batchmode WallClock often yields Time.unscaledDeltaTime == 0, so FastTick never
+87|        // accumulates dayAcc despite dil=100. Step-bounded time is the product headless clock:
+88|        // fixed unscaled dt per dispatcher update (clamp-free max = MaxClampFreeStepSeconds = 0.04).
+89|        // Not a mock — real dispatcher time source; day rows still only from Fast/Frost ticks.
+90|        private const float HeadlessStepBoundedDeltaSeconds = 0.04f;
+91|        // Post-ready self-heal: re-assert unpause+dilation while zero days completed.
+92|        // Not a mock — restores real dispatcher scalar after late pause signals.
+93|        private const float PostReadyClockEnsureIntervalSeconds = 5f;
+94|        private const float PostReadyDiagIntervalSeconds = 15f;
+95|        private const float GhostSpeedMetersPerSecond = 85f;
+96|        private const float NativeBytesToMegabytes = 1f / (1024f * 1024f);
+97|        private const uint RunnerHash = 0x48385141u;
+98|        private const uint SuccessHash = 0x48385130u;
+99|        private const uint LeakHash = 0x48384C45u;
+100|        private const uint EcologyCollapseHash = 0x48384543u;
+101|        // 'H','8','N','S' - never sampled. Distinct from EcologyCollapseHash on purpose: the blackbox ring
+102|        // stores only the reason hash, so a run that reached its target day count without ever obtaining a
+103|        // biomass sample must not be indistinguishable from one whose predators actually died out.
+104|        private const uint EcologyNeverSampledHash = 0x48384E53u;
+105|        private const uint GasInvalidHash = 0x48384741u;
+106|        private const uint NaNHash = 0x48384E41u;
+107|        private const uint TimeoutHash = 0x4838544Fu;
+108|        private const uint AupShiftHash = 0x48384155u;
+109|        private const uint CsvWriteHash = 0x48384353u;
+110|        private const uint DataVaultUnavailableHash = 0x48384456u;
+111|        private const uint EvidenceBlackboxWriteFailed = 1u << 0;
+112|        private const uint EvidenceResultWriteFailed = 1u << 1;
+113|        private const uint EvidenceCsvWriteFailed = 1u << 2;
+114|        private const SystemID OwnerSystemId = SystemID.QAHeadless;
+115|        private const BufferID GhostStateBufferId = BufferID.HeadlessSimulationGhostState;
+116|        private const BufferID BlackboxBufferId = BufferID.HeadlessSimulationBlackBox;
+117|        private const BufferID MemoryWindowBytesBufferId = BufferID.HeadlessSimulationMemoryWindowBytes;
+118|        private const BufferID MemoryWindowH8BytesBufferId = BufferID.HeadlessSimulationMemoryWindowH8Bytes;
+119|        private const BufferID MemoryWindowAllocationCountsBufferId = BufferID.HeadlessSimulationMemoryWindowAllocationCounts;
+120|

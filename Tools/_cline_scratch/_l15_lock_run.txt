@@ -1,0 +1,14 @@
+WROTE C:\hades\Hecton8\Tools\_cline_scratch\_l15_lock_check.txt
+lock_exists True
+lock_size 0
+lock_mtime 1785523988.8688025
+lock_content b''
+UNITY_CSV:
+€­д®а¬ жЁп: ‡ ¤ зЁ, ®вўҐз ойЁҐ § ¤ ­­л¬ ЄаЁвҐаЁп¬, ®вбгвбвўгов.
+
+
+WMIC:
+
+C:\hades\Hecton8\Tools\_cline_scratch\v0_L14_pid.txt=3976
+C:\hades\Hecton8\Tools\_cline_scratch\v0_L13_pid.txt=8388
+C:\hades\Hecton8\Tools\_cline_scratch\v0_L12_pid.txt=12928

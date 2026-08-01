@@ -1,0 +1,21 @@
+ts=2026-08-01 04:39:01
+pid=12368 alive=False
+log_bytes=1062883 artifact=False
+fodrain=2 foLock_last=0 dispBoot_last=0
+simclock=2 stepBound1=True
+inputhop=1 lateUnfrozen=True pumpUnfrozen=False
+late=[33, 0] pump=[1]
+hop2_present=0 hop2_absent=0
+intent_max=None vals=[]
+swim=[]
+verdict=[]
+done=[]
+--- hits tail ---
+UnityEngine.DebugLogHandler:Internal_LogException(Exception, Object)
+UnityEngine.DebugLogHandler:LogException(Exception, Object)
+UnityEngine.Logger:LogException(Exception, Object)
+UnityEngine.Debug:LogException(Exception)
+Exception while executing InitializeOnLoad for ImguiElementUtils.Init
+MissingFieldException: Field not found: System.Action`1<UnityEngine.UIElements.IMGUIContainer> UnityEngine.UIElements.UIElementsUtility.s_BeginContainerCallback Due to: Could not find field in class
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+PROCESS_EXITED

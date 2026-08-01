@@ -1,0 +1,424 @@
+### SystemDispatcher.cs lines=7585
+   19: using Hecton8.Construction;
+   40: public readonly struct CriticalMemoryPressureEvent
+   48: public CriticalMemoryPressureEvent(
+   67: public sealed class SystemDispatcher : MonoBehaviour, ITickDispatcher, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+   83: //   Fixed lane (AdvanceFixedStep): temporal compression trips when
+   98: private const double MaxClampFreeFixedStepSeconds = FixedStepSeconds * (MaxFixedSubstepsPerFrame - 1);
+  168: private struct MasterRollbackRuntimeStateProbeDTO
+  192: private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.Dispatcher.Update");
+  193: private static readonly ProfilerMarker _fastTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.FastTick");
+  194: private static readonly ProfilerMarker _fixedUpdateProfilerMarker = new ProfilerMarker("H8.Dispatcher.FixedUpdate");
+  195: private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.SlowTick");
+  196: private static readonly ProfilerMarker _coldTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.ColdTick");
+  197: private static readonly ProfilerMarker _frostTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.FrostTick");
+  198: private static readonly ProfilerMarker _memoryDefragProfilerMarker = new ProfilerMarker("H8.Dispatcher.MemoryDefrag.PreSimulation");
+  199: private static readonly ProfilerMarker _lateFrameProfilerMarker = new ProfilerMarker("H8.Dispatcher.LateFrame");
+  200: private static readonly ProfilerMarker _postFixedProfilerMarker = new ProfilerMarker("H8.Dispatcher.PostFixed");
+  201: private static readonly ProfilerMarker _lateFrameCommandQueueDrainProfilerMarker = new ProfilerMarker("H8.Dispatcher.CommandQueue.Drain");
+  202: private static readonly ProfilerMarker _foveatedCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Foveated.Complete");
+  203: private static readonly ProfilerMarker _dispatcherSurfaceProbeScheduleProfilerMarker = new ProfilerMarker("H8.Dispatcher.SurfaceProbe.Schedule");
+  204: private static readonly ProfilerMarker _dispatcherSurfaceProbeCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.SurfaceProbe.Complete");
+  205: private static readonly ProfilerMarker _masterPreSimulationProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.PreSimulation");
+  206: private static readonly ProfilerMarker _masterSimulationProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.Simulation");
+  207: private static readonly ProfilerMarker _masterPostSimulationProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.PostSimulation");
+  208: private static readonly ProfilerMarker _masterVisualSyncProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.VisualSync");
+  264: private static readonly int _HectonFreezeFrameDitherId = Shader.PropertyToID("_HectonFreezeFrameDither");
+  265: private static readonly int _GamePausedId = Shader.PropertyToID("_GamePaused");
+  266: private static readonly int _HectonVisualStaticGlitchId = Shader.PropertyToID("_HectonVisualStaticGlitch");
+  267: private static readonly int _HectonVisualStaticGlitchSeedId = Shader.PropertyToID("_HectonVisualStaticGlitchSeed");
+  268: private static readonly int _SimulationBucketInterpolationAlphaId = Shader.PropertyToID("_SimulationBucketInterpolationAlpha");
+  338: private static readonly RegistryBucket<IFixedTickable>[] _fixedPriorityLanes =
+  340: new RegistryBucket<IFixedTickable>(128),
+  341: new RegistryBucket<IFixedTickable>(128),
+  342: new RegistryBucket<IFixedTickable>(96),
+  343: new RegistryBucket<IFixedTickable>(32),
+  374: private static readonly RegistryBucket<IPostFixedTickable>[] _postFixedPriorityLanes =
+  376: new RegistryBucket<IPostFixedTickable>(128),
+  377: new RegistryBucket<IPostFixedTickable>(128),
+  378: new RegistryBucket<IPostFixedTickable>(96),
+  379: new RegistryBucket<IPostFixedTickable>(32),
+  428: private static IFoveatedDispatcher _foveatedSimulationManager = new FoveatedSimulationManager();
+  475: private double _fixedStepAccumulator;
+  603: /// same seed plus the same step count reaches the same state by construction rather than by
+  617: internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+  619: internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == CurrentFrameIndex;
+  623: public static ulong KillSwitchMask => unchecked((ulong)Volatile.Read(ref _homeostasisKillSwitchMaskBits));
+  625: internal static byte HomeostasisPressureLevel => (byte)Volatile.Read(ref _homeostasisPressureLevel);
+  627: internal static byte HomeostasisFoveatedTier => (byte)Volatile.Read(ref _homeostasisFoveatedTier);
+  673: private struct DispatcherBlackBoxEntry
+  709: public static float StreamingStorageDebt01 => math.saturate(Volatile.Read(ref _streamingStorageDebtMilli) * 0.001f);
+  711: public static uint StreamingStorageDebtSequence => unchecked((uint)Volatile.Read(ref _streamingStorageDebtSequence));
+  729: public static void PublishStreamingStorageDebt(float debt01)
+  735: internal static void SetModdingBridgeProjectionRuntime(IModdingBridge bridge)
+  741: internal static void ClearModdingBridgeProjectionRuntime(IModdingBridge bridge)
+  748: internal static bool TryGetLastPostFixedGcAttribution(
+  776: private static void ResetStaticState()
+  849: private struct DispatcherUpdatePlayerLoopNode
+  853: private struct DispatcherLateFramePlayerLoopNode
+  857: private static void EnsureDispatcherPlayerLoopInstalled()
+  887: private static bool TryEnsurePlayerLoopNode(
+  905: private static bool ContainsPlayerLoopNode(PlayerLoopSystem system, System.Type nodeType)
+  923: private static bool TryInsertPlayerLoopNode(
+  953: private static void InsertPlayerLoopNodeBefore(
+  986: private static void RunDispatcherUpdateFromPlayerLoop()
+  995: private static void RunDispatcherLateFrameFromPlayerLoop()
+ 1004: private static void PublishDispatcherComplianceViolation(uint ruleHash, uint contextHash, byte severity, byte flags)
+ 1016: internal static uint ReadPublishedDispatcherFrameId()
+ 1027: public static int CurrentFrameIndex => (int)(ReadPublishedDispatcherFrameId() & 0x7FFFFFFFu);
+ 1029: internal static void ApplyHomeostasisKillSwitch(
+ 1053: internal static bool TryConsumeBaseStressCascadeEvent(int islandId, uint eventHash)
+ 1102: internal static void ResetBaseStressCascadeCircuitBreakerForSmokeTest()
+ 1107: internal static int DebugGetBaseStressCascadeDroppedCount(int islandId)
+ 1114: internal static int DebugGetBaseStressCascadeConsumedCount(int islandId)
+ 1121: internal static int DebugGetBaseStressCascadeActiveSlotCount()
+ 1134: private static void ResetBaseStressCascadeCircuitBreakerState()
+ 1139: private static void ResetBaseStressCascadeCircuitBreakerStateForFrame(int frame)
+ 1153: private static int ClaimBaseStressCascadeSlot(int islandId)
+ 1177: private static int FindBaseStressCascadeSlot(int islandId)
+ 1194: internal static void SetVoxelTeardownBackpressure(bool active, int pendingChunkCount)
+ 1202: public static void RequestPauseDepthOfField(bool active)
+ 1211: public static void RequestPdaDepthOfField(bool active)
+ 1220: private static IDispatcherSystem GetMasterRegisteredSystemAt(int index)
+ 1226: private static IDispatcherSystem GetMasterSortedSystemAt(int index)
+ 1232: private static IDispatcherFixedSystem GetMasterFixedSystemAt(int index)
+ 1238: private static IDispatcherSurfaceProbeReceiver GetScheduledDispatcherSurfaceProbeReceiverAt(int index)
+ 1248: public static RegistryBucket<IUpdatable> GetLane(PriorityLayer layer)
+ 1256: public static RegistryBucket<IFastTickable> GetFastLane(PriorityLayer layer)
+ 1266: public static RegistryBucket<IFixedTickable> GetFixedLane(PriorityLayer layer)
+ 1276: public static RegistryBucket<ISlowTickable> GetSlowLane(PriorityLayer layer)
+ 1284: public static RegistryBucket<IColdTickable> GetColdLane(PriorityLayer layer)
+ 1294: public static RegistryBucket<IFrostTickable> GetFrostLane(PriorityLayer layer)
+ 1304: public static RegistryBucket<ILateFrameTickable> GetLateFrameLane(PriorityLayer layer)
+ 1314: public static RegistryBucket<IPostFixedTickable> GetPostFixedLane(PriorityLayer layer)
+ 1322: public static RegistryBucket<IUnscaledFastTickable> GetUnscaledFastLane(PriorityLayer layer)
+ 1332: public static bool Register(IUpdatable item, PriorityLayer layer)
+ 1349: public static bool Register(IFastTickable item, PriorityLayer layer)
+ 1362: public static bool Register(IFixedTickable item, PriorityLayer layer)
+ 1375: public static bool Register(ISlowTickable item, PriorityLayer layer)
+ 1392: public static bool Register(IColdTickable item, PriorityLayer layer)
+ 1405: public static bool Register(IFrostTickable item, PriorityLayer layer)
+ 1418: public static bool Register(ILateFrameTickable item, PriorityLayer layer)
+ 1431: public static bool Register(IPostFixedTickable item, PriorityLayer layer)
+ 1442: public static bool Register(IUnscaledFastTickable item, PriorityLayer layer)
+ 1453: public static bool Register(IDispatcherSystem item)
+ 1483: public static bool Register(IDispatcherFixedSystem item)
+ 1513: public static void Unregister(IUpdatable item, PriorityLayer layer)
+ 1527: public static void Unregister(IFastTickable item, PriorityLayer layer)
+ 1540: public static void Unregister(IFixedTickable item, PriorityLayer layer)
+ 1553: public static void Unregister(ISlowTickable item, PriorityLayer layer)
+ 1565: public static void Unregister(IColdTickable item, PriorityLayer layer)
+ 1578: public static void Unregister(IFrostTickable item, PriorityLayer layer)
+ 1591: public static void Unregister(ILateFrameTickable item, PriorityLayer layer)
+ 1605: public static void UnregisterLateFrameTickableDirect(ILateFrameTickable item, PriorityLayer layer)
+ 1615: public static void Unregister(IPostFixedTickable item, PriorityLayer layer)
+ 1626: public static void Unregister(IUnscaledFastTickable item, PriorityLayer layer)
+ 1637: public static void Unregister(IDispatcherSystem item)
+ 1660: public static void Unregister(IDispatcherFixedSystem item)
+ 1681: public static void ClearAllLanes()
+ 1722: internal static void RequestOriginShiftBootstrapLock()
+ 1727: internal static void RequestOriginShiftFrameLock(int frame)
+ 1735: public void RequestTimeDilation(float scalar, uint reasonHash = 0u)
+ 1742: public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+ 1757: public void RequestCoreTickDilation(float scalar, int frameCount, uint reasonHash = 0u)
+ 1784: public void SetThermalCriticalSlowTick(bool active)
+ 1791: public void RequestSimulationPause(bool paused, uint reasonHash = 0u)
+ 1809: public void RequestAupPreShiftPause(uint shiftFrameId)
+ 1818: public void ReleaseAupPreShiftPause(uint shiftFrameId)
+ 1823: private void SetAupJobAdmissionBarrier(bool active)
+ 1832: public static void RequestDebugAupHardFence()
+ 1841: public static int ResolveInnerloopBatchCount(int elementCount, int minBatch, int maxBatch)
+ 1860: public static bool IsAsyncReadbackReadyNoWait(AsyncGPUReadbackRequest request, out byte statusFlags)
+ 1882: public static JobHandle GenerateMockDependencyChain(
+ 1911: public async Awaitable DelayDilated(float seconds, CancellationToken cancellationToken = default)
+ 1916: internal static void ReleaseOriginShiftBootstrapLock()
+ 1930: private void SetTimeDilationScalar(float scalar, uint reasonHash, bool publishImmediate)
+ 1940: private void SetTimeDilationScalar(
+ 1962: private void PublishTimeDilationState(uint reasonHash)
+ 1989: private void DrainSimulationPauseSignals()
+ 2000: private void Awake()
+ 2007: _fixedStepAccumulator = 0f;
+ 2029: private void OnEnable()
+ 2041: private void OnDisable()
+ 2048: private void OnDestroy()
+ 2053: public void OnServiceShutdown()
+ 2058: private void ShutdownServiceState()
+ 2080: _fixedStepAccumulator = 0f;
+ 2152: public void InitializeService()
+ 2187: private bool TryClaimActiveRuntimeAfterReloadCold()
+ 2203: private void InitializeMasterDispatcherRuntime()
+ 2217: private void EnsureMasterDispatcherNativeBuffers()
+ 2304: private void DisposeMasterDispatcherRuntime()
+ 2309: private void DisposeMasterDispatcherRuntime(IDataVault dataVault)
+ 2329: private bool TryEnsureMasterSimulationBuffers(
+ 2342: private bool TryReadMasterSimulationBuffers(
+ 2387: private bool TryEnsureMasterTelemetryBuffers(
+ 2394: private bool TryReadMasterTelemetryBuffers(
+ 2420: private bool TryEnsureMasterDomainFenceBuffers(
+ 2428: private bool TryReadMasterDomainFenceBuffers(
+ 2463: private static bool HasLegacyDispatcherTopologyFile()
+ 2469: private static void GenerateEmergencyMockTopology()
+ 2517: private static void GenerateMockSubsystems()
+ 2522: private static void EnsureMasterDispatcherTopology()
+ 2603: private static bool TryReadMasterDispatcherTopology(out int sortedSystemCount)
+ 2613: private static string BuildMasterCycleTrace(int count, int sortedCount)
+ 2667: private static void AppendTraceText(char[] buffer, ref int length, string value)
+ 2676: private static void AppendTraceInt(char[] buffer, ref int length, int value)
+ 2709: private static void AppendTraceHex8(char[] buffer, ref int length, uint value)
+ 2718: private static void AppendTraceChar(char[] buffer, ref int length, char value)
+ 2726: private static int FindRegisteredMasterSystemIndex(uint systemHash, int count)
+ 2738: private static int FindSortedMasterSystemIndex(uint systemHash)
+ 2750: private ref DispatcherStateDTO GetDispatcherStateRef()
+ 2755: private DispatcherTimingDTO BuildMasterDispatcherTiming(float deltaTime, float unscaledDeltaTime, float fixedDeltaTime = 0f)
+ 2762: timing.FixedDelta = fixedDeltaTime;
+ 2769: private uint ResolveCurrentDispatcherFrameId()
+ 2776: private uint AdvanceDispatcherFrameId()
+ 2785: private uint ResolveMasterActiveBucket()
+ 2790: private static uint ResolveMasterActiveBucket(uint frameId)
+ 2795: private void SetMasterDispatcherPhase(DispatcherPhase phase, in DispatcherTimingDTO timing)
+ 2808: private uint BuildMasterDispatcherTransientFlags()
+ 2820: private float ResolveGraphicsUploadPressure01()
+ 2842: private void RunMasterPreSimulationPhase(in DispatcherTimingDTO timing)
+ 2888: private void RunMasterSimulationPhase(in DispatcherTimingDTO timing)
+ 2985: private void RunMasterPostSimulationPhase(in DispatcherTimingDTO timing)
+ 3045: private void ProcessDeferredArenaGrowthPostSimulation()
+ 3055: private void RunMasterVisualSyncPhase()
+ 3100: private void RunMasterFixedSimulationBridge(float fixedDeltaTime)
+ 3105: DispatcherTimingDTO timing = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime, fixedDeltaTime);
+ 3128: private void CompleteMasterFixedSimulationBridge(float fixedDeltaTime)
+ 3133: DispatcherTimingDTO timing = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime, fixedDeltaTime);
+ 3166: private void ForceCompleteMasterFencesForAupRebase(uint shiftFrameId)
+ 3211: private JobHandle BuildMasterDependencyHandleIntoScratch(
+ 3242: private static bool ShouldRunMasterSystemInActiveBucket(IDispatcherSystem system, uint activeBucket)
+ 3251: private static DispatcherFenceDomain ResolveMasterFenceDomain(IDispatcherSystem system)
+ 3259: private static DispatcherFenceDomain ResolveMasterFixedFenceDomain(IDispatcherFixedSystem system)
+ 3267: private void CaptureMasterFixedDomainFence(
+ 3294: private void AccumulateDomainFence(
+ 3307: private void CaptureDomainFenceBits(NativeArray<JobHandle> domainFenceHandles)
+ 3317: private static JobDependencyDTO BuildJobDependencyTelemetry(
+ 3337: private static unsafe ulong CaptureJobHandleBits(ref JobHandle handle)
+ 3343: private void ApplyMockTimeDilationSignals(uint frame)
+ 3368: private void DisableMasterSystem(int sortedIndex, IDispatcherSystem system)
+ 3380: private static bool ShouldShedMasterVisualSync()
+ 3396: private bool TryFenceRollbackBeforeVisualSync()
+ 3424: private void WriteMasterPresentationSuppression(uint frame)
+ 3460: private void RecordMasterPipelineTelemetry(uint frame)
+ 3496: private void RecordMasterFenceTelemetry(uint frame)
+ 3539: private static bool ShouldFlagMasterFenceTelemetry(in DispatcherFenceTelemetryEntry entry)
+ 3546: private void TryReloadMasterExecutionPriorityCsv()
+ 3568: private static void ApplyMasterExecutionPriorityCsv()
+ 3595: private static int ResolveMasterCsvPriority(IDispatcherSystem system, int entryCount)
+ 3610: private static int ParseMasterExecutionPriorityCsv()
+ 3726: private static int ParseCsvDigit(byte c)
+ 3738: private static float ElapsedMilliseconds(long startTimestamp)
+ 3744: public static bool TryGetExecutionPipelineXRaySnapshot(
+ 3775: public static bool TryGetDependencyGraphSnapshot(
+ 3822: public static bool TryGetDependencyGraphEdges(
+ 3889: public static bool TryGetJobDependencyTelemetrySnapshot(
+ 3932: public static bool TryGetLatestFenceTelemetry(out DispatcherFenceTelemetryEntry entry)
+ 3957: private bool TryCopyLatestMasterTelemetry(float[] phaseMilliseconds)
+ 3985: private bool EnsureH8TimeArray()
+ 4000: private bool TryResolveH8TimeArray(out NativeArray<double> h8Time)
+ 4014: private void RefreshDataVaultDependency()
+ 4031: private static bool TryResolveCachedDataVault(out IDataVault dataVault)
+ 4048: private static bool IsVaultGenerationHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+ 4053: private static bool TryResolveDispatcherVaultBuffer<T>(
+ 4057: out NativeArray<T> buffer) where T : struct
+ 4074: private static bool TryResolveDispatcherVaultBuffer<T>(
+ 4078: out NativeArray<T>.ReadOnly buffer) where T : struct
+ 4095: private static bool TryReadExistingDispatcherVaultBuffer<T>(
+ 4100: out NativeArray<T>.ReadOnly buffer) where T : struct
+ 4120: private static bool TryResolveExistingDispatcherVaultBuffer<T>(
+ 4125: out NativeArray<T> buffer) where T : struct
+ 4146: private static bool TryEnsureDispatcherVaultBuffer<T>(
+ 4152: out NativeArray<T> buffer) where T : struct
+ 4176: private static void ReleaseDispatcherVaultHandle<T>(
+ 4178: ref VaultGenerationHandle<T> handle) where T : struct
+ 4186: private void ReleaseSystemDispatcherVaultHandles(IDataVault dataVault)
+ 4215: private void RefreshSimulationBucketerDependency()
+ 4220: private void RefreshJobAdmissionDependency()
+ 4259: private void RefreshInputDeterminismDependency()
+ 4275: /// interface bool read, and ONLY when the cache is not already usable. Once the real service is
+ 4287: private void EnsureInputDeterminismResolved()
+ 4296: private void RefreshPeripheralDependencies()
+ 4398: private static IVramBudgetReadModel ResolveCachedVramMonitor()
+ 4407: private static IVramPressureSampleSink ResolveCachedVramPressure()
+ 4416: private static IMacroDatabaseService ResolveCachedMacroDatabase()
+ 4425: private static IObjectPoolService ResolveCachedObjectPool()
+ 4434: private void CacheObjectPoolService(ObjectPoolManager candidate)
+ 4449: private bool TryResolveCachedObjectPool(out IObjectPoolService pool)
+ 4473: private static IPhysicsService ResolveCachedPhysicsService()
+ 4482: private float RefreshScalabilityQualityWeight()
+ 4488: private static float ResolveGlobalQualityWeight01()
+ 4494: private static byte EncodeGlobalQualityWeightByte(float qualityWeight01)
+ 4500: private static float SmoothStep01(float value)
+ 4506: private void RunPreSimulationMemoryDefrag(float unscaledDeltaTime)
+ 4554: private void TryPollVaultMemoryProfileCsv(IDataVault dataVault)
+ 4567: private void RecordVaultSovereigntyTelemetry(
+ 4602: private static int ResolveVaultTelemetryStride(float quality)
+ 4608: private uint ResolveMemoryTelemetryFrameId()
+ 4624: private void RecordVaultSovereigntyPostSimulationHeartbeat()
+ 4638: private void RecordMemoryBlackBoxHeartbeat()
+ 4646: private void RecordDispatcherBlackBoxHeartbeat(IDataVault dataVault)
+ 4727: private uint ResolveDispatcherStateHash(ushort flags, uint dispatcherFrameId)
+ 4739: private static ushort EncodeDispatcherQualityWeightQ8(float qualityWeight01)
+ 4745: private static bool IsFiniteDouble(double value)
+ 4750: private static float ResolveMemoryCompactionStress01(float unscaledDeltaTime)
+ 4760: private static void PublishMemoryAddressShiftSignals(IDataVault dataVault)
+ 4785: private static void PublishVaultSovereigntyAddressShiftRecords(IDataVault dataVault)
+ 4832: private void PublishDataVaultDefragTelemetry(IDataVault dataVault, double elapsedMilliseconds, uint frameId)
+ 4889: private static void EmitVramPressureDefragSignalIfNeeded()
+ 4911: private void DisposeH8TimeArray()
+ 4916: private void DisposeH8TimeArray(IDataVault dataVault)
+ 4921: private bool EnsureDispatcherBlackBox()
+ 4950: private void DisposeDispatcherBlackBox()
+ 4955: private void DisposeDispatcherBlackBox(IDataVault dataVault)
+ 4961: private void UpdateH8TimeState(float dilatedDeltaTime, float unscaledDeltaTime)
+ 4966: float safeDilatedDeltaTime = math.isfinite(dilatedDeltaTime) && dilatedDeltaTime >= 0f ? dilatedDeltaTime : 0f;
+ 4995: private float ConsumeFrameTimeDilationScalar()
+ 5014: private float ResolvePauseRestoreScalar()
+ 5024: private void ClearCoreTickDilationBurst()
+ 5033: private void ClearAdrenalineDilation()
+ 5042: private void DrainAdrenalineDilationSignals(float unscaledDeltaTime)
+ 5064: private static bool TryResolveAdrenalineDilationTrigger(out uint sourceHash)
+ 5083: private void BeginAdrenalineDilation(uint sourceHash)
+ 5098: private void BeginAdrenalineDilationRestore()
+ 5107: private void TickAdrenalineDilation(float unscaledDeltaTime)
+ 5147: private void ApplyPendingCoreTickDilationRestore()
+ 5158: private void RunDispatcherUpdate()
+ 5320: RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+ 5348: private void PublishSimulationBucketSync(in SimulationBucketFrameState frameState)
+ 5367: private static void FlushSimulationBucketVisualSync()
+ 5376: private void PublishFramePacingWarningIfNeeded(in SimulationBucketFrameState frameState)
+ 5421: private static void ApplyFramePacingHomeostasisKill()
+ 5436: private static float ResolveCurrentFrameMilliseconds()
+ 5452: private static float SanitizeNonNegativeMilliseconds(float milliseconds)
+ 5457: private static byte ResolveFramePacingSeverity(uint flags, float currentFrameMs, float preSimulationMs)
+ 5472: private static void RefreshPauseDepthOfFieldTarget()
+ 5488: private static float ResolvePauseDepthOfFieldWeight(float unscaledTime)
+ 5496: private static ICameraJuiceSystem ResolveCameraJuiceSystem()
+ 5501: private static void TickPauseDepthOfField(float unscaledTime)
+ 5510: private void RunDispatcherLateFrame()
+ 5618: private static void FlushCoreEventsArtery()
+ 5656: private static void FlushEnvironmentEventsArtery()
+ 5720: private static int ResolvePhysicsLateFramePendingCount()
+ 5726: private static void FlushPhysicsLateFrameEvents()
+ 5732: private static void FlushPlayerEventsArtery()
+ 5788: private static void FlushBaseEventsArtery()
+ 5816: private static void FlushAIEventsArtery()
+ 5842: public static bool TryConsumeLateFrameEventDispatch()
+ 5851: public static bool TryReserveLateFrameEventDispatches(int dispatchCount)
+ 5891: public static void DispatchCriticalMemoryPressure(in CriticalMemoryPressureEvent memoryPressureEvent)
+ 5922: internal static void MarkLateFrameEventDispatchDeferred()
+ 5931: private static void SetActiveLateFrameEventLane(uint queueHash)
+ 5936: private static void ClearActiveLateFrameEventLane()
+ 5941: private static void ReportLateFrameQueueDepth(uint queueHash, int pendingCount)
+ 5943: ObjectPoolDiagnostics.TryPublishDataBusDepth(queueHash, pendingCount);
+ 5946: private static long BeginLateFrameFlushPass()
+ 5951: private static void EndLateFrameFlushPass(uint laneHash, long passStartTimestamp)
+ 5971: internal static int CopyArteryFlushMilliseconds(float[] destination)
+ 5988: private static void RecordArteryFlushSample(double elapsedMilliseconds)
+ 5997: private static bool ShouldDropAmbientLateFrameEvents(uint laneHash)
+ 6020: private static void DropAmbientEnvironmentEvents()
+ 6028: private static void UpdatePauseFreezeFrameDitherState()
+ 6040: public static void RequestVisualStaticGlitch()
+ 6045: public static void RequestVisualStaticGlitch(float durationSeconds)
+ 6055: private static void UpdateVisualStaticGlitchState()
+ 6072: private static uint CaptureCriticalPerformanceStackHash(uint laneHash)
+ 6079: private static void TrackPdaBusCongestion(int pendingBeforeFlush, int pendingAfterFlush)
+ 6097: private static void BeginLateFrameEventBudget()
+ 6111: private static void EndLateFrameEventBudget()
+ 6143: private static void RecordLateFrameCircuitBreakerLane(uint queueHash)
+ 6181: private void RunFixedStepAccumulator(float dilatedDeltaTime, bool blockGameplayLanes)
+ 6186: if (dilatedDeltaTime <= 0f)
+ 6194: double requestedAccumulatedTime = _fixedStepAccumulator + dilatedDeltaTime;
+ 6216: _fixedStepAccumulator = System.Math.Min(requestedAccumulatedTime, maxAccumulatedTime);
+ 6219: while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
+ 6224: DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
+ 6225: _fixedStepAccumulator -= FixedStepSeconds;
+ 6229: if (substepCount >= MaxFixedSubstepsPerFrame && _fixedStepAccumulator >= FixedStepSeconds)
+ 6230: _fixedStepAccumulator = 0d;
+ 6235: private void RefreshFixedInterpolationAlpha()
+ 6237: CurrentFixedInterpolationAlpha = math.saturate((float)(_fixedStepAccumulator / FixedStepSeconds));
+ 6240: private void DispatchFixedStep(float fixedDeltaTime, bool blockGameplayLanes)
+ 6247: RunMasterFixedSimulationBridge(fixedDeltaTime);
+ 6256: RegistryBucket<IFixedTickable> lane = _fixedPriorityLanes[laneIndex];
+ 6258: lane.ValidateNoDestroyedEntriesDebug(nameof(IFixedTickable));
+ 6266: lane.GetAt(itemIndex).FixedTick(fixedDeltaTime);
+ 6278: CompleteMasterFixedSimulationBridge(fixedDeltaTime);
+ 6287: RegistryBucket<IPostFixedTickable> lane = _postFixedPriorityLanes[laneIndex];
+ 6289: lane.ValidateNoDestroyedEntriesDebug(nameof(IPostFixedTickable));
+ 6295: IPostFixedTickable postFixedTickable = lane.GetAt(itemIndex);
+ 6297: _currentPostFixedGcOwner = postFixedTickable;
+ 6300: postFixedTickable.PostFixedTick(fixedDeltaTime);
+ 6307: _lastPostFixedGcOwner = postFixedTickable;
+ 6317: lane.GetAt(itemIndex).PostFixedTick(fixedDeltaTime);
+ 6346: private static void DrainAupNanInquisitor()
+ 6365: private void RunFastTick(float deltaTime, bool blockGameplayLanes)
+ 6422: private void RunUnscaledFastTick(float unscaledDeltaTime, bool blockGameplayLanes)
+ 6474: private void RunSlowTick(float deltaTime, bool blockGameplayLanes)
+ 6588: //   - same seed + same step count -> same state, by construction, not by machine load;
+ 6640: /// player loop (<c>EditorApplication.QueuePlayerLoopUpdate</c>); the existing player-loop node then
+ 6641: /// consumes exactly <paramref name="fixedDeltaSeconds"/> per pump no matter how long the pump took
+ 6644: /// <param name="fixedDeltaSeconds">
+ 6653: internal static bool EnableStepBoundedTime(float fixedDeltaSeconds)
+ 6655: if (!math.isfinite(fixedDeltaSeconds) || fixedDeltaSeconds <= 0f)
+ 6657: ReportStepBoundedConfigRejected(fixedDeltaSeconds);
+ 6662: _stepBoundedDeltaSeconds = fixedDeltaSeconds;
+ 6666: if (fixedDeltaSeconds <= MaxStepBoundedDeltaSeconds)
+ 6669: ReportStepBoundedStepTooCoarse(fixedDeltaSeconds);
+ 6676: internal static void DisableStepBoundedTime()
+ 6689: private static float AdvanceStepBoundedClock()
+ 6701: private static float ResolveDispatcherUnscaledDeltaTime()
+ 6716: private static void ReportStepBoundedClamp(byte laneBit, double intervalSeconds, double surplusSeconds)
+ 6747: private static void ReportStepBoundedConfigRejected(float requestedDeltaSeconds)
+ 6759: private static void ReportStepBoundedStepTooCoarse(float requestedDeltaSeconds)
+ 6780: private void RunBucketedSlowTick(bool blockGameplayLanes)
+ 6822: private double ResolveSlowTickIntervalSeconds()
+ 6845: private void RunColdTick(float deltaTime, bool blockGameplayLanes)
+ 6902: private void RunFrostTick(float deltaTime, bool blockGameplayLanes)
+ 6942: private static void EnsureDispatcherSurfaceProbeBuffers()
+ 6956: private static bool TryResolveDispatcherSurfaceProbeHits(out NativeArray<KinematicSurfaceHit> scheduledHits)
+ 6969: private static bool TryLockDispatcherSurfaceProbeScheduledVaultBuffers()
+ 6988: private static void UnlockDispatcherSurfaceProbeScheduledVaultBuffers()
+ 6994: private static void UnlockDispatcherSurfaceProbeScheduledVaultBuffers(IDataVault dataVault)
+ 7007: private static void ScheduleDispatcherSurfaceProbes()
+ 7027: private static void CompleteDispatcherSurfaceProbes()
+ 7077: private static void DisposeDispatcherSurfaceProbeBuffers()
+ 7083: private static void DisposeDispatcherSurfaceProbeBuffers(IDataVault dataVault)
+ 7115: private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
+ 7122: // starves HPM.FixedTick -> Sample -> GetState (hop2) even when InputDispatcher already
+ 7123: // holds non-zero MoveDelta (L12/L13 LIVE: hop1 healthy, hop2 ABSENT, intent=0).
+ 7130: private static int GetLaneIndex(PriorityLayer layer)
+ 7147: private static long BeginDispatcherPhaseTiming()
+ 7156: private static void EndDispatcherPhaseTiming(long startTimestamp, string phaseName)
+ 7176: private void CompleteFoveatedFrameJobs()
+ 7212: public static class GlobalRenderContext
+ 7229: private static void ResetStaticState()
+ 7235: internal static void SetCurrent(ScriptableRenderContext context, Camera camera)
+ 7242: private static void PublishCameraSignals(Camera camera)
+ 7275: internal static void Clear()
+ 7287: public sealed class RenderDispatcher : MonoBehaviour, IServiceHeartbeat, IServiceShutdown
+ 7298: private static void ResetStaticState()
+ 7303: private struct RenderSettingsSnapshot
+ 7318: public static RenderSettingsSnapshot Capture()
+ 7337: public void Restore(IGIRelaySystem giRelay)
+ 7365: internal static void BindGIRelayCold(IGIRelaySystem giRelay)
+ 7372: private void Awake()
+ 7384: public void InitializeService()
+ 7401: private void OnEnable()
+ 7410: private void OnDisable()
+ 7417: private void OnDestroy()
+ 7422: public void OnServiceShutdown()
+ 7427: private void ShutdownServiceState()
+ 7445: private void RefreshRenderDependencies()
+ 7453: private void HandleBeginCameraRendering(ScriptableRenderContext context, Camera camera)
+ 7489: private void HandleEndCameraRendering(ScriptableRenderContext context, Camera camera)
+ 7504: private void RestorePendingRenderSettings()
+ 7517: public static class TimeSliceScheduler
+ 7547: public static float RemainingMs => math.max(0f, _budgetMs - ConsumedMs);
+ 7549: public static void BeginFrame(float globalQualityWeight, uint frameId)
+ 7556: public static bool HasBudgetRemaining(float estimatedCostMs = 0f)
+ 7562: public static bool TryConsume(float estimatedCostMs)
+ 7567: private static float ResolveBudgetMs(float globalQualityWeight)
+ 7578: private static float SanitizeNonNegative(float value)

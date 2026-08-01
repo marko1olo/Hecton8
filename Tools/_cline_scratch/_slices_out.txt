@@ -1,0 +1,1685 @@
+=== LOCOMOTION HOLD HITS ===
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:291:             LocomotionHoldInProgress,
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2749:             _waitReason = WaitReason.LocomotionHoldInProgress;
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2762:             _waitReason = WaitReason.LocomotionHoldInProgress;
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:4687:                 case WaitReason.LocomotionHoldInProgress:
+
+===== C:\hades\Hecton8\Assets\_Project\Scripts\HectonPlayerMovement.cs =====
+--- lines 1900-1920 ---
+  1900|        public float InventoryCarriedMassKg => _runtimeInventoryTotalMassKg;
+  1901|
+  1902|        /// <summary>Resolved upward-swim multiplier after inventory mass encumbrance.</summary>
+  1903|        public float InventoryUpwardSwimMultiplier => _runtimeInventoryUpwardSwimMultiplier;
+  1904|
+  1905|        /// <summary>Normalized 0-1 movement intent from the latest kinematic input snapshot.</summary>
+  1906|        public float CurrentMovementIntent01 => math.saturate(math.sqrt(math.max(0f, math.lengthsq(_lastPlayerKinematicsIntendedMovement))));
+  1907|
+  1908|        /// <summary>Movement-owned stamina drain multiplier forwarded to survival.</summary>
+  1909|        public float CurrentMovementStaminaDrainMultiplier => MovementStaminaDrainMultiplier;
+  1910|
+  1911|        /// <summary>Movement-owned emergency encumbrance ratio threshold.</summary>
+  1912|        public float CurrentCriticalEncumbranceRatio => CriticalEncumbranceRatio;
+  1913|
+  1914|        /// <summary>Movement-owned stamina threshold for critical encumbrance failure.</summary>
+  1915|        public float CurrentCriticalStaminaFailureThreshold01 => CriticalStaminaFailureThreshold01;
+  1916|
+  1917|        /// <summary>True when carried inventory mass exceeds the emergency locomotion cutoff.</summary>
+  1918|        public bool IsCriticallyEncumbered => _runtimeInventoryLoadRatio >= CriticalEncumbranceRatio;
+  1919|
+  1920|        public bool IsCriticalStaminaFailureActive => _criticalStaminaFailureTimer > 0f;
+
+--- lines 2980-3020 ---
+  2980|        private static float SmoothQuality01(float value)
+  2981|        {
+  2982|            float t = math.saturate(math.isfinite(value) ? value : 1f);
+  2983|            return t * t * (3f - (2f * t));
+  2984|        }
+  2985|
+  2986|        private float3 ResolveRawInputIntentVector()
+  2987|        {
+  2988|            return new float3(_inputH, _inputVertical, _inputV);
+  2989|        }
+  2990|
+  2991|        private void WritePlayerKinematicsSnapshot(Vector3 position, Vector3 velocity, float3 intendedMovement)
+  2992|        {
+  2993|            if (!HasPlayerKinematicsNativeState())
+  2994|                return;
+  2995|
+  2996|            float3 position3 = new float3(position.x, position.y, position.z);
+  2997|            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
+  2998|            if (!math.all(math.isfinite(position3)) ||
+  2999|                !math.all(math.isfinite(velocity3)) ||
+  3000|                !math.all(math.isfinite(intendedMovement)))
+  3001|            {
+  3002|                DumpPlayerKinematicsBlackBox(_playerKinematicsNaNHash);
+  3003|                return;
+  3004|            }
+  3005|
+  3006|            _playerKinematicsNativeState.WriteKinematicSnapshot(_dataVault, position3, velocity3, intendedMovement);
+  3007|        }
+  3008|
+  3009|        private Vector3 ResolvePlayerKinematicsBurstDragVelocity(
+  3010|            Vector3 velocity,
+  3011|            float3 intendedMovement,
+  3012|            float dragCoefficient,
+  3013|            float waterDensityScale,
+  3014|            float fixedDeltaTime)
+  3015|        {
+  3016|            if (fixedDeltaTime <= 0f)
+  3017|                return velocity;
+  3018|
+  3019|            if (!HasPlayerKinematicsNativeState())
+  3020|                return velocity;
+
+--- lines 8085-8260 ---
+  8085|                    _activeSonarPingCooldownTimer -= deltaTime;
+  8086|                    if (_activeSonarPingCooldownTimer < 0f)
+  8087|                        _activeSonarPingCooldownTimer = 0f;
+  8088|                }
+  8089|
+  8090|                if (IsGameplayInputBlockedByMenu())
+  8091|                {
+  8092|                    HandleMenuBlockedInput(deltaTime, suit);
+  8093|                    return;
+  8094|                }
+  8095|
+  8096|                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+  8097|                {
+  8098|                    Cursor.lockState = CursorLockMode.Locked;
+  8099|                    Cursor.visible = false;
+  8100|                    _inputCleared = false;
+  8101|                }
+  8102|
+  8103|                ProcessPlayerInputFrame();
+  8104|                ProcessWipeoutInputOverride();
+  8105|                ProcessLocomotionPresentationAndJuice(deltaTime, suit);
+  8106|            }
+  8107|        }
+  8108|
+  8109|        private void HandleMenuBlockedInput(float deltaTime, SuitData suit)
+  8110|        {
+  8111|            _currentInputState = default;
+  8112|            _pendingLookInput = Vector2.zero;
+  8113|            _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
+  8114|            SetSprintingState(false);
+  8115|            _inputCleared = true;
+  8116|            _lastKinematicRepairProbe = default;
+  8117|            _lastKinematicRepairSnapPoint = default;
+  8118|            _kinematicRepairStateBits &= ~KinematicRepairStateHasSnapBit;
+  8119|            ResetKinematicRepairProbeReuseGate();
+  8120|            Cursor.lockState = CursorLockMode.None;
+  8121|            Cursor.visible = true;
+  8122|            UpdateRenderInterpolationState();
+  8123|            BuildJuiceInput(deltaTime, suit);
+  8124|            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+  8125|            UpdateUnderwaterSomaticCameraOffsets(deltaTime);
+  8126|            ApplyCameraState();
+  8127|            UpdateVrComfortSignals(deltaTime, Vector3.zero, 0f);
+  8128|        }
+  8129|
+  8130|        private void ProcessPlayerInputFrame()
+  8131|        {
+  8132|            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+  8133|            {
+  8134|                _inputHandler.TryReadFrame(
+  8135|                    _inputManager,
+  8136|                    jumpBufferTime,
+  8137|                    out HectonPlayerInputFrame inputFrame,
+  8138|                    out bool jumpBuffered);
+  8139|                _currentInputState = inputFrame.State;
+  8140|                _cachedMoveInput = inputFrame.MoveInput;
+  8141|                _cachedVerticalInput = inputFrame.VerticalInput;
+  8142|                _pendingLookInput = inputFrame.LookInput;
+  8143|                if (jumpBuffered)
+  8144|                {
+  8145|                    _jumpRequested = true;
+  8146|                    _jumpBufferTimer = jumpBufferTime;
+  8147|                }
+  8148|
+  8149|                Vector2 lookDelta = _pendingLookInput;
+  8150|                _pendingLookInput = Vector2.zero;
+  8151|                ApplyLookInput(lookDelta);
+  8152|
+  8153|                _inputH = _cachedMoveInput.x;
+  8154|                _inputV = _cachedMoveInput.y;
+  8155|                _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+  8156|                if (IsAuthoritativeVehicleTransportActive())
+  8157|                {
+  8158|                    _inputH = 0f;
+  8159|                    _inputV = 0f;
+  8160|                    _inputVertical = 0f;
+  8161|                }
+  8162|                SetSprintingState(inputFrame.SprintHeld != 0);
+  8163|            }
+  8164|            else
+  8165|            {
+  8166|                _currentInputState = default;
+  8167|                _pendingLookInput = Vector2.zero;
+  8168|                _inputH = 0f;
+  8169|                _inputV = 0f;
+  8170|                _inputVertical = 0f;
+  8171|                SetSprintingState(false);
+  8172|                _mouseXDelta = 0f;
+  8173|            }
+  8174|        }
+  8175|
+  8176|        private void ProcessWipeoutInputOverride()
+  8177|        {
+  8178|            if (_wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f)
+  8179|            {
+  8180|                _currentInputState = default;
+  8181|                _pendingLookInput = Vector2.zero;
+  8182|                _mouseXDelta = 0f;
+  8183|                _inputH = 0f;
+  8184|                _inputV = 0f;
+  8185|                _inputVertical = 0f;
+  8186|                SetSprintingState(false);
+  8187|                _jumpRequested = false;
+  8188|                _jumpBufferTimer = 0f;
+  8189|            }
+  8190|        }
+  8191|
+  8192|        /// <summary>
+  8193|        /// Samples MoveDelta / vertical / sprint into the fixed-step locomotion fields that
+  8194|        /// <see cref="ResolveRawInputIntentVector"/> and swim thrust read.
+  8195|        ///
+  8196|        /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+  8197|        /// render IUpdatable.Tick path. Batchmode and physics-heavy schedules (headless V0 probe,
+  8198|        /// long fixed steps) drive locomotion almost entirely through FixedTick while render Tick
+  8199|        /// rarely runs, so _inputH/_inputV/_inputVertical stayed zero even when InputDispatcher
+  8200|        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+  8201|        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+  8202|        /// mocking input or bypassing menu / vehicle / wipeout gates.
+  8203|        ///
+  8204|        /// Look / juice / cursor remain render-owned on Tick. Menu block zeros locomotion only -
+  8205|        /// full HandleMenuBlockedInput stays on Tick so camera/cursor presentation is not driven
+  8206|        /// from the physics step.
+  8207|        /// </summary>
+  8208|        private void SampleGameplayLocomotionInputForFixedStep()
+  8209|        {
+  8210|            ResolveInputManagerBinding();
+  8211|
+  8212|            if (IsGameplayInputBlockedByMenu())
+  8213|            {
+  8214|                _currentInputState = default;
+  8215|                _pendingLookInput = Vector2.zero;
+  8216|                _inputH = 0f;
+  8217|                _inputV = 0f;
+  8218|                _inputVertical = 0f;
+  8219|                _mouseXDelta = 0f;
+  8220|                SetSprintingState(false);
+  8221|                return;
+  8222|            }
+  8223|
+  8224|            ProcessPlayerInputFrame();
+  8225|            ProcessWipeoutInputOverride();
+  8226|        }
+  8227|
+  8228|        private void ProcessLocomotionPresentationAndJuice(float deltaTime, SuitData suit)
+  8229|        {
+  8230|            ConsumeKinematicRepairTargetProbe();
+  8231|            ScheduleKinematicRepairTargetProbe();
+  8232|            UpdateRenderInterpolationState();
+  8233|            _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
+  8234|            _velocity = _feedbackVelocity;
+  8235|            float currentSpeed = ApproximateVectorMagnitude(_velocity);
+  8236|            float renderCameraYaw = CameraYaw;
+  8237|            float yawDelta = DeltaAngleDegrees(_prevYawForMomentum, renderCameraYaw);
+  8238|            UpdateVrComfortSignals(deltaTime, _velocity, yawDelta);
+  8239|
+  8240|            if (_swimPresentationController != null)
+  8241|            {
+  8242|                _swimPresentationController.SyncFromLocomotion(deltaTime, true);
+  8243|                _debugLastSwimPresentationDriveFrame = SystemDispatcher.CurrentFrameIndex;
+  8244|            }
+  8245|
+  8246|            BuildJuiceInput(deltaTime, suit);
+  8247|            _juiceInput.speedDelta = currentSpeed - _prevSpeed;
+  8248|            _juiceInput.yawDelta = yawDelta;
+  8249|            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+  8250|
+  8251|            _prevSpeed = currentSpeed;
+  8252|            _prevYawForMomentum = renderCameraYaw;
+  8253|
+  8254|            if (_juiceOutput.stepEvent != 0)
+  8255|            {
+  8256|                PublishPlayerFootstepSignal();
+  8257|                TryEmitSurfaceFootstepAudio();
+  8258|                EmitExosuitFootstepSeismicPing();
+  8259|                UpdateStepDiagnostics();
+  8260|            }
+
+--- lines 9905-9960 ---
+  9905|
+  9906|            return t < 0.5f ? startGravity : targetGravity;
+  9907|        }
+  9908|
+  9909|        private Vector3 ResolveBodyRuntimePosition()
+  9910|        {
+  9911|            if (_useFixedFrameSpatialCache && MathGuard.IsFinite(_fixedFrameBodyPosition))
+  9912|                return HectonPlayerMotor.SafeVelocity(_fixedFrameBodyPosition);
+  9913|
+  9914|            Vector3 statePosition = ResolvePlayerAupRuntimePosition();
+  9915|            if (MathGuard.IsFinite(statePosition))
+  9916|                return HectonPlayerMotor.SafeVelocity(statePosition);
+  9917|
+  9918|            return _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.position) : Vector3.zero;
+  9919|        }
+  9920|
+  9921|        public void FixedTick(float fixedDeltaTime)
+  9922|        {
+  9923|            SuitData suit = currentSuitData;
+  9924|            if (suit == null) return;
+  9925|            if (_juiceProcessor == null) return;
+  9926|
+  9927|            using (_fixedTickProfilerMarker.Auto())
+  9928|            {
+  9929|                // Fixed-step locomotion must sample input here. Render Tick is not guaranteed
+  9930|                // before each FixedTick (batchmode / catch-up), and PrepareTransportAndFrameState
+  9931|                // snapshots intent from _input* immediately below.
+  9932|                SampleGameplayLocomotionInputForFixedStep();
+  9933|
+  9934|                PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+  9935|
+  9936|                float previousWaterImmersionRatio = _waterImmersionRatio;
+  9937|                bool wasGroundedLastFixedTick = _isGrounded;
+  9938|
+  9939|                _rb.useGravity = false;
+  9940|
+  9941|                if (_isWalking)
+  9942|                {
+  9943|                    _bodyYaw = _cameraYaw;
+  9944|                    _bodyYawVelocity = 0f;
+  9945|                }
+  9946|                else
+  9947|                {
+  9948|                    float bodyYawOmega = suit.bodyYawSpringOmega *
+  9949|                        ResolveHeavyCarryBodyYawSpringMultiplier() *
+  9950|                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
+  9951|                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
+  9952|                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+  9953|                }
+  9954|
+  9955|                _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
+  9956|                _wasGroundedLastFrame = _isGrounded;
+  9957|
+  9958|                GroundCheck();
+  9959|                _playerMotor?.SetGroundedState(_isGrounded);
+  9960|
+
+--- lines 10085-10150 ---
+ 10085|                ApplyLocomotionPhysics(fixedDeltaTime, suit, activeTransportPreset, exosuitActive, exosuitKinematicAuthority, groundedOnDryLand, groundedOnShore);
+ 10086|
+ 10087|                FinalizeFixedTick(fixedDeltaTime, suit, exosuitKinematicAuthority);
+ 10088|            }
+ 10089|        }
+ 10090|
+ 10091|        private PlayerTransportPreset PrepareTransportAndFrameState(float fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority)
+ 10092|        {
+ 10093|            RefreshVrComfortSettingsCache();
+ 10094|            AdvanceMovementProbeCacheFrame();
+ 10095|
+ 10096|            if (_transportEvaLockTicks > 0)
+ 10097|                _transportEvaLockTicks--;
+ 10098|
+ 10099|            if (_transportBailoutCooldownTimer > 0f)
+ 10100|            {
+ 10101|                _transportBailoutCooldownTimer -= fixedDeltaTime;
+ 10102|                if (_transportBailoutCooldownTimer < 0f)
+ 10103|                    _transportBailoutCooldownTimer = 0f;
+ 10104|            }
+ 10105|
+ 10106|            _currentFixedDeltaTime = fixedDeltaTime;
+ 10107|            RefreshActiveGravity(fixedDeltaTime);
+ 10108|            Vector3 bodyRuntimePosition = ResolveBodyRuntimePosition();
+ 10109|            Vector3 authoritativeVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
+ 10110|            currentVerticalVelocity = authoritativeVelocity.y;
+ 10111|
+ 10112|            _playerState.SyncKinematic(bodyRuntimePosition, authoritativeVelocity);
+ 10113|            _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
+ 10114|            WritePlayerKinematicsSnapshot(bodyRuntimePosition, authoritativeVelocity, _lastPlayerKinematicsIntendedMovement);
+ 10115|            _useFixedFrameSpatialCache = true;
+ 10116|
+ 10117|            PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
+ 10118|            _stateMachine?.AdvanceFixed(fixedDeltaTime);
+ 10119|
+ 10120|            ITransportPlatform previousTransportPlatform = _activeTransportPlatform;
+ 10121|            Transform previousTransportPlatformTransform = _activeTransportPlatformTransform;
+ 10122|            ResolveActiveTransportPlatform();
+ 10123|            if (_transportEvaLockTicks <= 0 &&
+ 10124|                previousTransportPlatform != null &&
+ 10125|                _activeTransportPlatform == null)
+ 10126|            {
+ 10127|                ExecuteTransportEvaHandoff(previousTransportPlatform, previousTransportPlatformTransform);
+ 10128|            }
+ 10129|
+ 10130|            bool exosuitActive = IsExosuitTransportActive();
+ 10131|            initialExosuitKinematicAuthority = exosuitActive && ExosuitKinematicAuthority.HasActiveAuthority();
+ 10132|
+ 10133|            SyncTransportPlatformRotation();
+ 10134|            RefreshFixedFrameSpatialCache();
+ 10135|            ApplyTransportPlatformCarrierMotion(fixedDeltaTime, initialExosuitKinematicAuthority);
+ 10136|            RefreshFixedFrameSpatialCache();
+ 10137|            RefreshSharedGroundSweepBuffer();
+ 10138|
+ 10139|            return activeTransportPreset;
+ 10140|        }
+ 10141|
+ 10142|        private void UpdateWaterImmersion(float fixedDeltaTime)
+ 10143|        {
+ 10144|            UpdateOceanWaterHeight();
+ 10145|            _waterImmersionRatio = ComputeImmersionRatio();
+ 10146|            _currentDepth = ComputeDepth();
+ 10147|            UpdateBottomClearance();
+ 10148|
+ 10149|            if (IsInDryInterior())
+ 10150|            {
+
+===== C:\hades\Hecton8\Assets\_Project\Scripts\PlayerToolManager.cs =====
+--- lines 40-55 ---
+    40|#if UNITY_EDITOR
+    41|    using UnityEditor;
+    42|#endif
+    43|
+    44|    [DisallowMultipleComponent]
+    45|    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, IFixedTickable, ILateFrameTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
+    46|    {
+    47|        private static int s_x001PlayerToolManagerSignalPushDropCount;
+    48|        // ══════════════════════════════════════════════════════════
+    49|        //  INSPECTOR
+    50|        // ══════════════════════════════════════════════════════════
+    51|
+    52|        [Header("── References ────────────────────────────────")]
+    53|        [Tooltip("Transform tochki krepleniya instrumenta (docherniy obekt kamery).")]
+    54|        [SerializeField] private Transform handAnchor;
+    55|
+
+--- lines 160-175 ---
+   160|        // Cold storage repair is ~54 vault lane binds. Asking more often than this does not make a dead
+   161|        // inventory live; it only burns the tick lane.
+   162|        private const int RuntimeStartToolGrantRecoveryStride = 60;
+   163|        // Storage live but the add still refused: re-ask 4x/second, not 60x. TryAddItem's preflight copies
+   164|        // the whole stack lane and the occupancy mask, which is cheap but not free.
+   165|        private const int RuntimeStartToolGrantRefusalStride = 15;
+   166|        private bool _handlingEquippedToolBreak;
+   167|        private bool _registeredToTick;
+   168|        private bool _registeredToFixedTick;
+   169|        private bool _registeredToLateFrame;
+   170|        private bool _pendingSwapExecution;
+   171|        private bool _pendingCurrentToolDespawn;
+   172|        private bool _flushingToolLifecyclePresentation;
+   173|        private bool _pendingToolSpawnExecution;
+   174|        private GameObject _pendingToolSpawnPrefab;
+   175|        private int _pendingToolSpawnSlotIndex;
+
+--- lines 320-380 ---
+   320|            ClearCachedFieldLoadoutAdvice();
+   321|
+   322|            // Despavnim tekuschiy instrument pri otklyuchenii menedzhera
+   323|            _flushingToolLifecyclePresentation = true;
+   324|            DespawnCurrentToolImmediate();
+   325|            _flushingToolLifecyclePresentation = false;
+   326|        }
+   327|
+   328|        private void TryRegisterToTickManager()
+   329|        {
+   330|            if ((_registeredToTick && _registeredToLateFrame) || !Application.isPlaying)
+   331|                return;
+   332|
+   333|            if (GlobalRegistry.Dispatcher == null)
+   334|                return;
+   335|
+   336|            if (!_registeredToTick)
+   337|            {
+   338|                _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+   339|            }
+   340|
+   341|            if (!_registeredToLateFrame)
+   342|                _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+   343|            if (!_registeredToFixedTick)
+   344|            {
+   345|                // Starter grant retry must not depend on render Tick alone. Batchmode / V0 probe
+   346|                // schedules few IUpdatable ticks while FixedTick runs continuously; without this
+   347|                // lane STARTERGRANT stays deferred (L08 refusalMask 0x1E) and IsToolAvailableInSlot
+   348|                // never becomes true before ToolEquip latches Blocked.
+   349|                _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+   350|            }
+   351|
+   352|        }
+   353|
+   354|        private void TryUnregisterFromTickManager(bool clearPendingPresentation = true)
+   355|        {
+   356|            if (!_registeredToTick && !_registeredToLateFrame)
+   357|                return;
+   358|
+   359|            if (_registeredToTick)
+   360|                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+   361|
+   362|            if (_registeredToFixedTick)
+   363|            {
+   364|                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+   365|                _registeredToFixedTick = false;
+   366|            }
+   367|            if (_registeredToLateFrame)
+   368|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+   369|
+   370|            _registeredToTick = false;
+   371|            _registeredToLateFrame = false;
+   372|            if (clearPendingPresentation)
+   373|            {
+   374|                _pendingToolPoseFlush = false;
+   375|                _pendingToolPoseTransform = null;
+   376|                _pendingToolGripOffsets = null;
+   377|                _hasPendingHandAnchorLocalPosition = false;
+   378|            }
+   379|        }
+   380|
+
+--- lines 385-510 ---
+   385|        /// <summary>
+   386|        /// Glavnyy tsikl menedzhera instrumentov.
+   387|        /// Poryadok: Input → SwapAnimation → ToolTick → UseInput.
+   388|        /// </summary>
+   389|        public void Tick(float deltaTime)
+   390|        {
+   391|            // FIRST, and outside every early-out below. The starter grant is what makes a quick slot
+   392|            // selectable at all (IsToolAvailableInSlot -> HasToolInInventory -> CountAvailableTotal), so it
+   393|            // must not be starved by an external tool dock, a transport block or a battery lockout - all of
+   394|            // which return from this method before ProcessSlotInput. Single bool read once the grant lands.
+   395|            RetryRuntimeStartToolGrantIfPending();
+   396|            ConsumeToolSlotInputSignals();
+   397|            if (ConsumeInventoryChangedSignals())
+   398|                HandleInventoryChanged();
+   399|            ConsumeEquippedToolDurabilitySignals();
+   400|            if (_currentTool != null)
+   401|                _currentTool.AdvanceRuntimeActiveIntent(deltaTime);
+   402|
+   403|            if (_externallyDockedTool != null)
+   404|            {
+   405|                if (!ReferenceEquals(_externallyDockedTool, _currentTool))
+   406|                    _externallyDockedTool = null;
+   407|                else
+   408|                {
+   409|                    PublishRuntimeContextState();
+   410|#if UNITY_EDITOR
+   411|                    _debugCurrentSlot = _currentSlotIndex;
+   412|                    _debugStateName   = GetSwapStateDebugName(_swapState);
+   413|#endif
+   414|                    return;
+   415|                }
+   416|            }
+   417|
+   418|            bool handheldToolsBlocked = IsHandheldToolUsageBlocked();
+   419|            bool batterySiphonLockout = IsBatterySiphonLockoutActive;
+   420|            // ── 1. Obrabotka vvoda pereklyucheniya slotov ──
+   421|            if (!handheldToolsBlocked && !batterySiphonLockout)
+   422|                ProcessSlotInput();
+   423|            else if (handheldToolsBlocked && _currentTool != null && _swapState == SwapState.Idle && _pendingSlotIndex < 0)
+   424|                Holster();
+   425|
+   426|            // ── 2. Animatsiya smeny instrumenta ──
+   427|            ProcessSwapAnimation(deltaTime);
+   428|
+   429|            if (IsBatterySiphonLockoutActive)
+   430|            {
+   431|                ProcessBatterySiphonLockout(deltaTime);
+   432|                PublishRuntimeContextState();
+   433|#if UNITY_EDITOR
+   434|                _debugCurrentSlot = _currentSlotIndex;
+   435|                _debugStateName   = GetSwapStateDebugName(_swapState);
+   436|#endif
+   437|                return;
+   438|            }
+   439|
+   440|            if (handheldToolsBlocked)
+   441|            {
+   442|                PublishRuntimeContextState();
+   443|#if UNITY_EDITOR
+   444|                _debugCurrentSlot = _currentSlotIndex;
+   445|                _debugStateName   = GetSwapStateDebugName(_swapState);
+   446|#endif
+   447|                return;
+   448|            }
+   449|
+   450|            // ── 3. Esli instrument aktiven i animatsiya zavershena — obnovlyaem ──
+   451|            if (_currentTool != null && _swapState == SwapState.Idle)
+   452|            {
+   453|                // ── Tick instrumenta (idle-animatsiya, pokachivanie) ──
+   454|                if (TryBeginBatterySiphonLockoutIfNeeded())
+   455|                {
+   456|                    PublishRuntimeContextState();
+   457|#if UNITY_EDITOR
+   458|                    _debugCurrentSlot = _currentSlotIndex;
+   459|                    _debugStateName   = GetSwapStateDebugName(_swapState);
+   460|#endif
+   461|                    return;
+   462|                }
+   463|
+   464|                _currentTool.ToolTick(deltaTime);
+   465|
+   466|                IInputService inputService = _inputService;
+   467|                PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+   468|                    ? inputService.GetState()
+   469|                    : default;
+   470|
+   471|                if (inputState.HasAction(PlayerInputAction.PrimaryFire))
+   472|                {
+   473|                    _currentTool.UsePrimary(deltaTime);
+   474|                }
+   475|
+   476|                if (inputState.HasAction(PlayerInputAction.SecondaryFire))
+   477|                {
+   478|                    _currentTool.UseSecondary(deltaTime);
+   479|                }
+   480|            }
+   481|
+   482|            PublishRuntimeContextState();
+   483|
+   484|#if UNITY_EDITOR
+   485|            _debugCurrentSlot = _currentSlotIndex;
+   486|            _debugStateName   = GetSwapStateDebugName(_swapState);
+   487|#endif
+   488|        }
+   489|
+   490|        /// <summary>
+   491|        /// Fixed-step grant retry. Render <see cref="Tick"/> still owns slot input and swap
+   492|        /// presentation; this lane only keeps <see cref="RetryRuntimeStartToolGrantIfPending"/>
+   493|        /// alive when the dispatcher is physics-heavy and IUpdatable rarely runs (batchmode V0).
+   494|        /// </summary>
+   495|        public void FixedTick(float fixedDeltaTime)
+   496|        {
+   497|            RetryRuntimeStartToolGrantIfPending();
+   498|        }
+   499|
+   500|
+   501|        // ══════════════════════════════════════════════════════════
+   502|        //  PUBLIC API
+   503|        // ══════════════════════════════════════════════════════════
+   504|
+   505|        public void LateFrameTick()
+   506|        {
+   507|            _flushingToolLifecyclePresentation = true;
+   508|            FlushPendingCurrentToolDespawn();
+   509|            FlushPendingSwapExecution();
+   510|            FlushPendingToolSpawnExecution();
+
+--- lines 940-970 ---
+   940|            toolPrefabs[slotIndex] = prefab;
+   941|            CacheAssignedToolPrefabComponentCold(slotIndex);
+   942|            EnsurePoolWarmup(prefab, toolPoolWarmupCount);
+   943|            PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
+   944|
+   945|            if (!holsterIfCurrentInvalid || slotIndex != _currentSlotIndex)
+   946|                return true;
+   947|
+   948|            if (prefab == null || !HasToolInInventory(prefab))
+   949|                Holster();
+   950|
+   951|            return true;
+   952|        }
+   953|
+   954|        public bool IsToolAvailableInSlot(int slotIndex)
+   955|        {
+   956|            if (slotIndex < 0 || slotIndex >= SlotCount)
+   957|                return false;
+   958|
+   959|            GameObject prefab = toolPrefabs[slotIndex];
+   960|            return prefab != null && HasToolInInventory(prefab);
+   961|        }
+   962|
+   963|        internal bool TryResolveInteriorCarrierBody(out Rigidbody carrierBody)
+   964|        {
+   965|            carrierBody = _currentInteriorCarrierBody;
+   966|            return _isInsideModuleInterior && carrierBody != null;
+   967|        }
+   968|
+   969|        private void RefreshToolPrefabComponentCachesCold()
+   970|        {
+
+--- lines 1270-1560 ---
+  1270|        }
+  1271|
+  1272|        private void WarmRuntimePoolsIfNeeded()
+  1273|        {
+  1274|            WarmAssignedToolPoolsIfNeeded();
+  1275|        }
+  1276|
+  1277|        /// <summary>
+  1278|        /// Grants the authored quick-slot tool items once so the production starter loadout actually exists
+  1279|        /// in the inventory. Slot availability IS ownership: <see cref="IsToolAvailableInSlot"/> resolves
+  1280|        /// through <see cref="HasToolInInventory"/>, so an assigned prefab on its own never makes a slot
+  1281|        /// selectable. The completion latch is therefore only consumed when the grant genuinely finished -
+  1282|        /// every examined slot is owned, permanently unresolvable, or the budget was spent. A refusal from
+  1283|        /// the inventory (buffers not allocated yet on this activation, grid full) leaves the latch clear so
+  1284|        /// the next activation or player-context rebind retries, instead of reporting a completed grant that
+  1285|        /// added nothing and leaving all four slots unavailable for the rest of the session.
+  1286|        ///
+  1287|        /// WHY THE OLD "leaves the latch clear so the next activation retries" WAS NOT A RETRY. Before this
+  1288|        /// change there were exactly two callers - <c>OnEnable</c> and
+  1289|        /// <see cref="RebindRuntimeContextFromPlayerService"/> - and on the headless route (boot reaching
+  1290|        /// activationStep='Complete') <c>OnEnable</c> is hit twice: once inside <c>HectonPlayerSpawner</c>'s
+  1291|        /// cold <c>Instantiate</c> of Player.prefab, once from <c>GameBootstrapper.ActivatePlayer</c>'s
+  1292|        /// <c>SetActive(true)</c>. The player-context path cannot add a third: <c>ActivatePlayer</c> calls
+  1293|        /// <c>PublishPlayerRuntimeReference()</c> one line BEFORE <c>SetActive(true)</c>, and at that moment
+  1294|        /// this manager sits on a deactivated object and has already dropped its hot-swap listener in
+  1295|        /// <c>OnDisable</c>, so the Player-slot notification that drives the rebind retry never reaches it -
+  1296|        /// and nothing publishes that slot again afterwards. So the grant got exactly two shots, BOTH at the
+  1297|        /// same point of this object's own lifecycle, and then never ran again for the rest of the session.
+  1298|        /// That is the whole reason the Tool row stayed blocked with <c>STARTERGRANT deferred</c> logged
+  1299|        /// exactly twice: not two retries of a converging condition, but the total number of attempts the
+  1300|        /// design allowed.
+  1301|        ///
+  1302|        /// The real retry now lives on <see cref="RetryRuntimeStartToolGrantIfPending"/>, driven from
+  1303|        /// <see cref="Tick"/> - the one lane that keeps running after boot - and it is gated on
+  1304|        /// <c>PlayerInventory.CanServiceItemAdds()</c> so it costs a handful of field reads per frame while
+  1305|        /// the grant is open and nothing at all once it closes.
+  1306|        /// </summary>
+  1307|        private void TryGrantAssignedToolItemsOnRuntimeStart()
+  1308|        {
+  1309|            if (!Application.isPlaying ||
+  1310|                _runtimeStartToolGrantCompleted ||
+  1311|                !grantAssignedToolItemsOnRuntimeStart)
+  1312|            {
+  1313|                return;
+  1314|            }
+  1315|
+  1316|            if (playerInventory == null || toolPrefabs == null)
+  1317|                return;
+  1318|
+  1319|            int grantBudget = math.min(math.max(runtimeStartToolGrantBudget, 0), toolPrefabs.Length);
+  1320|            if (grantBudget <= 0)
+  1321|            {
+  1322|                _runtimeStartToolGrantCompleted = true;
+  1323|                return;
+  1324|            }
+  1325|
+  1326|            int granted = 0;
+  1327|            int refused = 0;
+  1328|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+  1329|            int firstRefusedSlot = -1;
+  1330|            int firstRefusedItemHash = 0;
+  1331|            uint firstRefusalMask = 0u;
+  1332|#endif
+  1333|            _suppressInventoryChangedHandling = true;
+  1334|            try
+  1335|            {
+  1336|                for (int i = 0; i < toolPrefabs.Length && granted < grantBudget; i++)
+  1337|                {
+  1338|                    GameObject prefab = toolPrefabs[i];
+  1339|                    if (prefab == null || !TryGetCachedToolForPrefab(prefab, out PlayerTool tool))
+  1340|                        continue;
+  1341|
+  1342|                    ItemData item = tool.ToolData;
+  1343|                    int itemHash = ItemData.ResolvePersistentHashId(item);
+  1344|                    if (itemHash == 0 || playerInventory.CountAvailableTotal(itemHash) > 0)
+  1345|                        continue;
+  1346|
+  1347|                    if (playerInventory.TryAddItem(itemHash, 1))
+  1348|                    {
+  1349|                        granted++;
+  1350|                        continue;
+  1351|                    }
+  1352|
+  1353|                    // The refusal reason has to be captured HERE, at the refusal, or it is unrecoverable: the
+  1354|                    // warning below used to say only "refused at least one", which is the same text whether the
+  1355|                    // inventory will accept the item on the next activation or can never accept anything again
+  1356|                    // for the rest of the session. Both halves of this row read the same state -
+  1357|                    // IsToolAvailableInSlot resolves through HasToolInInventory -> CountAvailableTotal, which
+  1358|                    // returns 0 unconditionally when PlayerInventory's stack lane is not live - so one dead lane
+  1359|                    // presents as "the grant was refused" AND "no tool is available in any slot" at once, and
+  1360|                    // without the mask the two are impossible to tell apart from a deferred authoring gap.
+  1361|                    //
+  1362|                    // DescribeAddRefusalMask runs the full physical-capacity fold and its own doc comment
+  1363|                    // bans it from tick cadence - and this method IS now reachable from Tick through
+  1364|                    // RetryRuntimeStartToolGrantIfPending. The deferral latch is therefore part of the gate,
+  1365|                    // not just of the logging: the mask is folded once, on the first refusal of the session,
+  1366|                    // and every retry after that pays only the TryAddItem it was going to pay anyway.
+  1367|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+  1368|                    if (refused == 0 && !_runtimeStartToolGrantDeferralAnnounced)
+  1369|                    {
+  1370|                        firstRefusedSlot = i;
+  1371|                        firstRefusedItemHash = itemHash;
+  1372|                        firstRefusalMask = playerInventory.DescribeAddRefusalMask(itemHash);
+  1373|                    }
+  1374|#endif
+  1375|
+  1376|                    refused++;
+  1377|                }
+  1378|            }
+  1379|            finally
+  1380|            {
+  1381|                _suppressInventoryChangedHandling = false;
+  1382|                BaselineInventoryChangedSignalRevision();
+  1383|            }
+  1384|
+  1385|            _debugRuntimeStartToolGrants += granted;
+  1386|            _runtimeStartToolGrantCompleted = refused == 0;
+  1387|            if (refused > 0)
+  1388|                _runtimeStartToolGrantRefusedAtLeastOnce = true;
+  1389|
+  1390|            if (granted > 0)
+  1391|                PublishToolLoadoutChanged(ToolLoadoutChangedSignal.ReasonAssignmentsChanged);
+  1392|
+  1393|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+  1394|            if (refused > 0)
+  1395|            {
+  1396|                // ONCE, not once per attempt. RetryRuntimeStartToolGrantIfPending now calls this method from
+  1397|                // the tick lane, so an unlatched warning here would print hundreds of identical lines and
+  1398|                // bury the give-up diagnosis. The retry budget's expiry is what reports the final verdict.
+  1399|                if (_runtimeStartToolGrantDeferralAnnounced)
+  1400|                    return;
+  1401|
+  1402|                _runtimeStartToolGrantDeferralAnnounced = true;
+  1403|                _lastRuntimeStartToolGrantRefusalMask = firstRefusalMask;
+  1404|                _lastRuntimeStartToolGrantRefusedSlot = firstRefusedSlot;
+  1405|                _lastRuntimeStartToolGrantRefusedItemHash = firstRefusedItemHash;
+  1406|                Hecton8.Core.H8Debug.LogWarning(
+  1407|                    "[PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one " +
+  1408|                    "assigned quick-slot tool item. The grant is now retried from the tick lane until the " +
+  1409|                    "inventory can accept, so this line is printed once. " +
+  1410|                    "refused=" + refused.ToString() +
+  1411|                    " granted=" + granted.ToString() +
+  1412|                    " firstSlot=" + firstRefusedSlot.ToString() +
+  1413|                    " firstItemHash=" + firstRefusedItemHash.ToString() +
+  1414|                    " refusalMask=0x" + firstRefusalMask.ToString("X") +
+  1415|                    " (bit0 componentDisabled, bit1 gridMissing, bit2 stackLaneDead, bit3 simStackLaneDead, " +
+  1416|                    "bit4 simOccupancyLaneDead, bit5 catalogMissing, bit6 hashZero, bit7 descriptorMissing, " +
+  1417|                    "bit8 physicalCapacity, bit9 gridPlacement).");
+  1418|            }
+  1419|            else if (granted > 0)
+  1420|            {
+  1421|                Hecton8.Core.H8Debug.Log(
+  1422|                    "[PlayerToolManager] STARTERGRANT applied - the assigned quick-slot tool items are owned." +
+  1423|                    " retryAttempts=" + _runtimeStartToolGrantRetryAttempts.ToString());
+  1424|            }
+  1425|            else
+  1426|            {
+  1427|                Hecton8.Core.H8Debug.Log(
+  1428|                    "[PlayerToolManager] STARTERGRANT satisfied - every assigned quick-slot tool item was " +
+  1429|                    "already owned.");
+  1430|            }
+  1431|#endif
+  1432|        }
+  1433|
+  1434|        /// <summary>
+  1435|        /// Retries the starter grant on the ONE lane that keeps running after boot.
+  1436|        ///
+  1437|        /// The grant's original two attempts both sat inside <c>OnEnable</c>, which on the headless route
+  1438|        /// runs at the same point of this object's lifecycle twice and never again - see
+  1439|        /// <see cref="TryGrantAssignedToolItemsOnRuntimeStart"/>. So any inventory condition that was not
+  1440|        /// already satisfied at <c>Instantiate</c> time could never be picked up, and the four quick slots
+  1441|        /// stayed unavailable for the whole session even after the inventory became usable. This closes that:
+  1442|        /// the grant keeps its own budget and converges the moment
+  1443|        /// <c>PlayerInventory.CanServiceItemAdds()</c> reports the add lane live.
+  1444|        ///
+  1445|        /// HOT-PATH COST. Once <c>_runtimeStartToolGrantCompleted</c> latches, this is a single bool read.
+  1446|        /// While the grant is open it is a handful of field reads plus three vault-lane resolves - no
+  1447|        /// allocation, no cell fold. The heavy repair (<c>TryRecoverRuntimeStorageCold</c>, ~54 lane binds)
+  1448|        /// is strided, never per frame, because it is only reachable when storage is dead and a dead
+  1449|        /// inventory does not become live by being asked more often.
+  1450|        /// </summary>
+  1451|        private void RetryRuntimeStartToolGrantIfPending()
+  1452|        {
+  1453|            if (_runtimeStartToolGrantCompleted ||
+  1454|                !grantAssignedToolItemsOnRuntimeStart ||
+  1455|                playerInventory == null)
+  1456|            {
+  1457|                return;
+  1458|            }
+  1459|
+  1460|            if (_runtimeStartToolGrantRetryAttempts >= RuntimeStartToolGrantMaxRetryAttempts)
+  1461|            {
+  1462|                AnnounceRuntimeStartToolGrantGiveUpOnce();
+  1463|                return;
+  1464|            }
+  1465|
+  1466|            _runtimeStartToolGrantRetryAttempts++;
+  1467|
+  1468|            // THE EAGER WINDOW IS NOT AN OPTIMISATION, IT IS THE ONLY WINDOW THAT EXISTS ON THE HEADLESS
+  1469|            // ROUTE. H8_HeadlessWorldDriver's ToolEquip phase has a tick FLOOR of 3
+  1470|            // (H8_HeadlessWorldDriver.cs:276 MinTicksToolEquip) and its 6 s wall ceiling never fires
+  1471|            // beneath that floor, while a pumped batch-mode frame has been measured at ~132 s - so the whole
+  1472|            // run reads IsToolAvailableInSlot after roughly a dozen dispatcher ticks, not a dozen seconds. A
+  1473|            // stride-only retry (every 60th tick) would therefore never fire once before the Tool row
+  1474|            // latched Blocked, and this fix would be inert exactly where it is needed. So the first
+  1475|            // attempts run on consecutive ticks, and the strides only take over afterwards for a long
+  1476|            // interactive session.
+  1477|            bool eager = _runtimeStartToolGrantRetryAttempts <= RuntimeStartToolGrantEagerAttempts;
+  1478|
+  1479|            if (!playerInventory.CanServiceItemAdds())
+  1480|            {
+  1481|                if (!eager && (_runtimeStartToolGrantRetryAttempts % RuntimeStartToolGrantRecoveryStride) != 0)
+  1482|                    return;
+  1483|
+  1484|                // PlayerInventory cannot repair itself: a failed bind in its Awake sets enabled = false,
+  1485|                // which means its OnEnable never ran, which means its hot-swap listener was never
+  1486|                // registered, so no DataVault notification can ever reach it. Recovery has to be driven by
+  1487|                // the consumer that noticed the refusal.
+  1488|                if (!playerInventory.TryRecoverRuntimeStorageCold())
+  1489|                    return;
+  1490|            }
+  1491|            else if (!eager &&
+  1492|                     _runtimeStartToolGrantRefusedAtLeastOnce &&
+  1493|                     (_runtimeStartToolGrantRetryAttempts % RuntimeStartToolGrantRefusalStride) != 0)
+  1494|            {
+  1495|                // Storage is live and the inventory still refused, so the block is about this item or this
+  1496|                // grid (mask bits 6-9), not about readiness. Re-asking every frame cannot change that, but a
+  1497|                // freed cell or a released weight budget can, so keep asking on a stride rather than never.
+  1498|                return;
+  1499|            }
+  1500|
+  1501|            TryGrantAssignedToolItemsOnRuntimeStart();
+  1502|        }
+  1503|
+  1504|        /// <summary>
+  1505|        /// Reports, once, that the starter grant exhausted its retry budget, and names the refusal that
+  1506|        /// blocked it. A precise negative beats a silent empty tool bar.
+  1507|        ///
+  1508|        /// The mask is re-folded HERE rather than reused from the first deferral. The first refusal of a
+  1509|        /// session happens inside <c>OnEnable</c> during <c>Instantiate</c>, where "not ready yet" and
+  1510|        /// "never going to be ready" look identical; the mask that matters is the one still true after the
+  1511|        /// retries gave up. <c>DescribeAddRefusalMask</c> runs a full capacity fold and is banned from tick
+  1512|        /// cadence - the give-up latch is what makes this call legal, so it must stay above the fold.
+  1513|        /// </summary>
+  1514|        private void AnnounceRuntimeStartToolGrantGiveUpOnce()
+  1515|        {
+  1516|            if (_runtimeStartToolGrantGiveUpAnnounced)
+  1517|                return;
+  1518|
+  1519|            _runtimeStartToolGrantGiveUpAnnounced = true;
+  1520|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+  1521|            int probedSlot = -1;
+  1522|            int probedItemHash = 0;
+  1523|            uint probedMask = 0u;
+  1524|            if (playerInventory != null && toolPrefabs != null)
+  1525|            {
+  1526|                for (int i = 0; i < toolPrefabs.Length; i++)
+  1527|                {
+  1528|                    GameObject prefab = toolPrefabs[i];
+  1529|                    if (prefab == null || !TryGetCachedToolForPrefab(prefab, out PlayerTool tool))
+  1530|                        continue;
+  1531|
+  1532|                    int itemHash = ItemData.ResolvePersistentHashId(tool.ToolData);
+  1533|                    if (itemHash == 0)
+  1534|                        continue;
+  1535|
+  1536|                    probedSlot = i;
+  1537|                    probedItemHash = itemHash;
+  1538|                    probedMask = playerInventory.DescribeAddRefusalMask(itemHash);
+  1539|                    break;
+  1540|                }
+  1541|            }
+  1542|
+  1543|            Hecton8.Core.H8Debug.LogError(
+  1544|                "[PlayerToolManager] STARTERGRANT ABANDONED - the player inventory refused every assigned " +
+  1545|                "quick-slot tool item for " + RuntimeStartToolGrantMaxRetryAttempts.ToString() +
+  1546|                " dispatcher ticks, so IsToolAvailableInSlot stays false for every slot and the player has " +
+  1547|                "no tools. currentSlot=" + probedSlot.ToString() +
+  1548|                " currentItemHash=" + probedItemHash.ToString() +
+  1549|                " currentRefusalMask=0x" + probedMask.ToString("X") +
+  1550|                " firstRefusedSlot=" + _lastRuntimeStartToolGrantRefusedSlot.ToString() +
+  1551|                " firstRefusalMask=0x" + _lastRuntimeStartToolGrantRefusalMask.ToString("X") +
+  1552|                " inventoryCanServiceAdds=" + (playerInventory != null && playerInventory.CanServiceItemAdds()
+  1553|                    ? "yes"
+  1554|                    : "no") +
+  1555|                " assignedSlotsWithNoToolComponentOrItemData=" + (probedSlot < 0 ? "ALL" : "none") +
+  1556|                ". Bits 0-5 point at PlayerInventory storage - look for the [PlayerInventory] STORAGE " +
+  1557|                "UNAVAILABLE error naming the failing step. Bits 6-7 point at the tool prefab's ItemData or " +
+  1558|                "its ItemCatalog entry. Bits 8-9 mean the grid genuinely refused the footprint. A mask of 0 " +
+  1559|                "with a refusal means TryAddItem's placement disagrees with its own preflight.");
+  1560|#endif
+
+===== C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs =====
+--- lines 1540-1720 ---
+  1540|            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.ShadowPayloadLength), 44, ref failures);
+  1541|            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.RadiationSv), 48, ref failures);
+  1542|            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.Columns), 52, ref failures);
+  1543|            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.Rows), 56, ref failures);
+  1544|            ValidateOffset<InventoryTelemetryEntry>(nameof(InventoryTelemetryEntry.DefragTimeMicroseconds), 60, ref failures);
+  1545|
+  1546|            ValidateLayoutSize<SalinityCorrosionTelemetryEntry>(SalinityCorrosionBlackBoxEntrySizeBytes, ref failures);
+  1547|            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.Frame), 0, ref failures);
+  1548|            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.InventoryVersion), 4, ref failures);
+  1549|            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.AverageEquipmentDurability01), 8, ref failures);
+  1550|            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.RustScalar01), 12, ref failures);
+  1551|            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.SalinityFactor), 16, ref failures);
+  1552|            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.CurrentBiomeHash), 20, ref failures);
+  1553|            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.InventoryMaskLow), 24, ref failures);
+  1554|            ValidateOffset<SalinityCorrosionTelemetryEntry>(nameof(SalinityCorrosionTelemetryEntry.Flags), 28, ref failures);
+  1555|
+  1556|            ValidateLayoutSize<VaultGenerationHandle<uint>>(16, ref failures);
+  1557|
+  1558|            _inventoryLayoutVerdictPassed = failures == 0u;
+  1559|            if (_inventoryLayoutVerdictPassed)
+  1560|            {
+  1561|                // A PASSING guard used to emit absolutely nothing, and that silence is the whole reason this
+  1562|                // branch became the standing suspect for every empty-inventory symptom in the project: an
+  1563|                // unrun guard and a satisfied guard produced byte-identical logs, so "the DTO layout drifted"
+  1564|                // could never be disconfirmed from a run - only re-argued. One line per domain reload retires
+  1565|                // that question permanently and points the next investigation at the bind, not at the layout.
+  1566|                Debug.Log(
+  1567|                    "[PlayerInventory] DTO layout sovereignty PASSED: InventoryTelemetryEntry " +
+  1568|                    InventoryBlackBoxEntrySizeBytes + "B, SalinityCorrosionTelemetryEntry " +
+  1569|                    SalinityCorrosionBlackBoxEntrySizeBytes + "B, VaultGenerationHandle<uint> 16B, all 24 " +
+  1570|                    "asserted field offsets in place. Awake did NOT bail here, so an empty inventory this " +
+  1571|                    "session has a different cause - look at the GlobalDataVault lane bind " +
+  1572|                    "(STORAGE UNAVAILABLE above) instead.");
+  1573|            }
+  1574|
+  1575|            return _inventoryLayoutVerdictPassed;
+  1576|        }
+  1577|
+  1578|        private static void ValidateLayoutSize<T>(int expectedSize, ref uint failures) where T : struct
+  1579|        {
+  1580|            int size = UnsafeUtility.SizeOf<T>();
+  1581|            if (size == expectedSize && (size & 7) == 0)
+  1582|                return;
+  1583|
+  1584|            failures |= 1u;
+  1585|            // Editor-only guard path; naming the type and both numbers is the whole point of the check.
+  1586|            // Previously this set a bit and said nothing, so a layout drift silently disabled the entire
+  1587|            // player inventory with no way to tell which struct moved.
+  1588|            Debug.LogError(
+  1589|                "[PlayerInventory] DTO layout size mismatch: " + typeof(T).Name +
+  1590|                " is " + size + " bytes, expected " + expectedSize +
+  1591|                ((size & 7) != 0 ? " (and is not 8-byte aligned)" : string.Empty) +
+  1592|                ". ARM64/Burst/persistence/GPU boundaries require the authored layout; fix the struct or the "
+  1593|                + "expected constant, do not relax the guard.");
+  1594|        }
+  1595|
+  1596|        private static void ValidateOffset<T>(string fieldName, int expectedOffset, ref uint failures) where T : struct
+  1597|        {
+  1598|            int offset = (int)Marshal.OffsetOf<T>(fieldName);
+  1599|            if (offset == expectedOffset)
+  1600|                return;
+  1601|
+  1602|            failures |= 2u;
+  1603|            Debug.LogError(
+  1604|                "[PlayerInventory] DTO field offset mismatch: " + typeof(T).Name + "." + fieldName +
+  1605|                " is at " + offset + ", expected " + expectedOffset +
+  1606|                ". A field was reordered, resized, or lost its explicit padding.");
+  1607|        }
+  1608|#endif
+  1609|
+  1610|        public float TotalWeight { get; private set; }
+  1611|        public float TotalMassKg => _currentWeightKg;
+  1612|        public ref readonly float CurrentWeightKg => ref _currentWeightKg;
+  1613|        public float TotalVolumeM3 { get; private set; }
+  1614|        public float CurrentVolumeLiters => _currentVolumeLiters;
+  1615|        public float MaxWeightKg => math.max(0f, maxWeightKg);
+  1616|        public float MaxVolumeLiters => math.max(0f, maxVolumeLiters);
+  1617|        public float TotalRadiationSv { get; private set; }
+  1618|        public float AverageEquipmentDurability01 => _averageEquipmentDurability01;
+  1619|        public float CachedInventoryLoad01 { get; private set; }
+  1620|        public float CachedMaxSwimSpeedMultiplier { get; private set; } = 1f;
+  1621|        public ulong CurrentInventoryMask { get; private set; }
+  1622|        public bool HasPressurizedContainerProtection => _pressurizedContainerProtectionCount > 0;
+  1623|        public int DroppedInventoryCommandSignalCount => _droppedInventoryCommandSignalCount;
+  1624|        public InventoryGrid Grid => _grid;
+  1625|        public ItemCatalog ItemCatalog => itemCatalog;
+  1626|        public int InventoryVersion { get; private set; }
+  1627|
+  1628|        public int SavePriority => 20;
+  1629|        public int LoadPriority => 20;
+  1630|
+  1631|        /// <summary>
+  1632|        /// Registers one active pressurized storage protector for this inventory.
+  1633|        /// </summary>
+  1634|        public void AddPressurizedContainerProtection()
+  1635|        {
+  1636|            if (_pressurizedContainerProtectionCount < int.MaxValue)
+  1637|                _pressurizedContainerProtectionCount++;
+  1638|        }
+  1639|
+  1640|        /// <summary>
+  1641|        /// Removes one active pressurized storage protector from this inventory.
+  1642|        /// </summary>
+  1643|        public void RemovePressurizedContainerProtection()
+  1644|        {
+  1645|            if (_pressurizedContainerProtectionCount > 0)
+  1646|                _pressurizedContainerProtectionCount--;
+  1647|        }
+  1648|
+  1649|        internal static bool IsFaunaBaitItem(ItemData itemData)
+  1650|        {
+  1651|            if (itemData == null)
+  1652|                return false;
+  1653|
+  1654|            return itemData.category == ItemCategory.Organic ||
+  1655|                   itemData.resourceFamily == ResourceFamily.Organic ||
+  1656|                   itemData.isConsumable;
+  1657|        }
+  1658|
+  1659|        private void Awake()
+  1660|        {
+  1661|#if UNITY_EDITOR
+  1662|            if (!ValidateInventoryMemorySovereigntyLayouts1317())
+  1663|            {
+  1664|                // Fail-closed is correct here - running with a drifted DTO layout would corrupt vault
+  1665|                // buffers. Failing SILENTLY was not: this returned before _grid was built and before
+  1666|                // BindPlayerInventoryVaultBuffers ran, so the inventory was dead with nothing logged, and
+  1667|                // every downstream consumer just saw an empty inventory.
+  1668|                //
+  1669|                // THIS BRANCH IS NOT WHAT EMPTIED THE TOOL SLOTS. The earlier attribution of the four empty
+  1670|                // slots to this guard was a hypothesis that had never been executed, and it is now
+  1671|                // disconfirmed: all three asserted layouts were reproduced field-for-field outside Unity and
+  1672|                // every one of the 27 assertions passes. Both telemetry entries are LayoutKind.Explicit with
+  1673|                // hardcoded [FieldOffset] values IDENTICAL to the numbers the validator expects, and
+  1674|                // VaultGenerationHandle<uint> is four uints under Size = 16 - measured 16 via the same
+  1675|                // 'sizeof' opcode UnsafeUtility.SizeOf<T>() lowers to. An explicit-layout struct cannot drift
+  1676|                // away from an expectation that is spelled with the same literals, so this guard cannot fail
+  1677|                // as written and Awake reaches the grid construction below. The surviving suspect for an
+  1678|                // empty inventory is the vault lane bind - see TryBindRuntimeStorageCold and its
+  1679|                // STORAGE UNAVAILABLE line, which names _cachedDataVault when the GlobalDataVault service is
+  1680|                // not registered yet at Awake time.
+  1681|                enabled = false;
+  1682|                Debug.LogError(
+  1683|                    "[PlayerInventory] DISABLED at Awake: DTO layout validation failed (see the layout " +
+  1684|                    "mismatch errors above). The inventory grid was never built and its vault lanes were " +
+  1685|                    "never bound, so item grants, tool availability and any consumer reading inventory " +
+  1686|                    "state will report empty for the rest of this session. Editor-only guard: a player " +
+  1687|                    "build does not take this path.");
+  1688|                return;
+  1689|            }
+  1690|#endif
+  1691|            _grid = new InventoryGrid(columns, rows);
+  1692|
+  1693|            // The lane bind and the cold scratch allocation live in TryBindRuntimeStorageCold so the SAME
+  1694|            // sequence can be re-run later. Both of the bailouts that used to sit inline here were silent
+  1695|            // `enabled = false; return;` - and because Awake disabling the component also means OnEnable
+  1696|            // never runs, the hot-swap listener was never registered either, so nothing could ever drive a
+  1697|            // retry. A vault refusal that was only ever momentary (raised compaction fence, arena or key
+  1698|            // table briefly exhausted) therefore became permanent for the session, with no log line naming
+  1699|            // it: every TryAddItem false and every CountAvailableTotal zero, which downstream reads as an
+  1700|            // empty inventory rather than a broken one. TryBindRuntimeStorageCold now names the failing step
+  1701|            // once, and TryRecoverRuntimeStorageCold lets the consumer that noticed re-arm it.
+  1702|            if (!TryBindRuntimeStorageCold())
+  1703|            {
+  1704|                enabled = false;
+  1705|                return;
+  1706|            }
+  1707|
+  1708|            if (_traumaDispatcher == null)
+  1709|                TryGetComponent(out _traumaDispatcher);
+  1710|        }
+  1711|
+  1712|        private void OnEnable()
+  1713|        {
+  1714|            CacheRegistryServicesCold();
+  1715|            TryRegisterHotSwapListener();
+  1716|            TryRegisterSaveParticipant();
+  1717|            TryRegisterPostSimulationDispatcher();
+  1718|            TryRegisterSlowTick();
+  1719|            TryRegisterLateFrameTick();
+  1720|            TryRegisterPhysicsImpactListener();
+
+--- lines 2370-2650 ---
+  2370|
+  2371|        // Refusal-reason bits for DescribeAddRefusalMask. Kept public because the only consumers are cold
+  2372|        // callers that must PRINT the reason: a bare false from TryAddItem cannot distinguish "this inventory
+  2373|        // can never store anything for the rest of the session" from "this one item does not fit right now",
+  2374|        // and every caller that defers on a refusal has to make that distinction to be debuggable.
+  2375|        public const uint AddRefusalComponentDisabled = 1u << 0;
+  2376|        public const uint AddRefusalGridMissing = 1u << 1;
+  2377|        public const uint AddRefusalStackLaneDead = 1u << 2;
+  2378|        public const uint AddRefusalSimStackLaneDead = 1u << 3;
+  2379|        public const uint AddRefusalSimOccupancyLaneDead = 1u << 4;
+  2380|        public const uint AddRefusalCatalogMissing = 1u << 5;
+  2381|        public const uint AddRefusalHashZero = 1u << 6;
+  2382|        public const uint AddRefusalDescriptorMissing = 1u << 7;
+  2383|        public const uint AddRefusalPhysicalCapacity = 1u << 8;
+  2384|        public const uint AddRefusalGridPlacement = 1u << 9;
+  2385|
+  2386|        /// <summary>
+  2387|        /// COLD DIAGNOSTIC ONLY. Names which <see cref="TryAddItem"/> precondition is refusing a single-unit
+  2388|        /// add; returns 0 when one unit would be accepted.
+  2389|        ///
+  2390|        /// Why this exists: <see cref="TryAddItem"/> is the strictest add overload in the class - it gates on
+  2391|        /// <c>CanAcceptQuantity</c> first, which additionally requires the two PREFLIGHT SCRATCH lanes
+  2392|        /// (<c>_scavengeSimStackCounts</c>, <c>_simulationOccupiedCells</c>) to be live, while
+  2393|        /// <c>TryAddItemWithState</c>/<c>TryAddItemWithGenetics</c> skip that gate entirely. Those lanes, and
+  2394|        /// <c>_stackCounts</c>, are vault-backed and bound exactly once in <c>Awake</c> via
+  2395|        /// <c>BindPlayerInventoryVaultBuffers</c>. If that bind fails, <c>Awake</c> sets <c>enabled = false</c>
+  2396|        /// and the loss is PERMANENT for the session: <c>Awake</c> never re-runs on
+  2397|        /// <c>SetActive(true)</c>, <c>OnEnable</c> never runs so the hot-swap listener is never registered, and
+  2398|        /// the <c>GlobalRegistryServiceSlot.DataVault</c> case only calls <c>RebindVault</c> - it never
+  2399|        /// re-allocates. A caller that reads a bare <c>false</c> as "retry later" then waits forever.
+  2400|        ///
+  2401|        /// The refusal is honest and must NOT be worked around by switching to a laxer overload: a dead
+  2402|        /// <c>_stackCounts</c> lane makes the indexer setter a silent no-op (see
+  2403|        /// <c>InventoryVaultLane{T}</c>), so a laxer add would place the item in the grid, report success, and
+  2404|        /// still leave <c>CountAvailableTotal</c> at zero - trading a visible refusal for an invisible lie.
+  2405|        ///
+  2406|        /// Runs the full physical-capacity fold; never call it from a tick, render, input or UI cadence.
+  2407|        /// </summary>
+  2408|        public uint DescribeAddRefusalMask(int itemHashId)
+  2409|        {
+  2410|            uint mask = 0u;
+  2411|            if (!enabled)
+  2412|                mask |= AddRefusalComponentDisabled;
+  2413|
+  2414|            if (_grid == null)
+  2415|                mask |= AddRefusalGridMissing;
+  2416|
+  2417|            if (!_stackCounts.IsCreated)
+  2418|                mask |= AddRefusalStackLaneDead;
+  2419|
+  2420|            if (!_scavengeSimStackCounts.IsCreated)
+  2421|                mask |= AddRefusalSimStackLaneDead;
+  2422|
+  2423|            if (!_simulationOccupiedCells.IsCreated)
+  2424|                mask |= AddRefusalSimOccupancyLaneDead;
+  2425|
+  2426|            if (itemCatalog == null)
+  2427|                mask |= AddRefusalCatalogMissing;
+  2428|
+  2429|            if (itemHashId == 0)
+  2430|                mask |= AddRefusalHashZero;
+  2431|            else if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
+  2432|                mask |= AddRefusalDescriptorMissing;
+  2433|            else if (!CanAcceptAdditionalPhysicalCapacity(in runtimeDescriptor, 1))
+  2434|                mask |= AddRefusalPhysicalCapacity;
+  2435|
+  2436|            // Everything named above passed, so the only remaining refusal inside CanAcceptQuantity is the
+  2437|            // simulated placement itself - the grid genuinely has no free footprint for this item.
+  2438|            if (mask == 0u && !CanAcceptQuantity(itemHashId, 1))
+  2439|                mask |= AddRefusalGridPlacement;
+  2440|
+  2441|            return mask;
+  2442|        }
+  2443|
+  2444|        /// <summary>
+  2445|        /// O(1) probe naming whether <see cref="TryAddItem"/> can do anything at all right now. These are
+  2446|        /// exactly the item-independent preconditions <c>CanAcceptQuantity</c> gates on before it touches a
+  2447|        /// single grid cell, plus the two that make a refusal indistinguishable from "the grid is full":
+  2448|        /// <c>enabled</c> (<see cref="AddRefusalComponentDisabled"/>) and <c>itemCatalog</c>
+  2449|        /// (<see cref="AddRefusalCatalogMissing"/>).
+  2450|        ///
+  2451|        /// Safe to call from a tick: no allocation and no fold over cells, unlike
+  2452|        /// <see cref="DescribeAddRefusalMask"/>. Note that <c>IsCreated</c> on a vault lane re-resolves
+  2453|        /// through the vault instead of reading a cached flag - that is the point. A raised
+  2454|        /// <c>GlobalDataVault</c> compaction fence makes <c>TryResolveHandle</c> refuse, which flips these
+  2455|        /// to false and later back to true with no callback firing anywhere, so the only honest way to know
+  2456|        /// is to ask at the moment of use.
+  2457|        /// </summary>
+  2458|        /// <remarks>
+  2459|        /// KNOWN RESIDUAL - do not "fix" this with a partial refresh. The three IsCreated checks below can
+  2460|        /// go false long after a successful bind, because ANY other system allocating a vault buffer splits
+  2461|        /// an arena free block and re-stamps meta.Version for every live buffer
+  2462|        /// (GlobalDataVault.RebuildMetadataBlockIndices), staling all 49 of this component's cached
+  2463|        /// descriptors at once. Refreshing only these three lanes here would make this method return true
+  2464|        /// while the other 46 stay stale, and a write through a stale lane silently no-ops
+  2465|        /// (InventoryVaultLane's indexer setter returns early when TryAcquireWriteLock refuses) - so
+  2466|        /// TryAddItem would write the hash and drop the stack count, which is worse than refusing.
+  2467|        /// Recovery must stay all-or-nothing: whoever notices the refusal calls
+  2468|        /// <see cref="TryRecoverRuntimeStorageCold"/>, which re-arms every lane together.
+  2469|        /// </remarks>
+  2470|        internal bool CanServiceItemAdds()
+  2471|        {
+  2472|            return enabled &&
+  2473|                   _grid != null &&
+  2474|                   itemCatalog != null &&
+  2475|                   _stackCounts.IsCreated &&
+  2476|                   _scavengeSimStackCounts.IsCreated &&
+  2477|                   _simulationOccupiedCells.IsCreated;
+  2478|        }
+  2479|
+  2480|        /// <summary>
+  2481|        /// COLD. Ensures inventory storage is live, re-arming the vault bind if it is not, and returns
+  2482|        /// whether <see cref="TryAddItem"/> can now do work. Cheap no-op when storage is already live, so a
+  2483|        /// caller may treat this as "ensure storage" rather than "repair storage". Never call it from a
+  2484|        /// per-frame path without a stride - it re-binds ~54 vault lanes.
+  2485|        ///
+  2486|        /// WHY THIS HAS TO BE DRIVEN FROM OUTSIDE. <c>Awake</c> binds these lanes exactly once and sets
+  2487|        /// <c>enabled = false</c> on any refusal. That also guarantees <c>OnEnable</c> never runs, so
+  2488|        /// <c>TryRegisterHotSwapListener</c> never runs, so the
+  2489|        /// <c>GlobalRegistryServiceSlot.DataVault</c> notification that would drive a rebind can never
+  2490|        /// reach this component - and the DataVault case only calls <c>RebindPlayerInventoryVaultReferences</c>
+  2491|        /// anyway, which re-points at a vault without re-allocating anything. So a bind refusal that was
+  2492|        /// only ever transient (raised compaction fence, key table or arena momentarily exhausted) became
+  2493|        /// permanent for the session: every <c>TryAddItem</c> false, every <c>CountAvailableTotal</c> zero.
+  2494|        /// Recovery therefore belongs to whoever noticed the refusal; <c>PlayerToolManager</c>'s starter
+  2495|        /// grant is the first consumer to do so.
+  2496|        ///
+  2497|        /// Re-enabling the component is deliberate, not a side effect: it is what finally registers the save
+  2498|        /// participant, the slow/late-frame ticks, the physics-impact listener and the hot-swap listener
+  2499|        /// that the failed <c>Awake</c> skipped.
+  2500|        ///
+  2501|        /// A DTO layout-sovereignty failure is NOT recoverable and is refused without retrying. It is
+  2502|        /// detectable here without a second latch: that branch is the only one that returns from
+  2503|        /// <c>Awake</c> before <c>_grid</c> is constructed.
+  2504|        /// </summary>
+  2505|        internal bool TryRecoverRuntimeStorageCold()
+  2506|        {
+  2507|            if (CanServiceItemAdds())
+  2508|                return true;
+  2509|
+  2510|            // _grid == null means Awake has not completed its grid construction. Do not build the grid here:
+  2511|            // InventoryGrid's constructor THROWS on allocation failure, and this method is reachable from a
+  2512|            // dispatcher tick, where an escaping throw would amputate the caller's whole lane.
+  2513|            //
+  2514|            // This used to be documented as "Awake bailed on the editor-only DTO layout guard", i.e. as a
+  2515|            // permanent unrecoverable state. It is not that in practice: the layout guard's assertions are
+  2516|            // satisfied by construction (see the note in Awake) and cannot fail, so the reachable meaning of
+  2517|            // _grid == null is that Awake has not RUN yet - a consumer polled this component before its
+  2518|            // Awake, which is ordinary on the AddComponent bootstrap route. Returning false is still correct,
+  2519|            // but the caller must treat it as "not ready yet" and keep its retry budget alive rather than
+  2520|            // reading it as the unrecoverable layout verdict and giving up.
+  2521|            if (_grid == null)
+  2522|                return false;
+  2523|
+  2524|            if (!TryBindRuntimeStorageCold())
+  2525|                return false;
+  2526|
+  2527|            if (!enabled)
+  2528|                enabled = true;
+  2529|
+  2530|            return CanServiceItemAdds();
+  2531|        }
+  2532|
+  2533|        /// <summary>
+  2534|        /// Binds every vault-backed lane and allocates the managed cold scratch this inventory needs.
+  2535|        /// Idempotent and re-entrant: the single owner of this sequence, called by <c>Awake</c> for the first
+  2536|        /// bind and by <see cref="TryRecoverRuntimeStorageCold"/> for every re-arm after that.
+  2537|        /// </summary>
+  2538|        private bool TryBindRuntimeStorageCold()
+  2539|        {
+  2540|            if (_grid == null)
+  2541|                return false;
+  2542|
+  2543|            CacheRegistryServicesCold();
+  2544|            int cellCount = columns * rows;
+  2545|            if (cellCount <= 0)
+  2546|            {
+  2547|                AnnounceRuntimeStorageFailureOnce("grid sizing");
+  2548|                return false;
+  2549|            }
+  2550|
+  2551|            if (!BindPlayerInventoryVaultBuffers(cellCount))
+  2552|            {
+  2553|                AnnounceRuntimeStorageFailureOnce("GlobalDataVault lane binding");
+  2554|                return false;
+  2555|            }
+  2556|
+  2557|            if (!AllocateSalinityCorrosionScratchCold(cellCount))
+  2558|            {
+  2559|                ReleasePlayerInventoryVaultBuffers();
+  2560|                AnnounceRuntimeStorageFailureOnce(
+  2561|                    _salinityScratchFailureDetail == null
+  2562|                        ? "salinity-corrosion scratch validation"
+  2563|                        : "salinity-corrosion scratch validation [" + _salinityScratchFailureDetail + "]");
+  2564|                return false;
+  2565|            }
+  2566|
+  2567|            // DO NOT make this unconditional again. The lanes are bound with
+  2568|            // NativeArrayOptions.UninitializedMemory, so a FIRST bind must clear or the grid reads garbage
+  2569|            // item hashes and stack counts. But this method is also the re-arm path for
+  2570|            // TryRecoverRuntimeStorageCold, and a re-bind of buffers that already hold live data returns the
+  2571|            // SAME pointers untouched (GlobalDataVault hands back the existing block whenever
+  2572|            // existingMeta.Length >= requiredLength). Clearing on that path silently empties a populated
+  2573|            // inventory with no log line and no save event - the player's items just cease to exist. So the
+  2574|            // clear is skipped only when this component has itself already completed a bind-and-clear at this
+  2575|            // exact cell count and has not released the lanes since; a release, a first bind, or a grid resize
+  2576|            // all still clear.
+  2577|            if (!_vaultBuffersInitialized || _boundVaultCellCount != cellCount)
+  2578|            {
+  2579|                ClearPlayerInventoryVaultBuffersCold();
+  2580|                _vaultBuffersInitialized = true;
+  2581|                _boundVaultCellCount = cellCount;
+  2582|            }
+  2583|
+  2584|            RegisterNativeMemorySentinel();
+  2585|            if (_sortBuffer == null || _sortBuffer.Length != cellCount)
+  2586|                _sortBuffer = new ItemPlacement[cellCount];
+  2587|            // COLD ALLOC: ushort[cellCount] - bulk transfer merge-cap scratch - owner: PlayerInventory
+  2588|            if (_bulkCompactionMaxStackBuffer == null || _bulkCompactionMaxStackBuffer.Length != cellCount)
+  2589|                _bulkCompactionMaxStackBuffer = new ushort[cellCount];
+  2590|            // COLD ALLOC: ItemAcquiredSignal[ItemAcquiredSignal.ExpectedCapacity] - late-frame to slow-tick scavenging ingress - owner: PlayerInventory
+  2591|            if (_pendingScavengingItemSignals == null)
+  2592|                _pendingScavengingItemSignals = new ItemAcquiredSignal[PendingScavengingItemSignalCapacity];
+  2593|            // COLD ALLOC: PendingInventoryCommand[16] - late-frame to slow-tick command ingress - owner: PlayerInventory
+  2594|            if (_pendingInventoryCommands == null)
+  2595|                _pendingInventoryCommands = new PendingInventoryCommand[PendingInventoryCommandSignalCapacity];
+  2596|            InitializeSoaQueryEngine(cellCount);
+  2597|
+  2598|            // LAST STATEMENT ON PURPOSE - do not move this up and do not drop it as a duplicate of the sweep
+  2599|            // inside BindPlayerInventoryVaultBuffers. That earlier sweep exists so the fail-closed scratch
+  2600|            // guard and the clear above see live lanes; this one exists because InitializeSoaQueryEngine calls
+  2601|            // SoaInventoryQueryEngine.EnsureVaultBuffers, which allocates FURTHER vault buffers and therefore
+  2602|            // re-stales all 49 descriptors that the earlier sweep just repaired. Without this second sweep the
+  2603|            // scratch guard passes, this method returns true, and CanServiceItemAdds still reports false at the
+  2604|            // first add - storage that reports itself healthy and refuses every item, which is the exact
+  2605|            // failure mode this whole path is supposed to make impossible.
+  2606|            //
+  2607|            // Anything added below this line that touches the vault needs the sweep moved after it.
+  2608|            RefreshPlayerInventoryVaultHandlesCold();
+  2609|            return true;
+  2610|        }
+  2611|
+  2612|        private bool _runtimeStorageFailureAnnounced;
+  2613|
+  2614|        /// <summary>
+  2615|        /// Names the failing storage step ONCE per component. Cold: string building and Unity object context
+  2616|        /// are fine here, and the latch is what keeps a strided retry from turning this into log spam.
+  2617|        ///
+  2618|        /// <c>Awake</c> now has exactly ONE vault-bind bailout and it DOES route through here, because
+  2619|        /// <see cref="TryBindRuntimeStorageCold"/> announces before every one of its three false returns
+  2620|        /// (grid sizing, lane binding, scratch validation). So a bind failure is no longer invisible: this is
+  2621|        /// the line to look for when the starter-tool grant presents as four assigned prefabs, four valid
+  2622|        /// catalog entries and no inventory to grant into. Note the latch is per component and never reset,
+  2623|        /// so a lane bind that fails, is announced, and is later repaired by
+  2624|        /// <see cref="TryRecoverRuntimeStorageCold"/> leaves one stale error in the log with no paired
+  2625|        /// recovery line - read this as "storage was dead at least once", not as "storage is dead now".
+  2626|        /// </summary>
+  2627|        private void AnnounceRuntimeStorageFailureOnce(string failedStep)
+  2628|        {
+  2629|            if (_runtimeStorageFailureAnnounced)
+  2630|                return;
+  2631|
+  2632|            _runtimeStorageFailureAnnounced = true;
+  2633|            Hecton8.Core.H8Debug.LogError(
+  2634|                "[PlayerInventory] STORAGE UNAVAILABLE - " + failedStep + " failed, so this inventory " +
+  2635|                "cannot store or report ANY item: every TryAddItem returns false and every " +
+  2636|                "CountAvailableTotal returns 0 until it binds. object='" + name +
+  2637|                "' columns=" + columns.ToString() +
+  2638|                " rows=" + rows.ToString() +
+  2639|                " cells=" + (columns * rows).ToString() +
+  2640|                " dataVault=" + (_cachedDataVault != null ? "present" : "NULL") +
+  2641|                " itemCatalog=" + (itemCatalog != null ? itemCatalog.name : "NULL") +
+  2642|                " vaultBufferBase=" + _vaultBufferBase.ToString() +
+  2643|                " gridAllocated=" + (_grid != null ? "yes" : "no") + ".",
+  2644|                this);
+  2645|        }
+  2646|
+  2647|        /// <summary>
+  2648|        /// Preflights a mixed set of item quantities against one shared grid simulation without mutating live inventory.
+  2649|        /// </summary>
+  2650|        public bool CanAcceptItemQuantityBatch(ReadOnlySpan<int> itemHashIds, ReadOnlySpan<int> quantities, int count)
+
+===== C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs =====
+--- lines 1-80 ---
+     1|using Hecton8.Core;
+     2|using Unity.Mathematics;
+     3|using UnityEngine;
+     4|
+     5|namespace Hecton8.Gameplay
+     6|{
+     7|    /// <summary>
+     8|    /// Zero-allocation reader for frame-cached player input snapshots.
+     9|    /// </summary>
+    10|    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    11|    internal struct HectonPlayerInputHandler
+    12|    {
+    13|        public bool TryReadFrame(
+    14|            IInputService inputService,
+    15|            float jumpBufferSeconds,
+    16|            out HectonPlayerInputFrame frame,
+    17|            out bool jumpBuffered)
+    18|        {
+    19|            return TryReadFrame(
+    20|                inputService,
+    21|                jumpBufferSeconds,
+    22|                consumeBufferedJump: true,
+    23|                out frame,
+    24|                out jumpBuffered);
+    25|        }
+    26|
+    27|        public bool TryReadFrame(
+    28|            IInputService inputService,
+    29|            float jumpBufferSeconds,
+    30|            bool consumeBufferedJump,
+    31|            out HectonPlayerInputFrame frame,
+    32|            out bool jumpBuffered)
+    33|        {
+    34|            frame = default;
+    35|            jumpBuffered = false;
+    36|
+    37|            if (inputService == null || !inputService.IsPlayerInputEnabled)
+    38|                return false;
+    39|
+    40|            PlayerInputState state = inputService.GetState();
+    41|            Vector2 moveInput = state.MoveDelta;
+    42|            Vector2 lookInput = state.LookDelta;
+    43|            float verticalInput = state.VerticalDelta;
+    44|            if (!IsFinite(moveInput) || !IsFinite(lookInput) || !math.isfinite(verticalInput))
+    45|                return false;
+    46|
+    47|            frame = new HectonPlayerInputFrame(
+    48|                state,
+    49|                ClampUnitInput(moveInput),
+    50|                lookInput,
+    51|                math.clamp(verticalInput, -1f, 1f),
+    52|                state.HasAction(PlayerInputAction.Sprint));
+    53|            jumpBuffered = consumeBufferedJump && inputService.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferSeconds);
+    54|            return true;
+    55|        }
+    56|
+    57|        public static float ResolveVerticalInput(in PlayerInputState state)
+    58|        {
+    59|            return math.clamp(state.VerticalDelta, -1f, 1f);
+    60|        }
+    61|
+    62|        private static bool IsFinite(Vector2 value)
+    63|        {
+    64|            return math.isfinite(value.x) && math.isfinite(value.y);
+    65|        }
+    66|
+    67|        private static Vector2 ClampUnitInput(Vector2 value)
+    68|        {
+    69|            float lengthSq = (value.x * value.x) + (value.y * value.y);
+    70|            if (lengthSq <= 1f)
+    71|                return value;
+    72|
+    73|            float inverseLength = math.rsqrt(lengthSq);
+    74|            return new Vector2(value.x * inverseLength, value.y * inverseLength);
+    75|        }
+    76|    }
+    77|
+    78|    /// <summary>
+    79|    /// Value snapshot consumed by the locomotion orchestrator after input service reads.
+    80|    /// </summary>
+
+===== HectonPlayerInputHandler full (104 lines) =====
+    11|    internal struct HectonPlayerInputHandler
+    12|    {
+    13|        public bool TryReadFrame(
+    14|            IInputService inputService,
+    15|            float jumpBufferSeconds,
+    16|            out HectonPlayerInputFrame frame,
+    17|            out bool jumpBuffered)
+    18|        {
+    19|            return TryReadFrame(
+    20|                inputService,
+    21|                jumpBufferSeconds,
+    22|                consumeBufferedJump: true,
+    23|                out frame,
+    24|                out jumpBuffered);
+    25|        }
+    26|
+    27|        public bool TryReadFrame(
+    28|            IInputService inputService,
+    29|            float jumpBufferSeconds,
+    30|            bool consumeBufferedJump,
+    31|            out HectonPlayerInputFrame frame,
+    32|            out bool jumpBuffered)
+    33|        {
+    34|            frame = default;
+    35|            jumpBuffered = false;
+    36|
+    37|            if (inputService == null || !inputService.IsPlayerInputEnabled)
+    38|                return false;
+ ...
+    12|    {
+    13|        public bool TryReadFrame(
+    14|            IInputService inputService,
+    15|            float jumpBufferSeconds,
+    16|            out HectonPlayerInputFrame frame,
+    17|            out bool jumpBuffered)
+    18|        {
+    19|            return TryReadFrame(
+    20|                inputService,
+    21|                jumpBufferSeconds,
+    22|                consumeBufferedJump: true,
+    23|                out frame,
+    24|                out jumpBuffered);
+    25|        }
+    26|
+    27|        public bool TryReadFrame(
+    28|            IInputService inputService,
+    29|            float jumpBufferSeconds,
+    30|            bool consumeBufferedJump,
+    31|            out HectonPlayerInputFrame frame,
+    32|            out bool jumpBuffered)
+    33|        {
+    34|            frame = default;
+    35|            jumpBuffered = false;
+    36|
+    37|            if (inputService == null || !inputService.IsPlayerInputEnabled)
+    38|                return false;
+    39|
+ ...
+    17|            out bool jumpBuffered)
+    18|        {
+    19|            return TryReadFrame(
+    20|                inputService,
+    21|                jumpBufferSeconds,
+    22|                consumeBufferedJump: true,
+    23|                out frame,
+    24|                out jumpBuffered);
+    25|        }
+    26|
+    27|        public bool TryReadFrame(
+    28|            IInputService inputService,
+    29|            float jumpBufferSeconds,
+    30|            bool consumeBufferedJump,
+    31|            out HectonPlayerInputFrame frame,
+    32|            out bool jumpBuffered)
+    33|        {
+    34|            frame = default;
+    35|            jumpBuffered = false;
+    36|
+    37|            if (inputService == null || !inputService.IsPlayerInputEnabled)
+    38|                return false;
+    39|
+    40|            PlayerInputState state = inputService.GetState();
+    41|            Vector2 moveInput = state.MoveDelta;
+    42|            Vector2 lookInput = state.LookDelta;
+    43|            float verticalInput = state.VerticalDelta;
+    44|            if (!IsFinite(moveInput) || !IsFinite(lookInput) || !math.isfinite(verticalInput))
+ ...
+    25|        }
+    26|
+    27|        public bool TryReadFrame(
+    28|            IInputService inputService,
+    29|            float jumpBufferSeconds,
+    30|            bool consumeBufferedJump,
+    31|            out HectonPlayerInputFrame frame,
+    32|            out bool jumpBuffered)
+    33|        {
+    34|            frame = default;
+    35|            jumpBuffered = false;
+    36|
+    37|            if (inputService == null || !inputService.IsPlayerInputEnabled)
+    38|                return false;
+    39|
+    40|            PlayerInputState state = inputService.GetState();
+    41|            Vector2 moveInput = state.MoveDelta;
+    42|            Vector2 lookInput = state.LookDelta;
+    43|            float verticalInput = state.VerticalDelta;
+    44|            if (!IsFinite(moveInput) || !IsFinite(lookInput) || !math.isfinite(verticalInput))
+    45|                return false;
+    46|
+    47|            frame = new HectonPlayerInputFrame(
+    48|                state,
+    49|                ClampUnitInput(moveInput),
+    50|                lookInput,
+    51|                math.clamp(verticalInput, -1f, 1f),
+    52|                state.HasAction(PlayerInputAction.Sprint));
+ ...
+    26|
+    27|        public bool TryReadFrame(
+    28|            IInputService inputService,
+    29|            float jumpBufferSeconds,
+    30|            bool consumeBufferedJump,
+    31|            out HectonPlayerInputFrame frame,
+    32|            out bool jumpBuffered)
+    33|        {
+    34|            frame = default;
+    35|            jumpBuffered = false;
+    36|
+    37|            if (inputService == null || !inputService.IsPlayerInputEnabled)
+    38|                return false;
+    39|
+    40|            PlayerInputState state = inputService.GetState();
+    41|            Vector2 moveInput = state.MoveDelta;
+    42|            Vector2 lookInput = state.LookDelta;
+    43|            float verticalInput = state.VerticalDelta;
+    44|            if (!IsFinite(moveInput) || !IsFinite(lookInput) || !math.isfinite(verticalInput))
+    45|                return false;
+    46|
+    47|            frame = new HectonPlayerInputFrame(
+    48|                state,
+    49|                ClampUnitInput(moveInput),
+    50|                lookInput,
+    51|                math.clamp(verticalInput, -1f, 1f),
+    52|                state.HasAction(PlayerInputAction.Sprint));
+    53|            jumpBuffered = consumeBufferedJump && inputService.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferSeconds);
+ ...
+    38|                return false;
+    39|
+    40|            PlayerInputState state = inputService.GetState();
+    41|            Vector2 moveInput = state.MoveDelta;
+    42|            Vector2 lookInput = state.LookDelta;
+    43|            float verticalInput = state.VerticalDelta;
+    44|            if (!IsFinite(moveInput) || !IsFinite(lookInput) || !math.isfinite(verticalInput))
+    45|                return false;
+    46|
+    47|            frame = new HectonPlayerInputFrame(
+    48|                state,
+    49|                ClampUnitInput(moveInput),
+    50|                lookInput,
+    51|                math.clamp(verticalInput, -1f, 1f),
+    52|                state.HasAction(PlayerInputAction.Sprint));
+    53|            jumpBuffered = consumeBufferedJump && inputService.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferSeconds);
+    54|            return true;
+    55|        }
+    56|
+    57|        public static float ResolveVerticalInput(in PlayerInputState state)
+    58|        {
+    59|            return math.clamp(state.VerticalDelta, -1f, 1f);
+    60|        }
+    61|
+    62|        private static bool IsFinite(Vector2 value)
+    63|        {
+    64|            return math.isfinite(value.x) && math.isfinite(value.y);
+    65|        }
+ ...
+    39|
+    40|            PlayerInputState state = inputService.GetState();
+    41|            Vector2 moveInput = state.MoveDelta;
+    42|            Vector2 lookInput = state.LookDelta;
+    43|            float verticalInput = state.VerticalDelta;
+    44|            if (!IsFinite(moveInput) || !IsFinite(lookInput) || !math.isfinite(verticalInput))
+    45|                return false;
+    46|
+    47|            frame = new HectonPlayerInputFrame(
+    48|                state,
+    49|                ClampUnitInput(moveInput),
+    50|                lookInput,
+    51|                math.clamp(verticalInput, -1f, 1f),
+    52|                state.HasAction(PlayerInputAction.Sprint));
+    53|            jumpBuffered = consumeBufferedJump && inputService.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferSeconds);
+    54|            return true;
+    55|        }
+    56|
+    57|        public static float ResolveVerticalInput(in PlayerInputState state)
+    58|        {
+    59|            return math.clamp(state.VerticalDelta, -1f, 1f);
+    60|        }
+    61|
+    62|        private static bool IsFinite(Vector2 value)
+    63|        {
+    64|            return math.isfinite(value.x) && math.isfinite(value.y);
+    65|        }
+    66|
+ ...

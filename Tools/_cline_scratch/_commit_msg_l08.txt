@@ -1,0 +1,12 @@
+fix(gameplay): sample locomotion input + starter grant on FixedTick (L08)
+
+L08 measured movementIntent01max=0 and tool slots=0 despite publishOk>0.
+Root cause: ProcessPlayerInputFrame and RetryRuntimeStartToolGrantIfPending
+only ran on render IUpdatable.Tick; batchmode FixedTick path never consumed
+published input or retried vault-gated grants.
+
+- HectonPlayerMovement: SampleGameplayLocomotionInputForFixedStep at FixedTick
+- PlayerToolManager: IFixedTickable + FixedTick grant retry
+- Docs: V0_L08_MEASURED ledger (PASS/FAIL, gaps, L09 acceptance)
+
+No mocks. HeadlessSimulationRunner and agent scratch not included.

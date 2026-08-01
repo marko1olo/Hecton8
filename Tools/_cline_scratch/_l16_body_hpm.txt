@@ -1,0 +1,167 @@
+### HectonPlayerMovement.cs
+--- 5465-5520 ---
+ 5465: 
+ 5466:         /// <summary>
+ 5467:         /// L13: Product entry so gameplay bootstrap / headless route can re-assert Player fixed+update
+ 5468:         /// lane registration if OnEnable raced an empty Dispatcher. Does not mock input.
+ 5469:         /// </summary>
+ 5470:         public void EnsureDispatcherRegistration()
+ 5471:         {
+ 5472:             TryRegisterToDispatchers();
+ 5473:         }
+ 5474: 
+ 5475:         private void TryRegisterToDispatchers()
+ 5476:         {
+ 5477:             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+ 5478:                 return;
+ 5479: 
+ 5480:             // L15: sticky alone is insufficient. Soft-reset / dispatcher lane Clear can leave
+ 5481:             // GlobalRegistry containing HPM while the Player fixed lane does not (dual-register
+ 5482:             // desync). WorldDriver calls Ensure every settle/swim tick — do NOT Unregister+
+ 5483:             // Register thrash; instead verify actual lane membership and re-TryRegister when
+ 5484:             // sticky is false OR lane is missing. GR L15 heals desync when global Contains.
+ 5485:             // FixedTick on Player lane is the only path to hop2 (GetState) + movementIntent01.
+ 5486:             if (_registeredTick && !SystemDispatcher.GetLane(PriorityLayer.Player).Contains(this))
+ 5487:                 _registeredTick = false;
+ 5488:             if (!_registeredTick)
+ 5489:                 _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+ 5490: 
+ 5491:             if (_registeredFixedTick && !SystemDispatcher.GetFixedLane(PriorityLayer.Player).Contains(this))
+ 5492:                 _registeredFixedTick = false;
+ 5493:             if (!_registeredFixedTick)
+ 5494:                 _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+ 5495: 
+ 5496:             if (_registeredColdTick && !SystemDispatcher.GetColdLane(PriorityLayer.Player).Contains(this))
+ 5497:                 _registeredColdTick = false;
+ 5498:             if (!_registeredColdTick)
+ 5499:                 _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+ 5500: 
+ 5501:             TryRegisterLateFrameTickable();
+ 5502: 
+ 5503:             if (!_registeredPlayerMovementContracts)
+ 5504:             {
+ 5505:                 IPlayerMovementContracts currentContracts = GlobalRegistry.PlayerMovementContracts;
+ 5506:                 if (currentContracts == null)
+ 5507:                     GlobalRegistry.RegisterPlayerMovementContracts(this);
+ 5508: 
+ 5509:                 _registeredPlayerMovementContracts = ReferenceEquals(GlobalRegistry.PlayerMovementContracts, this);
+ 5510:             }
+ 5511: 
+ 5512:             if (!_registeredHotSwapListener)
+ 5513:                 _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+ 5514: 
+ 5515:         }
+ 5516: 
+ 5517:         private void UnregisterDispatcherTicks()
+ 5518:         {
+ 5519:             if (_registeredTick)
+ 5520:             {
+--- 8215-8280 ---
+ 8215:         /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+ 8216:         /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+ 8217:         /// mocking input or bypassing menu / vehicle / wipeout gates.
+ 8218:         ///
+ 8219:         /// Look / juice / cursor remain render-owned on Tick. Menu block zeros locomotion only -
+ 8220:         /// full HandleMenuBlockedInput stays on Tick so camera/cursor presentation is not driven
+ 8221:         /// from the physics step.
+ 8222:         /// </summary>
+ 8223:         private void SampleGameplayLocomotionInputForFixedStep()
+ 8224:         {
+ 8225:             ResolveInputManagerBinding();
+ 8226: 
+ 8227:             if (IsGameplayInputBlockedByMenu())
+ 8228:             {
+ 8229:                 _currentInputState = default;
+ 8230:                 _pendingLookInput = Vector2.zero;
+ 8231:                 _inputH = 0f;
+ 8232:                 _inputV = 0f;
+ 8233:                 _inputVertical = 0f;
+ 8234:                 _mouseXDelta = 0f;
+ 8235:                 SetSprintingState(false);
+ 8236:                 // L14: menu block zeros intent metric so CurrentMovementIntent01 tracks Sample,
+ 8237:                 // not a stale post-suit PrepareTransport write from a prior frame.
+ 8238:                 _lastPlayerKinematicsIntendedMovement = default;
+ 8239:                 return;
+ 8240:             }
+ 8241: 
+ 8242:             ProcessPlayerInputFrame();
+ 8243:             ProcessWipeoutInputOverride();
+ 8244:             // L14: publish raw locomotion intent at Sample (pre-suit). hop2/GetState already ran
+ 8245:             // inside ProcessPlayerInputFrame; CurrentMovementIntent01 must reflect this frame even
+ 8246:             // when suit==null early-outs before PrepareTransportAndFrameState.
+ 8247:             _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
+ 8248:         }
+ 8249: 
+ 8250:         private void ProcessLocomotionPresentationAndJuice(float deltaTime, SuitData suit)
+ 8251:         {
+ 8252:             ConsumeKinematicRepairTargetProbe();
+ 8253:             ScheduleKinematicRepairTargetProbe();
+ 8254:             UpdateRenderInterpolationState();
+ 8255:             _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
+ 8256:             _velocity = _feedbackVelocity;
+ 8257:             float currentSpeed = ApproximateVectorMagnitude(_velocity);
+ 8258:             float renderCameraYaw = CameraYaw;
+ 8259:             float yawDelta = DeltaAngleDegrees(_prevYawForMomentum, renderCameraYaw);
+ 8260:             UpdateVrComfortSignals(deltaTime, _velocity, yawDelta);
+ 8261: 
+ 8262:             if (_swimPresentationController != null)
+ 8263:             {
+ 8264:                 _swimPresentationController.SyncFromLocomotion(deltaTime, true);
+ 8265:                 _debugLastSwimPresentationDriveFrame = SystemDispatcher.CurrentFrameIndex;
+ 8266:             }
+ 8267: 
+ 8268:             BuildJuiceInput(deltaTime, suit);
+ 8269:             _juiceInput.speedDelta = currentSpeed - _prevSpeed;
+ 8270:             _juiceInput.yawDelta = yawDelta;
+ 8271:             _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+ 8272: 
+ 8273:             _prevSpeed = currentSpeed;
+ 8274:             _prevYawForMomentum = renderCameraYaw;
+ 8275: 
+ 8276:             if (_juiceOutput.stepEvent != 0)
+ 8277:             {
+ 8278:                 PublishPlayerFootstepSignal();
+ 8279:                 TryEmitSurfaceFootstepAudio();
+ 8280:                 EmitExosuitFootstepSeismicPing();
+--- 9935-9975 ---
+ 9935: 
+ 9936:             Vector3 statePosition = ResolvePlayerAupRuntimePosition();
+ 9937:             if (MathGuard.IsFinite(statePosition))
+ 9938:                 return HectonPlayerMotor.SafeVelocity(statePosition);
+ 9939: 
+ 9940:             return _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.position) : Vector3.zero;
+ 9941:         }
+ 9942: 
+ 9943:         public void FixedTick(float fixedDeltaTime)
+ 9944:         {
+ 9945:             // L13: Sample locomotion BEFORE suit/juice physics gates. hop2 (GetState) must not
+ 9946:             // depend on suit asset or juice processor being ready — L12 proved dispatcher already
+ 9947:             // holds non-zero MoveDelta while movementIntent01max stayed 0 because these early-outs
+ 9948:             // skipped SampleGameplayLocomotionInputForFixedStep for the whole Swim window.
+ 9949:             EnsureJuiceProcessor();
+ 9950:             SampleGameplayLocomotionInputForFixedStep();
+ 9951: 
+ 9952:             SuitData suit = currentSuitData;
+ 9953:             if (suit == null)
+ 9954:                 return;
+ 9955: 
+ 9956:             using (_fixedTickProfilerMarker.Auto())
+ 9957:             {
+ 9958: 
+ 9959:                 PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+ 9960: 
+ 9961:                 float previousWaterImmersionRatio = _waterImmersionRatio;
+ 9962:                 bool wasGroundedLastFixedTick = _isGrounded;
+ 9963: 
+ 9964:                 _rb.useGravity = false;
+ 9965: 
+ 9966:                 if (_isWalking)
+ 9967:                 {
+ 9968:                     _bodyYaw = _cameraYaw;
+ 9969:                     _bodyYawVelocity = 0f;
+ 9970:                 }
+ 9971:                 else
+ 9972:                 {
+ 9973:                     float bodyYawOmega = suit.bodyYawSpringOmega *
+ 9974:                         ResolveHeavyCarryBodyYawSpringMultiplier() *
+ 9975:                         ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
