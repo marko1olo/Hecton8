@@ -8567,6 +8567,16 @@ namespace Hecton8.Bootstrap
                 // and HeadlessSimulationRunner hit permanent null. Factory + call
                 // here after fluid decals so atmosphere sinks bind.
                 Hecton8.Atmosphere.GasDynamicsSolver.EnsureRuntimeInstance();
+
+                // AudioLogSystem is the sole GlobalRegistry.AudioLogs owner
+                // (discovered log mask, PDA archive, narrative unlock playback).
+                // GUID ca4d93977437b664fbbf3dcd8b694d38 has ZERO live scene/prefab hits.
+                // HectonLoreSystemsRoot only constructs via editor ContextMenu.
+                // No Ensure existed; OnEnable only registers when already present.
+                // NarrativeDiscovery, AudioLogPickup, PDADataLogTab, FirstHourDirector,
+                // ProceduralLoreDirector and NarrativeProgressionBridge hit permanent null.
+                // Factory + call here after GasDynamics so lore sinks bind.
+                Hecton8.Narrative.AudioLogSystem.EnsureRuntimeInstance();
             }
 
 
