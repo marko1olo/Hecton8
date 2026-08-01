@@ -112,6 +112,11 @@ namespace Hecton8.Animation.Locomotion
         private byte _lastPublishedClimbFlags;
         private bool _headStabilizationInitialized;
 
+        /// <summary>
+        /// Ensures a live ProceduralLadderClimbRuntime is registered for climb requests.
+        /// Player builds must construct here: GUID has zero scene/prefab hits and ClimbableLadder
+        /// routes exclusively through TryBeginClimb → EnsureRuntimeInstance.
+        /// </summary>
         internal static ProceduralLadderClimbRuntime EnsureRuntimeInstance()
         {
             ProceduralLadderClimbRuntime registered = GlobalRegistry.ProceduralLadderClimbRuntime;
@@ -124,12 +129,18 @@ namespace Hecton8.Animation.Locomotion
             if (!Application.isPlaying)
                 return null;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Player-build construction path (not editor/dev-only): zero authored scene/prefab hits.
             GameObject runtimeRoot = new GameObject("[ProceduralLadderClimbRuntime]"); // COLD ALLOC: GameObject[1] - scene-local animation locomotion runtime root - owner: ProceduralLadderClimbRuntime
             return runtimeRoot.AddComponent<ProceduralLadderClimbRuntime>();
-#else
-            return null;
-#endif
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void BootstrapRuntimeAfterSceneLoad()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            EnsureRuntimeInstance();
         }
 
         internal static bool TryBeginClimb(
