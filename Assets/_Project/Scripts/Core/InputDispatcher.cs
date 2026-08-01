@@ -3290,7 +3290,7 @@ namespace Hecton8.Core
                 return;
 
             INativeInputManagerRuntime native = GlobalRegistry.NativeInputRuntime;
-            if (native == null || ReferenceEquals(native, this as INativeInputManagerRuntime))
+            if (native == null || ReferenceEquals(native, this))
                 return;
 
             BindNativeInputManager(native);
