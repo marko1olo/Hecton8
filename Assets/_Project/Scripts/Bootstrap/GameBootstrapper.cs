@@ -8617,6 +8617,10 @@ namespace Hecton8.Bootstrap
                 // GUID ffc0ea3d61e66f842999d9cc00327913 has ZERO live scene/prefab hits;
                 // electrolysis / physiology consumers hit permanent null without this path.
                 Hecton8.Construction.FluidPipeGraphRuntime.EnsureRuntimeInstance();
+                // SargassumGlobalDragManager: sole SargassumDrag / ISargassumDragReadModel owner.
+                // GUID fcf340598bd22a94ab47ed42a25868ee has ZERO live scene/prefab hits;
+                // drag-field / scavenger consumers hit permanent null without this path.
+                Hecton8.World.SargassumGlobalDragManager.EnsureRuntimeInstance();
             }
 
 
