@@ -9,6 +9,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5270696664998326201}
+  - component: {fileID: 2847391056284937165}
+  - component: {fileID: 3918462057395848276}
+  - component: {fileID: 4729573168406759387}
   - component: {fileID: 8173154833957341306}
   m_Layer: 0
   m_Name: SmallPassiveProxy
@@ -33,6 +36,191 @@ Transform:
   - {fileID: 1959864804597056803}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!54 &2847391056284937165
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 676815894980492824}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 1.2
+  m_AngularDamping: 4
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 0
+  m_Interpolate: 1
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &3918462057395848276
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 676815894980492824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f97102d76d9d9d04f95ccebcd55b7079, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.AI.FaunaBrain
+  isAggressive: 0
+  canFlee: 1
+  _authoredFaunaMaterial: {fileID: 0}
+  enableBrainLOD: 1
+  brainDisableDistance: 150
+  brainOptimizationDistance: 80
+  _speciesProfile: {fileID: 0}
+  _faunaDataTemplate: {fileID: 0}
+  _sensorSuite:
+    avoidanceRange: 8
+    lookAheadFactor: 0.5
+    maxProbeLength: 15
+    spreadAngle: 35
+    avoidanceSphereRadius: 0.8
+    obstacleLayerMask:
+      serializedVersion: 2
+      m_Bits: 1792
+    visionConeAngle: 135
+    aggroDistance: 25
+    deaggroDistance: 35
+    sleepDistance: 100
+    reactToPlayerNoise: 1
+    reactToPlayerLight: 1
+    distractorDetectRadius: 30
+    distractorMask:
+      serializedVersion: 2
+      m_Bits: 0
+    territoryMask:
+      serializedVersion: 2
+      m_Bits: 0
+    canSeePlayer: 0
+    hasVisualPlayerContact: 0
+    hasNoisePlayerContact: 0
+    distSqrToPlayer: 0
+    isThreatened: 0
+    hasCurrentThreat: 0
+    currentThreatPosition: {x: 0, y: 0, z: 0}
+    currentThreatOwner: {fileID: 0}
+    isAvoidingObstacle: 0
+    bestFreeDirection: {x: 0, y: 0, z: 0}
+    lodDisabled: 0
+    isSleeping: 0
+    hasCurrentDistractor: 0
+    currentDistractorPosition: {x: 0, y: 0, z: 0}
+    currentDistractorOwner: {fileID: 0}
+    hasCurrentScavengeTarget: 0
+    currentScavengeTargetPosition: {x: 0, y: 0, z: 0}
+    currentScavengeTargetOwner: {fileID: 0}
+    hasPlayerFlashlightConeHit: 0
+    playerFlashlightExposure01: 0
+    playerFlashlightThreatPosition: {x: 0, y: 0, z: 0}
+    flockMask:
+      serializedVersion: 2
+      m_Bits: 0
+    flockRadius: 10
+    flockCenter: {x: 0, y: 0, z: 0}
+    flockDirection: {x: 0, y: 0, z: 0}
+    flockAvoidance: {x: 0, y: 0, z: 0}
+    flockCount: 0
+    isScattering: 0
+    scatterDirection: {x: 0, y: 0, z: 0}
+    poiMask:
+      serializedVersion: 2
+      m_Bits: 0
+    currentEscapePOI: {x: 0, y: 0, z: 0}
+    hasEscapePOI: 0
+    preyMask:
+      serializedVersion: 2
+      m_Bits: 0
+    hasCurrentPrey: 0
+    currentPreyPosition: {x: 0, y: 0, z: 0}
+    currentPreyOwner: {fileID: 0}
+  _steeringEngine:
+    moveSpeed: 5
+    maxSpeed: 5
+    swimForce: 15
+    acceleration: 2
+    rotationSpeed: 3
+    turnSpeed: 3
+    bankingStrength: 25
+    stopDistance: 0.5
+    velocity: {x: 0, y: 0, z: 0}
+    currentDirection: {x: 0, y: 0, z: 0}
+    desiredDirection: {x: 0, y: 0, z: 0}
+    currentSpeed: 0
+  _stateMachine:
+    profile:
+      aggressionLevel: 0.5
+      curiosity: 0
+      braveThreshold: 0.2
+    wanderRadius: 15
+    waypointReachDistance: 2
+    escapeDistance: 30
+    escapeSafeDistance: 50
+    stalkDuration: 10
+    stalkRadius: 18
+    attackRadius: 3
+    attackDamage: 15
+    retreatDuration: 6
+    useTerritory: 0
+    patrolRadius: 50
+    isFlockingFish: 0
+    cohesionWeight: 1
+    alignmentWeight: 1
+    separationWeight: 1.5
+    currentState: 0
+    currentForceMultiplier: 1
+    currentSpeedMultiplier: 1
+    currentTurnMultiplier: 1
+  OnPanicTriggered:
+    m_PersistentCalls:
+      m_Calls: []
+  OnBurrowBreach:
+    m_PersistentCalls:
+      m_Calls: []
+  _migratedV2: 1
+  le_swimForce: -1
+  le_maxSpeed: -1
+  le_turnSpeed: -1
+  le_avoidanceRange: -1
+  le_lookAheadFactor: -1
+  le_maxProbeLength: -1
+  le_spreadAngle: -1
+  le_wanderRadius: -1
+  le_waypointReachDistance: -1
+  le_escapeDistance: -1
+  le_escapeSafeDistance: -1
+  le_sleepDistance: -1
+  le_aggroDistance: -1
+  le_deaggroDistance: -1
+--- !u!114 &4729573168406759387
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 676815894980492824}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5cb9acdb70dafc645b37e39c0a97187d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.ScannableTarget
+  entryId: scannable.unknown
+  entryTitle: UNIDENTIFIED CONTACT
+  entryCategory: Unknown
+  entrySummary: Passive scan profile has been captured. Manual classification pending.
 --- !u!135 &8173154833957341306
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -48,7 +236,7 @@ SphereCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 1
+  m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3

@@ -111,7 +111,7 @@ Not proven by that log:
 | ~~Nine authoring buttons were never pressed~~ RETRACTED — the world scene is binary and was saved | `[?]` | none; see the retraction note |
 | Four scenes are BINARY, so every text GUID search in this repo silently under-reports | `[~]` | `Tools/SceneGuidReachability.py` added `46625dc38`; still owed: the older docs re-tested with it |
 | The authored swim profile is dropped for the entire lower body — accepted parameter, never read | `[c]` | STATIC CLOSED `5dd92fa69` — `ApplySwimProfileToBodyPose` wired; visual/designer proof still owed |
-| No creature carries `FaunaBrain` — its guid occurs in exactly one file, its own `.cs.meta` | `[c]` | STATIC CLOSED — guid `f97102d76d9d9d04f95ccebcd55b7079` on 5 GeneratedProxies prefabs (Drone/HeavyHunter/Hunter/Leviathan/Territorial); runtime creature-move proof still owed |
+| No creature carries `FaunaBrain` — its guid occurs in exactly one file, its own `.cs.meta` | `[c]` | STATIC CLOSED — guid `f97102d76d9d9d04f95ccebcd55b7079` on all 6 GeneratedProxies (Drone/HeavyHunter/Hunter/Leviathan/Territorial/SmallPassive); authoring no longer skips ambient brain; runtime creature-move proof still owed |
 | World-content sockets are Editor-authored only, and `WorldShippingContentFilter` drops 10 of the 14 | `[~]` | settle whether `Tool_TrialRange` ships, then port or press |
 | A failed save is invisible in the GAMEPLAY HUD (the main menu shows a real modal) | `[c]` | STATIC CLOSED `62a310140` — `EnsureSaveFailureNotificationBridgeCold` + `HUDSaveNotificationLink.ShowCritical`; Play Mode force-fail proof still owed |
 | ~~Notifications never reach the player: `HUDNotification` had zero instances~~ FIXED 2026-07-29, `5caea2a5e` | `[~]` | Play Mode: a warning visible on screen once |
