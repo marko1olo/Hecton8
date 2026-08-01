@@ -8587,6 +8587,14 @@ namespace Hecton8.Bootstrap
                 // hit permanent null. Factory + call here after AudioLogSystem
                 // so lore unlock sinks bind with audio-log discovery.
                 Hecton8.Narrative.LoreDatabaseManager.EnsureRuntimeInstance();
+                // DestructibleOrganicManager is the sole GlobalRegistry.OrganicToolHits owner
+                // (indirect-flora harvest health / tool-hit service).
+                // GUID e21070ca5e8272b4aa0678faa365a3e1 has ZERO live scene/prefab hits.
+                // No Ensure existed; OnEnable only registers when already present.
+                // Tool-hit and flora harvest consumers hit permanent null.
+                // Factory + call here after LoreDatabaseManager so world harvest binds
+                // with narrative discovery owners already published.
+                Hecton8.World.DestructibleOrganicManager.EnsureRuntimeInstance();
             }
 
 
