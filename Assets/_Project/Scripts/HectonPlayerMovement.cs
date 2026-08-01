@@ -5543,10 +5543,16 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterLateFrameTickable()
         {
-            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            // L18: L15 Fixed-lane Contains heal parity for Player late-frame membership.
+            // ClearAllLanes can drop the lane while sticky _registeredLateFrameTick stays true.
+            if (_registeredLateFrameTick &&
+                !SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this))
+                _registeredLateFrameTick = false;
+            if (!_registeredLateFrameTick)
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void MarkLateFramePresentationDirty()
