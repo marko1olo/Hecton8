@@ -3964,8 +3964,16 @@ namespace Hecton8.Core
             // poll - never consuming, never clearing. Measured effect in Logs/omega_route28.log: 124 overrides
             // published, movementIntent01max=0.000, Swim row FAIL with the input path fully open.
             bool automationOverrideApplied = ApplyAutomationOverride(ref state, Hecton8.Core.SystemDispatcher.CurrentFrameId);
-            _lastAutomationOverrideApplied = automationOverrideApplied;
+            // L19d: latch sticky once any override lands this session. Assigning only the
+            // per-capture bool cleared hop2 on every subsequent CaptureState where consume
+            // rejected (overrideRejected stays large by design). HPM FixedTick then saw
+            // IsPlayerInputEnabled false and never called GetState — L19 LIVE readHop=1 only
+            // despite overrideApplied rising and currentStateMove=(0,1). Cleared only in
+            // full input reset path below.
+            if (automationOverrideApplied)
+                _lastAutomationOverrideApplied = true;
             DiagRecordOverrideOutcome(automationOverrideApplied, state.MoveDelta);
+
             if (automationOverrideApplied)
                 _lastDeliveredLookDelta = state.LookDelta;
 

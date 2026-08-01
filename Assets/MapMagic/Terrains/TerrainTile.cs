@@ -133,9 +133,11 @@ namespace MapMagic.Terrains
 		}
 
 		/// <summary>
-		/// L19/L19b product guard: Unity fake-null, destroyed TerrainData, and half-torn-down
-		/// Terrain GameObjects must not reach SetActive (L19 LIVE still native-crashed inside
-		/// GameObject.SetActive_Injected from set_ActiveTerrain line 120 despite null checks).
+		/// L19/L19c product guard: never call GameObject.SetActive on MapMagic terrain GOs.
+		/// L19 + L19b LIVE both native-crashed inside GameObject.SetActive_Injected from
+		/// set_ActiveTerrain → SafeSetTerrainActive despite null/terrainData checks and managed
+		/// try/catch (native SEH is not a managed exception). Toggle Terrain + TerrainCollider
+		/// .enabled instead — isActiveAndEnabled follows component enable when the GO stays live.
 		/// </summary>
 		private static bool IsLiveTerrain(Terrain terrain)
 		{
@@ -146,39 +148,55 @@ namespace MapMagic.Terrains
 			if (terrain.terrainData == null)
 				return false;
 			GameObject go = terrain.gameObject;
-			return go != null;
+			if (go == null)
+				return false;
+			// Scene unloaded / invalid: component is not safe to touch for LOD.
+			if (!go.scene.IsValid() || !go.scene.isLoaded)
+				return false;
+			return true;
 		}
 
 		private static void SafeSetTerrainActive(Terrain terrain, bool active)
 		{
 			if (!IsLiveTerrain(terrain))
 				return;
-			GameObject go = terrain.gameObject;
-			if (go == null)
-				return;
 			// Re-check after property reads: concurrent ApplyRoutine teardown can invalidate between checks.
 			if (terrain == null || terrain.terrainData == null)
 				return;
-			bool currentlyActive;
+
+			// Component path only — do NOT call GameObject.SetActive (L19/L19b native crash).
 			try
 			{
-				currentlyActive = go.activeSelf;
+				if (terrain.enabled != active)
+					terrain.enabled = active;
 			}
 			catch (System.Exception)
 			{
 				return;
 			}
-			if (currentlyActive == active)
-				return;
+
+			TerrainCollider col = null;
 			try
 			{
-				go.SetActive(active);
+				col = terrain.GetComponent<TerrainCollider>();
 			}
 			catch (System.Exception)
 			{
-				// Native/managed half-destroyed Terrain: swallow and leave LOD selection unchanged.
+				return;
+			}
+			if (col == null)
+				return;
+			try
+			{
+				if (col.enabled != active)
+					col.enabled = active;
+			}
+			catch (System.Exception)
+			{
+				// Half-destroyed collider: leave LOD selection unchanged.
 			}
 		}
+
 
 
 
@@ -277,16 +295,21 @@ namespace MapMagic.Terrains
 				ActiveTerrain = newActiveTerrain;
 			}
 
-			//disabling objects
+			//disabling objects — component enable only (same L19c SetActive native-crash avoidance)
 			if (objectsPool != null)
 			{
 				bool objsEnabled = useMain; // || (useDraft && mapMagic.draftsIfObjectsChanged);
-				bool currentObjsEnabled = objectsPool.isActiveAndEnabled;
-				if (!objsEnabled && currentObjsEnabled && objectsPool.gameObject != null)
-					objectsPool.gameObject.SetActive(false);
-				if (objsEnabled && !currentObjsEnabled && objectsPool.gameObject != null)
-					objectsPool.gameObject.SetActive(true);
+				try
+				{
+					if (objectsPool.enabled != objsEnabled)
+						objectsPool.enabled = objsEnabled;
+				}
+				catch (System.Exception)
+				{
+					// pool half-destroyed during tile move/teardown
+				}
 			}
+
 			
 
 			//welding
