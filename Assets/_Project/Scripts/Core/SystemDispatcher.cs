@@ -5253,13 +5253,20 @@ namespace Hecton8.Core
                 }
 
                 if (IsOriginShiftFrameLockedForCurrentFrame)
+                {
+                    // L19 hop2 fix: drain the fixed accumulator with dt=0 so HPM.FixedTick
+                    // (hop2 / GetState) still executes during AUP origin-shift frames.
+                    // blockGameplayLanes=false — Player lane must run even during shift.
+                    RunFixedStepAccumulator(0f, blockGameplayLanes: false);
                     return;
+                }
 
                 if (_aupPreShiftPauseFrameId == dispatcherFrameId)
                 {
                     RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
                     return;
                 }
+
 
                 masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
                 RunMasterSimulationPhase(in masterTiming);
