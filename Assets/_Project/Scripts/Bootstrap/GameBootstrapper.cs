@@ -8621,6 +8621,10 @@ namespace Hecton8.Bootstrap
                 // GUID fcf340598bd22a94ab47ed42a25868ee has ZERO live scene/prefab hits;
                 // drag-field / scavenger consumers hit permanent null without this path.
                 Hecton8.World.SargassumGlobalDragManager.EnsureRuntimeInstance();
+                // SargassumCutManager: sole SargassumCut / ISargassumCutWriteService owner.
+                // GUID ff5d403710d1d0e4bb43e3210c59df5c has ZERO live scene/prefab hits;
+                // cut-mask / GPU fauna consumers hit permanent null without this path.
+                Hecton8.World.SargassumCutManager.EnsureRuntimeInstance();
             }
 
 
