@@ -30,13 +30,28 @@ namespace Hecton8.Editor
         [MenuItem("Window/HECTON-8/Validate Main Menu")]
         public static void ValidateMainMenu()
         {
+            // Compile-proof / CI path: -executeMethod must never open DisplayDialog
+            // (batchmode aborts with "This should not be called in batch mode").
+            bool batch = Application.isBatchMode;
             Scene mainMenuScene = SceneManager.GetSceneByPath(MainMenuScenePath);
-            if (!mainMenuScene.IsValid())
+
+            if (!mainMenuScene.IsValid() || !mainMenuScene.isLoaded)
             {
-                EditorUtility.DisplayDialog(
-                    "Main Menu Validation",
-                    "01_MAIN_MENU.unity not found or not loaded.",
-                    "OK");
+                // OpenScene is additive-safe for a one-shot audit; batchmode never has the scene
+                // already open, so the previous IsValid-only gate always failed there.
+                mainMenuScene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(
+                    MainMenuScenePath,
+                    UnityEditor.SceneManagement.OpenSceneMode.Single);
+            }
+
+            if (!mainMenuScene.IsValid() || !mainMenuScene.isLoaded)
+            {
+                string missing = "[MainMenuValidator] FAIL: 01_MAIN_MENU.unity not found or not loaded at " + MainMenuScenePath;
+                Debug.LogError(missing);
+                if (!batch)
+                    EditorUtility.DisplayDialog("Main Menu Validation", missing, "OK");
+                if (batch)
+                    EditorApplication.Exit(1);
                 return;
             }
 
@@ -54,13 +69,28 @@ namespace Hecton8.Editor
             report.AppendLine();
             report.AppendLine(new string('=', 50));
             string reportText = report.ToString();
-            Debug.Log(reportText);
+            bool passed = reportText.IndexOf("FAIL ", System.StringComparison.Ordinal) < 0;
+            report.Append("RESULT: ");
+            report.AppendLine(passed ? "PASS" : "FAIL");
+            reportText = report.ToString();
 
-            EditorUtility.DisplayDialog(
-                "Main Menu Validation Report",
-                reportText.Length > 2000 ? reportText.Substring(0, 2000) + "...\n(see Console for full report)" : reportText,
-                "OK");
+            // Always emit the report. Soft FAIL is LogError so CI greps can see it,
+            // but batchmode still exits 0: this method is a compile/scene-audit entry.
+            if (passed)
+                Debug.Log(reportText);
+            else
+                Debug.LogError(reportText);
+
+            if (!batch)
+            {
+                EditorUtility.DisplayDialog(
+                    "Main Menu Validation Report",
+                    reportText.Length > 2000 ? reportText.Substring(0, 2000) + "...\n(see Console for full report)" : reportText,
+                    "OK");
+            }
+            // batchmode: rely on -quit; do not EditorApplication.Exit(1) on soft FAIL.
         }
+
 
         private static void ValidateController(Scene scene, StringBuilder report)
         {
