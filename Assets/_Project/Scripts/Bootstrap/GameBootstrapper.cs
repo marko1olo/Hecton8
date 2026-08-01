@@ -8533,6 +8533,13 @@ namespace Hecton8.Bootstrap
                 // and SystemDispatcher consumers hit permanent null. Factory + call here after player
                 // publication so TryResolveCamera can bind PlayerCamera.
                 Hecton8.VFX.CameraJuiceSystem.EnsureRuntimeInstance();
+
+                // MissionManager is the sole GlobalRegistry.Missions owner (quest compatibility facade).
+                // GUID 118565efc6b6f054c835c8316440c86f has ZERO scene/prefab hits. No Ensure existed;
+                // Awake/OnEnable only register when already present. Save mission lanes and director
+                // bridge compatibility consumers hit permanent null. Factory + call here after player
+                // publication so QuestSystem hot-swap can bind when available.
+                Hecton8.Gameplay.MissionManager.EnsureRuntimeInstance();
             }
 
 
