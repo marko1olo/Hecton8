@@ -100,32 +100,47 @@ namespace MapMagic.Terrains
 		public Terrain GetTerrain (bool isDraft)  =>  isDraft ? draft?.terrain : main?.terrain;
 		public bool ContainsTerrain (Terrain terrain)  =>  terrain==draft?.terrain  || terrain==main?.terrain;
 
+		// L19e: managed LOD selection only. Native Terrain/GO enable toggles native-crash
+		// under ApplyRoutine (see SafeSetTerrainActive). 0=none, 1=main, 2=draft.
+		[System.NonSerialized] private int _lodActiveKind;
+
 		public Terrain ActiveTerrain 
 		/// Setting null will disable both terrains
 		{
 			get{
-				if (main!=null && IsLiveTerrain(main.terrain)  &&  main.terrain.isActiveAndEnabled) 
+				// Prefer managed LOD choice so SwitchLod does not thrash when native
+				// enable state is intentionally left untouched (L19e).
+				if (_lodActiveKind == 1 && main != null && IsLiveTerrain(main.terrain))
 					return main.terrain;
-				if (draft!=null && IsLiveTerrain(draft.terrain)  &&  draft.terrain.isActiveAndEnabled) 
+				if (_lodActiveKind == 2 && draft != null && IsLiveTerrain(draft.terrain))
+					return draft.terrain;
+				// Cold start / pre-SwitchLod: fall back to whichever wrapper is still live.
+				if (main != null && IsLiveTerrain(main.terrain))
+					return main.terrain;
+				if (draft != null && IsLiveTerrain(draft.terrain))
 					return draft.terrain;
 				return null;
 			}
 
 			set{
-				// L19: destroyed/dangling Terrain wrappers reach SetActive and native-crash
-				// (L18 LIVE: set_ActiveTerrain → GameObject.SetActive_Injected during SwitchLod/ApplyRoutine).
-				if (main!=null && value==main.terrain)
-				{ 
+				// L19/L19e: never mutate Terrain/GO native enable from LOD. L18-L19c LIVE all
+				// native-crashed inside SetActive_Injected or terrain.enabled= during
+				// ApplyRoutine → SwitchLod → set_ActiveTerrain (SEH, not catchable).
+				if (main != null && value == main.terrain)
+				{
+					_lodActiveKind = 1;
 					SafeSetTerrainActive(main.terrain, true);
 					if (draft != null) SafeSetTerrainActive(draft.terrain, false);
 				}
-				else if (draft!=null && value==draft.terrain)
+				else if (draft != null && value == draft.terrain)
 				{
+					_lodActiveKind = 2;
 					if (main != null) SafeSetTerrainActive(main.terrain, false);
 					SafeSetTerrainActive(draft.terrain, true);
 				}
 				else
 				{
+					_lodActiveKind = 0;
 					if (main != null) SafeSetTerrainActive(main.terrain, false);
 					if (draft != null) SafeSetTerrainActive(draft.terrain, false);
 				}
@@ -133,11 +148,9 @@ namespace MapMagic.Terrains
 		}
 
 		/// <summary>
-		/// L19/L19c product guard: never call GameObject.SetActive on MapMagic terrain GOs.
-		/// L19 + L19b LIVE both native-crashed inside GameObject.SetActive_Injected from
-		/// set_ActiveTerrain → SafeSetTerrainActive despite null/terrainData checks and managed
-		/// try/catch (native SEH is not a managed exception). Toggle Terrain + TerrainCollider
-		/// .enabled instead — isActiveAndEnabled follows component enable when the GO stays live.
+		/// L19 product guard: Terrain wrappers can be destroyed/half-applied during MapMagic
+		/// ApplyRoutine. Used only for null/lifetime checks — never as a green light to
+		/// mutate native enable state (L19e: even "live" terrains SEH on .enabled=).
 		/// </summary>
 		private static bool IsLiveTerrain(Terrain terrain)
 		{
@@ -156,46 +169,20 @@ namespace MapMagic.Terrains
 			return true;
 		}
 
+		/// <summary>
+		/// L19e: intentional no-op. Measured cascade:
+		/// L19/L19b — GameObject.SetActive_Injected SEH from SafeSetTerrainActive;
+		/// L19c LIVE (0ebe045ed) — terrain.enabled= SEH at TerrainTile.cs:172 still from
+		/// ApplyRoutine→SwitchLod→set_ActiveTerrain. Managed try/catch does not catch native SEH.
+		/// LOD visibility is tracked only via <see cref="_lodActiveKind"/>; leaving both
+		/// terrain components at create-time enable is acceptable for V0 playtest survival.
+		/// </summary>
 		private static void SafeSetTerrainActive(Terrain terrain, bool active)
 		{
-			if (!IsLiveTerrain(terrain))
-				return;
-			// Re-check after property reads: concurrent ApplyRoutine teardown can invalidate between checks.
-			if (terrain == null || terrain.terrainData == null)
-				return;
-
-			// Component path only — do NOT call GameObject.SetActive (L19/L19b native crash).
-			try
-			{
-				if (terrain.enabled != active)
-					terrain.enabled = active;
-			}
-			catch (System.Exception)
-			{
-				return;
-			}
-
-			TerrainCollider col = null;
-			try
-			{
-				col = terrain.GetComponent<TerrainCollider>();
-			}
-			catch (System.Exception)
-			{
-				return;
-			}
-			if (col == null)
-				return;
-			try
-			{
-				if (col.enabled != active)
-					col.enabled = active;
-			}
-			catch (System.Exception)
-			{
-				// Half-destroyed collider: leave LOD selection unchanged.
-			}
+			// Do not read or write Terrain.enabled, TerrainCollider.enabled, or GameObject.SetActive.
+			// Any of those paths can SEH when ApplyRoutine is mid-flight on the same tile.
 		}
+
 
 
 
@@ -295,25 +282,12 @@ namespace MapMagic.Terrains
 				ActiveTerrain = newActiveTerrain;
 			}
 
-			//disabling objects — component enable only (same L19c SetActive native-crash avoidance)
-			if (objectsPool != null)
-			{
-				bool objsEnabled = useMain; // || (useDraft && mapMagic.draftsIfObjectsChanged);
-				try
-				{
-					if (objectsPool.enabled != objsEnabled)
-						objectsPool.enabled = objsEnabled;
-				}
-				catch (System.Exception)
-				{
-					// pool half-destroyed during tile move/teardown
-				}
-			}
+			// L19e: do not toggle objectsPool.enabled — same SEH class as Terrain.enabled
+			// under ApplyRoutine teardown. Pool stays at create-time enable for V0 survival.
 
-			
+			//welding — L19e: skip isActiveAndEnabled native read; managed live check is enough
+			bool isTerrainActive = IsLiveTerrain(newActiveTerrain);
 
-			//welding
-			bool isTerrainActive = IsLiveTerrain(newActiveTerrain) && newActiveTerrain.isActiveAndEnabled;
 			if (lodSwitched && isTerrainActive &&
 				mapMagic.tiles != null && mapMagic.tiles.Contains(coord) ) //otherwise error on SwitchLod called from Generate (when tile has been moved)
 			{
