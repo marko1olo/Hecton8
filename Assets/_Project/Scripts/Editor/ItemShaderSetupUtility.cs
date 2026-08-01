@@ -14,6 +14,7 @@
 #if UNITY_EDITOR
 
 using Hecton8.Gameplay;
+using Hecton8.Interaction;
 using Hecton8.Items;
 using System.Collections.Generic;
 using UnityEditor;
@@ -33,6 +34,9 @@ namespace Hecton8.Editor
         [MenuItem("Tools/Hecton/Setup Item Shaders", false, 100)]
         public static void SetupAllItemShaders()
         {
+            // -executeMethod / CI: never open DisplayDialog in batchmode.
+            bool batch = Application.isBatchMode;
+
             Shader highlightShader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath);
 
             if (highlightShader == null)
@@ -43,12 +47,15 @@ namespace Hecton8.Editor
 
             if (highlightShader == null)
             {
-                Debug.LogError("[ItemShaderSetupUtility] Shader not found: " + ShaderPath);
-                EditorUtility.DisplayDialog(
-                    "Shader Not Found",
-                    "Could not find Hecton_Item_Highlight shader.\n" +
-                    "Make sure the shader exists at: " + ShaderPath,
-                    "OK");
+                Debug.LogError("[ItemShaderSetupUtility] RESULT: FAIL — Shader not found: " + ShaderPath);
+                if (!batch)
+                {
+                    EditorUtility.DisplayDialog(
+                        "Shader Not Found",
+                        "Could not find Hecton_Item_Highlight shader.\n" +
+                        "Make sure the shader exists at: " + ShaderPath,
+                        "OK");
+                }
                 return;
             }
 
@@ -65,12 +72,15 @@ namespace Hecton8.Editor
 
                 if (prefab == null) continue;
 
-                // Proveryaem nalichie ItemData (na prefabe ili v dochernih obektah)
-                ItemData itemData = prefab.GetComponent<ItemData>();
-                if (itemData == null)
-                    itemData = prefab.GetComponentInChildren<ItemData>();
+                // ItemData is a ScriptableObject — prefabs carry it via PickupItem / ItemHighlight.
+                PickupItem pickup = prefab.GetComponent<PickupItem>();
+                if (pickup == null)
+                    pickup = prefab.GetComponentInChildren<PickupItem>(true);
+                ItemHighlight existingHighlight = prefab.GetComponent<ItemHighlight>();
+                if (existingHighlight == null)
+                    existingHighlight = prefab.GetComponentInChildren<ItemHighlight>(true);
 
-                if (itemData == null) continue;
+                if (pickup == null && existingHighlight == null) continue;
 
                 processedCount++;
 
@@ -122,7 +132,9 @@ namespace Hecton8.Editor
             AssetDatabase.Refresh();
 
             // Logiruem rezultat
-            Debug.Log($"[ItemShaderSetupUtility] Processed: {processedCount}, Modified: {modifiedCount}");
+            string setupReport =
+                $"[ItemShaderSetupUtility] RESULT: PASS — Processed: {processedCount}, Modified: {modifiedCount}";
+            Debug.Log(setupReport);
 
             if (modifiedCount > 0)
             {
@@ -132,12 +144,15 @@ namespace Hecton8.Editor
                 }
             }
 
-            EditorUtility.DisplayDialog(
-                "Setup Complete",
-                $"Processed: {processedCount} item prefabs\n" +
-                $"Modified: {modifiedCount} prefabs\n\n" +
-                "See Console for details.",
-                "OK");
+            if (!batch)
+            {
+                EditorUtility.DisplayDialog(
+                    "Setup Complete",
+                    $"Processed: {processedCount} item prefabs\n" +
+                    $"Modified: {modifiedCount} prefabs\n\n" +
+                    "See Console for details.",
+                    "OK");
+            }
         }
 
         [MenuItem("Tools/Hecton/Setup Item Shaders (Selected)", false, 101)]
@@ -218,6 +233,9 @@ namespace Hecton8.Editor
         [MenuItem("Tools/Hecton/Validate Item Shaders", false, 102)]
         public static void ValidateItemShaders()
         {
+            // -executeMethod / CI: never open DisplayDialog in batchmode.
+            bool batch = Application.isBatchMode;
+
             Shader highlightShader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderPath);
 
             if (highlightShader == null)
@@ -237,16 +255,21 @@ namespace Hecton8.Editor
 
                 if (prefab == null) continue;
 
-                ItemData itemData = prefab.GetComponent<ItemData>();
-                if (itemData == null)
-                    itemData = prefab.GetComponentInChildren<ItemData>();
+                // ItemData is a ScriptableObject — prefabs carry it via PickupItem / ItemHighlight.
+                PickupItem pickup = prefab.GetComponent<PickupItem>();
+                if (pickup == null)
+                    pickup = prefab.GetComponentInChildren<PickupItem>(true);
+                ItemHighlight highlightOnPrefab = prefab.GetComponent<ItemHighlight>();
+                if (highlightOnPrefab == null)
+                    highlightOnPrefab = prefab.GetComponentInChildren<ItemHighlight>(true);
 
-                if (itemData == null) continue;
+                if (pickup == null && highlightOnPrefab == null) continue;
 
                 itemCount++;
 
                 bool hasCorrectShader = true;
-                bool hasHighlightComponent = prefab.GetComponent<ItemHighlight>() != null;
+                bool hasHighlightComponent = highlightOnPrefab != null ||
+                                            prefab.GetComponent<ItemHighlight>() != null;
 
                 // Proveryaem materialy
                 Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
@@ -290,25 +313,34 @@ namespace Hecton8.Editor
                 }
             }
 
-            Debug.Log($"[ItemShaderSetupUtility] Validation Results:\n" +
-                      $"  Total Items: {itemCount}\n" +
-                      $"  Valid: {validCount}\n" +
-                      $"  Missing Shader: {missingShaderCount}\n" +
-                      $"  Missing Component: {missingComponentCount}");
+            bool pass = missingShaderCount == 0 && missingComponentCount == 0;
+            string report =
+                $"[ItemShaderSetupUtility] RESULT: {(pass ? "PASS" : "FAIL")} — " +
+                $"Total Items: {itemCount}, Valid: {validCount}, " +
+                $"Missing Shader: {missingShaderCount}, Missing Component: {missingComponentCount}";
+
+            if (pass)
+                Debug.Log(report);
+            else
+                Debug.LogError(report);
 
             for (int i = 0; i < issues.Count; i++)
             {
                 Debug.Log($"  {issues[i]}");
             }
 
-            EditorUtility.DisplayDialog(
-                "Validation Complete",
-                $"Total Items: {itemCount}\n" +
-                $"Valid: {validCount}\n" +
-                $"Missing Shader: {missingShaderCount}\n" +
-                $"Missing Component: {missingComponentCount}\n\n" +
-                "See Console for details.",
-                "OK");
+            // Soft FAIL stays exit 0 under -quit; DisplayDialog only interactive.
+            if (!batch)
+            {
+                EditorUtility.DisplayDialog(
+                    "Validation Complete",
+                    $"Total Items: {itemCount}\n" +
+                    $"Valid: {validCount}\n" +
+                    $"Missing Shader: {missingShaderCount}\n" +
+                    $"Missing Component: {missingComponentCount}\n\n" +
+                    "See Console for details.",
+                    "OK");
+            }
         }
     }
 }
