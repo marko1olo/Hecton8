@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 - SaveStation.cs
 // Mirnyy terminal sohraneniya s defensive-povedeniem i integratsiey v HUD.
 // ============================================================================
@@ -179,6 +179,17 @@ namespace Hecton8.Interaction
             bool accepted = asyncPersistence.TryRequestSave((byte)slotIndex, SaveStationSourceHash);
             if (!accepted)
             {
+                // Rejection is silent at the persistence layer (no SaveFailed event). Surface it
+                // on the station HUD so an explicit player save request never looks like success.
+                if (saveService.IsBusy)
+                    ShowHudInfo(LocalizationKeys.SAVE_STATION_BUSY, "SAVE ALREADY IN PROGRESS");
+                else
+                    ShowHudWarning(LocalizationKeys.SAVE_STATION_OFFLINE, "SAVE SYSTEM OFFLINE");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[SaveStation] TryRequestSave rejected; player was notified on HUD.",
+                    this);
+#endif
                 return true;
             }
 
