@@ -391,7 +391,7 @@ namespace Hecton8.UI
 
             // Overlay may not have claimed ActiveRuntimeInstance yet (AfterSceneLoad race, or
             // Suit_HUD_Canvas prefab spawned later). Fall back to the named primary HUD canvas.
-            Canvas[] canvases = Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None); // COLD ALLOC: Canvas[] - one-shot host canvas resolve - owner: SubtitleManager
+            Canvas[] canvases = UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None); // COLD ALLOC: Canvas[] - one-shot host canvas resolve - owner: SubtitleManager
             Canvas namedHud = null;
             Canvas anyOverlay = null;
             for (int i = 0; i < canvases.Length; i++)

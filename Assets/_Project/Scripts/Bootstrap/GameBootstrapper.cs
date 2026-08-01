@@ -8516,6 +8516,16 @@ namespace Hecton8.Bootstrap
                 // acquire/evaluate never arms. Factory now lives on the service itself
                 // (EnsureRuntimeInstance); call it here so the registry slot is live.
                 Hecton8.Vehicles.Automation.DockingAutopilotService.EnsureRuntimeInstance();
+
+                // SubtitleManager is the sole GlobalRegistry.Subtitles owner. GUID
+                // 2007393d93d7376438891f11d8ec3a10 has ZERO scene/prefab hits (including
+                // Suit_HUD_Canvas.prefab). Construction used to live only behind
+                // #if UNITY_EDITOR || DEVELOPMENT_BUILD, so player builds never installed
+                // the owner and every subtitle consumer hit a permanent null. Ensure now
+                // constructs in player builds and parents under the HUD overlay canvas when
+                // present; call here after player/HUD publication so AfterSceneLoad cannot
+                // race an empty canvas set.
+                Hecton8.UI.SubtitleManager.EnsureRuntimeInstance();
             }
 
 
