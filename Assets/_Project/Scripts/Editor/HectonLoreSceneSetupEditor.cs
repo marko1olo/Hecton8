@@ -16,64 +16,87 @@ namespace Hecton8.Editor
         [MenuItem("Hecton8/Lore/Setup Lore Systems in Scene")]
         public static void SetupLoreSystemsInScene()
         {
+            // -executeMethod / CI: never open DisplayDialog in batchmode.
+            bool batch = Application.isBatchMode;
+
             HectonLoreSystemsRoot existing = Object.FindAnyObjectByType<HectonLoreSystemsRoot>(FindObjectsInactive.Include);
             if (existing != null)
             {
                 existing.ValidateSystems();
-                EditorUtility.DisplayDialog(
-                    "Lore Systems",
-                    "HectonLoreSystemsRoot already exists in the scene.\nUse the inspector actions to validate or reconcile it.",
-                    "OK");
-
-                Selection.activeGameObject = existing.gameObject;
-                EditorGUIUtility.PingObject(existing.gameObject);
+                Debug.Log("[HectonLoreSceneSetupEditor] RESULT: PASS — HectonLoreSystemsRoot already exists in the scene.");
+                if (!batch)
+                {
+                    EditorUtility.DisplayDialog(
+                        "Lore Systems",
+                        "HectonLoreSystemsRoot already exists in the scene.\nUse the inspector actions to validate or reconcile it.",
+                        "OK");
+                    Selection.activeGameObject = existing.gameObject;
+                    EditorGUIUtility.PingObject(existing.gameObject);
+                }
                 return;
             }
 
             GameObject go = new GameObject("LoreSystems");
-            Undo.RegisterCreatedObjectUndo(go, "Create LoreSystems");
+            if (!batch)
+                Undo.RegisterCreatedObjectUndo(go, "Create LoreSystems");
 
             HectonLoreSystemsRoot root = go.AddComponent<HectonLoreSystemsRoot>();
             root.SetupAllSystems();
 
             EditorSceneManager.MarkSceneDirty(go.scene);
-            Selection.activeGameObject = go;
-            EditorGUIUtility.PingObject(go);
+            if (!batch)
+            {
+                Selection.activeGameObject = go;
+                EditorGUIUtility.PingObject(go);
+                EditorUtility.DisplayDialog(
+                    "Lore Systems",
+                    "LoreSystems created in the scene.\n\n" +
+                    "Next steps:\n" +
+                    "1. Create ScriptableObject assets under Data/Lore/\n" +
+                    "2. Wire references in the inspector for each system\n" +
+                    "3. Place AudioLogPickup and NarrativeDiscovery objects in the world\n\n" +
+                    "See: Assets/_Project/Scripts/LORE_SYSTEMS_GUIDE.md",
+                    "OK");
+            }
 
-            EditorUtility.DisplayDialog(
-                "Lore Systems",
-                "LoreSystems created in the scene.\n\n" +
-                "Next steps:\n" +
-                "1. Create ScriptableObject assets under Data/Lore/\n" +
-                "2. Wire references in the inspector for each system\n" +
-                "3. Place AudioLogPickup and NarrativeDiscovery objects in the world\n\n" +
-                "See: Assets/_Project/Scripts/LORE_SYSTEMS_GUIDE.md",
-                "OK");
-
-            Debug.Log("[LoreSetup] LoreSystems created. See LORE_SYSTEMS_GUIDE.md for setup instructions.");
+            Debug.Log("[HectonLoreSceneSetupEditor] RESULT: PASS — LoreSystems created. See LORE_SYSTEMS_GUIDE.md for setup instructions.");
         }
 
         [MenuItem("Hecton8/Lore/Validate Lore Systems in Scene")]
         public static void ValidateLoreSystemsInScene()
         {
+            // -executeMethod / CI: never open DisplayDialog in batchmode.
+            bool batch = Application.isBatchMode;
+
             HectonLoreSystemsRoot existing = Object.FindAnyObjectByType<HectonLoreSystemsRoot>(FindObjectsInactive.Include);
             if (existing == null)
             {
-                EditorUtility.DisplayDialog(
-                    "Lore Systems",
-                    "No HectonLoreSystemsRoot exists in the active scene.",
-                    "OK");
+                // Soft FAIL stays exit 0 under -quit; DisplayDialog only interactive.
+                Debug.LogError("[HectonLoreSceneSetupEditor] RESULT: FAIL — No HectonLoreSystemsRoot exists in the active scene.");
+                if (!batch)
+                {
+                    EditorUtility.DisplayDialog(
+                        "Lore Systems",
+                        "No HectonLoreSystemsRoot exists in the active scene.",
+                        "OK");
+                }
                 return;
             }
 
             existing.ValidateSystems();
-            Selection.activeGameObject = existing.gameObject;
-            EditorGUIUtility.PingObject(existing.gameObject);
+            Debug.Log("[HectonLoreSceneSetupEditor] RESULT: PASS — HectonLoreSystemsRoot validated.");
+            if (!batch)
+            {
+                Selection.activeGameObject = existing.gameObject;
+                EditorGUIUtility.PingObject(existing.gameObject);
+            }
         }
 
         [MenuItem("Hecton8/Lore/Create Lore Data Folder Structure")]
         public static void CreateLoreDataFolders()
         {
+            bool batch = Application.isBatchMode;
+
             string[] folders =
             {
                 "Assets/_Project/Data/Lore",
@@ -96,35 +119,45 @@ namespace Hecton8.Editor
 
             AssetDatabase.Refresh();
 
-            EditorUtility.DisplayDialog(
-                "Lore Data Folders",
-                "Folders created:\n" +
-                "• Data/Lore/AudioLogs - AudioLogData assets\n" +
-                "• Data/Lore/Quests - QuestData assets\n" +
-                "• Data/Lore/DepthZones - DepthZoneProfile assets\n" +
-                "• Data/Lore/SuitUpgrades - SuitUpgradeData assets\n" +
-                "• Data/Lore/Registries - registry ScriptableObjects",
-                "OK");
+            Debug.Log("[HectonLoreSceneSetupEditor] RESULT: PASS — Lore data folders ensured.");
+            if (!batch)
+            {
+                EditorUtility.DisplayDialog(
+                    "Lore Data Folders",
+                    "Folders created:\n" +
+                    "• Data/Lore/AudioLogs - AudioLogData assets\n" +
+                    "• Data/Lore/Quests - QuestData assets\n" +
+                    "• Data/Lore/DepthZones - DepthZoneProfile assets\n" +
+                    "• Data/Lore/SuitUpgrades - SuitUpgradeData assets\n" +
+                    "• Data/Lore/Registries - registry ScriptableObjects",
+                    "OK");
+            }
         }
 
         [MenuItem("Hecton8/Lore/Open Lore Guide")]
         public static void OpenLoreGuide()
         {
+            bool batch = Application.isBatchMode;
             string path = "Assets/_Project/Scripts/LORE_SYSTEMS_GUIDE.md";
             Object asset = AssetDatabase.LoadAssetAtPath<Object>(path);
             if (asset != null)
             {
-                AssetDatabase.OpenAsset(asset);
+                if (!batch)
+                    AssetDatabase.OpenAsset(asset);
+                Debug.Log("[HectonLoreSceneSetupEditor] RESULT: PASS — Lore guide found: " + path);
             }
             else
             {
-                EditorUtility.DisplayDialog("Not Found", $"File not found: {path}", "OK");
+                Debug.LogError("[HectonLoreSceneSetupEditor] RESULT: FAIL — File not found: " + path);
+                if (!batch)
+                    EditorUtility.DisplayDialog("Not Found", $"File not found: {path}", "OK");
             }
         }
 
         [MenuItem("Hecton8/Lore/Create Default SO Assets")]
         public static void CreateDefaultSOAssets()
         {
+            bool batch = Application.isBatchMode;
             int created = 0;
 
             created += CreateSOIfMissing<Hecton8.Narrative.ColonistLoreRegistry>(
@@ -184,10 +217,14 @@ namespace Hecton8.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            EditorUtility.DisplayDialog(
-                "Lore Assets Created",
-                $"Created {created} assets in Assets/_Project/Data/Lore/\n\nAssign them in the relevant system inspectors.",
-                "OK");
+            Debug.Log($"[HectonLoreSceneSetupEditor] RESULT: PASS — Created {created} assets in Assets/_Project/Data/Lore/");
+            if (!batch)
+            {
+                EditorUtility.DisplayDialog(
+                    "Lore Assets Created",
+                    $"Created {created} assets in Assets/_Project/Data/Lore/\n\nAssign them in the relevant system inspectors.",
+                    "OK");
+            }
         }
 
         private static int CreateSOIfMissing<T>(string path) where T : ScriptableObject
