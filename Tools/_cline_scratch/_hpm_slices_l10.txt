@@ -1,0 +1,333 @@
+
+=== 5466-5520 ===
+ 5466|        private void TryRegisterToDispatchers()
+ 5467|        {
+ 5468|            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+ 5469|                return;
+ 5470|
+ 5471|            if (!_registeredTick)
+ 5472|            {
+ 5473|                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+ 5474|            }
+ 5475|
+ 5476|            if (!_registeredFixedTick)
+ 5477|            {
+ 5478|                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+ 5479|            }
+ 5480|
+ 5481|            if (!_registeredColdTick)
+ 5482|            {
+ 5483|                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+ 5484|            }
+ 5485|
+ 5486|            TryRegisterLateFrameTickable();
+ 5487|
+ 5488|            if (!_registeredPlayerMovementContracts)
+ 5489|            {
+ 5490|                IPlayerMovementContracts currentContracts = GlobalRegistry.PlayerMovementContracts;
+ 5491|                if (currentContracts == null)
+ 5492|                    GlobalRegistry.RegisterPlayerMovementContracts(this);
+ 5493|
+ 5494|                _registeredPlayerMovementContracts = ReferenceEquals(GlobalRegistry.PlayerMovementContracts, this);
+ 5495|            }
+ 5496|
+ 5497|            if (!_registeredHotSwapListener)
+ 5498|                _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+ 5499|
+ 5500|        }
+ 5501|
+ 5502|        private void UnregisterDispatcherTicks()
+ 5503|        {
+ 5504|            if (_registeredTick)
+ 5505|            {
+ 5506|                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+ 5507|                _registeredTick = false;
+ 5508|            }
+ 5509|
+ 5510|            if (_registeredFixedTick)
+ 5511|            {
+ 5512|                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+ 5513|                _registeredFixedTick = false;
+ 5514|            }
+ 5515|
+ 5516|            if (_registeredColdTick)
+ 5517|            {
+ 5518|                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+ 5519|                _registeredColdTick = false;
+ 5520|            }
+
+=== 8080-8125 ===
+ 8080|
+ 8081|                DrainNarrativeFocusSignals();
+ 8082|                AdvanceCinematicFocus(deltaTime);
+ 8083|                if (_activeSonarPingCooldownTimer > 0f)
+ 8084|                {
+ 8085|                    _activeSonarPingCooldownTimer -= deltaTime;
+ 8086|                    if (_activeSonarPingCooldownTimer < 0f)
+ 8087|                        _activeSonarPingCooldownTimer = 0f;
+ 8088|                }
+ 8089|
+ 8090|                if (IsGameplayInputBlockedByMenu())
+ 8091|                {
+ 8092|                    HandleMenuBlockedInput(deltaTime, suit);
+ 8093|                    return;
+ 8094|                }
+ 8095|
+ 8096|                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+ 8097|                {
+ 8098|                    Cursor.lockState = CursorLockMode.Locked;
+ 8099|                    Cursor.visible = false;
+ 8100|                    _inputCleared = false;
+ 8101|                }
+ 8102|
+ 8103|                ProcessPlayerInputFrame();
+ 8104|                ProcessWipeoutInputOverride();
+ 8105|                ProcessLocomotionPresentationAndJuice(deltaTime, suit);
+ 8106|            }
+ 8107|        }
+ 8108|
+ 8109|        private void HandleMenuBlockedInput(float deltaTime, SuitData suit)
+ 8110|        {
+ 8111|            _currentInputState = default;
+ 8112|            _pendingLookInput = Vector2.zero;
+ 8113|            _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
+ 8114|            SetSprintingState(false);
+ 8115|            _inputCleared = true;
+ 8116|            _lastKinematicRepairProbe = default;
+ 8117|            _lastKinematicRepairSnapPoint = default;
+ 8118|            _kinematicRepairStateBits &= ~KinematicRepairStateHasSnapBit;
+ 8119|            ResetKinematicRepairProbeReuseGate();
+ 8120|            Cursor.lockState = CursorLockMode.None;
+ 8121|            Cursor.visible = true;
+ 8122|            UpdateRenderInterpolationState();
+ 8123|            BuildJuiceInput(deltaTime, suit);
+ 8124|            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+ 8125|            UpdateUnderwaterSomaticCameraOffsets(deltaTime);
+
+=== 8130-8235 ===
+ 8130|        private void ProcessPlayerInputFrame()
+ 8131|        {
+ 8132|            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+ 8133|            {
+ 8134|                _inputHandler.TryReadFrame(
+ 8135|                    _inputManager,
+ 8136|                    jumpBufferTime,
+ 8137|                    out HectonPlayerInputFrame inputFrame,
+ 8138|                    out bool jumpBuffered);
+ 8139|                _currentInputState = inputFrame.State;
+ 8140|                _cachedMoveInput = inputFrame.MoveInput;
+ 8141|                _cachedVerticalInput = inputFrame.VerticalInput;
+ 8142|                _pendingLookInput = inputFrame.LookInput;
+ 8143|                if (jumpBuffered)
+ 8144|                {
+ 8145|                    _jumpRequested = true;
+ 8146|                    _jumpBufferTimer = jumpBufferTime;
+ 8147|                }
+ 8148|
+ 8149|                Vector2 lookDelta = _pendingLookInput;
+ 8150|                _pendingLookInput = Vector2.zero;
+ 8151|                ApplyLookInput(lookDelta);
+ 8152|
+ 8153|                _inputH = _cachedMoveInput.x;
+ 8154|                _inputV = _cachedMoveInput.y;
+ 8155|                _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+ 8156|                if (IsAuthoritativeVehicleTransportActive())
+ 8157|                {
+ 8158|                    _inputH = 0f;
+ 8159|                    _inputV = 0f;
+ 8160|                    _inputVertical = 0f;
+ 8161|                }
+ 8162|                SetSprintingState(inputFrame.SprintHeld != 0);
+ 8163|            }
+ 8164|            else
+ 8165|            {
+ 8166|                _currentInputState = default;
+ 8167|                _pendingLookInput = Vector2.zero;
+ 8168|                _inputH = 0f;
+ 8169|                _inputV = 0f;
+ 8170|                _inputVertical = 0f;
+ 8171|                SetSprintingState(false);
+ 8172|                _mouseXDelta = 0f;
+ 8173|            }
+ 8174|        }
+ 8175|
+ 8176|        private void ProcessWipeoutInputOverride()
+ 8177|        {
+ 8178|            if (_wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f)
+ 8179|            {
+ 8180|                _currentInputState = default;
+ 8181|                _pendingLookInput = Vector2.zero;
+ 8182|                _mouseXDelta = 0f;
+ 8183|                _inputH = 0f;
+ 8184|                _inputV = 0f;
+ 8185|                _inputVertical = 0f;
+ 8186|                SetSprintingState(false);
+ 8187|                _jumpRequested = false;
+ 8188|                _jumpBufferTimer = 0f;
+ 8189|            }
+ 8190|        }
+ 8191|
+ 8192|        /// <summary>
+ 8193|        /// Samples MoveDelta / vertical / sprint into the fixed-step locomotion fields that
+ 8194|        /// <see cref="ResolveRawInputIntentVector"/> and swim thrust read.
+ 8195|        ///
+ 8196|        /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+ 8197|        /// render IUpdatable.Tick path. Batchmode and physics-heavy schedules (headless V0 probe,
+ 8198|        /// long fixed steps) drive locomotion almost entirely through FixedTick while render Tick
+ 8199|        /// rarely runs, so _inputH/_inputV/_inputVertical stayed zero even when InputDispatcher
+ 8200|        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+ 8201|        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+ 8202|        /// mocking input or bypassing menu / vehicle / wipeout gates.
+ 8203|        ///
+ 8204|        /// Look / juice / cursor remain render-owned on Tick. Menu block zeros locomotion only -
+ 8205|        /// full HandleMenuBlockedInput stays on Tick so camera/cursor presentation is not driven
+ 8206|        /// from the physics step.
+ 8207|        /// </summary>
+ 8208|        private void SampleGameplayLocomotionInputForFixedStep()
+ 8209|        {
+ 8210|            ResolveInputManagerBinding();
+ 8211|
+ 8212|            if (IsGameplayInputBlockedByMenu())
+ 8213|            {
+ 8214|                _currentInputState = default;
+ 8215|                _pendingLookInput = Vector2.zero;
+ 8216|                _inputH = 0f;
+ 8217|                _inputV = 0f;
+ 8218|                _inputVertical = 0f;
+ 8219|                _mouseXDelta = 0f;
+ 8220|                SetSprintingState(false);
+ 8221|                return;
+ 8222|            }
+ 8223|
+ 8224|            ProcessPlayerInputFrame();
+ 8225|            ProcessWipeoutInputOverride();
+ 8226|        }
+ 8227|
+ 8228|        private void ProcessLocomotionPresentationAndJuice(float deltaTime, SuitData suit)
+ 8229|        {
+ 8230|            ConsumeKinematicRepairTargetProbe();
+ 8231|            ScheduleKinematicRepairTargetProbe();
+ 8232|            UpdateRenderInterpolationState();
+ 8233|            _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
+ 8234|            _velocity = _feedbackVelocity;
+ 8235|            float currentSpeed = ApproximateVectorMagnitude(_velocity);
+
+=== 9921-9975 ===
+ 9921|        public void FixedTick(float fixedDeltaTime)
+ 9922|        {
+ 9923|            SuitData suit = currentSuitData;
+ 9924|            if (suit == null) return;
+ 9925|            if (_juiceProcessor == null) return;
+ 9926|
+ 9927|            using (_fixedTickProfilerMarker.Auto())
+ 9928|            {
+ 9929|                // Fixed-step locomotion must sample input here. Render Tick is not guaranteed
+ 9930|                // before each FixedTick (batchmode / catch-up), and PrepareTransportAndFrameState
+ 9931|                // snapshots intent from _input* immediately below.
+ 9932|                SampleGameplayLocomotionInputForFixedStep();
+ 9933|
+ 9934|                PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+ 9935|
+ 9936|                float previousWaterImmersionRatio = _waterImmersionRatio;
+ 9937|                bool wasGroundedLastFixedTick = _isGrounded;
+ 9938|
+ 9939|                _rb.useGravity = false;
+ 9940|
+ 9941|                if (_isWalking)
+ 9942|                {
+ 9943|                    _bodyYaw = _cameraYaw;
+ 9944|                    _bodyYawVelocity = 0f;
+ 9945|                }
+ 9946|                else
+ 9947|                {
+ 9948|                    float bodyYawOmega = suit.bodyYawSpringOmega *
+ 9949|                        ResolveHeavyCarryBodyYawSpringMultiplier() *
+ 9950|                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
+ 9951|                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
+ 9952|                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+ 9953|                }
+ 9954|
+ 9955|                _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
+ 9956|                _wasGroundedLastFrame = _isGrounded;
+ 9957|
+ 9958|                GroundCheck();
+ 9959|                _playerMotor?.SetGroundedState(_isGrounded);
+ 9960|
+ 9961|                UpdateWaterImmersion(fixedDeltaTime);
+ 9962|
+ 9963|                ApplyLadderSplineSnapFromAsyncProbe(initialExosuitKinematicAuthority);
+ 9964|
+ 9965|                float physicsImmersion = _smoothedImmersionRatio;
+ 9966|                float feetDepth = GetFeetDepthBelowSurface(EffectiveWaterSurfaceY);
+ 9967|                bool hasImmediateShoreFooting = _isGrounded && feetDepth <= shoreWalkFootDepth;
+ 9968|                bool isShallowEnoughForShore = physicsImmersion < swimTransitionThreshold || hasImmediateShoreFooting;
+ 9969|                bool isDryLand = physicsImmersion <= 0.01f;
+ 9970|
+ 9971|                if (_isGrounded && isDryLand)
+ 9972|                {
+ 9973|                    _dryGroundGraceTimer = dryGroundGraceTime;
+ 9974|                }
+ 9975|                else if (_dryGroundGraceTimer > 0f)
+
+=== 4760-4820 ===
+ 4760|
+ 4761|        private PlayerTransportPreset PrepareFixedTickDependencies()
+ 4762|        {
+ 4763|            return ResolveActiveTransportPreset();
+ 4764|        }
+ 4765|
+ 4766|        private void OnEnable()
+ 4767|        {
+ 4768|            SargassumGlobalDragManager.Register(this);
+ 4769|            SpectrumEvents.RegisterSonarPingListener(this);
+ 4770|            OnRegister();
+ 4771|            OnDependencyInject();
+ 4772|            TryRegisterDependencyRebinds();
+ 4773|            if (_survivalSystem == null)
+ 4774|                TryGetComponent(out _survivalSystem);
+ 4775|            BindInventoryLoadSource();
+ 4776|            ResolvePlayerToolManagerCold();
+ 4777|            ResolvePlayerTransportCoordinatorCold();
+ 4778|            ResolveSwimPresentationControllerCold();
+ 4779|            ResolveUnderwaterVisualsCold();
+ 4780|            ResolveInputManagerBinding();
+ 4781|            EnsurePlayerRuntimeSubsystems();
+ 4782|            EnsurePlayerKinematicsNativeState();
+ 4783|            EnsureCinematicFocusBlackBox();
+ 4784|            RefreshCinematicFocusTierGateCold();
+ 4785|            _playerKinematicsTelemetryDumpedThisFault = false;
+ 4786|            if (_rb != null)
+ 4787|            {
+ 4788|                _playerState.SyncKinematic(ResolveBodyRuntimePosition(), ResolveAuthoritativeLinearVelocity(Vector3.zero));
+ 4789|                RecordLastValidAup(_playerState.AbsolutePosition);
+ 4790|            }
+ 4791|            if (_cameraRig != null)
+ 4792|                _cameraRig.Bind(playerCamera, _cameraComponent);
+ 4793|            ToggleBuoyancy(true);
+ 4794|            if (!_registeredOriginShiftListener)
+ 4795|            {
+ 4796|                HectonFloatingOrigin.RegisterListener(this);
+ 4797|                _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
+ 4798|            }
+ 4799|            TryRegisterToDispatchers();
+ 4800|        }
+ 4801|
+ 4802|        private void Start()
+ 4803|        {
+ 4804|            if (_survivalSystem == null)
+ 4805|                TryGetComponent(out _survivalSystem);
+ 4806|
+ 4807|            OnDependencyInject();
+ 4808|            if (_registeredTick && _registeredFixedTick && _registeredLateFrameTick) return;
+ 4809|            TryRegisterToDispatchers();
+ 4810|
+ 4811|            BindInventoryLoadSource();
+ 4812|            ResolveInputManagerBinding();
+ 4813|            if (useCrestOceanHeight && !_crestAvailable)
+ 4814|                InitOceanKinematics();
+ 4815|        }
+ 4816|
+ 4817|        private void OnDisable()
+ 4818|        {
+ 4819|            SargassumGlobalDragManager.Unregister(this);
+ 4820|            SpectrumEvents.UnregisterSonarPingListener(this);

@@ -1,0 +1,154 @@
+==== Assets\_Project\Scripts\HectonFloatingOrigin.cs ====
+326|// ResumePhysicsAfterShift driver - was starved by IsOriginShiftBootstrapLocked.
+929|SystemDispatcher.RequestOriginShiftFrameLock(SystemDispatcher.CurrentFrameIndex);
+2244|SystemDispatcher.RequestOriginShiftBootstrapLock();
+2254|SystemDispatcher.ReleaseOriginShiftBootstrapLock();
+2283|// starved Frost/Slow via IsOriginShiftBootstrapLocked. Rebuild is read-only
+==== Assets\_Project\Scripts\Core\SystemDispatcher.cs ====
+570|private static int _originShiftBootstrapLockCount;
+617|internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+816|Volatile.Write(ref _originShiftBootstrapLockCount, 0);
+1722|internal static void RequestOriginShiftBootstrapLock()
+1724|Interlocked.Increment(ref _originShiftBootstrapLockCount);
+1727|internal static void RequestOriginShiftFrameLock(int frame)
+1916|internal static void ReleaseOriginShiftBootstrapLock()
+1918|int current = Volatile.Read(ref _originShiftBootstrapLockCount);
+1922|int observed = Interlocked.CompareExchange(ref _originShiftBootstrapLockCount, next, current);
+4682|if (IsOriginShiftBootstrapLocked || IsOriginShiftFrameLockedForCurrentFrame)
+5230|bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+5246|if (IsOriginShiftBootstrapLocked)
+5251|if (IsOriginShiftBootstrapLocked)
+5517|if (IsOriginShiftBootstrapLocked)
+==== Assets\_Project\Scripts\QA\Headless\HeadlessSimulationRunner.cs ====
+284|// all Frost/LateFrame while IsOriginShiftBootstrapLocked holds.
+715|bool dispBootstrapLocked = SystemDispatcher.IsOriginShiftBootstrapLocked;
+770|" dispBootstrapLocked=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
+936|" dispBoot=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
+==== TryPrepareShiftTargets from 2279 ====
+2279|        private void TryPrepareShiftTargets()
+2280|        {
+2281|            // Physics pause no longer blocks target-cache rebuild. Holding dirty targets
+2282|            // under pause kept SceneRebaseTickLock alive (see ProcessPending finally) and
+2283|            // starved Frost/Slow via IsOriginShiftBootstrapLocked. Rebuild is read-only
+2284|            // cache work against already-committed world state.
+2285|            if (!Application.isPlaying ||
+2286|                _isShiftInProgress ||
+2287|                _pendingLoadedScenes.Count > 0 ||
+2288|                !_shiftTargetsDirty)
+2289|            {
+2290|                return;
+2291|            }
+2292|
+2293|            RebuildShiftTargetCache();
+2294|            if (_pendingLoadedScenes.Count == 0 && !_shiftTargetsDirty)
+2295|                ReleaseSceneRebaseTickLock();
+2296|        }
+==== FO Tick candidate 730|        public void Tick(float deltaTime) ====
+==== FO.Tick from 730 ====
+730|        public void Tick(float deltaTime)
+731|        {
+732|            UpdateAupJitterMaskRelease();
+733|            if (_isShiftInProgress)
+734|                return;
+735|
+736|            if (_physicsPauseActive)
+737|            {
+738|                if (SystemDispatcher.CurrentFrameIndex >= _physicsResumeFrame)
+739|                    ResumePhysicsAfterShift();
+740|                else
+741|                    return;
+742|            }
+743|
+744|            if (_shiftTargetsDirty || _pendingLoadedScenes.Count > 0)
+745|                _pendingSceneSynchronizationVisualSync = true;
+746|
+747|            if (_hasPendingShift)
+748|            {
+749|                if (SystemDispatcher.CurrentFrameIndex >= _pendingShiftFrame)
+750|                {
+751|                    Vector3 pendingShiftOffset = _pendingShiftOffset;
+752|                    _pendingShiftOffset = Vector3.zero;
+753|                    _pendingShiftFrame = -1;
+754|                    _hasPendingShift = false;
+755|                    QueueImmediateShiftVisualSync(pendingShiftOffset);
+756|                }
+757|
+758|                return;
+759|            }
+760|
+761|            Vector3 anchorRuntimePosition = Vector3.zero;
+762|            bool hasAnchorRuntimePosition = _anchor != null && TryGetTransformWorldPosition(_anchor, out anchorRuntimePosition);
+763|            IDataVault vault = _dataVault;
+764|            if (AupOriginShiftCoordinator.TickPreSimulation(
+765|                    vault,
+766|                    deltaTime,
+767|                    hasAnchorRuntimePosition,
+768|                    anchorRuntimePosition,
+769|                    _totalOffsetDouble,
+770|                    out Vector3 aupRequestedShift))
+771|            {
+772|                _shiftDeadzoneArmed = false;
+773|                BeginShiftWorld(aupRequestedShift);
+774|                return;
+775|            }
+776|
+777|            if (_driftCheckScheduled && ConsumeCompletedDriftCheck())
+778|                return;
+779|
+780|            UpdateCriticalEntityTrackers();
+781|            bool precisionWatchdogFrame = ShouldRunPrecisionWatchdogFrame();
+782|            if (!_driftCheckScheduled && precisionWatchdogFrame)
+783|                ScheduleAupDriftCheck();
+784|
+785|            if (_anchor == null)
+786|            {
+787|                _anchorResolveTimer -= deltaTime;
+788|                if (_anchorResolveTimer > 0f)
+789|                    return;
+790|
+791|                TryResolveAnchor(force: false);
+792|                if (_anchor == null)
+793|                    return;
+794|            }
+795|
+796|            if (!TryGetTransformWorldPosition(_anchor, out Vector3 anchorPosition))
+797|                return;
+798|
+799|            float anchorDistanceSqr = VectorLengthSq(anchorPosition);
+800|            if (anchorDistanceSqr <= ShiftDeadzoneReleaseMeters * ShiftDeadzoneReleaseMeters)
+801|                _shiftDeadzoneArmed = true;
+802|
+803|            bool isMovingAwayFromCenter = IsAnchorMovingAwayFromCenter(anchorPosition, deltaTime);
+804|            if (precisionWatchdogFrame &&
+805|                anchorDistanceSqr >= PrecisionWatchdogSafeRadiusSq &&
+806|                _shiftDeadzoneArmed &&
+807|                isMovingAwayFromCenter)
+808|            {
+809|                _shiftDeadzoneArmed = false;
+==== RunDispatcherLateFrame from 995 ====
+995|        private static void RunDispatcherLateFrameFromPlayerLoop()
+996|        {
+997|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+998|            if (dispatcher == null || !dispatcher._serviceRegistered || !dispatcher.isActiveAndEnabled)
+999|                return;
+1000|
+1001|            dispatcher.RunDispatcherLateFrame();
+1002|        }
+617|        internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+617|        internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+618|
+619|        internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == CurrentFrameIndex;
+620|
+621|        public float TimeDilationScalar => _timeDilationScalar;
+622|
+623|        public static ulong KillSwitchMask => unchecked((ulong)Volatile.Read(ref _homeostasisKillSwitchMaskBits));
+624|
+5230|                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+5230|                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+5231|                                        IsOriginShiftFrameLockedForCurrentFrame ||
+5232|                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+5233|                if (simulationBucketer != null && simulationBucketer.IsInitialized)
+5234|                {
+5235|                    simulationBucketer.ReportPreSimulationCostMs(preSimulationCostMs);
+5236|                    simulationBucketer.AdvanceFrame(
+5237|                        globalQualityWeightByte,

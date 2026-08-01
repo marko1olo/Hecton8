@@ -1,0 +1,285 @@
+==== GREP /inputEnabled|switchToPlayerInput|IsPlayerInputEnabled|movementIntent01/ C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessPlayModeProbe.cs ====
+  228|        private const double GraceHardTimeoutMarginSeconds = 20.0;
+  229|
+  230|        // L16: batchmode WallClock often yields unscaledDeltaTime==0 so RunFixedStepAccumulator
+>>231|        // early-outs and HPM.FixedTick never runs (hop2 ABSENT, movementIntent01max=0) despite the
+  232|        // world driver publishing hot overrides. Mirror HeadlessSimulationRunner.EnsureHeadlessSimulationClock:
+  233|        // unpause + headless dilation + EnableStepBoundedTime so the product dispatcher supplies a
+  234|        // real fixed unscaled dt per update. Probe is INPUT PRODUCER only via WorldDriver; this is
+---
+  2151|            // and the player stays held by the Kinematic Arrest Gate - IsSuspended, velocity zero, input
+  2152|            // locked - which is correct designed behaviour, not a bug. The driver still runs and still
+  2153|            // publishes: in Logs/omega_route20.log it published 47,344 input overrides and the Swim row
+>>2154|            // reported FAIL with movementIntent01max=0.000. Read literally that says the input route is
+  2155|            // broken. It is not; the input route delivered every one of those overrides to a player that
+  2156|            // was not permitted to move.
+  2157|            //
+---
+(matches=2)
+==== GREP /inputEnabled|switchToPlayerInput|IsPlayerInputEnabled|SwitchToPlayerInput/ C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs ====
+  937|        private static bool _sawVitalsOxygenFlag;
+  938|        private static bool _sawVitalsPressureFlag;
+  939|        private static bool _sawVitalsDepthFlag;
+>>940|        private static bool _inputEnabledEverObserved;
+  941|        // Distinct from _inputEnabledEverObserved: GlobalRegistry.RegisteredInput can be null (nothing
+  942|        // registered) or non-null with a closed action map, and those are different defects with different
+  943|        // owners. One shared flag hid that difference for a full cycle.
+---
+  938|        private static bool _sawVitalsPressureFlag;
+  939|        private static bool _sawVitalsDepthFlag;
+  940|        private static bool _inputEnabledEverObserved;
+>>941|        // Distinct from _inputEnabledEverObserved: GlobalRegistry.RegisteredInput can be null (nothing
+  942|        // registered) or non-null with a closed action map, and those are different defects with different
+  943|        // owners. One shared flag hid that difference for a full cycle.
+  944|        private static bool _inputServiceEverObserved;
+---
+  1314|            _sawVitalsOxygenFlag = false;
+  1315|            _sawVitalsPressureFlag = false;
+  1316|            _sawVitalsDepthFlag = false;
+>>1317|            _inputEnabledEverObserved = false;
+  1318|            _inputServiceEverObserved = false;
+  1319|            _inputBlockMaskLast = 0u;
+  1320|
+---
+  1578|            if (input != null)
+  1579|            {
+  1580|                _inputServiceEverObserved = true;
+>>1581|                if (input.IsPlayerInputEnabled)
+  1582|                    _inputEnabledEverObserved = true;
+  1583|
+  1584|                _inputBlockMaskLast = input.GetInputBlockMask();
+---
+  1579|            {
+  1580|                _inputServiceEverObserved = true;
+  1581|                if (input.IsPlayerInputEnabled)
+>>1582|                    _inputEnabledEverObserved = true;
+  1583|
+  1584|                _inputBlockMaskLast = input.GetInputBlockMask();
+  1585|
+---
+  2630|        ///     way GlobalRegistry.Input does. Every consumer null-checks it before anything else
+  2631|        ///     (HectonPlayerInputHandler.cs:37, HectonPlayerMovement.cs:7992, PlayerToolManager.cs:414), so
+  2632|        ///     a null slot suppresses input for a reason that has nothing to do with action maps.
+>>2633|        ///   GATE 2, IInputService.IsPlayerInputEnabled. Resolves to
+  2634|        ///     _nativeInputManager.IsPlayerInputEnabled (InputDispatcher.cs:409) and from there to
+  2635|        ///     InputActionMap.enabled (InputManager.cs:277). SwitchToPlayerInput below is the same public
+  2636|        ///     entry PauseMenuController.cs:728 and HectonFabricatorUI.cs:644 use when a menu closes - the
+---
+  2631|        ///     (HectonPlayerInputHandler.cs:37, HectonPlayerMovement.cs:7992, PlayerToolManager.cs:414), so
+  2632|        ///     a null slot suppresses input for a reason that has nothing to do with action maps.
+  2633|        ///   GATE 2, IInputService.IsPlayerInputEnabled. Resolves to
+>>2634|        ///     _nativeInputManager.IsPlayerInputEnabled (InputDispatcher.cs:409) and from there to
+  2635|        ///     InputActionMap.enabled (InputManager.cs:277). SwitchToPlayerInput below is the same public
+  2636|        ///     entry PauseMenuController.cs:728 and HectonFabricatorUI.cs:644 use when a menu closes - the
+  2637|        ///     driver opens the gate the way a human's first input does, and never forces the flag or reads
+---
+  2632|        ///     a null slot suppresses input for a reason that has nothing to do with action maps.
+  2633|        ///   GATE 2, IInputService.IsPlayerInputEnabled. Resolves to
+  2634|        ///     _nativeInputManager.IsPlayerInputEnabled (InputDispatcher.cs:409) and from there to
+>>2635|        ///     InputActionMap.enabled (InputManager.cs:277). SwitchToPlayerInput below is the same public
+  2636|        ///     entry PauseMenuController.cs:728 and HectonFabricatorUI.cs:644 use when a menu closes - the
+  2637|        ///     driver opens the gate the way a human's first input does, and never forces the flag or reads
+  2638|        ///     past it.
+---
+  2645|        /// <summary>
+  2646|        /// Product-correct locomotion readiness for scripted swim/route holds:
+  2647|        /// force-close PDA / fabricator / pause via their real close APIs (restoring player maps),
+>>2648|        /// then always SwitchToPlayerInput. Called every settle and swim hold tick so a mid-window
+  2649|        /// SwitchToUIInput or sticky IsOpen cannot starve hop2 (GetState) for the whole phase.
+  2650|        /// </summary>
+  2651|        private static void EnsureGameplayLocomotionInputReady()
+---
+  2685|            IInputService input = GlobalRegistry.RegisteredInput;
+  2686|            if (input != null)
+  2687|            {
+>>2688|                input.SwitchToPlayerInput();
+  2689|                _switchedToPlayerInput = true;
+  2690|            }
+  2691|
+---
+  2722|            // Force-close any leftover menu (PDA/Fab/Pause) and re-assert the player action map
+  2723|            // every settle tick. L10 measured hop2-starve: SampleGameplayLocomotionInputForFixedStep
+  2724|            // short-circuits on IsGameplayInputBlockedByMenu without calling GetState, and a single
+>>2725|            // SwitchToPlayerInput at first settle loses to later SwitchToUIInput (MainMenu bind,
+  2726|            // sticky IsOpen). Product close APIs only — no mock input path.
+  2727|            EnsureGameplayLocomotionInputReady();
+  2728|            IInputService input = GlobalRegistry.RegisteredInput;
+---
+  2771|                .Append("s: survival=").Append(_survival != null)
+  2772|                .Append(" movement=").Append(_movement != null)
+  2773|                .Append(" inputServiceRegistered=").Append(input != null)
+>>2774|                .Append(" inputEnabled=").Append(_inputEnabledEverObserved)
+  2775|                .Append(" switchToPlayerInputCalled=").Append(_switchedToPlayerInput)
+  2776|                .Append(" blockMask=0x").Append(_inputBlockMaskLast.ToString("X8", CultureInfo.InvariantCulture));
+  2777|
+---
+  2772|                .Append(" movement=").Append(_movement != null)
+  2773|                .Append(" inputServiceRegistered=").Append(input != null)
+  2774|                .Append(" inputEnabled=").Append(_inputEnabledEverObserved)
+>>2775|                .Append(" switchToPlayerInputCalled=").Append(_switchedToPlayerInput)
+  2776|                .Append(" blockMask=0x").Append(_inputBlockMaskLast.ToString("X8", CultureInfo.InvariantCulture));
+  2777|
+  2778|            if (input == null)
+---
+  2778|            if (input == null)
+  2779|            {
+  2780|                _detail.Append(" - BLOCKER GATE 1 (service absent, NOT disabled): GlobalRegistry's Input ")
+>>2781|                    .Append("slot is empty, so IsPlayerInputEnabled was never reachable and the leading ")
+  2782|                    .Append("null check in HectonPlayerInputHandler.cs:37 rejected every frame. The slot's ")
+  2783|                    .Append("only producer is GameBootstrapper.EnsureInputDispatcherRegistered ")
+  2784|                    .Append("(GameBootstrapper.cs:6309), which runs once in BootstrapPhase.Player - if the ")
+---
+  2785|                    .Append("dispatcher it creates does not outlive the scene it was created in, ")
+  2786|                    .Append("OnDestroy -> TryUnregisterInputService empties the slot and nothing refills it");
+  2787|            }
+>>2788|            else if (!_inputEnabledEverObserved)
+  2789|            {
+  2790|                _detail.Append(" - BLOCKER GATE 2 (service present, map closed): SwitchToPlayerInput was ")
+  2791|                    .Append("invoked on the registered service and IsPlayerInputEnabled still never read ")
+---
+  2787|            }
+  2788|            else if (!_inputEnabledEverObserved)
+  2789|            {
+>>2790|                _detail.Append(" - BLOCKER GATE 2 (service present, map closed): SwitchToPlayerInput was ")
+  2791|                    .Append("invoked on the registered service and IsPlayerInputEnabled still never read ")
+  2792|                    .Append("true, so InputManager.EnablePlayerInput did not leave the Player action map ")
+  2793|                    .Append("enabled (InputManager.cs:1019 and :277). Nothing this driver may legitimately ")
+---
+  2788|            else if (!_inputEnabledEverObserved)
+  2789|            {
+  2790|                _detail.Append(" - BLOCKER GATE 2 (service present, map closed): SwitchToPlayerInput was ")
+>>2791|                    .Append("invoked on the registered service and IsPlayerInputEnabled still never read ")
+  2792|                    .Append("true, so InputManager.EnablePlayerInput did not leave the Player action map ")
+  2793|                    .Append("enabled (InputManager.cs:1019 and :277). Nothing this driver may legitimately ")
+  2794|                    .Append("do can open that gate - the owner has to");
+---
+  2917|                .Append(" pressure=").Append(_sawVitalsPressureFlag)
+  2918|                .Append(" depth=").Append(_sawVitalsDepthFlag)
+  2919|                .Append("] inputServiceRegistered=").Append(_inputServiceEverObserved)
+>>2920|                .Append(" inputEnabled=").Append(_inputEnabledEverObserved)
+  2921|                .Append(" switchToPlayerInputCalled=").Append(_switchedToPlayerInput)
+  2922|                .Append(" blockMask=0x").Append(_inputBlockMaskLast.ToString("X8", CultureInfo.InvariantCulture))
+  2923|                .Append(" pdaOpen=").Append(Hecton8.UI.PlayerPDA.IsOpen)
+---
+  2918|                .Append(" depth=").Append(_sawVitalsDepthFlag)
+  2919|                .Append("] inputServiceRegistered=").Append(_inputServiceEverObserved)
+  2920|                .Append(" inputEnabled=").Append(_inputEnabledEverObserved)
+>>2921|                .Append(" switchToPlayerInputCalled=").Append(_switchedToPlayerInput)
+  2922|                .Append(" blockMask=0x").Append(_inputBlockMaskLast.ToString("X8", CultureInfo.InvariantCulture))
+  2923|                .Append(" pdaOpen=").Append(Hecton8.UI.PlayerPDA.IsOpen)
+  2924|                .Append(" fabOpen=").Append(Hecton8.UI.HectonFabricatorUI.IsMenuOpen)
+---
+  2923|                .Append(" pdaOpen=").Append(Hecton8.UI.PlayerPDA.IsOpen)
+  2924|                .Append(" fabOpen=").Append(Hecton8.UI.HectonFabricatorUI.IsMenuOpen)
+  2925|                .Append(" pauseOpen=").Append(Hecton8.UI.PauseMenuController.IsAnyOpen)
+>>2926|                .Append(" inputEnabledNow=").Append(
+  2927|                    GlobalRegistry.RegisteredInput != null &&
+  2928|                    GlobalRegistry.RegisteredInput.IsPlayerInputEnabled);
+  2929|
+---
+  2925|                .Append(" pauseOpen=").Append(Hecton8.UI.PauseMenuController.IsAnyOpen)
+  2926|                .Append(" inputEnabledNow=").Append(
+  2927|                    GlobalRegistry.RegisteredInput != null &&
+>>2928|                    GlobalRegistry.RegisteredInput.IsPlayerInputEnabled);
+  2929|
+  2930|            if (!_inputServiceEverObserved)
+  2931|            {
+---
+  2930|            if (!_inputServiceEverObserved)
+  2931|            {
+  2932|                _detail.Append(" - BLOCKER GATE 1: GlobalRegistry's Input slot was EMPTY for the whole ")
+>>2933|                    .Append("window. No IInputService was ever registered, so IsPlayerInputEnabled was ")
+  2934|                    .Append("never reachable and the leading null check in HectonPlayerInputHandler.cs:37 ")
+  2935|                    .Append("rejected every frame. This is a registration lifetime defect, not a disabled ")
+  2936|                    .Append("action map");
+---
+  2938|                return;
+  2939|            }
+  2940|
+>>2941|            if (!_inputEnabledEverObserved)
+  2942|            {
+  2943|                _detail.Append(" - BLOCKER GATE 2: the service was registered but ")
+  2944|                    .Append("IInputService.IsPlayerInputEnabled was false for the whole window, so ")
+---
+  2941|            if (!_inputEnabledEverObserved)
+  2942|            {
+  2943|                _detail.Append(" - BLOCKER GATE 2: the service was registered but ")
+>>2944|                    .Append("IInputService.IsPlayerInputEnabled was false for the whole window, so ")
+  2945|                    .Append("HectonPlayerInputHandler.TryReadFrame refused every frame and no locomotion ")
+  2946|                    .Append("producer can reach movement in this configuration");
+  2947|                Latch(RowSwim, RowVerdict.Blocked);
+---
+  3400|                .Append(F(_nodeHealthAtToolUse)).Append("->").Append(F(_nodeHealthAfterToolUse))
+  3401|                .Append(" durability ").Append(F(_durabilityAtToolUse)).Append("->")
+  3402|                .Append(F(_durabilityAfterToolUse))
+>>3403|                .Append(" inputEnabled=").Append(_inputEnabledEverObserved);
+  3404|
+  3405|            if (nodeDamaged || toolSpentItself)
+  3406|            {
+---
+  3410|            else
+  3411|            {
+  3412|                _detail.Append(" - equip observed, no downstream effect");
+>>3413|                if (!_inputEnabledEverObserved)
+  3414|                    _detail.Append("; IsPlayerInputEnabled was false, so PlayerToolManager never read the ")
+  3415|                        .Append("snapshot and UsePrimary was never called");
+  3416|                else if (_node == null)
+---
+  3411|            {
+  3412|                _detail.Append(" - equip observed, no downstream effect");
+  3413|                if (!_inputEnabledEverObserved)
+>>3414|                    _detail.Append("; IsPlayerInputEnabled was false, so PlayerToolManager never read the ")
+  3415|                        .Append("snapshot and UsePrimary was never called");
+  3416|                else if (_node == null)
+  3417|                    _detail.Append("; there was no resource node in front of the player for the tool to act on");
+---
+  4328|                .Append(" consumerConfirmed=").Append(consumerConfirmed)
+  4329|                .Append(" | overrideFlagSeen=").Append(_verbSweepOverrideFlagObserved)
+  4330|                .Append(" overridesPublished=").Append(_publishedOverrides)
+>>4331|                .Append(" inputEnabled=").Append(_inputEnabledEverObserved)
+  4332|                .Append(" blockMask=0x")
+  4333|                .Append(_inputBlockMaskLast.ToString("X8", CultureInfo.InvariantCulture))
+  4334|                .Append(" lastResolvedButtons=0x")
+---
+(matches=28)
+==== C:\hades\Hecton8\Assets\_Project\Scripts\HectonPlayerMovement.cs L8145-8205 (15332 total) ====
+8145|        private void ProcessPlayerInputFrame()
+8146|        {
+8147|            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+8148|            {
+8149|                _inputHandler.TryReadFrame(
+8150|                    _inputManager,
+8151|                    jumpBufferTime,
+8152|                    out HectonPlayerInputFrame inputFrame,
+8153|                    out bool jumpBuffered);
+8154|                _currentInputState = inputFrame.State;
+8155|                _cachedMoveInput = inputFrame.MoveInput;
+8156|                _cachedVerticalInput = inputFrame.VerticalInput;
+8157|                _pendingLookInput = inputFrame.LookInput;
+8158|                if (jumpBuffered)
+8159|                {
+8160|                    _jumpRequested = true;
+8161|                    _jumpBufferTimer = jumpBufferTime;
+8162|                }
+8163|
+8164|                Vector2 lookDelta = _pendingLookInput;
+8165|                _pendingLookInput = Vector2.zero;
+8166|                ApplyLookInput(lookDelta);
+8167|
+8168|                _inputH = _cachedMoveInput.x;
+8169|                _inputV = _cachedMoveInput.y;
+8170|                _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+8171|                if (IsAuthoritativeVehicleTransportActive())
+8172|                {
+8173|                    _inputH = 0f;
+8174|                    _inputV = 0f;
+8175|                    _inputVertical = 0f;
+8176|                }
+8177|                SetSprintingState(inputFrame.SprintHeld != 0);
+8178|            }
+8179|            else
+8180|            {
+8181|                _currentInputState = default;
+8182|                _pendingLookInput = Vector2.zero;
+8183|       
+WROTE C:\hades\Hecton8\Tools\_cline_scratch\_l17_enabled_dig.txt 50236

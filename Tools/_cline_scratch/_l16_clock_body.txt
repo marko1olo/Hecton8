@@ -1,0 +1,90 @@
+811|
+812|        /// <summary>
+813|        /// Unpause + re-request headless dilation + enable step-bounded dispatcher time.
+814|        /// Product clock restore only — never writes CSV/day counters.
+815|        /// Batchmode WallClock often yields unscaledDeltaTime==0 so FastTick never advances
+816|        /// dayAcc; EnableStepBoundedTime supplies a real fixed unscaled dt per update.
+817|        /// </summary>
+818|        private void EnsureHeadlessSimulationClock(string reason)
+819|        {
+820|            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+821|            if (dispatcher == null)
+822|            {
+823|                LogRunnerLifecycle("sim clock ensure reason=" + reason + " dispatcher=null");
+824|                return;
+825|            }
+826|
+827|            bool wasPaused = dispatcher.SimulationPaused;
+828|            float dilBefore = dispatcher.TimeDilationScalar;
+829|            bool stepBoundBefore = SystemDispatcher.IsStepBoundedTimeActive;
+830|
+831|            // ConsumeFrameTimeDilationScalar returns 0 while _simulationPaused — unpause first.
+832|            if (wasPaused)
+833|                dispatcher.RequestSimulationPause(false, RunnerHash);
+834|
+835|            dispatcher.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+836|
+837|            // Real product headless time source (InternalsVisibleTo Hecton8.QA.Headless).
+838|            // Idempotent: EnableStepBoundedTime resets elapsed only when first arming; keep armed.
+839|            bool stepBoundOk = stepBoundBefore;
+840|            if (!stepBoundBefore)
+841|                stepBoundOk = SystemDispatcher.EnableStepBoundedTime(HeadlessStepBoundedDeltaSeconds);
+842|
+843|            _lastClockEnsureRealtime = Time.realtimeSinceStartupAsDouble;
+844|
+845|            bool pausedAfter = dispatcher.SimulationPaused;
+846|            float dilAfter = dispatcher.TimeDilationScalar;
+847|            bool stepBoundAfter = SystemDispatcher.IsStepBoundedTimeActive;
+848|            LogRunnerLifecycle(
+849|                "sim clock ensure reason=" + reason +
+850|                " pausedBefore=" + (wasPaused ? "1" : "0") +
+851|                " dilBefore=" + dilBefore.ToString("0.###", CultureInfo.InvariantCulture) +
+852|                " dilAfter=" + dilAfter.ToString("0.###", CultureInfo.InvariantCulture) +
+853|                " pausedAfter=" + (pausedAfter ? "1" : "0") +
+854|                " stepBoundBefore=" + (stepBoundBefore ? "1" : "0") +
+855|                " stepBoundAfter=" + (stepBoundAfter ? "1" : "0") +
+856|                " stepBoundOk=" + (stepBoundOk ? "1" : "0") +
+857|                " stepDt=" + HeadlessStepBoundedDeltaSeconds.ToString("0.###", CultureInfo.InvariantCulture) +
+858|                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0"));
+859|        }
+860|
+861|        /// <summary>
+862|        /// While ecology is ready and no day has completed, periodically re-assert the real clock
+863|        /// against late SimulationPauseSignal / pause-menu / desync paths. Stops once days advance.
+864|        /// </summary>
+865|        private void MaybeEnsureHeadlessSimulationClockSustain()
+866|        {
+867|            if (!_ecologyReady || _finished || _completedDays > 0)
+868|                return;
+869|
+870|            if (_lastClockEnsureRealtime > 0.0 &&
+871|                Time.realtimeSinceStartupAsDouble - _lastClockEnsureRealtime < PostReadyClockEnsureIntervalSeconds)
+872|                return;
+873|
+874|            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+875|            if (dispatcher == null)
+876|                return;
+877|
+878|            // Cheap path: only force when paused, dilation collapsed, or step-bound clock dropped.
+879|            bool needsRestore = dispatcher.SimulationPaused ||
+880|                                dispatcher.TimeDilationScalar + 0.01f < TimeDilationScalar ||
+881|                                !SystemDispatcher.IsStepBoundedTimeActive;
+882|            if (!needsRestore)
+883|            {
+884|                _lastClockEnsureRealtime = Time.realtimeSinceStartupAsDouble;
+885|                return;
+886|            }
+887|
+888|            EnsureHeadlessSimulationClock("post-ready-sustain");
+889|        }
+890|
+891|        /// <summary>
+892|        /// Throttled post-ready Warning diag so BATCH_TIMEOUT still leaves pause/dilation/dayAcc on disk.
+893|        /// </summary>
+894|        private void MaybeLogPostReadyProgress()
+895|        {
+896|            if (!_ecologyReady || _finished || _simulationStartRealtime <= 0.0)
+897|                return;
+898|
+899|            double waited = Time.realtimeSinceStartupAsDouble - _simulationStartRealtime;
+900|            int bucket = (int)(waited / PostReadyDiagIntervalSeconds);

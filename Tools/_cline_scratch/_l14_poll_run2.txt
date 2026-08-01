@@ -1,0 +1,19 @@
+﻿=== L14 POLL COMPACT ===
+ts=2026-07-31 22:58:58 pid=3976 alive=False
+log_bytes=2029519 prev=2029519 growing=False stagnant=True
+intent01max=0.0 lastOverrideMove=0,1 currentStateMove=0,0 depth_span=0.0 immersionMax=1.0
+readHop_seen=[1] hop2_present=False Swim_FAIL=1 Swim_PASS=0 RESULT_failures=1
+verdict_draft=ROUTE_HAS_VERDICT
+--- last samples ---
+C:\WINDOWS\system32\explorerframe.dll:explorerframe.dll (00007FF8439D0000), size: 3149824 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\system32\explorerframe.dll', fileVersion: 10.0.26100.8737
+C:\WINDOWS\SYSTEM32\TextShaping.dll:TextShaping.dll (00007FF865B70000), size: 733184 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\TextShaping.dll', fileVersion: 10.0.26100.8737
+C:\WINDOWS\SYSTEM32\textinputframework.dll:textinputframework.dll (00007FF85C2C0000), size: 1339392 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\textinputframework.dll', fileVersion: 10.0.26100.8737
+C:\WINDOWS\system32\Oleacc.dll:Oleacc.dll (00007FF85F7C0000), size: 471040 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\system32\Oleacc.dll', fileVersion: 7.2.26100.8737
+C:\hades\Hecton8\Library\BurstCache\JIT\fe716d90fff16276ff577b5bb5c35c5e.dll:fe716d90fff16276ff577b5bb5c35c5e.dll (00007FFFFF980000), size: 413696 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\fe716d90fff16276ff
+C:\hades\Hecton8\Library\BurstCache\JIT\ba38ba01d50ae20b1429ed60b7e08585.dll:ba38ba01d50ae20b1429ed60b7e08585.dll (00007FFFFF910000), size: 442368 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\ba38ba01d50ae20b14
+C:\hades\Hecton8\Library\BurstCache\JIT\9d4aecac36acf24e6546c2643aa2d0dc.dll:9d4aecac36acf24e6546c2643aa2d0dc.dll (00007FFFFD1D0000), size: 487424 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\9d4aecac36acf24e65
+C:\hades\Hecton8\Library\BurstCache\JIT\181dc0962708302d8c3316825076ad0f.dll:181dc0962708302d8c3316825076ad0f.dll (00007FFFFAC50000), size: 495616 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\181dc0962708302d8c
+C:\hades\Hecton8\Library\BurstCache\JIT\7fd71c8c7fbabe4b4b79460853770643.dll:7fd71c8c7fbabe4b4b79460853770643.dll (00007FFFFABC0000), size: 573440 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\7fd71c8c7fbabe4b4b
+C:\hades\Hecton8\Library\BurstCache\JIT\c02341abe70d522d3fb95d1c56853e8d.dll:c02341abe70d522d3fb95d1c56853e8d.dll (00007FFFF8130000), size: 585728 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\c02341abe70d522d3f
+C:\hades\Hecton8\Library\BurstCache\JIT\27e458b37e743e64bb709e5926252143.dll:27e458b37e743e64bb709e5926252143.dll (00007FFFF7130000), size: 995328 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\27e458b37e743e64bb
+C:\hades\Hecton8\Assets\MapMagic\Tools\Plugins\NativePlugins.dll:NativePlugins.dll (00007FF86D4D0000), size: 122880 (result: 0), SymType: '-exported-', PDB: 'C:\hades\Hecton8\Assets\MapMagic\Tools\Plugins\NativePlugins.dll'

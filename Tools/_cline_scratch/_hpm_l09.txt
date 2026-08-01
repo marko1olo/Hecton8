@@ -1,0 +1,553 @@
+
+===== 8060-8255 =====
+8060|            SetSprintingState(frame.SprintHeld != 0);
+8061|        }
+8062|
+8063|        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8064|        //  Tick Ã¢â‚¬â€ INPUT + CAMERA (render framerate)
+8065|        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8066|
+8067|        public void Tick(float deltaTime)
+8068|        {
+8069|            SuitData suit = currentSuitData;
+8070|            if (suit == null) return;
+8071|            if (_juiceProcessor == null) return;
+8072|
+8073|            using (_tickProfilerMarker.Auto())
+8074|            {
+8075|                _currentRenderDeltaTime = math.max(0.0001f, deltaTime);
+8076|                RefreshVrComfortSettingsCache();
+8077|                PrepareRenderTickDependencies();
+8078|                if (ConsumeInventoryLoadSignals())
+8079|                    HandleInventoryLoadChanged();
+8080|
+8081|                DrainNarrativeFocusSignals();
+8082|                AdvanceCinematicFocus(deltaTime);
+8083|                if (_activeSonarPingCooldownTimer > 0f)
+8084|                {
+8085|                    _activeSonarPingCooldownTimer -= deltaTime;
+8086|                    if (_activeSonarPingCooldownTimer < 0f)
+8087|                        _activeSonarPingCooldownTimer = 0f;
+8088|                }
+8089|
+8090|                if (IsGameplayInputBlockedByMenu())
+8091|                {
+8092|                    HandleMenuBlockedInput(deltaTime, suit);
+8093|                    return;
+8094|                }
+8095|
+8096|                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+8097|                {
+8098|                    Cursor.lockState = CursorLockMode.Locked;
+8099|                    Cursor.visible = false;
+8100|                    _inputCleared = false;
+8101|                }
+8102|
+8103|                ProcessPlayerInputFrame();
+8104|                ProcessWipeoutInputOverride();
+8105|                ProcessLocomotionPresentationAndJuice(deltaTime, suit);
+8106|            }
+8107|        }
+8108|
+8109|        private void HandleMenuBlockedInput(float deltaTime, SuitData suit)
+8110|        {
+8111|            _currentInputState = default;
+8112|            _pendingLookInput = Vector2.zero;
+8113|            _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
+8114|            SetSprintingState(false);
+8115|            _inputCleared = true;
+8116|            _lastKinematicRepairProbe = default;
+8117|            _lastKinematicRepairSnapPoint = default;
+8118|            _kinematicRepairStateBits &= ~KinematicRepairStateHasSnapBit;
+8119|            ResetKinematicRepairProbeReuseGate();
+8120|            Cursor.lockState = CursorLockMode.None;
+8121|            Cursor.visible = true;
+8122|            UpdateRenderInterpolationState();
+8123|            BuildJuiceInput(deltaTime, suit);
+8124|            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+8125|            UpdateUnderwaterSomaticCameraOffsets(deltaTime);
+8126|            ApplyCameraState();
+8127|            UpdateVrComfortSignals(deltaTime, Vector3.zero, 0f);
+8128|        }
+8129|
+8130|        private void ProcessPlayerInputFrame()
+8131|        {
+8132|            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+8133|            {
+8134|                _inputHandler.TryReadFrame(
+8135|                    _inputManager,
+8136|                    jumpBufferTime,
+8137|                    out HectonPlayerInputFrame inputFrame,
+8138|                    out bool jumpBuffered);
+8139|                _currentInputState = inputFrame.State;
+8140|                _cachedMoveInput = inputFrame.MoveInput;
+8141|                _cachedVerticalInput = inputFrame.VerticalInput;
+8142|                _pendingLookInput = inputFrame.LookInput;
+8143|                if (jumpBuffered)
+8144|                {
+8145|                    _jumpRequested = true;
+8146|                    _jumpBufferTimer = jumpBufferTime;
+8147|                }
+8148|
+8149|                Vector2 lookDelta = _pendingLookInput;
+8150|                _pendingLookInput = Vector2.zero;
+8151|                ApplyLookInput(lookDelta);
+8152|
+8153|                _inputH = _cachedMoveInput.x;
+8154|                _inputV = _cachedMoveInput.y;
+8155|                _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+8156|                if (IsAuthoritativeVehicleTransportActive())
+8157|                {
+8158|                    _inputH = 0f;
+8159|                    _inputV = 0f;
+8160|                    _inputVertical = 0f;
+8161|                }
+8162|                SetSprintingState(inputFrame.SprintHeld != 0);
+8163|            }
+8164|            else
+8165|            {
+8166|                _currentInputState = default;
+8167|                _pendingLookInput = Vector2.zero;
+8168|                _inputH = 0f;
+8169|                _inputV = 0f;
+8170|                _inputVertical = 0f;
+8171|                SetSprintingState(false);
+8172|                _mouseXDelta = 0f;
+8173|            }
+8174|        }
+8175|
+8176|        private void ProcessWipeoutInputOverride()
+8177|        {
+8178|            if (_wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f)
+8179|            {
+8180|                _currentInputState = default;
+8181|                _pendingLookInput = Vector2.zero;
+8182|                _mouseXDelta = 0f;
+8183|                _inputH = 0f;
+8184|                _inputV = 0f;
+8185|                _inputVertical = 0f;
+8186|                SetSprintingState(false);
+8187|                _jumpRequested = false;
+8188|                _jumpBufferTimer = 0f;
+8189|            }
+8190|        }
+8191|
+8192|        /// <summary>
+8193|        /// Samples MoveDelta / vertical / sprint into the fixed-step locomotion fields that
+8194|        /// <see cref="ResolveRawInputIntentVector"/> and swim thrust read.
+8195|        ///
+8196|        /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+8197|        /// render IUpdatable.Tick path. Batchmode and physics-heavy schedules (headless V0 probe,
+8198|        /// long fixed steps) drive locomotion almost entirely through FixedTick while render Tick
+8199|        /// rarely runs, so _inputH/_inputV/_inputVertical stayed zero even when InputDispatcher
+8200|        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+8201|        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+8202|        /// mocking input or bypassing menu / vehicle / wipeout gates.
+8203|        ///
+8204|        /// Look / juice / cursor remain render-owned on Tick. Menu block zeros locomotion only -
+8205|        /// full HandleMenuBlockedInput stays on Tick so camera/cursor presentation is not driven
+8206|        /// from the physics step.
+8207|        /// </summary>
+8208|        private void SampleGameplayLocomotionInputForFixedStep()
+8209|        {
+8210|            ResolveInputManagerBinding();
+8211|
+8212|            if (IsGameplayInputBlockedByMenu())
+8213|            {
+8214|                _currentInputState = default;
+8215|                _pendingLookInput = Vector2.zero;
+8216|                _inputH = 0f;
+8217|                _inputV = 0f;
+8218|                _inputVertical = 0f;
+8219|                _mouseXDelta = 0f;
+8220|                SetSprintingState(false);
+8221|                return;
+8222|            }
+8223|
+8224|            ProcessPlayerInputFrame();
+8225|            ProcessWipeoutInputOverride();
+8226|        }
+8227|
+8228|        private void ProcessLocomotionPresentationAndJuice(float deltaTime, SuitData suit)
+8229|        {
+8230|            ConsumeKinematicRepairTargetProbe();
+8231|            ScheduleKinematicRepairTargetProbe();
+8232|            UpdateRenderInterpolationState();
+8233|            _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
+8234|            _velocity = _feedbackVelocity;
+8235|            float currentSpeed = ApproximateVectorMagnitude(_velocity);
+8236|            float renderCameraYaw = CameraYaw;
+8237|            float yawDelta = DeltaAngleDegrees(_prevYawForMomentum, renderCameraYaw);
+8238|            UpdateVrComfortSignals(deltaTime, _velocity, yawDelta);
+8239|
+8240|            if (_swimPresentationController != null)
+8241|            {
+8242|                _swimPresentationController.SyncFromLocomotion(deltaTime, true);
+8243|                _debugLastSwimPresentationDriveFrame = SystemDispatcher.CurrentFrameIndex;
+8244|            }
+8245|
+8246|            BuildJuiceInput(deltaTime, suit);
+8247|            _juiceInput.speedDelta = currentSpeed - _prevSpeed;
+8248|            _juiceInput.yawDelta = yawDelta;
+8249|            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+8250|
+8251|            _prevSpeed = currentSpeed;
+8252|            _prevYawForMomentum = renderCameraYaw;
+8253|
+8254|            if (_juiceOutput.stepEvent != 0)
+8255|            {
+
+===== 9910-9965 =====
+9910|        {
+9911|            if (_useFixedFrameSpatialCache && MathGuard.IsFinite(_fixedFrameBodyPosition))
+9912|                return HectonPlayerMotor.SafeVelocity(_fixedFrameBodyPosition);
+9913|
+9914|            Vector3 statePosition = ResolvePlayerAupRuntimePosition();
+9915|            if (MathGuard.IsFinite(statePosition))
+9916|                return HectonPlayerMotor.SafeVelocity(statePosition);
+9917|
+9918|            return _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.position) : Vector3.zero;
+9919|        }
+9920|
+9921|        public void FixedTick(float fixedDeltaTime)
+9922|        {
+9923|            SuitData suit = currentSuitData;
+9924|            if (suit == null) return;
+9925|            if (_juiceProcessor == null) return;
+9926|
+9927|            using (_fixedTickProfilerMarker.Auto())
+9928|            {
+9929|                // Fixed-step locomotion must sample input here. Render Tick is not guaranteed
+9930|                // before each FixedTick (batchmode / catch-up), and PrepareTransportAndFrameState
+9931|                // snapshots intent from _input* immediately below.
+9932|                SampleGameplayLocomotionInputForFixedStep();
+9933|
+9934|                PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+9935|
+9936|                float previousWaterImmersionRatio = _waterImmersionRatio;
+9937|                bool wasGroundedLastFixedTick = _isGrounded;
+9938|
+9939|                _rb.useGravity = false;
+9940|
+9941|                if (_isWalking)
+9942|                {
+9943|                    _bodyYaw = _cameraYaw;
+9944|                    _bodyYawVelocity = 0f;
+9945|                }
+9946|                else
+9947|                {
+9948|                    float bodyYawOmega = suit.bodyYawSpringOmega *
+9949|                        ResolveHeavyCarryBodyYawSpringMultiplier() *
+9950|                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
+9951|                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
+9952|                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+9953|                }
+9954|
+9955|                _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
+9956|                _wasGroundedLastFrame = _isGrounded;
+9957|
+9958|                GroundCheck();
+9959|                _playerMotor?.SetGroundedState(_isGrounded);
+9960|
+9961|                UpdateWaterImmersion(fixedDeltaTime);
+9962|
+9963|                ApplyLadderSplineSnapFromAsyncProbe(initialExosuitKinematicAuthority);
+9964|
+9965|                float physicsImmersion = _smoothedImmersionRatio;
+
+===== 10085-10160 =====
+10085|                ApplyLocomotionPhysics(fixedDeltaTime, suit, activeTransportPreset, exosuitActive, exosuitKinematicAuthority, groundedOnDryLand, groundedOnShore);
+10086|
+10087|                FinalizeFixedTick(fixedDeltaTime, suit, exosuitKinematicAuthority);
+10088|            }
+10089|        }
+10090|
+10091|        private PlayerTransportPreset PrepareTransportAndFrameState(float fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority)
+10092|        {
+10093|            RefreshVrComfortSettingsCache();
+10094|            AdvanceMovementProbeCacheFrame();
+10095|
+10096|            if (_transportEvaLockTicks > 0)
+10097|                _transportEvaLockTicks--;
+10098|
+10099|            if (_transportBailoutCooldownTimer > 0f)
+10100|            {
+10101|                _transportBailoutCooldownTimer -= fixedDeltaTime;
+10102|                if (_transportBailoutCooldownTimer < 0f)
+10103|                    _transportBailoutCooldownTimer = 0f;
+10104|            }
+10105|
+10106|            _currentFixedDeltaTime = fixedDeltaTime;
+10107|            RefreshActiveGravity(fixedDeltaTime);
+10108|            Vector3 bodyRuntimePosition = ResolveBodyRuntimePosition();
+10109|            Vector3 authoritativeVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
+10110|            currentVerticalVelocity = authoritativeVelocity.y;
+10111|
+10112|            _playerState.SyncKinematic(bodyRuntimePosition, authoritativeVelocity);
+10113|            _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
+10114|            WritePlayerKinematicsSnapshot(bodyRuntimePosition, authoritativeVelocity, _lastPlayerKinematicsIntendedMovement);
+10115|            _useFixedFrameSpatialCache = true;
+10116|
+10117|            PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
+10118|            _stateMachine?.AdvanceFixed(fixedDeltaTime);
+10119|
+10120|            ITransportPlatform previousTransportPlatform = _activeTransportPlatform;
+10121|            Transform previousTransportPlatformTransform = _activeTransportPlatformTransform;
+10122|            ResolveActiveTransportPlatform();
+10123|            if (_transportEvaLockTicks <= 0 &&
+10124|                previousTransportPlatform != null &&
+10125|                _activeTransportPlatform == null)
+10126|            {
+10127|                ExecuteTransportEvaHandoff(previousTransportPlatform, previousTransportPlatformTransform);
+10128|            }
+10129|
+10130|            bool exosuitActive = IsExosuitTransportActive();
+10131|            initialExosuitKinematicAuthority = exosuitActive && ExosuitKinematicAuthority.HasActiveAuthority();
+10132|
+10133|            SyncTransportPlatformRotation();
+10134|            RefreshFixedFrameSpatialCache();
+10135|            ApplyTransportPlatformCarrierMotion(fixedDeltaTime, initialExosuitKinematicAuthority);
+10136|            RefreshFixedFrameSpatialCache();
+10137|            RefreshSharedGroundSweepBuffer();
+10138|
+10139|            return activeTransportPreset;
+10140|        }
+10141|
+10142|        private void UpdateWaterImmersion(float fixedDeltaTime)
+10143|        {
+10144|            UpdateOceanWaterHeight();
+10145|            _waterImmersionRatio = ComputeImmersionRatio();
+10146|            _currentDepth = ComputeDepth();
+10147|            UpdateBottomClearance();
+10148|
+10149|            if (IsInDryInterior())
+10150|            {
+10151|                _waterImmersionRatio = 0f;
+10152|                _smoothedImmersionRatio = 0f;
+10153|                _currentDepth = 0f;
+10154|            }
+10155|
+10156|            UpdateBrineLayerState(fixedDeltaTime);
+10157|
+10158|            if (_waterImmersionRatio > _smoothedImmersionRatio)
+10159|            {
+10160|                float enterT = ResolveLinearBlendT(12f, fixedDeltaTime);
+
+===== 2975-3060 =====
+2975|        {
+2976|            float weight = HomeostasisBrain.GlobalQualityWeight;
+2977|            return math.saturate(math.isfinite(weight) ? weight : 1f);
+2978|        }
+2979|
+2980|        private static float SmoothQuality01(float value)
+2981|        {
+2982|            float t = math.saturate(math.isfinite(value) ? value : 1f);
+2983|            return t * t * (3f - (2f * t));
+2984|        }
+2985|
+2986|        private float3 ResolveRawInputIntentVector()
+2987|        {
+2988|            return new float3(_inputH, _inputVertical, _inputV);
+2989|        }
+2990|
+2991|        private void WritePlayerKinematicsSnapshot(Vector3 position, Vector3 velocity, float3 intendedMovement)
+2992|        {
+2993|            if (!HasPlayerKinematicsNativeState())
+2994|                return;
+2995|
+2996|            float3 position3 = new float3(position.x, position.y, position.z);
+2997|            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
+2998|            if (!math.all(math.isfinite(position3)) ||
+2999|                !math.all(math.isfinite(velocity3)) ||
+3000|                !math.all(math.isfinite(intendedMovement)))
+3001|            {
+3002|                DumpPlayerKinematicsBlackBox(_playerKinematicsNaNHash);
+3003|                return;
+3004|            }
+3005|
+3006|            _playerKinematicsNativeState.WriteKinematicSnapshot(_dataVault, position3, velocity3, intendedMovement);
+3007|        }
+3008|
+3009|        private Vector3 ResolvePlayerKinematicsBurstDragVelocity(
+3010|            Vector3 velocity,
+3011|            float3 intendedMovement,
+3012|            float dragCoefficient,
+3013|            float waterDensityScale,
+3014|            float fixedDeltaTime)
+3015|        {
+3016|            if (fixedDeltaTime <= 0f)
+3017|                return velocity;
+3018|
+3019|            if (!HasPlayerKinematicsNativeState())
+3020|                return velocity;
+3021|
+3022|            WritePlayerKinematicsSnapshot(ResolveBodyRuntimePosition(), velocity, intendedMovement);
+3023|            if (!_playerKinematicsNativeState.TryResolveDragArrays(
+3024|                    _dataVault,
+3025|                    out NativeArray<float3> kinematicVelocities,
+3026|                    out NativeArray<float3> dragSolvedVelocities))
+3027|                return velocity;
+3028|
+3029|            PlayerKinematicsLinearDragJob dragJob = new PlayerKinematicsLinearDragJob
+3030|            {
+3031|                Velocities = kinematicVelocities,
+3032|                SolvedVelocities = dragSolvedVelocities,
+3033|                DragCoefficient = dragCoefficient,
+3034|                WaterDensityScale = waterDensityScale,
+3035|                DeltaTime = fixedDeltaTime
+3036|            };
+3037|            // HOT SCALAR CONTROL KERNEL: same-frame player velocity is consumed immediately; Execute removes the synchronous job runner without a fake schedule fence.
+3038|            dragJob.Execute();
+3039|
+3040|            float3 solvedVelocity = dragSolvedVelocities[0];
+3041|            if (!math.all(math.isfinite(solvedVelocity)))
+3042|            {
+3043|                DumpPlayerKinematicsBlackBox(_playerKinematicsNaNHash);
+3044|                return HectonPlayerMotor.SafeVelocity(velocity);
+3045|            }
+3046|
+3047|            _lastPlayerKinematicsBurstDragVelocity = solvedVelocity;
+3048|            return HectonPlayerMotor.SafeVelocity(
+3049|                new Vector3(solvedVelocity.x, solvedVelocity.y, solvedVelocity.z),
+3050|                velocity);
+3051|        }
+3052|
+3053|        private uint ResolvePlayerKinematicsTelemetryFlags()
+3054|        {
+3055|            uint flags = 0u;
+3056|            flags |= math.select(0u, 1u, !_isWalking);
+3057|            flags |= math.select(0u, 2u, _waterImmersionRatio > 0.01f);
+3058|            flags |= math.select(0u, 4u, _lastPlayerKinematicsDragCoefficient > 0f && _waterImmersionRatio > 0.01f);
+3059|            flags |= math.select(0u, 8u, _ladderSplineSnapActive);
+3060|            flags |= math.select(0u, 16u, _isSurfaceSwimming);
+
+===== 9755-9795 =====
+9755|        {
+9756|            if (!_vrComfortActiveCached || _activeTransportPlatform == null || !_activeTransportPlatform.IsTransportPlatformActive)
+9757|                return null;
+9758|
+9759|            if (_activeTransportPlatform is ISubmarineRuntimeContext)
+9760|                return _activeTransportPlatform.PlatformTransform;
+9761|
+9762|            return null;
+9763|        }
+9764|
+9765|        private static bool IsGameplayInputBlockedByMenu()
+9766|        {
+9767|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+9768|        }
+9769|
+9770|        private void RefreshActiveGravity(float fixedDeltaTime)
+9771|        {
+9772|            if (_localGravityOverrideActive && _localGravityOverrideTimer > 0f)
+9773|            {
+9774|                _localGravityOverrideTimer = math.max(0f, _localGravityOverrideTimer - math.max(0f, fixedDeltaTime));
+9775|                _cachedGravity = ResolveBlendedLocalGravity(fixedDeltaTime);
+9776|                if (_localGravityOverrideTimer <= 0f)
+9777|                    _localGravityOverrideActive = false;
+9778|            }
+9779|            else
+9780|            {
+9781|                _cachedGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
+9782|                _localGravityOverrideActive = false;
+9783|                _localGravityOverrideBlendTimer = 0f;
+9784|                _localGravityOverrideBlendStart = _cachedGravity;
+9785|            }
+9786|
+9787|            _cachedGravityMagnitude = MagnitudeFromRsqrt(_cachedGravity);
+9788|            if (_cachedGravityMagnitude <= 0.0001f)
+9789|            {
+9790|                _cachedGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
+9791|                _cachedGravityMagnitude = MagnitudeFromRsqrt(_cachedGravity);
+9792|            }
+9793|
+9794|            if (_localGravityOverrideActive && _cachedGravityMagnitude > 0.0001f)
+9795|                _smoothedGroundNormal = -_cachedGravity / _cachedGravityMagnitude;
+
+===== 7980-8065 =====
+7980|            _cachedVerticalInput = 0f;
+7981|            _pendingLookInput = Vector2.zero;
+7982|            SetSprintingState(false);
+7983|        }
+7984|
+7985|        /// <summary>
+7986|        /// Re-reads the live registry Input slot on every call instead of trusting a one-shot cold resolve.
+7987|        ///
+7988|        /// The previous version latched on its first success: it returned early as soon as
+7989|        /// _resolvedInputManager was set, and the only writers of _inputServiceRuntime are
+7990|        /// OnDependencyInject (:4214) and the GlobalRegistryServiceSlot.Input hot-swap case (:4295).
+7991|        /// GlobalRegistry.Register only queues that hot-swap callback when the slot ALREADY held a service
+7992|        /// (GlobalRegistry.cs:7352-7353), so a FIRST registration into an empty Input slot notifies nobody.
+7993|        /// Any player that resolved input while the slot was empty got GlobalRegistry.Input's non-null
+7994|        /// NoOpInputService null object (GlobalRegistry.cs:920-936) and kept it for the whole session -
+7995|        /// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+7996|        /// returns default (:8450), which sends ProcessPlayerInputFrame (:8079) down its else branch every
+7997|        /// render tick, zeroing _inputH/_inputV/_inputVertical and therefore the intent vector published at
+7998|        /// :10019. The InputDispatcher's own history says this window is real: its Input slot has already
+7999|        /// been observed emptied by a scene transition (InputDispatcher.cs:2838-2863).
+8000|        ///
+8001|        /// RegisteredInput is the raw slot (GlobalRegistry.cs:949) and never substitutes the null object, so
+8002|        /// binding off it cannot latch onto a service that is disabled by construction; a null slot leaves
+8003|        /// _inputManager null, which every consumer here already null-checks, and the next call rebinds.
+8004|        /// Cost is one static field read plus two ReferenceEquals - this method already ran every render
+8005|        /// tick through PrepareRenderTickDependencies (:4722), it just returned early.
+8006|        /// </summary>
+8007|        private void ResolveInputManagerBinding()
+8008|        {
+8009|            IInputService currentManager = GlobalRegistry.RegisteredInput;
+8010|            _inputServiceRuntime = currentManager;
+8011|            if (_resolvedInputManager &&
+8012|                ReferenceEquals(_inputManager, currentManager) &&
+8013|                ReferenceEquals(_subscribedInputManager, currentManager))
+8014|            {
+8015|                return;
+8016|            }
+8017|
+8018|            UnsubscribeFromInput();
+8019|            _inputManager = currentManager;
+8020|            _resolvedInputManager = true;
+8021|            SubscribeToInput();
+8022|        }
+8023|
+8024|        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8025|        //  SPRINT EVENTS (for CameraJuiceSystem integration)
+8026|        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8027|
+8028|        private void SetSprintingState(bool isSprinting)
+8029|        {
+8030|            if (isSprinting)
+8031|            {
+8032|                float stamina = _survivalSystem != null ? _survivalSystem.EnergyNormalized : 1f;
+8033|                isSprinting = Hecton8.PureLogic.Kinematics.SprintStaminaGate.EvaluateGate(stamina, 0.25f, 0.05f, _isSprinting);
+8034|            }
+8035|
+8036|            if (_isSprinting == isSprinting)
+8037|                return;
+8038|
+8039|            _isSprinting = isSprinting;
+8040|            PublishPlayerSprintStateSignal(isSprinting);
+8041|        }
+8042|
+8043|        private void SeedInputStateFromService(IInputService inputService)
+8044|        {
+8045|            if (inputService == null || !inputService.IsPlayerInputEnabled)
+8046|            {
+8047|                _currentInputState = default;
+8048|                _cachedMoveInput = Vector2.zero;
+8049|                _cachedVerticalInput = 0f;
+8050|                _pendingLookInput = Vector2.zero;
+8051|                SetSprintingState(false);
+8052|                return;
+8053|            }
+8054|
+8055|            _inputHandler.TryReadFrame(inputService, jumpBufferTime, false, out HectonPlayerInputFrame frame, out _);
+8056|            _currentInputState = frame.State;
+8057|            _cachedMoveInput = frame.MoveInput;
+8058|            _cachedVerticalInput = frame.VerticalInput;
+8059|            _pendingLookInput = Vector2.zero;
+8060|            SetSprintingState(frame.SprintHeld != 0);
+8061|        }
+8062|
+8063|        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8064|        //  Tick Ã¢â‚¬â€ INPUT + CAMERA (render framerate)
+8065|        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â

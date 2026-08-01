@@ -1,0 +1,20 @@
+bucket dumps 18
+bool TryRegisterDesiredPlacement(
+            ScatterPlacement placement,
+            in ScatterPlacementRegistrationContext registrationContext)
+        {
+            if (placement == null || placement.Key == 0L)
+                return false;
+
+            if (placement.IsPooled)
+                return false;
+
+            if (proceduralStateRegistry != null && proceduralStateRegistry.IsPlacementSuppressed(placement.Key))
+                return false;
+
+            EnsurePlacementRuntimeStateResolved(placement);
+
+            Dictionary<long, ScatterPlacement> desiredPlacements = registrationCont
+OK replaced unicode emdash variant
+WROTE C:\hades\Hecton8\Assets\_Project\Scripts\HectonPlayerMovement.cs bytes 828016
+PASS verify

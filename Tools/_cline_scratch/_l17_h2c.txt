@@ -1,0 +1,445 @@
+SD:5031|        }
+SD:5032|
+SD:5033|        private void ClearAdrenalineDilation()
+SD:5034|        {
+SD:5035|            _adrenalineDilationStartScalar = 1f;
+--
+SD:4997|            if (_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon)
+SD:4998|                return 0f;
+SD:4999|
+SD:5000|            if (_coreTickDilationFramesRemaining <= 0)
+SD:5001|                return _timeDilationScalar;
+SD:5002|
+SD:5003|            float scalar = _coreTickDilationScalar;
+SD:5004|            _coreTickDilationFramesRemaining--;
+SD:5005|            if (_coreTickDilationFramesRemaining == 0)
+SD:5006|            {
+SD:5007|                _coreTickDilationScalar = 1f;
+SD:5008|                _coreTickDilationRestorePending = true;
+SD:5009|            }
+SD:5010|
+SD:5011|            return scalar;
+SD:5012|        }
+SD:5013|
+SD:5014|        private float ResolvePauseRestoreScalar()
+SD:5015|        {
+SD:5016|            float restoreScalar = _coreTickDilationFramesRemaining > 0 || _coreTickDilationRestorePending
+SD:5017|                ? _coreTickDilationRestoreScalar
+SD:5018|                : _timeDilationScalar;
+SD:5019|            return math.isfinite(restoreScalar)
+SD:5020|                ? math.max(TimeDilationPausedEpsilon, restoreScalar)
+SD:5021|                : 1f;
+SD:5022|        }
+SD:5023|
+SD:5024|        private void ClearCoreTickDilationBurst()
+SD:5025|        {
+SD:5026|            _coreTickDilationScalar = 1f;
+SD:5027|            _coreTickDilationRestoreScalar = 1f;
+SD:5028|            _coreTickDilationFramesRemaining = 0;
+SD:5029|            _coreTickDilationReasonHash = 0u;
+SD:5030|            _coreTickDilationRestorePending = false;
+SD:5031|        }
+SD:5032|
+SD:5033|        private void ClearAdrenalineDilation()
+SD:5034|        {
+SD:5035|            _adrenalineDilationStartScalar = 1f;
+SD:5036|            _adrenalineDilationRestoreScalar = 1f;
+SD:5037|            _adrenalineDilationElapsedSeconds = 0f;
+--
+SD:5020|                ? math.max(TimeDilationPausedEpsilon, restoreScalar)
+SD:5021|                : 1f;
+SD:5022|        }
+SD:5023|
+SD:5024|        private void ClearCoreTickDilationBurst()
+SD:5025|        {
+SD:5026|            _coreTickDilationScalar = 1f;
+SD:5027|            _coreTickDilationRestoreScalar = 1f;
+SD:5028|            _coreTickDilationFramesRemaining = 0;
+SD:5029|            _coreTickDilationReasonHash = 0u;
+SD:5030|            _coreTickDilationRestorePending = false;
+SD:5031|        }
+SD:5032|
+SD:5033|        private void ClearAdrenalineDilation()
+SD:5034|        {
+SD:5035|            _adrenalineDilationStartScalar = 1f;
+SD:5036|            _adrenalineDilationRestoreScalar = 1f;
+SD:5037|            _adrenalineDilationElapsedSeconds = 0f;
+SD:5038|            _adrenalineDilationSourceHash = 0u;
+SD:5039|            _adrenalineDilationPhase = AdrenalineDilationPhaseNone;
+SD:5040|        }
+SD:5041|
+SD:5042|        private void DrainAdrenalineDilationSignals(float unscaledDeltaTime)
+SD:5043|        {
+SD:5044|            if (_simulationPaused)
+SD:5045|                return;
+SD:5046|
+SD:5047|            bool triggered = TryResolveAdrenalineDilationTrigger(out uint sourceHash);
+SD:5048|            if (triggered &&
+SD:5049|                (_adrenalineDilationPhase == AdrenalineDilationPhaseNone ||
+SD:5050|                 _adrenalineDilationPhase == AdrenalineDilationPhaseRestore))
+SD:5051|            {
+SD:5052|                BeginAdrenalineDilation(sourceHash);
+SD:5053|            }
+SD:5054|
+SD:5055|            if (_adrenalineDilationPhase == AdrenalineDilationPhaseNone)
+SD:5056|                return;
+SD:5057|
+SD:5058|            if (!triggered && _adrenalineDilationPhase == AdrenalineDilationPhaseHold)
+SD:5059|                BeginAdrenalineDilationRestore();
+SD:5060|
+--
+SD:5086|                ? math.clamp(_timeDilationScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+SD:5087|                : 1f;
+SD:5088|            float targetScalar = math.min(currentScalar, AdrenalineTargetTimeDilationScalar);
+SD:5089|            _adrenalineDilationStartScalar = currentScalar;
+SD:5090|            _adrenalineDilationRestoreScalar = currentScalar;
+SD:5091|            _adrenalineDilationElapsedSeconds = 0f;
+SD:5092|            _adrenalineDilationSourceHash = sourceHash != 0u ? sourceHash : AdrenalineDilationReasonHash;
+SD:5093|            _adrenalineDilationPhase = currentScalar <= targetScalar + 0.0001f
+SD:5094|                ? AdrenalineDilationPhaseHold
+SD:5095|                : AdrenalineDilationPhaseRampDown;
+SD:5096|        }
+SD:5097|
+SD:5098|        private void BeginAdrenalineDilationRestore()
+SD:5099|        {
+SD:5100|            _adrenalineDilationStartScalar = math.isfinite(_timeDilationScalar)
+SD:5101|                ? math.clamp(_timeDilationScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+SD:5102|                : AdrenalineTargetTimeDilationScalar;
+SD:5103|            _adrenalineDilationElapsedSeconds = 0f;
+SD:5104|            _adrenalineDilationPhase = AdrenalineDilationPhaseRestore;
+SD:5105|        }
+SD:5106|
+SD:5107|        private void TickAdrenalineDilation(float unscaledDeltaTime)
+SD:5108|        {
+SD:5109|            if (_coreTickDilationFramesRemaining > 0 || _coreTickDilationRestorePending)
+SD:5110|                return;
+SD:5111|
+SD:5112|            float safeDeltaTime = math.isfinite(unscaledDeltaTime) && unscaledDeltaTime > 0f ? unscaledDeltaTime : 0f;
+SD:5113|            _adrenalineDilationElapsedSeconds = math.min(
+SD:5114|                AdrenalineRampSeconds,
+SD:5115|                _adrenalineDilationElapsedSeconds + safeDeltaTime);
+SD:5116|            float t = math.saturate(_adrenalineDilationElapsedSeconds * AdrenalineInvRampSeconds);
+SD:5117|            if (_adrenalineDilationPhase == AdrenalineDilationPhaseRampDown)
+SD:5118|            {
+SD:5119|                float scalar = math.lerp(
+SD:5120|                    _adrenalineDilationStartScalar,
+SD:5121|                    AdrenalineTargetTimeDilationScalar,
+SD:5122|                    t);
+SD:5123|                SetTimeDilationScalar(scalar, _adrenalineDilationSourceHash, publishImmediate: true);
+SD:5124|                if (t >= 1f)
+SD:5125|                    _adrenalineDilationPhase = AdrenalineDilationPhaseHold;
+SD:5126|                return;
+--
+SD:5101|                ? math.clamp(_timeDilationScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+SD:5102|                : AdrenalineTargetTimeDilationScalar;
+SD:5103|            _adrenalineDilationElapsedSeconds = 0f;
+SD:5104|            _adrenalineDilationPhase = AdrenalineDilationPhaseRestore;
+SD:5105|        }
+SD:5106|
+SD:5107|        private void TickAdrenalineDilation(float unscaledDeltaTime)
+SD:5108|        {
+SD:5109|            if (_coreTickDilationFramesRemaining > 0 || _coreTickDilationRestorePending)
+SD:5110|                return;
+SD:5111|
+SD:5112|            float safeDeltaTime = math.isfinite(unscaledDeltaTime) && unscaledDeltaTime > 0f ? unscaledDeltaTime : 0f;
+SD:5113|            _adrenalineDilationElapsedSeconds = math.min(
+SD:5114|                AdrenalineRampSeconds,
+SD:5115|                _adrenalineDilationElapsedSeconds + safeDeltaTime);
+SD:5116|            float t = math.saturate(_adrenalineDilationElapsedSeconds * AdrenalineInvRampSeconds);
+SD:5117|            if (_adrenalineDilationPhase == AdrenalineDilationPhaseRampDown)
+SD:5118|            {
+SD:5119|                float scalar = math.lerp(
+SD:5120|                    _adrenalineDilationStartScalar,
+SD:5121|                    AdrenalineTargetTimeDilationScalar,
+SD:5122|                    t);
+SD:5123|                SetTimeDilationScalar(scalar, _adrenalineDilationSourceHash, publishImmediate: true);
+SD:5124|                if (t >= 1f)
+SD:5125|                    _adrenalineDilationPhase = AdrenalineDilationPhaseHold;
+SD:5126|                return;
+SD:5127|            }
+SD:5128|
+SD:5129|            if (_adrenalineDilationPhase != AdrenalineDilationPhaseRestore)
+SD:5130|                return;
+SD:5131|
+SD:5132|            float restoredScalar = math.lerp(
+SD:5133|                _adrenalineDilationStartScalar,
+SD:5134|                _adrenalineDilationRestoreScalar,
+SD:5135|                t);
+SD:5136|            SetTimeDilationScalar(restoredScalar, _adrenalineDilationSourceHash, publishImmediate: true);
+SD:5137|            if (t < 1f)
+SD:5138|                return;
+SD:5139|
+SD:5140|            float finalScalar = math.isfinite(_adrenalineDilationRestoreScalar)
+SD:5141|                ? math.clamp(_adrenalineDilationRestoreScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+--
+SD:5141|                ? math.clamp(_adrenalineDilationRestoreScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+SD:5142|                : 1f;
+SD:5143|            ClearAdrenalineDilation();
+SD:5144|            SetTimeDilationScalar(finalScalar, AdrenalineDilationReasonHash, publishImmediate: true);
+SD:5145|        }
+SD:5146|
+SD:5147|        private void ApplyPendingCoreTickDilationRestore()
+SD:5148|        {
+SD:5149|            if (!_coreTickDilationRestorePending)
+SD:5150|                return;
+SD:5151|
+SD:5152|            _coreTickDilationRestorePending = false;
+SD:5153|            SetTimeDilationScalar(_coreTickDilationRestoreScalar, _coreTickDilationReasonHash, publishImmediate: true);
+SD:5154|            _coreTickDilationRestoreScalar = 1f;
+SD:5155|            _coreTickDilationReasonHash = 0u;
+SD:5156|        }
+SD:5157|
+SD:5158|        private void RunDispatcherUpdate()
+SD:5159|        {
+SD:5160|            AdvanceDispatcherFrameId();
+SD:5161|            FrameTimeWatchdog.TickMathPrecisionTransition(CurrentFrameIndex);
+SD:5162|#if UNITY_EDITOR
+SD:5163|            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherUpdate);
+SD:5164|#endif
+SD:5165|            using (_updateProfilerMarker.Auto())
+SD:5166|            {
+SD:5167|#if UNITY_EDITOR
+SD:5168|                NativeAllocationTrackerRuntimeBridge.NotifyDispatcherHeartbeat();
+SD:5169|#endif
+SD:5170|                ApplyPendingCoreTickDilationRestore();
+SD:5171|                if (BootstrapStatus.TryTriggerSafeHalt())
+SD:5172|                    BootstrapBiosErrorOverlay.Show(BootstrapStatus.SafeHaltDisplayMessage);
+SD:5173|
+SD:5174|                long dispatcherTickStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+SD:5175|                long preSimulationStartTimestamp = dispatcherTickStartTimestamp;
+SD:5176|                HectonXRRuntimeState.RefreshFrameState(CurrentFrameIndex);
+SD:5177|                float unscaledDeltaTime = ResolveDispatcherUnscaledDeltaTime();
+SD:5178|                if (!math.isfinite(unscaledDeltaTime) || unscaledDeltaTime < 0f)
+SD:5179|                    unscaledDeltaTime = 0f;
+SD:5180|                bool previousFrameMissedBudget = CurrentFrameUnscaledDeltaTime > JobAdmissionFrameBudgetMissThresholdSeconds;
+SD:5181|                CurrentFrameUnscaledDeltaTime = unscaledDeltaTime;
+--
+SD:5210|                float frameDilationScalar = ConsumeFrameTimeDilationScalar();
+SD:5211|                if (!math.isfinite(frameDilationScalar) || frameDilationScalar < 0f)
+SD:5212|                    frameDilationScalar = 0f;
+SD:5213|
+SD:5214|                float deltaTime = unscaledDeltaTime * frameDilationScalar;
+SD:5215|                if (!math.isfinite(deltaTime) || deltaTime < 0f)
+SD:5216|                    deltaTime = 0f;
+SD:5217|                CurrentFrameDeltaTime = deltaTime;
+SD:5218|                DispatcherTimingDTO masterTiming = BuildMasterDispatcherTiming(deltaTime, unscaledDeltaTime);
+SD:5219|                uint dispatcherFrameId = masterTiming.FrameId;
+SD:5220|                RunMasterPreSimulationPhase(in masterTiming);
+SD:5221|                UpdateH8TimeState(deltaTime, unscaledDeltaTime);
+SD:5222|                PublishTimeDilationState(0u);
+SD:5223|                IDataVault dispatcherDataVault = _dataVault;
+SD:5224|                if (dispatcherDataVault == null && TryResolveCachedDataVault(out dispatcherDataVault))
+SD:5225|                    _dataVault = dispatcherDataVault;
+SD:5226|                RecordDispatcherBlackBoxHeartbeat(dispatcherDataVault);
+SD:5227|                float preSimulationCostMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - preSimulationStartTimestamp) * 1000.0 /
+SD:5228|                                                    System.Diagnostics.Stopwatch.Frequency);
+SD:5229|                ISimulationBucketer simulationBucketer = _simulationBucketer;
+SD:5230|                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+SD:5231|                                        IsOriginShiftFrameLockedForCurrentFrame ||
+SD:5232|                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+SD:5233|                if (simulationBucketer != null && simulationBucketer.IsInitialized)
+SD:5234|                {
+SD:5235|                    simulationBucketer.ReportPreSimulationCostMs(preSimulationCostMs);
+SD:5236|                    simulationBucketer.AdvanceFrame(
+SD:5237|                        globalQualityWeightByte,
+SD:5238|                        unscaledDeltaTime,
+SD:5239|                        jobAdmission != null ? jobAdmission.CriticalDebtFrameCount : 0,
+SD:5240|                        aupBarrierActive);
+SD:5241|                    SimulationBucketFrameState bucketFrameState = simulationBucketer.CaptureFrameState();
+SD:5242|                    PublishSimulationBucketSync(in bucketFrameState);
+SD:5243|                    PublishFramePacingWarningIfNeeded(in bucketFrameState);
+SD:5244|                }
+SD:5245|
+SD:5246|                if (IsOriginShiftBootstrapLocked)
+SD:5247|                {
+SD:5248|                    if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
+SD:5249|                        return;
+SD:5250|
+--
+
+==== SRC RunFixedStepAccumulator head ====
+SD:6181|        private void RunFixedStepAccumulator(float dilatedDeltaTime, bool blockGameplayLanes)
+SD:6182|        {
+SD:6183|            if (SignalBusRegistry.IsSimulationHalted)
+SD:6184|                return;
+SD:6185|
+SD:6186|            if (dilatedDeltaTime <= 0f)
+SD:6187|            {
+SD:6188|                _temporalCompressionActive = false;
+SD:6189|                RefreshFixedInterpolationAlpha();
+SD:6190|                return;
+SD:6191|            }
+SD:6192|
+SD:6193|            double maxAccumulatedTime = FixedStepSeconds * MaxFixedSubstepsPerFrame;
+SD:6194|            double requestedAccumulatedTime = _fixedStepAccumulator + dilatedDeltaTime;
+SD:6195|            bool compressionActive = requestedAccumulatedTime > maxAccumulatedTime;
+SD:6196|            _temporalCompressionActive = compressionActive;
+SD:6197|            if (compressionActive)
+SD:6198|            {
+SD:6199|                _temporalCompressionFrameCount++;
+SD:6200|                CrashTelemetryBuffer.ReportTemporalCompression();
+SD:6201|
+SD:6202|                // Temporal compression is the fixed lane's version of the slow lane's discarded surplus:
+SD:6203|                // the Math.Min below throws away requested-minus-max seconds of physics and fixed-tick
+SD:6204|                // time, and only a frame COUNT was ever recorded for it - never the seconds lost. Under
+SD:6205|                // step-bounded time this must not happen at all, so say so once and loudly. This sits
+SD:6206|                // inside the already-rare compression branch, so it costs nothing on a normal frame.
+SD:6207|                if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+SD:6208|                {
+SD:6209|                    ReportStepBoundedClamp(
+SD:6210|                        StepBoundedClampLaneFixed,
+SD:6211|                        FixedStepSeconds,
+SD:6212|                        requestedAccumulatedTime - maxAccumulatedTime);
+SD:6213|                }
+SD:6214|            }
+SD:6215|
+SD:6216|            _fixedStepAccumulator = System.Math.Min(requestedAccumulatedTime, maxAccumulatedTime);
+SD:6217|
+SD:6218|            int substepCount = 0;
+SD:6219|            while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
+SD:6220|            {
+SD:6221|                if (SignalBusRegistry.IsSimulationHalted)
+SD:6222|                    break;
+SD:6223|
+SD:6224|                DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
+SD:6225|                _fixedStepAccumulator -= FixedStepSeconds;
+SD:6226|                substepCount++;
+SD:6227|            }
+SD:6228|
+SD:6229|            if (substepCount >= MaxFixedSubstepsPerFrame && _fixedStepAccumulator >= FixedStepSeconds)
+SD:6230|                _fixedStepAccumulator = 0d;
+SD:6231|
+SD:6232|            RefreshFixedInterpolationAlpha();
+SD:6233|        }
+SD:6234|
+SD:6235|        private void RefreshFixedInterpolationAlpha()
+SD:6236|        {
+SD:6237|            CurrentFixedInterpolationAlpha = math.saturate((float)(_fixedStepAccumulator / FixedStepSeconds));
+SD:6238|        }
+SD:6239|
+SD:6240|        private void DispatchFixedStep(float fixedDeltaTime, bool blockGameplayLanes)
+SD:6241|        {
+SD:6242|#if UNITY_EDITOR && HECTON_HEAP_LOCK_GUARD
+SD:6243|            long heapBefore = Profiler.GetMonoUsedSizeLong();
+SD:6244|#endif
+SD:6245|            using (_fixedUpdateProfilerMarker.Auto())
+SD:6246|            {
+SD:6247|                RunMasterFixedSimulationBridge(fixedDeltaTime);
+SD:6248|                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+SD:6249|                {
+SD:6250|                    if (SignalBusRegistry.IsSimulationHalted)
+SD:6251|                        return;
+SD:6252|
+SD:6253|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+SD:6254|                        continue;
+SD:6255|
+SD:6256|                    RegistryBucket<IFixedTickable> lane = _fixedPriorityLanes[laneIndex];
+SD:6257|#if UNITY_EDITOR
+SD:6258|                    lane.ValidateNoDestroyedEntriesDebug(nameof(IFixedTickable));
+SD:6259|#endif
+SD:6260|                    using (_fixedLaneProfilerMarkers[laneIndex].Auto())
+SD:6261|                    {
+
+==== SRC INPUTHOP emit ====
+HectonInputRuntime_HapticSynth.cs:1094|        // to residues {0,1,2,3,5,24..31} = 0xFF00002F. The six buffers TryPinHapticSynthesisScheduleBuffers
+HectonInputRuntime_HapticSynth.cs:1095|        // pins land on residues 70975->31, 70976->0, 70977->1, 70978->2, 70979->3, 70980->4: FIVE of the six
+HectonInputRuntime_HapticSynth.cs:1096|        // are inside 0xFF00002F. Only ShinobuHapticSynthesisTuning (70980 -> residue 4) is clean. So while
+HectonInputRuntime_HapticSynth.cs:1097|        // this owner holds its own haptic pins, this owner cannot acquire its own input mutation guard, and
+HectonInputRuntime_HapticSynth.cs:1098|        // PublishDeterministicInputState fails with publishGuardFail - input dies.
+HectonInputRuntime_HapticSynth.cs:1099|        //
+HectonInputRuntime_HapticSynth.cs:1100|        // WHY IT HAS NOT FIRED YET, AND WHY THAT IS NOT SAFETY. Two accidents, not invariants:
+HectonInputRuntime_HapticSynth.cs:1101|        //   1. ScheduleHapticSynthesisSimulation returns before pinning when the scheme hash is
+HectonInputRuntime_HapticSynth.cs:1102|        //      keyboard/mouse (:109-110).
+HectonInputRuntime_HapticSynth.cs:1103|        //   2. The pins are taken in SIMULATION and released in POST_SIMULATION of the same frame
+HectonInputRuntime_HapticSynth.cs:1104|        //      (ConsumeScheduledHapticSynthesis, :256), which never overlaps PRE_SIMULATION.
+HectonInputRuntime_HapticSynth.cs:1105|        // Accident 1 is weaker than "you need a gamepad". CaptureState promotes an automation override's
+HectonInputRuntime_HapticSynth.cs:1106|        // scheme hash into _currentInputSchemeHash whenever it is nonzero (InputDispatcher.cs, CaptureState,
+HectonInputRuntime_HapticSynth.cs:1107|        // the automationOverrideApplied branch), and Shinobu38QaWatchdogRuntime.PublishAutomationInputOverride
+HectonInputRuntime_HapticSynth.cs:1108|        // (:2079) publishes CurrentInputSchemeHash = 0x53373951, which is not InputSchemeHashKeyboardMouse. So
+HectonInputRuntime_HapticSynth.cs:1109|        // a HEADLESS run with no input device at all reaches the pin path as soon as that watchdog publishes.
+HectonInputRuntime_HapticSynth.cs:1110|        // Accident 2 holds only while POST_SIMULATION actually runs. Skip it once - a NoOp-latched dispatcher,
+HectonInputRuntime_HapticSynth.cs:1111|        // an unregistered post-sim system, an exception upstream in the phase - and the pins survive into the
+HectonInputRuntime_HapticSynth.cs:1112|        // NEXT frame's PRE_SIMULATION. From then on every publish is refused and the next SIMULATION re-pins,
+HectonInputRuntime_HapticSynth.cs:1113|        // so input stays dead for the rest of the session.
+HectonInputRuntime_HapticSynth.cs:1114|        //
+HectonInputRuntime_HapticSynth.cs:1115|        // WHAT THIS DOES. Makes the cross-frame overlap structurally impossible instead of incidentally
+HectonInputRuntime_HapticSynth.cs:1116|        // avoided: the guard path releases any pin set stamped with an EARLIER dispatcher frame, because a
+HectonInputRuntime_HapticSynth.cs:1117|        // previous frame's job chain is no longer in flight. A pin set stamped with the CURRENT frame is left
+HectonInputRuntime_HapticSynth.cs:1118|        // alone - releasing it could let the defragmenter move memory under a live job, which is the whole
+HectonInputRuntime_HapticSynth.cs:1119|        // reason the pin exists - and reported instead of failing silently. The residue collision itself is
+HectonInputRuntime_HapticSynth.cs:1120|        // not fixable from this class; that needs either non-colliding haptic buffer IDs in H8Memory.cs or a
+HectonInputRuntime_HapticSynth.cs:1121|        // vault that does not fold 64 guard bits onto 32 lock bits.
+HectonInputRuntime_HapticSynth.cs:1122|        //
+HectonInputRuntime_HapticSynth.cs:1123|        // CurrentFrameIndex, NOT CurrentFrameId, and that is not interchangeable. probe7's [H8_INPUTHOP]
+HectonInputRuntime_HapticSynth.cs:1124|        // census reports frameIndex advancing (303, 304, 313 across the three emissions) while frameId is
+HectonInputRuntime_HapticSynth.cs:1125|        // pinned at 0 for the whole run. Stamping with CurrentFrameId would make pinFrame == currentFrame
+HectonInputRuntime_HapticSynth.cs:1126|        // always true and this entire release path inert.
+HectonInputRuntime_HapticSynth.cs:1127|        // -------------------------------------------------------------------------------------------------
+HectonInputRuntime_HapticSynth.cs:1128|        private void ReleaseStaleHapticSynthesisSchedulePins()
+HectonInputRuntime_HapticSynth.cs:1129|        {
+HectonInputRuntime_HapticSynth.cs:1130|            if (_hapticSynthesisPinnedBufferMask == 0u)
+HectonInputRuntime_HapticSynth.cs:1131|                return;
+HectonInputRuntime_HapticSynth.cs:1132|
+HectonInputRuntime_HapticSynth.cs:1133|            int pinFrame = _hapticSynthesisPinnedBufferFrame;
+HectonInputRuntime_HapticSynth.cs:1134|            if (pinFrame >= 0 && pinFrame == Hecton8.Core.SystemDispatcher.CurrentFrameIndex)
+HectonInputRuntime_HapticSynth.cs:1135|            {
+HectonInputRuntime_HapticSynth.cs:1136|                ReportHapticPinGuardOverlapOnce(pinFrame, sameFrame: true);
+HectonInputRuntime_HapticSynth.cs:1137|                return;
+HectonInputRuntime_HapticSynth.cs:1138|            }
+HectonInputRuntime_HapticSynth.cs:1139|
+HectonInputRuntime_HapticSynth.cs:1140|            ReportHapticPinGuardOverlapOnce(pinFrame, sameFrame: false);
+HectonInputRuntime_HapticSynth.cs:1141|            ReleaseHapticSynthesisSchedulePins();
+HectonInputRuntime_HapticSynth.cs:1142|        }
+HectonInputRuntime_HapticSynth.cs:1143|
+--
+InputDispatcher.cs:1227|                default:
+InputDispatcher.cs:1228|                    return;
+InputDispatcher.cs:1229|            }
+InputDispatcher.cs:1230|
+InputDispatcher.cs:1231|            if (_diagReadObservations < threshold)
+InputDispatcher.cs:1232|                return;
+InputDispatcher.cs:1233|
+InputDispatcher.cs:1234|            _diagReportsEmitted++;
+InputDispatcher.cs:1235|            DiagEmitHopCensus(readHop);
+InputDispatcher.cs:1236|#endif
+InputDispatcher.cs:1237|        }
+InputDispatcher.cs:1238|
+InputDispatcher.cs:1239|        private void DiagEmitFinalCensus()
+InputDispatcher.cs:1240|        {
+InputDispatcher.cs:1241|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+InputDispatcher.cs:1242|            if (_diagFinalCensusEmitted)
+InputDispatcher.cs:1243|                return;
+InputDispatcher.cs:1244|
+InputDispatcher.cs:1245|            _diagFinalCensusEmitted = true;
+InputDispatcher.cs:1246|            DiagEmitHopCensus(0);
+InputDispatcher.cs:1247|#endif
+InputDispatcher.cs:1248|        }
+InputDispatcher.cs:1249|
+InputDispatcher.cs:1250|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+InputDispatcher.cs:1251|        private void DiagEmitHopCensus(int readHop)
+InputDispatcher.cs:1252|        {
+InputDispatcher.cs:1253|            // COLD ALLOC: one census string - emitted at most three times per session from a read accessor -
+InputDispatcher.cs:1254|            // owner: InputDispatcher
+InputDispatcher.cs:1255|            Hecton8.Core.H8Debug.LogWarning(
+InputDispatcher.cs:1256|                "[H8_INPUTHOP] readHop=" + readHop +
+InputDispatcher.cs:1257|                " obs=" + _diagReadObservations +
+InputDispatcher.cs:1258|                " | lateFrameTick=" + _diagLateFrameTickCalls +
+InputDispatcher.cs:1259|                " pumpFired=" + _diagPumpFiredCalls +
+InputDispatcher.cs:1260|                " presimTick=" + _diagPreSimTickCalls +
+InputDispatcher.cs:1261|                " presimSubsteps=" + _diagPreSimSubsteps +
+InputDispatcher.cs:1262|                " | captureRan=" + _diagCaptureRan +
+InputDispatcher.cs:1263|                " captureSkippedByFrameGuard=" + _diagCaptureSkippedByFrameGuard +
+InputDispatcher.cs:1264|                " | overrideApplied=" + _diagOverrideApplied +
+InputDispatcher.cs:1265|                " overrideRejected=" + _diagOverrideRejected +
+InputDispatcher.cs:1266|                " lastOverrideMove=(" + _diagLastOverrideMoveX + "," + _diagLastOverrideMoveY + ")" +
+InputDispatcher.cs:1267|                " | blockMaskNonZero=" + _diagBlockMaskNonZero +
+InputDispatcher.cs:1268|                " postMaskMove=(" + _diagLastPostMaskMoveX + "," + _diagLastPostMaskMoveY + ")" +
+InputDispatcher.cs:1269|                " | publishAttempt=" + _diagPublishAttempts +
+InputDispatcher.cs:1270|                " publishGuardFail=" + _diagPublishGuardFail +
+InputDispatcher.cs:1271|                " publishBufferFail=" + _diagPublishBufferFail +
+InputDispatcher.cs:1272|                " publishOk=" + _diagPublishOk +
+InputDispatcher.cs:1273|                " | currentStateMove=(" + _currentState.MoveDelta.x + "," + _currentState.MoveDelta.y + ")" +
+InputDispatcher.cs:1274|                " currentInputStateFrame=" + _currentInputState.Frame +
+InputDispatcher.cs:1275|                " standardInputFrame=" + _standardInputFrame +
+InputDispatcher.cs:1276|                " inputStateSequence=" + _inputStateSequence +
+--

@@ -1,0 +1,57 @@
+USINGS
+FIELD
+900:        private static Hecton8.Gameplay.HectonPlayerMovement _movement;
+1630:            Hecton8.Gameplay.HectonPlayerMovement movement = _movement;
+2696:                _movement as HectonPlayerMovement
+BLOCK
+2686:            if (input != null)
+2687:            {
+2688:                input.SwitchToPlayerInput();
+2689:                _switchedToPlayerInput = true;
+2690:            }
+2691:
+2692:            // L13: Re-assert HPM Player fixed-tick registration so SampleGameplay/GetState (hop2)
+2693:            // runs during Swim. Suit/juice no longer gate sampling (HPM FixedTick L13), but a
+2694:            // missed TryRegisterFixedTickable still starves the entire locomotion read path.
+2695:            HectonPlayerMovement movement =
+2696:                _movement as HectonPlayerMovement
+2697:                ?? UnityEngine.Object.FindFirstObjectByType<HectonPlayerMovement>();
+2698:            if (movement != null)
+2699:            {
+2700:                movement.EnsureDispatcherRegistration();
+2701:                if (_movement == null)
+2702:                    _movement = movement;
+2703:            }
+2704:        }
+2705:
+2706:        private static void TickSettle()
+2707:        {
+2708:            IPlayerRuntimeContext player = GlobalRegistry.RegisteredPlayer;
+2709:            if (player != null)
+2710:            {
+2711:                if (_survival == null)
+2712:                    _survival = player.SurvivalSystem;
+2713:                if (_movement == null)
+2714:                    _movement = player.PlayerMovement;
+2715:                if (_toolManager == null)
+2716:                    _toolManager = player.ToolManager;
+2717:            }
+2718:
+2719:            TryResolveInteraction();
+2720:
+2721:            // Force-close any leftover menu (PDA/Fab/Pause) and re-assert the player action map
+2722:            // every settle tick. L10 measured hop2-starve: SampleGameplayLocomotionInputForFixedStep
+2723:            // short-circuits on IsGameplayInputBlockedByMenu without calling GetState, and a single
+2724:            // SwitchToPlayerInput at first settle loses to later SwitchToUIInput (MainMenu bind,
+2725:            // sticky IsOpen). Product close APIs only — no mock input path.
+ALL_HPM
+900:        private static Hecton8.Gameplay.HectonPlayerMovement _movement;
+1630:            Hecton8.Gameplay.HectonPlayerMovement movement = _movement;
+2631:        ///     (HectonPlayerInputHandler.cs:37, HectonPlayerMovement.cs:7992, PlayerToolManager.cs:414), so
+2695:            HectonPlayerMovement movement =
+2696:                _movement as HectonPlayerMovement
+2697:                ?? UnityEngine.Object.FindFirstObjectByType<HectonPlayerMovement>();
+2798:                    .Append("component (HectonSurvivalSystem / HectonPlayerMovement off ")
+2989:                .Append("HectonPlayerMovement");
+4453:                    _log.Append(". Consumer: HectonPlayerMovement reads this bit off its own snapshot ")
+4454:                        .Append("(HectonPlayerMovement.cs:13225) and the dispatcher also buffers ")

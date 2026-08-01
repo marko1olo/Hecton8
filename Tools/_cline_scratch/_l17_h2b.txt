@@ -1,0 +1,341 @@
+tDispatcher.cs:511|                return _currentInputState;
+InputDispatcher.cs:512|            }
+--
+InputDispatcher.cs:815|
+InputDispatcher.cs:816|            DiagRecordPumpFired();
+InputDispatcher.cs:817|            PreSimulationInputTick(Hecton8.Core.SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+InputDispatcher.cs:818|        }
+InputDispatcher.cs:819|
+--
+InputDispatcher.cs:857|        // The census below separates them in one run. Counters are printed in pipeline order, so the first
+InputDispatcher.cs:858|        // zero from the left is the break point: lateFrameTick=0 is H1; lateFrameTick>0 with publishOk=0 and
+InputDispatcher.cs:859|        // a nonzero publishGuardFail/publishBufferFail is H2's publish gate; overrideRejected>0 with
+InputDispatcher.cs:860|        // overrideApplied=0 is the consume gate.
+InputDispatcher.cs:861|        //
+--
+InputDispatcher.cs:868|        // ---------------------------------------------------------------------------------------------
+InputDispatcher.cs:869|        private void DiagRecordPumpFired()
+InputDispatcher.cs:870|        {
+InputDispatcher.cs:871|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+InputDispatcher.cs:872|            _diagPumpFiredCalls++;
+--
+InputDispatcher.cs:871|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+InputDispatcher.cs:872|            _diagPumpFiredCalls++;
+InputDispatcher.cs:873|#endif
+InputDispatcher.cs:874|        }
+InputDispatcher.cs:875|
+--
+InputDispatcher.cs:1257|                " obs=" + _diagReadObservations +
+InputDispatcher.cs:1258|                " | lateFrameTick=" + _diagLateFrameTickCalls +
+InputDispatcher.cs:1259|                " pumpFired=" + _diagPumpFiredCalls +
+InputDispatcher.cs:1260|                " presimTick=" + _diagPreSimTickCalls +
+InputDispatcher.cs:1261|                " presimSubsteps=" + _diagPreSimSubsteps +
+--
+InputDispatcher.cs:1258|                " | lateFrameTick=" + _diagLateFrameTickCalls +
+InputDispatcher.cs:1259|                " pumpFired=" + _diagPumpFiredCalls +
+InputDispatcher.cs:1260|                " presimTick=" + _diagPreSimTickCalls +
+InputDispatcher.cs:1261|                " presimSubsteps=" + _diagPreSimSubsteps +
+InputDispatcher.cs:1262|                " | captureRan=" + _diagCaptureRan +
+--
+InputDispatcher.cs:1287|                " - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the" +
+InputDispatcher.cs:1288|                " override. lateFrameTick=0 means this component's late-frame lane never ran, so the" +
+InputDispatcher.cs:1289|                " self-pump never fired and PreSimulationInputTick - the only per-frame caller of" +
+InputDispatcher.cs:1290|                " CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override" +
+InputDispatcher.cs:1291|                " lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every" +
+--
+InputDispatcher.cs:1290|                " CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override" +
+InputDispatcher.cs:1291|                " lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every" +
+InputDispatcher.cs:1292|                " capture; compare lastCapturedFrame against frameIndex. captureRan>0 with" +
+InputDispatcher.cs:1293|                " overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no" +
+InputDispatcher.cs:1294|                " clock-skew LogError that leaves the silent age>maxFrameAge branch at" +
+--
+HeadlessSimulationValidator.cs:205|
+HeadlessSimulationValidator.cs:206|                if (behaviour is ILateFrameTickable lateFrameTickable)
+HeadlessSimulationValidator.cs:207|                    lateFrameTickable.LateFrameTick();
+HeadlessSimulationValidator.cs:208|
+HeadlessSimulationValidator.cs:209|                if (tickIndex % SlowTickCadence == 0 && behaviour is ISlowTickable slowTickable)
+--
+HeadlessSimulationValidator.cs:206|                if (behaviour is ILateFrameTickable lateFrameTickable)
+HeadlessSimulationValidator.cs:207|                    lateFrameTickable.LateFrameTick();
+HeadlessSimulationValidator.cs:208|
+HeadlessSimulationValidator.cs:209|                if (tickIndex % SlowTickCadence == 0 && behaviour is ISlowTickable slowTickable)
+HeadlessSimulationValidator.cs:210|                    slowTickable.SlowTick();
+--
+VehicleMotor.cs:121|        private bool _registeredHotSwapListener;
+VehicleMotor.cs:122|        private bool _lateFrameTickDormant;
+VehicleMotor.cs:123|        private bool _postFixedTickDormant;
+VehicleMotor.cs:124|        private int _motorRegistryIndex = -1;
+VehicleMotor.cs:125|        private bool _safeTeleportCollisionGuardActive;
+--
+VehicleMotor.cs:439|        {
+VehicleMotor.cs:440|            if (_lateFrameTickDormant)
+VehicleMotor.cs:441|                return;
+VehicleMotor.cs:442|
+VehicleMotor.cs:443|            ApplyHeadlessVisualInterpolation();
+--
+VehicleMotor.cs:444|            if (headlessVisualRoot == null)
+VehicleMotor.cs:445|                _lateFrameTickDormant = _registeredLateFrameTick;
+VehicleMotor.cs:446|        }
+VehicleMotor.cs:447|
+VehicleMotor.cs:448|        /// <inheritdoc />
+--
+VehicleMotor.cs:1192|            {
+VehicleMotor.cs:1193|                _lateFrameTickDormant = false;
+VehicleMotor.cs:1194|                return;
+VehicleMotor.cs:1195|            }
+VehicleMotor.cs:1196|
+--
+VehicleMotor.cs:1198|            if (_registeredLateFrameTick)
+VehicleMotor.cs:1199|                _lateFrameTickDormant = false;
+VehicleMotor.cs:1200|        }
+VehicleMotor.cs:1201|
+VehicleMotor.cs:1202|        private void TryUnregisterLateFrameTickable()
+--
+VehicleMotor.cs:1208|            _registeredLateFrameTick = false;
+VehicleMotor.cs:1209|            _lateFrameTickDormant = false;
+VehicleMotor.cs:1210|        }
+VehicleMotor.cs:1211|
+VehicleMotor.cs:1212|        private void TryRegisterPostFixedTickable()
+--
+SuitHUDV4CanvasOverlay.cs:694|        private bool _slowTickRegistered;
+SuitHUDV4CanvasOverlay.cs:695|        private bool _lateFrameTickRegistered;
+SuitHUDV4CanvasOverlay.cs:696|        private bool _pendingRuntimeCanvasRefresh = true;
+SuitHUDV4CanvasOverlay.cs:697|        private bool _forceResolveOnSlowTick = true;
+SuitHUDV4CanvasOverlay.cs:698|        private bool _pendingDepthSignalRefresh = true;
+--
+SuitHUDV4CanvasOverlay.cs:7730|
+SuitHUDV4CanvasOverlay.cs:7731|            if (_lateFrameTickRegistered && _slowTickRegistered)
+SuitHUDV4CanvasOverlay.cs:7732|                return;
+SuitHUDV4CanvasOverlay.cs:7733|
+SuitHUDV4CanvasOverlay.cs:7734|            if (!_lateFrameTickRegistered)
+--
+SuitHUDV4CanvasOverlay.cs:7733|
+SuitHUDV4CanvasOverlay.cs:7734|            if (!_lateFrameTickRegistered)
+SuitHUDV4CanvasOverlay.cs:7735|            {
+SuitHUDV4CanvasOverlay.cs:7736|                _lateFrameTickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
+SuitHUDV4CanvasOverlay.cs:7737|            }
+--
+SuitHUDV4CanvasOverlay.cs:7735|            {
+SuitHUDV4CanvasOverlay.cs:7736|                _lateFrameTickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
+SuitHUDV4CanvasOverlay.cs:7737|            }
+SuitHUDV4CanvasOverlay.cs:7738|
+SuitHUDV4CanvasOverlay.cs:7739|            if (_slowTickRegistered)
+--
+SuitHUDV4CanvasOverlay.cs:7747|            _pendingStencilSuppressionApply = true;
+SuitHUDV4CanvasOverlay.cs:7748|            if (!_lateFrameTickRegistered && Application.isPlaying)
+SuitHUDV4CanvasOverlay.cs:7749|                _lateFrameTickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
+SuitHUDV4CanvasOverlay.cs:7750|        }
+SuitHUDV4CanvasOverlay.cs:7751|
+--
+SuitHUDV4CanvasOverlay.cs:7748|            if (!_lateFrameTickRegistered && Application.isPlaying)
+SuitHUDV4CanvasOverlay.cs:7749|                _lateFrameTickRegistered = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.UI);
+SuitHUDV4CanvasOverlay.cs:7750|        }
+SuitHUDV4CanvasOverlay.cs:7751|
+SuitHUDV4CanvasOverlay.cs:7752|        private void QueueReactiveLateFrameSolve(float deltaTime)
+--
+SuitHUDV4CanvasOverlay.cs:7765|        {
+SuitHUDV4CanvasOverlay.cs:7766|            if (_lateFrameTickRegistered)
+SuitHUDV4CanvasOverlay.cs:7767|            {
+SuitHUDV4CanvasOverlay.cs:7768|                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
+SuitHUDV4CanvasOverlay.cs:7769|                _lateFrameTickRegistered = false;
+--
+SuitHUDV4CanvasOverlay.cs:7768|                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
+SuitHUDV4CanvasOverlay.cs:7769|                _lateFrameTickRegistered = false;
+SuitHUDV4CanvasOverlay.cs:7770|            }
+SuitHUDV4CanvasOverlay.cs:7771|
+SuitHUDV4CanvasOverlay.cs:7772|            if (!_slowTickRegistered)
+--
+DestructibleOrganicManager.cs:1519|        private bool _slowTickRegistered;
+DestructibleOrganicManager.cs:1520|        private bool _lateFrameTickRegistered;
+DestructibleOrganicManager.cs:1521|        private bool _registeredPostSimulationDispatcher;
+DestructibleOrganicManager.cs:1522|        private bool _originShiftListenerRegistered;
+DestructibleOrganicManager.cs:1523|        private bool _dearLieJobScheduled;
+--
+DestructibleOrganicManager.cs:2080|
+DestructibleOrganicManager.cs:2081|            if (!_lateFrameTickRegistered)
+DestructibleOrganicManager.cs:2082|                _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+DestructibleOrganicManager.cs:2083|        }
+DestructibleOrganicManager.cs:2084|
+--
+DestructibleOrganicManager.cs:2081|            if (!_lateFrameTickRegistered)
+DestructibleOrganicManager.cs:2082|                _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+DestructibleOrganicManager.cs:2083|        }
+DestructibleOrganicManager.cs:2084|
+DestructibleOrganicManager.cs:2085|        private void TryUnregisterTickLanes()
+--
+DestructibleOrganicManager.cs:2098|
+DestructibleOrganicManager.cs:2099|            if (_lateFrameTickRegistered)
+DestructibleOrganicManager.cs:2100|            {
+DestructibleOrganicManager.cs:2101|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+DestructibleOrganicManager.cs:2102|                _lateFrameTickRegistered = false;
+--
+DestructibleOrganicManager.cs:2101|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+DestructibleOrganicManager.cs:2102|                _lateFrameTickRegistered = false;
+DestructibleOrganicManager.cs:2103|            }
+DestructibleOrganicManager.cs:2104|        }
+DestructibleOrganicManager.cs:2105|
+--
+
+==== SRC ConsumeFrameTimeDilationScalar ====
+SD:112|        private const float TimeDilationPausedEpsilon = 0.0001f;
+SD:113|        private const float BulletTimePostScalarThreshold = 0.98f;
+SD:114|        private const double SlowJobCompleteWarningMilliseconds = 1.0;
+SD:115|        private const double SlowDispatcherPhaseWarningMilliseconds = 100.0;
+SD:116|        private const float JobAdmissionFrameBudgetMissThresholdSeconds = 1.0f / 60.0f;
+SD:117|        private const int MaxQueuedDispatcherSurfaceProbes = 1024;
+SD:118|        private const int DispatcherBlackBoxFrameCount = 300;
+SD:119|        private const int DispatcherBlackBoxEntrySizeBytes = 64;
+SD:120|        private const int MasterDispatcherMaxSystems = 85;
+SD:121|        private const int MasterDispatcherBucketCount = 64;
+SD:122|        private const int MasterDispatcherBucketMask = MasterDispatcherBucketCount - 1;
+SD:123|        private const int MasterDispatcherBlackBoxFrameCount = 300;
+SD:124|        private const int MasterDispatcherFenceDomainCount = 4;
+SD:125|        private const int MasterDispatcherMockDependencyJobCount = 100;
+SD:126|        private const int MasterDispatcherSignalLaneCount = 33;
+SD:127|        private const int MasterDispatcherDependencyScratchCapacity = 8;
+SD:128|        private const uint MasterDispatcherFlagVisualSyncShed = 1u << 0;
+SD:129|        private const uint MasterDispatcherFlagRollbackFence = 1u << 1;
+SD:130|        private const uint MasterDispatcherFlagHealthPressureShed = 1u << 2;
+SD:131|        private const BufferID MasterRollbackRuntimeStateBuffer = BufferID.ShinobuHydroKccResolvedHits;
+SD:132|        private const uint MasterRollbackRequiredFlag = 1u << 3;
+SD:133|        private const uint MasterRollbackResimulatingFlag = 1u << 4;
+SD:134|        private const uint MasterRollbackHardResyncRequiredFlag = 1u << 14;
+SD:135|        private const float MasterDispatcherStallViolationThresholdMs = 8f;
+SD:136|#if UNITY_EDITOR
+SD:137|        private const string MasterDispatcherPriorityCsvPath = "Docs/Tasks/execution_priorities.csv";
+SD:138|        private const string VaultMemoryProfileCsvPath = "memory_overrides.csv";
+SD:139|#endif
+SD:140|        private const int DispatcherDependencyRetryFrames = 8;
+SD:141|        private static readonly ulong DispatcherSurfaceProbeHitsGuardMask =
+SD:142|            1UL << (unchecked((int)(uint)(int)BufferID.DispatcherRaycastHits) & 31);
+SD:143|        private const float AdrenalineHealthThreshold01 = 0.1f;
+SD:144|        private const float AdrenalineTargetTimeDilationScalar = 0.5f;
+SD:145|        private const float AdrenalineRampSeconds = 1.0f;
+SD:146|        private const float AdrenalineInvRampSeconds = 1.0f / AdrenalineRampSeconds;
+SD:147|        private const uint AdrenalineDilationReasonHash = 0x41445245u; // ADRE
+SD:148|        private const double FixedStepSeconds = 0.02;
+SD:149|        private const int MaxFixedSubstepsPerFrame = 3;
+SD:150|        private const int MaxLateFrameEventsPerFrame = 1000;
+SD:151|        private const int MaxPdaEventsPerFrame = 30;
+SD:152|        private const int PdaCongestionWarningFrameThreshold = 5;
+--
+SD:629|        public bool SimulationPaused => _simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon;
+SD:630|
+SD:631|        public double DilatedTimeSeconds => _timeSnapshot.Time;
+SD:632|
+SD:633|        public double UnscaledTimeSeconds => _timeSnapshot.UnscaledTime;
+SD:634|
+SD:635|        public H8TimeSnapshot TimeSnapshot => _timeSnapshot;
+SD:636|
+SD:637|        /// <inheritdoc />
+SD:638|        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+SD:639|
+SD:640|        /// <inheritdoc />
+SD:641|        public bool IsServiceReady => _serviceRegistered;
+SD:642|#if UNITY_EDITOR
+SD:643|        private static object _currentPostFixedGcOwner;
+SD:644|        private static object _lastPostFixedGcOwner;
+SD:645|        private static int _lastPostFixedGcFrame = -1;
+SD:646|        private static int _lastPostFixedGcDelta;
+SD:647|        private static int _lastPostFixedGcLaneIndex = -1;
+SD:648|        private static int _lastPostFixedGcItemIndex = -1;
+SD:649|        private static float _nextAupNanInquisitorLogTime;
+SD:650|        private static float _nextDispatcherPhaseWarningLogTime;
+SD:651|        private static float _nextFoveatedFrameWarningLogTime;
+SD:652|#endif
+SD:653|        private static ushort _dominantLateFrameCircuitBreakerLaneCount;
+SD:654|        private static float _pauseDepthOfFieldWeight;
+SD:655|        private static float _pauseDepthOfFieldBlendStartTime;
+SD:656|        private static float _pauseDepthOfFieldBlendStartWeight;
+SD:657|        private static float _pauseDepthOfFieldTargetWeight;
+SD:658|        private static bool _temporalCompressionActive;
+SD:659|        private static bool _pauseMenuDepthOfFieldRequested;
+SD:660|        private static bool _pdaDepthOfFieldRequested;
+SD:661|        private static bool _pauseDepthOfFieldTargetActive;
+SD:662|        private static int _temporalCompressionFrameCount;
+SD:663|        private static int _pdaOverBudgetConsecutiveFrames;
+SD:664|        private static VaultGenerationHandle<KinematicSurfaceHit> _scheduledDispatcherSurfaceProbeHitsHandle;
+SD:665|        private static IDataVault _scheduledDispatcherSurfaceProbeHitsGuardVault;
+SD:666|        private static bool _scheduledDispatcherSurfaceProbeHitsGuardHeld;
+SD:667|        private static JobHandle _scheduledDispatcherSurfaceProbeHandle;
+SD:668|        private static bool _dispatcherSurfaceProbesScheduled;
+SD:669|        private static int _pendingDispatcherSurfaceProbeCount;
+--
+SD:1766|                ? math.clamp(scalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+SD:1767|                : 1f;
+SD:1768|
+SD:1769|            if (_coreTickDilationRestorePending)
+SD:1770|            {
+SD:1771|                _coreTickDilationRestorePending = false;
+SD:1772|            }
+SD:1773|            else if (_coreTickDilationFramesRemaining <= 0)
+SD:1774|            {
+SD:1775|                _coreTickDilationRestoreScalar = _timeDilationScalar;
+SD:1776|            }
+SD:1777|
+SD:1778|            _coreTickDilationScalar = safeScalar;
+SD:1779|            _coreTickDilationFramesRemaining = math.max(_coreTickDilationFramesRemaining, frameCount);
+SD:1780|            _coreTickDilationReasonHash = reasonHash;
+SD:1781|            SetTimeDilationScalar(safeScalar, reasonHash, publishImmediate: true);
+SD:1782|        }
+SD:1783|
+SD:1784|        public void SetThermalCriticalSlowTick(bool active)
+SD:1785|        {
+SD:1786|            _thermalCriticalSlowTickActive = active;
+SD:1787|            if (active && _slowTickAccumulator > ThermalCriticalSlowTickIntervalSeconds)
+SD:1788|                _slowTickAccumulator = ThermalCriticalSlowTickIntervalSeconds;
+SD:1789|        }
+SD:1790|
+SD:1791|        public void RequestSimulationPause(bool paused, uint reasonHash = 0u)
+SD:1792|        {
+SD:1793|            if (paused)
+SD:1794|            {
+SD:1795|                if (!_simulationPaused)
+SD:1796|                    _prePauseTimeDilationScalar = ResolvePauseRestoreScalar();
+SD:1797|
+SD:1798|                ClearCoreTickDilationBurst();
+SD:1799|                ClearAdrenalineDilation();
+SD:1800|                _simulationPaused = true;
+SD:1801|                SetTimeDilationScalar(0f, reasonHash, publishImmediate: true);
+SD:1802|                return;
+SD:1803|            }
+SD:1804|
+SD:1805|            _simulationPaused = false;
+SD:1806|            SetTimeDilationScalar(_prePauseTimeDilationScalar, reasonHash, publishImmediate: true);
+--
+SD:4995|        private float ConsumeFrameTimeDilationScalar()
+SD:4996|        {
+SD:4997|            if (_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon)
+SD:4998|                return 0f;
+SD:4999|
+SD:5000|            if (_coreTickDilationFramesRemaining <= 0)
+SD:5001|                return _timeDilationScalar;
+SD:5002|
+SD:5003|            float scalar = _coreTickDilationScalar;
+SD:5004|            _coreTickDilationFramesRemaining--;
+SD:5005|            if (_coreTickDilationFramesRemaining == 0)
+SD:5006|            {
+SD:5007|                _coreTickDilationScalar = 1f;
+SD:5008|                _coreTickDilationRestorePending = true;
+SD:5009|            }
+SD:5010|
+SD:5011|            return scalar;
+SD:5012|        }
+SD:5013|
+SD:5014|        private float ResolvePauseRestoreScalar()
+SD:5015|        {
+SD:5016|            float restoreScalar = _coreTickDilationFramesRemaining > 0 || _coreTickDilationRestorePending
+SD:5017|                ? _coreTickDilationRestoreScalar
+SD:5018|                : _timeDilationScalar;
+SD:5019|            return math.isfinite(restoreScalar)
+SD:5020|                ? math.max(TimeDilationPausedEpsilon, restoreScalar)
+SD:5021|                : 1f;
+SD:5022|        }
+SD:5023|
+SD:5024|        private void ClearCoreTickDilationBurst()
+SD:5025|        {
+SD:5026|            _coreTickDilationScalar = 1f;
+SD:5027|            _coreTickDilationRestoreScalar = 1f;
+SD:5028|            _coreTickDilationFramesRemaining = 0;
+SD:5029|            _coreTickDilationReasonHash = 0u;
+SD:5030|            _coreTickDilationRestorePending = false;

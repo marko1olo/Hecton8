@@ -1,0 +1,3 @@
+3976
+PID=3976 start_time=31.07.2026 22:53:07,92
+status_file=C:\hades\Hecton8\Tools\_cline_scratch\v0_L14_launch_status.txt

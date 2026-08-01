@@ -1,0 +1,14 @@
+size_before=293140 nl=lf
+bare_as=True
+bare_find=True
+fqn_already=False
+regex_subs=1
+bare_as_after=False
+bare_find_after=False
+fqn_find_after=True
+marker_after=True
+2695|            // Fully-qualify type: editor asm has no using Hecton8.Gameplay (CS0246 on bare name).
+2696|            Hecton8.Gameplay.HectonPlayerMovement movement =
+2698|                ?? UnityEngine.Object.FindFirstObjectByType<Hecton8.Gameplay.HectonPlayerMovement>();
+2701|                movement.EnsureDispatcherRegistration();
+OK

@@ -1,0 +1,159 @@
+hits 157 chars 19448
+_Project\Scripts\BuoyancyObject.cs:199:         private bool _registeredToFixedTick;
+_Project\Scripts\BuoyancyObject.cs:472:             if (_registeredToFixedTick)
+_Project\Scripts\BuoyancyObject.cs:477:             _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+_Project\Scripts\BuoyancyObject.cs:482:             if (!_registeredToFixedTick)
+_Project\Scripts\BuoyancyObject.cs:486:             _registeredToFixedTick = false;
+_Project\Scripts\HectonCelestialEngine.cs:1986:             TryRegisterToTickManager();
+_Project\Scripts\HectonCelestialEngine.cs:2006:             TryRegisterToTickManager();
+_Project\Scripts\HectonCelestialEngine.cs:2340:         private void TryRegisterToTickManager()
+_Project\Scripts\HectonCelestialEngine.cs:2448:                             TryRegisterToTickManager();
+_Project\Scripts\HectonPlayerMovement.cs:1906:         public float CurrentMovementIntent01 => math.saturate(math.sqrt(math.max(0f, math.lengthsq(_lastPlayerKinematicsIntendedMovement))));
+_Project\Scripts\HectonPlayerMovement.cs:2986:         private float3 ResolveRawInputIntentVector()
+_Project\Scripts\HectonPlayerMovement.cs:7996:         /// returns default (:8450), which sends ProcessPlayerInputFrame (:8079) down its else branch every
+_Project\Scripts\HectonPlayerMovement.cs:8103:                 ProcessPlayerInputFrame();
+_Project\Scripts\HectonPlayerMovement.cs:8130:         private void ProcessPlayerInputFrame()
+_Project\Scripts\HectonPlayerMovement.cs:8194:         /// <see cref="ResolveRawInputIntentVector"/> and swim thrust read.
+_Project\Scripts\HectonPlayerMovement.cs:8196:         /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+_Project\Scripts\HectonPlayerMovement.cs:8208:         private void SampleGameplayLocomotionInputForFixedStep()
+_Project\Scripts\HectonPlayerMovement.cs:8224:             ProcessPlayerInputFrame();
+_Project\Scripts\HectonPlayerMovement.cs:9930:                 // before each FixedTick (batchmode / catch-up), and PrepareTransportAndFrameState
+_Project\Scripts\HectonPlayerMovement.cs:9932:                 SampleGameplayLocomotionInputForFixedStep();
+_Project\Scripts\HectonPlayerMovement.cs:9934:                 PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+_Project\Scripts\HectonPlayerMovement.cs:10091:         private PlayerTransportPreset PrepareTransportAndFrameState(float fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority)
+_Project\Scripts\HectonPlayerMovement.cs:10113:             _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
+_Project\Scripts\HectonRockManager.cs:214:             TryRegisterToTickManager();
+_Project\Scripts\HectonRockManager.cs:224:             TryRegisterToTickManager();
+_Project\Scripts\HectonRockManager.cs:312:         private void TryRegisterToTickManager()
+_Project\Scripts\HectonRockManager.cs:346:                 TryRegisterToTickManager();
+_Project\Scripts\HUDQuickBar.cs:604:                 available = toolManager.IsToolAvailableInSlot(slotIndex);
+_Project\Scripts\MainMenuController.cs:208:             TryRegisterToTickManager();
+_Project\Scripts\MainMenuController.cs:229:             TryRegisterToTickManager();
+_Project\Scripts\MainMenuController.cs:286:                     TryRegisterToTickManager();
+_Project\Scripts\MainMenuController.cs:1417:             TryRegisterToTickManager();
+_Project\Scripts\MainMenuController.cs:1600:             TryRegisterToTickManager();
+_Project\Scripts\MainMenuController.cs:2647:         private void TryRegisterToTickManager()
+_Project\Scripts\PDAInventoryTab.cs:1867:                     _toolSlotIcons[i].color = toolManager.IsToolAvailableInSlot(i)
+_Project\Scripts\PDAInventoryTab.cs:2360:                 else if (toolManager.IsToolAvailableInSlot(assignedSlot))
+_Project\Scripts\PDAInventoryTab.cs:3139:                 bool available = toolManager != null && toolManager.IsToolAvailableInSlot(i);
+_Project\Scripts\PDAInventoryTab.cs:3491:                     bool available = toolManager != null && toolManager.IsToolAvailableInSlot(i);
+_Project\Scripts\PDAInventoryTab.cs:3579:                 bool available = toolManager.IsToolAvailableInSlot(i);
+_Project\Scripts\PDAInventoryTab.cs:3621:                 return toolManager.IsToolAvailableInSlot(i)
+_Project\Scripts\PDAInventoryTab.cs:3677:                     return toolManager.IsToolAvailableInSlot(i)
+_Project\Scripts\PDAInventoryTab.cs:3735:                 if (assigned == null || !toolManager.IsToolAvailableInSlot(preferredSlot))
+_Project\Scripts\PDAInventoryTab.cs:3747:                 if (!toolManager.IsToolAvailableInSlot(i))
+_Project\Scripts\PlayerInventory.cs:1241:         /// <see cref="CanServiceItemAdds"/>). This method must never be the thing that decides storage is
+_Project\Scripts\PlayerInventory.cs:1572:                     "(STORAGE UNAVAILABLE above) instead.");
+_Project\Scripts\PlayerInventory.cs:1679:                 // STORAGE UNAVAILABLE line, which names _cachedDataVault when the GlobalDataVault service is
+_Project\Scripts\PlayerInventory.cs:1701:             // once, and TryRecoverRuntimeStorageCold lets the consumer that noticed re-arm it.
+_Project\Scripts\PlayerInventory.cs:2371:         // Refusal-reason bits for DescribeAddRefusalMask. Kept public because the only consumers are cold
+_Project\Scripts\PlayerInventory.cs:2408:         public uint DescribeAddRefusalMask(int itemHashId)
+_Project\Scripts\PlayerInventory.cs:2452:         /// <see cref="DescribeAddRefusalMask"/>. Note that <c>IsCreated</c> on a vault lane re-resolves
+_Project\Scripts\PlayerInventory.cs:2468:         /// <see cref="TryRecoverRuntimeStorageCold"/>, which re-arms every lane together.
+_Project\Scripts\PlayerInventory.cs:2470:         internal bool CanServiceItemAdds()
+_Project\Scripts\PlayerInventory.cs:2505:         internal bool TryRecoverRuntimeStorageCold()
+_Project\Scripts\PlayerInventory.cs:2507:             if (CanServiceItemAdds())
+_Project\Scripts\PlayerInventory.cs:2530:             return CanServiceItemAdds();
+_Project\Scripts\PlayerInventory.cs:2536:         /// bind and by <see cref="TryRecoverRuntimeStorageCold"/> for every re-arm after that.
+_Project\Scripts\PlayerInventory.cs:2570:             // TryRecoverRuntimeStorageCold, and a re-bind of buffers that already hold live data returns the
+_Project\Scripts\PlayerInventory.cs:2603:             // scratch guard passes, this method returns true, and CanServiceItemAdds still reports false at the
+_Project\Scripts\PlayerInventory.cs:2624:         /// <see cref="TryRecoverRuntimeStorageCold"/> leaves one stale error in the log with no paired
+_Project\Scripts\PlayerInventory.cs:2634:                 "[PlayerInventory] STORAGE UNAVAILABLE - " + failedStep + " failed, so this inventory " +
+_Project\Scripts\PlayerToolManager.cs:168:         private bool _registeredToFixedTick;
+_Project\Scripts\PlayerToolManager.cs:295:             TryRegisterToTickManager();
+_Project\Scripts\PlayerToolManager.cs:305:             // loadout, which is exactly what IsToolAvailableInSlot reports on.
+_Project\Scripts\PlayerToolManager.cs:328:         private void TryRegisterToTickManager()
+_Project\Scripts\PlayerToolManager.cs:343:             if (!_registeredToFixedTick)
+_Project\Scripts\PlayerToolManager.cs:347:                 // lane STARTERGRANT stays deferred (L08 refusalMask 0x1E) and IsToolAvailableInSlot
+_Project\Scripts\PlayerToolManager.cs:349:                 _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+_Project\Scripts\PlayerToolManager.cs:362:             if (_registeredToFixedTick)
+_Project\Scripts\PlayerToolManager.cs:365:                 _registeredToFixedTick = false;
+_Project\Scripts\PlayerToolManager.cs:392:             // selectable at all (IsToolAvailableInSlot -> HasToolInInventory -> CountAvailableTotal), so it
+_Project\Scripts\PlayerToolManager.cs:954:         public bool IsToolAvailableInSlot(int slotIndex)
+_Project\Scripts\PlayerToolManager.cs:1279:         /// in the inventory. Slot availability IS ownership: <see cref="IsToolAvailableInSlot"/> resolves
+_Project\Scripts\PlayerToolManager.cs:1304:         /// <c>PlayerInventory.CanServiceItemAdds()</c> so it costs a handful of field reads per frame while
+_Project\Scripts\PlayerToolManager.cs:1357:                     // IsToolAvailableInSlot resolves through HasToolInInventory -> CountAvailableTotal, which
+_Project\Scripts\PlayerToolManager.cs:1362:                     // DescribeAddRefusalMask runs the full physical-capacity fold and its own doc comment
+_Project\Scripts\PlayerToolManager.cs:1372:                         firstRefusalMask = playerInventory.DescribeAddRefusalMask(itemHash);
+_Project\Scripts\PlayerToolManager.cs:1443:         /// <c>PlayerInventory.CanServiceItemAdds()</c> reports the add lane live.
+_Project\Scripts\PlayerToolManager.cs:1447:         /// allocation, no cell fold. The heavy repair (<c>TryRecoverRuntimeStorageCold</c>, ~54 lane binds)
+_Project\Scripts\PlayerToolManager.cs:1472:             // run reads IsToolAvailableInSlot after roughly a dozen dispatcher ticks, not a dozen seconds. A
+_Project\Scripts\PlayerToolManager.cs:1479:             if (!playerInventory.CanServiceItemAdds())
+_Project\Scripts\PlayerToolManager.cs:1488:                 if (!playerInventory.TryRecoverRuntimeStorageCold())
+_Project\Scripts\PlayerToolManager.cs:1511:         /// retries gave up. <c>DescribeAddRefusalMask</c> runs a full capacity fold and is banned from tick
+_Project\Scripts\PlayerToolManager.cs:1538:                     probedMask = playerInventory.DescribeAddRefusalMask(itemHash);
+_Project\Scripts\PlayerToolManager.cs:1546:                 " dispatcher ticks, so IsToolAvailableInSlot stays false for every slot and the player has " +
+_Project\Scripts\PlayerToolManager.cs:1552:                 " inventoryCanServiceAdds=" + (playerInventory != null && playerInventory.CanServiceItemAdds()
+_Project\Scripts\PlayerToolManager.cs:1644:                         TryRegisterToTickManager();
+_Project\Scripts\UIRuntimeSmokeTester.cs:175:                     if (builderSlot >= 0 && toolManager.IsToolAvailableInSlot(builderSlot))
+_Project\Scripts\WorldGenerativeGeologySeamExecutionDirector.cs:255:             TryRegisterToTickManager();
+_Project\Scripts\WorldGenerativeGeologySeamExecutionDirector.cs:262:             TryRegisterToTickManager();
+_Project\Scripts\WorldGenerativeGeologySeamExecutionDirector.cs:305:         private void TryRegisterToTickManager()
+_Project\Scripts\WorldGenerativeGeologySeamExecutionDirector.cs:362:                     TryRegisterToTickManager();
+_Project\Scripts\WorldGenerativeGeologyTerrainSeamApplier.cs:212:             TryRegisterToTickManager();
+_Project\Scripts\WorldGenerativeGeologyTerrainSeamApplier.cs:221:             TryRegisterToTickManager();
+_Project\Scripts\WorldGenerativeGeologyTerrainSeamApplier.cs:414:         private void TryRegisterToTickManager()
+_Project\Scripts\WorldGenerativeGeologyTerrainSeamApplier.cs:475:                 TryRegisterToTickManager();
+_Project\Scripts\WorldProceduralFillDirector.cs:72:             TryRegisterToTickManager();
+_Project\Scripts\WorldProceduralFillDirector.cs:77:             TryRegisterToTickManager();
+_Project\Scripts\WorldProceduralFillDirector.cs:108:                     TryRegisterToTickManager();
+_Project\Scripts\WorldProceduralFillDirector.cs:152:         private void TryRegisterToTickManager()
+_Project\Scripts\Core\InputDispatcher.cs:790:         /// handed that zero out every frame, and HectonPlayerMovement.ProcessPlayerInputFrame
+_Project\Scripts\Core\PlayerRuntimeContextService.cs:1229:             effortLoadState.MovementIntent01 = _playerMovement != null ? Sanitize01(_playerMovement.CurrentMovementIntent01) : 0f;
+_Project\Scripts\Core\Memory\GlobalDataVault.cs:6673:         /// last-bound lane was resolvable. CanServiceItemAdds() then read _stackCounts (ordinal 1, staled 47
+_Project\Scripts\Ecosystem\EcosystemHealthDirector.cs:66:             TryRegisterToTickManager();
+_Project\Scripts\Ecosystem\EcosystemHealthDirector.cs:80:             TryRegisterToTickManager();
+_Project\Scripts\Ecosystem\EcosystemHealthDirector.cs:353:         private void TryRegisterToTickManager()
+_Project\Scripts\Ecosystem\MigrationDirector.cs:236:             TryRegisterToTickManager();
+_Project\Scripts\Ecosystem\MigrationDirector.cs:253:             TryRegisterToTickManager();
+_Project\Scripts\Ecosystem\MigrationDirector.cs:327:             TryRegisterToTickManager();
+_Project\Scripts\Ecosystem\MigrationDirector.cs:2050:         private void TryRegisterToTickManager()
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:291:             LocomotionHoldInProgress,
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:301:             /// <summary>ToolEquip: <c>PlayerToolManager.IsToolAvailableInSlot</c> is false for every slot,
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:989:         // inventory makes PlayerToolManager.IsToolAvailableInSlot false for EVERY slot by construction
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:1621:                 float intent = movement.CurrentMovementIntent01;
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:1755:         /// PlayerToolManager.IsToolAvailableInSlot (PlayerToolManager.cs:927-933) - false for every slot. The
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:1828:                     .Append("IsToolAvailableInSlot (PlayerToolManager.cs:927-933) - false for EVERY slot no ")
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2749:             _waitReason = WaitReason.LocomotionHoldInProgress;
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2762:             _waitReason = WaitReason.LocomotionHoldInProgress;
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2773:         ///   1. the driver's MoveDelta reached the locomotion owner (CurrentMovementIntent01 moved),
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:3089:                     if (!manager.IsToolAvailableInSlot(slot))
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:3110:                     // the claim this row used to make. IsToolAvailableInSlot is
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:3118:                         .Append(" and IsToolAvailableInSlot is false for every slot, so no tool could be ")
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:4466:                 _log.Append(" - PlayerInventory is DISABLED, which forces IsToolAvailableInSlot false for ")
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:4687:                 case WaitReason.LocomotionHoldInProgress:
+_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:4704:                     return "PlayerToolManager.IsToolAvailableInSlot was false for every slot, which is " +
+_Project\Scripts\Gameplay\DataArchaeologyRuntime.cs:1303:             // IsToolAvailableInSlot false for EVERY slot. An unassigned cosmetic hologram material was
+_Project\Scripts\Items\PickupItem.cs:103:         private bool _registeredToFixedTick;
+_Project\Scripts\Items\PickupItem.cs:486:             if (_registeredToFixedTick || !Application.isPlaying)
+_Project\Scripts\Items\PickupItem.cs:492:             _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+_Project\Scripts\Items\PickupItem.cs:507:             if (!_registeredToFixedTick)
+_Project\Scripts\Items\PickupItem.cs:512:             _registeredToFixedTick = false;
+_Project\Scripts\Plugins\MapMagic\MapMagicRuntimeBridge.cs:330:             TryRegisterToTickManager();
+_Project\Scripts\Plugins\MapMagic\MapMagicRuntimeBridge.cs:338:             TryRegisterToTickManager();
+_Project\Scripts\Plugins\MapMagic\MapMagicRuntimeBridge.cs:408:         private void TryRegisterToTickManager()
+_Project\Scripts\Plugins\MapMagic\MapMagicRuntimeBridge.cs:477:             TryRegisterToTickManager();
+_Project\Scripts\UI\LoadingScreenController.cs:177:             TryRegisterToTickManager();
+_Project\Scripts\UI\LoadingScreenController.cs:187:             TryRegisterToTickManager();
+_Project\Scripts\UI\LoadingScreenController.cs:236:             TryRegisterToTickManager();
+_Project\Scripts\UI\LoadingScreenController.cs:538:         private void TryRegisterToTickManager()
+_Project\Scripts\UI\LoadingScreenController.cs:613:                     TryRegisterToTickManager();
+_Project\Scripts\UI\PDAConstructionTab.cs:915:             bool builderReady = builderSlot >= 0 && toolManager != null && toolManager.IsToolAvailableInSlot(builderSlot);
+_Project\Scripts\UI\PDAConstructionTab.cs:1114:                 if (!toolManager.IsToolAvailableInSlot(builderSlot))
+_Project\Scripts\UI\PDAConstructionTab.cs:1163:             bool builderReady = builderSlot >= 0 && toolManager.IsToolAvailableInSlot(builderSlot);
+_Project\Scripts\UI\PDAConstructionTab.cs:1196:                 builderReady = toolManager.IsToolAvailableInSlot(builderSlot);
+_Project\Scripts\UI\PDALoadoutTab.cs:825:                 bool available = toolManager.IsToolAvailableInSlot(i);
+_Project\Scripts\UI\PDALoadoutTab.cs:949:                 else if (toolManager.IsToolAvailableInSlot(i))
+_Project\Scripts\UI\PDALoadoutTab.cs:1147:             if (!toolManager.IsToolAvailableInSlot(slotIndex))
+_Project\Scripts\UI\PDAShellChrome.cs:1575:                 if (toolManager.GetAssignedToolPrefab(i) != null && toolManager.IsToolAvailableInSlot(i))
+_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:5778:                 available = _toolManager.IsToolAvailableInSlot(slotIndex);
+_Project\Tests\Editor\MigrationRuntimeOwnerEditTests.cs:28:             AssertTextBefore(start, "if (TryAbortForUsableExistingRuntime())", "TryRegisterToTickManager();");
+_Project\Tests\Editor\PhysicsRockRuntimeOwnerEditTests.cs:54:             AssertTextBefore(onEnable, "if (TryAbortForUsableExistingRuntime())", "TryRegisterToTickManager();");
+_Project\Tests\Editor\PlayerToolManagerTickTests.cs:132:         public void TryRegisterToTickManager_NotInPlayMode_ReturnsEarlyWithoutException()
+_Project\Tests\Editor\PlayerToolManagerTickTests.cs:134:             var method = typeof(PlayerToolManager).GetMethod("TryRegisterToTickManager", BindingFlags.NonPublic | BindingFlags.Instance);
+_Project\Tests\Editor\PlayerToolManagerTickTests.cs:139:         public void TryRegisterToTickManager_AlreadyRegistered_ReturnsEarlyWithoutException()
+_Project\Tests\Editor\PlayerToolManagerTickTests.cs:141:             var method = typeof(PlayerToolManager).GetMethod("TryRegisterToTickManager", BindingFlags.NonPublic | BindingFlags.Instance);
+_Project\Tests\PlayMode\PlayerToolManagerTickRegistrationTests.cs:35:         public IEnumerator TryRegisterToTickManager_DispatcherNull_ReturnsEarly()
+_Project\Tests\PlayMode\PlayerToolManagerTickRegistrationTests.cs:39:             var method = typeof(PlayerToolManager).GetMethod("TryRegisterToTickManager", BindingFlags.NonPublic | BindingFlags.Instance);
+_Project\Tests\PlayMode\PlayerToolManagerTickRegistrationTests.cs:40:             Assert.IsNotNull(method, "Method TryRegisterToTickManager not found");
+

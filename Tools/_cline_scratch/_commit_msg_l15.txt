@@ -1,0 +1,10 @@
+fix(v0): heal dual-register desync so HPM FixedTick reaches hop2 (L15)
+
+L14 LIVE left hop2 ABSENT and movementIntent01max=0 despite healthy hop1 overrides.
+GlobalRegistry.TryRegisterFixedTickable/Updatable/Cold returned false when the global
+bucket already Contained the item, without healing a missing SystemDispatcher lane.
+HPM sticky flags trusted registration without verifying lane membership.
+
+Heal: if global Contains, still ensure dispatcher lane; HPM Ensure clears sticky when
+lane missing and re-TryRegisters. No Unregister thrash. Docs: L14 live results + L15.
+Swim PASS still requires LIVE probe (hop2 + intent>0).

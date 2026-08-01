@@ -1,0 +1,12 @@
+fix(v0): HPM FixedTick sample before suit/juice + dispatcher re-register (L13)
+
+L12 LIVE proved InputDispatcher holds MoveDelta=(0,1) while hop2 stayed ABSENT
+and movementIntent01max=0. FixedTick returned on suit/juice null BEFORE
+SampleGameplayLocomotionInputForFixedStep, so GetState never ran.
+
+- Sample locomotion first in FixedTick; EnsureJuiceProcessor soft path
+- suit null remains physics-only early-out after sample
+- public EnsureDispatcherRegistration; driver EnsureGameplayLocomotionInputReady calls it
+
+Docs: Docs/V0_Playtest/V0_L13_FIXEDTICK_SAMPLE_BEFORE_SUIT.md
+Probe verify: launch_v0_L13_sample_before_suit_probe.bat

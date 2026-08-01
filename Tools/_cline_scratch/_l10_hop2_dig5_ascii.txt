@@ -1,0 +1,561 @@
+=== CurrentMovementIntent01 / ResolveRawInput / _inputH ===
+1188|        private HectonPlayerInputHandler _inputHandler;
+1386|        private float _inputH;
+1387|        private float _inputV;
+1388|        private float _inputVertical;
+1906|        public float CurrentMovementIntent01 => math.saturate(math.sqrt(math.max(0f, math.lengthsq(_lastPlayerKinematicsIntendedMovement))));
+2986|        private float3 ResolveRawInputIntentVector()
+2988|            return new float3(_inputH, _inputVertical, _inputV);
+3778|            float inputX = _inputH;
+3779|            float inputZ = _inputV;
+6984|            float planarInputMagnitude = ResolveSargassum01(ApproximatePlanarMagnitude(_inputH, _inputV));
+6985|            float verticalInputMagnitude = math.isfinite(_inputVertical) ? math.abs(_inputVertical) : 0f;
+7258|            if (_jumpRequested || _inputVertical > 0.0001f)
+7263|                new float2(_inputH, _inputV),
+7264|                _inputVertical,
+7997|        /// render tick, zeroing _inputH/_inputV/_inputVertical and therefore the intent vector published at
+8055|            _inputHandler.TryReadFrame(inputService, jumpBufferTime, false, out HectonPlayerInputFrame frame, out _);
+8113|            _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
+8134|                _inputHandler.TryReadFrame(
+8153|                _inputH = _cachedMoveInput.x;
+8154|                _inputV = _cachedMoveInput.y;
+8155|                _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+8158|                    _inputH = 0f;
+8159|                    _inputV = 0f;
+8160|                    _inputVertical = 0f;
+8168|                _inputH = 0f;
+8169|                _inputV = 0f;
+8170|                _inputVertical = 0f;
+8183|                _inputH = 0f;
+8184|                _inputV = 0f;
+8185|                _inputVertical = 0f;
+8194|        /// <see cref="ResolveRawInputIntentVector"/> and swim thrust read.
+8199|        /// rarely runs, so _inputH/_inputV/_inputVertical stayed zero even when InputDispatcher
+8200|        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+8216|                _inputH = 0f;
+8217|                _inputV = 0f;
+8218|                _inputVertical = 0f;
+8643|            _juiceInput.hasMovementInput = (_inputH != 0f || _inputV != 0f || _inputVertical != 0f) ? (byte)1 : (byte)0;
+8644|            _juiceInput.inputH = _inputH;
+8656|            _juiceInput.swimVerticalInput = _inputVertical;
+8968|                ApproximatePlanarMagnitude(_inputH, _inputV),
+8969|                math.abs(_inputVertical)));
+9105|            bool manualRollIntent = math.abs(_inputH) >= vrManualRollInputThreshold && math.abs(_inputV) <= 0.25f;
+9224|                ? math.saturate(math.max(math.abs(_inputVertical), ResolveActiveTransportBoost01()))
+10113|            _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
+10187|                bool hasLandInput = _inputH != 0f || _inputV != 0f;
+10713|            return _inputV > surfaceDiveForwardCommit;
+11005|            float counterIntent = math.max(math.saturate(_inputVertical), upwardLookT * math.saturate(_inputV));
+11122|            Vector3 inputDirection = _cachedTransform.forward * _inputV +
+11123|                                     _cachedTransform.right * _inputH +
+11124|                                     Vector3.up * _inputVertical;
+11924|                float demandT = math.max(transportBoost01, math.saturate(_inputV));
+13725|            if (_inputV <= 0.05f)
+13895|            float gatedInputH = IsCriticalStaminaFailureActive ? 0f : _inputH;
+13896|            float gatedInputV = IsCriticalStaminaFailureActive ? 0f : _inputV;
+13897|            float gatedInputVertical = IsCriticalStaminaFailureActive ? 0f : _inputVertical;
+14143|                bool thrusterActive = math.abs(_inputVertical) > 0.01f || ResolveActiveTransportPropulsionForce() > 0.01f;
+14337|                float absInputH = math.isfinite(_inputH) ? math.abs(_inputH) : 0f;
+14338|                float absInputV = math.isfinite(_inputV) ? math.abs(_inputV) : 0f;
+14340|                float inputIntent = math.max(planarInputIntent, math.isfinite(_inputVertical) ? math.abs(_inputVertical) : 0f);
+14377|            if (_inputH == 0f && _inputV == 0f) return;
+14384|                _moveDirection = ResolveTransportPlatformRelativeWalkInputWorldDirection(_inputH, _inputV);
+14390|                _moveDirection.x = sinYaw * _inputV + cosYaw * _inputH;
+14392|                _moveDirection.z = cosYaw * _inputV - sinYaw * _inputH;
+14570|                float planarInputMagnitude = ApproximatePlanarMagnitude(_inputH, _inputV);
+14571|                bool surfaceIdleDrift = _isSurfaceSwimming && planarInputMagnitude <= crestFlowIdleInputThreshold && math.abs(_inputVertical) <= crestFlowIdleInputThreshold;
+14635|            float planarInputMagnitude = ApproximatePlanarMagnitude(_inputH, _inputV);
+14636|            float verticalInputMagnitude = math.abs(_inputVertical);
+14646|                    float desiredX = sinYaw * _inputV + cosYaw * _inputH;
+14647|                    float desiredZ = cosYaw * _inputV - sinYaw * _inputH;
+
+I1906|        public float CurrentMovementIntent01 => math.saturate(math.sqrt(math.max(0f, math.lengthsq(_lastPlayerKinematicsIntendedMovement))));
+I1907|
+I1908|        /// <summary>Movement-owned stamina drain multiplier forwarded to survival.</summary>
+I1909|        public float CurrentMovementStaminaDrainMultiplier => MovementStaminaDrainMultiplier;
+I1910|
+I1911|        /// <summary>Movement-owned emergency encumbrance ratio threshold.</summary>
+I1912|        public float CurrentCriticalEncumbranceRatio => CriticalEncumbranceRatio;
+I1913|
+I1914|        /// <summary>Movement-owned stamina threshold for critical encumbrance failure.</summary>
+I1915|        public float CurrentCriticalStaminaFailureThreshold01 => CriticalStaminaFailureThreshold01;
+I1916|
+I1917|        /// <summary>True when carried inventory mass exceeds the emergency locomotion cutoff.</summary>
+I1918|        public bool IsCriticallyEncumbered => _runtimeInventoryLoadRatio >= CriticalEncumbranceRatio;
+I1919|
+I1920|        public bool IsCriticalStaminaFailureActive => _criticalStaminaFailureTimer > 0f;
+I1921|        public bool IsSprinting => _isSprinting;
+I1922|
+I1923|        /// <summary>Resolved movement multiplier after inventory mass encumbrance.</summary>
+I1924|        public float InventoryLoadMovementMultiplier => ResolveRuntimeInventoryLoadMovementMultiplier();
+I1925|
+I1926|        /// <summary>Currently active suit data driving mass, drag, and swim parameters.</summary>
+I1927|        public SuitData CurrentSuit => currentSuitData;
+I1928|        public bool IsInsideBrineLayer => _isInsideBrineLayer;
+I1929|        public float CurrentBrineDensityMultiplier => _isInsideBrineLayer
+I1930|            ? math.max(1f, _lastBrineLayerSample.DensityMultiplier)
+I1931|            : 1f;
+I1932|        /// <summary>0???1 ratio of the player body submerged below the water surface.</summary>
+I1933|        public float WaterImmersionRatio => _waterImmersionRatio;
+I1934|        /// <summary>True when the player is on solid ground and in a walking locomotion mode.</summary>
+I1935|        public bool IsGrounded => _isGrounded && _isWalking;
+I1936|        /// <summary>True when the locomotion mode is any form of walking (dry or shallow).</summary>
+I1937|        public bool IsWalking => _isWalking;
+I1938|        /// <summary>Resolved locomotion mode for movement, camera, audio, and VFX consumers.</summary>
+I1939|        public PlayerLocomotionMode CurrentLocomotionMode => _currentLocomotionMode;
+I1940|        byte IPlayerKinematicsMovementRuntime.CurrentLocomotionModeCode => (byte)_currentLocomotionMode;
+I1941|        /// <summary>Returns a recent async KCC surface hit for footstep audio without issuing a new physics query.</summary>
+I1942|        public bool TryGetRecentFootstepSurfaceHit(float maxDistance, LayerMask layerMask, out PlayerMovementSurfaceHit hit)
+I1943|        {
+I1944|            hit = default;
+I1945|            float safeMaxDistance = math.max(0.01f, maxDistance);
+--
+R2986|        private float3 ResolveRawInputIntentVector()
+R2987|        {
+R2988|            return new float3(_inputH, _inputVertical, _inputV);
+R2989|        }
+R2990|
+R2991|        private void WritePlayerKinematicsSnapshot(Vector3 position, Vector3 velocity, float3 intendedMovement)
+R2992|        {
+R2993|            if (!HasPlayerKinematicsNativeState())
+R2994|                return;
+R2995|
+R2996|            float3 position3 = new float3(position.x, position.y, position.z);
+R2997|            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
+R2998|            if (!math.all(math.isfinite(position3)) ||
+R2999|                !math.all(math.isfinite(velocity3)) ||
+R3000|                !math.all(math.isfinite(intendedMovement)))
+R3001|            {
+R3002|                DumpPlayerKinematicsBlackBox(_playerKinematicsNaNHash);
+R3003|                return;
+R3004|            }
+R3005|
+R3006|            _playerKinematicsNativeState.WriteKinematicSnapshot(_dataVault, position3, velocity3, intendedMovement);
+R3007|        }
+--
+=== DiagEmitHopCensus full ===
+D1251|        private void DiagEmitHopCensus(int readHop)
+D1252|        {
+D1253|            // COLD ALLOC: one census string - emitted at most three times per session from a read accessor -
+D1254|            // owner: InputDispatcher
+D1255|            Hecton8.Core.H8Debug.LogWarning(
+D1256|                "[H8_INPUTHOP] readHop=" + readHop +
+D1257|                " obs=" + _diagReadObservations +
+D1258|                " | lateFrameTick=" + _diagLateFrameTickCalls +
+D1259|                " pumpFired=" + _diagPumpFiredCalls +
+D1260|                " presimTick=" + _diagPreSimTickCalls +
+D1261|                " presimSubsteps=" + _diagPreSimSubsteps +
+D1262|                " | captureRan=" + _diagCaptureRan +
+D1263|                " captureSkippedByFrameGuard=" + _diagCaptureSkippedByFrameGuard +
+D1264|                " | overrideApplied=" + _diagOverrideApplied +
+D1265|                " overrideRejected=" + _diagOverrideRejected +
+D1266|                " lastOverrideMove=(" + _diagLastOverrideMoveX + "," + _diagLastOverrideMoveY + ")" +
+D1267|                " | blockMaskNonZero=" + _diagBlockMaskNonZero +
+D1268|                " postMaskMove=(" + _diagLastPostMaskMoveX + "," + _diagLastPostMaskMoveY + ")" +
+D1269|                " | publishAttempt=" + _diagPublishAttempts +
+D1270|                " publishGuardFail=" + _diagPublishGuardFail +
+D1271|                " publishBufferFail=" + _diagPublishBufferFail +
+D1272|                " publishOk=" + _diagPublishOk +
+D1273|                " | currentStateMove=(" + _currentState.MoveDelta.x + "," + _currentState.MoveDelta.y + ")" +
+D1274|                " currentInputStateFrame=" + _currentInputState.Frame +
+D1275|                " standardInputFrame=" + _standardInputFrame +
+D1276|                " inputStateSequence=" + _inputStateSequence +
+D1277|                " | initialized=" + _isInitialized +
+D1278|                " regLateFrame=" + _registeredLateFrame +
+D1279|                " regSlowTick=" + _registeredSlowTick +
+D1280|                " regInputService=" + _registeredInputService +
+D1281|                " vaultNull=" + (_dataVault == null) +
+D1282|                " vaultBuffersReady=" + _deterministicVaultBuffersReady +
+D1283|                " lastPresimFrame=" + _lastPreSimulationInputFrame +
+D1284|                " lastCapturedFrame=" + _lastCapturedFrame +
+D1285|                " frameIndex=" + Hecton8.Core.SystemDispatcher.CurrentFrameIndex +
+D1286|                " frameId=" + Hecton8.Core.SystemDispatcher.CurrentFrameId +
+D1287|                " - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the" +
+D1288|                " override. lateFrameTick=0 means this component's late-frame lane never ran, so the" +
+D1289|                " self-pump never fired and PreSimulationInputTick - the only per-frame caller of" +
+D1290|                " CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override" +
+D1291|                " lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every" +
+D1292|                " capture; compare lastCapturedFrame against frameIndex. captureRan>0 with" +
+D1293|                " overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no" +
+D1294|                " clock-skew LogError that leaves the silent age>maxFrameAge branch at" +
+D1295|                " CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio:" +
+D1296|                " overrideRejected is expected to be large even in a fully healthy run because it counts" +
+D1297|                " every poll on a frame where the driver published nothing (Sequence==0 early return)." +
+D1298|                " overrideApplied>0 with currentStateMove=(0,0) means the" +
+D1299|                " value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero." +
+D1300|                " publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being" +
+D1301|                " zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are" +
+D1302|                " the same event - those four driver numbers are not evidence about the override lane.");
+D1303|        }
+=== L09 INPUTHOP FULL ===
+L13156|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) currentInputStateFrame=363 standardInputFrame=364 inputStateSequence=364 | initialized=True regLateFrame=True regSlowTick=True regInputService=True vaultNull=False vaultBuffersReady=True lastPresimFrame=334 lastCapturedFrame=334 frameIndex=334 frameId=0 - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the override. lateFrameTick=0 means this component's late-frame lane never ran, so the self-pump never fired and PreSimulationInputTick - the only per-frame caller of CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every capture; compare lastCapturedFrame against frameIndex. captureRan>0 with overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no clock-skew LogError that leaves the silent age>maxFrameAge branch at CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio: overrideRejected is expected to be large even in a fully healthy run because it counts every poll on a frame where the driver published nothing (Sequence==0 early return). overrideApplied>0 with currentStateMove=(0,0) means the value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero. publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are the same event - those four driver numbers are not evidence about the override lane.
+L13174|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) currentInputStateFrame=363 standardInputFrame=364 inputStateSequence=364 | initialized=True regLateFrame=True regSlowTick=True regInputService=True vaultNull=False vaultBuffersReady=True lastPresimFrame=335 lastCapturedFrame=334 frameIndex=335 frameId=0 - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the override. lateFrameTick=0 means this component's late-frame lane never ran, so the self-pump never fired and PreSimulationInputTick - the only per-frame caller of CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every capture; compare lastCapturedFrame against frameIndex. captureRan>0 with overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no clock-skew LogError that leaves the silent age>maxFrameAge branch at CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio: overrideRejected is expected to be large even in a fully healthy run because it counts every poll on a frame where the driver published nothing (Sequence==0 early return). overrideApplied>0 with currentStateMove=(0,0) means the value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero. publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are the same event - those four driver numbers are not evidence about the override lane.
+L13192|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBufferFail=0 publishOk=380 | currentStateMove=(0,1) currentInputStateFrame=379 standardInputFrame=380 inputStateSequence=380 | initialized=True regLateFrame=True regSlowTick=True regInputService=True vaultNull=False vaultBuffersReady=True lastPresimFrame=350 lastCapturedFrame=350 frameIndex=350 frameId=0 - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the override. lateFrameTick=0 means this component's late-frame lane never ran, so the self-pump never fired and PreSimulationInputTick - the only per-frame caller of CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every capture; compare lastCapturedFrame against frameIndex. captureRan>0 with overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no clock-skew LogError that leaves the silent age>maxFrameAge branch at CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio: overrideRejected is expected to be large even in a fully healthy run because it counts every poll on a frame where the driver published nothing (Sequence==0 early return). overrideApplied>0 with currentStateMove=(0,0) means the value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero. publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are the same event - those four driver numbers are not evidence about the override lane.
+=== L09 SWIM FULL ===
+[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInputCalled=True blockMask=0x00000000 - FAIL: the input path was open but the driver's MoveDelta never reached HectonPlayerMovement [SCHEDULE phase=SwimSurface wall=5.078s ticks=10994 tickFloor=2 tickBox=61442 granted=5.000s yield=Completed waitingOn=LocomotionHoldInProgress] [SCHEDULE phase=SwimDive wall=4.256s ticks=86018 tickFloor=2 tickBox=86018 granted=7.000s yield=PhaseTickCeiling waitingOn=LocomotionHoldInProgress - PHASE TICK CEILING: this phase spent its whole 86018-tick share of the schedule's pot inside its wall box, so it yielded on the tick axis. Its own share only - the phases after it kept theirs]
+=== h8_playprobe_v0_L08.log INPUTHOP ===
+h8_playprobe_v0_L08.log|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=32 pumpFired=1 presimTick=318 presimSubsteps=343 | captureRan=314 captureSkippedByFrameGuard=31 | overrideApplied=1 overrideRejected=313 lastOverrideMove=(0,0) | blockMaskNonZero=0 postMaskMove=(0,0) | publishAttempt=343 publishGuardFail=0 publishBuffe
+h8_playprobe_v0_L08.log|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=32 pumpFired=1 presimTick=320 presimSubsteps=345 | captureRan=316 captureSkippedByFrameGuard=31 | overrideApplied=3 overrideRejected=313 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=345 publishGuardFail=0 publishBuff
+h8_playprobe_v0_L08.log|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=32 pumpFired=1 presimTick=333 presimSubsteps=360 | captureRan=327 captureSkippedByFrameGuard=35 | overrideApplied=14 overrideRejected=313 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=360 publishGuardFail=0 publishBuf
+h8_playprobe_v0_L08.log|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 95030 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRe
+h8_playprobe_v0_L08.log|[H8_INPUTHOP] readHop=0 obs=351505 | lateFrameTick=32 pumpFired=1 presimTick=4121 presimSubsteps=4420 | captureRan=3936 captureSkippedByFrameGuard=486 | overrideApplied=856 overrideRejected=3080 lastOverrideMove=(0,0) | blockMaskNonZero=0 postMaskMove=(0,0) | publishAttempt=4420 publishGuardFail=401
+=== h8_playprobe_v0_L07.log INPUTHOP ===
+h8_playprobe_v0_L07.log|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=33 pumpFired=1 presimTick=299 presimSubsteps=1196 | captureRan=299 captureSkippedByFrameGuard=899 | overrideApplied=2 overrideRejected=297 lastOverrideMove=(0,0) | blockMaskNonZero=0 postMaskMove=(0,0) | publishAttempt=1196 publishGuardFail=1196 publis
+h8_playprobe_v0_L07.log|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=33 pumpFired=1 presimTick=302 presimSubsteps=1208 | captureRan=302 captureSkippedByFrameGuard=908 | overrideApplied=5 overrideRejected=297 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=1208 publishGuardFail=1208 publi
+h8_playprobe_v0_L07.log|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=33 pumpFired=1 presimTick=324 presimSubsteps=1296 | captureRan=324 captureSkippedByFrameGuard=974 | overrideApplied=27 overrideRejected=297 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=1296 publishGuardFail=1296 publ
+h8_playprobe_v0_L07.log|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 93935 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRe
+h8_playprobe_v0_L07.log|[H8_INPUTHOP] readHop=0 obs=413452 | lateFrameTick=33 pumpFired=1 presimTick=4718 presimSubsteps=18872 | captureRan=4718 captureSkippedByFrameGuard=14156 | overrideApplied=838 overrideRejected=3880 lastOverrideMove=(0,0) | blockMaskNonZero=0 postMaskMove=(0,0) | publishAttempt=18872 publishGuardFail
+=== InputManager player map ===
+M179|        [SerializeField] private InputActionAsset _inputActionAsset;
+M180|        private InputActionMap _playerActionMap;
+M181|        private InputActionMap _uiActionMap;
+M182|
+M183|        // Player Actions (cached references - zero GC)
+M184|        private InputAction _moveAction;
+--
+M276|
+M277|        public bool IsPlayerInputEnabled => TryGetActionMapEnabled(_playerActionMap);
+M278|        public bool IsUIInputEnabled => TryGetActionMapEnabled(_uiActionMap);
+M279|        public bool CanSwitchActionMaps => _serviceRegistered && !_serviceShuttingDown && _inputMapsInitialized && _runtimeInputActionAsset != null;
+M280|        public InputDisplayStyle CurrentDisplayStyle { get; private set; } = InputDisplayStyle.KeyboardMouse;
+M281|        public byte CurrentDisplayStyleCode => (byte)CurrentDisplayStyle;
+--
+M277|        public bool IsPlayerInputEnabled => TryGetActionMapEnabled(_playerActionMap);
+M278|        public bool IsUIInputEnabled => TryGetActionMapEnabled(_uiActionMap);
+M279|        public bool CanSwitchActionMaps => _serviceRegistered && !_serviceShuttingDown && _inputMapsInitialized && _runtimeInputActionAsset != null;
+M280|        public InputDisplayStyle CurrentDisplayStyle { get; private set; } = InputDisplayStyle.KeyboardMouse;
+M281|        public byte CurrentDisplayStyleCode => (byte)CurrentDisplayStyle;
+M282|
+--
+M295|            scrollDelta = Vector2.zero;
+M296|            if (_uiScrollWheelAction == null || !TryGetActionMapEnabled(_uiActionMap))
+M297|                return false;
+M298|
+M299|            scrollDelta = _uiScrollWheelAction.ReadValue<Vector2>();
+M300|            return scrollDelta.sqrMagnitude > 0.000001f;
+--
+M305|            point = Vector2.zero;
+M306|            if (_uiPointAction == null || !TryGetActionMapEnabled(_uiActionMap))
+M307|                return false;
+M308|
+M309|            point = _uiPointAction.ReadValue<Vector2>();
+M310|            return point.x >= 0f && point.y >= 0f;
+--
+M321|
+M322|            if (_playerActionMap == null)
+M323|            {
+M324|                message =
+M325|                    "BIOS ERROR 0xINPUT\nEXPECTED: Player action map\nDETECTED: missing Player map\nACTION: Restore the player action map before boot.";
+M326|                return false;
+--
+M438|            if (_restorePlayerInputOnEnable)
+M439|                SafeEnableActionMap(_playerActionMap);
+M440|
+M441|            if (_restoreUiInputOnEnable && _uiActionMap != null)
+M442|                SafeEnableActionMap(_uiActionMap);
+M443|        }
+--
+M449|
+M450|            _restorePlayerInputOnEnable = IsActionMapEnabledForStateCapture(_playerActionMap);
+M451|            _restoreUiInputOnEnable = IsActionMapEnabledForStateCapture(_uiActionMap);
+M452|            SafeDisableActionMapForTeardown(_playerActionMap);
+M453|            SafeDisableActionMapForTeardown(_uiActionMap);
+M454|            UnsubscribeFromDeviceChanges();
+--
+M451|            _restoreUiInputOnEnable = IsActionMapEnabledForStateCapture(_uiActionMap);
+M452|            SafeDisableActionMapForTeardown(_playerActionMap);
+M453|            SafeDisableActionMapForTeardown(_uiActionMap);
+M454|            UnsubscribeFromDeviceChanges();
+M455|            if (!_serviceShuttingDown)
+M456|                UnregisterService();
+--
+M469|        {
+M470|            if (_inputMapsInitialized && TryValidateActionMap(_playerActionMap, scheduleRecoveryOnFailure: true))
+M471|                return;
+M472|
+M473|            ResetInputActionCaches(disposeRuntimeAsset: true);
+M474|            _inputMapsInitialized = false;
+--
+M500|            // Get action maps
+M501|            _playerActionMap = _runtimeInputActionAsset.FindActionMap("Player");
+M502|            _uiActionMap = _runtimeInputActionAsset.FindActionMap("UI");
+M503|
+M504|            if (_playerActionMap == null)
+M505|            {
+--
+M503|
+M504|            if (_playerActionMap == null)
+M505|            {
+M506|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+M507|                Hecton8.Core.H8Debug.LogError("[InputManager] Player action map not found in InputActionAsset!");
+M508|#endif
+--
+M540|        {
+M541|            _moveAction = _playerActionMap.FindAction("Movement");
+M542|            _lookAction = _playerActionMap.FindAction("Look");
+M543|            _jumpAction = _playerActionMap.FindAction("Jump");
+M544|            _sprintAction = _playerActionMap.FindAction("Sprint");
+M545|            _interactAction = _playerActionMap.FindAction("Interact");
+--
+M541|            _moveAction = _playerActionMap.FindAction("Movement");
+M542|            _lookAction = _playerActionMap.FindAction("Look");
+M543|            _jumpAction = _playerActionMap.FindAction("Jump");
+M544|            _sprintAction = _playerActionMap.FindAction("Sprint");
+M545|            _interactAction = _playerActionMap.FindAction("Interact");
+M546|            _flashlightAction = _playerActionMap.FindAction("Flashlight");
+--
+M542|            _lookAction = _playerActionMap.FindAction("Look");
+M543|            _jumpAction = _playerActionMap.FindAction("Jump");
+M544|            _sprintAction = _playerActionMap.FindAction("Sprint");
+M545|            _interactAction = _playerActionMap.FindAction("Interact");
+M546|            _flashlightAction = _playerActionMap.FindAction("Flashlight");
+M547|            _pdaAction = _playerActionMap.FindAction("PDA");
+--
+M543|            _jumpAction = _playerActionMap.FindAction("Jump");
+M544|            _sprintAction = _playerActionMap.FindAction("Sprint");
+M545|            _interactAction = _playerActionMap.FindAction("Interact");
+M546|            _flashlightAction = _playerActionMap.FindAction("Flashlight");
+M547|            _pdaAction = _playerActionMap.FindAction("PDA");
+M548|            _pauseAction = _playerActionMap.FindAction("Pause");
+--
+M544|            _sprintAction = _playerActionMap.FindAction("Sprint");
+M545|            _interactAction = _playerActionMap.FindAction("Interact");
+M546|            _flashlightAction = _playerActionMap.FindAction("Flashlight");
+M547|            _pdaAction = _playerActionMap.FindAction("PDA");
+M548|            _pauseAction = _playerActionMap.FindAction("Pause");
+M549|            _toolSlot1Action = _playerActionMap.FindAction("ToolSlot1");
+--
+M545|            _interactAction = _playerActionMap.FindAction("Interact");
+M546|            _flashlightAction = _playerActionMap.FindAction("Flashlight");
+M547|            _pdaAction = _playerActionMap.FindAction("PDA");
+M548|            _pauseAction = _playerActionMap.FindAction("Pause");
+M549|            _toolSlot1Action = _playerActionMap.FindAction("ToolSlot1");
+M550|            _toolSlot2Action = _playerActionMap.FindAction("ToolSlot2");
+--
+M546|            _flashlightAction = _playerActionMap.FindAction("Flashlight");
+M547|            _pdaAction = _playerActionMap.FindAction("PDA");
+M548|            _pauseAction = _playerActionMap.FindAction("Pause");
+M549|            _toolSlot1Action = _playerActionMap.FindAction("ToolSlot1");
+M550|            _toolSlot2Action = _playerActionMap.FindAction("ToolSlot2");
+M551|            _toolSlot3Action = _playerActionMap.FindAction("ToolSlot3");
+--
+M547|            _pdaAction = _playerActionMap.FindAction("PDA");
+M548|            _pauseAction = _playerActionMap.FindAction("Pause");
+M549|            _toolSlot1Action = _playerActionMap.FindAction("ToolSlot1");
+M550|            _toolSlot2Action = _playerActionMap.FindAction("ToolSlot2");
+M551|            _toolSlot3Action = _playerActionMap.FindAction("ToolSlot3");
+M552|            _toolSlot4Action = _playerActionMap.FindAction("ToolSlot4");
+--
+M548|            _pauseAction = _playerActionMap.FindAction("Pause");
+M549|            _toolSlot1Action = _playerActionMap.FindAction("ToolSlot1");
+M550|            _toolSlot2Action = _playerActionMap.FindAction("ToolSlot2");
+M551|            _toolSlot3Action = _playerActionMap.FindAction("ToolSlot3");
+M552|            _toolSlot4Action = _playerActionMap.FindAction("ToolSlot4");
+M553|            _primaryActionAction = _playerActionMap.FindAction("PrimaryAction");
+--
+M549|            _toolSlot1Action = _playerActionMap.FindAction("ToolSlot1");
+M550|            _toolSlot2Action = _playerActionMap.FindAction("ToolSlot2");
+M551|            _toolSlot3Action = _playerActionMap.FindAction("ToolSlot3");
+M552|            _toolSlot4Action = _playerActionMap.FindAction("ToolSlot4");
+M553|            _primaryActionAction = _playerActionMap.FindAction("PrimaryAction");
+M554|            _secondaryActionAction = _playerActionMap.FindAction("SecondaryAction");
+--
+M550|            _toolSlot2Action = _playerActionMap.FindAction("ToolSlot2");
+M551|            _toolSlot3Action = _playerActionMap.FindAction("ToolSlot3");
+M552|            _toolSlot4Action = _playerActionMap.FindAction("ToolSlot4");
+M553|            _primaryActionAction = _playerActionMap.FindAction("PrimaryAction");
+M554|            _secondaryActionAction = _playerActionMap.FindAction("SecondaryAction");
+M555|            _verticalMovementAction = _playerActionMap.FindAction("VerticalMovement");
+--
+M551|            _toolSlot3Action = _playerActionMap.FindAction("ToolSlot3");
+M552|            _toolSlot4Action = _playerActionMap.FindAction("ToolSlot4");
+M553|            _primaryActionAction = _playerActionMap.FindAction("PrimaryAction");
+M554|            _secondaryActionAction = _playerActionMap.FindAction("SecondaryAction");
+M555|            _verticalMovementAction = _playerActionMap.FindAction("VerticalMovement");
+M556|            _inventoryAction = _playerActionMap.FindAction("Inventory");
+--
+M552|            _toolSlot4Action = _playerActionMap.FindAction("ToolSlot4");
+M553|            _primaryActionAction = _playerActionMap.FindAction("PrimaryAction");
+M554|            _secondaryActionAction = _playerActionMap.FindAction("SecondaryAction");
+M555|            _verticalMovementAction = _playerActionMap.FindAction("VerticalMovement");
+M556|            _inventoryAction = _playerActionMap.FindAction("Inventory");
+M557|        }
+--
+M553|            _primaryActionAction = _playerActionMap.FindAction("PrimaryAction");
+M554|            _secondaryActionAction = _playerActionMap.FindAction("SecondaryAction");
+M555|            _verticalMovementAction = _playerActionMap.FindAction("VerticalMovement");
+M556|            _inventoryAction = _playerActionMap.FindAction("Inventory");
+M557|        }
+M558|
+--
+M554|            _secondaryActionAction = _playerActionMap.FindAction("SecondaryAction");
+M555|            _verticalMovementAction = _playerActionMap.FindAction("VerticalMovement");
+M556|            _inventoryAction = _playerActionMap.FindAction("Inventory");
+M557|        }
+M558|
+M559|        private void CacheUIActions()
+--
+M555|            _verticalMovementAction = _playerActionMap.FindAction("VerticalMovement");
+M556|            _inventoryAction = _playerActionMap.FindAction("Inventory");
+M557|        }
+M558|
+M559|        private void CacheUIActions()
+M560|        {
+--
+M1024|            _restorePlayerInputOnEnable = true;
+M1025|            SafeEnableActionMap(_playerActionMap);
+M1026|        }
+M1027|
+M1028|        public void DisablePlayerInput()
+M1029|        {
+--
+M1030|            _restorePlayerInputOnEnable = false;
+M1031|            SafeDisableActionMap(_playerActionMap);
+M1032|        }
+M1033|
+M1034|        public void EnableUIInput()
+M1035|        {
+--
+M1051|
+M1052|        public void SwitchToPlayerInput()
+M1053|        {
+M1054|            if (!EnsureInputActionsInitialized())
+M1055|                return;
+M1056|
+--
+M1060|
+M1061|        public void SwitchToUIInput()
+M1062|        {
+M1063|            if (!EnsureInputActionsInitialized())
+M1064|                return;
+M1065|
+--
+M1088|                if (actionMap == "Player")
+M1089|                    return _playerActionMap?.FindAction(actionName);
+M1090|                else if (actionMap == "UI")
+M1091|                    return _uiActionMap?.FindAction(actionName);
+M1092|            }
+M1093|            catch (InvalidOperationException)
+--
+M1112|                if (actionMap == "Player")
+M1113|                    return _playerActionMap;
+M1114|                if (actionMap == "UI")
+M1115|                    return _uiActionMap;
+M1116|            }
+M1117|            catch (InvalidOperationException)
+--
+M2541|
+M2542|                bool playerRestored = !_restorePlayerInputOnEnable || TrySetActionMapEnabled(_playerActionMap, enable: true, scheduleRecoveryOnFailure: false);
+M2543|                bool uiRestored = !_restoreUiInputOnEnable || _uiActionMap == null || TrySetActionMapEnabled(_uiActionMap, enable: true, scheduleRecoveryOnFailure: false);
+M2544|                if (!playerRestored || !uiRestored)
+M2545|                {
+M2546|                    _inputRecoveryState = InputRecoveryState.AwaitingDeviceReconnect;
+--
+M2565|            {
+M2566|                _playerActionMap = actionMap;
+M2567|                return;
+M2568|            }
+M2569|
+M2570|            if (string.Equals(actionMapName, "UI", StringComparison.Ordinal))
+--
+M2989|
+M2990|            if (_inputMapsInitialized && TryValidateActionMap(_playerActionMap, scheduleRecoveryOnFailure: true))
+M2991|                return true;
+M2992|
+M2993|            InitializeInputActions();
+M2994|            return _inputMapsInitialized && TryValidateActionMap(_playerActionMap, scheduleRecoveryOnFailure: true);
+--
+M2993|            InitializeInputActions();
+M2994|            return _inputMapsInitialized && TryValidateActionMap(_playerActionMap, scheduleRecoveryOnFailure: true);
+M2995|        }
+M2996|
+M2997|        private bool TryGetActionMapEnabled(InputActionMap actionMap)
+M2998|        {
+--
+M2996|
+M2997|        private bool TryGetActionMapEnabled(InputActionMap actionMap)
+M2998|        {
+M2999|            if (actionMap == null || _serviceShuttingDown)
+M3000|                return false;
+M3001|
+--
+M3025|
+M3026|            SafeDisableActionMapForTeardown(_playerActionMap);
+M3027|            SafeDisableActionMapForTeardown(_uiActionMap);
+M3028|            ResetCachedInputState();
+M3029|
+M3030|            _inputMapsInitialized = false;
+--
+M3030|            _inputMapsInitialized = false;
+M3031|            _playerActionMap = null;
+M3032|            _uiActionMap = null;
+M3033|            _moveAction = null;
+M3034|            _lookAction = null;
+M3035|            _jumpAction = null;
+--
+=== SwitchToPlayerInput callers ===
+HectonFabricatorUI.cs:646|inputService.SwitchToPlayerInput();
+PlayerPDA.cs:1640|SwitchToPlayerInputIfAvailable();
+PlayerPDA.cs:1707|SwitchToPlayerInputIfAvailable();
+PlayerPDA.cs:1788|private void SwitchToPlayerInputIfAvailable()
+PlayerPDA.cs:1793|inputManager.SwitchToPlayerInput();
+GlobalRegistry.cs:8678|public void SwitchToPlayerInput()
+GlobalRegistryContracts.cs:1060|void SwitchToPlayerInput();
+InputDispatcher.cs:3237|public void SwitchToPlayerInput()
+InputDispatcher.cs:3241|_nativeInputManager.SwitchToPlayerInput();
+InputBindingServiceContracts.cs:257|void SwitchToPlayerInput();
+H8_HeadlessWorldDriver.cs:2604|///     InputActionMap.enabled (InputManager.cs:277). SwitchToPlayerInput below is the same public
+H8_HeadlessWorldDriver.cs:2631|input.SwitchToPlayerInput();
+H8_HeadlessWorldDriver.cs:2695|_detail.Append(" - BLOCKER GATE 2 (service present, map closed): SwitchToPlayerInput was ")
+InputManager.cs:1052|public void SwitchToPlayerInput()
+PauseMenuController.cs:728|inputService.SwitchToPlayerInput();
+InputBindingContractsEditTests.cs:2731|public void SwitchToPlayerInput() { }
+=== IsGameplayInputBlockedByMenu ===
+8090|                if (IsGameplayInputBlockedByMenu())
+8091|                {
+8092|                    HandleMenuBlockedInput(deltaTime, suit);
+8093|                    return;
+8094|                }
+8095|
+8096|                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+8097|                {
+8098|                    Cursor.lockState = CursorLockMode.Locked;
+8099|                    Cursor.visible = false;
+8100|                    _inputCleared = false;
+8101|                }
+8102|
+8103|                ProcessPlayerInputFrame();
+8104|                ProcessWipeoutInputOverride();
+--
+8212|            if (IsGameplayInputBlockedByMenu())
+8213|            {
+8214|                _currentInputState = default;
+8215|                _pendingLookInput = Vector2.zero;
+8216|                _inputH = 0f;
+8217|                _inputV = 0f;
+8218|                _inputVertical = 0f;
+8219|                _mouseXDelta = 0f;
+8220|                SetSprintingState(false);
+8221|                return;
+8222|            }
+8223|
+8224|            ProcessPlayerInputFrame();
+8225|            ProcessWipeoutInputOverride();
+8226|        }
+--
+9765|        private static bool IsGameplayInputBlockedByMenu()
+9766|        {
+9767|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+9768|        }
+9769|
+9770|        private void RefreshActiveGravity(float fixedDeltaTime)
+9771|        {
+9772|            if (_localGravityOverrideActive && _localGravityOverrideTimer > 0f)
+9773|            {
+9774|                _localGravityOverrideTimer = math.max(0f, _localGravityOverrideTimer - math.max(0f, fixedDeltaTime));
+9775|                _cachedGravity = ResolveBlendedLocalGravity(fixedDeltaTime);
+9776|                if (_localGravityOverrideTimer <= 0f)
+9777|                    _localGravityOverrideActive = false;
+9778|            }
+9779|            else
+--

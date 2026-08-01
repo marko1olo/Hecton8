@@ -1,0 +1,15 @@
+ts=2026-08-01 04:36:54
+pid=12368 alive=True
+log_bytes=91385 artifact=False
+fodrain=0 foLock_last= dispBoot_last=
+simclock=0 stepBound1=False
+inputhop=0 lateUnfrozen=False pumpUnfrozen=False
+late=[] pump=[]
+hop2_present=0 hop2_absent=0
+intent_max=None vals=[]
+swim=[]
+verdict=[]
+done=[]
+--- hits tail ---
+UnityEditor.Scripting.ScriptCompilation.EditorCompilationInterface:EmitExceptionAsError<UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus> (System.Func`1<UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus>,UnityEditor.Scripting.ScriptCompilation.EditorCompilation/CompileStatus)
+STILL_RUNNING

@@ -1,0 +1,683 @@
+
+##### Assets\_Project\Scripts\HectonPlayerMovement.cs total=15333 #####
+--- 9780:9850 ---
+9780|                return null;
+9781|
+9782|            if (_activeTransportPlatform is ISubmarineRuntimeContext)
+9783|                return _activeTransportPlatform.PlatformTransform;
+9784|
+9785|            return null;
+9786|        }
+9787|
+9788|        private static bool IsGameplayInputBlockedByMenu()
+9789|        {
+9790|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+9791|        }
+9792|
+9793|        private void RefreshActiveGravity(float fixedDeltaTime)
+9794|        {
+9795|            if (_localGravityOverrideActive && _localGravityOverrideTimer > 0f)
+9796|            {
+9797|                _localGravityOverrideTimer = math.max(0f, _localGravityOverrideTimer - math.max(0f, fixedDeltaTime));
+9798|                _cachedGravity = ResolveBlendedLocalGravity(fixedDeltaTime);
+9799|                if (_localGravityOverrideTimer <= 0f)
+9800|                    _localGravityOverrideActive = false;
+9801|            }
+9802|            else
+9803|            {
+9804|                _cachedGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
+9805|                _localGravityOverrideActive = false;
+9806|                _localGravityOverrideBlendTimer = 0f;
+9807|                _localGravityOverrideBlendStart = _cachedGravity;
+9808|            }
+9809|
+9810|            _cachedGravityMagnitude = MagnitudeFromRsqrt(_cachedGravity);
+9811|            if (_cachedGravityMagnitude <= 0.0001f)
+9812|            {
+9813|                _cachedGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
+9814|                _cachedGravityMagnitude = MagnitudeFromRsqrt(_cachedGravity);
+9815|            }
+9816|
+9817|            if (_localGravityOverrideActive && _cachedGravityMagnitude > 0.0001f)
+9818|                _smoothedGroundNormal = -_cachedGravity / _cachedGravityMagnitude;
+9819|        }
+9820|
+9821|        private Vector3 ResolveAupCenterGravity(Vector3 fallbackGravity)
+9822|        {
+9823|            Vector3 safeFallback = HectonPlayerMotor.SafeVelocity(fallbackGravity);
+9824|            float gravityMagnitude = MagnitudeFromRsqrt(safeFallback);
+9825|            if (gravityMagnitude <= 0.0001f)
+9826|                gravityMagnitude = HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
+9827|
+9828|            double3 absolutePosition = _playerState.PredictedAbsolutePosition.ToAbsoluteDouble3();
+9829|            double3 toAupCenter = -absolutePosition;
+9830|            double distanceSq = math.lengthsq(toAupCenter);
+9831|            if (!math.isfinite(distanceSq) || distanceSq <= 0.0001d)
+9832|                return safeFallback.sqrMagnitude > MinLocalGravitySqr ? safeFallback : Vector3.down * gravityMagnitude;
+9833|
+9834|            double inverseDistance = math.rsqrt(math.max(distanceSq, 0.0001d));
+9835|            double3 gravityDirection = toAupCenter * inverseDistance;
+9836|            if (!math.all(math.isfinite(gravityDirection)))
+9837|                return safeFallback.sqrMagnitude > MinLocalGravitySqr ? safeFallback : Vector3.down * gravityMagnitude;
+9838|
+9839|            Vector3 radialGravity = new Vector3(
+9840|                (float)(gravityDirection.x * gravityMagnitude),
+9841|                (float)(gravityDirection.y * gravityMagnitude),
+9842|                (float)(gravityDirection.z * gravityMagnitude));
+9843|            return IsFiniteVector(radialGravity) && radialGravity.sqrMagnitude > MinLocalGravitySqr
+9844|                ? radialGravity
+9845|                : (safeFallback.sqrMagnitude > MinLocalGravitySqr ? safeFallback : Vector3.down * gravityMagnitude);
+9846|        }
+9847|
+9848|        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+9849|        //  FixedTick Ã¢â‚¬â€ PHYSICS
+9850|        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+
+##### Assets\_Project\Scripts\Core\GlobalRegistry.cs total=8695 #####
+--- 6520:6580 ---
+6520|            }
+6521|
+6522|            return true;
+6523|        }
+6524|
+6525|        /// <summary>
+6526|        /// Registers a fixed-update owner into both the global bucket and its fixed dispatcher lane.
+6527|        /// </summary>
+6528|        /// <param name="item">Fixed-update owner.</param>
+6529|        /// <param name="layer">Dispatcher priority lane.</param>
+6530|        public static void RegisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+6531|        {
+6532|            TryRegisterFixedTickable(item, layer);
+6533|        }
+6534|
+6535|        /// <summary>
+6536|        /// Registers a fixed-update owner into both the global bucket and its fixed dispatcher lane.
+6537|        /// </summary>
+6538|        /// <param name="item">Fixed-update owner.</param>
+6539|        /// <param name="layer">Dispatcher priority lane.</param>
+6540|        /// <returns>True when both registry and dispatcher lane accepted the item.</returns>
+6541|        public static bool TryRegisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+6542|        {
+6543|            if (item == null)
+6544|                return false;
+6545|
+6546|            if (!Application.isPlaying)
+6547|                return false;
+6548|
+6549|            if (!TryEnsureDispatcherRegistration())
+6550|                return false;
+6551|            if (!_fixedTickables.TryRegister(item))
+6552|                return false;
+6553|
+6554|            if (!SystemDispatcher.Register(item, layer))
+6555|            {
+6556|                _fixedTickables.Unregister(item);
+6557|                return false;
+6558|            }
+6559|
+6560|            return true;
+6561|        }
+6562|
+6563|        /// <summary>
+6564|        /// Registers a slow-tick owner into both the global bucket and its dispatcher lane.
+6565|        /// </summary>
+6566|        /// <param name="item">Slow-tick owner.</param>
+6567|        /// <param name="layer">Dispatcher priority lane.</param>
+6568|        public static void RegisterSlowTickable(ISlowTickable item, PriorityLayer layer)
+6569|        {
+6570|            TryRegisterSlowTickable(item, layer);
+6571|        }
+6572|
+6573|        /// <summary>
+6574|        /// Registers a slow-tick owner into both the global bucket and its dispatcher lane.
+6575|        /// </summary>
+6576|        /// <param name="item">Slow-tick owner.</param>
+6577|        /// <param name="layer">Dispatcher priority lane.</param>
+6578|        /// <returns>True when both registry and dispatcher lane accepted the item.</returns>
+6579|        public static bool TryRegisterSlowTickable(ISlowTickable item, PriorityLayer layer)
+6580|        {
+--- 940:980 ---
+940|        public static IInputService Input
+941|        {
+942|            get
+943|            {
+944|                IInputService cached = _threadInput;
+945|                IInputService registered = _input;
+946|                if (cached != null && ReferenceEquals(cached, registered))
+947|                    return cached;
+948|
+949|                if (registered != null)
+950|                {
+951|                    _threadInput = registered;
+952|                    return registered;
+953|                }
+954|
+955|                PublishInputFallbackWarning();
+956|                return _noOpInputService;
+957|            }
+958|        }
+959|
+960|        /// <summary>
+961|        /// Registry-owned deterministic input bridge. This aliases the authoritative input service without exposing a concrete singleton.
+962|        /// </summary>
+963|        public static IInputDeterminismService InputDeterminism => Input;
+964|
+965|        /// <summary>
+966|        /// Raw registered input service slot for bootstrap/service-owner validation.
+967|        /// Callers outside service initialization should use <see cref="Input"/>.
+968|        /// </summary>
+969|        internal static IInputService RegisteredInput => _input;
+970|
+971|        /// <summary>
+972|        /// Bootstrap-owned native input action owner exposed through a narrow runtime contract.
+973|        /// </summary>
+974|        public static INativeInputManagerRuntime NativeInputRuntime
+975|        {
+976|            get
+977|            {
+978|                if (_nativeInputManagerRuntime != null)
+979|                    return _nativeInputManagerRuntime;
+980|
+--- 8610:8480 ---
+
+##### Assets\_Project\Scripts\Core\GlobalRegistry.cs total=8695 #####
+--- 8610:8680 ---
+8610|        }
+8611|
+8612|        [Preserve]
+8613|        private static class ServiceSlotCache<T> where T : class
+8614|        {
+8615|            internal static readonly GlobalRegistryServiceSlot Slot = ResolveServiceSlotCold(typeof(T));
+8616|        }
+8617|
+8618|        private sealed class NoOpInputService : IInputService
+8619|        {
+8620|            public bool IsInitialized => false;
+8621|            public bool IsPlayerInputEnabled => false;
+8622|            public int InputDelayFrames { get => 0; set { } }
+8623|            public InputState CurrentInputState => default;
+8624|            public InputState PreviousInputState => default;
+8625|            public Vector2 VisualLookDelta => Vector2.zero;
+8626|
+8627|            public event Action OnInteract { add { } remove { } }
+8628|            public event Action OnToolSlot1 { add { } remove { } }
+8629|            public event Action OnToolSlot2 { add { } remove { } }
+8630|            public event Action OnToolSlot3 { add { } remove { } }
+8631|            public event Action OnToolSlot4 { add { } remove { } }
+8632|            public event Action OnPrimaryAction { add { } remove { } }
+8633|            public event Action OnSecondaryAction { add { } remove { } }
+8634|            public event Action OnPDA { add { } remove { } }
+8635|            public event Action OnInventory { add { } remove { } }
+8636|            public event Action OnCancel { add { } remove { } }
+8637|            public event Action OnTabNext { add { } remove { } }
+8638|            public event Action OnTabPrevious { add { } remove { } }
+8639|
+8640|            public PlayerInputState GetState()
+8641|            {
+8642|                return default;
+8643|            }
+8644|
+8645|            public void PreSimulationInputTick(float deltaTime)
+8646|            {
+8647|            }
+8648|
+8649|            public bool TryGetInputState(uint frame, out InputState state)
+8650|            {
+8651|                state = default;
+8652|                return false;
+8653|            }
+8654|
+8655|            public void BufferAction(PlayerBufferedAction action)
+8656|            {
+8657|            }
+8658|
+8659|            public bool TryConsumeBufferedAction(PlayerBufferedAction action, float maxAgeSeconds)
+8660|            {
+8661|                return false;
+8662|            }
+8663|
+8664|            public bool CheckBufferedInput(uint buttonBit, int frames)
+8665|            {
+8666|                return false;
+8667|            }
+8668|
+8669|            public uint GetInputBlockMask()
+8670|            {
+8671|                return 0u;
+8672|            }
+8673|
+8674|            public void SetInputBlockMask(uint mask)
+8675|            {
+8676|            }
+8677|
+8678|            public void SwitchToPlayerInput()
+8679|            {
+8680|            }
+
+##### Assets\_Project\Scripts\Core\RegistryBucket.cs total=231 #####
+--- 1:180 ---
+1|using System;
+2|using System.Runtime.CompilerServices;
+3|
+4|namespace Hecton8.Core
+5|{
+6|    /// <summary>
+7|    /// Dense fixed-capacity registry bucket with O(1) swap-with-last removal.
+8|    /// </summary>
+9|    /// <typeparam name="T">Reference type stored in the bucket.</typeparam>
+10|    public sealed class RegistryBucket<T> where T : class
+11|    {
+12|        private readonly T[] _items;
+13|        private readonly int _capacity;
+14|        private int _count;
+15|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+16|        private bool _indexErrorLogged;
+17|        private bool _nullRegistrationLogged;
+18|        private bool _capacityErrorLogged;
+19|        private bool _unregisterMissLogged;
+20|        private bool _destroyedEntryLogged;
+21|#endif
+22|
+23|        /// <summary>
+24|        /// Active item count.
+25|        /// </summary>
+26|        public int Count => _count;
+27|
+28|        /// <summary>
+29|        /// Fixed cold capacity of the dense backing store.
+30|        /// </summary>
+31|        public int Capacity => _capacity;
+32|
+33|        /// <summary>
+34|        /// Raw contiguous backing array for zero-allocation linear scans.
+35|        /// </summary>
+36|        public T[] RawArray => _items;
+37|
+38|        /// <summary>
+39|        /// Returns the live item at the given dense-array index.
+40|        /// </summary>
+41|        /// <param name="index">Dense registry index.</param>
+42|        /// <returns>Registered item at the requested index.</returns>
+43|        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+44|        public T GetAt(int index)
+45|        {
+46|            if ((uint)index >= (uint)_count)
+47|            {
+48|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+49|                if (!_indexErrorLogged)
+50|                {
+51|                    Hecton8.Core.H8Debug.LogError(
+52|                        $"[RegistryBucket<{typeof(T).Name}>] Index {index} outside live count {_count}.");
+53|                    _indexErrorLogged = true;
+54|                }
+55|#endif
+56|                return null;
+57|            }
+58|
+59|            return _items[index];
+60|        }
+61|
+62|        /// <summary>
+63|        /// Creates a fixed-capacity registry bucket.
+64|        /// </summary>
+65|        /// <param name="capacity">Maximum number of live entries allowed in the bucket.</param>
+66|        public RegistryBucket(int capacity)
+67|        {
+68|            _capacity = Math.Max(1, capacity);
+69|            _items = new T[_capacity]; // COLD ALLOC: T[_capacity] — dense registry backing storage — owner: RegistryBucket<T>
+70|            _count = 0;
+71|        }
+72|
+73|        /// <summary>
+74|        /// Appends a new item to the tail of the dense array.
+75|        /// </summary>
+76|        /// <param name="item">Item instance to register.</param>
+77|        public void Register(T item)
+78|        {
+79|            TryRegister(item);
+80|        }
+81|
+82|        /// <summary>
+83|        /// Attempts to append a new item to the tail of the dense array.
+84|        /// </summary>
+85|        /// <param name="item">Item instance to register.</param>
+86|        /// <returns>True when the item was registered.</returns>
+87|        public bool TryRegister(T item)
+88|        {
+89|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+90|            if (item == null)
+91|            {
+92|                if (!_nullRegistrationLogged)
+93|                {
+94|                    Hecton8.Core.H8Debug.LogError(
+95|                        $"[RegistryBucket<{typeof(T).Name}>] Null registration is forbidden.");
+96|                    _nullRegistrationLogged = true;
+97|                }
+98|                return false;
+99|            }
+100|
+101|            if (_count >= _capacity)
+102|            {
+103|                if (!_capacityErrorLogged)
+104|                {
+105|                    Hecton8.Core.H8Debug.LogError(
+106|                        $"[GlobalRegistry] RegistryBucket<{typeof(T).Name}> capacity ({_capacity}) exceeded.");
+107|                    _capacityErrorLogged = true;
+108|                }
+109|                return false;
+110|            }
+111|
+112|            if (Contains(item))
+113|                return false;
+114|#else
+115|            if (item == null || _count >= _capacity || Contains(item))
+116|                return false;
+117|#endif
+118|            _items[_count++] = item;
+119|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+120|            _indexErrorLogged = false;
+121|            _destroyedEntryLogged = false;
+122|#endif
+123|            return true;
+124|        }
+125|
+126|        /// <summary>
+127|        /// Removes an item using O(1) swap-with-last tail compaction.
+128|        /// </summary>
+129|        /// <param name="item">Item instance to remove.</param>
+130|        /// <returns>True when the item was found and removed.</returns>
+131|        public bool Unregister(T item)
+132|        {
+133|            if (TryUnregister(item))
+134|                return true;
+135|
+136|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+137|            if (!_unregisterMissLogged)
+138|            {
+139|                Hecton8.Core.H8Debug.LogWarning(
+140|                    $"[GlobalRegistry] Unregister called for non-registered {typeof(T).Name}.");
+141|                _unregisterMissLogged = true;
+142|            }
+143|#endif
+144|            return false;
+145|        }
+146|
+147|        /// <summary>
+148|        /// Removes an item without emitting a miss warning; used by idempotent lifecycle teardown paths.
+149|        /// </summary>
+150|        /// <param name="item">Item instance to remove.</param>
+151|        /// <returns>True when the item was found and removed.</returns>
+152|        public bool TryUnregister(T item)
+153|        {
+154|            for (int i = 0; i < _count; i++)
+155|            {
+156|                if (!ReferenceEquals(_items[i], item))
+157|                    continue;
+158|
+159|                _count--;
+160|                _items[i] = _items[_count];
+161|                _items[_count] = null;
+162|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+163|                _indexErrorLogged = false;
+164|                _unregisterMissLogged = false;
+165|                _destroyedEntryLogged = false;
+166|#endif
+167|                return true;
+168|            }
+169|
+170|            return false;
+171|        }
+172|
+173|        /// <summary>
+174|        /// Checks whether a given instance is already present in the bucket.
+175|        /// </summary>
+176|        /// <param name="item">Item instance to test.</param>
+177|        /// <returns>True when the instance is present.</returns>
+178|        public bool Contains(T item)
+179|        {
+180|            for (int i = 0; i < _count; i++)
+
+##### Assets\_Project\Scripts\Core\InputDispatcher.cs total=5757 #####
+--- 400:520 ---
+400|        private float _appliedHighMotorSpeed;
+401|        private float _appliedLeftXRHapticAmplitude;
+402|        private float _appliedRightXRHapticAmplitude;
+403|        private float _nextLeftXRHapticWriteTime;
+404|        private float _nextRightXRHapticWriteTime;
+405|        private float _lookBlendElapsed;
+406|        private float _lastPublishedXRToolTriggerStrength = -1f;
+407|        private float _lastPublishedXRSecondaryTriggerStrength = -1f;
+408|        private float _hapticDispatchAccumulator;
+409|        private float _viewportHeightSnapshot = 1f;
+410|        private uint _lastPublishedXRToolTriggerMask;
+411|        private uint _xrRuntimeFlags;
+412|        private uint _currentInputSchemeHash;
+413|        private uint _lastTelemetryInputSchemeHash;
+414|        private uint _previousButtonMask;
+415|        private uint _lastPollingTimeMicroseconds;
+416|        private uint _bufferedInputsConsumedThisFrame;
+417|        private ushort _lastHapticCommandsActive;
+418|        private ushort _toolTriggerSequence;
+419|        private ushort _deviceLostPauseSequence;
+420|        private byte _lastPublishedXRToolTriggerFlags;
+421|        private byte _lastPublishedXRToolDominantController;
+422|        private bool _pendingHapticOutput;
+423|        private uint _pendingHapticSchemeHash;
+424|        private float _pendingHapticLowMotor;
+425|        private float _pendingHapticHighMotor;
+426|        private bool _lookBlendActive;
+427|        private bool _lastAutomationOverrideApplied;
+428|        private bool _pollActionsCached;
+429|        private bool _deterministicVaultBuffersReady;
+430|        private bool _deterministicVaultBuffersCleared;
+431|        private bool _xrVaultBuffersCleared;
+432|        private int _ownerThreadId;
+433|        private int _inputMutationGuardDepth;
+434|        // Latched true only once InitializeDefaultInputProfile has actually written the Default* constants into
+435|        // the vault copy. Separate from _deterministicVaultBuffersCleared because the profile seed no longer
+436|        // rides on the broad owner guard that flag gates.
+437|        private bool _inputProfileDefaultsSeeded;
+438|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+439|        private bool _inputProfileSeedFailureReported;
+440|#endif
+441|        private IDataVault _inputMutationGuardVault;
+442|        private Vector2 _lookBlendFrom;
+443|        private Vector2 _lastDeliveredLookDelta;
+444|        private PlayerInputState _currentState;
+445|        private InputState _currentInputState;
+446|        private InputState _previousInputState;
+447|#if UNITY_EDITOR
+448|        private InputProfileDTO _stagedInputProfileCsv;
+449|#endif
+450|        private uint _standardInputFrame;
+451|        private uint _inputStateSequence;
+452|        private uint _playerInputSignalSequence;
+453|        private uint _lastDeterministicInputFrame = uint.MaxValue;
+454|        [SerializeField, Range(0, MaxInputDelayFrames)]
+455|        private int _inputDelayFrames;
+456|        private double _standardInputAccumulator;
+457|#if UNITY_EDITOR
+458|        private string _inputProfileCsvPath;
+459|#endif
+460|
+461|        internal static InputDispatcher ActiveRuntimeInstance;
+462|
+463|        internal static bool TryResolveActiveRuntime(ref InputDispatcher target)
+464|        {
+465|            InputDispatcher active = ActiveRuntimeInstance;
+466|            if (active == null || !active.isActiveAndEnabled)
+467|            {
+468|                target = null;
+469|                return false;
+470|            }
+471|
+472|            if (!ReferenceEquals(target, active))
+473|                target = active;
+474|
+475|            return true;
+476|        }
+477|
+478|        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+479|        private static void ResetStaticState()
+480|        {
+481|            ActiveRuntimeInstance = null;
+482|        }
+483|
+484|        // COLD ALLOC: BufferedActionEntry[10] - fixed player action buffering ring for pre-commit intent capture - owner: InputDispatcher
+485|        private readonly BufferedActionEntry[] _bufferedActions = new BufferedActionEntry[BufferedActionCapacity];
+486|        // Zero-alloc CAS gate for deterministic input replay MMF copy/flush handoff - owner: InputDispatcher
+487|        private int _inputReplaySnapshotGate;
+488|#if UNITY_EDITOR
+489|        // COLD ALLOC: object[1] - CSV profile stage gate; file I/O happens outside PRE_SIMULATION - owner: InputDispatcher
+490|        private readonly object _inputProfileCsvStageGate = new object();
+491|#endif
+492|        /// <summary>
+493|        /// Returns true once the dispatcher is registered into <see cref="GlobalRegistry"/>.
+494|        /// </summary>
+495|        public bool IsInitialized => _isInitialized;
+496|
+497|        public int InputDelayFrames
+498|        {
+499|            get => _inputDelayFrames;
+500|            set => _inputDelayFrames = Mathf.Clamp(value, 0, MaxInputDelayFrames);
+501|        }
+502|
+503|        public InputState CurrentInputState
+504|        {
+505|            get
+506|            {
+507|                // The census rides this accessor because probe5 proves it is reached in the failing
+508|                // configuration while every tick lane this component owns may not be. See the block above
+509|                // DiagRecordPumpFired.
+510|                DiagRecordReadObservation(1);
+511|                return _currentInputState;
+512|            }
+513|        }
+514|
+515|        public InputState PreviousInputState => _previousInputState;
+516|
+517|        public Vector2 VisualLookDelta => _visualLookDelta;
+518|
+519|        /// <inheritdoc />
+520|        public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+##### Assets\_Project\Scripts\Core\SystemDispatcher.cs total=7585 #####
+--- 5268:5290 ---
+5268|#endif
+5269|                _foveatedSimulationManager.BeginDispatcherFrame(deltaTime);
+5270|#if UNITY_EDITOR
+5271|                EndDispatcherPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
+5272|#endif
+5273|                PredatorCognitionDomain.BeginDispatcherFrame(CurrentFrameIndex);
+5274|                bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&
+5275|                                          BootstrapState.HasActiveInstance &&
+5276|                                          !BootstrapState.IsGameReady;
+5277|                long bucketWorkStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+5278|
+5279|                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+5280|                {
+5281|                    if (SignalBusRegistry.IsSimulationHalted)
+5282|                        return;
+5283|
+5284|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+5285|                        continue;
+5286|
+5287|                    RegistryBucket<IUpdatable> lane = _priorityLanes[laneIndex];
+5288|#if UNITY_EDITOR
+5289|                    lane.ValidateNoDestroyedEntriesDebug(nameof(IUpdatable));
+5290|#endif
+--- 6181:6230 ---
+6181|        private void RunFixedStepAccumulator(float dilatedDeltaTime, bool blockGameplayLanes)
+6182|        {
+6183|            if (SignalBusRegistry.IsSimulationHalted)
+6184|                return;
+6185|
+6186|            if (dilatedDeltaTime <= 0f)
+6187|            {
+6188|                _temporalCompressionActive = false;
+6189|                RefreshFixedInterpolationAlpha();
+6190|                return;
+6191|            }
+6192|
+6193|            double maxAccumulatedTime = FixedStepSeconds * MaxFixedSubstepsPerFrame;
+6194|            double requestedAccumulatedTime = _fixedStepAccumulator + dilatedDeltaTime;
+6195|            bool compressionActive = requestedAccumulatedTime > maxAccumulatedTime;
+6196|            _temporalCompressionActive = compressionActive;
+6197|            if (compressionActive)
+6198|            {
+6199|                _temporalCompressionFrameCount++;
+6200|                CrashTelemetryBuffer.ReportTemporalCompression();
+6201|
+6202|                // Temporal compression is the fixed lane's version of the slow lane's discarded surplus:
+6203|                // the Math.Min below throws away requested-minus-max seconds of physics and fixed-tick
+6204|                // time, and only a frame COUNT was ever recorded for it - never the seconds lost. Under
+6205|                // step-bounded time this must not happen at all, so say so once and loudly. This sits
+6206|                // inside the already-rare compression branch, so it costs nothing on a normal frame.
+6207|                if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+6208|                {
+6209|                    ReportStepBoundedClamp(
+6210|                        StepBoundedClampLaneFixed,
+6211|                        FixedStepSeconds,
+6212|                        requestedAccumulatedTime - maxAccumulatedTime);
+6213|                }
+6214|            }
+6215|
+6216|            _fixedStepAccumulator = System.Math.Min(requestedAccumulatedTime, maxAccumulatedTime);
+6217|
+6218|            int substepCount = 0;
+6219|            while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
+6220|            {
+6221|                if (SignalBusRegistry.IsSimulationHalted)
+6222|                    break;
+6223|
+6224|                DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
+6225|                _fixedStepAccumulator -= FixedStepSeconds;
+6226|                substepCount++;
+6227|            }
+6228|
+6229|            if (substepCount >= MaxFixedSubstepsPerFrame && _fixedStepAccumulator >= FixedStepSeconds)
+6230|                _fixedStepAccumulator = 0d;
+
+##### GREP time/halt Assets\_Project\Scripts\Core\SystemDispatcher.cs #####
+84|        //   residual + dt > FixedStepSeconds * MaxFixedSubstepsPerFrame = 0.02 * 3 = 0.06 s. The residual
+85|        //   carried in from the previous frame is anything under one FixedStepSeconds, so the bound must
+98|        private const double MaxClampFreeFixedStepSeconds = FixedStepSeconds * (MaxFixedSubstepsPerFrame - 1);
+101|            MaxClampFreeFixedStepSeconds < MaxClampFreeCadenceStepSeconds
+102|                ? MaxClampFreeFixedStepSeconds
+148|        private const double FixedStepSeconds = 0.02;
+5192|                if (SignalBusRegistry.IsSimulationHalted)
+5281|                    if (SignalBusRegistry.IsSimulationHalted)
+5303|                            if (SignalBusRegistry.IsSimulationHalted)
+5312|                if (SignalBusRegistry.IsSimulationHalted)
+6183|            if (SignalBusRegistry.IsSimulationHalted)
+6193|            double maxAccumulatedTime = FixedStepSeconds * MaxFixedSubstepsPerFrame;
+6211|                        FixedStepSeconds,
+6219|            while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
+6221|                if (SignalBusRegistry.IsSimulationHalted)
+6224|                DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
+6225|                _fixedStepAccumulator -= FixedStepSeconds;
+6229|            if (substepCount >= MaxFixedSubstepsPerFrame && _fixedStepAccumulator >= FixedStepSeconds)
+6237|            CurrentFixedInterpolationAlpha = math.saturate((float)(_fixedStepAccumulator / FixedStepSeconds));
+6250|                    if (SignalBusRegistry.IsSimulationHalted)
+6267|                            if (SignalBusRegistry.IsSimulationHalted)
+6281|                            if (SignalBusRegistry.IsSimulationHalted)
+6319|                                if (SignalBusRegistry.IsSimulationHalted)
+6367|            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
+6381|                        if (SignalBusRegistry.IsSimulationHalted)
+6398|                                if (SignalBusRegistry.IsSimulationHalted)
+6424|            if (unscaledDeltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
+6436|                    if (SignalBusRegistry.IsSimulationHalted)
+6453|                            if (SignalBusRegistry.IsSimulationHalted)
+6476|            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
+6495|                        if (SignalBusRegistry.IsSimulationHalted)
+6516|                                if (SignalBusRegistry.IsSimulationHalted)
+6774|                "(temporal compression above " + MaxClampFreeFixedStepSeconds.ToString("F4", invariant) +
+6782|            if (SignalBusRegistry.IsSimulationHalted)
+6793|                    if (SignalBusRegistry.IsSimulationHalted)
+6813|                                if (SignalBusRegistry.IsSimulationHalted)
+6847|            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
+6863|                        if (SignalBusRegistry.IsSimulationHalted)
+6880|                                if (SignalBusRegistry.IsSimulationHalted)
+6904|            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
+6917|                    if (SignalBusRegistry.IsSimulationHalted)
+6934|                            if (SignalBusRegistry.IsSimulationHalted)

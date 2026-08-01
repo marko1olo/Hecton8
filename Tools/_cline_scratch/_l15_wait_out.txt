@@ -1,0 +1,311 @@
+
+===== SNAP n=1 elapsed=0s pid=42884 alive=True =====
+time=2026-07-31 23:23:50
+pid=42884 alive=True
+log_exists=True log_bytes=122715 prev=90997 growing=True stagnant=False
+intent01max=None lastOverrideMove=None currentStateMove=None depth_span=None immersionMax=None
+readHop_seen=[] hop2_present=False Swim_FAIL=0 Swim_PASS=0 RESULT_failures=None
+verdict_draft=IN_PROGRESS
+MARKER_COUNTS:
+  FAIL: 3
+  PASS: 2
+  PHASE: 2
+  menu: 11
+SAMPLES_TAIL:
+  -h8MenuSeconds
+  [Licensing::Module] LicensingClient has failed validation; ignoring
+  [Licensing::Module] Error: Access token is unavailable; failed to update
+  Starting: C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+  [3569/3945  0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Rendering.OceanSinglePass.dll (+pdb)
+  Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Rendering.OceanSinglePass.dll, with 157 defines and 320 references
+  Imported 'GUID: 8ce5c3ce78cc12749a7c905a6d8c86fe' -> (Import Result ID: 'f7538dea6a6cc78bc26f3919de85edd3') in 0.030 seconds [static dependencies only]. Details - ImportResultOutputID=5c57ac83c1adf789db9531a7fe36a2bd DependenciesID=2e80793372e10abaee676b99d74b1d4d StaticDependenciesID=d65b87118d3ac273b1c32ff58ee3b5ef 
+  Cannot add menu item 'Window/Hecton-8/SpaceEngine 0.9.8 Preview' for method 'Hecton8.Editor.Generators.SpaceEngineTerrainPreviewWindow.ShowWindow' because a menu item with the same name already exists.
+  UnityEditor.MenuItemScriptCommand:Update (UnityEditor.MenuItem,System.Reflection.MethodInfo)
+  UnityEditor.MenuService:ExtractMenuItemsFromAttributes ()
+  UnityEditor.MenuService:GetMenuItemsFromAttributesById (string)
+  UnityEditor.MenuService:GetMenuItemsFromAttributes ()
+  ##utp:{"type":"ProjectInfo","version":2,"phase":"Immediate","time":1785525814977,"processId":42884,"projectLoad":100.4369445,"projectInit":98.5750936,"templateInit":0.0,"packageManagerInit":0.4100118,"assetDatabaseInit":0.5196922,"globalIlluminationInit":0.0019832,"assembliesLoad":6.680437,"unityExtensionsInit":0.13875
+  ##utp:{"type":"EditorInfo","version":2,"phase":"Immediate","time":1785525814977,"processId":42884,"editorVersion":"6000.5.0f1 (88b47c5e7076)","branch":"6000.5/staging","buildType":"Release","platform":"Windows"}
+  	GatherAllCurrentPrimaryImportResultRevisions: 5.111ms
+
+===== SNAP n=2 elapsed=45s pid=42884 alive=True =====
+time=2026-07-31 23:24:35
+pid=42884 alive=True
+log_exists=True log_bytes=1189203 prev=122715 growing=True stagnant=False
+intent01max=None lastOverrideMove=0,1 currentStateMove=0,0 depth_span=None immersionMax=None
+readHop_seen=[1] hop2_present=False Swim_FAIL=0 Swim_PASS=0 RESULT_failures=None
+verdict_draft=IN_PROGRESS
+MARKER_COUNTS:
+  INPUTHOP: 3
+  FAIL: 13
+  PASS: 4
+  depth: 4
+  lastOverride: 3
+  PHASE: 722
+  menu: 261
+  currentStateMove: 6
+  readHop: 3
+SAMPLES_TAIL:
+  H8QUESTGATE ARMED q=0x3ADC7895 i=6 state=IDLE need=ItemCollected hash=0xD150482E value=1 prereq=0 phaseGate=1
+  H8QUESTGATE ARMED q=0xA93EA0AC i=7 state=IDLE need=Manual phaseGate=1
+  H8QUESTGATE ARMED q=0x4EC8FFFB i=8 state=IDLE need=DiscoveryMade hash=0xD0717A28 value=0 prereq=1 phaseGate=1
+  H8QUESTGATE ARMED q=0x438E89D9 i=9 state=IDLE need=DiscoveryMade hash=0xF389A603 value=0 prereq=0 phaseGate=0
+  H8QUESTGATE ARMED q=0x2405CB07 i=10 state=IDLE need=DiscoveryMade hash=0xEE984C8B value=0 prereq=0 phaseGate=0
+  H8QUESTGATE ARMED q=0x9626EC9B i=11 state=IDLE need=DiscoveryMade hash=0x2CDF30D5 value=0 prereq=0 phaseGate=1
+  [PlayerInventory] DTO layout sovereignty PASSED: InventoryTelemetryEntry 64B, SalinityCorrosionTelemetryEntry 64B, VaultGenerationHandle<uint> 16B, all 24 asserted field offsets in place. Awake did NOT bail here, so an empty inventory this session has a different cause - look at the GlobalDataVault lane bind (STORAGE U
+  [GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: 02_HECTON_WORLD -> isValid=True, isLoaded=True, isBootstrap=False, isMainMenu=False, isOrbit=False
+  [GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: 01_MAIN_MENU -> isValid=True, isLoaded=True, isBootstrap=False, isMainMenu=True, isOrbit=False
+  Hecton8.Quest.QuestManager:FlushRuntimeResults () (at Assets/_Project/Scripts/Quest/QuestManager.cs:943)
+  Hecton8.Quest.QuestManager:FlushRuntimeResults () (at Assets/_Project/Scripts/Quest/QuestManager.cs:943)
+  [H8_LIFETIME] ACTIVESCENECHANGED from=01_MAIN_MENU fromHandle=568105589213755356 to=02_HECTON_WORLD toHandle=568105589213754124 frame=272
+  Hecton8.Core.SceneRuntimeService/<CompleteMainMenuCinematicTransitionAsync>d__170:MoveNext () (at Assets/_Project/Scripts/Core/SceneRuntimeService.cs:838)
+  UnityEngine.Awaitable/AwaitableAsyncMethodBuilder/StateMachineBox`1<Hecton8.Core.SceneRuntimeService/<CompleteMainMenuCinematicTransitionAsync>d__170>:DoMoveNext ()
+  Hecton8.Core.SceneRuntimeService:CompleteMainMenuCinematicTransitionAsync (UnityEngine.SceneManagement.Scene,string)
+  Hecton8.Core.SceneRuntimeService/<CompleteMainMenuCinematicTransitionAsync>d__170:MoveNext () (at Assets/_Project/Scripts/Core/SceneRuntimeService.cs:838)
+  UnityEngine.Awaitable/AwaitableAsyncMethodBuilder/StateMachineBox`1<Hecton8.Core.SceneRuntimeService/<CompleteMainMenuCinematicTransitionAsync>d__170>:DoMoveNext ()
+  Hecton8.Core.SceneRuntimeService:CompleteMainMenuCinematicTransitionAsync (UnityEngine.SceneManagement.Scene,string)
+  Hecton8.Core.SceneRuntimeService/<CompleteMainMenuCinematicTransitionAsync>d__170:MoveNext () (at Assets/_Project/Scripts/Core/SceneRuntimeService.cs:838)
+  UnityEngine.Awaitable/AwaitableAsyncMethodBuilder/StateMachineBox`1<Hecton8.Core.SceneRuntimeService/<CompleteMainMenuCinematicTransitionAsync>d__170>:DoMoveNext ()
+  Hecton8.Core.SceneRuntimeService:CompleteMainMenuCinematicTransitionAsync (UnityEngine.SceneManagement.Scene,string)
+  Hecton8.Core.SceneRuntimeService/<CompleteMainMenuCinematicTransitionAsync>d__170:MoveNext () (at Assets/_Project/Scripts/Core/SceneRuntimeService.cs:838)
+  UnityEngine.Awaitable/AwaitableAsyncMethodBuilder/StateMachineBox`1<Hecton8.Core.SceneRuntimeService/<CompleteMainMenuCinematicTransitionAsync>d__170>:DoMoveNext ()
+  Hecton8.Core.SceneRuntimeService:CompleteMainMenuCinematicTransitionAsync (UnityEngine.SceneManagement.Scene,string)
+  Hecton8.Core.SceneRuntimeService/<CompleteMainMenuCinematicTransitionAsync>d__170:MoveNext () (at Assets/_Project/Scripts/Core/SceneRuntimeService.cs:838)
+  UnityEngine.Awaitable/AwaitableAsyncMethodBuilder/StateMachineBox`1<Hecton8.Core.SceneRuntimeService/<CompleteMainMenuCinematicTransitionAsync>d__170>:DoMoveNext ()
+  Hecton8.Core.SceneRuntimeService:CompleteMainMenuCinematicTransitionAsync (UnityEngine.SceneManagement.Scene,string)
+  [H8_PLAYPROBE] SETTLED after 15s - active scene '02_HECTON_WORLD' is loaded; still-unloading: 01_MAIN_MENU
+  SCENE_LEAK_ATTRIBUTION_UNPROVEN: scene-lifetime allocation outlived a scene the sentinel only guessed it belonged to. owner=WorldProceduralScatterDirector.ScatterWorkingMemory label=CandidateAcceptanceBatchPendingMetadataBuckets bytes=4096 allocator=Persistent allocFrame=270 id=942 sceneIdentity=-2084 sceneBuildIndex=1
+  SCENE_LEAK_ATTRIBUTION_UNPROVEN: scene-lifetime allocation outlived a scene the sentinel only guessed it belonged to. owner=WorldProceduralScatterDirector.ScatterWorkingMemory label=CandidateAcceptanceBatchPendingPositionBuckets bytes=6144 allocator=Persistent allocFrame=270 id=941 sceneIdentity=-2084 sceneBuildIndex=1
+  SCENE_LEAK_ATTRIBUTION_UNPROVEN: scene-lifetime allocation outlived a scene the sentinel only guessed it belonged to. owner=WorldProceduralScatterDirector.ScatterWorkingMemory label=CandidateAcceptanceBatchPendingMetadata bytes=8192 allocator=Persistent allocFrame=270 id=940 sceneIdentity=-2084 sceneBuildIndex=1 sceneS
+  SCENE_LEAK_ATTRIBUTION_UNPROVEN: scene-lifetime allocation outlived a scene the sentinel only guessed it belonged to. owner=WorldProceduralScatterDirector.ScatterWorkingMemory label=CandidateAcceptanceBatchResults bytes=256 allocator=Persistent allocFrame=270 id=939 sceneIdentity=-2084 sceneBuildIndex=1 sceneScope=acti
+  SCENE_LEAK_ATTRIBUTION_UNPROVEN: scene-lifetime allocation outlived a scene the sentinel only guessed it belonged to. owner=WorldProceduralScatterDirector.ScatterWorkingMemory label=CandidateAcceptanceBatchInputs bytes=16384 allocator=Persistent allocFrame=270 id=938 sceneIdentity=-2084 sceneBuildIndex=1 sceneScope=act
+  SCENE_LEAK_ATTRIBUTION_UNPROVEN: scene-lifetime allocation outlived a scene the sentinel only guessed it belonged to. owner=WorldProceduralScatterDirector.ScatterWorkingMemory label=GridPlacementMetadataBuckets bytes=262144 allocator=Persistent allocFrame=270 id=937 sceneIdentity=-2084 sceneBuildIndex=1 sceneScope=acti
+  SCENE_LEAK_ATTRIBUTION_UNPROVEN: scene-lifetime allocation outlived a scene the sentinel only guessed it belonged to. owner=WorldProceduralScatterDirector.ScatterWorkingMemory label=GridPlacementPositionBuckets bytes=393216 allocator=Persistent allocFrame=270 id=936 sceneIdentity=-2084 sceneBuildIndex=1 sceneScope=acti
+  SCENE_LEAK_ATTRIBUTION_UNPROVEN: scene-lifetime allocation outlived a scene the sentinel only guessed it belonged to. owner=WorldProceduralScatterDirector.ScatterWorkingMemory label=GridPlacementSpatialMetadata bytes=524288 allocator=Persistent allocFrame=270 id=935 sceneIdentity=-2084 sceneBuildIndex=1 sceneScope=acti
+  [H8_LIFETIME] SCENEUNLOADED name=01_MAIN_MENU handle=568105589213755356 frame=273
+  [H8_PLAYPROBE] PLACEMENT OWNER DIVERGENCE this run does NOT match a player session. The shipped scene still has the component disabled, so any world content measured after this line exists only because the probe enabled it in memory. Persist it by opening Assets/_Project/Scenes/02_HECTON_WORLD.unity, running the menu i
+  [H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=22 pumpFired=1 presimTick=274 presimSubsteps=298 | captureRan=271 captureSkippedByFrameGuard=29 | overrideApplied=4 overrideRejected=267 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=298 publishGuardFail=0 publishBufferFail=0 publishOk=29
+  [H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=22 pumpFired=1 presimTick=287 presimSubsteps=311 | captureRan=283 captureSkippedByFrameGuard=30 | overrideApplied=16 overrideRejected=267 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=311 publishGuardFail=0 publishBufferFail=0 publishOk=
+  [H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=22 pumpFired=1 presimTick=303 presimSubsteps=328 | captureRan=297 captureSkippedByFrameGuard=33 | overrideApplied=30 overrideRejected=267 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=328 publishGuardFail=0 publishBufferFail=0 publishOk=
+  [GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: 02_HECTON_WORLD -> isValid=True, isLoaded=True, isBootstrap=False, isMainMenu=False, isOrbit=False
+  [GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: 02_HECTON_WORLD -> isValid=True, isLoaded=True, isBootstrap=False, isMainMenu=False, isOrbit=False
+  [GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: 02_HECTON_WORLD -> isValid=True, isLoaded=True, isBootstrap=False, isMainMenu=False, isOrbit=False
+     Water depth: 16,8m
+  [GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: 02_HECTON_WORLD -> isValid=True, isLoaded=True, isBootstrap=False, isMainMenu=False, isOrbit=False
+  [GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: 02_HECTON_WORLD -> isValid=True, isLoaded=True, isBootstrap=False, isMainMenu=False, isOrbit=False
+  [GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: 02_HECTON_WORLD -> isValid=True, isLoaded=True, isBootstrap=False, isMainMenu=False, isOrbit=False
+  [H8_INPUTREFUSE] stage=GUARD code=5 (1=vaultNull 2=notOwnerThread 3=compactionFence 4=guardBitsAlreadyHeld 5=activeLockConflict 6=opaque:blockMutationGateContended-or-vaultNotInitialized) ownerThread=1 callThread=1 | ownerGuardMask=18374686479671623727 vaultGuardMask=103079215104 heldOverlap=0 | ownerConflictMask=42781
+  Hecton8.Core.InputDispatcher:DiagRecordPublishGuardFail () (at Assets/_Project/Scripts/Core/InputDispatcher.cs:948)
+
+===== SNAP n=3 elapsed=91s pid=42884 alive=True =====
+time=2026-07-31 23:25:21
+pid=42884 alive=True
+log_exists=True log_bytes=1653346 prev=1647076 growing=True stagnant=False
+intent01max=None lastOverrideMove=0,1 currentStateMove=0,0 depth_span=None immersionMax=None
+readHop_seen=[1] hop2_present=False Swim_FAIL=0 Swim_PASS=0 RESULT_failures=None
+verdict_draft=IN_PROGRESS
+MARKER_COUNTS:
+  INPUTHOP: 3
+  FAIL: 53
+  PASS: 4
+  depth: 9
+  lastOverride: 3
+  PHASE: 741
+  menu: 261
+  currentStateMove: 6
+  readHop: 3
+SAMPLES_TAIL:
+  [GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: 02_HECTON_WORLD -> isValid=True, isLoaded=True, isBootstrap=False, isMainMenu=False, isOrbit=False
+     Water depth: 16,8m
+  [GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: 02_HECTON_WORLD -> isValid=True, isLoaded=True, isBootstrap=False, isMainMenu=False, isOrbit=False
+  [GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: 02_HECTON_WORLD -> isValid=True, isLoaded=True, isBootstrap=False, isMainMenu=False, isOrbit=False
+  [GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: 02_HECTON_WORLD -> isValid=True, isLoaded=True, isBootstrap=False, isMainMenu=False, isOrbit=False
+  [H8_INPUTREFUSE] stage=GUARD code=5 (1=vaultNull 2=notOwnerThread 3=compactionFence 4=guardBitsAlreadyHeld 5=activeLockConflict 6=opaque:blockMutationGateContended-or-vaultNotInitialized) ownerThread=1 callThread=1 | ownerGuardMask=18374686479671623727 vaultGuardMask=103079215104 heldOverlap=0 | ownerConflictMask=42781
+  Hecton8.Core.InputDispatcher:DiagRecordPublishGuardFail () (at Assets/_Project/Scripts/Core/InputDispatcher.cs:948)
+  [H8_INPUTRESIDUE] stage=PRE_ACQUIRE code=1 (1=lowWordOnly:FOREIGN-(id&31)-caller-NOT-this-owner 2=highWordDirty:(id&63)-caller:this-owner-leaked-or-MemorySentinelRuntime) guardDepth=0 | heldOverlap=32 heldLow=32 heldHigh=0 lowestHeldBit=5 | ownerGuardMask=18374686479671623727 ownerLow=47 ownerHigh=4278190080 vaultGuard
+  [H8_WORLDDRIVER] VERBSWEEP complete step=17/16 raised=17/17 arrivedInResolvedSnapshot=0/17 dispatcherCommands=0/13 consumerConfirmed=0 | overrideFlagSeen=True overridesPublished=258114 inputEnabled=True blockMask=0x00000000 lastResolvedButtons=0x00000000 atFrame=354 - NOTHING ARRIVED: not one raised bit appeared in IIn
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB Jump bit=0x00000001 raised=True expectedCommand=0 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00000001 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a consumer 
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB Interact bit=0x00000002 raised=True expectedCommand=6 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00000002 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a consu
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB PrimaryFire bit=0x00000004 raised=True expectedCommand=7 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00000004 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a co
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB SecondaryFire bit=0x00000008 raised=True expectedCommand=8 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00000008 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a 
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB Sprint bit=0x00000010 raised=True expectedCommand=0 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00000010 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a consume
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB Dash bit=0x00000020 raised=True expectedCommand=0 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00000020 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a consumer 
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB Pda bit=0x00000040 raised=True expectedCommand=2 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00000040 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a consumer f
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB Inventory bit=0x00000080 raised=True expectedCommand=1 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00000080 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a cons
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB Cancel bit=0x00000100 raised=True expectedCommand=3 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00000100 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a consume
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB TabNext bit=0x00000200 raised=True expectedCommand=4 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00000200 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a consum
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB TabPrevious bit=0x00000400 raised=True expectedCommand=5 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00000400 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a co
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB ToolSlot1 bit=0x00000800 raised=True expectedCommand=9 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00000800 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a cons
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB ToolSlot2 bit=0x00001000 raised=True expectedCommand=10 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00001000 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a con
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB ToolSlot3 bit=0x00002000 raised=True expectedCommand=11 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00002000 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a con
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB ToolSlot4 bit=0x00004000 raised=True expectedCommand=12 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00004000 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a con
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB Flashlight bit=0x00008000 raised=True expectedCommand=13 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00008000 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a co
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] VERB Pause bit=0x00010000 raised=True expectedCommand=0 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00010000 set in CurrentInputState.ButtonsBitmask; measured 0x00000000 at frame 354. INPUT PLUMBING failure, not a consumer
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_WORLDDRIVER] LANECENSUS ticks=258115 InputStateSignal=0 PlayerInputSignal[PLIN]=0 InventoryChangedSignal=0 ToolLoadoutChangedSignal=0 CraftingStartedSignal=0 ResourceDepletionDeltaSignal=0 DebrisSpawnSignal=0 | inventoryComponent=present enabled=True gridBound=True inventoryVersion 0->0 | PLINlane hasNativeStorage=
+  Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+  [H8_INPUTREFUSE] stage=GUARD code=4 (1=vaultNull 2=notOwnerThread 3=compactionFence 4=guardBitsAlreadyHeld 5=activeLockConflict 6=opaque:blockMutationGateContended-or-vaultNotInitialized) ownerThread=1 callThread=1 | ownerGuardMask=18374686479671623727 vaultGuardMask=103079215104 heldOverlap=32 | ownerConflictMask=4278
+  Hecton8.Core.InputDispatcher:DiagRecordPublishGuardFail () (at Assets/_Project/Scripts/Core/InputDispatcher.cs:948)
+  [H8_INPUTREFUSE] stage=GUARD code=5 (1=vaultNull 2=notOwnerThread 3=compactionFence 4=guardBitsAlreadyHeld 5=activeLockConflict 6=opaque:blockMutationGateContended-or-vaultNotInitialized) ownerThread=1 callThread=1 | ownerGuardMask=18374686479671623727 vaultGuardMask=103079215104 heldOverlap=0 | ownerConflictMask=42781
+  Hecton8.Core.InputDispatcher:DiagRecordPublishGuardFail () (at Assets/_Project/Scripts/Core/InputDispatcher.cs:948)
+
+===== SNAP n=4 elapsed=136s pid=42884 alive=True =====
+time=2026-07-31 23:26:07
+pid=42884 alive=True
+log_exists=True log_bytes=2197716 prev=1653346 growing=True stagnant=False
+intent01max=0.0 lastOverrideMove=0,1 currentStateMove=0,0 depth_span=0.0 immersionMax=1.0
+readHop_seen=[1] hop2_present=False Swim_FAIL=1 Swim_PASS=0 RESULT_failures=1
+verdict_draft=ROUTE_HAS_VERDICT
+MARKER_COUNTS:
+  movementIntent01max: 1
+  INPUTHOP: 3
+  Swim: 6
+  FAIL: 67
+  PASS: 9
+  depth: 14
+  lastOverride: 3
+  PHASE: 774
+  menu: 263
+  currentStateMove: 6
+  readHop: 3
+SAMPLES_TAIL:
+  C:\hades\Hecton8\Library\BurstCache\JIT\60642bf0e41cec9418a097ef3f606ed1.dll:60642bf0e41cec9418a097ef3f606ed1.dll (00007FF804DE0000), size: 28672 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\60642bf0e41cec9418a097ef3f606ed1.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\75777724aadb812f4953e554717a555f.dll:75777724aadb812f4953e554717a555f.dll (00007FF8045C0000), size: 69632 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\75777724aadb812f4953e554717a555f.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\b2e68c80e6bf585f96ac17ab0d7ecdf1.dll:b2e68c80e6bf585f96ac17ab0d7ecdf1.dll (00007FF8045A0000), size: 94208 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\b2e68c80e6bf585f96ac17ab0d7ecdf1.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\11e8689addb84f7899974577a7eb6b59.dll:11e8689addb84f7899974577a7eb6b59.dll (00007FF804DD0000), size: 40960 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\11e8689addb84f7899974577a7eb6b59.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\2069ef2f4cef0e370fa476e9ffeb6f61.dll:2069ef2f4cef0e370fa476e9ffeb6f61.dll (00007FF804590000), size: 36864 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\2069ef2f4cef0e370fa476e9ffeb6f61.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\b4bf996073ef6f0d4e237377c0469df0.dll:b4bf996073ef6f0d4e237377c0469df0.dll (00007FF804580000), size: 28672 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\b4bf996073ef6f0d4e237377c0469df0.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\6ae88a4fadf6d9f47deb4f18e7ca8675.dll:6ae88a4fadf6d9f47deb4f18e7ca8675.dll (00007FF804570000), size: 32768 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\6ae88a4fadf6d9f47deb4f18e7ca8675.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\cb384929580cdabbfe888678af494e13.dll:cb384929580cdabbfe888678af494e13.dll (00007FF802E70000), size: 32768 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\cb384929580cdabbfe888678af494e13.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\2c7b60b3631dc5ca07dfbb565acae73f.dll:2c7b60b3631dc5ca07dfbb565acae73f.dll (00007FF802E60000), size: 49152 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\2c7b60b3631dc5ca07dfbb565acae73f.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\b7adf3ef1161feb2883cbf426810f783.dll:b7adf3ef1161feb2883cbf426810f783.dll (00007FF802E50000), size: 49152 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\b7adf3ef1161feb2883cbf426810f783.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\1a6f95a6bc72f5375586fca5bdd39540.dll:1a6f95a6bc72f5375586fca5bdd39540.dll (00007FF802E40000), size: 53248 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\1a6f95a6bc72f5375586fca5bdd39540.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\b0046841ac384b463c81bdf67edbd636.dll:b0046841ac384b463c81bdf67edbd636.dll (00007FF802E30000), size: 36864 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\b0046841ac384b463c81bdf67edbd636.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\130c5b85a8f63892e3a485aa5e62f26c.dll:130c5b85a8f63892e3a485aa5e62f26c.dll (00007FF802E20000), size: 32768 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\130c5b85a8f63892e3a485aa5e62f26c.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\45d6aad07f1eba87982921c9ef5f015e.dll:45d6aad07f1eba87982921c9ef5f015e.dll (00007FF800F80000), size: 57344 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\45d6aad07f1eba87982921c9ef5f015e.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\f588e94cfebb07e8c45a59ff549d022d.dll:f588e94cfebb07e8c45a59ff549d022d.dll (00007FF800F70000), size: 40960 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\f588e94cfebb07e8c45a59ff549d022d.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\efebf6dab61c917cc9371f146ce03637.dll:efebf6dab61c917cc9371f146ce03637.dll (00007FF800B20000), size: 40960 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\efebf6dab61c917cc9371f146ce03637.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\fe7d0921d72f7ab38386a5cd205cb860.dll:fe7d0921d72f7ab38386a5cd205cb860.dll (00007FF8009C0000), size: 53248 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\fe7d0921d72f7ab38386a5cd205cb860.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\a8e9e9f9cb40ee408faac6e19e8f9fc1.dll:a8e9e9f9cb40ee408faac6e19e8f9fc1.dll (00007FF83FBE0000), size: 40960 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\a8e9e9f9cb40ee408faac6e19e8f9fc1.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\a3c306bf842652c3ca3a720e5b7c961d.dll:a3c306bf842652c3ca3a720e5b7c961d.dll (00007FF83FBC0000), size: 77824 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\a3c306bf842652c3ca3a720e5b7c961d.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\b5ba54c9890db1c375cca05e940a5118.dll:b5ba54c9890db1c375cca05e940a5118.dll (00007FF83FB30000), size: 40960 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\b5ba54c9890db1c375cca05e940a5118.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\1c46473b66126d4a6be3fa35228c61fe.dll:1c46473b66126d4a6be3fa35228c61fe.dll (00007FF806380000), size: 36864 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\1c46473b66126d4a6be3fa35228c61fe.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\c097f914f08f7b8f947e9a46c6cadd6d.dll:c097f914f08f7b8f947e9a46c6cadd6d.dll (00007FF83FBB0000), size: 61440 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\c097f914f08f7b8f947e9a46c6cadd6d.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\37d996aaf90dd1b3f05b600301a13793.dll:37d996aaf90dd1b3f05b600301a13793.dll (00007FF83FBA0000), size: 40960 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\37d996aaf90dd1b3f05b600301a13793.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\3e36fa17618c5030dbb545f836017117.dll:3e36fa17618c5030dbb545f836017117.dll (00007FF83FB90000), size: 45056 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\3e36fa17618c5030dbb545f836017117.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\1f5a16eb5f7e9302ff105f2e38f79a17.dll:1f5a16eb5f7e9302ff105f2e38f79a17.dll (00007FF83FB70000), size: 86016 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\1f5a16eb5f7e9302ff105f2e38f79a17.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\14d0b8b96ca66ea314e29da6d2a92b4f.dll:14d0b8b96ca66ea314e29da6d2a92b4f.dll (00007FF83FB60000), size: 36864 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\14d0b8b96ca66ea314e29da6d2a92b4f.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\157327a91c73cc9296a4b398959743d2.dll:157327a91c73cc9296a4b398959743d2.dll (00007FF83FB50000), size: 28672 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\157327a91c73cc9296a4b398959743d2.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\0b5d0cca692bfa86f71571b5ea5e2cdd.dll:0b5d0cca692bfa86f71571b5ea5e2cdd.dll (00007FF83FB40000), size: 36864 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\0b5d0cca692bfa86f71571b5ea5e2cdd.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\7fd1a659d8a4e62e07370d78e462729e.dll:7fd1a659d8a4e62e07370d78e462729e.dll (00007FF806910000), size: 114688 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\7fd1a659d8a4e62e07370d78e462729e.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\d2c96db3465f6a66264e4d47c6d8e809.dll:d2c96db3465f6a66264e4d47c6d8e809.dll (00007FF806870000), size: 69632 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\d2c96db3465f6a66264e4d47c6d8e809.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\0936cae4f59a463a4ed27e98764500cc.dll:0936cae4f59a463a4ed27e98764500cc.dll (00007FF806900000), size: 45056 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\0936cae4f59a463a4ed27e98764500cc.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\ffa40e357e3046974114716a3718418a.dll:ffa40e357e3046974114716a3718418a.dll (00007FF805380000), size: 151552 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\ffa40e357e3046974114716a3718418a.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\c82792a1562bcf094444ad1086e4eeaf.dll:c82792a1562bcf094444ad1086e4eeaf.dll (00007FF8068E0000), size: 102400 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\c82792a1562bcf094444ad1086e4eeaf.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\27093fce3d97e134e56100e853f8a337.dll:27093fce3d97e134e56100e853f8a337.dll (00007FF8068B0000), size: 155648 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\27093fce3d97e134e56100e853f8a337.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\4f3587f97bd1333d450466c792bf3a10.dll:4f3587f97bd1333d450466c792bf3a10.dll (00007FF800040000), size: 475136 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\4f3587f97bd1333d450466c792bf3a10.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\bcea3eb21aff467a2a1797a1371bf004.dll:bcea3eb21aff467a2a1797a1371bf004.dll (00007FF800260000), size: 417792 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\bcea3eb21aff467a2a1797a1371bf004.pdb'
+  C:\WINDOWS\System32\MSCTF.dll:MSCTF.dll (00007FF887760000), size: 1429504 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\MSCTF.dll', fileVersion: 10.0.26100.8737
+  C:\WINDOWS\system32\explorerframe.dll:explorerframe.dll (00007FF8439D0000), size: 3149824 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\system32\explorerframe.dll', fileVersion: 10.0.26100.8737
+  C:\WINDOWS\SYSTEM32\TextShaping.dll:TextShaping.dll (00007FF865B70000), size: 733184 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\TextShaping.dll', fileVersion: 10.0.26100.8737
+  C:\WINDOWS\SYSTEM32\textinputframework.dll:textinputframework.dll (00007FF85C2C0000), size: 1339392 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\textinputframework.dll', fileVersion: 10.0.26100.8737
+  C:\WINDOWS\system32\Oleacc.dll:Oleacc.dll (00007FF85F7C0000), size: 471040 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\system32\Oleacc.dll', fileVersion: 7.2.26100.8737
+  C:\hades\Hecton8\Library\BurstCache\JIT\65f87e6a9c473cf13ca982dbdcaf1630.dll:65f87e6a9c473cf13ca982dbdcaf1630.dll (00007FF8053B0000), size: 311296 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\65f87e6a9c473cf13ca982dbdcaf1630.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\118bce4cb533fb286a46d298fb45f9ad.dll:118bce4cb533fb286a46d298fb45f9ad.dll (00007FFFFD1E0000), size: 413696 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\118bce4cb533fb286a46d298fb45f9ad.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\4f398b50476a29c42af004acc73a9b5d.dll:4f398b50476a29c42af004acc73a9b5d.dll (00007FFFFABF0000), size: 442368 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\4f398b50476a29c42af004acc73a9b5d.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\7966e37a3ce18532ed64da1b1407fcbb.dll:7966e37a3ce18532ed64da1b1407fcbb.dll (00007FFFFAB70000), size: 495616 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\7966e37a3ce18532ed64da1b1407fcbb.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\8d00d280b55279288a9df80bf3bffd9d.dll:8d00d280b55279288a9df80bf3bffd9d.dll (00007FFFF5130000), size: 487424 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\8d00d280b55279288a9df80bf3bffd9d.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\d9e1cb7ef03939e820f2d76925b07ebc.dll:d9e1cb7ef03939e820f2d76925b07ebc.dll (00007FFFF8130000), size: 573440 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\d9e1cb7ef03939e820f2d76925b07ebc.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\1ca988ed65fb15b7b59fd53e83de61b7.dll:1ca988ed65fb15b7b59fd53e83de61b7.dll (00007FFFF71A0000), size: 585728 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\1ca988ed65fb15b7b59fd53e83de61b7.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\55f1aadb1a6c797b2dafe7986a2375e8.dll:55f1aadb1a6c797b2dafe7986a2375e8.dll (00007FFFF24B0000), size: 995328 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\55f1aadb1a6c797b2dafe7986a2375e8.pdb'
+  C:\hades\Hecton8\Assets\MapMagic\Tools\Plugins\NativePlugins.dll:NativePlugins.dll (00007FF8009A0000), size: 122880 (result: 0), SymType: '-exported-', PDB: 'C:\hades\Hecton8\Assets\MapMagic\Tools\Plugins\NativePlugins.dll'
+
+===== SNAP n=5 elapsed=182s pid=42884 alive=False =====
+time=2026-07-31 23:26:53
+pid=42884 alive=False
+log_exists=True log_bytes=2197716 prev=2197716 growing=False stagnant=True
+intent01max=0.0 lastOverrideMove=0,1 currentStateMove=0,0 depth_span=0.0 immersionMax=1.0
+readHop_seen=[1] hop2_present=False Swim_FAIL=1 Swim_PASS=0 RESULT_failures=1
+verdict_draft=ROUTE_HAS_VERDICT
+MARKER_COUNTS:
+  movementIntent01max: 1
+  INPUTHOP: 3
+  Swim: 6
+  FAIL: 67
+  PASS: 9
+  depth: 14
+  lastOverride: 3
+  PHASE: 774
+  menu: 263
+  currentStateMove: 6
+  readHop: 3
+SAMPLES_TAIL:
+  C:\hades\Hecton8\Library\BurstCache\JIT\60642bf0e41cec9418a097ef3f606ed1.dll:60642bf0e41cec9418a097ef3f606ed1.dll (00007FF804DE0000), size: 28672 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\60642bf0e41cec9418a097ef3f606ed1.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\75777724aadb812f4953e554717a555f.dll:75777724aadb812f4953e554717a555f.dll (00007FF8045C0000), size: 69632 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\75777724aadb812f4953e554717a555f.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\b2e68c80e6bf585f96ac17ab0d7ecdf1.dll:b2e68c80e6bf585f96ac17ab0d7ecdf1.dll (00007FF8045A0000), size: 94208 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\b2e68c80e6bf585f96ac17ab0d7ecdf1.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\11e8689addb84f7899974577a7eb6b59.dll:11e8689addb84f7899974577a7eb6b59.dll (00007FF804DD0000), size: 40960 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\11e8689addb84f7899974577a7eb6b59.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\2069ef2f4cef0e370fa476e9ffeb6f61.dll:2069ef2f4cef0e370fa476e9ffeb6f61.dll (00007FF804590000), size: 36864 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\2069ef2f4cef0e370fa476e9ffeb6f61.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\b4bf996073ef6f0d4e237377c0469df0.dll:b4bf996073ef6f0d4e237377c0469df0.dll (00007FF804580000), size: 28672 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\b4bf996073ef6f0d4e237377c0469df0.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\6ae88a4fadf6d9f47deb4f18e7ca8675.dll:6ae88a4fadf6d9f47deb4f18e7ca8675.dll (00007FF804570000), size: 32768 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\6ae88a4fadf6d9f47deb4f18e7ca8675.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\cb384929580cdabbfe888678af494e13.dll:cb384929580cdabbfe888678af494e13.dll (00007FF802E70000), size: 32768 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\cb384929580cdabbfe888678af494e13.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\2c7b60b3631dc5ca07dfbb565acae73f.dll:2c7b60b3631dc5ca07dfbb565acae73f.dll (00007FF802E60000), size: 49152 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\2c7b60b3631dc5ca07dfbb565acae73f.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\b7adf3ef1161feb2883cbf426810f783.dll:b7adf3ef1161feb2883cbf426810f783.dll (00007FF802E50000), size: 49152 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\b7adf3ef1161feb2883cbf426810f783.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\1a6f95a6bc72f5375586fca5bdd39540.dll:1a6f95a6bc72f5375586fca5bdd39540.dll (00007FF802E40000), size: 53248 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\1a6f95a6bc72f5375586fca5bdd39540.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\b0046841ac384b463c81bdf67edbd636.dll:b0046841ac384b463c81bdf67edbd636.dll (00007FF802E30000), size: 36864 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\b0046841ac384b463c81bdf67edbd636.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\130c5b85a8f63892e3a485aa5e62f26c.dll:130c5b85a8f63892e3a485aa5e62f26c.dll (00007FF802E20000), size: 32768 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\130c5b85a8f63892e3a485aa5e62f26c.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\45d6aad07f1eba87982921c9ef5f015e.dll:45d6aad07f1eba87982921c9ef5f015e.dll (00007FF800F80000), size: 57344 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\45d6aad07f1eba87982921c9ef5f015e.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\f588e94cfebb07e8c45a59ff549d022d.dll:f588e94cfebb07e8c45a59ff549d022d.dll (00007FF800F70000), size: 40960 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\f588e94cfebb07e8c45a59ff549d022d.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\efebf6dab61c917cc9371f146ce03637.dll:efebf6dab61c917cc9371f146ce03637.dll (00007FF800B20000), size: 40960 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\efebf6dab61c917cc9371f146ce03637.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\fe7d0921d72f7ab38386a5cd205cb860.dll:fe7d0921d72f7ab38386a5cd205cb860.dll (00007FF8009C0000), size: 53248 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\fe7d0921d72f7ab38386a5cd205cb860.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\a8e9e9f9cb40ee408faac6e19e8f9fc1.dll:a8e9e9f9cb40ee408faac6e19e8f9fc1.dll (00007FF83FBE0000), size: 40960 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\a8e9e9f9cb40ee408faac6e19e8f9fc1.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\a3c306bf842652c3ca3a720e5b7c961d.dll:a3c306bf842652c3ca3a720e5b7c961d.dll (00007FF83FBC0000), size: 77824 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\a3c306bf842652c3ca3a720e5b7c961d.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\b5ba54c9890db1c375cca05e940a5118.dll:b5ba54c9890db1c375cca05e940a5118.dll (00007FF83FB30000), size: 40960 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\b5ba54c9890db1c375cca05e940a5118.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\1c46473b66126d4a6be3fa35228c61fe.dll:1c46473b66126d4a6be3fa35228c61fe.dll (00007FF806380000), size: 36864 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\1c46473b66126d4a6be3fa35228c61fe.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\c097f914f08f7b8f947e9a46c6cadd6d.dll:c097f914f08f7b8f947e9a46c6cadd6d.dll (00007FF83FBB0000), size: 61440 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\c097f914f08f7b8f947e9a46c6cadd6d.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\37d996aaf90dd1b3f05b600301a13793.dll:37d996aaf90dd1b3f05b600301a13793.dll (00007FF83FBA0000), size: 40960 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\37d996aaf90dd1b3f05b600301a13793.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\3e36fa17618c5030dbb545f836017117.dll:3e36fa17618c5030dbb545f836017117.dll (00007FF83FB90000), size: 45056 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\3e36fa17618c5030dbb545f836017117.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\1f5a16eb5f7e9302ff105f2e38f79a17.dll:1f5a16eb5f7e9302ff105f2e38f79a17.dll (00007FF83FB70000), size: 86016 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\1f5a16eb5f7e9302ff105f2e38f79a17.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\14d0b8b96ca66ea314e29da6d2a92b4f.dll:14d0b8b96ca66ea314e29da6d2a92b4f.dll (00007FF83FB60000), size: 36864 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\14d0b8b96ca66ea314e29da6d2a92b4f.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\157327a91c73cc9296a4b398959743d2.dll:157327a91c73cc9296a4b398959743d2.dll (00007FF83FB50000), size: 28672 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\157327a91c73cc9296a4b398959743d2.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\0b5d0cca692bfa86f71571b5ea5e2cdd.dll:0b5d0cca692bfa86f71571b5ea5e2cdd.dll (00007FF83FB40000), size: 36864 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\0b5d0cca692bfa86f71571b5ea5e2cdd.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\7fd1a659d8a4e62e07370d78e462729e.dll:7fd1a659d8a4e62e07370d78e462729e.dll (00007FF806910000), size: 114688 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\7fd1a659d8a4e62e07370d78e462729e.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\d2c96db3465f6a66264e4d47c6d8e809.dll:d2c96db3465f6a66264e4d47c6d8e809.dll (00007FF806870000), size: 69632 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\d2c96db3465f6a66264e4d47c6d8e809.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\0936cae4f59a463a4ed27e98764500cc.dll:0936cae4f59a463a4ed27e98764500cc.dll (00007FF806900000), size: 45056 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\0936cae4f59a463a4ed27e98764500cc.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\ffa40e357e3046974114716a3718418a.dll:ffa40e357e3046974114716a3718418a.dll (00007FF805380000), size: 151552 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\ffa40e357e3046974114716a3718418a.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\c82792a1562bcf094444ad1086e4eeaf.dll:c82792a1562bcf094444ad1086e4eeaf.dll (00007FF8068E0000), size: 102400 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\c82792a1562bcf094444ad1086e4eeaf.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\27093fce3d97e134e56100e853f8a337.dll:27093fce3d97e134e56100e853f8a337.dll (00007FF8068B0000), size: 155648 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\27093fce3d97e134e56100e853f8a337.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\4f3587f97bd1333d450466c792bf3a10.dll:4f3587f97bd1333d450466c792bf3a10.dll (00007FF800040000), size: 475136 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\4f3587f97bd1333d450466c792bf3a10.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\bcea3eb21aff467a2a1797a1371bf004.dll:bcea3eb21aff467a2a1797a1371bf004.dll (00007FF800260000), size: 417792 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\bcea3eb21aff467a2a1797a1371bf004.pdb'
+  C:\WINDOWS\System32\MSCTF.dll:MSCTF.dll (00007FF887760000), size: 1429504 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\System32\MSCTF.dll', fileVersion: 10.0.26100.8737
+  C:\WINDOWS\system32\explorerframe.dll:explorerframe.dll (00007FF8439D0000), size: 3149824 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\system32\explorerframe.dll', fileVersion: 10.0.26100.8737
+  C:\WINDOWS\SYSTEM32\TextShaping.dll:TextShaping.dll (00007FF865B70000), size: 733184 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\TextShaping.dll', fileVersion: 10.0.26100.8737
+  C:\WINDOWS\SYSTEM32\textinputframework.dll:textinputframework.dll (00007FF85C2C0000), size: 1339392 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\SYSTEM32\textinputframework.dll', fileVersion: 10.0.26100.8737
+  C:\WINDOWS\system32\Oleacc.dll:Oleacc.dll (00007FF85F7C0000), size: 471040 (result: 0), SymType: '-exported-', PDB: 'C:\WINDOWS\system32\Oleacc.dll', fileVersion: 7.2.26100.8737
+  C:\hades\Hecton8\Library\BurstCache\JIT\65f87e6a9c473cf13ca982dbdcaf1630.dll:65f87e6a9c473cf13ca982dbdcaf1630.dll (00007FF8053B0000), size: 311296 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\65f87e6a9c473cf13ca982dbdcaf1630.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\118bce4cb533fb286a46d298fb45f9ad.dll:118bce4cb533fb286a46d298fb45f9ad.dll (00007FFFFD1E0000), size: 413696 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\118bce4cb533fb286a46d298fb45f9ad.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\4f398b50476a29c42af004acc73a9b5d.dll:4f398b50476a29c42af004acc73a9b5d.dll (00007FFFFABF0000), size: 442368 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\4f398b50476a29c42af004acc73a9b5d.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\7966e37a3ce18532ed64da1b1407fcbb.dll:7966e37a3ce18532ed64da1b1407fcbb.dll (00007FFFFAB70000), size: 495616 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\7966e37a3ce18532ed64da1b1407fcbb.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\8d00d280b55279288a9df80bf3bffd9d.dll:8d00d280b55279288a9df80bf3bffd9d.dll (00007FFFF5130000), size: 487424 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\8d00d280b55279288a9df80bf3bffd9d.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\d9e1cb7ef03939e820f2d76925b07ebc.dll:d9e1cb7ef03939e820f2d76925b07ebc.dll (00007FFFF8130000), size: 573440 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\d9e1cb7ef03939e820f2d76925b07ebc.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\1ca988ed65fb15b7b59fd53e83de61b7.dll:1ca988ed65fb15b7b59fd53e83de61b7.dll (00007FFFF71A0000), size: 585728 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\1ca988ed65fb15b7b59fd53e83de61b7.pdb'
+  C:\hades\Hecton8\Library\BurstCache\JIT\55f1aadb1a6c797b2dafe7986a2375e8.dll:55f1aadb1a6c797b2dafe7986a2375e8.dll (00007FFFF24B0000), size: 995328 (result: 0), SymType: 'PDB', PDB: 'C:\hades\Hecton8\Library\BurstCache\JIT\55f1aadb1a6c797b2dafe7986a2375e8.pdb'
+  C:\hades\Hecton8\Assets\MapMagic\Tools\Plugins\NativePlugins.dll:NativePlugins.dll (00007FF8009A0000), size: 122880 (result: 0), SymType: '-exported-', PDB: 'C:\hades\Hecton8\Assets\MapMagic\Tools\Plugins\NativePlugins.dll'
+
+PROBE_DEAD

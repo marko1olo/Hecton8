@@ -1,0 +1,8 @@
+GetLane present
+MATCH public static RegistryBucket<IUpdatable> GetLane(
+MATCH static RegistryBucket<IUpdatable> GetLane(
+OK GR Fixed
+OK GR Updatable
+OK GR Cold
+OK HPM TryRegister
+ALL_OK

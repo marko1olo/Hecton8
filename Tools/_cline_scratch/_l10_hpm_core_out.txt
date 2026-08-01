@@ -1,0 +1,1219 @@
+===== FixedTick area 9900-10050 =====
+9900:        {
+9901:            float t = math.saturate(blend01);
+9902:            Vector3 blended = startGravity + ((targetGravity - startGravity) * t);
+9903:            if (blended.sqrMagnitude > MinLocalGravitySqr)
+9904:                return blended;
+9905:
+9906:            return t < 0.5f ? startGravity : targetGravity;
+9907:        }
+9908:
+9909:        private Vector3 ResolveBodyRuntimePosition()
+9910:        {
+9911:            if (_useFixedFrameSpatialCache && MathGuard.IsFinite(_fixedFrameBodyPosition))
+9912:                return HectonPlayerMotor.SafeVelocity(_fixedFrameBodyPosition);
+9913:
+9914:            Vector3 statePosition = ResolvePlayerAupRuntimePosition();
+9915:            if (MathGuard.IsFinite(statePosition))
+9916:                return HectonPlayerMotor.SafeVelocity(statePosition);
+9917:
+9918:            return _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.position) : Vector3.zero;
+9919:        }
+9920:
+9921:        public void FixedTick(float fixedDeltaTime)
+9922:        {
+9923:            SuitData suit = currentSuitData;
+9924:            if (suit == null) return;
+9925:            if (_juiceProcessor == null) return;
+9926:
+9927:            using (_fixedTickProfilerMarker.Auto())
+9928:            {
+9929:                // Fixed-step locomotion must sample input here. Render Tick is not guaranteed
+9930:                // before each FixedTick (batchmode / catch-up), and PrepareTransportAndFrameState
+9931:                // snapshots intent from _input* immediately below.
+9932:                SampleGameplayLocomotionInputForFixedStep();
+9933:
+9934:                PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+9935:
+9936:                float previousWaterImmersionRatio = _waterImmersionRatio;
+9937:                bool wasGroundedLastFixedTick = _isGrounded;
+9938:
+9939:                _rb.useGravity = false;
+9940:
+9941:                if (_isWalking)
+9942:                {
+9943:                    _bodyYaw = _cameraYaw;
+9944:                    _bodyYawVelocity = 0f;
+9945:                }
+9946:                else
+9947:                {
+9948:                    float bodyYawOmega = suit.bodyYawSpringOmega *
+9949:                        ResolveHeavyCarryBodyYawSpringMultiplier() *
+9950:                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
+9951:                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
+9952:                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+9953:                }
+9954:
+9955:                _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
+9956:                _wasGroundedLastFrame = _isGrounded;
+9957:
+9958:                GroundCheck();
+9959:                _playerMotor?.SetGroundedState(_isGrounded);
+9960:
+9961:                UpdateWaterImmersion(fixedDeltaTime);
+9962:
+9963:                ApplyLadderSplineSnapFromAsyncProbe(initialExosuitKinematicAuthority);
+9964:
+9965:                float physicsImmersion = _smoothedImmersionRatio;
+9966:                float feetDepth = GetFeetDepthBelowSurface(EffectiveWaterSurfaceY);
+9967:                bool hasImmediateShoreFooting = _isGrounded && feetDepth <= shoreWalkFootDepth;
+9968:                bool isShallowEnoughForShore = physicsImmersion < swimTransitionThreshold || hasImmediateShoreFooting;
+9969:                bool isDryLand = physicsImmersion <= 0.01f;
+9970:
+9971:                if (_isGrounded && isDryLand)
+9972:                {
+9973:                    _dryGroundGraceTimer = dryGroundGraceTime;
+9974:                }
+9975:                else if (_dryGroundGraceTimer > 0f)
+9976:                {
+9977:                    _dryGroundGraceTimer -= fixedDeltaTime;
+9978:                    if (_dryGroundGraceTimer < 0f)
+9979:                        _dryGroundGraceTimer = 0f;
+9980:                }
+9981:
+9982:                if (_isGrounded && isShallowEnoughForShore)
+9983:                {
+9984:                    _shoreGroundGraceTimer = shoreGroundGraceTime;
+9985:                }
+9986:                else if (_shoreGroundGraceTimer > 0f)
+9987:                {
+9988:                    _shoreGroundGraceTimer -= fixedDeltaTime;
+9989:                    if (_shoreGroundGraceTimer < 0f)
+9990:                        _shoreGroundGraceTimer = 0f;
+9991:                }
+9992:
+9993:                AdvanceCooldownTimers(fixedDeltaTime);
+9994:                AdvanceFatalPressureSequence(fixedDeltaTime);
+9995:                UpdateWipeoutState(fixedDeltaTime);
+9996:                UpdateShoreBuoyancyBlend(fixedDeltaTime, physicsImmersion, feetDepth);
+9997:                UpdateVegetationDensityLinearDamping(fixedDeltaTime);
+9998:
+9999:                bool hasDryGroundSupport = _isGrounded || (_dryGroundGraceTimer > 0f && isDryLand);
+10000:                bool hasShoreGroundSupport = hasImmediateShoreFooting || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
+10001:                bool groundedOnDryLand = hasDryGroundSupport && isDryLand;
+10002:                bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
+10003:
+10004:                bool exosuitActive = IsExosuitTransportActive();
+10005:                bool exosuitKinematicAuthority = TrySubmitExosuitKinematicAuthority(exosuitActive);
+10006:
+10007:                ToggleBuoyancy(!exosuitActive);
+10008:                RefreshSurfaceBreachLock(physicsImmersion);
+10009:                UpdateSurfaceDiveCommitTimer(fixedDeltaTime, activeTransportPreset);
+10010:
+10011:                float targetGravityScale = exosuitActive
+10012:                    ? exosuitNegativeBuoyancyScale
+10013:                    : groundedOnShore ? 1f : 1f - math.saturate(physicsImmersion * gravityFadeRate);
+10014:                _gravityScale = ResolveVrComfortGravityScale(targetGravityScale, fixedDeltaTime);
+10015:
+10016:                if (!exosuitKinematicAuthority && _gravityScale > 0.001f)
+10017:                {
+10018:                    float mass = ResolveAuthoritativeBodyMassKg();
+10019:                    _forceVector.x = _cachedGravity.x * mass * _gravityScale;
+10020:                    _forceVector.y = _cachedGravity.y * mass * _gravityScale;
+10021:                    _forceVector.z = _cachedGravity.z * mass * _gravityScale;
+10022:                    QueueEnvironmentalForce(_forceVector);
+10023:                }
+10024:
+10025:                if ((exosuitActive && _isGrounded) || groundedOnShore)
+10026:                {
+10027:                    _snapScale = 1f;
+10028:                }
+10029:                else
+10030:                {
+10031:                    _snapScale = 1f - math.saturate(physicsImmersion * snapFadeRate);
+10032:                }
+10033:
+10034:                bool shouldWalk = ShouldUseLandLocomotion(physicsImmersion, hasShoreGroundSupport, hasImmediateShoreFooting);
+10035:                bool shouldStartSurfaceDiveAssist =
+10036:                    !shouldWalk &&
+10037:                    !IsInDryInterior() &&
+10038:                    physicsImmersion >= surfaceBreachMinImmersion &&
+10039:                    GetHeadDepthBelowSurface(EffectiveWaterSurfaceY) <= surfaceDiveBreakDepth &&
+10040:                    HasCommittedSurfaceDive(activeTransportPreset);
+10041:
+10042:                if (shouldWalk)
+10043:                {
+10044:                    _surfaceDiveAssistTimer = 0f;
+10045:                }
+10046:                else if (shouldStartSurfaceDiveAssist && _surfaceDiveAssistTimer <= 0f)
+10047:                {
+10048:                    _surfaceDiveAssistTimer = surfaceDiveAssistDuration;
+10049:                }
+10050:
+===== SampleGameplayLocomotion 8185-8250 =====
+8185:                _inputVertical = 0f;
+8186:                SetSprintingState(false);
+8187:                _jumpRequested = false;
+8188:                _jumpBufferTimer = 0f;
+8189:            }
+8190:        }
+8191:
+8192:        /// <summary>
+8193:        /// Samples MoveDelta / vertical / sprint into the fixed-step locomotion fields that
+8194:        /// <see cref="ResolveRawInputIntentVector"/> and swim thrust read.
+8195:        ///
+8196:        /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+8197:        /// render IUpdatable.Tick path. Batchmode and physics-heavy schedules (headless V0 probe,
+8198:        /// long fixed steps) drive locomotion almost entirely through FixedTick while render Tick
+8199:        /// rarely runs, so _inputH/_inputV/_inputVertical stayed zero even when InputDispatcher
+8200:        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+8201:        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+8202:        /// mocking input or bypassing menu / vehicle / wipeout gates.
+8203:        ///
+8204:        /// Look / juice / cursor remain render-owned on Tick. Menu block zeros locomotion only -
+8205:        /// full HandleMenuBlockedInput stays on Tick so camera/cursor presentation is not driven
+8206:        /// from the physics step.
+8207:        /// </summary>
+8208:        private void SampleGameplayLocomotionInputForFixedStep()
+8209:        {
+8210:            ResolveInputManagerBinding();
+8211:
+8212:            if (IsGameplayInputBlockedByMenu())
+8213:            {
+8214:                _currentInputState = default;
+8215:                _pendingLookInput = Vector2.zero;
+8216:                _inputH = 0f;
+8217:                _inputV = 0f;
+8218:                _inputVertical = 0f;
+8219:                _mouseXDelta = 0f;
+8220:                SetSprintingState(false);
+8221:                return;
+8222:            }
+8223:
+8224:            ProcessPlayerInputFrame();
+8225:            ProcessWipeoutInputOverride();
+8226:        }
+8227:
+8228:        private void ProcessLocomotionPresentationAndJuice(float deltaTime, SuitData suit)
+8229:        {
+8230:            ConsumeKinematicRepairTargetProbe();
+8231:            ScheduleKinematicRepairTargetProbe();
+8232:            UpdateRenderInterpolationState();
+8233:            _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
+8234:            _velocity = _feedbackVelocity;
+8235:            float currentSpeed = ApproximateVectorMagnitude(_velocity);
+8236:            float renderCameraYaw = CameraYaw;
+8237:            float yawDelta = DeltaAngleDegrees(_prevYawForMomentum, renderCameraYaw);
+8238:            UpdateVrComfortSignals(deltaTime, _velocity, yawDelta);
+8239:
+8240:            if (_swimPresentationController != null)
+8241:            {
+8242:                _swimPresentationController.SyncFromLocomotion(deltaTime, true);
+8243:                _debugLastSwimPresentationDriveFrame = SystemDispatcher.CurrentFrameIndex;
+8244:            }
+8245:
+8246:            BuildJuiceInput(deltaTime, suit);
+8247:            _juiceInput.speedDelta = currentSpeed - _prevSpeed;
+8248:            _juiceInput.yawDelta = yawDelta;
+8249:            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+8250:
+===== ProcessPlayerInputFrame 8120-8180 =====
+8120:            Cursor.lockState = CursorLockMode.None;
+8121:            Cursor.visible = true;
+8122:            UpdateRenderInterpolationState();
+8123:            BuildJuiceInput(deltaTime, suit);
+8124:            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+8125:            UpdateUnderwaterSomaticCameraOffsets(deltaTime);
+8126:            ApplyCameraState();
+8127:            UpdateVrComfortSignals(deltaTime, Vector3.zero, 0f);
+8128:        }
+8129:
+8130:        private void ProcessPlayerInputFrame()
+8131:        {
+8132:            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+8133:            {
+8134:                _inputHandler.TryReadFrame(
+8135:                    _inputManager,
+8136:                    jumpBufferTime,
+8137:                    out HectonPlayerInputFrame inputFrame,
+8138:                    out bool jumpBuffered);
+8139:                _currentInputState = inputFrame.State;
+8140:                _cachedMoveInput = inputFrame.MoveInput;
+8141:                _cachedVerticalInput = inputFrame.VerticalInput;
+8142:                _pendingLookInput = inputFrame.LookInput;
+8143:                if (jumpBuffered)
+8144:                {
+8145:                    _jumpRequested = true;
+8146:                    _jumpBufferTimer = jumpBufferTime;
+8147:                }
+8148:
+8149:                Vector2 lookDelta = _pendingLookInput;
+8150:                _pendingLookInput = Vector2.zero;
+8151:                ApplyLookInput(lookDelta);
+8152:
+8153:                _inputH = _cachedMoveInput.x;
+8154:                _inputV = _cachedMoveInput.y;
+8155:                _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+8156:                if (IsAuthoritativeVehicleTransportActive())
+8157:                {
+8158:                    _inputH = 0f;
+8159:                    _inputV = 0f;
+8160:                    _inputVertical = 0f;
+8161:                }
+8162:                SetSprintingState(inputFrame.SprintHeld != 0);
+8163:            }
+8164:            else
+8165:            {
+8166:                _currentInputState = default;
+8167:                _pendingLookInput = Vector2.zero;
+8168:                _inputH = 0f;
+8169:                _inputV = 0f;
+8170:                _inputVertical = 0f;
+8171:                SetSprintingState(false);
+8172:                _mouseXDelta = 0f;
+8173:            }
+8174:        }
+8175:
+8176:        private void ProcessWipeoutInputOverride()
+8177:        {
+8178:            if (_wipeoutTimer > 0f || _fatalPressureSequenceTimer > 0f)
+8179:            {
+8180:                _currentInputState = default;
+===== suit/juice early in tick? 8055-8135 =====
+8055:            _inputHandler.TryReadFrame(inputService, jumpBufferTime, false, out HectonPlayerInputFrame frame, out _);
+8056:            _currentInputState = frame.State;
+8057:            _cachedMoveInput = frame.MoveInput;
+8058:            _cachedVerticalInput = frame.VerticalInput;
+8059:            _pendingLookInput = Vector2.zero;
+8060:            SetSprintingState(frame.SprintHeld != 0);
+8061:        }
+8062:
+8063:        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8064:        //  Tick Ã¢â‚¬â€ INPUT + CAMERA (render framerate)
+8065:        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8066:
+8067:        public void Tick(float deltaTime)
+8068:        {
+8069:            SuitData suit = currentSuitData;
+8070:            if (suit == null) return;
+8071:            if (_juiceProcessor == null) return;
+8072:
+8073:            using (_tickProfilerMarker.Auto())
+8074:            {
+8075:                _currentRenderDeltaTime = math.max(0.0001f, deltaTime);
+8076:                RefreshVrComfortSettingsCache();
+8077:                PrepareRenderTickDependencies();
+8078:                if (ConsumeInventoryLoadSignals())
+8079:                    HandleInventoryLoadChanged();
+8080:
+8081:                DrainNarrativeFocusSignals();
+8082:                AdvanceCinematicFocus(deltaTime);
+8083:                if (_activeSonarPingCooldownTimer > 0f)
+8084:                {
+8085:                    _activeSonarPingCooldownTimer -= deltaTime;
+8086:                    if (_activeSonarPingCooldownTimer < 0f)
+8087:                        _activeSonarPingCooldownTimer = 0f;
+8088:                }
+8089:
+8090:                if (IsGameplayInputBlockedByMenu())
+8091:                {
+8092:                    HandleMenuBlockedInput(deltaTime, suit);
+8093:                    return;
+8094:                }
+8095:
+8096:                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+8097:                {
+8098:                    Cursor.lockState = CursorLockMode.Locked;
+8099:                    Cursor.visible = false;
+8100:                    _inputCleared = false;
+8101:                }
+8102:
+8103:                ProcessPlayerInputFrame();
+8104:                ProcessWipeoutInputOverride();
+8105:                ProcessLocomotionPresentationAndJuice(deltaTime, suit);
+8106:            }
+8107:        }
+8108:
+8109:        private void HandleMenuBlockedInput(float deltaTime, SuitData suit)
+8110:        {
+8111:            _currentInputState = default;
+8112:            _pendingLookInput = Vector2.zero;
+8113:            _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
+8114:            SetSprintingState(false);
+8115:            _inputCleared = true;
+8116:            _lastKinematicRepairProbe = default;
+8117:            _lastKinematicRepairSnapPoint = default;
+8118:            _kinematicRepairStateBits &= ~KinematicRepairStateHasSnapBit;
+8119:            ResetKinematicRepairProbeReuseGate();
+8120:            Cursor.lockState = CursorLockMode.None;
+8121:            Cursor.visible = true;
+8122:            UpdateRenderInterpolationState();
+8123:            BuildJuiceInput(deltaTime, suit);
+8124:            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+8125:            UpdateUnderwaterSomaticCameraOffsets(deltaTime);
+8126:            ApplyCameraState();
+8127:            UpdateVrComfortSignals(deltaTime, Vector3.zero, 0f);
+8128:        }
+8129:
+8130:        private void ProcessPlayerInputFrame()
+8131:        {
+8132:            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+8133:            {
+8134:                _inputHandler.TryReadFrame(
+8135:                    _inputManager,
+===== registration 1740-2000 =====
+1740:        /// and the juice processor for the new suit profile.
+1741:        /// </summary>
+1742:        /// <param name="newSuit">Suit data to apply. Null is rejected with a warning.</param>
+1743:        public void SetSuit(SuitData newSuit)
+1744:        {
+1745:            if (newSuit == null)
+1746:            {
+1747:#if UNITY_EDITOR || DEVELOPMENT_BUILD
+1748:                Hecton8.Core.H8Debug.LogWarning("[HectonPlayerMovement] null suit.", this);
+1749:#endif
+1750:                return;
+1751:            }
+1752:
+1753:            currentSuitData = newSuit;
+1754:            ApplySuitToRigidbody();
+1755:            EnsureJuiceProcessor();
+1756:            _juiceProcessor.Initialize(leanIntoTurn);
+1757:            UpdateSuitDiagnostics();
+1758:        }
+1759:
+1760:        /// <summary>
+1761:        /// Applies a runtime-only multiplier to underwater thrust and swim-speed ceilings.
+1762:        /// </summary>
+1763:        /// <param name="multiplier">Runtime swim-speed multiplier.</param>
+1764:        public void SetRuntimeSwimSpeedMultiplier(float multiplier)
+1765:        {
+1766:            _runtimeSwimSpeedMultiplier = math.clamp(multiplier, 0.5f, 3f);
+1767:        }
+1768:
+1769:        /// <summary>
+1770:        /// Applies voxel streaming backpressure without overwriting buffs, injury penalties, or emergency movement gates.
+1771:        /// </summary>
+1772:        internal void SetRuntimeVoxelBackpressureSwimSpeedMultiplier(float multiplier)
+1773:        {
+1774:            _runtimeVoxelBackpressureSwimSpeedMultiplier = math.clamp(multiplier, 0.5f, 1f);
+1775:        }
+1776:
+1777:        /// <summary>
+1778:        /// Applies a body-state penalty without overwriting external runtime swim buffs.
+1779:        /// </summary>
+1780:        internal void SetRuntimeInjurySwimSpeedMultiplier(float multiplier)
+1781:        {
+1782:            _runtimeInjurySwimSpeedMultiplier = math.clamp(multiplier, 0.35f, 1f);
+1783:        }
+1784:
+1785:        /// <summary>
+1786:        /// Applies a temporary emergency locomotion multiplier without overwriting authored buffs or injury penalties.
+1787:        /// </summary>
+1788:        internal void SetRuntimeEmergencyMovementMultiplier(float multiplier)
+1789:        {
+1790:            _runtimeEmergencyMovementMultiplier = math.clamp(multiplier, 0.5f, 2f);
+1791:        }
+1792:
+1793:        /// <summary>
+1794:        /// Applies body-state stamina loss without overwriting injury, emergency, or inventory gates.
+1795:        /// </summary>
+1796:        internal void SetRuntimeStaminaMultiplier(float multiplier)
+1797:        {
+1798:            _runtimeStaminaMultiplier = math.clamp(multiplier, 0.2f, 1f);
+1799:        }
+1800:
+1801:        internal void SetRuntimeNarcosisInputNoise(float severity01)
+1802:        {
+1803:            _runtimeNarcosisInputNoise01 = math.saturate(severity01);
+1804:        }
+1805:
+1806:        internal void TriggerCriticalStaminaFailure(float durationSeconds = CriticalStaminaFailureDurationSeconds)
+1807:        {
+1808:            _criticalStaminaFailureTimer = math.max(_criticalStaminaFailureTimer, math.max(0f, durationSeconds));
+1809:        }
+1810:
+1811:        internal void ApplyRuntimeNarcosisConvulsion(float severity01, float durationSeconds)
+1812:        {
+1813:            float clampedSeverity = math.saturate(severity01);
+1814:            float clampedDuration = math.max(0f, durationSeconds);
+1815:            if (clampedSeverity <= 0f || clampedDuration <= 0f)
+1816:                return;
+1817:
+1818:            _wipeoutSeverity = math.max(_wipeoutSeverity, clampedSeverity);
+1819:            _wipeoutTimer = math.max(_wipeoutTimer, clampedDuration);
+1820:            _stateMachine?.BeginWipeout(_wipeoutSeverity, _wipeoutTimer);
+1821:
+1822:            QueueCameraEntanglementStrain(math.lerp(0.35f, 0.95f, clampedSeverity));
+1823:        }
+1824:
+1825:        private void ApplyRuntimeNarcosisInputNoise(ref float inputH, ref float inputV, ref float inputVertical)
+1826:        {
+1827:            float severity01 = math.saturate(_runtimeNarcosisInputNoise01);
+1828:            if (severity01 <= 0f)
+1829:                return;
+1830:
+1831:            float inputIntent = math.max(math.max(math.abs(inputH), math.abs(inputV)), math.abs(inputVertical));
+1832:            if (inputIntent <= 0.001f)
+1833:                return;
+1834:
+1835:            uint timeTick = (uint)math.max(0, (int)math.min(2147483647f, _currentTimer * 60f));
+1836:            uint narcosisSeed = AdvanceRuntimeNarcosisLcg(unchecked((uint)_instanceId) ^ timeTick);
+1837:
+1838:            float phase = _currentTimer * RuntimeNarcosisInputNoiseFrequency +
+1839:                ((narcosisSeed & 0xFFFFu) * 0.000015259022f) * TwoPi;
+1840:
+1841:            System.Numerics.Vector2 drifted2D = Hecton8.PureLogic.Kinematics.NitrogenNarcosisInputDrifter.Calculate(
+1842:                new System.Numerics.Vector2(inputH, inputV),
+1843:                severity01,
+1844:                _currentTimer,
+1845:                unchecked((int)narcosisSeed)
+1846:            );
+1847:
+1848:            inputH = drifted2D.X;
+1849:            inputV = drifted2D.Y;
+1850:
+1851:            // Advance seed twice to account for the two advancements that happened inside Calculate (for X and Y)
+1852:            narcosisSeed = AdvanceRuntimeNarcosisLcg(AdvanceRuntimeNarcosisLcg(narcosisSeed));
+1853:
+1854:            inputVertical = math.clamp(
+1855:                inputVertical + SignedTriangleRadians(phase * 1.231f + ((narcosisSeed & 0xFFFFu) * 0.000015259022f) * TwoPi) * RuntimeNarcosisInputNoiseScale * 0.35f * severity01,
+1856:                -1f,
+1857:                1f);
+1858:        }
+1859:
+1860:        private static uint AdvanceRuntimeNarcosisLcg(uint state)
+1861:        {
+1862:            return state * RuntimeNarcosisLcgMultiplier + RuntimeNarcosisLcgIncrement;
+1863:        }
+1864:
+1865:        /// <summary>
+1866:        /// Applies a runtime-only movement penalty sourced from carried inventory mass.
+1867:        /// </summary>
+1868:        /// <param name="multiplier">Runtime carry-load movement multiplier.</param>
+1869:        public void SetRuntimeInventoryLoadMovementMultiplier(float multiplier)
+1870:        {
+1871:            _runtimeInventoryLoadMovementMultiplier = math.clamp(multiplier, InventoryLoadMinimumMovementMultiplier, 1f);
+1872:            _playerState.SyncEncumbrance(_runtimeInventoryLoad01, _runtimeInventoryLoadMovementMultiplier);
+1873:        }
+1874:
+1875:        public void ApplyRuntimeInventoryMassLoad(float totalMassKg, float carryCapacityKg)
+1876:        {
+1877:            _runtimeInventoryTotalMassKg = math.max(0f, totalMassKg);
+1878:            _runtimeInventoryLoadRatio = ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg);
+1879:            _runtimeInventoryLoad01 = math.saturate(_runtimeInventoryLoadRatio);
+1880:            _runtimeInventoryUpwardSwimMultiplier = ResolveInventoryUpwardSwimMultiplierFromLoad(_runtimeInventoryLoad01);
+1881:            SetRuntimeInventoryLoadMovementMultiplier(ResolveInventoryLoadMovementMultiplier(totalMassKg, carryCapacityKg));
+1882:        }
+1883:
+1884:        public void ApplyRuntimeInventoryMassLoad(float totalMassKg, float carryCapacityKg, float cachedMovementMultiplier, float cachedLoad01)
+1885:        {
+1886:            _runtimeInventoryTotalMassKg = math.max(0f, totalMassKg);
+1887:            _runtimeInventoryLoadRatio = ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg);
+1888:            _runtimeInventoryLoad01 = math.saturate(cachedLoad01);
+1889:            _runtimeInventoryUpwardSwimMultiplier = ResolveInventoryUpwardSwimMultiplierFromLoad(_runtimeInventoryLoad01);
+1890:            SetRuntimeInventoryLoadMovementMultiplier(cachedMovementMultiplier);
+1891:        }
+1892:
+1893:        /// <summary>Normalized 0-1 inventory mass load consumed by HUD and locomotion penalties.</summary>
+1894:        public float InventoryLoad01 => _runtimeInventoryLoad01;
+1895:
+1896:        /// <summary>Unclamped carried-mass ratio against the resolved survival carry capacity.</summary>
+1897:        public float InventoryLoadRatio => _runtimeInventoryLoadRatio;
+1898:
+1899:        /// <summary>Runtime-carried inventory mass in kilograms.</summary>
+1900:        public float InventoryCarriedMassKg => _runtimeInventoryTotalMassKg;
+1901:
+1902:        /// <summary>Resolved upward-swim multiplier after inventory mass encumbrance.</summary>
+1903:        public float InventoryUpwardSwimMultiplier => _runtimeInventoryUpwardSwimMultiplier;
+1904:
+1905:        /// <summary>Normalized 0-1 movement intent from the latest kinematic input snapshot.</summary>
+1906:        public float CurrentMovementIntent01 => math.saturate(math.sqrt(math.max(0f, math.lengthsq(_lastPlayerKinematicsIntendedMovement))));
+1907:
+1908:        /// <summary>Movement-owned stamina drain multiplier forwarded to survival.</summary>
+1909:        public float CurrentMovementStaminaDrainMultiplier => MovementStaminaDrainMultiplier;
+1910:
+1911:        /// <summary>Movement-owned emergency encumbrance ratio threshold.</summary>
+1912:        public float CurrentCriticalEncumbranceRatio => CriticalEncumbranceRatio;
+1913:
+1914:        /// <summary>Movement-owned stamina threshold for critical encumbrance failure.</summary>
+1915:        public float CurrentCriticalStaminaFailureThreshold01 => CriticalStaminaFailureThreshold01;
+1916:
+1917:        /// <summary>True when carried inventory mass exceeds the emergency locomotion cutoff.</summary>
+1918:        public bool IsCriticallyEncumbered => _runtimeInventoryLoadRatio >= CriticalEncumbranceRatio;
+1919:
+1920:        public bool IsCriticalStaminaFailureActive => _criticalStaminaFailureTimer > 0f;
+1921:        public bool IsSprinting => _isSprinting;
+1922:
+1923:        /// <summary>Resolved movement multiplier after inventory mass encumbrance.</summary>
+1924:        public float InventoryLoadMovementMultiplier => ResolveRuntimeInventoryLoadMovementMultiplier();
+1925:
+1926:        /// <summary>Currently active suit data driving mass, drag, and swim parameters.</summary>
+1927:        public SuitData CurrentSuit => currentSuitData;
+1928:        public bool IsInsideBrineLayer => _isInsideBrineLayer;
+1929:        public float CurrentBrineDensityMultiplier => _isInsideBrineLayer
+1930:            ? math.max(1f, _lastBrineLayerSample.DensityMultiplier)
+1931:            : 1f;
+1932:        /// <summary>0â€“1 ratio of the player body submerged below the water surface.</summary>
+1933:        public float WaterImmersionRatio => _waterImmersionRatio;
+1934:        /// <summary>True when the player is on solid ground and in a walking locomotion mode.</summary>
+1935:        public bool IsGrounded => _isGrounded && _isWalking;
+1936:        /// <summary>True when the locomotion mode is any form of walking (dry or shallow).</summary>
+1937:        public bool IsWalking => _isWalking;
+1938:        /// <summary>Resolved locomotion mode for movement, camera, audio, and VFX consumers.</summary>
+1939:        public PlayerLocomotionMode CurrentLocomotionMode => _currentLocomotionMode;
+1940:        byte IPlayerKinematicsMovementRuntime.CurrentLocomotionModeCode => (byte)_currentLocomotionMode;
+1941:        /// <summary>Returns a recent async KCC surface hit for footstep audio without issuing a new physics query.</summary>
+1942:        public bool TryGetRecentFootstepSurfaceHit(float maxDistance, LayerMask layerMask, out PlayerMovementSurfaceHit hit)
+1943:        {
+1944:            hit = default;
+1945:            float safeMaxDistance = math.max(0.01f, maxDistance);
+1946:
+1947:            if (_isGrounded && IsReusableFootstepSurfaceHit(in _groundHit, safeMaxDistance, layerMask))
+1948:            {
+1949:                hit = _groundHit;
+1950:                return true;
+1951:            }
+1952:
+1953:            return false;
+1954:        }
+1955:
+1956:        /// <summary>Current camera roll angle in degrees driven by juice effects.</summary>
+1957:        public float CurrentRoll => _juiceProcessor != null ? _juiceProcessor.CurrentRoll : 0f;
+1958:        /// <summary>Render-interpolated body yaw in degrees. Falls back to physics yaw when interpolation is not initialized.</summary>
+1959:        public float BodyYaw => _renderInterpolationStateInitialized ? _renderInterpolatedBodyYaw : _bodyYaw;
+1960:        /// <summary>Render-interpolated camera yaw in degrees. Falls back to physics yaw when interpolation is not initialized.</summary>
+1961:        public float CameraYaw => _renderInterpolationStateInitialized ? _renderInterpolatedCameraYaw : _cameraYaw;
+1962:        /// <summary>Render-interpolated linear velocity vector. Falls back to safe rigidbody velocity.</summary>
+1963:        public Vector3 InterpolatedLinearVelocity => _renderInterpolationStateInitialized
+1964:            ? _renderInterpolatedLinearVelocity
+1965:            : ResolveAuthoritativeLinearVelocity(Vector3.zero);
+1966:        /// <summary>Current physics world velocity used by predictive streaming and runtime telemetry.</summary>
+1967:        public Vector3 CurrentWorldVelocity => ResolveAuthoritativeLinearVelocity(Vector3.zero);
+1968:        /// <summary>Authoritative player AUP from the locomotion snapshot.</summary>
+1969:        public AbsoluteUniversePosition CurrentAup => _playerState.AbsolutePosition;
+1970:        /// <summary>Dead-reckoned player AUP at +0.1 seconds for low-rate AI steering.</summary>
+1971:        public AbsoluteUniversePosition PredictedAup => _playerState.PredictedAbsolutePosition;
+1972:        /// <summary>Dead-reckoned runtime position at +0.1 seconds for low-rate AI steering.</summary>
+1973:        public float3 PredictedRuntimePosition => _playerState.PredictedRuntimePosition;
+1974:        /// <summary>Effective water surface Y from Crest or the serialized fallback.</summary>
+1975:        public float CurrentWaterSurfaceY => EffectiveWaterSurfaceY;
+1976:        /// <summary>Current depth below the effective water surface in metres.</summary>
+1977:        public float CurrentDepth => _currentDepth;
+1978:        /// <summary>True when movement-owned head/eye water depth treats the player as submerged.</summary>
+1979:        public bool IsPlayerSubmerged => ResolveMovementOwnedSubmergedState();
+1980:        private bool ResolveMovementOwnedSubmergedState()
+1981:        {
+1982:            if (IsInDryInterior() || _waterImmersionRatio <= 0.01f)
+1983:                return false;
+1984:
+1985:            float enterDepth = math.max(0.001f, surfaceGaspHeadEnterDepth);
+1986:            float exitDepth = math.max(0f, surfaceGaspHeadExitDepth);
+1987:            return _currentDepth >= enterDepth ||
+1988:                   (_surfaceGaspSubmergedLatch && _currentDepth > exitDepth);
+1989:        }
+1990:        bool IPlayerKinematicsMovementRuntime.IsKinematicMovementActive => isActiveAndEnabled;
+1991:        /// <summary>True when the player is carrying a heavy object that restricts movement.</summary>
+1992:        public bool IsDraggingHeavyCargo => IsHeavyCarryActive();
+1993:        /// <summary>Normalized 0â€“1 load factor for the currently carried heavy object.</summary>
+1994:        public float HeavyCarryLoad => ResolveHeavyCarryLoad01();
+1995:        /// <summary>Local-space rotation contributed by Crest surface wave alignment while surface swimming.</summary>
+1996:        public Quaternion CurrentSurfaceWavePoseLocalRotation => _surfaceWavePoseRotation;
+1997:        /// <summary>Local-space rotation contributed by underwater turbulence while in storm-driven surf.</summary>
+1998:        public Quaternion CurrentUnderwaterTurbulencePoseLocalRotation => _underwaterTurbulencePoseRotation;
+1999:        /// <summary>Normalized 0â€“1 dynamic storm intensity from the weather director.</summary>
+2000:        public float CurrentStormIntensity01 => _dynamicStormIntensity;
+FOUND FixedTick sig @ 9921:         public void FixedTick(float fixedDeltaTime)
+===== FixedTick method 9921-10040 =====
+9921:        public void FixedTick(float fixedDeltaTime)
+9922:        {
+9923:            SuitData suit = currentSuitData;
+9924:            if (suit == null) return;
+9925:            if (_juiceProcessor == null) return;
+9926:
+9927:            using (_fixedTickProfilerMarker.Auto())
+9928:            {
+9929:                // Fixed-step locomotion must sample input here. Render Tick is not guaranteed
+9930:                // before each FixedTick (batchmode / catch-up), and PrepareTransportAndFrameState
+9931:                // snapshots intent from _input* immediately below.
+9932:                SampleGameplayLocomotionInputForFixedStep();
+9933:
+9934:                PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+9935:
+9936:                float previousWaterImmersionRatio = _waterImmersionRatio;
+9937:                bool wasGroundedLastFixedTick = _isGrounded;
+9938:
+9939:                _rb.useGravity = false;
+9940:
+9941:                if (_isWalking)
+9942:                {
+9943:                    _bodyYaw = _cameraYaw;
+9944:                    _bodyYawVelocity = 0f;
+9945:                }
+9946:                else
+9947:                {
+9948:                    float bodyYawOmega = suit.bodyYawSpringOmega *
+9949:                        ResolveHeavyCarryBodyYawSpringMultiplier() *
+9950:                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
+9951:                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
+9952:                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+9953:                }
+9954:
+9955:                _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
+9956:                _wasGroundedLastFrame = _isGrounded;
+9957:
+9958:                GroundCheck();
+9959:                _playerMotor?.SetGroundedState(_isGrounded);
+9960:
+9961:                UpdateWaterImmersion(fixedDeltaTime);
+9962:
+9963:                ApplyLadderSplineSnapFromAsyncProbe(initialExosuitKinematicAuthority);
+9964:
+9965:                float physicsImmersion = _smoothedImmersionRatio;
+9966:                float feetDepth = GetFeetDepthBelowSurface(EffectiveWaterSurfaceY);
+9967:                bool hasImmediateShoreFooting = _isGrounded && feetDepth <= shoreWalkFootDepth;
+9968:                bool isShallowEnoughForShore = physicsImmersion < swimTransitionThreshold || hasImmediateShoreFooting;
+9969:                bool isDryLand = physicsImmersion <= 0.01f;
+9970:
+9971:                if (_isGrounded && isDryLand)
+9972:                {
+9973:                    _dryGroundGraceTimer = dryGroundGraceTime;
+9974:                }
+9975:                else if (_dryGroundGraceTimer > 0f)
+9976:                {
+9977:                    _dryGroundGraceTimer -= fixedDeltaTime;
+9978:                    if (_dryGroundGraceTimer < 0f)
+9979:                        _dryGroundGraceTimer = 0f;
+9980:                }
+9981:
+9982:                if (_isGrounded && isShallowEnoughForShore)
+9983:                {
+9984:                    _shoreGroundGraceTimer = shoreGroundGraceTime;
+9985:                }
+9986:                else if (_shoreGroundGraceTimer > 0f)
+9987:                {
+9988:                    _shoreGroundGraceTimer -= fixedDeltaTime;
+9989:                    if (_shoreGroundGraceTimer < 0f)
+9990:                        _shoreGroundGraceTimer = 0f;
+9991:                }
+9992:
+9993:                AdvanceCooldownTimers(fixedDeltaTime);
+9994:                AdvanceFatalPressureSequence(fixedDeltaTime);
+9995:                UpdateWipeoutState(fixedDeltaTime);
+9996:                UpdateShoreBuoyancyBlend(fixedDeltaTime, physicsImmersion, feetDepth);
+9997:                UpdateVegetationDensityLinearDamping(fixedDeltaTime);
+9998:
+9999:                bool hasDryGroundSupport = _isGrounded || (_dryGroundGraceTimer > 0f && isDryLand);
+10000:                bool hasShoreGroundSupport = hasImmediateShoreFooting || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
+10001:                bool groundedOnDryLand = hasDryGroundSupport && isDryLand;
+10002:                bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
+10003:
+10004:                bool exosuitActive = IsExosuitTransportActive();
+10005:                bool exosuitKinematicAuthority = TrySubmitExosuitKinematicAuthority(exosuitActive);
+10006:
+10007:                ToggleBuoyancy(!exosuitActive);
+10008:                RefreshSurfaceBreachLock(physicsImmersion);
+10009:                UpdateSurfaceDiveCommitTimer(fixedDeltaTime, activeTransportPreset);
+10010:
+10011:                float targetGravityScale = exosuitActive
+10012:                    ? exosuitNegativeBuoyancyScale
+10013:                    : groundedOnShore ? 1f : 1f - math.saturate(physicsImmersion * gravityFadeRate);
+10014:                _gravityScale = ResolveVrComfortGravityScale(targetGravityScale, fixedDeltaTime);
+10015:
+10016:                if (!exosuitKinematicAuthority && _gravityScale > 0.001f)
+10017:                {
+10018:                    float mass = ResolveAuthoritativeBodyMassKg();
+10019:                    _forceVector.x = _cachedGravity.x * mass * _gravityScale;
+10020:                    _forceVector.y = _cachedGravity.y * mass * _gravityScale;
+10021:                    _forceVector.z = _cachedGravity.z * mass * _gravityScale;
+10022:                    QueueEnvironmentalForce(_forceVector);
+10023:                }
+10024:
+10025:                if ((exosuitActive && _isGrounded) || groundedOnShore)
+10026:                {
+10027:                    _snapScale = 1f;
+10028:                }
+10029:                else
+10030:                {
+10031:                    _snapScale = 1f - math.saturate(physicsImmersion * snapFadeRate);
+10032:                }
+10033:
+10034:                bool shouldWalk = ShouldUseLandLocomotion(physicsImmersion, hasShoreGroundSupport, hasImmediateShoreFooting);
+10035:                bool shouldStartSurfaceDiveAssist =
+10036:                    !shouldWalk &&
+10037:                    !IsInDryInterior() &&
+10038:                    physicsImmersion >= surfaceBreachMinImmersion &&
+10039:                    GetHeadDepthBelowSurface(EffectiveWaterSurfaceY) <= surfaceDiveBreakDepth &&
+10040:                    HasCommittedSurfaceDive(activeTransportPreset);
+FOUND reg @ 5529:         private void TryRegisterLateFrameTickable()
+===== register 5529-5608 =====
+5529:        private void TryRegisterLateFrameTickable()
+5530:        {
+5531:            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+5532:                return;
+5533:
+5534:            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+5535:        }
+5536:
+5537:        private void MarkLateFramePresentationDirty()
+5538:        {
+5539:            // Late-frame ticking is lifecycle-registered; hot queues only mutate pending presentation state.
+5540:        }
+5541:
+5542:        public void ColdTick()
+5543:        {
+5544:            if (!Application.isPlaying)
+5545:                return;
+5546:
+5547:            EnsurePlayerKinematicsNativeState();
+5548:            EnsureCinematicFocusBlackBox();
+5549:            RefreshCinematicFocusTierGateCold();
+5550:        }
+5551:
+5552:        private void ResolvePlayerToolManager()
+5553:        {
+5554:            if (_resolvedPlayerToolManager)
+5555:                return;
+5556:
+5557:            IPlayerInventoryService playerInventoryService = _playerInventoryService;
+5558:            if (playerInventoryService != null && playerInventoryService.ToolManager != null)
+5559:                _playerToolManager = playerInventoryService.ToolManager;
+5560:
+5561:            _resolvedPlayerToolManager = true;
+5562:        }
+5563:
+5564:        private void ResolvePlayerToolManagerCold()
+5565:        {
+5566:            if (_resolvedPlayerToolManager && _playerToolManager != null)
+5567:                return;
+5568:
+5569:            IPlayerInventoryService playerInventoryService = _playerInventoryService;
+5570:            if (playerInventoryService != null && playerInventoryService.ToolManager != null)
+5571:                _playerToolManager = playerInventoryService.ToolManager;
+5572:
+5573:            if (_playerToolManager == null && !TryGetComponent(out _playerToolManager))
+5574:                _playerToolManager = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<PlayerToolManager>(transform);
+5575:
+5576:            _resolvedPlayerToolManager = true;
+5577:        }
+5578:
+5579:        private void ResolvePlayerTransportCoordinator()
+5580:        {
+5581:            if (_resolvedPlayerTransportCoordinator)
+5582:                return;
+5583:
+5584:            _resolvedPlayerTransportCoordinator = true;
+5585:        }
+5586:
+5587:        private void ResolvePlayerTransportCoordinatorCold()
+5588:        {
+5589:            if (_resolvedPlayerTransportCoordinator && _playerTransportCoordinator != null)
+5590:                return;
+5591:
+5592:            TryGetComponent(out _playerTransportCoordinator);
+5593:            _resolvedPlayerTransportCoordinator = true;
+5594:        }
+5595:
+5596:        private void ResolveActiveTransportPlatform()
+5597:        {
+5598:            if (_transportEvaLockTicks > 0)
+5599:            {
+5600:                _activeTransportPlatform = null;
+5601:                _activeTransportPlatformBehaviour = null;
+5602:                _activeTransportPlatformTransform = null;
+5603:                _transportPlatformRotationInitialized = false;
+5604:                _lastTransportPlatformPosition = Vector3.zero;
+5605:                _currentTransportPlatformPosition = Vector3.zero;
+5606:                _lastTransportPlatformAup = default;
+5607:                _currentTransportPlatformAup = default;
+5608:                _lastTransportPlatformRotation = Quaternion.identity;
+SAMPLE_CALL 8208:        private void SampleGameplayLocomotionInputForFixedStep()
+SAMPLE_CALL 9932:                SampleGameplayLocomotionInputForFixedStep();
+INPUT_FILE C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs
+  65:        private const float XRToolTriggerPublishEpsilon = 0.01f;
+  326:        // Per-hop counters for the automation-override lane. Editor/dev only; every write goes through a
+  328:        // Read the census emitted by DiagEmitHopCensus - the counters are declared and printed in PIPELINE
+  329:        // ORDER, so the FIRST zero from the left is the hop that dropped the value. See
+  343:        private int _diagPublishAttempts;
+  344:        private int _diagPublishGuardFail;
+  345:        private int _diagPublishBufferFail;
+  346:        private int _diagPublishOk;
+  350:        // Last refusal identity reported by DiagReportPublishRefusal. 0 means nothing reported yet, so the
+  352:        // refusals use PublishRefusalBufferFlag plus one nibble per buffer, so a change in ANY of the four
+  354:        private int _diagPublishRefusalReported;
+  355:        // Separate latch from _diagPublishRefusalReported on purpose: this one fires at the ACQUIRE, before
+  361:        private const int PublishRefusalGuardVaultNull = 1;
+  362:        private const int PublishRefusalGuardOwnerThread = 2;
+  363:        private const int PublishRefusalGuardCompactionFence = 3;
+  364:        private const int PublishRefusalGuardMaskHeld = 4;
+  365:        private const int PublishRefusalGuardActiveLockConflict = 5;
+  366:        private const int PublishRefusalGuardOpaque = 6;
+  367:        private const int PublishRefusalBufferFlag = 1 << 16;
+  406:        private float _lastPublishedXRToolTriggerStrength = -1f;
+  407:        private float _lastPublishedXRSecondaryTriggerStrength = -1f;
+  410:        private uint _lastPublishedXRToolTriggerMask;
+  420:        private byte _lastPublishedXRToolTriggerFlags;
+  421:        private byte _lastPublishedXRToolDominantController;
+  789:        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+  821:        // Automation-override hop census.
+  826:        // "overrideFlagSeen=False overridesPublished=152 ... lastResolvedButtons=0x00000000 atFrame=0" plus
+  832:        // That field is assigned in exactly one place, PublishDeterministicInputState (:818), inside the try
+  937:        private void DiagRecordPublishAttempt()
+  940:            _diagPublishAttempts++;
+  944:        private void DiagRecordPublishGuardFail()
+  947:            _diagPublishGuardFail++;
+  952:        private void DiagRecordPublishBufferFail()
+  955:            _diagPublishBufferFail++;
+  1016:                " | attempts=" + _diagPublishAttempts +
+  1042:        // WHY THIS EXISTS. The hop census above already localised the fault by measurement:
+  1055:        // PublishRefusalGuardOpaque, and that code appearing is itself the answer: it excludes the other
+  1060:        // and the first refusal always prints because _diagPublishRefusalReported starts at 0.
+  1070:                code = PublishRefusalGuardVaultNull;
+  1074:                code = PublishRefusalGuardOwnerThread;
+  1078:                code = PublishRefusalGuardCompactionFence;
+  1085:                    code = PublishRefusalGuardMaskHeld;
+  1087:                    code = PublishRefusalGuardActiveLockConflict;
+  1089:                    code = PublishRefusalGuardOpaque;
+  1092:            if (_diagPublishRefusalReported == code)
+  1095:            _diagPublishRefusalReported = code;
+  1117:                " attempts=" + _diagPublishAttempts +
+  1136:            int code = PublishRefusalBufferFlag | journal | (predicted << 4) | (targets << 8) | (bridge << 12);
+  1137:            if (_diagPublishRefusalReported == code)
+  1140:            _diagPublishRefusalReported = code;
+  1192:        private void DiagRecordPublishOk()
+  1195:            _diagPublishOk++;
+  1200:        /// Counts a read of the resolved/player snapshot and emits the hop census at three fixed
+  1203:        /// <param name="readHop">
+  1204:        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+  1205:        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+  1207:        private void DiagRecordReadObservation(int readHop)
+  1235:            DiagEmitHopCensus(readHop);
+  1246:            DiagEmitHopCensus(0);
+  1251:        private void DiagEmitHopCensus(int readHop)
+  1256:                "[H8_INPUTHOP] readHop=" + readHop +
+  1269:                " | publishAttempt=" + _diagPublishAttempts +
+  1270:                " publishGuardFail=" + _diagPublishGuardFail +
+  1271:                " publishBufferFail=" + _diagPublishBufferFail +
+  1272:                " publishOk=" + _diagPublishOk +
+  1287:                " - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the" +
+  1344:                PublishDeterministicInputState(_standardInputFrame++);
+  1359:        public PlayerInputState GetState()
+  1384:        private void PublishDeterministicInputState(uint currentFrame)
+  1389:            DiagRecordPublishAttempt();
+  1392:                DiagRecordPublishGuardFail();
+  1411:                    DiagRecordPublishBufferFail();
+  1464:                DiagRecordPublishOk();
+  1481:                PublishDiscreteInputSignals(discreteCurrentButtonMask, discretePreviousButtonMask);
+  1681:        private void PublishDiscreteInputSignals(uint currentButtonMask, uint previousButtonMask)
+  1692:                PublishPlayerInputCommand(PlayerInputSignalCommands.TogglePda);
+  1696:                PublishPlayerInputCommand(PlayerInputSignalCommands.ToggleInventory);
+  1700:                PublishPlayerInputCommand(PlayerInputSignalCommands.Cancel);
+  1704:                PublishPlayerInputCommand(PlayerInputSignalCommands.TabNext);
+  1708:                PublishPlayerInputCommand(PlayerInputSignalCommands.TabPrevious);
+  1712:                PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot1);
+  1716:                PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot2);
+  1720:                PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot3);
+  1724:                PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot4);
+  1727:                PublishPlayerInputCommand(PlayerInputSignalCommands.Flashlight);
+  1730:                PublishPlayerInputCommand(PlayerInputSignalCommands.Interact);
+  1734:                PublishPlayerInputCommand(PlayerInputSignalCommands.PrimaryAction);
+  1738:                PublishPlayerInputCommand(PlayerInputSignalCommands.SecondaryAction);
+  3399:                        PublishDeviceLostPauseSignal(DeviceLostFlagGamepad);
+  3457:                        PublishDeviceLostPauseSignal(DeviceLostFlagXR);
+  3463:        private void PublishDeviceLostPauseSignal(byte flags)
+  3874:                actionBits |= CaptureXRToolActionBitsAndPublishSignal(currentFrame);
+  3879:                PublishXRToolTriggerReleaseIfNeeded(currentFrame);
+  3908:            PublishInputSchemeTelemetryIfChanged(state.CurrentInputSchemeHash, state.PlatformInputFlags, (uint)currentFrame);
+  4099:        private void PublishInputSchemeTelemetryIfChanged(uint schemeHash, uint flags, uint frame)
+  4105:            GlobalTelemetryBus.PublishInputSchemeHash(schemeHash, flags, frame);
+  4297:        private uint CaptureXRToolActionBitsAndPublishSignal(int frame)
+  4322:            PublishXRToolTriggerIfChanged(primaryStrength, secondaryStrength, controllerMask, dominantController, flags, frame);
+  4326:        private void PublishXRToolTriggerIfChanged(
+  4334:            if (math.abs(strength - _lastPublishedXRToolTriggerStrength) < XRToolTriggerPublishEpsilon &&
+  4335:                math.abs(secondaryStrength - _lastPublishedXRSecondaryTriggerStrength) < XRToolTriggerPublishEpsilon &&
+  4336:                controllerMask == _lastPublishedXRToolTriggerMask &&
+  4337:                dominantController == _lastPublishedXRToolDominantController &&
+  4338:                flags == _lastPublishedXRToolTriggerFlags)
+  4353:            _lastPublishedXRToolTriggerStrength = strength;
+  4354:            _lastPublishedXRSecondaryTriggerStrength = secondaryStrength;
+  4355:            _lastPublishedXRToolTriggerMask = controllerMask;
+  4356:            _lastPublishedXRToolDominantController = dominantController;
+  4357:            _lastPublishedXRToolTriggerFlags = flags;
+  4360:        private void PublishXRToolTriggerReleaseIfNeeded(int frame)
+  4362:            if (_lastPublishedXRToolTriggerStrength <= 0f &&
+  4363:                _lastPublishedXRSecondaryTriggerStrength <= 0f &&
+  4364:                _lastPublishedXRToolTriggerMask == 0u &&
+  4365:                _lastPublishedXRToolDominantController == 0 &&
+  4366:                _lastPublishedXRToolTriggerFlags == 0)
+  4371:            PublishXRToolTriggerIfChanged(0f, 0f, 0u, 0, 0, frame);
+  4758:            PublishPlayerInputCommand(PlayerInputSignalCommands.Interact);
+  4765:            PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot1);
+  4772:            PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot2);
+  4779:            PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot3);
+  4786:            PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot4);
+  4794:            PublishPlayerInputCommand(PlayerInputSignalCommands.PrimaryAction);
+  4802:            PublishPlayerInputCommand(PlayerInputSignalCommands.SecondaryAction);
+  4809:            PublishPlayerInputCommand(PlayerInputSignalCommands.TogglePda);
+  4816:            PublishPlayerInputCommand(PlayerInputSignalCommands.ToggleInventory);
+  4823:            PublishPlayerInputCommand(PlayerInputSignalCommands.Cancel);
+  4830:            PublishPlayerInputCommand(PlayerInputSignalCommands.TabNext);
+  4837:            PublishPlayerInputCommand(PlayerInputSignalCommands.TabPrevious);
+  4844:            PublishPlayerInputCommand(PlayerInputSignalCommands.Flashlight);
+  4847:        private void PublishPlayerInputCommand(byte command)
+  5750:            GlobalTelemetryBus.PublishPerformanceWarning(
+INPUT_FILE C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs
+  5:namespace Hecton8.Gameplay
+  13:        public bool TryReadFrame(
+  19:            return TryReadFrame(
+  27:        public bool TryReadFrame(
+  40:            PlayerInputState state = inputService.GetState();
+INV C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs
+--- CanServiceItemAdds @ 2470 ---
+2470:        internal bool CanServiceItemAdds()
+2471:        {
+2472:            return enabled &&
+2473:                   _grid != null &&
+2474:                   itemCatalog != null &&
+2475:                   _stackCounts.IsCreated &&
+2476:                   _scavengeSimStackCounts.IsCreated &&
+2477:                   _simulationOccupiedCells.IsCreated;
+2478:        }
+--- TryRecover @ 2505 ---
+2505:        internal bool TryRecoverRuntimeStorageCold()
+2506:        {
+2507:            if (CanServiceItemAdds())
+2508:                return true;
+2509:
+2510:            // _grid == null means Awake has not completed its grid construction. Do not build the grid here:
+2511:            // InventoryGrid's constructor THROWS on allocation failure, and this method is reachable from a
+2512:            // dispatcher tick, where an escaping throw would amputate the caller's whole lane.
+2513:            //
+2514:            // This used to be documented as "Awake bailed on the editor-only DTO layout guard", i.e. as a
+2515:            // permanent unrecoverable state. It is not that in practice: the layout guard's assertions are
+2516:            // satisfied by construction (see the note in Awake) and cannot fail, so the reachable meaning of
+2517:            // _grid == null is that Awake has not RUN yet - a consumer polled this component before its
+2518:            // Awake, which is ordinary on the AddComponent bootstrap route. Returning false is still correct,
+2519:            // but the caller must treat it as "not ready yet" and keep its retry budget alive rather than
+2520:            // reading it as the unrecoverable layout verdict and giving up.
+2521:            if (_grid == null)
+2522:                return false;
+2523:
+2524:            if (!TryBindRuntimeStorageCold())
+2525:                return false;
+2526:
+2527:            if (!enabled)
+2528:                enabled = true;
+2529:
+2530:            return CanServiceItemAdds();
+2531:        }
+--- TryBind @ 2538 ---
+2538:        private bool TryBindRuntimeStorageCold()
+2539:        {
+2540:            if (_grid == null)
+2541:                return false;
+2542:
+2543:            CacheRegistryServicesCold();
+2544:            int cellCount = columns * rows;
+2545:            if (cellCount <= 0)
+2546:            {
+2547:                AnnounceRuntimeStorageFailureOnce("grid sizing");
+2548:                return false;
+2549:            }
+2550:
+2551:            if (!BindPlayerInventoryVaultBuffers(cellCount))
+2552:            {
+2553:                AnnounceRuntimeStorageFailureOnce("GlobalDataVault lane binding");
+2554:                return false;
+2555:            }
+2556:
+2557:            if (!AllocateSalinityCorrosionScratchCold(cellCount))
+2558:            {
+2559:                ReleasePlayerInventoryVaultBuffers();
+2560:                AnnounceRuntimeStorageFailureOnce(
+2561:                    _salinityScratchFailureDetail == null
+2562:                        ? "salinity-corrosion scratch validation"
+2563:                        : "salinity-corrosion scratch validation [" + _salinityScratchFailureDetail + "]");
+2564:                return false;
+2565:            }
+2566:
+2567:            // DO NOT make this unconditional again. The lanes are bound with
+2568:            // NativeArrayOptions.UninitializedMemory, so a FIRST bind must clear or the grid reads garbage
+2569:            // item hashes and stack counts. But this method is also the re-arm path for
+2570:            // TryRecoverRuntimeStorageCold, and a re-bind of buffers that already hold live data returns the
+2571:            // SAME pointers untouched (GlobalDataVault hands back the existing block whenever
+2572:            // existingMeta.Length >= requiredLength). Clearing on that path silently empties a populated
+2573:            // inventory with no log line and no save event - the player's items just cease to exist. So the
+2574:            // clear is skipped only when this component has itself already completed a bind-and-clear at this
+2575:            // exact cell count and has not released the lanes since; a release, a first bind, or a grid resize
+2576:            // all still clear.
+2577:            if (!_vaultBuffersInitialized || _boundVaultCellCount != cellCount)
+2578:            {
+2579:                ClearPlayerInventoryVaultBuffersCold();
+2580:                _vaultBuffersInitialized = true;
+2581:                _boundVaultCellCount = cellCount;
+2582:            }
+2583:
+2584:            RegisterNativeMemorySentinel();
+2585:            if (_sortBuffer == null || _sortBuffer.Length != cellCount)
+2586:                _sortBuffer = new ItemPlacement[cellCount];
+2587:            // COLD ALLOC: ushort[cellCount] - bulk transfer merge-cap scratch - owner: PlayerInventory
+2588:            if (_bulkCompactionMaxStackBuffer == null || _bulkCompactionMaxStackBuffer.Length != cellCount)
+2589:                _bulkCompactionMaxStackBuffer = new ushort[cellCount];
+2590:            // COLD ALLOC: ItemAcquiredSignal[ItemAcquiredSignal.ExpectedCapacity] - late-frame to slow-tick scavenging ingress - owner: PlayerInventory
+2591:            if (_pendingScavengingItemSignals == null)
+2592:                _pendingScavengingItemSignals = new ItemAcquiredSignal[PendingScavengingItemSignalCapacity];
+2593:            // COLD ALLOC: PendingInventoryCommand[16] - late-frame to slow-tick command ingress - owner: PlayerInventory
+2594:            if (_pendingInventoryCommands == null)
+2595:                _pendingInventoryCommands = new PendingInventoryCommand[PendingInventoryCommandSignalCapacity];
+2596:            InitializeSoaQueryEngine(cellCount);
+2597:
+PTM FixedTick @ 495
+495:        public void FixedTick(float fixedDeltaTime)
+496:        {
+497:            RetryRuntimeStartToolGrantIfPending();
+498:        }
+L09 lines=24408
+LOG 12320:[PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one assigned quick-slot tool item. The grant is now retried from the tick lane until the inventory can accept, so this line is printed once. refused=4 granted=0 firstSlot=0 firstItemHash=-1760594330 refusalMask=0x1E (b
+LOG 12367:[PlayerInventory] DTO layout sovereignty PASSED: InventoryTelemetryEntry 64B, SalinityCorrosionTelemetryEntry 64B, VaultGenerationHandle<uint> 16B, all 24 asserted field offsets in place. Awake did NOT bail here, so an empty inventory this session has a different cause - look at the GlobalDataVault 
+LOG 13156:[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBuffe
+LOG 13174:[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBuff
+LOG 13192:[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBuf
+LOG 22561:[SaveManager] Save failed: SAVEFAIL_WORLDSNAPSHOT_SNAPSHOT_CLEAR - TryClearSaveSnapshotDeltas() rejected the capture and the refusal is NOT the self-clearing kind. GlobalDataVault.TryAcquireWriteLock refused the save-snapshot count buffer on a stale generation descriptor, a missing metadata entry or
+LOG 23666:[H8_PLAYPROBE] MOMENT   PASS          Boot               allSystemsReady=True gameReady=True Dispatcher=True TickManager=True Save=True ObjectPool=True activeScene='02_HECTON_WORLD' activationStep='Complete' activationCompleted=True
+LOG 23680:[H8_PLAYPROBE] MOMENT   PASS          WorldLoad          active gameplay scene '02_HECTON_WORLD' finished loading after 10s; loaded scenes=2; unloading in background=01_MAIN_MENU
+LOG 23708:[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRe
+LOG 23834:[H8_PLAYPROBE] RESULT 1 Required Route row(s) reported FAIL on a run that was asked to start the game, so the exit code now reflects them. Read the MOMENT lines above for which rows and why.
+===== L08 MEASURED =====
+# V0 L08 MEASURED — Playable Loop Probe Ledger
+
+**Date:** 2026-07-31  
+**Probe:** `h8_playprobe_v0_L08`  
+**HEAD at probe:** `2e0d5e3d3` (blackbox vault guard release P0)  
+**Log:** `Docs/AgentLogs/h8_playprobe_v0_L08.log` (~2.2MB)  
+**JSON result:** MISSING (teardown crash)  
+**Screenshots:** `Docs/Screenshots/V0_Playtest/` EMPTY — no PLAYER PNGs  
+**Policy:** Feature without gameplay is DECLINED. No mocks. Real product fixes only.
+
+---
+
+## PASS / FAIL Matrix (L08 measured)
+
+| Gate | Status | Evidence |
+|------|--------|----------|
+| Boot | PASS | Probe reached world/player attach |
+| WorldLoad | PASS | World driver phases advanced |
+| Input publish path open | PARTIAL | `publishOk=404/4420`; `publishGuardFail=4016` residue |
+| SwitchToPlayerInput | PASS | `switchToPlayerInputCalled=True`, `inputEnabled=True`, `blockMask=0` |
+| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+| Tool slots available | **FAIL** | `available=0` BLOCKED |
+| STARTERGRANT | **FAIL** | Deferred once with `refusalMask=0x1E` (bits 1–4) |
+| Inventory gridBound | PARTIAL | `gridBound=True`, `inventoryVersion 0→0` (empty, not proof of live lanes) |
+| Fauna encounter | UNPROVEN | Systems exist; route not exercised under L08 |
+| Death / save bridge | PARTIAL | SaveLoad PARTIAL; death not route-proven |
+| PLAYER PNGs V0-S01..S03 | **FAIL** | Zero screenshots captured |
+
+---
+
+## Root causes (product, not probe)
+
+### 1. Swim intent zero — FIXED (product)
+
+**Cause (~90–95% confidence):**  
+`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` → `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+`FixedTick` applied locomotion/kinematics from stale `_input*` and **never** called `ProcessPlayerInputFrame`.
+
+Batchmode / physics-heavy probe floods `FixedTick` while render `Tick` rarely runs → `CurrentMovementIntent01` stays 0 even when publish path is open (`publishOk>0`).
+
+**Call chain (intended):**  
+`Publish` / automation override → `InputDispatcher` state → `TryReadFrame` → `_inputH/_inputV` → `ResolveRawInputIntentVector` → `_lastPlayerKinematicsIntendedMovement` → `CurrentMovementIntent01`.
+
+**Product fix applied (this session, pre-commit):**
+- New `SampleGameplayLocomotionInputForFixedStep()` ~L8208  
+- Called at start of `FixedTick` ~L9932 before `PrepareTransportAndFrameState`  
+- Look/juice/cursor remain render-Tick owned; menu zeros locomotion on fixed path only  
+
+**File:** `Assets/_Project/Scripts/HectonPlayerMovement.cs`
+
+### 2. STARTERGRANT / tool slots — FIXED drive path (product); residual vault risk
+
+**Cause:**  
+`RetryRuntimeStartToolGrantIfPending` ran only from render `Tick` → same batchmode starvation.  
+Early grant hit `CanServiceItemAdds=false` → `DescribeAddRefusalMask=0x1E`:
+- bit1 gridMissing  
+- bit2 stackLaneDead  
+- bit3 simStackLaneDead  
+- bit4 simOccupancyLaneDead  
+
+Vault lanes can go stale after other vault allocs (meta.Version stamp); recovery is all-or-nothing via `TryRecoverRuntimeStorageCold`.
+
+**Product fix applied (this session, pre-commit):**
+- `PlayerToolManager` implements `IFixedTickable`  
+- Registers/unregisters via `GlobalRegistry.TryRegisterFixedTickable` / `UnregisterFixedTickable`  
+- `FixedTick` calls `RetryRuntimeStartToolGrantIfPending()` (also still from Tick)  
+
+**File:** `Assets/_Project/Scripts/PlayerToolManager.cs`
+
+**Residual risk for L09:** If vault never becomes `CanServiceItemAdds=true` after recover, grant still fails. FixedTick only multiplies retry opportunities — does not invent live lanes. Watch L09 for `STARTERGRANT applied` + STORAGE lines + `IsToolAvailableInSlot≥1`.
+
+### 3. Secondary (not fixed this commit)
+
+- `publishGuardFail=4016` still high (lock conflicts) — separate from intent-zero when `publishOk>0`.  
+- PNG capture path never proven under V0 probe.  
+- JSON missing after crash teardown.
+
+---
+
+## Architectural note (architect)
+
+V0 probe is physics/batchmode-heavy. **Any gameplay that only hooks `IUpdatable.Tick` is effectively unwired in the probe** (and weak under catch-up frames in real play). Two systems hit this class of bug in L08: movement input sampling + tool grant retry.
+
+Diagnostics showing “path open” without fixed-step consumers produced false confidence.
+
+`gridBound=True` + `inventoryVersion=0` means empty inventory, **not** healthy service lanes. `NativeArray.IsCreated` can flip false after other vault allocs without a callback.
+
+---
+
+## Implemented but NOT gameplay-integrated (DECLINED until proven)
+
+| Feature | Code exists | Wired into spawn→swim→tools→fauna→death/save |
+|---------|-------------|-----------------------------------------------|
+| Fauna AI / spawn | Yes | Route not proven under probe |
+| Death bridge | Yes | Partial; not end-to-end proven |
+| Save/Load | Partial | SaveLoad PARTIAL only |
+| Screenshot / V0-S01..S03 | Pipeline present | Zero PNGs |
+| FirstExit / Hazard | Content-gated | Blocked |
+| Craft / loot | Upstream | Blocked on tools/loot spawn |
+| Tick-only systems under batchmode | Many | Effectively unwired in probe |
+
+---
+
+## Verify (pre-commit)
+
+| Check | Result |
+|-------|--------|
+| HPM braces | delta 0 |
+| HPM `SampleGameplayLocomotionInputForFixedStep` | def L8208, call L9932, count=2 |
+| PTM braces | delta 0 |
+| PTM `IFixedTickable` | class + register + unregister + FixedTick |
+| PTM `RetryRuntimeStartToolGrantIfPending` from FixedTick | yes (Tick + FixedTick) |
+
+---
+
+## L09 acceptance (real game, no mocks)
+
+1. `movementIntent01max > 0` during Swim hold  
+2. `IsToolAvailableInSlot` ≥ 1 after runtime start; STARTERGRANT applied (not stuck 0x1E)  
+3. Fauna / death / save: log evidence of route exercise  
+4. PLAYER PNGs under `Docs/Screenshots/V0_Playtest/` V0-S01..S03 regenerated and analyzed  
+5. RESULT JSON present or explicit teardown reason documented  
+
+---
+
+## Commit allowlist (this wave)
+
+- `Assets/_Project/Scripts/HectonPlayerMovement.cs`  
+- `Assets/_Project/Scripts/PlayerToolManager.cs`  
+- This ledger  
+
+**DO NOT commit:** Desktop scratch, `_agent_*`, `_eco_*`, `_slice*`, `HeadlessSimulationRunner.cs` local dirty unless reviewed as intentional product.
+

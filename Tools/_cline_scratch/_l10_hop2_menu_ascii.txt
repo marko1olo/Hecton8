@@ -1,0 +1,510 @@
+===== HectonFabricatorUI.cs =====
+139|        [SerializeField] private bool _debugIsOpen;
+183|        private bool _isOpen;
+229|        public static bool IsMenuOpen { get; private set; }
+248|            IsMenuOpen = false;
+294|            if (_isOpen)
+358|            if (!_isOpen)
+364|            if (_isOpen && _currentFabricator == null)
+394|            if (!_isOpen && !_isCrafting && !_hasPendingFabricatorVisualTick && !_hasPendingRecipeListVisibility)
+412|            if (!_isOpen && !_isCrafting)
+493|            _isOpen = true;
+494|            IsMenuOpen = true;
+559|            if (!_isOpen)
+575|            if (!_isOpen || _isCrafting || _recipes == null || _recipes.Count == 0)
+592|            if (!_isOpen || _isCrafting || _currentFabricator == null || _recipes == null || _recipes.Count == 0)
+607|            if (!_isOpen)
+625|            _isOpen = false;
+626|            IsMenuOpen = false;
+739|        private static bool IsNewerInputSequence(uint candidate, uint current)
+778|                                             _isOpen ||
+949|            if (!_isOpen || _recipes == null || _recipes.Count == 0)
+959|            if ((_currentFabricator == null || !_isOpen) && !_isCrafting)
+1592|            if (!_isOpen || _recipeListRoot == null || _currentFabricator == null)
+1645|            if (!_isOpen || _recipeListRoot == null)
+1953|            if (_isOpen && _recipeListRoot != null && _recipeListPoseValid && hudCamera != null && _recipes != null && _recipes.Count > 0)
+2218|            _debugIsOpen = _isOpen;
+
+===== PlayerPDA.cs =====
+13|//   [ADD] Diagnostics ? _debugIsOpen, _debugActiveTab, _debugBatteryDrain
+18|//   ? IsOpen ? staticheskoe svoystvo, chitaetsya HectonPlayerMovement
+33|//   HectonPlayerMovement.Tick() ? gard: if (PlayerPDA.IsOpen) return;
+34|//   PlayerInteraction.Tick()    ? gard: if (PlayerPDA.IsOpen) return;
+139|        private static bool _isDispatching;
+151|        internal static bool TryRegister(IPDAEventListener listener)
+168|        public static bool IsRegistered(IPDAEventListener listener)
+250|        internal static bool TryRaiseOpened(int tab)
+263|        internal static bool TryRaiseClosed(float duration)
+276|        internal static bool TryRaiseTabChanged(int oldTab, int newTab)
+289|        internal static bool TryRaiseLowBatteryShutdown()
+306|        internal static bool TryRaiseMapChunkExplored(int chunkX, int chunkY)
+323|        internal static bool TryRaiseMarkerChanged(uint markerHashId, int markerCount)
+340|        internal static bool TryRaiseLogbookChanged(int entryCount, uint latestEventHash = 0u)
+357|        internal static bool TryRaiseUndoRequest(int framesBack = 1)
+411|        private static bool RegisterImmediate(IPDAEventListener listener)
+426|        private static bool TryUnregisterImmediate(IPDAEventListener listener)
+442|        private static bool ContainsImmediate(IPDAEventListener listener)
+652|        private static bool Enqueue(in PDAEventPayload payload)
+758|        private static bool TryRegisterDedupKey(ulong dedupKey)
+770|        private static bool ContainsDedupKey(ulong dedupKey)
+973|        [SerializeField] private bool _debugIsOpen;
+988|        public static bool IsOpen { get; private set; }
+991|        internal static bool TryResolveActiveRuntime(ref PlayerPDA target)
+1009|            IsOpen = false;
+1071|            IsOpen = false;
+1346|            if (IsOpen) ForceClose();
+1438|        private static bool IsAudioServiceUsable(IAudioService audioService)
+1511|            if (IsOpen && settings.enableBatteryDrain)
+1540|            if (!IsOpen)
+1571|                if (!IsOpen)
+1576|            else if (IsOpen)
+1590|            if (IsOpen) Close();
+1596|            if (IsOpen) return;
+1601|            IsOpen = true;
+1632|            if (!IsOpen) return;
+1636|            IsOpen = false;
+1689|            if (!IsOpen) return;
+1693|            IsOpen = false;
+1724|            if (pdaCanvasGroup != null && !IsOpen)
+2090|            _debugIsOpen = IsOpen;
+2092|            _debugOpenDuration = IsOpen ? ResolvePdaOpenDurationSeconds() : 0f;
+2161|        private static bool IsNewerInputSequence(uint candidate, uint current)
+2172|            EnqueuePDAStateCommand(IsOpen ? -1 : settings.defaultTab);
+2182|            if (IsOpen)
+2188|            if (IsOpen && settings.enableTabHistory && TryPopTabHistory(out int previousTab))
+2193|            if (!IsOpen) return;
+2476|                   PlayerPDA.IsOpen &&
+2617|        private static bool TryAppendSignedRoundedVector(Span<char> buffer, ref int cursor, double3 value)
+2628|        private static bool TryAppendSignedRounded(Span<char> buffer, ref int cursor, double value)
+2647|        private static bool TryAppendLine(Span<char> buffer, ref int cursor, ReadOnlySpan<char> value)
+2652|        private static bool TryAppendNewLine(Span<char> buffer, ref int cursor)
+2661|        private static bool TryAppendInt(Span<char> buffer, ref int cursor, int value)
+2673|        private static bool TryAppendLong(Span<char> buffer, ref int cursor, long value)
+2685|        private static bool TryAppend(Span<char> buffer, ref int cursor, ReadOnlySpan<char> value)
+
+===== PauseMenuController.cs =====
+86|        private static bool _pendingMainMenuCleanup;
+87|        private static bool _mainMenuCleanupHookRegistered;
+92|        private bool _isOpen;
+183|        public bool IsOpen => _isOpen;
+184|        public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
+185|        public static bool IsAnyOpen => _openMenuCount > 0;
+322|        private static bool IsSaveServiceUsable(ISaveService saveService)
+379|            bool restorePlayerInput = _isOpen && ShouldRestorePlayerInputOnDisable();
+599|            if (_isOpen)
+603|            if (PlayerPDA.IsOpen && playerPDA != null)
+609|            if (HectonFabricatorUI.IsMenuOpen)
+620|            _isOpen = true;
+655|            if (!_isOpen)
+695|            if (_isOpen)
+704|            bool wasOpen = _isOpen;
+705|            _isOpen = false;
+1245|            if (previousSection != section && _isOpen)
+1608|        private static bool CopyUpperAsciiStringToBuffer(
+1737|            bool wasOpen = _isOpen;
+1738|            _isOpen = false;
+2042|            if (!_isOpen)
+2938|        private static bool IsNewerInputSequence(uint candidate, uint current)
+2945|            if (_isOpen)
+2948|            if (PlayerPDA.IsOpen || HectonFabricatorUI.IsMenuOpen)
+2956|            if (!_isOpen)
+2991|        private static bool IsNumericOnlyFont(TMP_FontAsset font)
+
+=== PlayerPDA.cs IsOpen-ish bodies ===
+986|        /// PlayerInteraction dlya blokirovki vvoda.
+987|        /// </summary>
+988|        public static bool IsOpen { get; private set; }
+989|        internal static PlayerPDA ActiveRuntimeInstance { get; private set; }
+990|
+991|        internal static bool TryResolveActiveRuntime(ref PlayerPDA target)
+992|        {
+993|            PlayerPDA active = ActiveRuntimeInstance;
+994|            if (active == null || !active.isActiveAndEnabled)
+995|            {
+996|                target = null;
+997|                return false;
+998|            }
+999|
+1000|            if (!ReferenceEquals(target, active))
+1001|                target = active;
+1002|
+1003|            return true;
+1004|        }
+1005|
+1006|        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+1007|        private static void ResetStaticState()
+1008|        {
+1009|            IsOpen = false;
+1010|            ActiveRuntimeInstance = null;
+1011|        }
+1012|
+--
+=== HectonFabricatorUI.cs IsOpen-ish bodies ===
+227|        private int _recipeLabelTextVersion;
+228|
+229|        public static bool IsMenuOpen { get; private set; }
+230|        public int CraftBatchMultiplier
+231|        {
+232|            get => Mathf.Max(1, craftBatchMultiplier);
+233|            set
+234|            {
+235|                int nextMultiplier = Mathf.Max(1, value);
+236|                if (nextMultiplier == craftBatchMultiplier)
+237|                    return;
+238|
+239|                craftBatchMultiplier = nextMultiplier;
+240|                _lastRecipeVisualVersion = int.MinValue;
+241|                InvalidateHologramMatrixCache();
+242|            }
+243|        }
+244|
+245|        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+246|        private static void ResetStaticState()
+247|        {
+248|            IsMenuOpen = false;
+249|        }
+250|
+251|        private void Awake()
+252|        {
+253|            GlobalTelemetryBus.Initialize();
+--
+=== PauseMenuController.cs IsOpen-ish bodies ===
+181|        private readonly char[] _modalMessageBuffer = new char[192];
+182|
+183|        public bool IsOpen => _isOpen;
+184|        public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
+185|        public static bool IsAnyOpen => _openMenuCount > 0;
+186|        public MenuVisualStyle VisualStyle => visualStyle;
+187|        public MenuVisualConcept VisualConcept => visualConcept;
+188|
+189|        public void SetVisualStyle(MenuVisualStyle style)
+190|        {
+191|            if (visualStyle == style)
+192|                return;
+193|
+194|            visualStyle = style;
+195|            _visualStyleApplier?.ForceNextApply();
+196|            _visualConceptDecorApplier?.ForceNextApply();
+197|        }
+198|
+199|        public void SetVisualStyleQualityOverride(float qualityOverride)
+200|        {
+201|            visualStyleQualityOverride = math.clamp(qualityOverride, -1f, 1f);
+202|            _visualStyleApplier?.ForceNextApply();
+203|            _visualConceptDecorApplier?.ForceNextApply();
+204|        }
+205|
+206|        public void SetVisualConcept(MenuVisualConcept concept)
+207|        {
+--
+183|        public bool IsOpen => _isOpen;
+184|        public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
+185|        public static bool IsAnyOpen => _openMenuCount > 0;
+186|        public MenuVisualStyle VisualStyle => visualStyle;
+187|        public MenuVisualConcept VisualConcept => visualConcept;
+188|
+189|        public void SetVisualStyle(MenuVisualStyle style)
+190|        {
+191|            if (visualStyle == style)
+192|                return;
+193|
+194|            visualStyle = style;
+195|            _visualStyleApplier?.ForceNextApply();
+196|            _visualConceptDecorApplier?.ForceNextApply();
+197|        }
+198|
+199|        public void SetVisualStyleQualityOverride(float qualityOverride)
+200|        {
+201|            visualStyleQualityOverride = math.clamp(qualityOverride, -1f, 1f);
+202|            _visualStyleApplier?.ForceNextApply();
+203|            _visualConceptDecorApplier?.ForceNextApply();
+204|        }
+205|
+206|        public void SetVisualConcept(MenuVisualConcept concept)
+207|        {
+208|            if (visualConcept == concept)
+209|                return;
+--
+=== L09 menu markers ===
+L12706|  at Hecton8.Crafting.Fabricator.TryCaptureAssemblySourceFromPrefabCold (UnityEngine.GameObject prefab, UnityEngine.Mesh& sourceMesh, UnityEngine.Material& actualMaterial) [0x00011] in C:\hades\Hecton8\Assets\_Project\Sc
+L12707|  at Hecton8.Crafting.Fabricator.AppendAssemblySourceCacheCold (Hecton8.Crafting.RecipeData recipe) [0x00057] in C:\hades\Hecton8\Assets\_Project\Scripts\Fabricator.cs:3214 
+L12708|  at Hecton8.Crafting.Fabricator.RebuildAssemblySourceCacheCold () [0x0005d] in C:\hades\Hecton8\Assets\_Project\Scripts\Fabricator.cs:3166 
+L12709|  at Hecton8.Crafting.Fabricator.Awake () [0x00066] in C:\hades\Hecton8\Assets\_Project\Scripts\Fabricator.cs:577 
+L23750|[H8_PLAYPROBE] MOMENT   BLOCKED       CraftRepairBuild   Fabricator is live with visibleRecipes=0 totalRecipes=0 lockedRecipes=0 but CanCraft is false for all of them; the Resource leg delivered nothing, so no recipe/rep
+=== _lastPlayerKinematicsIntendedMovement writes ===
+1246|        private float3 _lastPlayerKinematicsIntendedMovement;
+1906|        public float CurrentMovementIntent01 => math.saturate(math.sqrt(math.max(0f, math.lengthsq(_lastPlayerKinematicsIntendedMovement))));
+3247|            float intendedLengthSq = math.lengthsq(_lastPlayerKinematicsIntendedMovement);
+10113|            _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
+10114|            WritePlayerKinematicsSnapshot(bodyRuntimePosition, authoritativeVelocity, _lastPlayerKinematicsIntendedMovement);
+10238|            WritePlayerKinematicsSnapshot(bodyRuntimePosition, safeVelocity, _lastPlayerKinematicsIntendedMovement);
+13899|            _lastPlayerKinematicsIntendedMovement = new float3(gatedInputH, gatedInputVertical, gatedInputV);
+13989|            _lastPlayerKinematicsIntendedMovement = new float3(dirX, dirY + verticalInput, dirZ);
+14255|                    _lastPlayerKinematicsIntendedMovement,
+14418|            _lastPlayerKinematicsIntendedMovement = new float3(_moveDirection.x, 0f, _moveDirection.z);
+=== PrepareTransportAndFrameState intent ===
+9934|                PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+9935|
+9936|                float previousWaterImmersionRatio = _waterImmersionRatio;
+9937|                bool wasGroundedLastFixedTick = _isGrounded;
+9938|
+9939|                _rb.useGravity = false;
+9940|
+9941|                if (_isWalking)
+9942|                {
+9943|                    _bodyYaw = _cameraYaw;
+9944|                    _bodyYawVelocity = 0f;
+9945|                }
+9946|                else
+9947|                {
+9948|                    float bodyYawOmega = suit.bodyYawSpringOmega *
+9949|                        ResolveHeavyCarryBodyYawSpringMultiplier() *
+9950|                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
+9951|                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
+9952|                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+9953|                }
+9954|
+9955|                _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
+9956|                _wasGroundedLastFrame = _isGrounded;
+9957|
+9958|                GroundCheck();
+9959|                _playerMotor?.SetGroundedState(_isGrounded);
+9960|
+9961|                UpdateWaterImmersion(fixedDeltaTime);
+9962|
+9963|                ApplyLadderSplineSnapFromAsyncProbe(initialExosuitKinematicAuthority);
+9964|
+9965|                float physicsImmersion = _smoothedImmersionRatio;
+9966|                float feetDepth = GetFeetDepthBelowSurface(EffectiveWaterSurfaceY);
+9967|                bool hasImmediateShoreFooting = _isGrounded && feetDepth <= shoreWalkFootDepth;
+9968|                bool isShallowEnoughForShore = physicsImmersion < swimTransitionThreshold || hasImmediateShoreFooting;
+9969|                bool isDryLand = physicsImmersion <= 0.01f;
+9970|
+9971|                if (_isGrounded && isDryLand)
+9972|                {
+9973|                    _dryGroundGraceTimer = dryGroundGraceTime;
+9974|                }
+9975|                else if (_dryGroundGraceTimer > 0f)
+9976|                {
+9977|                    _dryGroundGraceTimer -= fixedDeltaTime;
+9978|                    if (_dryGroundGraceTimer < 0f)
+9979|                        _dryGroundGraceTimer = 0f;
+9980|                }
+9981|
+9982|                if (_isGrounded && isShallowEnoughForShore)
+9983|                {
+9984|                    _shoreGroundGraceTimer = shoreGroundGraceTime;
+9985|                }
+9986|                else if (_shoreGroundGraceTimer > 0f)
+9987|                {
+9988|                    _shoreGroundGraceTimer -= fixedDeltaTime;
+9989|                    if (_shoreGroundGraceTimer < 0f)
+9990|                        _shoreGroundGraceTimer = 0f;
+9991|                }
+9992|
+9993|                AdvanceCooldownTimers(fixedDeltaTime);
+9994|                AdvanceFatalPressureSequence(fixedDeltaTime);
+9995|                UpdateWipeoutState(fixedDeltaTime);
+9996|                UpdateShoreBuoyancyBlend(fixedDeltaTime, physicsImmersion, feetDepth);
+9997|                UpdateVegetationDensityLinearDamping(fixedDeltaTime);
+9998|
+9999|                bool hasDryGroundSupport = _isGrounded || (_dryGroundGraceTimer > 0f && isDryLand);
+10000|                bool hasShoreGroundSupport = hasImmediateShoreFooting || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
+10001|                bool groundedOnDryLand = hasDryGroundSupport && isDryLand;
+10002|                bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
+10003|
+10004|                bool exosuitActive = IsExosuitTransportActive();
+10005|                bool exosuitKinematicAuthority = TrySubmitExosuitKinematicAuthority(exosuitActive);
+10006|
+10007|                ToggleBuoyancy(!exosuitActive);
+10008|                RefreshSurfaceBreachLock(physicsImmersion);
+10009|                UpdateSurfaceDiveCommitTimer(fixedDeltaTime, activeTransportPreset);
+10010|
+10011|                float targetGravityScale = exosuitActive
+10012|                    ? exosuitNegativeBuoyancyScale
+10013|                    : groundedOnShore ? 1f : 1f - math.saturate(physicsImmersion * gravityFadeRate);
+--
+10091|        private PlayerTransportPreset PrepareTransportAndFrameState(float fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority)
+10092|        {
+10093|            RefreshVrComfortSettingsCache();
+10094|            AdvanceMovementProbeCacheFrame();
+10095|
+10096|            if (_transportEvaLockTicks > 0)
+10097|                _transportEvaLockTicks--;
+10098|
+10099|            if (_transportBailoutCooldownTimer > 0f)
+10100|            {
+10101|                _transportBailoutCooldownTimer -= fixedDeltaTime;
+10102|                if (_transportBailoutCooldownTimer < 0f)
+10103|                    _transportBailoutCooldownTimer = 0f;
+10104|            }
+10105|
+10106|            _currentFixedDeltaTime = fixedDeltaTime;
+10107|            RefreshActiveGravity(fixedDeltaTime);
+10108|            Vector3 bodyRuntimePosition = ResolveBodyRuntimePosition();
+10109|            Vector3 authoritativeVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
+10110|            currentVerticalVelocity = authoritativeVelocity.y;
+10111|
+10112|            _playerState.SyncKinematic(bodyRuntimePosition, authoritativeVelocity);
+10113|            _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
+10114|            WritePlayerKinematicsSnapshot(bodyRuntimePosition, authoritativeVelocity, _lastPlayerKinematicsIntendedMovement);
+10115|            _useFixedFrameSpatialCache = true;
+10116|
+10117|            PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
+10118|            _stateMachine?.AdvanceFixed(fixedDeltaTime);
+10119|
+10120|            ITransportPlatform previousTransportPlatform = _activeTransportPlatform;
+10121|            Transform previousTransportPlatformTransform = _activeTransportPlatformTransform;
+10122|            ResolveActiveTransportPlatform();
+10123|            if (_transportEvaLockTicks <= 0 &&
+10124|                previousTransportPlatform != null &&
+10125|                _activeTransportPlatform == null)
+10126|            {
+10127|                ExecuteTransportEvaHandoff(previousTransportPlatform, previousTransportPlatformTransform);
+10128|            }
+10129|
+10130|            bool exosuitActive = IsExosuitTransportActive();
+10131|            initialExosuitKinematicAuthority = exosuitActive && ExosuitKinematicAuthority.HasActiveAuthority();
+10132|
+10133|            SyncTransportPlatformRotation();
+10134|            RefreshFixedFrameSpatialCache();
+10135|            ApplyTransportPlatformCarrierMotion(fixedDeltaTime, initialExosuitKinematicAuthority);
+10136|            RefreshFixedFrameSpatialCache();
+10137|            RefreshSharedGroundSweepBuffer();
+10138|
+10139|            return activeTransportPreset;
+10140|        }
+--
+=== L08 full ===
+# V0 L08 MEASURED ? Playable Loop Probe Ledger
+
+**Date:** 2026-07-31  
+**Probe:** `h8_playprobe_v0_L08`  
+**HEAD at probe:** `2e0d5e3d3` (blackbox vault guard release P0)  
+**Log:** `Docs/AgentLogs/h8_playprobe_v0_L08.log` (~2.2MB)  
+**JSON result:** MISSING (teardown crash)  
+**Screenshots:** `Docs/Screenshots/V0_Playtest/` EMPTY ? no PLAYER PNGs  
+**Policy:** Feature without gameplay is DECLINED. No mocks. Real product fixes only.
+
+---
+
+## PASS / FAIL Matrix (L08 measured)
+
+| Gate | Status | Evidence |
+|------|--------|----------|
+| Boot | PASS | Probe reached world/player attach |
+| WorldLoad | PASS | World driver phases advanced |
+| Input publish path open | PARTIAL | `publishOk=404/4420`; `publishGuardFail=4016` residue |
+| SwitchToPlayerInput | PASS | `switchToPlayerInputCalled=True`, `inputEnabled=True`, `blockMask=0` |
+| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+| Tool slots available | **FAIL** | `available=0` BLOCKED |
+| STARTERGRANT | **FAIL** | Deferred once with `refusalMask=0x1E` (bits 1?4) |
+| Inventory gridBound | PARTIAL | `gridBound=True`, `inventoryVersion 0?0` (empty, not proof of live lanes) |
+| Fauna encounter | UNPROVEN | Systems exist; route not exercised under L08 |
+| Death / save bridge | PARTIAL | SaveLoad PARTIAL; death not route-proven |
+| PLAYER PNGs V0-S01..S03 | **FAIL** | Zero screenshots captured |
+
+---
+
+## Root causes (product, not probe)
+
+### 1. Swim intent zero ? FIXED (product)
+
+**Cause (~90?95% confidence):**  
+`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` ? `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+`FixedTick` applied locomotion/kinematics from stale `_input*` and **never** called `ProcessPlayerInputFrame`.
+
+Batchmode / physics-heavy probe floods `FixedTick` while render `Tick` rarely runs ? `CurrentMovementIntent01` stays 0 even when publish path is open (`publishOk>0`).
+
+**Call chain (intended):**  
+`Publish` / automation override ? `InputDispatcher` state ? `TryReadFrame` ? `_inputH/_inputV` ? `ResolveRawInputIntentVector` ? `_lastPlayerKinematicsIntendedMovement` ? `CurrentMovementIntent01`.
+
+**Product fix applied (this session, pre-commit):**
+- New `SampleGameplayLocomotionInputForFixedStep()` ~L8208  
+- Called at start of `FixedTick` ~L9932 before `PrepareTransportAndFrameState`  
+- Look/juice/cursor remain render-Tick owned; menu zeros locomotion on fixed path only  
+
+**File:** `Assets/_Project/Scripts/HectonPlayerMovement.cs`
+
+### 2. STARTERGRANT / tool slots ? FIXED drive path (product); residual vault risk
+
+**Cause:**  
+`RetryRuntimeStartToolGrantIfPending` ran only from render `Tick` ? same batchmode starvation.  
+Early grant hit `CanServiceItemAdds=false` ? `DescribeAddRefusalMask=0x1E`:
+- bit1 gridMissing  
+- bit2 stackLaneDead  
+- bit3 simStackLaneDead  
+- bit4 simOccupancyLaneDead  
+
+Vault lanes can go stale after other vault allocs (meta.Version stamp); recovery is all-or-nothing via `TryRecoverRuntimeStorageCold`.
+
+**Product fix applied (this session, pre-commit):**
+- `PlayerToolManager` implements `IFixedTickable`  
+- Registers/unregisters via `GlobalRegistry.TryRegisterFixedTickable` / `UnregisterFixedTickable`  
+- `FixedTick` calls `RetryRuntimeStartToolGrantIfPending()` (also still from Tick)  
+
+**File:** `Assets/_Project/Scripts/PlayerToolManager.cs`
+
+**Residual risk for L09:** If vault never becomes `CanServiceItemAdds=true` after recover, grant still fails. FixedTick only multiplies retry opportunities ? does not invent live lanes. Watch L09 for `STARTERGRANT applied` + STORAGE lines + `IsToolAvailableInSlot?1`.
+
+### 3. Secondary (not fixed this commit)
+
+- `publishGuardFail=4016` still high (lock conflicts) ? separate from intent-zero when `publishOk>0`.  
+- PNG capture path never proven under V0 probe.  
+- JSON missing after crash teardown.
+
+---
+
+## Architectural note (architect)
+
+V0 probe is physics/batchmode-heavy. **Any gameplay that only hooks `IUpdatable.Tick` is effectively unwired in the probe** (and weak under catch-up frames in real play). Two systems hit this class of bug in L08: movement input sampling + tool grant retry.
+
+Diagnostics showing ?path open? without fixed-step consumers produced false confidence.
+
+`gridBound=True` + `inventoryVersion=0` means empty inventory, **not** healthy service lanes. `NativeArray.IsCreated` can flip false after other vault allocs without a callback.
+
+---
+
+## Implemented but NOT gameplay-integrated (DECLINED until proven)
+
+| Feature | Code exists | Wired into spawn?swim?tools?fauna?death/save |
+|---------|-------------|-----------------------------------------------|
+| Fauna AI / spawn | Yes | Route not proven under probe |
+| Death bridge | Yes | Partial; not end-to-end proven |
+| Save/Load | Partial | SaveLoad PARTIAL only |
+| Screenshot / V0-S01..S03 | Pipeline present | Zero PNGs |
+| FirstExit / Hazard | Content-gated | Blocked |
+| Craft / loot | Upstream | Blocked on tools/loot spawn |
+| Tick-only systems under batchmode | Many | Effectively unwired in probe |
+
+---
+
+## Verify (pre-commit)
+
+| Check | Result |
+|-------|--------|
+| HPM braces | delta 0 |
+| HPM `SampleGameplayLocomotionInputForFixedStep` | def L8208, call L9932, count=2 |
+| PTM braces | delta 0 |
+| PTM `IFixedTickable` | class + register + unregister + FixedTick |
+| PTM `RetryRuntimeStartToolGrantIfPending` from FixedTick | yes (Tick + FixedTick) |
+
+---
+
+## L09 acceptance (real game, no mocks)
+
+1. `movementIntent01max > 0` during Swim hold  
+2. `IsToolAvailableInSlot` ? 1 after runtime start; STARTERGRANT applied (not stuck 0x1E)  
+3. Fauna / death / save: log evidence of route exercise  
+4. PLAYER PNGs under `Docs/Screenshots/V0_Playtest/` V0-S01..S03 regenerated and analyzed  
+5. RESULT JSON present or explicit teardown reason documented  
+
+---
+
+## Commit allowlist (this wave)
+
+- `Assets/_Project/Scripts/HectonPlayerMovement.cs`  
+- `Assets/_Project/Scripts/PlayerToolManager.cs`  
+- This ledger  
+
+**DO NOT commit:** Desktop scratch, `_agent_*`, `_eco_*`, `_slice*`, `HeadlessSimulationRunner.cs` local dirty unless reviewed as intentional product.

@@ -1,0 +1,68 @@
+count 67
+0:=== PTM VERIFY ===
+134:--- hit 1 @ 1447: TryRecover ---
+163:--- hit 2 @ 1488: TryRecover ---
+192:--- hit 1 @ 347: STARTERGRANT ---
+216:--- hit 2 @ 1298: STARTERGRANT ---
+240:--- hit 3 @ 1407: STARTERGRANT ---
+264:--- hit 4 @ 1422: STARTERGRANT ---
+288:--- hit 5 @ 1428: STARTERGRANT ---
+312:--- hit 6 @ 1544: STARTERGRANT ---
+336:--- hit 1 @ 1304: CanServiceItemAdds ---
+355:--- hit 2 @ 1443: CanServiceItemAdds ---
+374:--- hit 3 @ 1479: CanServiceItemAdds ---
+393:--- hit 4 @ 1552: CanServiceItemAdds ---
+412:=== HPM path: C:\hades\Hecton8\Assets\_Project\Scripts\HectonPlayerMovement.cs ===
+414:=== HPM FixedTick @ 120 ===
+523:=== HPM SampleGameplay @ 8208 ===
+543:=== HPM ProcessPlayerInputFrame @ 8130 ===
+589:=== HPM TryRegisterToTickManager NOT FOUND as method sig ===
+590:=== HPM TryUnregisterFromTickManager NOT FOUND as method sig ===
+591:--- hit 1 @ 235: currentSuitData ---
+603:--- hit 2 @ 1753: currentSuitData ---
+615:--- hit 3 @ 1927: currentSuitData ---
+627:--- hit 4 @ 8069: currentSuitData ---
+639:--- hit 5 @ 8532: currentSuitData ---
+651:--- hit 6 @ 8533: currentSuitData ---
+663:--- hit 7 @ 9923: currentSuitData ---
+675:--- hit 8 @ 11455: currentSuitData ---
+687:--- hit 9 @ 12106: currentSuitData ---
+699:--- hit 10 @ 12483: currentSuitData ---
+711:--- hit 1 @ 1330: _juiceProcessor ---
+723:--- hit 2 @ 1756: _juiceProcessor ---
+735:--- hit 3 @ 1957: _juiceProcessor ---
+747:--- hit 4 @ 4585: _juiceProcessor ---
+759:--- hit 5 @ 4746: _juiceProcessor ---
+771:--- hit 6 @ 4749: _juiceProcessor ---
+783:--- hit 7 @ 8071: _juiceProcessor ---
+795:--- hit 8 @ 8124: _juiceProcessor ---
+807:--- hit 9 @ 8249: _juiceProcessor ---
+819:--- hit 10 @ 8262: _juiceProcessor ---
+831:--- hit 1 @ 8201: readHop ---
+843:--- hit 1 @ 8200: movementIntent ---
+855:--- hit 1 @ 7995: IsPlayerInputEnabled ---
+867:--- hit 2 @ 8045: IsPlayerInputEnabled ---
+879:--- hit 3 @ 8132: IsPlayerInputEnabled ---
+891:=== SEARCH InputDispatcher GetState hop ===
+1027:=== INVENTORY / VAULT ===
+1029:--- hit 1 @ 1241: CanServiceItemAdds ---
+1044:--- hit 2 @ 2470: CanServiceItemAdds ---
+1059:--- hit 1 @ 1701: TryRecover ---
+1074:--- hit 2 @ 2468: TryRecover ---
+1089:--- hit 1 @ 1228: TryBind ---
+1104:--- hit 2 @ 1678: TryBind ---
+1119:--- hit 1 @ 2596: InitializeSoaQueryEngine ---
+1134:--- hit 2 @ 2600: InitializeSoaQueryEngine ---
+1150:--- hit 1 @ 1304: CanServiceItemAdds ---
+1165:--- hit 2 @ 1443: CanServiceItemAdds ---
+1180:--- hit 1 @ 1447: TryRecover ---
+1195:--- hit 2 @ 1488: TryRecover ---
+1210:--- hit 1 @ 1606: TryBind ---
+1225:--- hit 2 @ 1728: TryBind ---
+1240:--- hit 1 @ 347: refusalMask ---
+1255:--- hit 2 @ 1414: refusalMask ---
+1270:--- hit 1 @ 347: 0x1E ---
+1286:--- hit 1 @ 6673: CanServiceItemAdds ---
+1302:--- hit 1 @ 22: 0x1E ---
+1317:=== L09 LOG exists=True ===
+1326:=== L08 MEASURED exists=True ===

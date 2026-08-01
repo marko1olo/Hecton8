@@ -1,0 +1,13 @@
+fix(v0): driver Tick publish after AdvancePhase (L12)
+
+HeadlessWorldDriver published locomotion intent before AdvancePhase,
+so hold ticks shipped the prior frame intent (often zero) while phase
+bodies had already written MoveDelta. Consume is destructive; zero
+publishes poisoned CaptureState for Swim.
+
+- SampleObservables -> AdvancePhase -> PublishLocomotionIntent
+- PhaseAuthorsInputIntent post-publish clear (no exit-tick zero)
+- Drop SwimDive/ToolUse/VerbSweep clear-before-publish
+- VerbSweep two-step comment matches same-tick publish
+
+Probe verify pending (UnityLockfile). Docs: V0_L12_TICK_PUBLISH_ORDER.md

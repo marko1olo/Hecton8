@@ -1,0 +1,376 @@
+SD:506|        private uint _aupPreShiftPauseFrameId;
+SD:570|        private static int _originShiftBootstrapLockCount;
+SD:571|        private static int _originShiftFrameLockFrame = -1;
+SD:617|        internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+SD:619|        internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == CurrentFrameIndex;
+SD:688|            [FieldOffset(48)] public uint AupPreShiftSequence;
+SD:816|            Volatile.Write(ref _originShiftBootstrapLockCount, 0);
+SD:817|            Volatile.Write(ref _originShiftFrameLockFrame, -1);
+SD:1722|        internal static void RequestOriginShiftBootstrapLock()
+SD:1724|            Interlocked.Increment(ref _originShiftBootstrapLockCount);
+SD:1729|            Volatile.Write(ref _originShiftFrameLockFrame, frame);
+SD:1732|                dispatcher.RequestAupPreShiftPause(unchecked((uint)frame));
+SD:1809|        public void RequestAupPreShiftPause(uint shiftFrameId)
+SD:1815|            _aupPreShiftPauseFrameId = ResolveCurrentDispatcherFrameId();
+SD:1818|        public void ReleaseAupPreShiftPause(uint shiftFrameId)
+SD:1838|            dispatcher.RequestAupPreShiftPause(dispatcher.ResolveCurrentDispatcherFrameId());
+SD:1916|        internal static void ReleaseOriginShiftBootstrapLock()
+SD:1918|            int current = Volatile.Read(ref _originShiftBootstrapLockCount);
+SD:1922|                int observed = Interlocked.CompareExchange(ref _originShiftBootstrapLockCount, next, current);
+SD:2093|            _aupPreShiftPauseFrameId = 0u;
+SD:4680|            if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+SD:4682|            if (IsOriginShiftBootstrapLocked || IsOriginShiftFrameLockedForCurrentFrame)
+SD:4709|            entry.AupPreShiftSequence = _aupPreShiftPauseSequence;
+SD:5230|                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+SD:5232|                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+SD:5246|                if (IsOriginShiftBootstrapLocked)
+SD:5251|                    if (IsOriginShiftBootstrapLocked)
+SD:5258|                if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+SD:5517|            if (IsOriginShiftBootstrapLocked)
+
+==== LateFrame dispatch @1591 ====
+1591|        public static void Unregister(ILateFrameTickable item, PriorityLayer layer)
+1592|        {
+1593|            if (item == null)
+1594|                return;
+1595|
+1596|            GetLateFrameLane(layer).TryUnregister(item);
+1597|        }
+1598|
+1599|        /// <summary>
+1600|        /// Removes a deferred late-frame owner from its dispatcher lane without routing through the registry.
+1601|        /// Use only when a late-frame owner must retire itself from the dispatcher-owned swap window.
+1602|        /// </summary>
+1603|        /// <param name="item">Late-frame owner.</param>
+1604|        /// <param name="layer">Priority lane.</param>
+1605|        public static void UnregisterLateFrameTickableDirect(ILateFrameTickable item, PriorityLayer layer)
+1606|        {
+1607|            Unregister(item, layer);
+1608|        }
+1609|
+1610|        /// <summary>
+1611|        /// Unregisters a post-fixed-step owner from a fixed priority lane.
+1612|        /// </summary>
+1613|        /// <param name="item">Post-fixed owner.</param>
+1614|        /// <param name="layer">Priority lane.</param>
+1615|        public static void Unregister(IPostFixedTickable item, PriorityLayer layer)
+1616|        {
+1617|            if (item == null)
+1618|                return;
+1619|
+1620|            GetPostFixedLane(layer).TryUnregister(item);
+1621|        }
+1622|
+1623|        /// <summary>
+1624|        /// Unregisters an unscaled fast-tick owner from a fixed priority lane.
+1625|        /// </summary>
+1626|        public static void Unregister(IUnscaledFastTickable item, PriorityLayer layer)
+1627|        {
+1628|            if (item == null)
+1629|                return;
+1630|
+1631|            GetUnscaledFastLane(layer).TryUnregister(item);
+1632|        }
+1633|
+1634|        /// <summary>
+1635|        /// Removes a master-dispatcher system from the sorted pipeline.
+1636|        /// </summary>
+1637|        public static void Unregister(IDispatcherSystem item)
+1638|        {
+1639|            if (item == null)
+1640|                return;
+1641|
+1642|            for (int i = 0; i < _masterRegisteredSystemCount; i++)
+1643|            {
+1644|                if (!ReferenceEquals(_masterRegisteredSystems[i], item))
+1645|                    continue;
+1646|
+1647|                int last = _masterRegisteredSystemCount - 1;
+1648|                _masterRegisteredSystems[i] = _masterRegisteredSystems[last];
+1649|                _masterRegisteredSystems[last] = null;
+1650|                _masterRegisteredSystemCount = last;
+
+==== LateFrame dispatch @1605 ====
+1605|        public static void UnregisterLateFrameTickableDirect(ILateFrameTickable item, PriorityLayer layer)
+1606|        {
+1607|            Unregister(item, layer);
+1608|        }
+1609|
+1610|        /// <summary>
+1611|        /// Unregisters a post-fixed-step owner from a fixed priority lane.
+1612|        /// </summary>
+1613|        /// <param name="item">Post-fixed owner.</param>
+1614|        /// <param name="layer">Priority lane.</param>
+1615|        public static void Unregister(IPostFixedTickable item, PriorityLayer layer)
+1616|        {
+1617|            if (item == null)
+1618|                return;
+1619|
+1620|            GetPostFixedLane(layer).TryUnregister(item);
+1621|        }
+1622|
+1623|        /// <summary>
+1624|        /// Unregisters an unscaled fast-tick owner from a fixed priority lane.
+1625|        /// </summary>
+1626|        public static void Unregister(IUnscaledFastTickable item, PriorityLayer layer)
+1627|        {
+1628|            if (item == null)
+1629|                return;
+1630|
+1631|            GetUnscaledFastLane(layer).TryUnregister(item);
+1632|        }
+1633|
+1634|        /// <summary>
+1635|        /// Removes a master-dispatcher system from the sorted pipeline.
+1636|        /// </summary>
+1637|        public static void Unregister(IDispatcherSystem item)
+1638|        {
+1639|            if (item == null)
+1640|                return;
+1641|
+1642|            for (int i = 0; i < _masterRegisteredSystemCount; i++)
+1643|            {
+1644|                if (!ReferenceEquals(_masterRegisteredSystems[i], item))
+1645|                    continue;
+1646|
+1647|                int last = _masterRegisteredSystemCount - 1;
+1648|                _masterRegisteredSystems[i] = _masterRegisteredSystems[last];
+1649|                _masterRegisteredSystems[last] = null;
+1650|                _masterRegisteredSystemCount = last;
+1651|                _masterTopologyDirty = true;
+1652|                _masterTopologyValid = false;
+1653|                return;
+1654|            }
+1655|        }
+1656|
+1657|        /// <summary>
+1658|        /// Removes a fixed-only dispatcher system.
+1659|        /// </summary>
+1660|        public static void Unregister(IDispatcherFixedSystem item)
+1661|        {
+1662|            if (item == null)
+1663|                return;
+1664|
+
+==== BuildMasterTiming @2755 ====
+2755|        private DispatcherTimingDTO BuildMasterDispatcherTiming(float deltaTime, float unscaledDeltaTime, float fixedDeltaTime = 0f)
+2756|        {
+2757|            uint frameId = ResolveCurrentDispatcherFrameId();
+2758|            uint activeBucket = ResolveMasterActiveBucket(frameId);
+2759|            uint activeBucketMask = 1u << (int)(activeBucket & 31u);
+2760|            DispatcherTimingDTO timing = default;
+2761|            timing.FrameDelta = deltaTime;
+2762|            timing.FixedDelta = fixedDeltaTime;
+2763|            timing.TimeScale = unscaledDeltaTime > 0f ? math.saturate(deltaTime / unscaledDeltaTime) : 0f;
+2764|            timing.ActiveBucketMask = activeBucketMask;
+2765|            timing.FrameId = frameId;
+2766|            return timing;
+2767|        }
+2768|
+2769|        private uint ResolveCurrentDispatcherFrameId()
+2770|        {
+2771|            if (_currentDispatcherFrameId == 0u)
+2772|                return AdvanceDispatcherFrameId();
+2773|            return _currentDispatcherFrameId;
+2774|        }
+2775|
+2776|        private uint AdvanceDispatcherFrameId()
+2777|        {
+2778|            _dispatcherFrameSequence++;
+2779|            if (_dispatcherFrameSequence == 0u)
+2780|                _dispatcherFrameSequence = 1u;
+2781|            _currentDispatcherFrameId = _dispatcherFrameSequence;
+2782|            return _currentDispatcherFrameId;
+2783|        }
+2784|
+2785|        private uint ResolveMasterActiveBucket()
+2786|        {
+2787|            return ResolveMasterActiveBucket(ResolveCurrentDispatcherFrameId());
+2788|        }
+2789|
+2790|        private static uint ResolveMasterActiveBucket(uint frameId)
+2791|        {
+2792|            return frameId & MasterDispatcherBucketMask;
+2793|        }
+2794|
+
+==== BuildMasterTiming @3057 ====
+3057|            DispatcherTimingDTO timing = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+3058|            _masterVisualSyncStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+3059|            _masterHealthPressureShedThisFrame = ShouldShedMasterVisualSync();
+3060|            _masterRollbackFenceThisFrame = TryFenceRollbackBeforeVisualSync();
+3061|            _masterVisualSyncShedThisFrame = _masterHealthPressureShedThisFrame || _masterRollbackFenceThisFrame;
+3062|            WriteMasterPresentationSuppression(timing.FrameId);
+3063|            SetMasterDispatcherPhase(DispatcherPhase.VisualSync, in timing);
+3064|            if (_masterVisualSyncShedThisFrame)
+3065|            {
+3066|                _masterLastVisualSyncMs = 0f;
+3067|                RecordMasterPipelineTelemetry(timing.FrameId);
+3068|                return;
+3069|            }
+3070|
+3071|            using (_masterVisualSyncProfilerMarker.Auto())
+3072|            {
+3073|                for (int i = 0; i < _masterSortedSystemCount; i++)
+3074|                {
+3075|                    if (_masterSystemDisabled[i])
+3076|                        continue;
+3077|
+3078|                    IDispatcherSystem system = GetMasterSortedSystemAt(i);
+3079|                    if (system == null || system.GetDispatcherPhase() != DispatcherPhase.VisualSync)
+3080|                        continue;
+3081|                    if (!ShouldRunMasterSystemInActiveBucket(system, ResolveMasterActiveBucket()))
+3082|                        continue;
+3083|
+3084|                    try
+3085|                    {
+3086|                        system.VisualSyncTick(in timing);
+3087|                    }
+3088|                    catch (Exception exception) when (!(exception is FatalArchitectureException))
+3089|                    {
+3090|                        DisableMasterSystem(i, system);
+3091|                    }
+3092|                }
+3093|            }
+3094|
+3095|            _masterLastVisualSyncMs = ElapsedMilliseconds(_masterVisualSyncStartTimestamp);
+3096|            _masterPhaseTimingSnapshotMs[3] = _masterLastVisualSyncMs;
+
+==== BuildMasterTiming @3105 ====
+3105|            DispatcherTimingDTO timing = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime, fixedDeltaTime);
+3106|            JobHandle combined = default;
+3107|            _masterPendingFixedJobCount = 0;
+3108|            for (int i = 0; i < _masterFixedSystemCount; i++)
+3109|            {
+3110|                IDispatcherFixedSystem system = GetMasterFixedSystemAt(i);
+3111|                if (system == null)
+3112|                    continue;
+3113|
+3114|                JobHandle previous = combined;
+3115|                combined = system.ScheduleFixedSimulation(in timing, combined);
+3116|                CaptureMasterFixedDomainFence(system, ref combined, ref previous);
+3117|                _masterPendingFixedJobCount++;
+3118|            }
+3119|
+3120|            if (_masterPendingFixedJobCount > 0)
+3121|            {
+3122|                _masterFixedCombinedHandle = combined;
+3123|                _masterFixedJobsPending = true;
+3124|                H8Memory.RegisterActiveJob(SystemID.SystemDispatcher, _masterFixedCombinedHandle);
+3125|            }
+3126|        }
+3127|
+3128|        private void CompleteMasterFixedSimulationBridge(float fixedDeltaTime)
+3129|        {
+3130|            if (_masterFixedSystemCount <= 0)
+3131|                return;
+3132|
+3133|            DispatcherTimingDTO timing = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime, fixedDeltaTime);
+3134|            if (_masterFixedJobsPending)
+3135|            {
+3136|                long waitStart = System.Diagnostics.Stopwatch.GetTimestamp();
+3137|                DispatcherJobFence.BeginPostFixedSwapWindow();
+3138|                try
+3139|                {
+3140|                    DispatcherJobFence.TryComplete(ref _masterFixedCombinedHandle, forceComplete: true);
+3141|                    _masterLastFixedWaitMs = ElapsedMilliseconds(waitStart);
+3142|                    _masterFixedJobsPending = false;
+3143|                }
+3144|                finally
+
+==== BuildMasterTiming @3133 ====
+3133|            DispatcherTimingDTO timing = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime, fixedDeltaTime);
+3134|            if (_masterFixedJobsPending)
+3135|            {
+3136|                long waitStart = System.Diagnostics.Stopwatch.GetTimestamp();
+3137|                DispatcherJobFence.BeginPostFixedSwapWindow();
+3138|                try
+3139|                {
+3140|                    DispatcherJobFence.TryComplete(ref _masterFixedCombinedHandle, forceComplete: true);
+3141|                    _masterLastFixedWaitMs = ElapsedMilliseconds(waitStart);
+3142|                    _masterFixedJobsPending = false;
+3143|                }
+3144|                finally
+3145|                {
+3146|                    DispatcherJobFence.EndPostFixedSwapWindow();
+3147|                }
+3148|            }
+3149|            else
+3150|            {
+3151|                _masterLastFixedWaitMs = 0f;
+3152|            }
+3153|
+3154|            for (int i = 0; i < _masterFixedSystemCount; i++)
+3155|            {
+3156|                IDispatcherFixedSystem system = GetMasterFixedSystemAt(i);
+3157|                if (system == null)
+3158|                    continue;
+3159|
+3160|                system.PostFixedSimulation(in timing);
+3161|            }
+3162|
+3163|            _masterPendingFixedJobCount = 0;
+3164|        }
+3165|
+3166|        private void ForceCompleteMasterFencesForAupRebase(uint shiftFrameId)
+3167|        {
+3168|            long waitStart = System.Diagnostics.Stopwatch.GetTimestamp();
+3169|            DispatcherJobFence.BeginPostSimulationSwapWindow();
+3170|            try
+3171|            {
+3172|                if (_masterSimulationJobsPending)
+
+==== BuildMasterTiming @5218 ====
+5218|                DispatcherTimingDTO masterTiming = BuildMasterDispatcherTiming(deltaTime, unscaledDeltaTime);
+5219|                uint dispatcherFrameId = masterTiming.FrameId;
+5220|                RunMasterPreSimulationPhase(in masterTiming);
+5221|                UpdateH8TimeState(deltaTime, unscaledDeltaTime);
+5222|                PublishTimeDilationState(0u);
+5223|                IDataVault dispatcherDataVault = _dataVault;
+5224|                if (dispatcherDataVault == null && TryResolveCachedDataVault(out dispatcherDataVault))
+5225|                    _dataVault = dispatcherDataVault;
+5226|                RecordDispatcherBlackBoxHeartbeat(dispatcherDataVault);
+5227|                float preSimulationCostMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - preSimulationStartTimestamp) * 1000.0 /
+5228|                                                    System.Diagnostics.Stopwatch.Frequency);
+5229|                ISimulationBucketer simulationBucketer = _simulationBucketer;
+5230|                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+5231|                                        IsOriginShiftFrameLockedForCurrentFrame ||
+5232|                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+5233|                if (simulationBucketer != null && simulationBucketer.IsInitialized)
+5234|                {
+5235|                    simulationBucketer.ReportPreSimulationCostMs(preSimulationCostMs);
+5236|                    simulationBucketer.AdvanceFrame(
+5237|                        globalQualityWeightByte,
+5238|                        unscaledDeltaTime,
+5239|                        jobAdmission != null ? jobAdmission.CriticalDebtFrameCount : 0,
+5240|                        aupBarrierActive);
+5241|                    SimulationBucketFrameState bucketFrameState = simulationBucketer.CaptureFrameState();
+5242|                    PublishSimulationBucketSync(in bucketFrameState);
+5243|                    PublishFramePacingWarningIfNeeded(in bucketFrameState);
+5244|                }
+5245|
+5246|                if (IsOriginShiftBootstrapLocked)
+5247|                {
+5248|                    if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
+5249|                        return;
+5250|
+5251|                    if (IsOriginShiftBootstrapLocked)
+5252|                        return;
+5253|                }
+5254|
+5255|                if (IsOriginShiftFrameLockedForCurrentFrame)
+5256|                    return;
+5257|
+
+==== FrameId assigns @1010 ====
+1010|            signal.Frame = ReadPublishedDispatcherFrameId();
+1011|            signal.Severity = severity;
+1012|            signal.Flags = flags;
+
+==== FrameId assigns @1019 ====
+1019|            if (dispatcher != null && dispatcher._currentDispatcherFrameId != 0u)
+1020|                return dispatcher._currentDispatcherFrameId;
+1021|
+
+==== FrameId assigns @1025 ====
+1025|        public static uint CurrentFrameId => TimeSliceScheduler.Curr

@@ -1,0 +1,90 @@
+3646|        private static void ResetRunState()
+3647|        {
+3648|            _phase = Phase.Idle;
+3649|            _clockPhase = Phase.Idle;
+3650|            _clockSegmentOpen = false;
+3651|            _clockWallStart = 0.0;
+3652|            _clockGameFrameStart = 0;
+3653|            _clockTickStart = 0;
+3654|            _totalTicks = 0;
+3655|            _phaseSamples.Clear();
+3656|            _rejectedServices.Clear();
+3657|            SeedRouteMoments();
+3658|
+3659|            _frames = 0;
+3660|            _failures = 0;
+3661|            _menuFrames = 0;
+3662|            _settleFrames = 0;
+3663|            _gameplayFrames = 0;
+3664|            _menuLoad = null;
+3665|            _phaseStartedAt = 0.0;
+3666|            _playStartedAt = 0.0;
+3667|            _gameFrameAtPlayStart = 0;
+3668|
+3669|            _saveRequestIssued = false;
+3670|            _saveAccepted = false;
+3671|            _saveBusyObserved = false;
+3672|            _saveBusyClearedAt = 0.0;
+3673|            _saveLegStartedAt = 0.0;
+3674|            _saveLastPollAt = 0.0;
+3675|            _saveWaitedSeconds = 0.0;
+3676|            _saveWaitBudget = 0.0;
+3677|            _saveRoot = string.Empty;
+3678|            _saveSlotName = string.Empty;
+3679|            _saveError = string.Empty;
+3680|            _saveBefore = Array.Empty<SaveFileFacts>();
+3681|            _saveFilesAfter = 0;
+3682|            _saveDiff = default;
+3683|
+3684|            _artifactWritten = false;
+3685|
+3686|            // Determinism statics are cleared for the reason this whole method exists: a second run in one
+3687|            // editor session would otherwise inherit the first run's hash and report it as its own, which
+3688|            // is the single worst failure mode available to a determinism instrument - two runs "agreeing"
+3689|            // because one of them never read anything. The category array is kept and re-filled in place.
+3690|            _determinismState = DeterminismCapture.NotRead;
+3691|            _determinismMasterHash = 0UL;
+3692|            _determinismMasterFlags = 0u;
+3693|            _determinismLastCleanHash = 0UL;
+3694|            _determinismLastCleanFrame = 0u;
+3695|            _determinismHashFromOwnerAccessor = false;
+3696|            _determinismAccessorVaultDisagreement = false;
+3697|            _determinismValidatorInstances = 0;
+3698|            _determinismValidatorEnabled = 0;
+3699|            _determinismDispatcherFrameId = 0u;
+3700|            _determinismSlowTickDiscardedSeconds = 0.0;
+3701|            _determinismSlowTickDiscardEvents = 0;
+3702|
+3703|            // The lifetime trace is cleared for a sharper version of the same reason: a second run in one
+3704|            // editor session that inherited a first run's "the owner existed at boot warmup" sample would
+3705|            // report a lifetime window it never observed. _determinismReviveRequested is safe to clear here
+3706|            // because Run() calls ResetRunState() FIRST and parses -h8ReviveDeterminismOwner afterwards -
+3707|            // reversing that order would make this line eat the argument.
+3708|            _determinismReviveRequested = false;
+3709|            _determinismOwnerAtBootWarmup = default;
+3710|            _determinismOwnerAtGameplayStart = default;
+3711|            _determinismHashBufferDiagnosis = string.Empty;
+3712|            _determinismVaultAllocationLocked = false;
+3713|            _determinismVaultCompactionFenceActive = false;
+3714|            _determinismReviveAttempted = false;
+3715|            _determinismReviveCreated = false;
+3716|            _determinismReviveNote = string.Empty;
+3717|
+3718|            for (int i = 0; i < _determinismCategories.Length; i++)
+3719|                _determinismCategories[i] = default;
+3720|
+3721|            _worldDriverStarted = false;
+3722|            _placementOwnersRepaired = false;
+3723|            _worldDriverGraceTicks = 0;
+3724|            _graceOpenedLogged = false;
+3725|            _graceClosedLogged = false;
+3726|            _gameplayWindowStartedAt = 0.0;
+3727|            H8_HeadlessWorldDriver.Reset();
+3728|        }
+3729|
+3730|        private static string ResolveArtifactPath()
+3731|        {
+3732|            return string.IsNullOrEmpty(_artifactPath) ? ResolveDefaultArtifactPath() : _artifactPath;
+3733|        }
+3734|
+3735|        /// <summary>

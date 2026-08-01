@@ -1,0 +1,2612 @@
+==== AUP pause compare / set sites ====
+503|        private uint _timeDilationSequence;
+504|        private uint _lastPublishedTimeDilationSequence;
+505|        private uint _aupPreShiftPauseSequence;
+506|        private uint _aupPreShiftPauseFrameId;
+507|        private uint _adrenalineDilationSourceHash;
+508|        private byte _adrenalineDilationPhase;
+509|        private bool _coreTickDilationRestorePending;
+510|        private H8TimeSnapshot _timeSnapshot;
+511|        private uint _dispatcherBlackBoxSequence;
+512|        private DispatcherStateDTO _dispatcherState;
+513|        private JobHandle _masterSimulationCombinedHandle;
+514|        private JobHandle _masterFixedCombinedHandle;
+515|        private long _masterFrameStartTimestamp;
+---
+1812|            _dataVault?.LockAllocationsForAupShift(shiftFrameId);
+1813|            ForceCompleteMasterFencesForAupRebase(shiftFrameId);
+1814|            _aupPreShiftPauseSequence = shiftFrameId;
+1815|            _aupPreShiftPauseFrameId = ResolveCurrentDispatcherFrameId();
+1816|        }
+1817|
+1818|        public void ReleaseAupPreShiftPause(uint shiftFrameId)
+1819|        {
+1820|            SetAupJobAdmissionBarrier(active: false);
+1821|        }
+1822|
+1823|        private void SetAupJobAdmissionBarrier(bool active)
+1824|        {
+---
+2090|            _timeDilationSequence = 0u;
+2091|            _lastPublishedTimeDilationSequence = 0u;
+2092|            _aupPreShiftPauseSequence = 0u;
+2093|            _aupPreShiftPauseFrameId = 0u;
+2094|            ClearCoreTickDilationBurst();
+2095|            ClearAdrenalineDilation();
+2096|            _dataVault = null;
+2097|            _lastVaultGenerationMissCount = 0;
+2098|            _lastVaultMemoryJobUs = 0f;
+2099|            _lastVaultMaintenanceFlags = 0u;
+2100|            _cachedDispatcherDataVault = null;
+2101|            _cachedCameraJuiceSystem = null;
+2102|            _simulationBucketer = null;
+---
+4677|            ushort flags = EncodeDispatcherQualityWeightQ8(_globalQualityWeight01);
+4678|            if (SimulationPaused)
+4679|                flags |= DispatcherBlackBoxFlagPaused;
+4680|            if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+4681|                flags |= DispatcherBlackBoxFlagAupBarrier;
+4682|            if (IsOriginShiftBootstrapLocked || IsOriginShiftFrameLockedForCurrentFrame)
+4683|                flags |= DispatcherBlackBoxFlagOriginShiftLock;
+4684|            if (nonFinite)
+4685|                flags |= DispatcherBlackBoxFlagNonFinite;
+4686|            if (_coreTickDilationFramesRemaining > 0 || _coreTickDilationRestorePending)
+4687|                flags |= DispatcherBlackBoxFlagCoreDilation;
+4688|            if (_temporalCompressionActive)
+4689|                flags |= DispatcherBlackBoxFlagTemporalCompression;
+---
+5229|                ISimulationBucketer simulationBucketer = _simulationBucketer;
+5230|                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+5231|                                        IsOriginShiftFrameLockedForCurrentFrame ||
+5232|                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+5233|                if (simulationBucketer != null && simulationBucketer.IsInitialized)
+5234|                {
+5235|                    simulationBucketer.ReportPreSimulationCostMs(preSimulationCostMs);
+5236|                    simulationBucketer.AdvanceFrame(
+5237|                        globalQualityWeightByte,
+5238|                        unscaledDeltaTime,
+5239|                        jobAdmission != null ? jobAdmission.CriticalDebtFrameCount : 0,
+5240|                        aupBarrierActive);
+5241|                    SimulationBucketFrameState bucketFrameState = simulationBucketer.CaptureFrameState();
+---
+5255|                if (IsOriginShiftFrameLockedForCurrentFrame)
+5256|                    return;
+5257|
+5258|                if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+5259|                {
+5260|                    RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
+5261|                    return;
+5262|                }
+5263|
+5264|                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+5265|                RunMasterSimulationPhase(in masterTiming);
+5266|#if UNITY_EDITOR
+5267|                long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
+---
+==== AdvanceDispatcherFrameId / _currentDispatcherFrameId ====
+549|        private bool _runtimeGameplayBootstrapGateActive;
+550|        private uint _dispatcherFrameSequence;
+551|        private uint _currentDispatcherFrameId;
+552|        private uint _memoryTelemetrySequence;
+553|        private uint _lastMemoryDefragPressureWarningFrame;
+554|        private static int _lateFrameEventDispatchBudget;
+555|        private static bool _lateFrameEventBudgetActive;
+556|        private static bool _lateFrameCircuitBreakerTripped;
+557|        private static bool _lateFrameTimeBudgetExhausted;
+558|        private static uint _activeLateFrameEventLaneHash;
+559|        private static uint _dominantLateFrameCircuitBreakerLaneHash;
+560|        private static long _lateFrameEventBudgetStartTimestamp;
+561|        private static bool _criticalPerformanceSpikeReported;
+562|        private static bool _pauseFreezeFrameDitherActive;
+563|        private static int _droppedEventsCounter;
+564|        private static bool _visualStaticGlitchActive;
+565|        private static float _visualStaticGlitchUntilTime;
+566|        private static int _baseStressCascadeBreakerFrame = -1;
+567|        private static int _baseStressCascadeTableOverflowTelemetryFrame = -1;
+568|        private static int _lastFramePacingWarningFrame = -1;
+569|        private static int _lastFramePacingHomeostasisFrame = -1;
+570|        private static int _originShiftBootstrapLockCount;
+571|        private static int _originShiftFrameLockFrame = -1;
+572|        private static int _criticalMemoryPressureDefragRequested;
+573|        private static int _streamingStorageDebtMilli;
+574|        private static int _streamingStorageDebtSequence;
+575|        private static bool _dispatcherPlayerLoopInstalled;
+---
+1017|        {
+1018|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+1019|            if (dispatcher != null && dispatcher._currentDispatcherFrameId != 0u)
+1020|                return dispatcher._currentDispatcherFrameId;
+1021|
+1022|            return TimeSliceScheduler.CurrentFrameId;
+1023|        }
+1024|
+1025|        public static uint CurrentFrameId => TimeSliceScheduler.CurrentFrameId;
+1026|
+1027|        public static int CurrentFrameIndex => (int)(ReadPublishedDispatcherFrameId() & 0x7FFFFFFFu);
+1028|
+1029|        internal static void ApplyHomeostasisKillSwitch(
+1030|            ulong mask,
+1031|            byte pressureLevel,
+1032|            byte foveatedTier,
+1033|            bool slowTick2Hz,
+1034|            bool forceTimeDilation09,
+1035|            uint reasonHash)
+1036|        {
+1037|            Volatile.Write(ref _homeostasisKillSwitchMaskBits, unchecked((long)mask));
+1038|            Volatile.Write(ref _homeostasisPressureLevel, pressureLevel);
+1039|            Volatile.Write(ref _homeostasisSlowTick2Hz, slowTick2Hz ? 1 : 0);
+1040|            Volatile.Write(ref _homeostasisFoveatedTier, foveatedTier);
+1041|            _foveatedSimulationManager.ApplyHomeostasisPressureTier(foveatedTier);
+1042|
+1043|            if (forceTimeDilation09 && ActiveRuntimeInstance != null)
+---
+1018|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+1019|            if (dispatcher != null && dispatcher._currentDispatcherFrameId != 0u)
+1020|                return dispatcher._currentDispatcherFrameId;
+1021|
+1022|            return TimeSliceScheduler.CurrentFrameId;
+1023|        }
+1024|
+1025|        public static uint CurrentFrameId => TimeSliceScheduler.CurrentFrameId;
+1026|
+1027|        public static int CurrentFrameIndex => (int)(ReadPublishedDispatcherFrameId() & 0x7FFFFFFFu);
+1028|
+1029|        internal static void ApplyHomeostasisKillSwitch(
+1030|            ulong mask,
+1031|            byte pressureLevel,
+1032|            byte foveatedTier,
+1033|            bool slowTick2Hz,
+1034|            bool forceTimeDilation09,
+1035|            uint reasonHash)
+1036|        {
+1037|            Volatile.Write(ref _homeostasisKillSwitchMaskBits, unchecked((long)mask));
+1038|            Volatile.Write(ref _homeostasisPressureLevel, pressureLevel);
+1039|            Volatile.Write(ref _homeostasisSlowTick2Hz, slowTick2Hz ? 1 : 0);
+1040|            Volatile.Write(ref _homeostasisFoveatedTier, foveatedTier);
+1041|            _foveatedSimulationManager.ApplyHomeostasisPressureTier(foveatedTier);
+1042|
+1043|            if (forceTimeDilation09 && ActiveRuntimeInstance != null)
+1044|                ActiveRuntimeInstance.RequestCoreTickDilation(0.9f, 2, reasonHash);
+---
+2138|            _serviceRegistered = false;
+2139|            _dispatcherFrameSequence = 0u;
+2140|            _currentDispatcherFrameId = 0u;
+2141|            _memoryTelemetrySequence = 0u;
+2142|            _lastMemoryDefragPressureWarningFrame = 0u;
+2143|            Volatile.Write(ref _homeostasisKillSwitchMaskBits, 0L);
+2144|            Volatile.Write(ref _homeostasisPressureLevel, 0);
+2145|            Volatile.Write(ref _homeostasisSlowTick2Hz, 0);
+2146|            Volatile.Write(ref _homeostasisFoveatedTier, 0);
+2147|        }
+2148|
+2149|        /// <summary>
+2150|        /// Registers this dispatcher as the authoritative runtime dispatcher service.
+2151|        /// </summary>
+2152|        public void InitializeService()
+2153|        {
+2154|            if (!TryClaimActiveRuntimeAfterReloadCold())
+2155|                return;
+2156|
+2157|            if (_serviceRegistered)
+2158|                return;
+2159|
+2160|            ThreadSafeCommandQueue.Initialize();
+2161|            RefreshDataVaultDependency();
+2162|            JobSchedulingProfileCatalog.LoadColdBootProfiles(_dataVault);
+2163|            UIStateStore.EnsureInitialized();
+2164|            BaseAirlockEvents.Prewarm();
+---
+2769|        private uint ResolveCurrentDispatcherFrameId()
+2770|        {
+2771|            if (_currentDispatcherFrameId == 0u)
+2772|                return AdvanceDispatcherFrameId();
+2773|            return _currentDispatcherFrameId;
+2774|        }
+2775|
+2776|        private uint AdvanceDispatcherFrameId()
+2777|        {
+2778|            _dispatcherFrameSequence++;
+2779|            if (_dispatcherFrameSequence == 0u)
+2780|                _dispatcherFrameSequence = 1u;
+2781|            _currentDispatcherFrameId = _dispatcherFrameSequence;
+2782|            return _currentDispatcherFrameId;
+2783|        }
+2784|
+2785|        private uint ResolveMasterActiveBucket()
+2786|        {
+2787|            return ResolveMasterActiveBucket(ResolveCurrentDispatcherFrameId());
+2788|        }
+2789|
+2790|        private static uint ResolveMasterActiveBucket(uint frameId)
+2791|        {
+2792|            return frameId & MasterDispatcherBucketMask;
+2793|        }
+2794|
+2795|        private void SetMasterDispatcherPhase(DispatcherPhase phase, in DispatcherTimingDTO timing)
+---
+2770|        {
+2771|            if (_currentDispatcherFrameId == 0u)
+2772|                return AdvanceDispatcherFrameId();
+2773|            return _currentDispatcherFrameId;
+2774|        }
+2775|
+2776|        private uint AdvanceDispatcherFrameId()
+2777|        {
+2778|            _dispatcherFrameSequence++;
+2779|            if (_dispatcherFrameSequence == 0u)
+2780|                _dispatcherFrameSequence = 1u;
+2781|            _currentDispatcherFrameId = _dispatcherFrameSequence;
+2782|            return _currentDispatcherFrameId;
+2783|        }
+2784|
+2785|        private uint ResolveMasterActiveBucket()
+2786|        {
+2787|            return ResolveMasterActiveBucket(ResolveCurrentDispatcherFrameId());
+2788|        }
+2789|
+2790|        private static uint ResolveMasterActiveBucket(uint frameId)
+2791|        {
+2792|            return frameId & MasterDispatcherBucketMask;
+2793|        }
+2794|
+2795|        private void SetMasterDispatcherPhase(DispatcherPhase phase, in DispatcherTimingDTO timing)
+2796|        {
+---
+2771|            if (_currentDispatcherFrameId == 0u)
+2772|                return AdvanceDispatcherFrameId();
+2773|            return _currentDispatcherFrameId;
+2774|        }
+2775|
+2776|        private uint AdvanceDispatcherFrameId()
+2777|        {
+2778|            _dispatcherFrameSequence++;
+2779|            if (_dispatcherFrameSequence == 0u)
+2780|                _dispatcherFrameSequence = 1u;
+2781|            _currentDispatcherFrameId = _dispatcherFrameSequence;
+2782|            return _currentDispatcherFrameId;
+2783|        }
+2784|
+2785|        private uint ResolveMasterActiveBucket()
+2786|        {
+2787|            return ResolveMasterActiveBucket(ResolveCurrentDispatcherFrameId());
+2788|        }
+2789|
+2790|        private static uint ResolveMasterActiveBucket(uint frameId)
+2791|        {
+2792|            return frameId & MasterDispatcherBucketMask;
+2793|        }
+2794|
+2795|        private void SetMasterDispatcherPhase(DispatcherPhase phase, in DispatcherTimingDTO timing)
+2796|        {
+2797|            ref DispatcherStateDTO state = ref GetDispatcherStateRef();
+---
+2774|        }
+2775|
+2776|        private uint AdvanceDispatcherFrameId()
+2777|        {
+2778|            _dispatcherFrameSequence++;
+2779|            if (_dispatcherFrameSequence == 0u)
+2780|                _dispatcherFrameSequence = 1u;
+2781|            _currentDispatcherFrameId = _dispatcherFrameSequence;
+2782|            return _currentDispatcherFrameId;
+2783|        }
+2784|
+2785|        private uint ResolveMasterActiveBucket()
+2786|        {
+2787|            return ResolveMasterActiveBucket(ResolveCurrentDispatcherFrameId());
+2788|        }
+2789|
+2790|        private static uint ResolveMasterActiveBucket(uint frameId)
+2791|        {
+2792|            return frameId & MasterDispatcherBucketMask;
+2793|        }
+2794|
+2795|        private void SetMasterDispatcherPhase(DispatcherPhase phase, in DispatcherTimingDTO timing)
+2796|        {
+2797|            ref DispatcherStateDTO state = ref GetDispatcherStateRef();
+2798|            state.CurrentPhaseId = (uint)phase;
+2799|            state.CurrentFrame = timing.FrameId;
+2800|            state.ActiveBucket = ResolveMasterActiveBucket(timing.FrameId);
+---
+2779|            if (_dispatcherFrameSequence == 0u)
+2780|                _dispatcherFrameSequence = 1u;
+2781|            _currentDispatcherFrameId = _dispatcherFrameSequence;
+2782|            return _currentDispatcherFrameId;
+2783|        }
+2784|
+2785|        private uint ResolveMasterActiveBucket()
+2786|        {
+2787|            return ResolveMasterActiveBucket(ResolveCurrentDispatcherFrameId());
+2788|        }
+2789|
+2790|        private static uint ResolveMasterActiveBucket(uint frameId)
+2791|        {
+2792|            return frameId & MasterDispatcherBucketMask;
+2793|        }
+2794|
+2795|        private void SetMasterDispatcherPhase(DispatcherPhase phase, in DispatcherTimingDTO timing)
+2796|        {
+2797|            ref DispatcherStateDTO state = ref GetDispatcherStateRef();
+2798|            state.CurrentPhaseId = (uint)phase;
+2799|            state.CurrentFrame = timing.FrameId;
+2800|            state.ActiveBucket = ResolveMasterActiveBucket(timing.FrameId);
+2801|            state.ActiveBucketMask = timing.ActiveBucketMask;
+2802|            state.SortedSystemCount = unchecked((uint)math.max(0, _masterSortedSystemCount));
+2803|            state.DisabledSystemCount = unchecked((uint)math.max(0, _masterDisabledSystemCount));
+2804|            state.PendingSimulationJobCount = unchecked((uint)math.max(0, _masterPendingSimulationJobCount));
+2805|            state.Flags = BuildMasterDispatcherTransientFlags();
+---
+2780|                _dispatcherFrameSequence = 1u;
+2781|            _currentDispatcherFrameId = _dispatcherFrameSequence;
+2782|            return _currentDispatcherFrameId;
+2783|        }
+2784|
+2785|        private uint ResolveMasterActiveBucket()
+2786|        {
+2787|            return ResolveMasterActiveBucket(ResolveCurrentDispatcherFrameId());
+2788|        }
+2789|
+2790|        private static uint ResolveMasterActiveBucket(uint frameId)
+2791|        {
+2792|            return frameId & MasterDispatcherBucketMask;
+2793|        }
+2794|
+2795|        private void SetMasterDispatcherPhase(DispatcherPhase phase, in DispatcherTimingDTO timing)
+2796|        {
+2797|            ref DispatcherStateDTO state = ref GetDispatcherStateRef();
+2798|            state.CurrentPhaseId = (uint)phase;
+2799|            state.CurrentFrame = timing.FrameId;
+2800|            state.ActiveBucket = ResolveMasterActiveBucket(timing.FrameId);
+2801|            state.ActiveBucketMask = timing.ActiveBucketMask;
+2802|            state.SortedSystemCount = unchecked((uint)math.max(0, _masterSortedSystemCount));
+2803|            state.DisabledSystemCount = unchecked((uint)math.max(0, _masterDisabledSystemCount));
+2804|            state.PendingSimulationJobCount = unchecked((uint)math.max(0, _masterPendingSimulationJobCount));
+2805|            state.Flags = BuildMasterDispatcherTransientFlags();
+2806|        }
+---
+==== RunDispatcherLateFrame start (120 lines) ====
+995|        private static void RunDispatcherLateFrameFromPlayerLoop()
+996|        {
+997|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+998|            if (dispatcher == null || !dispatcher._serviceRegistered || !dispatcher.isActiveAndEnabled)
+999|                return;
+1000|
+1001|            dispatcher.RunDispatcherLateFrame();
+1002|        }
+1003|
+1004|        private static void PublishDispatcherComplianceViolation(uint ruleHash, uint contextHash, byte severity, byte flags)
+1005|        {
+1006|            ComplianceViolationSignal signal = default;
+1007|            signal.RuleHash = ruleHash;
+1008|            signal.SystemHash = _SystemDispatcherHash;
+1009|            signal.ContextHash = contextHash;
+1010|            signal.Frame = ReadPublishedDispatcherFrameId();
+1011|            signal.Severity = severity;
+1012|            signal.Flags = flags;
+1013|            SignalBus<ComplianceViolationSignal>.TryPushTracked(in signal, ref s_x001SystemDispatcherSignalPushDropCount);
+1014|        }
+1015|
+1016|        internal static uint ReadPublishedDispatcherFrameId()
+1017|        {
+1018|            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+1019|            if (dispatcher != null && dispatcher._currentDispatcherFrameId != 0u)
+1020|                return dispatcher._currentDispatcherFrameId;
+1021|
+1022|            return TimeSliceScheduler.CurrentFrameId;
+1023|        }
+1024|
+1025|        public static uint CurrentFrameId => TimeSliceScheduler.CurrentFrameId;
+1026|
+1027|        public static int CurrentFrameIndex => (int)(ReadPublishedDispatcherFrameId() & 0x7FFFFFFFu);
+1028|
+1029|        internal static void ApplyHomeostasisKillSwitch(
+1030|            ulong mask,
+1031|            byte pressureLevel,
+1032|            byte foveatedTier,
+1033|            bool slowTick2Hz,
+1034|            bool forceTimeDilation09,
+1035|            uint reasonHash)
+1036|        {
+1037|            Volatile.Write(ref _homeostasisKillSwitchMaskBits, unchecked((long)mask));
+1038|            Volatile.Write(ref _homeostasisPressureLevel, pressureLevel);
+1039|            Volatile.Write(ref _homeostasisSlowTick2Hz, slowTick2Hz ? 1 : 0);
+1040|            Volatile.Write(ref _homeostasisFoveatedTier, foveatedTier);
+1041|            _foveatedSimulationManager.ApplyHomeostasisPressureTier(foveatedTier);
+1042|
+1043|            if (forceTimeDilation09 && ActiveRuntimeInstance != null)
+1044|                ActiveRuntimeInstance.RequestCoreTickDilation(0.9f, 2, reasonHash);
+1045|        }
+1046|
+1047|        /// <summary>
+1048|        /// Drops same-frame habitat damage/stress cascades once one IslandID exceeds the hard budget.
+1049|        /// </summary>
+1050|        /// <param name="islandId">Logistics component IslandID. Negative values are coerced to zero.</param>
+1051|        /// <param name="eventHash">Stable event hash for telemetry context.</param>
+1052|        /// <returns>True when the caller may process this cascade event.</returns>
+1053|        internal static bool TryConsumeBaseStressCascadeEvent(int islandId, uint eventHash)
+1054|        {
+1055|            int currentFrame = CurrentFrameIndex;
+1056|            if (_baseStressCascadeBreakerFrame != currentFrame)
+1057|                _baseStressCascadeBreakerFrame = currentFrame;
+1058|
+1059|            int safeIslandId = math.max(0, islandId);
+1060|            int slot = ClaimBaseStressCascadeSlot(safeIslandId);
+1061|            if (slot < 0)
+1062|            {
+1063|                if (_baseStressCascadeTableOverflowTelemetryFrame != currentFrame)
+1064|                {
+1065|                    _baseStressCascadeTableOverflowTelemetryFrame = currentFrame;
+1066|                    CrashTelemetryBuffer.ReportEventCascadeWarning();
+1067|                    GlobalTelemetryBus.PublishCatastrophicCascadePrevented(
+1068|                        unchecked((uint)safeIslandId),
+1069|                        eventHash != 0u ? eventHash : _BaseStressCascadeBreakerHash,
+1070|                        1);
+1071|                }
+1072|
+1073|                return false;
+1074|            }
+1075|
+1076|            ushort currentCount = _baseStressCascadeIslandCounts[slot];
+1077|            if (currentCount < MaxBaseStressCascadeEventsPerIslandPerFrame)
+1078|            {
+1079|                _baseStressCascadeIslandCounts[slot] = (ushort)(currentCount + 1);
+1080|                return true;
+1081|            }
+1082|
+1083|            ushort droppedCount = _baseStressCascadeDroppedCounts[slot];
+1084|            if (droppedCount < ushort.MaxValue)
+1085|                droppedCount++;
+1086|
+1087|            _baseStressCascadeDroppedCounts[slot] = droppedCount;
+1088|            if (!_baseStressCascadeTelemetryEmitted[slot])
+1089|            {
+1090|                _baseStressCascadeTelemetryEmitted[slot] = true;
+1091|                CrashTelemetryBuffer.ReportEventCascadeWarning();
+1092|                GlobalTelemetryBus.PublishCatastrophicCascadePrevented(
+1093|                    unchecked((uint)safeIslandId),
+1094|                    eventHash != 0u ? eventHash : _BaseStressCascadeBreakerHash,
+1095|                    droppedCount);
+1096|            }
+1097|
+1098|            return false;
+1099|        }
+1100|
+1101|#if UNITY_EDITOR
+1102|        internal static void ResetBaseStressCascadeCircuitBreakerForSmokeTest()
+1103|        {
+1104|            ResetBaseStressCascadeCircuitBreakerStateForFrame(CurrentFrameIndex);
+1105|        }
+1106|
+1107|        internal static int DebugGetBaseStressCascadeDroppedCount(int islandId)
+1108|        {
+1109|            int safeIslandId = math.max(0, islandId);
+1110|            int slot = FindBaseStressCascadeSlot(safeIslandId);
+1111|            return slot >= 0 ? _baseStressCascadeDroppedCounts[slot] : 0;
+1112|        }
+1113|
+1114|        internal static int DebugGetBaseStressCascadeConsumedCount(int islandId)
+==== RunDispatcherUpdate FO/AUP gates ====
+5210|                float frameDilationScalar = ConsumeFrameTimeDilationScalar();
+5211|                if (!math.isfinite(frameDilationScalar) || frameDilationScalar < 0f)
+5212|                    frameDilationScalar = 0f;
+5213|
+5214|                float deltaTime = unscaledDeltaTime * frameDilationScalar;
+5215|                if (!math.isfinite(deltaTime) || deltaTime < 0f)
+5216|                    deltaTime = 0f;
+5217|                CurrentFrameDeltaTime = deltaTime;
+5218|                DispatcherTimingDTO masterTiming = BuildMasterDispatcherTiming(deltaTime, unscaledDeltaTime);
+5219|                uint dispatcherFrameId = masterTiming.FrameId;
+5220|                RunMasterPreSimulationPhase(in masterTiming);
+5221|                UpdateH8TimeState(deltaTime, unscaledDeltaTime);
+5222|                PublishTimeDilationState(0u);
+5223|                IDataVault dispatcherDataVault = _dataVault;
+5224|                if (dispatcherDataVault == null && TryResolveCachedDataVault(out dispatcherDataVault))
+5225|                    _dataVault = dispatcherDataVault;
+5226|                RecordDispatcherBlackBoxHeartbeat(dispatcherDataVault);
+5227|                float preSimulationCostMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - preSimulationStartTimestamp) * 1000.0 /
+5228|                                                    System.Diagnostics.Stopwatch.Frequency);
+5229|                ISimulationBucketer simulationBucketer = _simulationBucketer;
+5230|                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+5231|                                        IsOriginShiftFrameLockedForCurrentFrame ||
+5232|                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+5233|                if (simulationBucketer != null && simulationBucketer.IsInitialized)
+5234|                {
+5235|                    simulationBucketer.ReportPreSimulationCostMs(preSimulationCostMs);
+5236|                    simulationBucketer.AdvanceFrame(
+5237|                        globalQualityWeightByte,
+5238|                        unscaledDeltaTime,
+5239|                        jobAdmission != null ? jobAdmission.CriticalDebtFrameCount : 0,
+5240|                        aupBarrierActive);
+5241|                    SimulationBucketFrameState bucketFrameState = simulationBucketer.CaptureFrameState();
+5242|                    PublishSimulationBucketSync(in bucketFrameState);
+5243|                    PublishFramePacingWarningIfNeeded(in bucketFrameState);
+5244|                }
+5245|
+5246|                if (IsOriginShiftBootstrapLocked)
+5247|                {
+5248|                    if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
+5249|                        return;
+5250|
+5251|                    if (IsOriginShiftBootstrapLocked)
+5252|                        return;
+5253|                }
+5254|
+5255|                if (IsOriginShiftFrameLockedForCurrentFrame)
+5256|                    return;
+5257|
+5258|                if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+5259|                {
+5260|                    RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
+5261|                    return;
+5262|                }
+5263|
+5264|                masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+5265|                RunMasterSimulationPhase(in masterTiming);
+5266|#if UNITY_EDITOR
+5267|                long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
+5268|#endif
+5269|                _foveatedSimulationManager.BeginDispatcherFrame(deltaTime);
+5270|#if UNITY_EDITOR
+5271|                EndDispatcherPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
+5272|#endif
+5273|                PredatorCognitionDomain.BeginDispatcherFrame(CurrentFrameIndex);
+5274|                bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&
+5275|                                          BootstrapState.HasActiveInstance &&
+5276|                                          !BootstrapState.IsGameReady;
+5277|                long bucketWorkStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+5278|
+5279|                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+---
+==== FO TryFlush body ====
+FO 313|        internal static bool TryFlushInitialSceneRebaseBeforeTicks()
+FO 314|        {
+FO 315|            HectonFloatingOrigin origin = s_activeRuntime;
+FO 316|            if (origin == null)
+FO 317|                return true;
+FO 318|
+FO 319|            // Active transform shift job owns the world; do not mutate scenes under it.
+FO 320|            if (origin._isShiftInProgress)
+FO 321|                return false;
+FO 322|
+FO 323|            // Physics pause must NOT soft-deadlock the dispatcher bootstrap lock.
+FO 324|            // Pending loaded scenes acquire SceneRebaseTickLock; the previous early-return
+FO 325|            // here (and in ProcessPending) left that lock held while FO.Tick - the only
+FO 326|            // ResumePhysicsAfterShift driver - was starved by IsOriginShiftBootstrapLocked.
+FO 327|            // Drive the pause frame-gate and drain pending scene offset apply from this
+FO 328|            // path (headless Update calls us outside the locked master sim).
+FO 329|            if (origin._physicsPauseActive &&
+FO 330|                SystemDispatcher.CurrentFrameIndex >= origin._physicsResumeFrame)
+FO 331|            {
+FO 332|                origin.ResumePhysicsAfterShift();
+FO 333|            }
+FO 334|
+FO 335|            if (origin._pendingLoadedScenes.Count > 0 || origin._shiftTargetsDirty)
+FO 336|                origin.ProcessPendingSceneSynchronization();
+FO 337|
+FO 338|            // If physics remains paused only because the scene-rebase barrier never
+FO 339|            // advanced (async broadcast cancelled/watchdog) and there is nothing left
+FO 340|            // to apply, complete the barrier so ResumePhysicsAfterShift can finish and
+FO 341|            // the bootstrap lock can release.
+FO 342|            if (origin._physicsPauseActive &&
+FO 343|                origin._pendingLoadedScenes.Count == 0 &&
+FO 344|                HasPendingSceneRebaseBarrier(origin))
+FO 345|            {
+FO 346|                origin.CompleteSceneRebaseBarrier();
+FO 347|                origin.ResumePhysicsAfterShift();
+FO 348|            }
+FO 349|
+FO 350|            return origin._pendingLoadedScenes.Count == 0 &&
+FO 351|                   !origin._shiftTargetsDirty &&
+FO 352|                   !origin._sceneRebaseTickLockHeld &&
+FO 353|                   !origin._physicsPauseActive;
+FO 354|        }
+==== FO CopyBootstrapDrainSnapshot ====
+FO 361|        internal static void CopyBootstrapDrainSnapshot(
+FO 362|            out bool hasOrigin,
+FO 363|            out bool shiftInProgress,
+FO 364|            out bool physicsPauseActive,
+FO 365|            out bool sceneRebaseTickLockHeld,
+FO 366|            out int pendingLoadedSceneCount,
+FO 367|            out bool shiftTargetsDirty,
+FO 368|            out bool sceneRebaseBarrierPending)
+FO 369|        {
+FO 370|            HectonFloatingOrigin origin = s_activeRuntime;
+FO 371|            if (origin == null)
+FO 372|            {
+FO 373|                hasOrigin = false;
+FO 374|                shiftInProgress = false;
+FO 375|                physicsPauseActive = false;
+FO 376|                sceneRebaseTickLockHeld = false;
+FO 377|                pendingLoadedSceneCount = 0;
+FO 378|                shiftTargetsDirty = false;
+FO 379|                sceneRebaseBarrierPending = false;
+FO 380|                return;
+FO 381|            }
+FO 382|
+FO 383|            hasOrigin = true;
+FO 384|            shiftInProgress = origin._isShiftInProgress;
+FO 385|            physicsPauseActive = origin._physicsPauseActive;
+FO 386|            sceneRebaseTickLockHeld = origin._sceneRebaseTickLockHeld;
+FO 387|            pendingLoadedSceneCount = origin._pendingLoadedScenes.Count;
+FO 388|            shiftTargetsDirty = origin._shiftTargetsDirty;
+FO 389|            sceneRebaseBarrierPending = HasPendingSceneRebaseBarrier(origin);
+FO 390|        }
+==== HSR TryFlush / snapshot / clock ====
+HSR 283|                    // Keep FO scene-rebase barrier draining while we wait — dispatcher early-returns
+HSR 284|                    // all Frost/LateFrame while IsOriginShiftBootstrapLocked holds.
+HSR 285|                    HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+HSR 286|                    MaybeLogEcologyWaitProgress();
+HSR 287|                    if (_ecologyWaitStartRealtime > 0.0 &&
+HSR 288|                        Time.realtimeSinceStartupAsDouble - _ecologyWaitStartRealtime > _startupTimeoutSeconds)
+HSR 289|                    {
+HSR 290|                        LogEcologyBootstrapTimeoutDiagnostics();
+HSR 291|                        FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
+HSR 292|                        return;
+---
+HSR 301|                // GameReady may land after ecoInit; arm wait clock + open Player LateFrame path.
+HSR 302|                TryArmEcologyWaitClock();
+HSR 303|                MaybeEnsureHeadlessSimulationClockSustain();
+HSR 304|                MaybeLogPostReadyProgress();
+HSR 305|                HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+HSR 306|            }
+HSR 307|
+HSR 308|            if (!_awaitingDispatcher)
+HSR 309|                return;
+HSR 310|
+---
+HSR 302|                TryArmEcologyWaitClock();
+HSR 303|                MaybeEnsureHeadlessSimulationClockSustain();
+HSR 304|                MaybeLogPostReadyProgress();
+HSR 305|                HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+HSR 306|            }
+HSR 307|
+HSR 308|            if (!_awaitingDispatcher)
+HSR 309|                return;
+HSR 310|
+HSR 311|            TryCompleteDispatcherWait();
+---
+HSR 303|                MaybeEnsureHeadlessSimulationClockSustain();
+HSR 304|                MaybeLogPostReadyProgress();
+HSR 305|                HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+HSR 306|            }
+HSR 307|
+HSR 308|            if (!_awaitingDispatcher)
+HSR 309|                return;
+HSR 310|
+HSR 311|            TryCompleteDispatcherWait();
+HSR 312|        }
+---
+HSR 493|                _originListenerRegistered = true;
+HSR 494|                // Unpause+dilation at register. Re-asserted again at ecology-ready / GameReady.
+HSR 495|                EnsureHeadlessSimulationClock("lanes-registered");
+HSR 496|                if (!_started)
+HSR 497|                    FailAndQuit(1, TimeoutHash, "[RUNNER_REGISTRATION_FAILED]");
+HSR 498|                else
+HSR 499|                    LogRunnerLifecycle("runtime lanes registered; dilation requested");
+HSR 500|            }
+HSR 501|            catch (IOException exception)
+HSR 502|            {
+---
+HSR 696|            // GameReady opens Player LateFrame (day-audit drain). Re-assert clock here so a pause
+HSR 697|            // taken during bootstrap cannot leave dilation at 0/pre-pause after short-circuit.
+HSR 698|            EnsureHeadlessSimulationClock("game-ready");
+HSR 699|        }
+HSR 700|
+HSR 701|        private void LogEcologyBootstrapTimeoutDiagnostics()
+HSR 702|        {
+HSR 703|            IEcosystemDirectorService ecosystem = GlobalRegistry.EcosystemDirector;
+HSR 704|            bool ecoNull = ecosystem == null;
+HSR 705|            bool ecoInit = !ecoNull && ecosystem.IsInitialized;
+---
+HSR 704|            bool ecoNull = ecosystem == null;
+HSR 705|            bool ecoInit = !ecoNull && ecosystem.IsInitialized;
+HSR 706|            bool foFlushClean = HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+HSR 707|            HectonFloatingOrigin.CopyBootstrapDrainSnapshot(
+HSR 708|                out bool foHasOrigin,
+HSR 709|                out bool foShift,
+HSR 710|                out bool foPhysicsPause,
+HSR 711|                out bool foLock,
+HSR 712|                out int foPendingScenes,
+HSR 713|                out bool foTargetsDirty,
+---
+HSR 705|            bool ecoInit = !ecoNull && ecosystem.IsInitialized;
+HSR 706|            bool foFlushClean = HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+HSR 707|            HectonFloatingOrigin.CopyBootstrapDrainSnapshot(
+HSR 708|                out bool foHasOrigin,
+HSR 709|                out bool foShift,
+HSR 710|                out bool foPhysicsPause,
+HSR 711|                out bool foLock,
+HSR 712|                out int foPendingScenes,
+HSR 713|                out bool foTargetsDirty,
+HSR 714|                out bool foBarrier);
+---
+HSR 708|                out bool foHasOrigin,
+HSR 709|                out bool foShift,
+HSR 710|                out bool foPhysicsPause,
+HSR 711|                out bool foLock,
+HSR 712|                out int foPendingScenes,
+HSR 713|                out bool foTargetsDirty,
+HSR 714|                out bool foBarrier);
+HSR 715|            bool dispBootstrapLocked = SystemDispatcher.IsOriginShiftBootstrapLocked;
+HSR 716|            // FailAndQuit muzzles Log after ecologyReady; we are pre-ready so Log is fine.
+HSR 717|            LogRunnerLifecycle(
+---
+HSR 709|                out bool foShift,
+HSR 710|                out bool foPhysicsPause,
+HSR 711|                out bool foLock,
+HSR 712|                out int foPendingScenes,
+HSR 713|                out bool foTargetsDirty,
+HSR 714|                out bool foBarrier);
+HSR 715|            bool dispBootstrapLocked = SystemDispatcher.IsOriginShiftBootstrapLocked;
+HSR 716|            // FailAndQuit muzzles Log after ecologyReady; we are pre-ready so Log is fine.
+HSR 717|            LogRunnerLifecycle(
+HSR 718|                "BOOTSTRAP_TIMEOUT diag ecoNull=" + (ecoNull ? "1" : "0") +
+---
+HSR 710|                out bool foPhysicsPause,
+HSR 711|                out bool foLock,
+HSR 712|                out int foPendingScenes,
+HSR 713|                out bool foTargetsDirty,
+HSR 714|                out bool foBarrier);
+HSR 715|            bool dispBootstrapLocked = SystemDispatcher.IsOriginShiftBootstrapLocked;
+HSR 716|            // FailAndQuit muzzles Log after ecologyReady; we are pre-ready so Log is fine.
+HSR 717|            LogRunnerLifecycle(
+HSR 718|                "BOOTSTRAP_TIMEOUT diag ecoNull=" + (ecoNull ? "1" : "0") +
+HSR 719|                " ecoInit=" + (ecoInit ? "1" : "0") +
+---
+HSR 713|                out bool foTargetsDirty,
+HSR 714|                out bool foBarrier);
+HSR 715|            bool dispBootstrapLocked = SystemDispatcher.IsOriginShiftBootstrapLocked;
+HSR 716|            // FailAndQuit muzzles Log after ecologyReady; we are pre-ready so Log is fine.
+HSR 717|            LogRunnerLifecycle(
+HSR 718|                "BOOTSTRAP_TIMEOUT diag ecoNull=" + (ecoNull ? "1" : "0") +
+HSR 719|                " ecoInit=" + (ecoInit ? "1" : "0") +
+HSR 720|                " foFlushClean=" + (foFlushClean ? "1" : "0") +
+HSR 721|                " foHasOrigin=" + (foHasOrigin ? "1" : "0") +
+HSR 722|                " foShift=" + (foShift ? "1" : "0") +
+---
+HSR 721|                " foHasOrigin=" + (foHasOrigin ? "1" : "0") +
+HSR 722|                " foShift=" + (foShift ? "1" : "0") +
+HSR 723|                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+HSR 724|                " foLock=" + (foLock ? "1" : "0") +
+HSR 725|                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+HSR 726|                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+HSR 727|                " foBarrier=" + (foBarrier ? "1" : "0") +
+HSR 728|                " dispBootstrapLocked=" + (dispBootstrapLocked ? "1" : "0") +
+HSR 729|                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0") +
+HSR 730|                " hasBootstrap=" + (BootstrapState.HasActiveInstance ? "1" : "0"));
+---
+HSR 722|                " foShift=" + (foShift ? "1" : "0") +
+HSR 723|                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+HSR 724|                " foLock=" + (foLock ? "1" : "0") +
+HSR 725|                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+HSR 726|                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+HSR 727|                " foBarrier=" + (foBarrier ? "1" : "0") +
+HSR 728|                " dispBootstrapLocked=" + (dispBootstrapLocked ? "1" : "0") +
+HSR 729|                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0") +
+HSR 730|                " hasBootstrap=" + (BootstrapState.HasActiveInstance ? "1" : "0"));
+HSR 731|        }
+---
+HSR 723|                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+HSR 724|                " foLock=" + (foLock ? "1" : "0") +
+HSR 725|                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+HSR 726|                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+HSR 727|                " foBarrier=" + (foBarrier ? "1" : "0") +
+HSR 728|                " dispBootstrapLocked=" + (dispBootstrapLocked ? "1" : "0") +
+HSR 729|                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0") +
+HSR 730|                " hasBootstrap=" + (BootstrapState.HasActiveInstance ? "1" : "0"));
+HSR 731|        }
+HSR 732|
+---
+HSR 726|                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+HSR 727|                " foBarrier=" + (foBarrier ? "1" : "0") +
+HSR 728|                " dispBootstrapLocked=" + (dispBootstrapLocked ? "1" : "0") +
+HSR 729|                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0") +
+HSR 730|                " hasBootstrap=" + (BootstrapState.HasActiveInstance ? "1" : "0"));
+HSR 731|        }
+HSR 732|
+HSR 733|        /// <summary>
+HSR 734|        /// Periodic pre-ecology wait trace so external BATCH_TIMEOUT still leaves FO lock state on disk.
+HSR 735|        /// </summary>
+---
+HSR 748|            bool ecoNull = ecosystem == null;
+HSR 749|            bool ecoInit = !ecoNull && ecosystem.IsInitialized;
+HSR 750|            HectonFloatingOrigin.CopyBootstrapDrainSnapshot(
+HSR 751|                out bool foHasOrigin,
+HSR 752|                out bool foShift,
+HSR 753|                out bool foPhysicsPause,
+HSR 754|                out bool foLock,
+HSR 755|                out int foPendingScenes,
+HSR 756|                out bool foTargetsDirty,
+HSR 757|                out bool foBarrier);
+---
+HSR 751|                out bool foHasOrigin,
+HSR 752|                out bool foShift,
+HSR 753|                out bool foPhysicsPause,
+HSR 754|                out bool foLock,
+HSR 755|                out int foPendingScenes,
+HSR 756|                out bool foTargetsDirty,
+HSR 757|                out bool foBarrier);
+HSR 758|            LogRunnerLifecycle(
+HSR 759|                "ecology wait progress t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
+HSR 760|                "s ecoNull=" + (ecoNull ? "1" : "0") +
+---
+HSR 752|                out bool foShift,
+HSR 753|                out bool foPhysicsPause,
+HSR 754|                out bool foLock,
+HSR 755|                out int foPendingScenes,
+HSR 756|                out bool foTargetsDirty,
+HSR 757|                out bool foBarrier);
+HSR 758|            LogRunnerLifecycle(
+HSR 759|                "ecology wait progress t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
+HSR 760|                "s ecoNull=" + (ecoNull ? "1" : "0") +
+HSR 761|                " ecoInit=" + (ecoInit ? "1" : "0") +
+---
+HSR 753|                out bool foPhysicsPause,
+HSR 754|                out bool foLock,
+HSR 755|                out int foPendingScenes,
+HSR 756|                out bool foTargetsDirty,
+HSR 757|                out bool foBarrier);
+HSR 758|            LogRunnerLifecycle(
+HSR 759|                "ecology wait progress t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
+HSR 760|                "s ecoNull=" + (ecoNull ? "1" : "0") +
+HSR 761|                " ecoInit=" + (ecoInit ? "1" : "0") +
+HSR 762|                " frostReg=" + (_registeredFrost ? "1" : "0") +
+---
+HSR 763|                " foHasOrigin=" + (foHasOrigin ? "1" : "0") +
+HSR 764|                " foShift=" + (foShift ? "1" : "0") +
+HSR 765|                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+HSR 766|                " foLock=" + (foLock ? "1" : "0") +
+HSR 767|                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+HSR 768|                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+HSR 769|                " foBarrier=" + (foBarrier ? "1" : "0") +
+HSR 770|                " dispBootstrapLocked=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
+HSR 771|                " dispFrameLocked=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0"));
+HSR 772|        }
+---
+HSR 764|                " foShift=" + (foShift ? "1" : "0") +
+HSR 765|                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+HSR 766|                " foLock=" + (foLock ? "1" : "0") +
+HSR 767|                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+HSR 768|                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+HSR 769|                " foBarrier=" + (foBarrier ? "1" : "0") +
+HSR 770|                " dispBootstrapLocked=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
+HSR 771|                " dispFrameLocked=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0"));
+HSR 772|        }
+HSR 773|
+---
+HSR 765|                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+HSR 766|                " foLock=" + (foLock ? "1" : "0") +
+HSR 767|                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+HSR 768|                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+HSR 769|                " foBarrier=" + (foBarrier ? "1" : "0") +
+HSR 770|                " dispBootstrapLocked=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
+HSR 771|                " dispFrameLocked=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0"));
+HSR 772|        }
+HSR 773|
+HSR 774|        private void TryMarkEcologyReady()
+---
+HSR 768|                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+HSR 769|                " foBarrier=" + (foBarrier ? "1" : "0") +
+HSR 770|                " dispBootstrapLocked=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
+HSR 771|                " dispFrameLocked=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0"));
+HSR 772|        }
+HSR 773|
+HSR 774|        private void TryMarkEcologyReady()
+HSR 775|        {
+HSR 776|            IEcosystemDirectorService ecosystem = GlobalRegistry.EcosystemDirector;
+HSR 777|            bool readyNow = ecosystem != null && ecosystem.IsInitialized;
+---
+HSR 804|                // lane register; any later pause zeros scalar and unpause restores pre-pause (often 1).
+HSR 805|                // Re-assert real dispatcher clock at the ready gate — not fake day rows.
+HSR 806|                EnsureHeadlessSimulationClock("ecology-ready");
+HSR 807|            }
+HSR 808|
+HSR 809|            _ecologyReady = readyNow;
+HSR 810|        }
+HSR 811|
+HSR 812|        /// <summary>
+HSR 813|        /// Unpause + re-request headless dilation + enable step-bounded dispatcher time.
+---
+HSR 816|        /// dayAcc; EnableStepBoundedTime supplies a real fixed unscaled dt per update.
+HSR 817|        /// </summary>
+HSR 818|        private void EnsureHeadlessSimulationClock(string reason)
+HSR 819|        {
+HSR 820|            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+HSR 821|            if (dispatcher == null)
+HSR 822|            {
+HSR 823|                LogRunnerLifecycle("sim clock ensure reason=" + reason + " dispatcher=null");
+HSR 824|                return;
+HSR 825|            }
+---
+HSR 863|        /// against late SimulationPauseSignal / pause-menu / desync paths. Stops once days advance.
+HSR 864|        /// </summary>
+HSR 865|        private void MaybeEnsureHeadlessSimulationClockSustain()
+HSR 866|        {
+HSR 867|            if (!_ecologyReady || _finished || _completedDays > 0)
+HSR 868|                return;
+HSR 869|
+HSR 870|            if (_lastClockEnsureRealtime > 0.0 &&
+HSR 871|                Time.realtimeSinceStartupAsDouble - _lastClockEnsureRealtime < PostReadyClockEnsureIntervalSeconds)
+HSR 872|                return;
+---
+HSR 886|            }
+HSR 887|
+HSR 888|            EnsureHeadlessSimulationClock("post-ready-sustain");
+HSR 889|        }
+HSR 890|
+HSR 891|        /// <summary>
+HSR 892|        /// Throttled post-ready Warning diag so BATCH_TIMEOUT still leaves pause/dilation/dayAcc on disk.
+HSR 893|        /// </summary>
+HSR 894|        private void MaybeLogPostReadyProgress()
+HSR 895|        {
+---
+HSR 892|        /// Throttled post-ready Warning diag so BATCH_TIMEOUT still leaves pause/dilation/dayAcc on disk.
+HSR 893|        /// </summary>
+HSR 894|        private void MaybeLogPostReadyProgress()
+HSR 895|        {
+HSR 896|            if (!_ecologyReady || _finished || _simulationStartRealtime <= 0.0)
+HSR 897|                return;
+HSR 898|
+HSR 899|            double waited = Time.realtimeSinceStartupAsDouble - _simulationStartRealtime;
+HSR 900|            int bucket = (int)(waited / PostReadyDiagIntervalSeconds);
+HSR 901|            if (bucket <= _postReadyDiagBucket)
+---
+HSR 907|            bool paused = dispatcher != null && dispatcher.SimulationPaused;
+HSR 908|            float dil = dispatcher != null ? dispatcher.TimeDilationScalar : -1f;
+HSR 909|            HectonFloatingOrigin.CopyBootstrapDrainSnapshot(
+HSR 910|                out bool foHasOrigin,
+HSR 911|                out bool foShift,
+HSR 912|                out bool foPhysicsPause,
+HSR 913|                out bool foLock,
+HSR 914|                out int foPendingScenes,
+HSR 915|                out bool foTargetsDirty,
+HSR 916|                out bool foBarrier);
+---
+HSR 910|                out bool foHasOrigin,
+HSR 911|                out bool foShift,
+HSR 912|                out bool foPhysicsPause,
+HSR 913|                out bool foLock,
+HSR 914|                out int foPendingScenes,
+HSR 915|                out bool foTargetsDirty,
+HSR 916|                out bool foBarrier);
+HSR 917|
+HSR 918|            LogRunnerLifecycle(
+HSR 919|                "post-ready t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
+---
+HSR 911|                out bool foShift,
+HSR 912|                out bool foPhysicsPause,
+HSR 913|                out bool foLock,
+HSR 914|                out int foPendingScenes,
+HSR 915|                out bool foTargetsDirty,
+HSR 916|                out bool foBarrier);
+HSR 917|
+HSR 918|            LogRunnerLifecycle(
+HSR 919|                "post-ready t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
+HSR 920|                "s paused=" + (paused ? "1" : "0") +
+---
+HSR 912|                out bool foPhysicsPause,
+HSR 913|                out bool foLock,
+HSR 914|                out int foPendingScenes,
+HSR 915|                out bool foTargetsDirty,
+HSR 916|                out bool foBarrier);
+HSR 917|
+HSR 918|            LogRunnerLifecycle(
+HSR 919|                "post-ready t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
+HSR 920|                "s paused=" + (paused ? "1" : "0") +
+HSR 921|                " dil=" + dil.ToString("0.###", CultureInfo.InvariantCulture) +
+---
+HSR 929|                " foHasOrigin=" + (foHasOrigin ? "1" : "0") +
+HSR 930|                " foShift=" + (foShift ? "1" : "0") +
+HSR 931|                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+HSR 932|                " foLock=" + (foLock ? "1" : "0") +
+HSR 933|                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+HSR 934|                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+HSR 935|                " foBarrier=" + (foBarrier ? "1" : "0") +
+HSR 936|                " dispBoot=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
+HSR 937|                " dispFrame=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0"));
+HSR 938|        }
+---
+HSR 930|                " foShift=" + (foShift ? "1" : "0") +
+HSR 931|                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+HSR 932|                " foLock=" + (foLock ? "1" : "0") +
+HSR 933|                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+HSR 934|                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+HSR 935|                " foBarrier=" + (foBarrier ? "1" : "0") +
+HSR 936|                " dispBoot=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
+HSR 937|                " dispFrame=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0"));
+HSR 938|        }
+HSR 939|
+---
+HSR 931|                " foPhysicsPause=" + (foPhysicsPause ? "1" : "0") +
+HSR 932|                " foLock=" + (foLock ? "1" : "0") +
+HSR 933|                " foPendingScenes=" + foPendingScenes.ToString(CultureInfo.InvariantCulture) +
+HSR 934|                " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
+HSR 935|                " foBarrier=" + (foBarrier ? "1" : "0") +
+HSR 936|                " dispBoot=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
+HSR 937|                " dispFrame=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0"));
+HSR 938|        }
+HSR 939|
+HSR 940|        /// <summary>
+---
+==== HSR Update body FO drain region ====
+HSR 262|        private void Update()
+HSR 263|        {
+HSR 264|            if (_finished)
+HSR 265|                return;
+HSR 266|
+HSR 267|            // Wall-clock ecology timeout must NOT depend on ColdTick (ticks can starve).
+HSR 268|            // CRITICAL: budget starts at GameReady/bootstrap-exit, NOT BeginStartup.
+HSR 269|            // p0_gameready (2026-07-30): _startupTime armed at runner install; bootstrap
+HSR 270|            // dependency chain burned ~180s; short-circuit PublishGameReady then immediate
+HSR 271|            // BOOTSTRAP_TIMEOUT with zero post-GameReady FrostTick budget.
+HSR 272|            if (_started && !_ecologyReady)
+HSR 273|            {
+HSR 274|                TryArmEcologyWaitClock();
+HSR 275|                // Ready-mark is a gate, not a sim-tick substitute. FrostTick can starve while
+HSR 276|                // FO bootstrap lock / frame lock / dilation=0 hold RunDispatcherUpdate off the
+HSR 277|                // master sim path; ecoInit was true from t=0 in p0_fo_lock_drain while
+HSR 278|                // TryMarkEcologyReady never ran (Frost-only). Same starvation-proof pattern as
+HSR 279|                // moving the wait clock off ColdTick onto Update.
+HSR 280|                TryMarkEcologyReady();
+HSR 281|                if (!_ecologyReady)
+HSR 282|                {
+HSR 283|                    // Keep FO scene-rebase barrier draining while we wait — dispatcher early-returns
+HSR 284|                    // all Frost/LateFrame while IsOriginShiftBootstrapLocked holds.
+HSR 285|                    HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+HSR 286|                    MaybeLogEcologyWaitProgress();
+HSR 287|                    if (_ecologyWaitStartRealtime > 0.0 &&
+HSR 288|                        Time.realtimeSinceStartupAsDouble - _ecologyWaitStartRealtime > _startupTimeoutSeconds)
+HSR 289|                    {
+HSR 290|                        LogEcologyBootstrapTimeoutDiagnostics();
+HSR 291|                        FailAndQuit(1, TimeoutHash, "[BOOTSTRAP_TIMEOUT]");
+HSR 292|                        return;
+HSR 293|                    }
+HSR 294|                }
+HSR 295|            }
+HSR 296|
+HSR 297|            // Post-ready: keep FO draining, re-assert unpause+dilation against late pause, emit diag.
+HSR 298|            // Smoke 80b2d9764: ready green then ~495s wall with 0 CSV rows — Fast/Frost got dt<=0.
+HSR 299|            if (_started && _ecologyReady && !_finished)
+HSR 300|            {
+HSR 301|                // GameReady may land after ecoInit; arm wait clock + open Player LateFrame path.
+HSR 302|                TryArmEcologyWaitClock();
+HSR 303|                MaybeEnsureHeadlessSimulationClockSustain();
+HSR 304|                MaybeLogPostReadyProgress();
+HSR 305|                HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+HSR 306|            }
+HSR 307|
+HSR 308|            if (!_awaitingDispatcher)
+HSR 309|                return;
+HSR 310|
+HSR 311|            TryCompleteDispatcherWait();
+HSR 312|        }
+HSR 313|
+HSR 314|        private void OnDestroy()
+HSR 315|        {
+HSR 316|            _awaitingDispatcher = false;
+HSR 317|            _ghostStepPending = false;
+HSR 318|            TryUnregisterHotSwapListener();
+HSR 319|            UnregisterRuntimeLanes();
+HSR 320|            if (_originListenerRegistered)
+HSR 321|                HectonFloatingOrigin.UnregisterListener(this);
+HSR 322|            Application.logMessageReceived -= HandleLogMessage;
+HSR 323|            RestoreRuntimePolicy();
+HSR 324|
+HSR 325|            ReleaseVaultBuffers();
+HSR 326|            _csvWriter?.Dispose();
+HSR 327|            _csvWriter = null;
+HSR 328|            if (_instance == this)
+HSR 329|                _instance = null;
+HSR 330|        }
+HSR 331|
+HSR 332|        public void FastTick(float deltaTime)
+HSR 333|        {
+HSR 334|            if (!_started || _finished)
+HSR 335|                return;
+HSR 336|
+HSR 337|            DrainSignals();
+HSR 338|            float safeDelta = math.isfinite(deltaTime) && deltaTime > 0f ? math.min(deltaTime, 120f) : 0f;
+HSR 339|            if (safeDelta > 0f)
+HSR 340|                _ghostSeconds += safeDelta;
+HSR 341|
+==== Probe clock + gameplay ====
+PR 97|            WaitingForSettle,
+PR 98|            GameplayWarmup,
+PR 99|            SaveRoundTrip,
+PR 100|            Reporting,
+PR 101|            LeavingPlayMode,
+PR 102|        }
+PR 103|
+---
+PR 207|
+PR 208|        // Whether H8_HeadlessWorldDriver produces on the input lanes during the gameplay window. See
+PR 209|        // that file's header for why it is a producer and not a state writer.
+PR 210|        private static bool _worldDriverEnabled = true;
+PR 211|        private static bool _worldDriverStarted;
+PR 212|
+PR 213|        // One-shot latch for EnableDisabledPlacementOwnersInMemory. It is what keeps that method's
+---
+PR 248|        /// <summary>
+PR 249|        /// When the gameplay window's clock starts: the FIRST tick of GameplayWarmup, not the phase
+PR 250|        /// transition into it.
+PR 251|        ///
+PR 252|        /// The window used to be measured from _phaseStartedAt, which TickWaitingForSettle sets
+PR 253|        /// immediately before SetPhase(GameplayWarmup) - one editor tick earlier than the tick that calls
+PR 254|        /// H8_HeadlessWorldDriver.Begin(). Those two origins are not the same instant and the difference is
+---
+PR 252|        /// The window used to be measured from _phaseStartedAt, which TickWaitingForSettle sets
+PR 253|        /// immediately before SetPhase(GameplayWarmup) - one editor tick earlier than the tick that calls
+PR 254|        /// H8_HeadlessWorldDriver.Begin(). Those two origins are not the same instant and the difference is
+PR 255|        /// not small: on the measured run the GameplayWarmup phase clock read 165.186s while the driver's
+PR 256|        /// own elapsed read 160.430s, so 4.756s of the window was spent before the driver existed. The
+PR 257|        /// window is 63.0 + 4.0 = 67.0s, which left the driver 62.244s of its 63.0s schedule - the margin
+PR 258|        /// was NEGATIVE before a single frame stalled, and the last phase in the schedule is the one that
+---
+PR 253|        /// immediately before SetPhase(GameplayWarmup) - one editor tick earlier than the tick that calls
+PR 254|        /// H8_HeadlessWorldDriver.Begin(). Those two origins are not the same instant and the difference is
+PR 255|        /// not small: on the measured run the GameplayWarmup phase clock read 165.186s while the driver's
+PR 256|        /// own elapsed read 160.430s, so 4.756s of the window was spent before the driver existed. The
+PR 257|        /// window is 63.0 + 4.0 = 67.0s, which left the driver 62.244s of its 63.0s schedule - the margin
+PR 258|        /// was NEGATIVE before a single frame stalled, and the last phase in the schedule is the one that
+PR 259|        /// pays. That alone produces a NOT_EXERCISED CraftRepairBuild row on a completely smooth run.
+---
+PR 254|        /// H8_HeadlessWorldDriver.Begin(). Those two origins are not the same instant and the difference is
+PR 255|        /// not small: on the measured run the GameplayWarmup phase clock read 165.186s while the driver's
+PR 256|        /// own elapsed read 160.430s, so 4.756s of the window was spent before the driver existed. The
+PR 257|        /// window is 63.0 + 4.0 = 67.0s, which left the driver 62.244s of its 63.0s schedule - the margin
+PR 258|        /// was NEGATIVE before a single frame stalled, and the last phase in the schedule is the one that
+PR 259|        /// pays. That alone produces a NOT_EXERCISED CraftRepairBuild row on a completely smooth run.
+PR 260|        ///
+---
+PR 558|            _settleWaitSeconds = Math.Max(5, ReadIntArg("-h8SettleSeconds", 300));
+PR 559|            _gameplaySeconds = Math.Max(1, ReadIntArg("-h8GameplaySeconds", 60));
+PR 560|            _forceMenuLoad = ReadStringArg("-h8ForceMenuLoad", null) != null;
+PR 561|            _saveWaitSeconds = Math.Max(1, ReadIntArg("-h8SaveSeconds", 60));
+PR 562|            _saveSlotIndex = (byte)Math.Clamp(
+PR 563|                ReadIntArg("-h8SaveSlot", 0), 0, Hecton8.SaveSystem.SaveEvents.ManualSlotCount - 1);
+PR 564|            _saveLegEnabled = ReadStringArg("-h8SkipSaveLeg", null) == null;
+---
+PR 581|            //
+PR 582|            // This can raise an explicitly passed -h8GameplaySeconds, so it says so out loud: an argument
+PR 583|            // that is quietly ignored is worse than one that is loudly overridden.
+PR 584|            //
+PR 585|            // THE MARGIN IS A TICK MARGIN, NOT A STALL ALLOWANCE, and it was tuned when the four driven
+PR 586|            // rows were upstream-blocked and every phase failed on its first tick. Now that they execute,
+PR 587|            // 4.0 seconds is worth 3 game frames at the 0.751 frames-per-wall-second this phase actually
+---
+PR 595|            {
+PR 596|                double required = H8_HeadlessWorldDriver.TotalBudgetSeconds + 4.0;
+PR 597|                if (_gameplaySeconds < required)
+PR 598|                {
+PR 599|                    Debug.Log(
+PR 600|                        $"{Marker} WORLDDRIVER gameplay window raised {_gameplaySeconds:F0}s -> " +
+PR 601|                        $"{required:F0}s to fit the driver schedule; pass -h8SkipWorldDriver to keep the " +
+---
+PR 740|
+PR 741|                case Phase.GameplayWarmup:
+PR 742|                    if (!EditorApplication.isPlaying)
+PR 743|                    {
+PR 744|                        Debug.Log($"{Marker} LEFT PLAY MODE during gameplay warmup at frame {_gameplayFrames}");
+PR 745|                        Finish(1);
+PR 746|                        return;
+---
+PR 768|                        // can consume locomotion overrides (hop2 path) under batchmode WallClock dt=0.
+PR 769|                        EnsureProbeSimulationClock("gameplay-window-start");
+PR 770|                    }
+PR 771|
+PR 772|                    // Content before measurement. This runs BEFORE the driver starts and OUTSIDE the
+PR 773|                    // _worldDriverEnabled branch on purpose: a -h8SkipWorldDriver run is supposed to
+PR 774|                    // measure an UNDRIVEN world, not an EMPTY one, and those are different claims.
+---
+PR 804|                            // L16: re-assert clock immediately before Begin in case dispatcher arrived late.
+PR 805|                            EnsureProbeSimulationClock("worlddriver-begin");
+PR 806|                            H8_HeadlessWorldDriver.Begin();
+PR 807|                            Debug.Log(
+PR 808|                                $"{Marker} WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> " +
+PR 809|                                "(PLIN) and CoreDeterminismSignals input-override; budget " +
+PR 810|                                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s of the " +
+---
+PR 805|                            EnsureProbeSimulationClock("worlddriver-begin");
+PR 806|                            H8_HeadlessWorldDriver.Begin();
+PR 807|                            Debug.Log(
+PR 808|                                $"{Marker} WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> " +
+PR 809|                                "(PLIN) and CoreDeterminismSignals input-override; budget " +
+PR 810|                                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s of the " +
+PR 811|                                $"{_gameplaySeconds:F0}s gameplay window");
+---
+PR 809|                                "(PLIN) and CoreDeterminismSignals input-override; budget " +
+PR 810|                                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s of the " +
+PR 811|                                $"{_gameplaySeconds:F0}s gameplay window");
+PR 812|                        }
+PR 813|
+PR 814|                        // L16: sustain against late pause / dilation collapse / step-bound drop.
+PR 815|                        MaybeEnsureProbeSimulationClockSustain();
+---
+PR 814|                        // L16: sustain against late pause / dilation collapse / step-bound drop.
+PR 815|                        MaybeEnsureProbeSimulationClockSustain();
+PR 816|                        H8_HeadlessWorldDriver.Tick();
+PR 817|                    }
+PR 818|                    else
+PR 819|                    {
+PR 820|                        // Undriven measurement still needs FixedTick for hop2/depth observability.
+---
+PR 815|                        MaybeEnsureProbeSimulationClockSustain();
+PR 816|                        H8_HeadlessWorldDriver.Tick();
+PR 817|                    }
+PR 818|                    else
+PR 819|                    {
+PR 820|                        // Undriven measurement still needs FixedTick for hop2/depth observability.
+PR 821|                        MaybeEnsureProbeSimulationClockSustain();
+---
+PR 820|                        // Undriven measurement still needs FixedTick for hop2/depth observability.
+PR 821|                        MaybeEnsureProbeSimulationClockSustain();
+PR 822|                    }
+PR 823|
+PR 824|                    if (EditorApplication.timeSinceStartup - _gameplayWindowStartedAt >= _gameplaySeconds)
+PR 825|                    {
+PR 826|                        // The window is a WALL clock; what the driver still needs is TICKS. Closing on
+---
+PR 836|                        {
+PR 837|                            H8_HeadlessWorldDriver.Stop(
+PR 838|                                H8_HeadlessWorldDriver.StopCause.ProbeGameplayWindowClosed);
+PR 839|                        }
+PR 840|
+PR 841|                        SetPhase(_saveLegEnabled ? Phase.SaveRoundTrip : Phase.Reporting);
+PR 842|                    }
+---
+PR 837|                            H8_HeadlessWorldDriver.Stop(
+PR 838|                                H8_HeadlessWorldDriver.StopCause.ProbeGameplayWindowClosed);
+PR 839|                        }
+PR 840|
+PR 841|                        SetPhase(_saveLegEnabled ? Phase.SaveRoundTrip : Phase.Reporting);
+PR 842|                    }
+PR 843|
+---
+PR 985|        /// WHY THIS IS NOT "JUST GIVE IT MORE TIME". The wall window and the driver's remaining work are
+PR 986|        /// denominated in different units and the exchange rate is not stable: the measured GameplayWarmup
+PR 987|        /// phase ran 124 game frames in 165.186 wall seconds, and one of those frames cost about 132 s
+PR 988|        /// while the other 123 cost about 0.23 s each. Adding seconds to the window therefore buys an
+PR 989|        /// unknown number of ticks - three, or a fraction of one - which is exactly why the existing
+PR 990|        /// +4.0s margin failed. Adding TICKS buys precisely the handshake steps the remaining phases need,
+PR 991|        /// and the cost is bounded by a countable number that appears in the log.
+---
+PR 1000|        {
+PR 1001|            if (!H8_HeadlessWorldDriver.IsActive)
+PR 1002|                return false;
+PR 1003|
+PR 1004|            int owed = H8_HeadlessWorldDriver.MinimumTicksOwed;
+PR 1005|            if (owed <= 0)
+PR 1006|                return false;
+---
+PR 1003|
+PR 1004|            int owed = H8_HeadlessWorldDriver.MinimumTicksOwed;
+PR 1005|            if (owed <= 0)
+PR 1006|                return false;
+PR 1007|
+PR 1008|            if (_worldDriverGraceTicks >= WorldDriverGraceTickCap)
+PR 1009|            {
+---
+PR 1014|                        $"{Marker} WORLDDRIVER grace EXHAUSTED after {_worldDriverGraceTicks} ticks with " +
+PR 1015|                        $"{owed} still owed in phase {H8_HeadlessWorldDriver.CurrentPhaseName}. The " +
+PR 1016|                        "remaining rows close as NOT_EXERCISED and say so; this is a harness shortfall, " +
+PR 1017|                        $"not a product gap. Heaviest phase: {H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1018|                        $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s.");
+PR 1019|                }
+PR 1020|
+---
+PR 1016|                        "remaining rows close as NOT_EXERCISED and say so; this is a harness shortfall, " +
+PR 1017|                        $"not a product gap. Heaviest phase: {H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1018|                        $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s.");
+PR 1019|                }
+PR 1020|
+PR 1021|                return false;
+PR 1022|            }
+---
+PR 1017|                        $"not a product gap. Heaviest phase: {H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1018|                        $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s.");
+PR 1019|                }
+PR 1020|
+PR 1021|                return false;
+PR 1022|            }
+PR 1023|
+---
+PR 1033|                        $"{Marker} WORLDDRIVER grace REFUSED with {owed} ticks owed in phase " +
+PR 1034|                        $"{H8_HeadlessWorldDriver.CurrentPhaseName}: only " +
+PR 1035|                        $"{_hardTimeoutSeconds - (EditorApplication.timeSinceStartup - _startedAt):F0}s " +
+PR 1036|                        $"left of the {_hardTimeoutSeconds:F0}s hard timeout and the report needs that " +
+PR 1037|                        "margin. Raise -h8TimeoutSeconds to let the schedule finish.");
+PR 1038|                }
+PR 1039|
+---
+PR 1047|                    $"{Marker} WORLDDRIVER the {_gameplaySeconds:F0}s gameplay window closed with the " +
+PR 1048|                    $"schedule still in phase {H8_HeadlessWorldDriver.CurrentPhaseName} owing {owed} " +
+PR 1049|                    $"ticks (driver elapsed {H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 1050|                    $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s, compressed=" +
+PR 1051|                    $"{H8_HeadlessWorldDriver.IsCompressed}). Granting up to {WorldDriverGraceTickCap} " +
+PR 1052|                    "further TICKS - not seconds - so the remaining rows produce a real verdict instead " +
+PR 1053|                    $"of NOT_EXERCISED. The phase that spent the schedule was " +
+---
+PR 1048|                    $"schedule still in phase {H8_HeadlessWorldDriver.CurrentPhaseName} owing {owed} " +
+PR 1049|                    $"ticks (driver elapsed {H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 1050|                    $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s, compressed=" +
+PR 1051|                    $"{H8_HeadlessWorldDriver.IsCompressed}). Granting up to {WorldDriverGraceTickCap} " +
+PR 1052|                    "further TICKS - not seconds - so the remaining rows produce a real verdict instead " +
+PR 1053|                    $"of NOT_EXERCISED. The phase that spent the schedule was " +
+PR 1054|                    $"{H8_HeadlessWorldDriver.WorstPhaseName} at " +
+---
+PR 1049|                    $"ticks (driver elapsed {H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 1050|                    $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s, compressed=" +
+PR 1051|                    $"{H8_HeadlessWorldDriver.IsCompressed}). Granting up to {WorldDriverGraceTickCap} " +
+PR 1052|                    "further TICKS - not seconds - so the remaining rows produce a real verdict instead " +
+PR 1053|                    $"of NOT_EXERCISED. The phase that spent the schedule was " +
+PR 1054|                    $"{H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1055|                    $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s - fix that, not the rows.");
+---
+PR 1050|                    $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s, compressed=" +
+PR 1051|                    $"{H8_HeadlessWorldDriver.IsCompressed}). Granting up to {WorldDriverGraceTickCap} " +
+PR 1052|                    "further TICKS - not seconds - so the remaining rows produce a real verdict instead " +
+PR 1053|                    $"of NOT_EXERCISED. The phase that spent the schedule was " +
+PR 1054|                    $"{H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1055|                    $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s - fix that, not the rows.");
+PR 1056|            }
+---
+PR 1053|                    $"of NOT_EXERCISED. The phase that spent the schedule was " +
+PR 1054|                    $"{H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1055|                    $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s - fix that, not the rows.");
+PR 1056|            }
+PR 1057|
+PR 1058|            _worldDriverGraceTicks++;
+PR 1059|            return true;
+---
+PR 1054|                    $"{H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1055|                    $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s - fix that, not the rows.");
+PR 1056|            }
+PR 1057|
+PR 1058|            _worldDriverGraceTicks++;
+PR 1059|            return true;
+PR 1060|        }
+---
+PR 1073|        /// phase, and the project-wide "batchmode runs about one game frame per second" belief -
+PR 1074|        /// which is what every gameplay-window budget in this probe was sized against - came from
+PR 1075|        /// exactly that blend. Segments are closed on each phase transition, so each phase now
+PR 1076|        /// reports its own rate and the blended line is kept only as a labelled trap.
+PR 1077|        /// </summary>
+PR 1078|        private static void ReportClockRates()
+PR 1079|        {
+---
+PR 1277|                _phaseStartedAt = EditorApplication.timeSinceStartup;
+PR 1278|                SetPhase(Phase.GameplayWarmup);
+PR 1279|                return;
+PR 1280|            }
+PR 1281|
+PR 1282|            if (pending.Length == 0)
+PR 1283|            {
+---
+PR 1289|                _phaseStartedAt = EditorApplication.timeSinceStartup;
+PR 1290|                SetPhase(Phase.GameplayWarmup);
+PR 1291|                return;
+PR 1292|            }
+PR 1293|
+PR 1294|            if (waited >= _settleWaitSeconds)
+PR 1295|            {
+---
+PR 1301|                _phaseStartedAt = EditorApplication.timeSinceStartup;
+PR 1302|                SetPhase(Phase.GameplayWarmup);
+PR 1303|                return;
+PR 1304|            }
+PR 1305|
+PR 1306|            if (++_settleFrames % 400 == 0)
+PR 1307|                Debug.Log(
+---
+PR 1558|                    $"only {remaining:F0}s left of the {_hardTimeoutSeconds:F0}s probe hard timeout - raise " +
+PR 1559|                    "-h8TimeoutSeconds or lower -h8GameplaySeconds so the save leg fits",
+PR 1560|                    countFailure: false);
+PR 1561|                return;
+PR 1562|            }
+PR 1563|
+PR 1564|            _saveRoot = Hecton8.Core.HectonPersistentPathPolicy.RootPath;
+---
+PR 2045|        /// <summary>
+PR 2046|        /// Transcribes <see cref="H8_HeadlessWorldDriver"/>'s four verdicts into the route table.
+PR 2047|        ///
+PR 2048|        /// Transcribes: it does not decide. The driver latches a verdict only from an observable it
+PR 2049|        /// actually read, and this method adds no interpretation on top - so a row can only be green here
+PR 2050|        /// if the shipping code path produced the observable. When the driver never ran, the rows keep
+PR 2051|        /// the NOT_EXERCISED they were seeded with and say the driver was off, which is a different and
+---
+PR 2070|            // phase it stalled in, so a budget shortfall is never silently reported as a product gap.
+PR 2071|            H8_HeadlessWorldDriver.Stop(H8_HeadlessWorldDriver.StopCause.ProbeReportingStarted);
+PR 2072|
+PR 2073|            Debug.Log(
+PR 2074|                $"{Marker} WORLDDRIVER ticks={H8_HeadlessWorldDriver.TickCount} " +
+PR 2075|                $"phase={H8_HeadlessWorldDriver.CurrentPhaseName} " +
+PR 2076|                $"elapsed={H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+---
+PR 2073|            Debug.Log(
+PR 2074|                $"{Marker} WORLDDRIVER ticks={H8_HeadlessWorldDriver.TickCount} " +
+PR 2075|                $"phase={H8_HeadlessWorldDriver.CurrentPhaseName} " +
+PR 2076|                $"elapsed={H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 2077|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s " +
+PR 2078|                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+PR 2079|                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+---
+PR 2074|                $"{Marker} WORLDDRIVER ticks={H8_HeadlessWorldDriver.TickCount} " +
+PR 2075|                $"phase={H8_HeadlessWorldDriver.CurrentPhaseName} " +
+PR 2076|                $"elapsed={H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 2077|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s " +
+PR 2078|                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+PR 2079|                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+PR 2080|                $"graceTicks={_worldDriverGraceTicks} " +
+---
+PR 2075|                $"phase={H8_HeadlessWorldDriver.CurrentPhaseName} " +
+PR 2076|                $"elapsed={H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 2077|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s " +
+PR 2078|                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+PR 2079|                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+PR 2080|                $"graceTicks={_worldDriverGraceTicks} " +
+PR 2081|                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+---
+PR 2076|                $"elapsed={H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 2077|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s " +
+PR 2078|                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+PR 2079|                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+PR 2080|                $"graceTicks={_worldDriverGraceTicks} " +
+PR 2081|                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+PR 2082|                $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
+---
+PR 2077|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s " +
+PR 2078|                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+PR 2079|                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+PR 2080|                $"graceTicks={_worldDriverGraceTicks} " +
+PR 2081|                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+PR 2082|                $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
+PR 2083|                $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+---
+PR 2078|                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+PR 2079|                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+PR 2080|                $"graceTicks={_worldDriverGraceTicks} " +
+PR 2081|                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+PR 2082|                $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
+PR 2083|                $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+PR 2084|
+---
+PR 2080|                $"graceTicks={_worldDriverGraceTicks} " +
+PR 2081|                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+PR 2082|                $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
+PR 2083|                $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+PR 2084|
+PR 2085|            ReportWorldDriverPhaseLedger();
+PR 2086|
+---
+PR 2081|                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+PR 2082|                $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
+PR 2083|                $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+PR 2084|
+PR 2085|            ReportWorldDriverPhaseLedger();
+PR 2086|
+PR 2087|            RecordDriverRow(H8_HeadlessWorldDriver.RowSwim, MomentSwim);
+---
+PR 2082|                $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
+PR 2083|                $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+PR 2084|
+PR 2085|            ReportWorldDriverPhaseLedger();
+PR 2086|
+PR 2087|            RecordDriverRow(H8_HeadlessWorldDriver.RowSwim, MomentSwim);
+PR 2088|            RecordDriverRow(H8_HeadlessWorldDriver.RowResource, MomentResource);
+---
+PR 2086|
+PR 2087|            RecordDriverRow(H8_HeadlessWorldDriver.RowSwim, MomentSwim);
+PR 2088|            RecordDriverRow(H8_HeadlessWorldDriver.RowResource, MomentResource);
+PR 2089|            RecordDriverRow(H8_HeadlessWorldDriver.RowTool, MomentTool);
+PR 2090|            RecordDriverRow(H8_HeadlessWorldDriver.RowCraft, MomentCraft);
+PR 2091|        }
+PR 2092|
+---
+PR 2087|            RecordDriverRow(H8_HeadlessWorldDriver.RowSwim, MomentSwim);
+PR 2088|            RecordDriverRow(H8_HeadlessWorldDriver.RowResource, MomentResource);
+PR 2089|            RecordDriverRow(H8_HeadlessWorldDriver.RowTool, MomentTool);
+PR 2090|            RecordDriverRow(H8_HeadlessWorldDriver.RowCraft, MomentCraft);
+PR 2091|        }
+PR 2092|
+PR 2093|        /// <summary>
+---
+PR 2088|            RecordDriverRow(H8_HeadlessWorldDriver.RowResource, MomentResource);
+PR 2089|            RecordDriverRow(H8_HeadlessWorldDriver.RowTool, MomentTool);
+PR 2090|            RecordDriverRow(H8_HeadlessWorldDriver.RowCraft, MomentCraft);
+PR 2091|        }
+PR 2092|
+PR 2093|        /// <summary>
+PR 2094|        /// One row per driver phase: what it was granted, what it spent in wall seconds AND in ticks, and
+---
+PR 2089|            RecordDriverRow(H8_HeadlessWorldDriver.RowTool, MomentTool);
+PR 2090|            RecordDriverRow(H8_HeadlessWorldDriver.RowCraft, MomentCraft);
+PR 2091|        }
+PR 2092|
+PR 2093|        /// <summary>
+PR 2094|        /// One row per driver phase: what it was granted, what it spent in wall seconds AND in ticks, and
+PR 2095|        /// why it stopped being the current phase.
+---
+PR 2108|        {
+PR 2109|            for (int phase = 0; phase < H8_HeadlessWorldDriver.PhaseLedgerCount; phase++)
+PR 2110|            {
+PR 2111|                // Phases that were never entered are skipped rather than printed as zero rows: a schedule
+PR 2112|                // legitimately skips phases (a blocked Settle jumps straight to ResourceTarget), and a
+PR 2113|                // wall of empty rows would bury the two or three that carry the answer.
+PR 2114|                if (!H8_HeadlessWorldDriver.WasPhaseEntered(phase))
+---
+PR 2113|                // wall of empty rows would bury the two or three that carry the answer.
+PR 2114|                if (!H8_HeadlessWorldDriver.WasPhaseEntered(phase))
+PR 2115|                    continue;
+PR 2116|
+PR 2117|                string yield = H8_HeadlessWorldDriver.GetPhaseYieldName(phase);
+PR 2118|                double wall = H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase);
+PR 2119|                double granted = H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase);
+---
+PR 2116|
+PR 2117|                string yield = H8_HeadlessWorldDriver.GetPhaseYieldName(phase);
+PR 2118|                double wall = H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase);
+PR 2119|                double granted = H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase);
+PR 2120|                int ticks = H8_HeadlessWorldDriver.GetPhaseTicks(phase);
+PR 2121|                int floor = H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase);
+PR 2122|                double secondsPerTick = ticks > 0 ? wall / ticks : 0.0;
+---
+PR 2117|                string yield = H8_HeadlessWorldDriver.GetPhaseYieldName(phase);
+PR 2118|                double wall = H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase);
+PR 2119|                double granted = H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase);
+PR 2120|                int ticks = H8_HeadlessWorldDriver.GetPhaseTicks(phase);
+PR 2121|                int floor = H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase);
+PR 2122|                double secondsPerTick = ticks > 0 ? wall / ticks : 0.0;
+PR 2123|
+---
+PR 2118|                double wall = H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase);
+PR 2119|                double granted = H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase);
+PR 2120|                int ticks = H8_HeadlessWorldDriver.GetPhaseTicks(phase);
+PR 2121|                int floor = H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase);
+PR 2122|                double secondsPerTick = ticks > 0 ? wall / ticks : 0.0;
+PR 2123|
+PR 2124|                Debug.Log(
+---
+PR 2119|                double granted = H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase);
+PR 2120|                int ticks = H8_HeadlessWorldDriver.GetPhaseTicks(phase);
+PR 2121|                int floor = H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase);
+PR 2122|                double secondsPerTick = ticks > 0 ? wall / ticks : 0.0;
+PR 2123|
+PR 2124|                Debug.Log(
+PR 2125|                    $"{Marker} DRIVERPHASE {H8_HeadlessWorldDriver.GetPhaseName(phase),-16} " +
+---
+PR 2120|                int ticks = H8_HeadlessWorldDriver.GetPhaseTicks(phase);
+PR 2121|                int floor = H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase);
+PR 2122|                double secondsPerTick = ticks > 0 ? wall / ticks : 0.0;
+PR 2123|
+PR 2124|                Debug.Log(
+PR 2125|                    $"{Marker} DRIVERPHASE {H8_HeadlessWorldDriver.GetPhaseName(phase),-16} " +
+PR 2126|                    $"wall={wall,8:F3}s granted={granted,6:F3}s ticks={ticks,5} floor={floor,2} " +
+---
+PR 2124|                Debug.Log(
+PR 2125|                    $"{Marker} DRIVERPHASE {H8_HeadlessWorldDriver.GetPhaseName(phase),-16} " +
+PR 2126|                    $"wall={wall,8:F3}s granted={granted,6:F3}s ticks={ticks,5} floor={floor,2} " +
+PR 2127|                    $"secondsPerTick={secondsPerTick,8:F3} yield={yield}");
+PR 2128|            }
+PR 2129|
+PR 2130|            Debug.Log(
+---
+PR 2130|            Debug.Log(
+PR 2131|                $"{Marker} DRIVERPHASE heaviest={H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 2132|                $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F3}s of the " +
+PR 2133|                $"{H8_HeadlessWorldDriver.ElapsedSeconds:F3}s the schedule ran against a " +
+PR 2134|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s budget. A yield of TotalCeiling means " +
+PR 2135|                "that phase was compressed to its tick floor by an earlier overrun and its row is " +
+PR 2136|                "UNMEASURED, not a product gap; WallCeiling means the phase spent its own window and " +
+---
+PR 2131|                $"{Marker} DRIVERPHASE heaviest={H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 2132|                $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F3}s of the " +
+PR 2133|                $"{H8_HeadlessWorldDriver.ElapsedSeconds:F3}s the schedule ran against a " +
+PR 2134|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s budget. A yield of TotalCeiling means " +
+PR 2135|                "that phase was compressed to its tick floor by an earlier overrun and its row is " +
+PR 2136|                "UNMEASURED, not a product gap; WallCeiling means the phase spent its own window and " +
+PR 2137|                "failed, which is a real result.");
+---
+PR 2132|                $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F3}s of the " +
+PR 2133|                $"{H8_HeadlessWorldDriver.ElapsedSeconds:F3}s the schedule ran against a " +
+PR 2134|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s budget. A yield of TotalCeiling means " +
+PR 2135|                "that phase was compressed to its tick floor by an earlier overrun and its row is " +
+PR 2136|                "UNMEASURED, not a product gap; WallCeiling means the phase spent its own window and " +
+PR 2137|                "failed, which is a real result.");
+PR 2138|        }
+---
+PR 2133|                $"{H8_HeadlessWorldDriver.ElapsedSeconds:F3}s the schedule ran against a " +
+PR 2134|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s budget. A yield of TotalCeiling means " +
+PR 2135|                "that phase was compressed to its tick floor by an earlier overrun and its row is " +
+PR 2136|                "UNMEASURED, not a product gap; WallCeiling means the phase spent its own window and " +
+PR 2137|                "failed, which is a real result.");
+PR 2138|        }
+PR 2139|
+---
+PR 2145|        {
+PR 2146|            string detail = H8_HeadlessWorldDriver.GetDetail(driverRow);
+PR 2147|
+PR 2148|            // An upstream gate that never opened is not four independent product failures.
+PR 2149|            //
+PR 2150|            // When scene activation does not finish, GameBootstrapper.cs:7365 ActivatePlayer() never runs
+PR 2151|            // and the player stays held by the Kinematic Arrest Gate - IsSuspended, velocity zero, input
+---
+PR 2165|            // worth seeing, so a Pass is never rewritten into a Blocked.
+PR 2166|            MomentVerdict verdict = (MomentVerdict)(byte)H8_HeadlessWorldDriver.GetVerdict(driverRow);
+PR 2167|            if (!BootstrapState.IsGameReady && verdict != MomentVerdict.Pass)
+PR 2168|            {
+PR 2169|                RecordMoment(
+PR 2170|                    momentName,
+PR 2171|                    MomentVerdict.Blocked,
+---
+PR 3681|        /// </summary>
+PR 3682|        private static void EnsureProbeSimulationClock(string reason)
+PR 3683|        {
+PR 3684|            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+PR 3685|            if (dispatcher == null)
+PR 3686|            {
+PR 3687|                Debug.Log($"{Marker} SIMCLOCK ensure reason={reason} dispatcher=null");
+---
+PR 3726|        /// <summary>
+PR 3727|        /// During GameplayWarmup, periodically re-assert the real clock against late
+PR 3728|        /// SimulationPauseSignal / pause-menu / desync paths that drop step-bound or dilation.
+PR 3729|        /// </summary>
+PR 3730|        private static void MaybeEnsureProbeSimulationClockSustain()
+PR 3731|        {
+PR 3732|            if (_lastProbeClockEnsureRealtime > 0.0 &&
+---
+PR 3729|        /// </summary>
+PR 3730|        private static void MaybeEnsureProbeSimulationClockSustain()
+PR 3731|        {
+PR 3732|            if (_lastProbeClockEnsureRealtime > 0.0 &&
+PR 3733|                EditorApplication.timeSinceStartup - _lastProbeClockEnsureRealtime < ProbeClockEnsureIntervalSeconds)
+PR 3734|            {
+PR 3735|                // Cheap path between throttle windows: still force if step-bound dropped.
+---
+PR 3758|
+PR 3759|            EnsureProbeSimulationClock("gameplay-sustain");
+PR 3760|        }
+PR 3761|
+PR 3762|        private static void ResetRunState()
+PR 3763|        {
+PR 3764|            _phase = Phase.Idle;
+---
+PR 3844|            _probeSimClockArmed = false;
+PR 3845|            H8_HeadlessWorldDriver.Reset();
+PR 3846|        }
+PR 3847|
+PR 3848|        private static string ResolveArtifactPath()
+PR 3849|        {
+PR 3850|            return string.IsNullOrEmpty(_artifactPath) ? ResolveDefaultArtifactPath() : _artifactPath;
+---
+PR 3963|            AppendJsonBool(builder, "started", _worldDriverStarted, "    ");
+PR 3964|            AppendJsonNumber(builder, "totalBudgetSeconds", H8_HeadlessWorldDriver.TotalBudgetSeconds, "    ");
+PR 3965|            AppendJsonNumber(builder, "elapsedSeconds", H8_HeadlessWorldDriver.ElapsedSeconds, "    ");
+PR 3966|            AppendJsonNumber(builder, "ticks", H8_HeadlessWorldDriver.TickCount, "    ");
+PR 3967|            AppendJsonNumber(builder, "graceTicks", _worldDriverGraceTicks, "    ");
+PR 3968|            AppendJsonNumber(builder, "graceTickCap", WorldDriverGraceTickCap, "    ");
+PR 3969|            AppendJsonBool(builder, "compressed", H8_HeadlessWorldDriver.IsCompressed, "    ");
+---
+PR 3964|            AppendJsonNumber(builder, "totalBudgetSeconds", H8_HeadlessWorldDriver.TotalBudgetSeconds, "    ");
+PR 3965|            AppendJsonNumber(builder, "elapsedSeconds", H8_HeadlessWorldDriver.ElapsedSeconds, "    ");
+PR 3966|            AppendJsonNumber(builder, "ticks", H8_HeadlessWorldDriver.TickCount, "    ");
+PR 3967|            AppendJsonNumber(builder, "graceTicks", _worldDriverGraceTicks, "    ");
+PR 3968|            AppendJsonNumber(builder, "graceTickCap", WorldDriverGraceTickCap, "    ");
+PR 3969|            AppendJsonBool(builder, "compressed", H8_HeadlessWorldDriver.IsCompressed, "    ");
+PR 3970|            AppendJsonField(builder, "stopCause", H8_HeadlessWorldDriver.StopCauseName, "    ");
+---
+PR 3965|            AppendJsonNumber(builder, "elapsedSeconds", H8_HeadlessWorldDriver.ElapsedSeconds, "    ");
+PR 3966|            AppendJsonNumber(builder, "ticks", H8_HeadlessWorldDriver.TickCount, "    ");
+PR 3967|            AppendJsonNumber(builder, "graceTicks", _worldDriverGraceTicks, "    ");
+PR 3968|            AppendJsonNumber(builder, "graceTickCap", WorldDriverGraceTickCap, "    ");
+PR 3969|            AppendJsonBool(builder, "compressed", H8_HeadlessWorldDriver.IsCompressed, "    ");
+PR 3970|            AppendJsonField(builder, "stopCause", H8_HeadlessWorldDriver.StopCauseName, "    ");
+PR 3971|            AppendJsonField(builder, "heaviestPhase", H8_HeadlessWorldDriver.WorstPhaseName, "    ");
+---
+PR 3968|            AppendJsonNumber(builder, "graceTickCap", WorldDriverGraceTickCap, "    ");
+PR 3969|            AppendJsonBool(builder, "compressed", H8_HeadlessWorldDriver.IsCompressed, "    ");
+PR 3970|            AppendJsonField(builder, "stopCause", H8_HeadlessWorldDriver.StopCauseName, "    ");
+PR 3971|            AppendJsonField(builder, "heaviestPhase", H8_HeadlessWorldDriver.WorstPhaseName, "    ");
+PR 3972|            AppendJsonNumber(
+PR 3973|                builder, "heaviestPhaseWallSeconds", H8_HeadlessWorldDriver.WorstPhaseWallSeconds, "    ");
+PR 3974|
+---
+PR 3969|            AppendJsonBool(builder, "compressed", H8_HeadlessWorldDriver.IsCompressed, "    ");
+PR 3970|            AppendJsonField(builder, "stopCause", H8_HeadlessWorldDriver.StopCauseName, "    ");
+PR 3971|            AppendJsonField(builder, "heaviestPhase", H8_HeadlessWorldDriver.WorstPhaseName, "    ");
+PR 3972|            AppendJsonNumber(
+PR 3973|                builder, "heaviestPhaseWallSeconds", H8_HeadlessWorldDriver.WorstPhaseWallSeconds, "    ");
+PR 3974|
+PR 3975|            builder.Append("    \"phases\": [\n");
+---
+PR 3970|            AppendJsonField(builder, "stopCause", H8_HeadlessWorldDriver.StopCauseName, "    ");
+PR 3971|            AppendJsonField(builder, "heaviestPhase", H8_HeadlessWorldDriver.WorstPhaseName, "    ");
+PR 3972|            AppendJsonNumber(
+PR 3973|                builder, "heaviestPhaseWallSeconds", H8_HeadlessWorldDriver.WorstPhaseWallSeconds, "    ");
+PR 3974|
+PR 3975|            builder.Append("    \"phases\": [\n");
+PR 3976|            bool firstDriverPhase = true;
+---
+PR 3972|            AppendJsonNumber(
+PR 3973|                builder, "heaviestPhaseWallSeconds", H8_HeadlessWorldDriver.WorstPhaseWallSeconds, "    ");
+PR 3974|
+PR 3975|            builder.Append("    \"phases\": [\n");
+PR 3976|            bool firstDriverPhase = true;
+PR 3977|            for (int phase = 0; phase < H8_HeadlessWorldDriver.PhaseLedgerCount; phase++)
+PR 3978|            {
+---
+PR 3976|            bool firstDriverPhase = true;
+PR 3977|            for (int phase = 0; phase < H8_HeadlessWorldDriver.PhaseLedgerCount; phase++)
+PR 3978|            {
+PR 3979|                if (!H8_HeadlessWorldDriver.WasPhaseEntered(phase))
+PR 3980|                    continue;
+PR 3981|
+PR 3982|                if (!firstDriverPhase)
+---
+PR 3978|            {
+PR 3979|                if (!H8_HeadlessWorldDriver.WasPhaseEntered(phase))
+PR 3980|                    continue;
+PR 3981|
+PR 3982|                if (!firstDriverPhase)
+PR 3983|                    builder.Append(",\n");
+PR 3984|
+---
+PR 3986|                builder.Append("      { \"phase\": \"")
+PR 3987|                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseName(phase)))
+PR 3988|                    .Append("\", \"wallSeconds\": ")
+PR 3989|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase)))
+PR 3990|                    .Append(", \"grantedSeconds\": ")
+PR 3991|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase)))
+PR 3992|                    .Append(", \"ticks\": ").Append(H8_HeadlessWorldDriver.GetPhaseTicks(phase))
+---
+PR 3988|                    .Append("\", \"wallSeconds\": ")
+PR 3989|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase)))
+PR 3990|                    .Append(", \"grantedSeconds\": ")
+PR 3991|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase)))
+PR 3992|                    .Append(", \"ticks\": ").Append(H8_HeadlessWorldDriver.GetPhaseTicks(phase))
+PR 3993|                    .Append(", \"tickFloor\": ").Append(H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase))
+PR 3994|                    .Append(", \"yield\": \"")
+---
+PR 3990|                    .Append(", \"grantedSeconds\": ")
+PR 3991|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase)))
+PR 3992|                    .Append(", \"ticks\": ").Append(H8_HeadlessWorldDriver.GetPhaseTicks(phase))
+PR 3993|                    .Append(", \"tickFloor\": ").Append(H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase))
+PR 3994|                    .Append(", \"yield\": \"")
+PR 3995|                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseYieldName(phase)))
+PR 3996|                    .Append("\" }");
+---
+PR 3991|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase)))
+PR 3992|                    .Append(", \"ticks\": ").Append(H8_HeadlessWorldDriver.GetPhaseTicks(phase))
+PR 3993|                    .Append(", \"tickFloor\": ").Append(H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase))
+PR 3994|                    .Append(", \"yield\": \"")
+PR 3995|                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseYieldName(phase)))
+PR 3996|                    .Append("\" }");
+PR 3997|            }
+---
+PR 3992|                    .Append(", \"ticks\": ").Append(H8_HeadlessWorldDriver.GetPhaseTicks(phase))
+PR 3993|                    .Append(", \"tickFloor\": ").Append(H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase))
+PR 3994|                    .Append(", \"yield\": \"")
+PR 3995|                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseYieldName(phase)))
+PR 3996|                    .Append("\" }");
+PR 3997|            }
+PR 3998|
+---
+PR 3994|                    .Append(", \"yield\": \"")
+PR 3995|                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseYieldName(phase)))
+PR 3996|                    .Append("\" }");
+PR 3997|            }
+PR 3998|
+PR 3999|            builder.Append(firstDriverPhase ? "    ]\n" : "\n    ]\n");
+PR 4000|            builder.Append("  },\n");
+---
+==== Probe EnsureProbeSimulationClock full ====
+PR 3682|        private static void EnsureProbeSimulationClock(string reason)
+PR 3683|        {
+PR 3684|            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+PR 3685|            if (dispatcher == null)
+PR 3686|            {
+PR 3687|                Debug.Log($"{Marker} SIMCLOCK ensure reason={reason} dispatcher=null");
+PR 3688|                return;
+PR 3689|            }
+PR 3690|
+PR 3691|            bool wasPaused = dispatcher.SimulationPaused;
+PR 3692|            float dilBefore = dispatcher.TimeDilationScalar;
+PR 3693|            bool stepBoundBefore = SystemDispatcher.IsStepBoundedTimeActive;
+PR 3694|
+PR 3695|            // ConsumeFrameTimeDilationScalar returns 0 while _simulationPaused — unpause first.
+PR 3696|            if (wasPaused)
+PR 3697|                dispatcher.RequestSimulationPause(false, ProbeSimClockHash);
+PR 3698|
+PR 3699|            dispatcher.RequestHeadlessTimeDilation(ProbeTimeDilationScalar, ProbeSimClockHash);
+PR 3700|
+PR 3701|            // Real product headless time source (InternalsVisibleTo Hecton8.Editor).
+PR 3702|            // Idempotent: EnableStepBoundedTime resets elapsed only when first arming; keep armed.
+PR 3703|            bool stepBoundOk = stepBoundBefore;
+PR 3704|            if (!stepBoundBefore)
+PR 3705|                stepBoundOk = SystemDispatcher.EnableStepBoundedTime(ProbeStepBoundedDeltaSeconds);
+PR 3706|
+PR 3707|            _lastProbeClockEnsureRealtime = EditorApplication.timeSinceStartup;
+PR 3708|            _probeSimClockArmed = stepBoundOk || SystemDispatcher.IsStepBoundedTimeActive;
+PR 3709|
+PR 3710|            bool pausedAfter = dispatcher.SimulationPaused;
+PR 3711|            float dilAfter = dispatcher.TimeDilationScalar;
+PR 3712|            bool stepBoundAfter = SystemDispatcher.IsStepBoundedTimeActive;
+PR 3713|            Debug.Log(
+PR 3714|                $"{Marker} SIMCLOCK ensure reason={reason}" +
+PR 3715|                " pausedBefore=" + (wasPaused ? "1" : "0") +
+PR 3716|                " dilBefore=" + dilBefore.ToString("0.###", CultureInfo.InvariantCulture) +
+PR 3717|                " dilAfter=" + dilAfter.ToString("0.###", CultureInfo.InvariantCulture) +
+PR 3718|                " pausedAfter=" + (pausedAfter ? "1" : "0") +
+PR 3719|                " stepBoundBefore=" + (stepBoundBefore ? "1" : "0") +
+PR 3720|                " stepBoundAfter=" + (stepBoundAfter ? "1" : "0") +
+PR 3721|                " stepBoundOk=" + (stepBoundOk ? "1" : "0") +
+PR 3722|                " stepDt=" + ProbeStepBoundedDeltaSeconds.ToString("0.###", CultureInfo.InvariantCulture) +
+PR 3723|                " armed=" + (_probeSimClockArmed ? "1" : "0"));
+PR 3724|        }
+PR 3730|        private static void MaybeEnsureProbeSimulationClockSustain()
+PR 3731|        {
+PR 3732|            if (_lastProbeClockEnsureRealtime > 0.0 &&
+PR 3733|                EditorApplication.timeSinceStartup - _lastProbeClockEnsureRealtime < ProbeClockEnsureIntervalSeconds)
+PR 3734|            {
+PR 3735|                // Cheap path between throttle windows: still force if step-bound dropped.
+PR 3736|                if (SystemDispatcher.IsStepBoundedTimeActive)
+PR 3737|                {
+PR 3738|                    ITickDispatcher d = GlobalRegistry.TickDispatcher;
+PR 3739|                    if (d != null &&
+PR 3740|                        !d.SimulationPaused &&
+PR 3741|                        d.TimeDilationScalar + 0.01f >= ProbeTimeDilationScalar)
+PR 3742|                        return;
+PR 3743|                }
+PR 3744|            }
+PR 3745|
+PR 3746|            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+PR 3747|            if (dispatcher == null)
+PR 3748|                return;
+PR 3749|
+PR 3750|            bool needsRestore = dispatcher.SimulationPaused ||
+PR 3751|                                dispatcher.TimeDilationScalar + 0.01f < ProbeTimeDilationScalar ||
+PR 3752|                                !SystemDispatcher.IsStepBoundedTimeActive;
+PR 3753|            if (!needsRestore)
+PR 3754|            {
+PR 3755|                _lastProbeClockEnsureRealtime = EditorApplication.timeSinceStartup;
+PR 3756|                return;
+PR 3757|            }
+PR 3758|
+PR 3759|            EnsureProbeSimulationClock("gameplay-sustain");
+PR 3760|        }
+==== Probe MaybeEnsure full ====
+PR 3730|        private static void MaybeEnsureProbeSimulationClockSustain()
+PR 3731|        {
+PR 3732|            if (_lastProbeClockEnsureRealtime > 0.0 &&
+PR 3733|                EditorApplication.timeSinceStartup - _lastProbeClockEnsureRealtime < ProbeClockEnsureIntervalSeconds)
+PR 3734|            {
+PR 3735|                // Cheap path between throttle windows: still force if step-bound dropped.
+PR 3736|                if (SystemDispatcher.IsStepBoundedTimeActive)
+PR 3737|                {
+PR 3738|                    ITickDispatcher d = GlobalRegistry.TickDispatcher;
+PR 3739|                    if (d != null &&
+PR 3740|                        !d.SimulationPaused &&
+PR 3741|                        d.TimeDilationScalar + 0.01f >= ProbeTimeDilationScalar)
+PR 3742|                        return;
+PR 3743|                }
+PR 3744|            }
+PR 3745|
+PR 3746|            ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
+PR 3747|            if (dispatcher == null)
+PR 3748|                return;
+PR 3749|
+PR 3750|            bool needsRestore = dispatcher.SimulationPaused ||
+PR 3751|                                dispatcher.TimeDilationScalar + 0.01f < ProbeTimeDilationScalar ||
+PR 3752|                                !SystemDispatcher.IsStepBoundedTimeActive;
+PR 3753|            if (!needsRestore)
+PR 3754|            {
+PR 3755|                _lastProbeClockEnsureRealtime = EditorApplication.timeSinceStartup;
+PR 3756|                return;
+PR 3757|            }
+PR 3758|
+PR 3759|            EnsureProbeSimulationClock("gameplay-sustain");
+PR 3760|        }
+==== Probe gameplay loop region (search WorldDriver) ====
+PR 206|        private static double _phaseStartedAt;
+PR 207|
+PR 208|        // Whether H8_HeadlessWorldDriver produces on the input lanes during the gameplay window. See
+PR 209|        // that file's header for why it is a producer and not a state writer.
+PR 210|        private static bool _worldDriverEnabled = true;
+PR 211|        private static bool _worldDriverStarted;
+PR 212|
+---
+PR 222|        /// to 132 s, so no number of seconds expresses the same guarantee.
+PR 223|        /// </summary>
+PR 224|        private const int WorldDriverGraceTickCap = 48;
+PR 225|
+PR 226|        /// <summary>Wall seconds of the hard timeout the grace refuses to eat into, so a grace can never
+PR 227|        /// convert a starved row into a TIMEOUT line that loses every verdict the run did produce.</summary>
+PR 228|        private const double GraceHardTimeoutMarginSeconds = 20.0;
+---
+PR 232|        // world driver publishing hot overrides. Mirror HeadlessSimulationRunner.EnsureHeadlessSimulationClock:
+PR 233|        // unpause + headless dilation + EnableStepBoundedTime so the product dispatcher supplies a
+PR 234|        // real fixed unscaled dt per update. Probe is INPUT PRODUCER only via WorldDriver; this is
+PR 235|        // the simulation CLOCK arm, not a mock hop2 path.
+PR 236|        private const float ProbeTimeDilationScalar = 100f;
+PR 237|        private const float ProbeStepBoundedDeltaSeconds = 0.04f;
+PR 238|        private const float ProbeClockEnsureIntervalSeconds = 5f;
+---
+PR 252|        /// The window used to be measured from _phaseStartedAt, which TickWaitingForSettle sets
+PR 253|        /// immediately before SetPhase(GameplayWarmup) - one editor tick earlier than the tick that calls
+PR 254|        /// H8_HeadlessWorldDriver.Begin(). Those two origins are not the same instant and the difference is
+PR 255|        /// not small: on the measured run the GameplayWarmup phase clock read 165.186s while the driver's
+PR 256|        /// own elapsed read 160.430s, so 4.756s of the window was spent before the driver existed. The
+PR 257|        /// window is 63.0 + 4.0 = 67.0s, which left the driver 62.244s of its 63.0s schedule - the margin
+PR 258|        /// was NEGATIVE before a single frame stalled, and the last phase in the schedule is the one that
+---
+PR 261|        /// Rebasing here rather than widening the window keeps the fix honest: the window still bounds
+PR 262|        /// 67 seconds of gameplay, it just stops charging the driver for the tail of the scene transition.
+PR 263|        /// Set unconditionally, so a -h8SkipWorldDriver run measures the same window as a driven one.
+PR 264|        /// </summary>
+PR 265|        private static double _gameplayWindowStartedAt;
+PR 266|
+PR 267|        private static Phase _phase = Phase.Idle;
+---
+PR 552|            // terrain, the world-seed owner - are installed only once a game is actually started.
+PR 553|            // Without this the probe can only ever inspect the menu.
+PR 554|            _gameplayFramesTarget = Math.Max(0, ReadIntArg("-h8GameplayFrames", 0));
+PR 555|            _startNewGame = ReadStringArg("-h8StartGame", null) != null || _gameplayFramesTarget > 0;
+PR 556|            _hardTimeoutSeconds = Math.Max(30.0, ReadIntArg("-h8TimeoutSeconds", 240));
+PR 557|            _menuWaitSeconds = Math.Max(5, ReadIntArg("-h8MenuSeconds", 300));
+PR 558|            _settleWaitSeconds = Math.Max(5, ReadIntArg("-h8SettleSeconds", 300));
+---
+PR 557|            _menuWaitSeconds = Math.Max(5, ReadIntArg("-h8MenuSeconds", 300));
+PR 558|            _settleWaitSeconds = Math.Max(5, ReadIntArg("-h8SettleSeconds", 300));
+PR 559|            _gameplaySeconds = Math.Max(1, ReadIntArg("-h8GameplaySeconds", 60));
+PR 560|            _forceMenuLoad = ReadStringArg("-h8ForceMenuLoad", null) != null;
+PR 561|            _saveWaitSeconds = Math.Max(1, ReadIntArg("-h8SaveSeconds", 60));
+PR 562|            _saveSlotIndex = (byte)Math.Clamp(
+PR 563|                ReadIntArg("-h8SaveSlot", 0), 0, Hecton8.SaveSystem.SaveEvents.ManualSlotCount - 1);
+---
+PR 572|            // The world driver is the only producer for the Swim/Resource/Tool/Craft rows in a headless
+PR 573|            // run. It is on by default because without it those four rows can only ever say
+PR 574|            // NOT_EXERCISED; -h8SkipWorldDriver exists so a run can measure an UNDRIVEN world on purpose,
+PR 575|            // and such a run keeps reporting NOT_EXERCISED rather than inheriting a driven verdict.
+PR 576|            _worldDriverEnabled = ReadStringArg("-h8SkipWorldDriver", null) == null;
+PR 577|
+PR 578|            // The driver needs its full schedule inside the gameplay window. Extending the window is
+---
+PR 574|            // NOT_EXERCISED; -h8SkipWorldDriver exists so a run can measure an UNDRIVEN world on purpose,
+PR 575|            // and such a run keeps reporting NOT_EXERCISED rather than inheriting a driven verdict.
+PR 576|            _worldDriverEnabled = ReadStringArg("-h8SkipWorldDriver", null) == null;
+PR 577|
+PR 578|            // The driver needs its full schedule inside the gameplay window. Extending the window is
+PR 579|            // safe; silently truncating the driver is not, because a truncated schedule produces
+PR 580|            // NOT_EXERCISED rows that look like a product gap instead of a harness budget.
+---
+PR 580|            // NOT_EXERCISED rows that look like a product gap instead of a harness budget.
+PR 581|            //
+PR 582|            // This can raise an explicitly passed -h8GameplaySeconds, so it says so out loud: an argument
+PR 583|            // that is quietly ignored is worse than one that is loudly overridden.
+PR 584|            //
+PR 585|            // THE MARGIN IS A TICK MARGIN, NOT A STALL ALLOWANCE, and it was tuned when the four driven
+PR 586|            // rows were upstream-blocked and every phase failed on its first tick. Now that they execute,
+---
+PR 590|            // a probe that passes because it was given more time hides the stall, and no fixed number of
+PR 591|            // seconds can cover a single pumped frame that cost 132 of them. The driver's own per-phase
+PR 592|            // ceilings bound the stall; TryGrantWorldDriverGrace covers the tail in TICKS, which is the
+PR 593|            // unit the driver's remaining work is actually denominated in. So this stays at +4.0.
+PR 594|            if (_worldDriverEnabled)
+PR 595|            {
+PR 596|                double required = H8_HeadlessWorldDriver.TotalBudgetSeconds + 4.0;
+---
+PR 594|            if (_worldDriverEnabled)
+PR 595|            {
+PR 596|                double required = H8_HeadlessWorldDriver.TotalBudgetSeconds + 4.0;
+PR 597|                if (_gameplaySeconds < required)
+PR 598|                {
+PR 599|                    Debug.Log(
+PR 600|                        $"{Marker} WORLDDRIVER gameplay window raised {_gameplaySeconds:F0}s -> " +
+---
+PR 599|                    Debug.Log(
+PR 600|                        $"{Marker} WORLDDRIVER gameplay window raised {_gameplaySeconds:F0}s -> " +
+PR 601|                        $"{required:F0}s to fit the driver schedule; pass -h8SkipWorldDriver to keep the " +
+PR 602|                        "shorter window and leave Swim/Resource/Tool/CraftRepairBuild NOT_EXERCISED");
+PR 603|                    _gameplaySeconds = required;
+PR 604|                }
+PR 605|            }
+---
+PR 765|                        }
+PR 766|
+PR 767|                        // L16: arm product step-bounded clock before any WorldDriver.Begin so FixedTick
+PR 768|                        // can consume locomotion overrides (hop2 path) under batchmode WallClock dt=0.
+PR 769|                        EnsureProbeSimulationClock("gameplay-window-start");
+PR 770|                    }
+PR 771|
+---
+PR 771|
+PR 772|                    // Content before measurement. This runs BEFORE the driver starts and OUTSIDE the
+PR 773|                    // _worldDriverEnabled branch on purpose: a -h8SkipWorldDriver run is supposed to
+PR 774|                    // measure an UNDRIVEN world, not an EMPTY one, and those are different claims.
+PR 775|                    if (!_placementOwnersRepaired)
+PR 776|                    {
+PR 777|                        _placementOwnersRepaired = true;
+---
+PR 804|                            // L16: re-assert clock immediately before Begin in case dispatcher arrived late.
+PR 805|                            EnsureProbeSimulationClock("worlddriver-begin");
+PR 806|                            H8_HeadlessWorldDriver.Begin();
+PR 807|                            Debug.Log(
+PR 808|                                $"{Marker} WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> " +
+PR 809|                                "(PLIN) and CoreDeterminismSignals input-override; budget " +
+PR 810|                                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s of the " +
+---
+PR 808|                                $"{Marker} WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> " +
+PR 809|                                "(PLIN) and CoreDeterminismSignals input-override; budget " +
+PR 810|                                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s of the " +
+PR 811|                                $"{_gameplaySeconds:F0}s gameplay window");
+PR 812|                        }
+PR 813|
+PR 814|                        // L16: sustain against late pause / dilation collapse / step-bound drop.
+---
+PR 814|                        // L16: sustain against late pause / dilation collapse / step-bound drop.
+PR 815|                        MaybeEnsureProbeSimulationClockSustain();
+PR 816|                        H8_HeadlessWorldDriver.Tick();
+PR 817|                    }
+PR 818|                    else
+PR 819|                    {
+PR 820|                        // Undriven measurement still needs FixedTick for hop2/depth observability.
+---
+PR 828|                        // a NOT_EXERCISED row: the driver was stopped on the same tick that entered
+PR 829|                        // Craft, so the phase got zero ticks and the mechanic was never looked at.
+PR 830|                        if (_worldDriverStarted && TryGrantWorldDriverGrace())
+PR 831|                            break;
+PR 832|
+PR 833|                        // Release the locomotion lane before the save leg, or the save would capture a
+PR 834|                        // player under synthetic input and the save/load row would measure the driver.
+---
+PR 835|                        if (_worldDriverStarted)
+PR 836|                        {
+PR 837|                            H8_HeadlessWorldDriver.Stop(
+PR 838|                                H8_HeadlessWorldDriver.StopCause.ProbeGameplayWindowClosed);
+PR 839|                        }
+PR 840|
+PR 841|                        SetPhase(_saveLegEnabled ? Phase.SaveRoundTrip : Phase.Reporting);
+---
+PR 836|                        {
+PR 837|                            H8_HeadlessWorldDriver.Stop(
+PR 838|                                H8_HeadlessWorldDriver.StopCause.ProbeGameplayWindowClosed);
+PR 839|                        }
+PR 840|
+PR 841|                        SetPhase(_saveLegEnabled ? Phase.SaveRoundTrip : Phase.Reporting);
+PR 842|                    }
+---
+PR 981|        /// <summary>
+PR 982|        /// Grants the world driver one more probe tick after the gameplay window has closed, up to a hard
+PR 983|        /// cap of <see cref="WorldDriverGraceTickCap"/> ticks. Returns true while the grace is open.
+PR 984|        ///
+PR 985|        /// WHY THIS IS NOT "JUST GIVE IT MORE TIME". The wall window and the driver's remaining work are
+PR 986|        /// denominated in different units and the exchange rate is not stable: the measured GameplayWarmup
+PR 987|        /// phase ran 124 game frames in 165.186 wall seconds, and one of those frames cost about 132 s
+---
+PR 997|        /// not - it just stops throwing away the four verdicts it had almost finished collecting.
+PR 998|        /// </summary>
+PR 999|        private static bool TryGrantWorldDriverGrace()
+PR 1000|        {
+PR 1001|            if (!H8_HeadlessWorldDriver.IsActive)
+PR 1002|                return false;
+PR 1003|
+---
+PR 999|        private static bool TryGrantWorldDriverGrace()
+PR 1000|        {
+PR 1001|            if (!H8_HeadlessWorldDriver.IsActive)
+PR 1002|                return false;
+PR 1003|
+PR 1004|            int owed = H8_HeadlessWorldDriver.MinimumTicksOwed;
+PR 1005|            if (owed <= 0)
+---
+PR 1002|                return false;
+PR 1003|
+PR 1004|            int owed = H8_HeadlessWorldDriver.MinimumTicksOwed;
+PR 1005|            if (owed <= 0)
+PR 1006|                return false;
+PR 1007|
+PR 1008|            if (_worldDriverGraceTicks >= WorldDriverGraceTickCap)
+---
+PR 1006|                return false;
+PR 1007|
+PR 1008|            if (_worldDriverGraceTicks >= WorldDriverGraceTickCap)
+PR 1009|            {
+PR 1010|                if (!_graceClosedLogged)
+PR 1011|                {
+PR 1012|                    _graceClosedLogged = true;
+---
+PR 1013|                    Debug.Log(
+PR 1014|                        $"{Marker} WORLDDRIVER grace EXHAUSTED after {_worldDriverGraceTicks} ticks with " +
+PR 1015|                        $"{owed} still owed in phase {H8_HeadlessWorldDriver.CurrentPhaseName}. The " +
+PR 1016|                        "remaining rows close as NOT_EXERCISED and say so; this is a harness shortfall, " +
+PR 1017|                        $"not a product gap. Heaviest phase: {H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1018|                        $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s.");
+PR 1019|                }
+---
+PR 1015|                        $"{owed} still owed in phase {H8_HeadlessWorldDriver.CurrentPhaseName}. The " +
+PR 1016|                        "remaining rows close as NOT_EXERCISED and say so; this is a harness shortfall, " +
+PR 1017|                        $"not a product gap. Heaviest phase: {H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1018|                        $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s.");
+PR 1019|                }
+PR 1020|
+PR 1021|                return false;
+---
+PR 1016|                        "remaining rows close as NOT_EXERCISED and say so; this is a harness shortfall, " +
+PR 1017|                        $"not a product gap. Heaviest phase: {H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1018|                        $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s.");
+PR 1019|                }
+PR 1020|
+PR 1021|                return false;
+PR 1022|            }
+---
+PR 1032|                    Debug.Log(
+PR 1033|                        $"{Marker} WORLDDRIVER grace REFUSED with {owed} ticks owed in phase " +
+PR 1034|                        $"{H8_HeadlessWorldDriver.CurrentPhaseName}: only " +
+PR 1035|                        $"{_hardTimeoutSeconds - (EditorApplication.timeSinceStartup - _startedAt):F0}s " +
+PR 1036|                        $"left of the {_hardTimeoutSeconds:F0}s hard timeout and the report needs that " +
+PR 1037|                        "margin. Raise -h8TimeoutSeconds to let the schedule finish.");
+PR 1038|                }
+---
+PR 1046|                Debug.Log(
+PR 1047|                    $"{Marker} WORLDDRIVER the {_gameplaySeconds:F0}s gameplay window closed with the " +
+PR 1048|                    $"schedule still in phase {H8_HeadlessWorldDriver.CurrentPhaseName} owing {owed} " +
+PR 1049|                    $"ticks (driver elapsed {H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 1050|                    $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s, compressed=" +
+PR 1051|                    $"{H8_HeadlessWorldDriver.IsCompressed}). Granting up to {WorldDriverGraceTickCap} " +
+PR 1052|                    "further TICKS - not seconds - so the remaining rows produce a real verdict instead " +
+---
+PR 1047|                    $"{Marker} WORLDDRIVER the {_gameplaySeconds:F0}s gameplay window closed with the " +
+PR 1048|                    $"schedule still in phase {H8_HeadlessWorldDriver.CurrentPhaseName} owing {owed} " +
+PR 1049|                    $"ticks (driver elapsed {H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 1050|                    $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s, compressed=" +
+PR 1051|                    $"{H8_HeadlessWorldDriver.IsCompressed}). Granting up to {WorldDriverGraceTickCap} " +
+PR 1052|                    "further TICKS - not seconds - so the remaining rows produce a real verdict instead " +
+PR 1053|                    $"of NOT_EXERCISED. The phase that spent the schedule was " +
+---
+PR 1048|                    $"schedule still in phase {H8_HeadlessWorldDriver.CurrentPhaseName} owing {owed} " +
+PR 1049|                    $"ticks (driver elapsed {H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 1050|                    $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s, compressed=" +
+PR 1051|                    $"{H8_HeadlessWorldDriver.IsCompressed}). Granting up to {WorldDriverGraceTickCap} " +
+PR 1052|                    "further TICKS - not seconds - so the remaining rows produce a real verdict instead " +
+PR 1053|                    $"of NOT_EXERCISED. The phase that spent the schedule was " +
+PR 1054|                    $"{H8_HeadlessWorldDriver.WorstPhaseName} at " +
+---
+PR 1049|                    $"ticks (driver elapsed {H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 1050|                    $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s, compressed=" +
+PR 1051|                    $"{H8_HeadlessWorldDriver.IsCompressed}). Granting up to {WorldDriverGraceTickCap} " +
+PR 1052|                    "further TICKS - not seconds - so the remaining rows produce a real verdict instead " +
+PR 1053|                    $"of NOT_EXERCISED. The phase that spent the schedule was " +
+PR 1054|                    $"{H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1055|                    $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s - fix that, not the rows.");
+---
+PR 1052|                    "further TICKS - not seconds - so the remaining rows produce a real verdict instead " +
+PR 1053|                    $"of NOT_EXERCISED. The phase that spent the schedule was " +
+PR 1054|                    $"{H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1055|                    $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s - fix that, not the rows.");
+PR 1056|            }
+PR 1057|
+PR 1058|            _worldDriverGraceTicks++;
+---
+PR 1053|                    $"of NOT_EXERCISED. The phase that spent the schedule was " +
+PR 1054|                    $"{H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 1055|                    $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F1}s - fix that, not the rows.");
+PR 1056|            }
+PR 1057|
+PR 1058|            _worldDriverGraceTicks++;
+PR 1059|            return true;
+---
+PR 1557|                    MomentVerdict.Blocked,
+PR 1558|                    $"only {remaining:F0}s left of the {_hardTimeoutSeconds:F0}s probe hard timeout - raise " +
+PR 1559|                    "-h8TimeoutSeconds or lower -h8GameplaySeconds so the save leg fits",
+PR 1560|                    countFailure: false);
+PR 1561|                return;
+PR 1562|            }
+PR 1563|
+---
+PR 1998|
+PR 1999|            RecordProofMoment();
+PR 2000|            RecordWorldDriverMoments();
+PR 2001|            RecordMissionMoment();
+PR 2002|            RecordContentBlockedMoments();
+PR 2003|            ReportRouteMoments();
+PR 2004|
+---
+PR 2044|
+PR 2045|        /// <summary>
+PR 2046|        /// Transcribes <see cref="H8_HeadlessWorldDriver"/>'s four verdicts into the route table.
+PR 2047|        ///
+PR 2048|        /// Transcribes: it does not decide. The driver latches a verdict only from an observable it
+PR 2049|        /// actually read, and this method adds no interpretation on top - so a row can only be green here
+PR 2050|        /// if the shipping code path produced the observable. When the driver never ran, the rows keep
+---
+PR 2052|        /// honest claim.
+PR 2053|        /// </summary>
+PR 2054|        private static void RecordWorldDriverMoments()
+PR 2055|        {
+PR 2056|            if (!_worldDriverStarted)
+PR 2057|            {
+PR 2058|                string reason = _worldDriverEnabled
+---
+PR 2058|                string reason = _worldDriverEnabled
+PR 2059|                    ? "gameplay never started, so the world driver never ran"
+PR 2060|                    : "world driver disabled by -h8SkipWorldDriver";
+PR 2061|
+PR 2062|                RecordMoment(MomentSwim, MomentVerdict.NotExercised, reason);
+PR 2063|                RecordMoment(MomentResource, MomentVerdict.NotExercised, reason);
+PR 2064|                RecordMoment(MomentTool, MomentVerdict.NotExercised, reason);
+---
+PR 2069|            // Anything still unlatched when reporting starts is closed out as NOT_EXERCISED with the
+PR 2070|            // phase it stalled in, so a budget shortfall is never silently reported as a product gap.
+PR 2071|            H8_HeadlessWorldDriver.Stop(H8_HeadlessWorldDriver.StopCause.ProbeReportingStarted);
+PR 2072|
+PR 2073|            Debug.Log(
+PR 2074|                $"{Marker} WORLDDRIVER ticks={H8_HeadlessWorldDriver.TickCount} " +
+PR 2075|                $"phase={H8_HeadlessWorldDriver.CurrentPhaseName} " +
+---
+PR 2072|
+PR 2073|            Debug.Log(
+PR 2074|                $"{Marker} WORLDDRIVER ticks={H8_HeadlessWorldDriver.TickCount} " +
+PR 2075|                $"phase={H8_HeadlessWorldDriver.CurrentPhaseName} " +
+PR 2076|                $"elapsed={H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 2077|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s " +
+PR 2078|                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+---
+PR 2073|            Debug.Log(
+PR 2074|                $"{Marker} WORLDDRIVER ticks={H8_HeadlessWorldDriver.TickCount} " +
+PR 2075|                $"phase={H8_HeadlessWorldDriver.CurrentPhaseName} " +
+PR 2076|                $"elapsed={H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 2077|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s " +
+PR 2078|                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+PR 2079|                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+---
+PR 2074|                $"{Marker} WORLDDRIVER ticks={H8_HeadlessWorldDriver.TickCount} " +
+PR 2075|                $"phase={H8_HeadlessWorldDriver.CurrentPhaseName} " +
+PR 2076|                $"elapsed={H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 2077|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s " +
+PR 2078|                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+PR 2079|                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+PR 2080|                $"graceTicks={_worldDriverGraceTicks} " +
+---
+PR 2075|                $"phase={H8_HeadlessWorldDriver.CurrentPhaseName} " +
+PR 2076|                $"elapsed={H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 2077|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s " +
+PR 2078|                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+PR 2079|                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+PR 2080|                $"graceTicks={_worldDriverGraceTicks} " +
+PR 2081|                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+---
+PR 2076|                $"elapsed={H8_HeadlessWorldDriver.ElapsedSeconds:F1}s of " +
+PR 2077|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s " +
+PR 2078|                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+PR 2079|                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+PR 2080|                $"graceTicks={_worldDriverGraceTicks} " +
+PR 2081|                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+PR 2082|                $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
+---
+PR 2077|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s " +
+PR 2078|                $"compressed={H8_HeadlessWorldDriver.IsCompressed} " +
+PR 2079|                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+PR 2080|                $"graceTicks={_worldDriverGraceTicks} " +
+PR 2081|                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+PR 2082|                $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
+PR 2083|                $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+---
+PR 2079|                $"stopCause={H8_HeadlessWorldDriver.StopCauseName} " +
+PR 2080|                $"graceTicks={_worldDriverGraceTicks} " +
+PR 2081|                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+PR 2082|                $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
+PR 2083|                $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+PR 2084|
+PR 2085|            ReportWorldDriverPhaseLedger();
+---
+PR 2080|                $"graceTicks={_worldDriverGraceTicks} " +
+PR 2081|                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+PR 2082|                $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
+PR 2083|                $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+PR 2084|
+PR 2085|            ReportWorldDriverPhaseLedger();
+PR 2086|
+---
+PR 2081|                $"discreteSignals={H8_HeadlessWorldDriver.PublishedDiscreteSignalCount} " +
+PR 2082|                $"discreteDropped={H8_HeadlessWorldDriver.DroppedDiscreteSignalCount} " +
+PR 2083|                $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+PR 2084|
+PR 2085|            ReportWorldDriverPhaseLedger();
+PR 2086|
+PR 2087|            RecordDriverRow(H8_HeadlessWorldDriver.RowSwim, MomentSwim);
+---
+PR 2083|                $"inputOverrides={H8_HeadlessWorldDriver.PublishedOverrideCount}");
+PR 2084|
+PR 2085|            ReportWorldDriverPhaseLedger();
+PR 2086|
+PR 2087|            RecordDriverRow(H8_HeadlessWorldDriver.RowSwim, MomentSwim);
+PR 2088|            RecordDriverRow(H8_HeadlessWorldDriver.RowResource, MomentResource);
+PR 2089|            RecordDriverRow(H8_HeadlessWorldDriver.RowTool, MomentTool);
+---
+PR 2085|            ReportWorldDriverPhaseLedger();
+PR 2086|
+PR 2087|            RecordDriverRow(H8_HeadlessWorldDriver.RowSwim, MomentSwim);
+PR 2088|            RecordDriverRow(H8_HeadlessWorldDriver.RowResource, MomentResource);
+PR 2089|            RecordDriverRow(H8_HeadlessWorldDriver.RowTool, MomentTool);
+PR 2090|            RecordDriverRow(H8_HeadlessWorldDriver.RowCraft, MomentCraft);
+PR 2091|        }
+---
+PR 2086|
+PR 2087|            RecordDriverRow(H8_HeadlessWorldDriver.RowSwim, MomentSwim);
+PR 2088|            RecordDriverRow(H8_HeadlessWorldDriver.RowResource, MomentResource);
+PR 2089|            RecordDriverRow(H8_HeadlessWorldDriver.RowTool, MomentTool);
+PR 2090|            RecordDriverRow(H8_HeadlessWorldDriver.RowCraft, MomentCraft);
+PR 2091|        }
+PR 2092|
+---
+PR 2087|            RecordDriverRow(H8_HeadlessWorldDriver.RowSwim, MomentSwim);
+PR 2088|            RecordDriverRow(H8_HeadlessWorldDriver.RowResource, MomentResource);
+PR 2089|            RecordDriverRow(H8_HeadlessWorldDriver.RowTool, MomentTool);
+PR 2090|            RecordDriverRow(H8_HeadlessWorldDriver.RowCraft, MomentCraft);
+PR 2091|        }
+PR 2092|
+PR 2093|        /// <summary>
+---
+PR 2088|            RecordDriverRow(H8_HeadlessWorldDriver.RowResource, MomentResource);
+PR 2089|            RecordDriverRow(H8_HeadlessWorldDriver.RowTool, MomentTool);
+PR 2090|            RecordDriverRow(H8_HeadlessWorldDriver.RowCraft, MomentCraft);
+PR 2091|        }
+PR 2092|
+PR 2093|        /// <summary>
+PR 2094|        /// One row per driver phase: what it was granted, what it spent in wall seconds AND in ticks, and
+---
+PR 2105|        /// harness, and the tick column is the one that says whether a phase was allowed to do its work.
+PR 2106|        /// </summary>
+PR 2107|        private static void ReportWorldDriverPhaseLedger()
+PR 2108|        {
+PR 2109|            for (int phase = 0; phase < H8_HeadlessWorldDriver.PhaseLedgerCount; phase++)
+PR 2110|            {
+PR 2111|                // Phases that were never entered are skipped rather than printed as zero rows: a schedule
+---
+PR 2107|        private static void ReportWorldDriverPhaseLedger()
+PR 2108|        {
+PR 2109|            for (int phase = 0; phase < H8_HeadlessWorldDriver.PhaseLedgerCount; phase++)
+PR 2110|            {
+PR 2111|                // Phases that were never entered are skipped rather than printed as zero rows: a schedule
+PR 2112|                // legitimately skips phases (a blocked Settle jumps straight to ResourceTarget), and a
+PR 2113|                // wall of empty rows would bury the two or three that carry the answer.
+---
+PR 2112|                // legitimately skips phases (a blocked Settle jumps straight to ResourceTarget), and a
+PR 2113|                // wall of empty rows would bury the two or three that carry the answer.
+PR 2114|                if (!H8_HeadlessWorldDriver.WasPhaseEntered(phase))
+PR 2115|                    continue;
+PR 2116|
+PR 2117|                string yield = H8_HeadlessWorldDriver.GetPhaseYieldName(phase);
+PR 2118|                double wall = H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase);
+---
+PR 2115|                    continue;
+PR 2116|
+PR 2117|                string yield = H8_HeadlessWorldDriver.GetPhaseYieldName(phase);
+PR 2118|                double wall = H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase);
+PR 2119|                double granted = H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase);
+PR 2120|                int ticks = H8_HeadlessWorldDriver.GetPhaseTicks(phase);
+PR 2121|                int floor = H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase);
+---
+PR 2116|
+PR 2117|                string yield = H8_HeadlessWorldDriver.GetPhaseYieldName(phase);
+PR 2118|                double wall = H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase);
+PR 2119|                double granted = H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase);
+PR 2120|                int ticks = H8_HeadlessWorldDriver.GetPhaseTicks(phase);
+PR 2121|                int floor = H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase);
+PR 2122|                double secondsPerTick = ticks > 0 ? wall / ticks : 0.0;
+---
+PR 2117|                string yield = H8_HeadlessWorldDriver.GetPhaseYieldName(phase);
+PR 2118|                double wall = H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase);
+PR 2119|                double granted = H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase);
+PR 2120|                int ticks = H8_HeadlessWorldDriver.GetPhaseTicks(phase);
+PR 2121|                int floor = H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase);
+PR 2122|                double secondsPerTick = ticks > 0 ? wall / ticks : 0.0;
+PR 2123|
+---
+PR 2118|                double wall = H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase);
+PR 2119|                double granted = H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase);
+PR 2120|                int ticks = H8_HeadlessWorldDriver.GetPhaseTicks(phase);
+PR 2121|                int floor = H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase);
+PR 2122|                double secondsPerTick = ticks > 0 ? wall / ticks : 0.0;
+PR 2123|
+PR 2124|                Debug.Log(
+---
+PR 2119|                double granted = H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase);
+PR 2120|                int ticks = H8_HeadlessWorldDriver.GetPhaseTicks(phase);
+PR 2121|                int floor = H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase);
+PR 2122|                double secondsPerTick = ticks > 0 ? wall / ticks : 0.0;
+PR 2123|
+PR 2124|                Debug.Log(
+PR 2125|                    $"{Marker} DRIVERPHASE {H8_HeadlessWorldDriver.GetPhaseName(phase),-16} " +
+---
+PR 2123|
+PR 2124|                Debug.Log(
+PR 2125|                    $"{Marker} DRIVERPHASE {H8_HeadlessWorldDriver.GetPhaseName(phase),-16} " +
+PR 2126|                    $"wall={wall,8:F3}s granted={granted,6:F3}s ticks={ticks,5} floor={floor,2} " +
+PR 2127|                    $"secondsPerTick={secondsPerTick,8:F3} yield={yield}");
+PR 2128|            }
+PR 2129|
+---
+PR 2129|
+PR 2130|            Debug.Log(
+PR 2131|                $"{Marker} DRIVERPHASE heaviest={H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 2132|                $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F3}s of the " +
+PR 2133|                $"{H8_HeadlessWorldDriver.ElapsedSeconds:F3}s the schedule ran against a " +
+PR 2134|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s budget. A yield of TotalCeiling means " +
+PR 2135|                "that phase was compressed to its tick floor by an earlier overrun and its row is " +
+---
+PR 2130|            Debug.Log(
+PR 2131|                $"{Marker} DRIVERPHASE heaviest={H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 2132|                $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F3}s of the " +
+PR 2133|                $"{H8_HeadlessWorldDriver.ElapsedSeconds:F3}s the schedule ran against a " +
+PR 2134|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s budget. A yield of TotalCeiling means " +
+PR 2135|                "that phase was compressed to its tick floor by an earlier overrun and its row is " +
+PR 2136|                "UNMEASURED, not a product gap; WallCeiling means the phase spent its own window and " +
+---
+PR 2131|                $"{Marker} DRIVERPHASE heaviest={H8_HeadlessWorldDriver.WorstPhaseName} at " +
+PR 2132|                $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F3}s of the " +
+PR 2133|                $"{H8_HeadlessWorldDriver.ElapsedSeconds:F3}s the schedule ran against a " +
+PR 2134|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s budget. A yield of TotalCeiling means " +
+PR 2135|                "that phase was compressed to its tick floor by an earlier overrun and its row is " +
+PR 2136|                "UNMEASURED, not a product gap; WallCeiling means the phase spent its own window and " +
+PR 2137|                "failed, which is a real result.");
+---
+PR 2132|                $"{H8_HeadlessWorldDriver.WorstPhaseWallSeconds:F3}s of the " +
+PR 2133|                $"{H8_HeadlessWorldDriver.ElapsedSeconds:F3}s the schedule ran against a " +
+PR 2134|                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s budget. A yield of TotalCeiling means " +
+PR 2135|                "that phase was compressed to its tick floor by an earlier overrun and its row is " +
+PR 2136|                "UNMEASURED, not a product gap; WallCeiling means the phase spent its own window and " +
+PR 2137|                "failed, which is a real result.");
+PR 2138|        }
+---
+PR 2144|        private static void RecordDriverRow(int driverRow, string momentName)
+PR 2145|        {
+PR 2146|            string detail = H8_HeadlessWorldDriver.GetDetail(driverRow);
+PR 2147|
+PR 2148|            // An upstream gate that never opened is not four independent product failures.
+PR 2149|            //
+PR 2150|            // When scene activation does not finish, GameBootstrapper.cs:7365 ActivatePlayer() never runs
+---
+PR 2164|            // Only downgrades. A row that already passed with gameReady false would be a contradiction
+PR 2165|            // worth seeing, so a Pass is never rewritten into a Blocked.
+PR 2166|            MomentVerdict verdict = (MomentVerdict)(byte)H8_HeadlessWorldDriver.GetVerdict(driverRow);
+PR 2167|            if (!BootstrapState.IsGameReady && verdict != MomentVerdict.Pass)
+PR 2168|            {
+PR 2169|                RecordMoment(
+PR 2170|                    momentName,
+---
+PR 3843|            _lastProbeClockEnsureRealtime = 0.0;
+PR 3844|            _probeSimClockArmed = false;
+PR 3845|            H8_HeadlessWorldDriver.Reset();
+PR 3846|        }
+PR 3847|
+PR 3848|        private static string ResolveArtifactPath()
+PR 3849|        {
+---
+PR 3962|            AppendJsonBool(builder, "enabled", _worldDriverEnabled, "    ");
+PR 3963|            AppendJsonBool(builder, "started", _worldDriverStarted, "    ");
+PR 3964|            AppendJsonNumber(builder, "totalBudgetSeconds", H8_HeadlessWorldDriver.TotalBudgetSeconds, "    ");
+PR 3965|            AppendJsonNumber(builder, "elapsedSeconds", H8_HeadlessWorldDriver.ElapsedSeconds, "    ");
+PR 3966|            AppendJsonNumber(builder, "ticks", H8_HeadlessWorldDriver.TickCount, "    ");
+PR 3967|            AppendJsonNumber(builder, "graceTicks", _worldDriverGraceTicks, "    ");
+PR 3968|            AppendJsonNumber(builder, "graceTickCap", WorldDriverGraceTickCap, "    ");
+---
+PR 3963|            AppendJsonBool(builder, "started", _worldDriverStarted, "    ");
+PR 3964|            AppendJsonNumber(builder, "totalBudgetSeconds", H8_HeadlessWorldDriver.TotalBudgetSeconds, "    ");
+PR 3965|            AppendJsonNumber(builder, "elapsedSeconds", H8_HeadlessWorldDriver.ElapsedSeconds, "    ");
+PR 3966|            AppendJsonNumber(builder, "ticks", H8_HeadlessWorldDriver.TickCount, "    ");
+PR 3967|            AppendJsonNumber(builder, "graceTicks", _worldDriverGraceTicks, "    ");
+PR 3968|            AppendJsonNumber(builder, "graceTickCap", WorldDriverGraceTickCap, "    ");
+PR 3969|            AppendJsonBool(builder, "compressed", H8_HeadlessWorldDriver.IsCompressed, "    ");
+---
+PR 3964|            AppendJsonNumber(builder, "totalBudgetSeconds", H8_HeadlessWorldDriver.TotalBudgetSeconds, "    ");
+PR 3965|            AppendJsonNumber(builder, "elapsedSeconds", H8_HeadlessWorldDriver.ElapsedSeconds, "    ");
+PR 3966|            AppendJsonNumber(builder, "ticks", H8_HeadlessWorldDriver.TickCount, "    ");
+PR 3967|            AppendJsonNumber(builder, "graceTicks", _worldDriverGraceTicks, "    ");
+PR 3968|            AppendJsonNumber(builder, "graceTickCap", WorldDriverGraceTickCap, "    ");
+PR 3969|            AppendJsonBool(builder, "compressed", H8_HeadlessWorldDriver.IsCompressed, "    ");
+PR 3970|            AppendJsonField(builder, "stopCause", H8_HeadlessWorldDriver.StopCauseName, "    ");
+---
+PR 3966|            AppendJsonNumber(builder, "ticks", H8_HeadlessWorldDriver.TickCount, "    ");
+PR 3967|            AppendJsonNumber(builder, "graceTicks", _worldDriverGraceTicks, "    ");
+PR 3968|            AppendJsonNumber(builder, "graceTickCap", WorldDriverGraceTickCap, "    ");
+PR 3969|            AppendJsonBool(builder, "compressed", H8_HeadlessWorldDriver.IsCompressed, "    ");
+PR 3970|            AppendJsonField(builder, "stopCause", H8_HeadlessWorldDriver.StopCauseName, "    ");
+PR 3971|            AppendJsonField(builder, "heaviestPhase", H8_HeadlessWorldDriver.WorstPhaseName, "    ");
+PR 3972|            AppendJsonNumber(
+---
+PR 3967|            AppendJsonNumber(builder, "graceTicks", _worldDriverGraceTicks, "    ");
+PR 3968|            AppendJsonNumber(builder, "graceTickCap", WorldDriverGraceTickCap, "    ");
+PR 3969|            AppendJsonBool(builder, "compressed", H8_HeadlessWorldDriver.IsCompressed, "    ");
+PR 3970|            AppendJsonField(builder, "stopCause", H8_HeadlessWorldDriver.StopCauseName, "    ");
+PR 3971|            AppendJsonField(builder, "heaviestPhase", H8_HeadlessWorldDriver.WorstPhaseName, "    ");
+PR 3972|            AppendJsonNumber(
+PR 3973|                builder, "heaviestPhaseWallSeconds", H8_HeadlessWorldDriver.WorstPhaseWallSeconds, "    ");
+---
+PR 3968|            AppendJsonNumber(builder, "graceTickCap", WorldDriverGraceTickCap, "    ");
+PR 3969|            AppendJsonBool(builder, "compressed", H8_HeadlessWorldDriver.IsCompressed, "    ");
+PR 3970|            AppendJsonField(builder, "stopCause", H8_HeadlessWorldDriver.StopCauseName, "    ");
+PR 3971|            AppendJsonField(builder, "heaviestPhase", H8_HeadlessWorldDriver.WorstPhaseName, "    ");
+PR 3972|            AppendJsonNumber(
+PR 3973|                builder, "heaviestPhaseWallSeconds", H8_HeadlessWorldDriver.WorstPhaseWallSeconds, "    ");
+PR 3974|
+---
+PR 3969|            AppendJsonBool(builder, "compressed", H8_HeadlessWorldDriver.IsCompressed, "    ");
+PR 3970|            AppendJsonField(builder, "stopCause", H8_HeadlessWorldDriver.StopCauseName, "    ");
+PR 3971|            AppendJsonField(builder, "heaviestPhase", H8_HeadlessWorldDriver.WorstPhaseName, "    ");
+PR 3972|            AppendJsonNumber(
+PR 3973|                builder, "heaviestPhaseWallSeconds", H8_HeadlessWorldDriver.WorstPhaseWallSeconds, "    ");
+PR 3974|
+PR 3975|            builder.Append("    \"phases\": [\n");
+---
+PR 3971|            AppendJsonField(builder, "heaviestPhase", H8_HeadlessWorldDriver.WorstPhaseName, "    ");
+PR 3972|            AppendJsonNumber(
+PR 3973|                builder, "heaviestPhaseWallSeconds", H8_HeadlessWorldDriver.WorstPhaseWallSeconds, "    ");
+PR 3974|
+PR 3975|            builder.Append("    \"phases\": [\n");
+PR 3976|            bool firstDriverPhase = true;
+PR 3977|            for (int phase = 0; phase < H8_HeadlessWorldDriver.PhaseLedgerCount; phase++)
+---
+PR 3975|            builder.Append("    \"phases\": [\n");
+PR 3976|            bool firstDriverPhase = true;
+PR 3977|            for (int phase = 0; phase < H8_HeadlessWorldDriver.PhaseLedgerCount; phase++)
+PR 3978|            {
+PR 3979|                if (!H8_HeadlessWorldDriver.WasPhaseEntered(phase))
+PR 3980|                    continue;
+PR 3981|
+---
+PR 3977|            for (int phase = 0; phase < H8_HeadlessWorldDriver.PhaseLedgerCount; phase++)
+PR 3978|            {
+PR 3979|                if (!H8_HeadlessWorldDriver.WasPhaseEntered(phase))
+PR 3980|                    continue;
+PR 3981|
+PR 3982|                if (!firstDriverPhase)
+PR 3983|                    builder.Append(",\n");
+---
+PR 3985|                firstDriverPhase = false;
+PR 3986|                builder.Append("      { \"phase\": \"")
+PR 3987|                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseName(phase)))
+PR 3988|                    .Append("\", \"wallSeconds\": ")
+PR 3989|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase)))
+PR 3990|                    .Append(", \"grantedSeconds\": ")
+PR 3991|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase)))
+---
+PR 3987|                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseName(phase)))
+PR 3988|                    .Append("\", \"wallSeconds\": ")
+PR 3989|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase)))
+PR 3990|                    .Append(", \"grantedSeconds\": ")
+PR 3991|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase)))
+PR 3992|                    .Append(", \"ticks\": ").Append(H8_HeadlessWorldDriver.GetPhaseTicks(phase))
+PR 3993|                    .Append(", \"tickFloor\": ").Append(H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase))
+---
+PR 3989|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseWallSeconds(phase)))
+PR 3990|                    .Append(", \"grantedSeconds\": ")
+PR 3991|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase)))
+PR 3992|                    .Append(", \"ticks\": ").Append(H8_HeadlessWorldDriver.GetPhaseTicks(phase))
+PR 3993|                    .Append(", \"tickFloor\": ").Append(H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase))
+PR 3994|                    .Append(", \"yield\": \"")
+PR 3995|                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseYieldName(phase)))
+---
+PR 3990|                    .Append(", \"grantedSeconds\": ")
+PR 3991|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase)))
+PR 3992|                    .Append(", \"ticks\": ").Append(H8_HeadlessWorldDriver.GetPhaseTicks(phase))
+PR 3993|                    .Append(", \"tickFloor\": ").Append(H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase))
+PR 3994|                    .Append(", \"yield\": \"")
+PR 3995|                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseYieldName(phase)))
+PR 3996|                    .Append("\" }");
+---
+PR 3991|                    .Append(FormatNumber(H8_HeadlessWorldDriver.GetPhaseGrantedSeconds(phase)))
+PR 3992|                    .Append(", \"ticks\": ").Append(H8_HeadlessWorldDriver.GetPhaseTicks(phase))
+PR 3993|                    .Append(", \"tickFloor\": ").Append(H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase))
+PR 3994|                    .Append(", \"yield\": \"")
+PR 3995|                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseYieldName(phase)))
+PR 3996|                    .Append("\" }");
+PR 3997|            }
+---
+PR 3993|                    .Append(", \"tickFloor\": ").Append(H8_HeadlessWorldDriver.GetPhaseMinimumTicks(phase))
+PR 3994|                    .Append(", \"yield\": \"")
+PR 3995|                    .Append(EscapeJson(H8_HeadlessWorldDriver.GetPhaseYieldName(phase)))
+PR 3996|                    .Append("\" }");
+PR 3997|            }
+PR 3998|
+PR 3999|            builder.Append(firstDriverPhase ? "    ]\n" : "\n    ]\n");
+---
