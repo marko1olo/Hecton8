@@ -5530,6 +5530,22 @@ namespace Hecton8.Core
             if (IsOriginShiftFrameLockedForCurrentFrame)
             {
                 _dataVault?.UnlockAllocationsAfterAupShift(_aupPreShiftPauseSequence);
+                // L18 SURGICAL FIX: Run ILateFrameTickables to prevent InputDispatcher from freezing
+                // while keeping Origin Shift safe by skipping visual syncs and job fences.
+                SetActiveLateFrameEventLane(_LateFrameTickablesQueueHash);
+                using (_lateFrameProfilerMarker.Auto())
+                {
+                    for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                    {
+                        RegistryBucket<ILateFrameTickable> lane = _lateFramePriorityLanes[laneIndex];
+#if UNITY_EDITOR
+                        lane.ValidateNoDestroyedEntriesDebug(nameof(ILateFrameTickable));
+#endif
+                        int count = lane.Count;
+                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                            lane.GetAt(itemIndex).LateFrameTick();
+                    }
+                }
                 return;
             }
 
