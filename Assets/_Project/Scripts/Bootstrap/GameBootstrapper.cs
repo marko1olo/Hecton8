@@ -8595,6 +8595,15 @@ namespace Hecton8.Bootstrap
                 // Factory + call here after LoreDatabaseManager so world harvest binds
                 // with narrative discovery owners already published.
                 Hecton8.World.DestructibleOrganicManager.EnsureRuntimeInstance();
+                // AtlasSignalSystem is the sole GlobalRegistry.AtlasSignal owner
+                // (Atlas-6 pulse / reveal read-model).
+                // GUID a9addf4847ba6d64396043aeeec51fb3 has ZERO live scene/prefab hits.
+                // HectonLoreSystemsRoot only constructs via editor ContextMenu.
+                // No Ensure existed; OnEnable only registers when already present.
+                // AudioLog, decoder and discovery consumers hit permanent null.
+                // Factory + call here after DestructibleOrganicManager so signal
+                // owners publish with world harvest already available.
+                Hecton8.AtlasSignal.AtlasSignalSystem.EnsureRuntimeInstance();
             }
 
 
