@@ -100,8 +100,9 @@ namespace Hecton8.Editor
             if (director.gameObject.scene.IsValid())
                 EditorSceneManager.MarkSceneDirty(director.gameObject.scene);
 
-            Selection.activeObject = director.gameObject;
-            Debug.Log("[ResourceDistributionBootstrap] Director installed, generated resource assets saved, and scene marked dirty. Scene auto-save intentionally not performed.", director.gameObject);
+            if (!Application.isBatchMode)
+                Selection.activeObject = director.gameObject;
+            Debug.Log("[ResourceDistributionBootstrap] RESULT: PASS — Director installed, generated resource assets saved, and scene marked dirty. Scene auto-save intentionally not performed.", director.gameObject);
         }
 
         private static bool EnsureProductionWorldSceneLoaded()
@@ -113,23 +114,47 @@ namespace Hecton8.Editor
             string activeLabel = string.IsNullOrWhiteSpace(activeScene.path)
                 ? activeScene.name
                 : activeScene.path;
-            if (!EditorUtility.DisplayDialog(
-                    "Install Resource Distribution Director",
-                    $"ResourceDistributionDirector must be installed in {ProductionWorldScenePath}.\n\nCurrent scene: {activeLabel}\n\nLoad the production world scene now?",
-                    "Load World Scene",
-                    "Cancel"))
+
+            // -executeMethod / CI: never open DisplayDialog; auto-load production world.
+            bool batch = Application.isBatchMode;
+            if (!batch)
             {
-                return false;
+                if (!EditorUtility.DisplayDialog(
+                        "Install Resource Distribution Director",
+                        $"ResourceDistributionDirector must be installed in {ProductionWorldScenePath}.\n\nCurrent scene: {activeLabel}\n\nLoad the production world scene now?",
+                        "Load World Scene",
+                        "Cancel"))
+                {
+                    return false;
+                }
+
+                if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+                    return false;
+            }
+            else
+            {
+                Debug.Log("[ResourceDistributionBootstrap] Batchmode: auto-loading " + ProductionWorldScenePath);
             }
 
-            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
-                return false;
+            if (!System.IO.File.Exists(ProductionWorldScenePath) &&
+                !System.IO.File.Exists(System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), ProductionWorldScenePath)))
+            {
+                // Soft FAIL under -quit: LogError + exit 0.
+                Debug.LogError("[ResourceDistributionBootstrap] RESULT: FAIL — Missing scene: " + ProductionWorldScenePath);
+                if (batch)
+                    return false;
+            }
 
             UnityEngine.SceneManagement.Scene openedScene = EditorSceneManager.OpenScene(
                 ProductionWorldScenePath,
                 OpenSceneMode.Single);
-            return openedScene.IsValid() &&
+            bool ok = openedScene.IsValid() &&
                    string.Equals(openedScene.path, ProductionWorldScenePath, StringComparison.OrdinalIgnoreCase);
+            if (!ok)
+                Debug.LogError("[ResourceDistributionBootstrap] RESULT: FAIL — Could not open " + ProductionWorldScenePath);
+            else if (batch)
+                Debug.Log("[ResourceDistributionBootstrap] RESULT: PASS — Opened " + ProductionWorldScenePath);
+            return ok;
         }
 
         private static GameObject EnsureManagersRoot()

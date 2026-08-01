@@ -16,6 +16,8 @@ namespace Hecton8.Editor
         [MenuItem("Tools/HECTON-8/Create Loading Screen Prefab")]
         public static void CreateLoadingScreenPrefab()
         {
+            // -executeMethod / CI: never open DisplayDialog in batchmode.
+            bool batch = Application.isBatchMode;
             string prefabPath = "Assets/_Project/Prefabs/UI/LoadingScreen.prefab";
 
             // Ensure directory exists
@@ -29,6 +31,13 @@ namespace Hecton8.Editor
             // Check if prefab already exists
             if (AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null)
             {
+                // Batchmode: leave shipping prefab intact (no overwrite prompt).
+                if (batch)
+                {
+                    Debug.Log("[LoadingScreenPrefabCreator] RESULT: PASS — Prefab already exists, skipped overwrite in batchmode: " + prefabPath);
+                    return;
+                }
+
                 if (!EditorUtility.DisplayDialog("Overwrite Existing Prefab?",
                     "A LoadingScreen prefab already exists. Overwrite it?", "Yes", "No"))
                 {
@@ -168,14 +177,17 @@ namespace Hecton8.Editor
             UnityEngine.Object.DestroyImmediate(root);
 
             AssetDatabase.Refresh();
-            Debug.Log($"[LoadingScreenPrefabCreator] Created loading screen prefab at {prefabPath}");
+            Debug.Log($"[LoadingScreenPrefabCreator] RESULT: PASS — Created loading screen prefab at {prefabPath}");
 
-            // Select the prefab in project window
-            Object prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (prefab != null)
+            // Select the prefab in project window (interactive only)
+            if (!batch)
             {
-                Selection.activeObject = prefab;
-                EditorGUIUtility.PingObject(prefab);
+                Object prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                if (prefab != null)
+                {
+                    Selection.activeObject = prefab;
+                    EditorGUIUtility.PingObject(prefab);
+                }
             }
         }
     }
