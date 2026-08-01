@@ -1,4 +1,0 @@
-Locking support detected on remote "gitlab". Consider enabling it with:
-  $ git config lfs.https://USER:REDACTED@gitlab.com/barsukdana/Hecton8.git/info/lfs.locksverify true
-To https://gitlab.com/barsukdana/Hecton8.git
-   9f4169ffd..e64fd2515  main -> main
