@@ -1,7 +1,0 @@
-docs(playtest): V0 ledger MEASURED ReportOnly + historical PNG fail
-
-Record V0-L02 ReportOnly: WORLD root active:1 at scene root; REFUSED
-re-lift expected post d7e461e67. Historical screenshots analyzed as
-pre-APPLY (2 near-black); none close captain checklist. Headless
-SceneActivate short-circuit observed in flight log. Checklist stays open
-until PLAYER proof. claimsWorldPlayable remains false for KCC gate.

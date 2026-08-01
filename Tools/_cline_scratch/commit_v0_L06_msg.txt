@@ -1,5 +1,0 @@
-docs(playtest): V0-L06 probe runbook + allowlist artifacts
-
-- Add V0_L06_PROBE_RUNBOOK.md (default timeout/menu/settle override notes)
-- Stage only Docs/PLAYTEST, Docs/AgentLogs V0 gate/probe, Docs/Screenshots/V0_Playtest
-- No Tools/_cline_scratch; no runtime code changes; no PASS claims

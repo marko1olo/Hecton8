@@ -248,3 +248,5 @@ keys.json
 # — noise that hides real changes and invites the next snapshot commit to claim more. The worktrees
 # themselves are live and registered in `git worktree list`; only the index entries were wrong.
 .claude/worktrees/
+
+Tools/_cline_scratch/
