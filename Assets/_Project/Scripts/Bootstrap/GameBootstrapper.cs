@@ -8548,6 +8548,15 @@ namespace Hecton8.Bootstrap
                 // PlayerAchievementRegistry hit permanent null. Factory + call here after player
                 // publication so save/discovery lanes can bind when available.
                 Hecton8.Gameplay.HectonDiscoveryManager.EnsureRuntimeInstance();
+
+                // AbyssalFluidDecalManager is the sole GlobalRegistry.FluidDecalPresentation /
+                // AbyssalFluidDecals owner (cable fluid, rupture, wake silt, pressure spray).
+                // GUID 932634fcdd3b41b091f6c33d24230da6 has ZERO scene/prefab hits. No Ensure
+                // existed; OnEnable only registers when already present. BaseModule,
+                // HabitatIntegrityManager, LogisticsPipeNode, HectonPlayerMotor, VehicleMotor,
+                // BiomeMatrixDirector, ConstructionManager and SubmarineStructuralGrid hit
+                // permanent null. Factory + call here after discovery so presentation sinks bind.
+                Hecton8.World.AbyssalFluidDecalManager.EnsureRuntimeInstance();
             }
 
 
