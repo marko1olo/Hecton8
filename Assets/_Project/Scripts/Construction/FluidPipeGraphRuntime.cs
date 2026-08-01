@@ -154,6 +154,39 @@ namespace Hecton8.Construction
             return false;
         }
 
+
+        /// <summary>
+        /// Resolve-or-create the sole FluidPipeGraphRuntime owner for GlobalRegistry.FluidPipeGraph.
+        /// Script GUID ffc0ea3d61e66f842999d9cc00327913 has ZERO live scene/prefab hits; without this
+        /// path IFluidPipeGraphService consumers (electrolysis modules, physiology) stay permanent null.
+        /// </summary>
+        public static FluidPipeGraphRuntime EnsureRuntimeInstance()
+        {
+            IFluidPipeGraphService registered = GlobalRegistry.FluidPipeGraph;
+            FluidPipeGraphRuntime registeredRuntime = registered as FluidPipeGraphRuntime;
+            if (IsFluidPipeGraphRuntimeUsable(registeredRuntime))
+                return registeredRuntime;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterFluidPipeGraphService(registered);
+                if (!ReferenceEquals(registeredRuntime, null))
+                    registeredRuntime._registeredService = false;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[FluidPipeGraphRuntime]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<FluidPipeGraphRuntime>();
+        }
+
+        private static bool IsFluidPipeGraphRuntimeUsable(FluidPipeGraphRuntime instance)
+        {
+            return !ReferenceEquals(instance, null) && instance != null && instance.isActiveAndEnabled;
+        }
+
         private void Awake()
         {
             ResolveAtmosphereSystem(force: true);

@@ -8613,6 +8613,10 @@ namespace Hecton8.Bootstrap
                 // Factory + call here after AtlasSignalSystem so decoder binds to
                 // the published signal read-model.
                 Hecton8.AtlasSignal.AtlasSignalDecoder.EnsureRuntimeInstance();
+                // FluidPipeGraphRuntime: sole IFluidPipeGraphService owner.
+                // GUID ffc0ea3d61e66f842999d9cc00327913 has ZERO live scene/prefab hits;
+                // electrolysis / physiology consumers hit permanent null without this path.
+                Hecton8.Construction.FluidPipeGraphRuntime.EnsureRuntimeInstance();
             }
 
 
