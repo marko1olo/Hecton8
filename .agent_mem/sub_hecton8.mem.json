@@ -1,0 +1,16 @@
+{
+  "completed_steps": [
+    "1. Read AGENTS.md and Docs/AGENT_AUTHORITY_ROUTING.md",
+    "2. Audit WorldDriver.cs and InputDispatcher for IsOriginShiftFrameLockedForCurrentFrame and _shiftTargetsDirty",
+    "3. Locate why LateFrameTick freezes while PreSim advances during scene rebase / origin shift",
+    "4. Draft the surgical product fix that unlocks LateFrameTick without disabling origin shift safety"
+  ],
+  "pending_steps": [],
+  "findings": [
+    "InputDispatcher's LateFrameTick is blocked because SystemDispatcher.RunDispatcherLateFrame() has an early return `if (IsOriginShiftFrameLockedForCurrentFrame) return;`.",
+    "SystemDispatcher.RunDispatcherUpdate() calls PreSim BEFORE its own `IsOriginShiftFrameLockedForCurrentFrame` early return, so PreSim still advances while LateFrame is skipped.",
+    "_shiftTargetsDirty in HectonFloatingOrigin keeps the SceneRebaseTickLock alive (via TryPrepareShiftTargets/QueuePendingLoadedScene) if it evaluates to true, freezing the bootstrap lock.",
+    "The drafted fix injects the `ILateFrameTickable` loop directly inside the `IsOriginShiftFrameLockedForCurrentFrame` block before it returns. This prevents InputDispatcher from freezing (by pumping skipped inputs) without running any of the unsafe visual syncs or job fences that Origin Shift prevents."
+  ],
+  "status": "COMPLETED"
+}
