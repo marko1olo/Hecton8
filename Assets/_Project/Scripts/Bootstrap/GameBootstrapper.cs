@@ -8540,6 +8540,14 @@ namespace Hecton8.Bootstrap
                 // bridge compatibility consumers hit permanent null. Factory + call here after player
                 // publication so QuestSystem hot-swap can bind when available.
                 Hecton8.Gameplay.MissionManager.EnsureRuntimeInstance();
+
+                // HectonDiscoveryManager is the sole GlobalRegistry.Discovery owner (biome + fauna
+                // bestiary progression). GUID 56aa89edaf4f263419dd966a1cc4c197 has ZERO scene/prefab
+                // hits. No Ensure existed; OnEnable only registers when already present.
+                // DynamicDifficultyDirector, GlobalProfileManager, PlayerExplorationTracker and
+                // PlayerAchievementRegistry hit permanent null. Factory + call here after player
+                // publication so save/discovery lanes can bind when available.
+                Hecton8.Gameplay.HectonDiscoveryManager.EnsureRuntimeInstance();
             }
 
 

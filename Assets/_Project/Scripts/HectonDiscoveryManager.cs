@@ -96,6 +96,41 @@ namespace Hecton8.Gameplay
         //  LIFECYCLE
         // ----------------------------------------------------------
 
+        /// <summary>
+        /// Resolve-or-create the sole HectonDiscoveryManager / GlobalRegistry.Discovery owner.
+        /// Script GUID 56aa89edaf4f263419dd966a1cc4c197 has ZERO scene/prefab hits.
+        /// OnEnable only registers when already present; without this factory the discovery
+        /// slot stays permanently null (DynamicDifficultyDirector, GlobalProfileManager,
+        /// PlayerExplorationTracker, PlayerAchievementRegistry consumers).
+        /// </summary>
+        public static HectonDiscoveryManager EnsureRuntimeInstance()
+        {
+            HectonDiscoveryManager registered = GlobalRegistry.Discovery;
+            if (IsDiscoveryRuntimeUsable(registered))
+                return registered;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterDiscoveryRuntime(registered);
+                registered._serviceRegistered = false;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[HectonDiscoveryManager]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<HectonDiscoveryManager>();
+        }
+
+        private static bool IsDiscoveryRuntimeUsable(HectonDiscoveryManager manager)
+        {
+            return !ReferenceEquals(manager, null) &&
+                   manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled;
+        }
+
         private void OnEnable()
         {
             TryRegisterService();
