@@ -190,14 +190,33 @@ def self_test(text, binary) -> int:
         else:
             print("  ok   text search misses the world scene, byte-aware search finds it")
 
+    # STATIC CLOSED 2026-07-29+: FaunaBrain guid is on all 6 GeneratedProxies
+    # (Drone/HeavyHunter/Hunter/Leviathan/Territorial/SmallPassive). The historical
+    # "absent everywhere" pin is inverted — absence would now mean the authoring
+    # regressed. Still pin exact count so a stray seventh attach or a wipe is visible.
     brain = guid_of_type("FaunaBrain")
     if brain:
         live, _ = find(brain, text, binary)
-        if live:
-            print(f"  FAIL FaunaBrain was expected absent everywhere, found in {len(live)}")
+        expected_brain_live = 6
+        if len(live) != expected_brain_live:
+            print(
+                f"  FAIL FaunaBrain expected in exactly {expected_brain_live} GeneratedProxy prefabs, "
+                f"found {len(live)}"
+            )
             failures += 1
         else:
-            print("  ok   FaunaBrain absent from every scene and prefab, both encodings")
+            proxy_hits = sum(1 for p in live if "GeneratedProxies" in p.as_posix())
+            if proxy_hits != expected_brain_live:
+                print(
+                    f"  FAIL FaunaBrain hits are not all under GeneratedProxies "
+                    f"(proxy_hits={proxy_hits} live={len(live)})"
+                )
+                failures += 1
+            else:
+                print(
+                    f"  ok   FaunaBrain present on all {expected_brain_live} GeneratedProxy prefabs"
+                )
+
 
     print("SELF_TEST=" + ("PASS" if failures == 0 else "FAIL"))
     return 0 if failures == 0 else 3
