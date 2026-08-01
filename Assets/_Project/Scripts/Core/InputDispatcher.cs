@@ -532,9 +532,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Returns true when the underlying player input map is active and safe for gameplay reads.
+        /// Returns true when the underlying player input map is active and safe for gameplay reads,
+        /// or when an automation locomotion override was applied on the latest CaptureState.
+        /// Automation overrides are written into <see cref="_currentState"/> after the device-poll
+        /// gate, so hop2 consumers (GetState via TryReadFrame / ProcessPlayerInputFrame) must be
+        /// allowed to read that snapshot even when the native player map is still closed.
         /// </summary>
-        public bool IsPlayerInputEnabled => _nativeInputManager != null && _nativeInputManager.IsPlayerInputEnabled;
+        public bool IsPlayerInputEnabled =>
+            (_nativeInputManager != null && _nativeInputManager.IsPlayerInputEnabled)
+            || _lastAutomationOverrideApplied;
 
         internal INativeInputManagerRuntime NativeInputRuntime => _nativeInputManager;
 
@@ -3239,23 +3245,75 @@ namespace Hecton8.Core
         /// <inheritdoc />
         public void SwitchToPlayerInput()
         {
-            if (_nativeInputManager != null)
+            // L19: hot-swap / first-registration can leave _nativeInputManager null while
+            // GlobalRegistry.NativeInputRuntime still holds the bootstrap InputManager. A silent
+            // no-op here left IsPlayerInputEnabled false for the whole route even though the driver
+            // called SwitchToPlayerInput every settle/swim tick (EnsureGameplayLocomotionInputReady).
+            TryEnsureNativeInputBound();
+            if (_nativeInputManager == null)
             {
-                _nativeInputManager.SwitchToPlayerInput();
-                BeginLookHotSwapBlend();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                DiagWarnNativeInputMissingOnce("SwitchToPlayerInput");
+#endif
+                return;
             }
+
+            _nativeInputManager.SwitchToPlayerInput();
+            BeginLookHotSwapBlend();
         }
 
         /// <inheritdoc />
         public void SwitchToUIInput()
         {
-            if (_nativeInputManager != null)
+            TryEnsureNativeInputBound();
+            if (_nativeInputManager == null)
             {
-                _nativeInputManager.SwitchToUIInput();
-                _lookBlendActive = false;
-                _pendingLookDelta = Vector2.zero;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                DiagWarnNativeInputMissingOnce("SwitchToUIInput");
+#endif
+                return;
             }
+
+            _nativeInputManager.SwitchToUIInput();
+            _lookBlendActive = false;
+            _pendingLookDelta = Vector2.zero;
         }
+
+        /// <summary>
+        /// Rebinds <see cref="_nativeInputManager"/> from <see cref="GlobalRegistry.NativeInputRuntime"/>
+        /// when the local slot is empty. Product path for headless/menu transitions that drop the
+        /// bootstrap-owned native owner without notifying this dispatcher.
+        /// </summary>
+        private void TryEnsureNativeInputBound()
+        {
+            if (_nativeInputManager != null)
+                return;
+
+            INativeInputManagerRuntime native = GlobalRegistry.NativeInputRuntime;
+            if (native == null || ReferenceEquals(native, this as INativeInputManagerRuntime))
+                return;
+
+            BindNativeInputManager(native);
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private bool _diagNativeInputMissingWarned;
+
+        private void DiagWarnNativeInputMissingOnce(string caller)
+        {
+            if (_diagNativeInputMissingWarned)
+                return;
+
+            _diagNativeInputMissingWarned = true;
+            // COLD ALLOC: one native-missing string per session - owner: InputDispatcher
+            Hecton8.Core.H8Debug.LogWarning(
+                "[H8_INPUTNATIVE] caller=" + caller +
+                " native=null registryNativeNull=" + (GlobalRegistry.NativeInputRuntime == null) +
+                " - SwitchToPlayer/UI is a no-op until GlobalRegistry.NativeInputRuntime is bound." +
+                " hop2 consumers stay gated unless an automation override is applied.");
+        }
+#endif
+
 
         private void EnsureInputBinding()
         {

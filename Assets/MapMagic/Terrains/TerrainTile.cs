@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -104,42 +104,55 @@ namespace MapMagic.Terrains
 		/// Setting null will disable both terrains
 		{
 			get{
-				if (main!=null && main.terrain != null  &&  main.terrain.isActiveAndEnabled) 
+				if (main!=null && IsLiveTerrain(main.terrain)  &&  main.terrain.isActiveAndEnabled) 
 					return main.terrain;
-				if (draft!=null && draft.terrain != null  &&  draft.terrain.isActiveAndEnabled) 
+				if (draft!=null && IsLiveTerrain(draft.terrain)  &&  draft.terrain.isActiveAndEnabled) 
 					return draft.terrain;
 				return null;
 			}
 
 			set{
+				// L19: destroyed/dangling Terrain wrappers reach SetActive and native-crash
+				// (L18 LIVE: set_ActiveTerrain → GameObject.SetActive_Injected during SwitchLod/ApplyRoutine).
 				if (main!=null && value==main.terrain)
 				{ 
-					if (main.terrain != null && !main.terrain.isActiveAndEnabled) 
-					{
-						main.terrain.gameObject.SetActive(true); 
-						//main.terrain.Flush(); //this is required to set neighbors
-					}
-					if (draft !=null && draft.terrain != null && draft.terrain.isActiveAndEnabled) draft.terrain.gameObject.SetActive(false); 
+					SafeSetTerrainActive(main.terrain, true);
+					if (draft != null) SafeSetTerrainActive(draft.terrain, false);
 				}
 				else if (draft!=null && value==draft.terrain)
 				{
-					if (main!=null && main.terrain != null && main.terrain.isActiveAndEnabled) main.terrain.gameObject.SetActive(false); 
-					if (draft.terrain != null && !draft.terrain.isActiveAndEnabled) 
-					{
-						draft.terrain.gameObject.SetActive(true); 
-						//draft.terrain.Flush(); 
-					}
+					if (main != null) SafeSetTerrainActive(main.terrain, false);
+					SafeSetTerrainActive(draft.terrain, true);
 				}
 				else
 				{
-					if (main?.terrain != null && main.terrain.isActiveAndEnabled) 
-						main.terrain.gameObject.SetActive(false); 
-
-					if (draft?.terrain != null && draft.terrain.isActiveAndEnabled) 
-						draft.terrain.gameObject.SetActive(false); 
+					if (main != null) SafeSetTerrainActive(main.terrain, false);
+					if (draft != null) SafeSetTerrainActive(draft.terrain, false);
 				}
 			}
 		}
+
+		/// <summary>
+		/// L19 product guard: Unity fake-null and destroyed native Terrain/GameObject must not call SetActive.
+		/// </summary>
+		private static bool IsLiveTerrain(Terrain terrain)
+		{
+			// UnityEngine.Object overloaded == handles destroyed wrappers.
+			return terrain != null && terrain.gameObject != null;
+		}
+
+		private static void SafeSetTerrainActive(Terrain terrain, bool active)
+		{
+			if (!IsLiveTerrain(terrain))
+				return;
+			GameObject go = terrain.gameObject;
+			if (go == null)
+				return;
+			if (go.activeSelf == active)
+				return;
+			go.SetActive(active);
+		}
+
 
 
 		public void SwitchLod ()
@@ -148,10 +161,17 @@ namespace MapMagic.Terrains
 		{
 			if (this == null) return; //happens after scene switch
 
+			// L19: ApplyRoutine/Update can call SwitchLod after tile teardown or with non-finite remoteness.
+			if (mapMagic == null)
+				return;
+			if (!float.IsFinite(distance))
+				distance = float.MaxValue;
+
 			Profiler.BeginSample("Switch Lod");
 
-			bool useMain = main!=null;
-			bool useDraft = draft!=null;
+			// Only consider detail levels whose Terrain native object is still alive.
+			bool useMain = main!=null && IsLiveTerrain(main.terrain);
+			bool useDraft = draft!=null && IsLiveTerrain(draft.terrain);
 			//if both using main
 			//if none disabling terrain
 
@@ -215,6 +235,14 @@ namespace MapMagic.Terrains
 			else if (useDraft) newActiveTerrain = draft.terrain;
 			else newActiveTerrain = null;
 
+			// Drop selection if wrapper went dead between flag compute and assign.
+			if (newActiveTerrain != null && !IsLiveTerrain(newActiveTerrain))
+			{
+				newActiveTerrain = null;
+				useMain = false;
+				useDraft = false;
+			}
+
 			bool lodSwitched = false;
 			if (ActiveTerrain != newActiveTerrain) 
 			{
@@ -223,16 +251,21 @@ namespace MapMagic.Terrains
 			}
 
 			//disabling objects
-			bool objsEnabled = useMain; // || (useDraft && mapMagic.draftsIfObjectsChanged);
-			bool currentObjsEnabled = objectsPool.isActiveAndEnabled;
-			if (!objsEnabled && currentObjsEnabled) objectsPool.gameObject.SetActive(false);
-			if (objsEnabled && !currentObjsEnabled) objectsPool.gameObject.SetActive(true);
+			if (objectsPool != null)
+			{
+				bool objsEnabled = useMain; // || (useDraft && mapMagic.draftsIfObjectsChanged);
+				bool currentObjsEnabled = objectsPool.isActiveAndEnabled;
+				if (!objsEnabled && currentObjsEnabled && objectsPool.gameObject != null)
+					objectsPool.gameObject.SetActive(false);
+				if (objsEnabled && !currentObjsEnabled && objectsPool.gameObject != null)
+					objectsPool.gameObject.SetActive(true);
+			}
 			
 
 			//welding
-			bool isTerrainActive = newActiveTerrain != null && newActiveTerrain.isActiveAndEnabled;
+			bool isTerrainActive = IsLiveTerrain(newActiveTerrain) && newActiveTerrain.isActiveAndEnabled;
 			if (lodSwitched && isTerrainActive &&
-				mapMagic.tiles.Contains(coord) ) //otherwise error on SwitchLod called from Generate (when tile has been moved)
+				mapMagic.tiles != null && mapMagic.tiles.Contains(coord) ) //otherwise error on SwitchLod called from Generate (when tile has been moved)
 			{
 				if (useMain)
 				{
@@ -255,6 +288,7 @@ namespace MapMagic.Terrains
 
 			Profiler.EndSample();
 		}
+
 
 
 		public void ResetTerrain ()
