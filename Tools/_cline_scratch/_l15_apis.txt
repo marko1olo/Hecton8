@@ -1,0 +1,736 @@
+=== method head 4480-4520 ===
+4481|                //     the destroyer despite HectonPlayerSpawner.cs:1092 MoveGameObjectToScene, meaning the
+4482|                //     move did not take or something moved the player back into the outgoing scene.
+4483|                //   scene=DontDestroyOnLoad -> a PersistRuntimeService reparent
+4484|                //     (GameBootstrapper.cs:5961-5978) pulled the player root out of the world scene first.
+4485|                //   scene=02_HECTON_WORLD on an unrelated frame -> a third party called Destroy on the
+4486|                //     player root and needs its own hunt.
+4487|                // sceneIsLoaded separates an in-flight unload from a live scene; sceneHandle disambiguates
+4488|                // two scenes that share a name across an additive transition.
+4489|                Hecton8.Core.H8Debug.Log($"[HectonPlayerMovement-DEBUG] OnDestroy called on player! InstanceID={gameObject.GetEntityId()} scene={gameObject.scene.name} sceneHandle={gameObject.scene.handle.GetRawData()} sceneIsLoaded={gameObject.scene.isLoaded} frame={Time.frameCount}\n" + UnityEngine.StackTraceUtility.ExtractStackTrace());
+4490|            }
+4491|        }
+4492|#endif
+4493|
+4494|        private void Awake()
+4495|        {
+4496|            EnsureDegreeSinCosLutInitialized();
+4497|            _cachedTransform = transform;
+4498|
+4499|            TryGetComponent(out _rb);
+4500|            if (_rb == null)
+4501|            {
+4502|                enabled = false;
+4503|                return;
+4504|            }
+4505|
+4506|            CacheAuthoritativeBodyMassKg(_rb.mass);
+4507|            TryGetComponent(out _capsuleCollider);
+4508|            _playerColliderInstanceId = _capsuleCollider != null ? unchecked((int)EntityId.ToULong(_capsuleCollider.GetEntityId())) : 0;
+4509|            _instanceId = ResolveStableEntitySeed32(gameObject);
+4510|            TryGetComponent(out _buoyancy);
+4511|            _buoyancyAirState = _buoyancy as IBuoyancyAirStateReadModel;
+4512|            TryGetComponent(out _swimPresentationController);
+4513|            if (!TryGetComponent(out _physicalInteractionHandler))
+4514|            {
+4515|                _physicalInteractionHandler = gameObject.AddComponent<PhysicalInteractionHandler>(); // COLD ALLOC: PhysicalInteractionHandler[1] - player-owned heavy-carry movement modifier bridge - owner: HectonPlayerMovement
+4516|            }
+4517|            if (!TryGetComponent(out _heavyTowWinch))
+4518|            {
+4519|                _heavyTowWinch = gameObject.AddComponent<HeavyTowWinch>(); // COLD ALLOC: HeavyTowWinch[1] â€” player-owned salvage tow runtime for harpoon/winch towing â€” owner: HectonPlayerMovement
+4520|            }
+=== TryRegisterToDispatchers 5470-5540 ===
+5470|        public void EnsureDispatcherRegistration()
+5471|        {
+5472|            TryRegisterToDispatchers();
+5473|        }
+5474|
+5475|        private void TryRegisterToDispatchers()
+5476|        {
+5477|            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+5478|                return;
+5479|
+5480|            // L14: sticky false -> TryRegister once. sticky true -> leave registered.
+5481|            // Do NOT Unregister+Register every Ensure: WorldDriver calls Ensure every settle/swim
+5482|            // tick; thrash would drop HPM from the fixed lane mid-hold. RegistryBucket.TryRegister
+5483|            // returns false when Contains (not idempotent-true), so re-call alone cannot heal a
+5484|            // missing entry either - membership loss is rare; SD L14 no longer bootstrap-skips
+5485|            // Player lane, so once registered FixedTick runs for hop2/Sample/intent.
+5486|            if (!_registeredTick)
+5487|            {
+5488|                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+5489|            }
+5490|
+5491|            if (!_registeredFixedTick)
+5492|            {
+5493|                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+5494|            }
+5495|
+5496|
+5497|            if (!_registeredColdTick)
+5498|            {
+5499|                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+5500|            }
+5501|
+5502|            TryRegisterLateFrameTickable();
+5503|
+5504|            if (!_registeredPlayerMovementContracts)
+5505|            {
+5506|                IPlayerMovementContracts currentContracts = GlobalRegistry.PlayerMovementContracts;
+5507|                if (currentContracts == null)
+5508|                    GlobalRegistry.RegisterPlayerMovementContracts(this);
+5509|
+5510|                _registeredPlayerMovementContracts = ReferenceEquals(GlobalRegistry.PlayerMovementContracts, this);
+5511|            }
+5512|
+5513|            if (!_registeredHotSwapListener)
+5514|                _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+5515|
+5516|        }
+5517|
+5518|        private void UnregisterDispatcherTicks()
+5519|        {
+5520|            if (_registeredTick)
+5521|            {
+5522|                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+5523|                _registeredTick = false;
+5524|            }
+5525|
+5526|            if (_registeredFixedTick)
+5527|            {
+5528|                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+5529|                _registeredFixedTick = false;
+5530|            }
+5531|
+5532|            if (_registeredColdTick)
+5533|            {
+5534|                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+5535|                _registeredColdTick = false;
+5536|            }
+5537|
+5538|            if (_registeredLateFrameTick)
+5539|            {
+5540|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+5541|                _registeredLateFrameTick = false;
+5542|            }
+5543|        }
+5544|
+5545|        private void TryRegisterLateFrameTickable()
+=== UnregisterGlobal 5012-5060 ===
+5012|        private void UnregisterGlobalLifecycleListeners()
+5013|        {
+5014|            if (_registeredOriginShiftListener)
+5015|            {
+5016|                HectonFloatingOrigin.UnregisterListener(this);
+5017|                _registeredOriginShiftListener = false;
+5018|            }
+5019|
+5020|            if (_registeredTick)
+5021|            {
+5022|                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+5023|                _registeredTick = false;
+5024|            }
+5025|
+5026|            if (_registeredFixedTick)
+5027|            {
+5028|                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+5029|                _registeredFixedTick = false;
+5030|            }
+5031|
+5032|            if (_registeredColdTick)
+5033|            {
+5034|                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+5035|                _registeredColdTick = false;
+5036|            }
+5037|
+5038|            if (_registeredLateFrameTick)
+5039|            {
+5040|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+5041|                _registeredLateFrameTick = false;
+5042|            }
+5043|
+5044|            if (_registeredPlayerMovementContracts)
+5045|            {
+5046|                GlobalRegistry.UnregisterPlayerMovementContracts(this);
+5047|                _registeredPlayerMovementContracts = false;
+5048|            }
+5049|
+5050|            if (_registeredHotSwapListener)
+5051|            {
+5052|                GlobalRegistry.TryUnregisterHotSwapListener(this);
+5053|                _registeredHotSwapListener = false;
+5054|            }
+5055|        }
+5056|
+5057|        private void OnCollisionEnter(Collision collision)
+5058|        {
+5059|            CaptureLegacyCollisionContacts(collision);
+5060|        }
+=== Ensure path 4790-4825 ===
+4790|            }
+4791|            if (_cameraRig != null)
+4792|                _cameraRig.Bind(playerCamera, _cameraComponent);
+4793|            ToggleBuoyancy(true);
+4794|            if (!_registeredOriginShiftListener)
+4795|            {
+4796|                HectonFloatingOrigin.RegisterListener(this);
+4797|                _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
+4798|            }
+4799|            TryRegisterToDispatchers();
+4800|        }
+4801|
+4802|        private void Start()
+4803|        {
+4804|            if (_survivalSystem == null)
+4805|                TryGetComponent(out _survivalSystem);
+4806|
+4807|            OnDependencyInject();
+4808|            if (_registeredTick && _registeredFixedTick && _registeredLateFrameTick) return;
+4809|            TryRegisterToDispatchers();
+4810|
+4811|            BindInventoryLoadSource();
+4812|            ResolveInputManagerBinding();
+4813|            if (useCrestOceanHeight && !_crestAvailable)
+4814|                InitOceanKinematics();
+4815|        }
+4816|
+4817|        private void OnDisable()
+4818|        {
+4819|            SargassumGlobalDragManager.Unregister(this);
+4820|            SpectrumEvents.UnregisterSonarPingListener(this);
+4821|            TryUnregisterDependencyRebinds();
+4822|            UnregisterPlayerMovementContracts();
+4823|            UnbindInventoryLoadSource();
+4824|            UnsubscribeFromInput();
+4825|            _cachedMoveInput = Vector2.zero;
+=== GR marks ===
+MARK 6470|        public static bool TryRegisterUpdatable(IUpdatable item, PriorityLayer layer)
+MARK 6532|            TryRegisterFixedTickable(item, layer);
+MARK 6541|        public static bool TryRegisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+MARK 6858|        public static void UnregisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+=== GR TryRegisterFixedTickable body ===
+6536|        /// Registers a fixed-update owner into both the global bucket and its fixed dispatcher lane.
+6537|        /// </summary>
+6538|        /// <param name="item">Fixed-update owner.</param>
+6539|        /// <param name="layer">Dispatcher priority lane.</param>
+6540|        /// <returns>True when both registry and dispatcher lane accepted the item.</returns>
+6541|        public static bool TryRegisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+6542|        {
+6543|            if (item == null)
+6544|                return false;
+6545|
+6546|            if (!Application.isPlaying)
+6547|                return false;
+6548|
+6549|            if (!TryEnsureDispatcherRegistration())
+6550|                return false;
+6551|            if (!_fixedTickables.TryRegister(item))
+6552|                return false;
+6553|
+6554|            if (!SystemDispatcher.Register(item, layer))
+6555|            {
+6556|                _fixedTickables.Unregister(item);
+6557|                return false;
+6558|            }
+6559|
+6560|            return true;
+6561|        }
+6562|
+6563|        /// <summary>
+6564|        /// Registers a slow-tick owner into both the global bucket and its dispatcher lane.
+6565|        /// </summary>
+6566|        /// <param name="item">Slow-tick owner.</param>
+6567|        /// <param name="layer">Dispatcher priority lane.</param>
+6568|        public static void RegisterSlowTickable(ISlowTickable item, PriorityLayer layer)
+6569|        {
+6570|            TryRegisterSlowTickable(item, layer);
+6571|        }
+6572|
+6573|        /// <summary>
+6574|        /// Registers a slow-tick owner into both the global bucket and its dispatcher lane.
+6575|        /// </summary>
+6576|        /// <param name="item">Slow-tick owner.</param>
+6577|        /// <param name="layer">Dispatcher priority lane.</param>
+6578|        /// <returns>True when both registry and dispatcher lane accepted the item.</returns>
+6579|        public static bool TryRegisterSlowTickable(ISlowTickable item, PriorityLayer layer)
+6580|        {
+6581|            if (item == null)
+6582|                return false;
+6583|
+6584|            if (!Application.isPlaying)
+6585|                return false;
+=== GR UnregisterFixed body ===
+6851|        }
+6852|
+6853|        /// <summary>
+6854|        /// Unregisters a fixed-update owner from both the global bucket and its dispatcher lane.
+6855|        /// </summary>
+6856|        /// <param name="item">Fixed-update owner.</param>
+6857|        /// <param name="layer">Dispatcher priority lane.</param>
+6858|        public static void UnregisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+6859|        {
+6860|            if (item == null)
+6861|                return;
+6862|
+6863|            _fixedTickables.TryUnregister(item);
+6864|            SystemDispatcher.Unregister(item, layer);
+6865|        }
+6866|
+6867|        /// <summary>
+6868|        /// Unregisters a slow-tick owner from both the global bucket and its dispatcher lane.
+6869|        /// </summary>
+6870|        /// <param name="item">Slow-tick owner.</param>
+6871|        /// <param name="layer">Dispatcher priority lane.</param>
+6872|        public static void UnregisterSlowTickable(ISlowTickable item, PriorityLayer layer)
+6873|        {
+6874|            if (item == null)
+6875|                return;
+6876|
+6877|            _slowTickables.TryUnregister(item);
+6878|            SystemDispatcher.Unregister(item, layer);
+6879|        }
+6880|
+6881|        /// <summary>
+6882|        /// Unregisters a cold-tick owner from both the global bucket and its dispatcher lane.
+6883|        /// </summary>
+6884|        public static void UnregisterColdTickable(IColdTickable item, PriorityLayer layer)
+6885|        {
+6886|            if (item == null)
+6887|                return;
+6888|
+6889|            _coldTickables.TryUnregister(item);
+6890|            SystemDispatcher.Unregister(item, layer);
+6891|        }
+6892|
+6893|        /// <summary>
+6894|        /// Unregisters a frost maintenance owner from both the global bucket and its dispatcher lane.
+6895|        /// </summary>
+=== GR TryRegisterUpdatable body ===
+6470|        public static bool TryRegisterUpdatable(IUpdatable item, PriorityLayer layer)
+6471|        {
+6472|            if (item == null)
+6473|                return false;
+6474|
+6475|            if (!Application.isPlaying)
+6476|                return false;
+6477|
+6478|            if (!TryEnsureDispatcherRegistration())
+6479|                return false;
+6480|            if (!_updatables.TryRegister(item))
+6481|                return false;
+6482|
+6483|            if (!SystemDispatcher.Register(item, layer))
+6484|            {
+6485|                _updatables.Unregister(item);
+6486|                return false;
+6487|            }
+6488|
+6489|            return true;
+6490|        }
+6491|
+6492|        /// <summary>
+6493|        /// Registers a 60 Hz fast-tick owner into both the global bucket and its dispatcher lane.
+6494|        /// </summary>
+6495|        public static void RegisterFastTickable(IFastTickable item, PriorityLayer layer)
+6496|        {
+6497|            TryRegisterFastTickable(item, layer);
+6498|        }
+6499|
+6500|        /// <summary>
+6501|        /// Registers a 60 Hz fast-tick owner into both the global bucket and its dispatcher lane.
+6502|        /// </summary>
+6503|        public static bool TryRegisterFastTickable(IFastTickable item, PriorityLayer layer)
+6504|        {
+=== GR dual-register pattern sites ===
+6480|            if (!_updatables.TryRegister(item))
+  6472|            if (item == null)
+  6473|                return false;
+  6474|
+  6475|            if (!Application.isPlaying)
+  6476|                return false;
+  6477|
+  6478|            if (!TryEnsureDispatcherRegistration())
+  6479|                return false;
+  6480|            if (!_updatables.TryRegister(item))
+  6481|                return false;
+  6482|
+  6483|            if (!SystemDispatcher.Register(item, layer))
+  6484|            {
+  6485|                _updatables.Unregister(item);
+  6486|                return false;
+  6487|            }
+  6488|
+  6489|            return true;
+  6490|        }
+  6491|
+  6492|        /// <summary>
+  6493|        /// Registers a 60 Hz fast-tick owner into both the global bucket and its dispatcher lane.
+  6494|        /// </summary>
+  6495|        public static void RegisterFastTickable(IFastTickable item, PriorityLayer layer)
+  6496|        {
+  6497|            TryRegisterFastTickable(item, layer);
+  6498|        }
+  6499|
+6551|            if (!_fixedTickables.TryRegister(item))
+  6543|            if (item == null)
+  6544|                return false;
+  6545|
+  6546|            if (!Application.isPlaying)
+  6547|                return false;
+  6548|
+  6549|            if (!TryEnsureDispatcherRegistration())
+  6550|                return false;
+  6551|            if (!_fixedTickables.TryRegister(item))
+  6552|                return false;
+  6553|
+  6554|            if (!SystemDispatcher.Register(item, layer))
+  6555|            {
+  6556|                _fixedTickables.Unregister(item);
+  6557|                return false;
+  6558|            }
+  6559|
+  6560|            return true;
+  6561|        }
+  6562|
+  6563|        /// <summary>
+  6564|        /// Registers a slow-tick owner into both the global bucket and its dispatcher lane.
+  6565|        /// </summary>
+  6566|        /// <param name="item">Slow-tick owner.</param>
+  6567|        /// <param name="layer">Dispatcher priority lane.</param>
+  6568|        public static void RegisterSlowTickable(ISlowTickable item, PriorityLayer layer)
+  6569|        {
+  6570|            TryRegisterSlowTickable(item, layer);
+=== SD Register Fixed marks ===
+MARK 1266|        public static RegistryBucket<IFixedTickable> GetFixedLane(PriorityLayer layer)
+MARK 1362|        public static bool Register(IFixedTickable item, PriorityLayer layer)
+MARK 1367|            return GetFixedLane(layer).TryRegister(item);
+MARK 1545|            GetFixedLane(layer).TryUnregister(item);
+=== SD Register Fixed body ~1360 ===
+1356|
+1357|        /// <summary>
+1358|        /// Registers a fixed-update owner into a fixed priority lane.
+1359|        /// </summary>
+1360|        /// <param name="item">Fixed-update owner.</param>
+1361|        /// <param name="layer">Priority lane.</param>
+1362|        public static bool Register(IFixedTickable item, PriorityLayer layer)
+1363|        {
+1364|            if (item == null)
+1365|                return false;
+1366|
+1367|            return GetFixedLane(layer).TryRegister(item);
+1368|        }
+1369|
+1370|        /// <summary>
+1371|        /// Registers a slow-tick owner into a fixed priority lane.
+1372|        /// </summary>
+1373|        /// <param name="item">Slow-tick owner.</param>
+1374|        /// <param name="layer">Priority lane.</param>
+1375|        public static bool Register(ISlowTickable item, PriorityLayer layer)
+1376|        {
+1377|            if (item == null)
+1378|                return false;
+1379|
+1380|            if (!GetSlowLane(layer).TryRegister(item))
+1381|                return false;
+1382|
+1383|            if (item is IBucketedSlowTickable)
+1384|                _bucketedSlowTickableCount++;
+1385|
+1386|            return true;
+1387|        }
+1388|
+1389|        /// <summary>
+1390|        /// Registers a 1 Hz cold-tick owner into a fixed priority lane.
+1391|        /// </summary>
+1392|        public static bool Register(IColdTickable item, PriorityLayer layer)
+1393|        {
+1394|            if (item == null)
+1395|                return false;
+1396|
+1397|            return GetColdLane(layer).TryRegister(item);
+1398|        }
+1399|
+1400|        /// <summary>
+1401|        /// Registers a frost maintenance owner into a fixed priority lane.
+1402|        /// </summary>
+1403|        /// <param name="item">Frost-tick owner.</param>
+1404|        /// <param name="layer">Priority lane.</param>
+1405|        public static bool Register(IFrostTickable item, PriorityLayer layer)
+1406|        {
+1407|            if (item == null)
+1408|                return false;
+1409|
+1410|            return GetFrostLane(layer).TryRegister(item);
+1411|        }
+1412|
+1413|        /// <summary>
+1414|        /// Registers a late-frame owner into a fixed priority lane.
+1415|        /// </summary>
+1416|        /// <param name="item">Late-frame owner.</param>
+1417|        /// <param name="layer">Priority lane.</param>
+1418|        public static bool Register(ILateFrameTickable item, PriorityLayer layer)
+1419|        {
+1420|            if (item == null)
+1421|                return false;
+1422|
+1423|            return GetLateFrameLane(layer).TryRegister(item);
+1424|        }
+1425|
+1426|        /// <summary>
+1427|        /// Registers a post-fixed-step owner into a fixed priority lane.
+1428|        /// </summary>
+1429|        /// <param name="item">Post-fixed owner.</param>
+1430|        /// <param name="layer">Priority lane.</param>
+1431|        public static bool Register(IPostFixedTickable item, PriorityLayer layer)
+1432|        {
+1433|            if (item == null)
+1434|                return false;
+1435|
+1436|            return GetPostFixedLane(layer).TryRegister(item);
+1437|        }
+1438|
+1439|        /// <summary>
+1440|        /// Registers an unscaled fast-tick owner into a fixed priority lane.
+1441|        /// </summary>
+1442|        public static bool Register(IUnscaledFastTickable item, PriorityLayer layer)
+1443|        {
+1444|            if (item == null)
+1445|                return false;
+1446|
+1447|            return GetUnscaledFastLane(layer).TryRegister(item);
+1448|        }
+1449|
+1450|        /// <summary>
+=== SD Contains / lane membership ===
+=== RegistryBucket full relevant ===
+1|using System;
+2|using System.Runtime.CompilerServices;
+3|
+4|namespace Hecton8.Core
+5|{
+6|    /// <summary>
+7|    /// Dense fixed-capacity registry bucket with O(1) swap-with-last removal.
+8|    /// </summary>
+9|    /// <typeparam name="T">Reference type stored in the bucket.</typeparam>
+10|    public sealed class RegistryBucket<T> where T : class
+11|    {
+12|        private readonly T[] _items;
+13|        private readonly int _capacity;
+14|        private int _count;
+15|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+16|        private bool _indexErrorLogged;
+17|        private bool _nullRegistrationLogged;
+18|        private bool _capacityErrorLogged;
+19|        private bool _unregisterMissLogged;
+20|        private bool _destroyedEntryLogged;
+21|#endif
+22|
+23|        /// <summary>
+24|        /// Active item count.
+25|        /// </summary>
+26|        public int Count => _count;
+27|
+28|        /// <summary>
+29|        /// Fixed cold capacity of the dense backing store.
+30|        /// </summary>
+31|        public int Capacity => _capacity;
+32|
+33|        /// <summary>
+34|        /// Raw contiguous backing array for zero-allocation linear scans.
+35|        /// </summary>
+36|        public T[] RawArray => _items;
+37|
+38|        /// <summary>
+39|        /// Returns the live item at the given dense-array index.
+40|        /// </summary>
+41|        /// <param name="index">Dense registry index.</param>
+42|        /// <returns>Registered item at the requested index.</returns>
+43|        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+44|        public T GetAt(int index)
+45|        {
+46|            if ((uint)index >= (uint)_count)
+47|            {
+48|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+49|                if (!_indexErrorLogged)
+50|                {
+51|                    Hecton8.Core.H8Debug.LogError(
+52|                        $"[RegistryBucket<{typeof(T).Name}>] Index {index} outside live count {_count}.");
+53|                    _indexErrorLogged = true;
+54|                }
+55|#endif
+56|                return null;
+57|            }
+58|
+59|            return _items[index];
+60|        }
+61|
+62|        /// <summary>
+63|        /// Creates a fixed-capacity registry bucket.
+64|        /// </summary>
+65|        /// <param name="capacity">Maximum number of live entries allowed in the bucket.</param>
+66|        public RegistryBucket(int capacity)
+67|        {
+68|            _capacity = Math.Max(1, capacity);
+69|            _items = new T[_capacity]; // COLD ALLOC: T[_capacity] — dense registry backing storage — owner: RegistryBucket<T>
+70|            _count = 0;
+71|        }
+72|
+73|        /// <summary>
+74|        /// Appends a new item to the tail of the dense array.
+75|        /// </summary>
+76|        /// <param name="item">Item instance to register.</param>
+77|        public void Register(T item)
+78|        {
+79|            TryRegister(item);
+80|        }
+81|
+82|        /// <summary>
+83|        /// Attempts to append a new item to the tail of the dense array.
+84|        /// </summary>
+85|        /// <param name="item">Item instance to register.</param>
+86|        /// <returns>True when the item was registered.</returns>
+87|        public bool TryRegister(T item)
+88|        {
+89|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+90|            if (item == null)
+91|            {
+92|                if (!_nullRegistrationLogged)
+93|                {
+94|                    Hecton8.Core.H8Debug.LogError(
+95|                        $"[RegistryBucket<{typeof(T).Name}>] Null registration is forbidden.");
+96|                    _nullRegistrationLogged = true;
+97|                }
+98|                return false;
+99|            }
+100|
+101|            if (_count >= _capacity)
+102|            {
+103|                if (!_capacityErrorLogged)
+104|                {
+105|                    Hecton8.Core.H8Debug.LogError(
+106|                        $"[GlobalRegistry] RegistryBucket<{typeof(T).Name}> capacity ({_capacity}) exceeded.");
+107|                    _capacityErrorLogged = true;
+108|                }
+109|                return false;
+110|            }
+111|
+112|            if (Contains(item))
+113|                return false;
+114|#else
+115|            if (item == null || _count >= _capacity || Contains(item))
+116|                return false;
+117|#endif
+118|            _items[_count++] = item;
+119|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+120|            _indexErrorLogged = false;
+121|            _destroyedEntryLogged = false;
+122|#endif
+123|            return true;
+124|        }
+125|
+126|        /// <summary>
+127|        /// Removes an item using O(1) swap-with-last tail compaction.
+128|        /// </summary>
+129|        /// <param name="item">Item instance to remove.</param>
+130|        /// <returns>True when the item was found and removed.</returns>
+131|        public bool Unregister(T item)
+132|        {
+133|            if (TryUnregister(item))
+134|                return true;
+135|
+136|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+137|            if (!_unregisterMissLogged)
+138|            {
+139|                Hecton8.Core.H8Debug.LogWarning(
+140|                    $"[GlobalRegistry] Unregister called for non-registered {typeof(T).Name}.");
+141|                _unregisterMissLogged = true;
+142|            }
+143|#endif
+144|            return false;
+145|        }
+146|
+147|        /// <summary>
+148|        /// Removes an item without emitting a miss warning; used by idempotent lifecycle teardown paths.
+149|        /// </summary>
+150|        /// <param name="item">Item instance to remove.</param>
+151|        /// <returns>True when the item was found and removed.</returns>
+152|        public bool TryUnregister(T item)
+153|        {
+154|            for (int i = 0; i < _count; i++)
+155|            {
+156|                if (!ReferenceEquals(_items[i], item))
+157|                    continue;
+158|
+159|                _count--;
+160|                _items[i] = _items[_count];
+161|                _items[_count] = null;
+162|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+163|                _indexErrorLogged = false;
+164|                _unregisterMissLogged = false;
+165|                _destroyedEntryLogged = false;
+166|#endif
+167|                return true;
+168|            }
+169|
+170|            return false;
+171|        }
+172|
+173|        /// <summary>
+174|        /// Checks whether a given instance is already present in the bucket.
+175|        /// </summary>
+176|        /// <param name="item">Item instance to test.</param>
+177|        /// <returns>True when the instance is present.</returns>
+178|        public bool Contains(T item)
+179|        {
+180|            for (int i = 0; i < _count; i++)
+181|            {
+182|                if (ReferenceEquals(_items[i], item))
+183|                    return true;
+184|            }
+185|
+186|            return false;
+187|        }
+188|
+189|        /// <summary>
+190|        /// Clears all live entries and nulls the dense storage window.
+191|        /// </summary>
+192|        public void Clear()
+193|        {
+194|            Array.Clear(_items, 0, _count);
+195|            _count = 0;
+196|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+197|            _indexErrorLogged = false;
+198|            _nullRegistrationLogged = false;
+199|            _capacityErrorLogged = false;
+200|            _unregisterMissLogged = false;
+201|            _destroyedEntryLogged = false;
+202|#endif
+203|        }
+204|
+205|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+206|        /// <summary>
+207|        /// Debug-only validation that detects Unity objects destroyed without unregistering first.
+208|        /// </summary>
+209|        /// <param name="bucketName">Human-readable bucket label for diagnostics.</param>
+210|        public void ValidateNoDestroyedEntriesDebug(string bucketName)
+211|        {
+212|            for (int i = 0; i < _count; i++)
+213|            {
+214|                if (!(_items[i] is UnityEngine.Object unityObject))
+215|                    continue;
+216|
+217|                if (unityObject != null)
+218|                    continue;
+219|
+220|                if (!_destroyedEntryLogged)
+221|                {
+222|                    Hecton8.Core.H8Debug.LogError(
+223|                        $"[RegistryBucket<{typeof(T).Name}>] Destroyed object remained registered in {bucketName} at index {i}.");
+224|                    _destroyedEntryLogged = true;
+225|                }
+226|                return;
+227|            }
+228|        }
+229|#endif
+230|    }
+231|}

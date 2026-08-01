@@ -1,0 +1,33 @@
+stepBoundOk = SystemDispatcher.EnableStepBoundedTime(HeadlessStepBoundedDeltaSeconds);
+842|
+843|            _lastClockEnsureRealtime = Time.realtimeSinceStartupAsDouble;
+844|
+845|            bool pausedAfter = dispatcher.SimulationPaused;
+846|            float dilAfter = dispatcher.TimeDilationScalar;
+847|            bool stepBoundAfter = SystemDispatcher.IsStepBoundedTimeActive;
+848|            LogRunnerLifecycle(
+849|                "sim clock ensure reason=" + reason +
+850|                " pausedBefore=" + (wasPaused ? "1" : "0") +
+851|                " dilBefore=" + dilBefore.ToString("0.###", CultureInfo.InvariantCulture) +
+852|                " dilAfter=" + dilAfter.ToString("0.###", CultureInfo.InvariantCulture) +
+853|                " pausedAfter=" + (pausedAfter ? "1" : "0") +
+854|                " stepBoundBefore=" + (stepBoundBefore ? "1" : "0") +
+855|                " stepBoundAfter=" + (stepBoundAfter ? "1" : "0") +
+856|                " stepBoundOk=" + (stepBoundOk ? "1" : "0") +
+857|                " stepDt=" + HeadlessStepBoundedDeltaSeconds.ToString("0.###", CultureInfo.InvariantCulture) +
+858|                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0"));
+==== C:\hades\Hecton8\Assets\_Project\Scripts\QA\Headless\Editor\HeadlessSimulationBatchRunner.cs ====
+  46|// second is 4 * fps / 60 = fps / 15 — reaching the runner's nominal TimeDilationScalar of 100 would
+==== L16 log extra ====
+  count(SimulationPaused|simulation pause|SIMPAUSE|RequestSimulationPause)=0
+  count(TimeDilation|dilation)=0
+  count(OriginShift|origin.shift|bootstrap.lock|AUP)=4
+  count(IsGameReady|BootstrapState|blockGameplay)=118
+  count(dual-register|lane heal|TryRegisterFixed|fixed lane)=0
+  count(lateFrameTick)=9
+  count(overrideRejected)=6
+  count(stepBound)=6
+  count(temporal compression|StepBoundedClamp)=0
+HOP L10128:[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=49 pumpFired=1 presimTick=566 presimSubsteps=619 | captureRan=556 captureSkippedByFrameGuard=65 | overrideApplied=20 overrideRejected=536 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=619 publishGuardFail=45 publishBufferFail=0 publishOk=574 | currentStateMove=(0,1) currentInputStateFrame=573 standardInputFrame=619 i
+HOP L10158:[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=49 pumpFired=1 presimTick=572 presimSubsteps=634 | captureRan=562 captureSkippedByFrameGuard=74 | overrideApplied=26 overrideRejected=536 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=634 publishGuardFail=60 publishBufferFail=0 publishOk=574 | currentStateMove=(0,1) currentInputStateFrame=573 standardInputFrame=634 
+HOP L10192:[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=49 pumpFired=1 presimTick=581 presimSubsteps=655 | captureRan=571 captureSkippedByFrameGuard=86 | overrideApplied=35 overrideRejected=536 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=655 publishGuardFail=81 publishBufferFail=0 publishOk=574 | currentStateMove=(0,1) currentInputStateFrame=573 standardInputFrame=655 

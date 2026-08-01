@@ -1,0 +1,19 @@
+=== L15 POLL COMPACT ===
+ts=2026-07-31 23:25:21 pid=42884 alive=True
+log_bytes=1647076 prev=1275875 growing=True stagnant=False
+intent01max=None lastOverrideMove=0,1 currentStateMove=0,0 depth_span=None immersionMax=None
+readHop_seen=[1] hop2_present=False Swim_FAIL=0 Swim_PASS=0 RESULT_failures=None
+verdict_draft=IN_PROGRESS
+--- last samples ---
+[H8_WORLDDRIVER] VERB ToolSlot4 bit=0x00004000 raised=True expectedCommand=12 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00004000 set in CurrentInputState.But
+Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+[H8_WORLDDRIVER] VERB Flashlight bit=0x00008000 raised=True expectedCommand=13 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00008000 set in CurrentInputState.Bu
+Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+[H8_WORLDDRIVER] VERB Pause bit=0x00010000 raised=True expectedCommand=0 arrived=False atFrame=0 commandOnLane=False consumerObserved=False - BIT NEVER REACHED THE RESOLVED SNAPSHOT. Expected bit 0x00010000 set in CurrentInputState.ButtonsB
+Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+[H8_WORLDDRIVER] LANECENSUS ticks=258115 InputStateSignal=0 PlayerInputSignal[PLIN]=0 InventoryChangedSignal=0 ToolLoadoutChangedSignal=0 CraftingStartedSignal=0 ResourceDepletionDeltaSignal=0 DebrisSpawnSignal=0 | inventoryComponent=presen
+Hecton8.EditorTools.Diagnostics.H8_HeadlessWorldDriver:AdvancePhase () (at Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessWorldDriver.cs:2515)
+[H8_INPUTREFUSE] stage=GUARD code=4 (1=vaultNull 2=notOwnerThread 3=compactionFence 4=guardBitsAlreadyHeld 5=activeLockConflict 6=opaque:blockMutationGateContended-or-vaultNotInitialized) ownerThread=1 callThread=1 | ownerGuardMask=18374686
+Hecton8.Core.InputDispatcher:DiagRecordPublishGuardFail () (at Assets/_Project/Scripts/Core/InputDispatcher.cs:948)
+[H8_INPUTREFUSE] stage=GUARD code=5 (1=vaultNull 2=notOwnerThread 3=compactionFence 4=guardBitsAlreadyHeld 5=activeLockConflict 6=opaque:blockMutationGateContended-or-vaultNotInitialized) ownerThread=1 callThread=1 | ownerGuardMask=18374686
+Hecton8.Core.InputDispatcher:DiagRecordPublishGuardFail () (at Assets/_Project/Scripts/Core/InputDispatcher.cs:948)

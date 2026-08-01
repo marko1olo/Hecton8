@@ -1,0 +1,131 @@
+log_bytes=2364483
+path=C:\hades\Hecton8\Docs\AgentLogs\h8_playprobe_v0_L09.log
+=== HIT COUNTS (non-noise) ===
+H8_HeadlessPlayModeProbe: 30
+MOMENT: 30
+screenshot: 30
+PASS|FAIL|BLOCKED|PARTIAL: 30
+fauna: 27
+Exception: 26
+vault: 19
+grant: 15
+PNG: 9
+blockMask: 5
+publishGuard: 4
+tool.?slot: 4
+ABORT: 4
+INPUTHOP: 3
+publishOk: 3
+readHop: 3
+postMaskMove: 3
+STORAGE: 2
+gridBound: 2
+inputEnabled: 2
+movementIntent: 1
+STARTERGRANT: 1
+IsToolAvailable: 1
+refusalMask: 1
+0x1E: 1
+SaveLoad: 1
+Swim\b: 1
+LocomotionHold: 1
+inventoryVersion: 1
+NullReference: 1
+switchToPlayer: 1
+
+=== KEY SAMPLES ===
+
+--- INPUTHOP ---
+L13156: [H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) cur
+L13174: [H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) cu
+L13192: [H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBufferFail=0 publishOk=380 | currentStateMove=(0,1) c
+
+--- movementIntent ---
+L23708: [H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInpu
+
+--- STARTERGRANT ---
+L12320: [PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one assigned quick-slot tool item. The grant is now retried from the tick lane until the inventory can accept, so this line is printed once. refused=4 granted=0 firstSlot=0 firstItemHash=-1760594330 refusalMask=0x1E (bit0 componentDisabled, bit1 gridMissing, bit2 stac
+
+--- IsToolAvailable ---
+L23736: [H8_PLAYPROBE] MOMENT   BLOCKED       Tool               PlayerToolManager reports slotCount=4 and IsToolAvailableInSlot is false for every slot, so no tool could be selected on this route [INVENTORY inventoryComponent=present enabled=True gridBound=True version 0->0 InventoryChangedSignal lane=0 - UPSTREAM LIVE: the inventory is enabled with its g
+
+--- publishOk ---
+L13156: [H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) cur
+L13174: [H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) cu
+L13192: [H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBufferFail=0 publishOk=380 | currentStateMove=(0,1) c
+
+--- readHop ---
+L13156: [H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) cur
+L13174: [H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) cu
+L13192: [H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBufferFail=0 publishOk=380 | currentStateMove=(0,1) c
+
+--- refusalMask ---
+L12320: [PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one assigned quick-slot tool item. The grant is now retried from the tick lane until the inventory can accept, so this line is printed once. refused=4 granted=0 firstSlot=0 firstItemHash=-1760594330 refusalMask=0x1E (bit0 componentDisabled, bit1 gridMissing, bit2 stac
+
+--- 0x1E ---
+L12320: [PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one assigned quick-slot tool item. The grant is now retried from the tick lane until the inventory can accept, so this line is printed once. refused=4 granted=0 firstSlot=0 firstItemHash=-1760594330 refusalMask=0x1E (bit0 componentDisabled, bit1 gridMissing, bit2 stac
+
+--- Swim\b ---
+L23708: [H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInpu
+
+--- LocomotionHold ---
+L23708: [H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInpu
+
+--- SaveLoad ---
+L23792: [H8_PLAYPROBE] MOMENT   PARTIAL       SaveLoad           save half observed: TryRequestSave(slot 'slot_0') changed 1 file(s) under 'C:/Users/Admin/AppData/LocalLow/Danat Games/Hecton8' in 1,0s (byteDelta=0). The LOAD half of this row is not exercised by this probe, so the row is not accepted.
+
+--- STORAGE ---
+L12367: [PlayerInventory] DTO layout sovereignty PASSED: InventoryTelemetryEntry 64B, SalinityCorrosionTelemetryEntry 64B, VaultGenerationHandle<uint> 16B, all 24 asserted field offsets in place. Awake did NOT bail here, so an empty inventory this session has a different cause - look at the GlobalDataVault lane bind (STORAGE UNAVAILABLE above) instead.
+L15906: [H8_WORLDDRIVER] LANECENSUS ticks=412490 InputStateSignal=0 PlayerInputSignal[PLIN]=0 InventoryChangedSignal=0 ToolLoadoutChangedSignal=0 CraftingStartedSignal=0 ResourceDepletionDeltaSignal=0 DebrisSpawnSignal=0 | inventoryComponent=present enabled=True gridBound=True inventoryVersion 0->0 | PLINlane hasNativeStorage=False snapshotCount=0 peakQueu
+
+--- gridBound ---
+L15906: [H8_WORLDDRIVER] LANECENSUS ticks=412490 InputStateSignal=0 PlayerInputSignal[PLIN]=0 InventoryChangedSignal=0 ToolLoadoutChangedSignal=0 CraftingStartedSignal=0 ResourceDepletionDeltaSignal=0 DebrisSpawnSignal=0 | inventoryComponent=present enabled=True gridBound=True inventoryVersion 0->0 | PLINlane hasNativeStorage=False snapshotCount=0 peakQueu
+L23736: [H8_PLAYPROBE] MOMENT   BLOCKED       Tool               PlayerToolManager reports slotCount=4 and IsToolAvailableInSlot is false for every slot, so no tool could be selected on this route [INVENTORY inventoryComponent=present enabled=True gridBound=True version 0->0 InventoryChangedSignal lane=0 - UPSTREAM LIVE: the inventory is enabled with its g
+
+--- inventoryVersion ---
+L15906: [H8_WORLDDRIVER] LANECENSUS ticks=412490 InputStateSignal=0 PlayerInputSignal[PLIN]=0 InventoryChangedSignal=0 ToolLoadoutChangedSignal=0 CraftingStartedSignal=0 ResourceDepletionDeltaSignal=0 DebrisSpawnSignal=0 | inventoryComponent=present enabled=True gridBound=True inventoryVersion 0->0 | PLINlane hasNativeStorage=False snapshotCount=0 peakQueu
+
+--- screenshot ---
+L13960: [H8PlayModeScreenshotter] Settling 20s before capture. playerFound=True waitedSeconds=7,5
+L13967: Hecton8.Tools.H8_PlayModeScreenshotter:Update () (at Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs:241)
+L13969: (Filename: Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs Line: 241)
+L13971: [H8PlayModeScreenshotter] Settling 20s before capture. playerFound=True waitedSeconds=7,5
+L13978: Hecton8.Tools.H8_PlayModeScreenshotter:Update () (at Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs:241)
+L13980: (Filename: Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs Line: 241)
+L13982: [H8PlayModeScreenshotter] Settling 20s before capture. playerFound=True waitedSeconds=7,1
+L13989: Hecton8.Tools.H8_PlayModeScreenshotter:Update () (at Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs:241)
+L13991: (Filename: Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs Line: 241)
+L13993: [H8PlayModeScreenshotter] Settling 20s before capture. playerFound=True waitedSeconds=7,1
+L14000: Hecton8.Tools.H8_PlayModeScreenshotter:Update () (at Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs:241)
+L14002: (Filename: Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs Line: 241)
+L14004: [H8PlayModeScreenshotter] Settling 20s before capture. playerFound=True waitedSeconds=7,1
+L14011: Hecton8.Tools.H8_PlayModeScreenshotter:Update () (at Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs:241)
+L14013: (Filename: Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs Line: 241)
+L14015: [H8PlayModeScreenshotter] Settling 20s before capture. playerFound=True waitedSeconds=7,1
+L14022: Hecton8.Tools.H8_PlayModeScreenshotter:Update () (at Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs:241)
+L14024: (Filename: Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs Line: 241)
+L14026: [H8PlayModeScreenshotter] Settling 20s before capture. playerFound=True waitedSeconds=7,1
+L14033: Hecton8.Tools.H8_PlayModeScreenshotter:Update () (at Assets/_Project/Scripts/Tools/H8_PlayModeScreenshotter.cs:241)
+
+--- PASS|FAIL|BLOCKED|PARTIAL ---
+L83: [Licensing::Module] LicensingClient has failed validation; ignoring
+L95: [Licensing::Module] Error: Access token is unavailable; failed to update
+L286: Starting: C:\Program Files\Unity\Hub\Editor\6000.5.0f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+L316: [3439/3945  0s] Csc Library/Bee/artifacts/1900b0aE.dag/Hecton8.Rendering.OceanSinglePass.dll (+2 others)
+L459: [3565/3945  3s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Hecton8.Rendering.OceanSinglePass.dll (+pdb)
+L460: Processing assembly Library/Bee/artifacts/1900b0aE.dag/Hecton8.Rendering.OceanSinglePass.dll, with 157 defines and 320 references
+L1363: [3699/3945  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Rendering.OceanSinglePass.dll
+L1568: [3899/3945  0s] CopyFiles Library/ScriptAssemblies/Hecton8.Rendering.OceanSinglePass.pdb
+L1710: 'Packages/com.unity.cinemachine/Editor/Editors/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+L1711: 'Packages/com.unity.cinemachine/Editor/Obsolete/CinemachineVirtualCameraBaseEditor.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+L3200: [GameBootstrapper] AUDIO IS A STUB: IAudioService slot holds NoOpAudioService, which discards every queued event. No SFX, no ambience, no music, no vocal warnings, no acoustic zones for this entire session. cause=SpatialAudioManager registered and initialized but IsAudioRuntimeReady is false (check slot co-ownership of IAudioVirtualizationService a
+L3835: [GameBootstrapper] DebrisManager is declared as a bootstrap dependency but is NOT installed. GlobalRegistry.Debris is empty and nothing calls DebrisManager.EnsureRuntimeInstance, so there is no debris owner this session and every IDebrisService.SpawnBurst call is dropped. This node is EXEMPT, not ready. Boot continues on purpose: nothing in the sta
+L4216: [GlobalRegistry] COLD-RESOLVED NULL OBJECT LEAKED PAST FIRST REGISTRATION. Slot Input handed out the non-null NoOpInputService while it was empty, and is only being filled now by InputDispatcher. Consumers that cached the substitute passed their null check and got a service that does nothing. A rebound is being queued for this first fill so IGlobal
+L5653: [AgentWorkCementer] git commit failed (exit 1): ==========================================
+L5660: Hecton8.EditorTools.HectonAgentWorkCementer:FinishFailure (string,Hecton8.EditorTools.HectonAgentWorkCementer/GitResult) (at Assets/_Project/Scripts/Editor/HectonAgentWorkCementer.cs:197)
+L12367: [PlayerInventory] DTO layout sovereignty PASSED: InventoryTelemetryEntry 64B, SalinityCorrosionTelemetryEntry 64B, VaultGenerationHandle<uint> 16B, all 24 asserted field offsets in place. Awake did NOT bail here, so an empty inventory this session has a different cause - look at the GlobalDataVault lane bind (STORAGE UNAVAILABLE above) instead.
+L13156: [H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) cur
+L13174: [H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) cu
+L13192: [H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrid
+
+WROTE C:\hades\Hecton8\Tools\_cline_scratch\_l09_deep_out.txt total_chars=46971

@@ -1,0 +1,208 @@
+HOP10128|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=49 pumpFired=1 presimTick=566 presimSubsteps=619 | captureRan=556 captureSkippedByFrameGuard=65 | overrideApplied=20 overrideRejected=536 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=619 publishGuardFail=45 publishBufferFail=0 publishOk=574 | currentStateMove=(0,1) currentInputStateFrame=573 standardInputFrame=619 inputStateSequence=574 | initialized=True regLateFrame=True regSlowTick=True regInputService=True vaultNull=False vaultBuffersReady=True lastPresimFrame=569 lastCapturedFrame=569 frameIndex=569 frameId=0 - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the override. lateFrameTick=0 means this component's late-frame lane never ran, so the self-pump never fired and PreSimulationInputTick - the only per-frame caller of CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every capture; compare lastCapturedFrame against frameIndex. captureRan>0 with overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no clock-skew LogError that leaves the silent age>maxFrameAge branch at CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio: overrideRejected is expected to be large even in a fully healthy run because it counts every poll on a frame where the driver published nothing (Sequence==0 early return). overrideApplied>0 with currentStateMove=(0,0) means the value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero. publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are the same event - those four driver numbers are not evidence about the override lane.
+HOP10158|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=49 pumpFired=1 presimTick=572 presimSubsteps=634 | captureRan=562 captureSkippedByFrameGuard=74 | overrideApplied=26 overrideRejected=536 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=634 publishGuardFail=60 publishBufferFail=0 publishOk=574 | currentStateMove=(0,1) currentInputStateFrame=573 standardInputFrame=634 inputStateSequence=574 | initialized=True regLateFrame=True regSlowTick=True regInputService=True vaultNull=False vaultBuffersReady=True lastPresimFrame=575 lastCapturedFrame=575 frameIndex=575 frameId=0 - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the override. lateFrameTick=0 means this component's late-frame lane never ran, so the self-pump never fired and PreSimulationInputTick - the only per-frame caller of CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every capture; compare lastCapturedFrame against frameIndex. captureRan>0 with overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no clock-skew LogError that leaves the silent age>maxFrameAge branch at CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio: overrideRejected is expected to be large even in a fully healthy run because it counts every poll on a frame where the driver published nothing (Sequence==0 early return). overrideApplied>0 with currentStateMove=(0,0) means the value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero. publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are the same event - those four driver numbers are not evidence about the override lane.
+HOP10192|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=49 pumpFired=1 presimTick=581 presimSubsteps=655 | captureRan=571 captureSkippedByFrameGuard=86 | overrideApplied=35 overrideRejected=536 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=655 publishGuardFail=81 publishBufferFail=0 publishOk=574 | currentStateMove=(0,1) currentInputStateFrame=573 standardInputFrame=655 inputStateSequence=574 | initialized=True regLateFrame=True regSlowTick=True regInputService=True vaultNull=False vaultBuffersReady=True lastPresimFrame=584 lastCapturedFrame=584 frameIndex=584 frameId=0 - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the override. lateFrameTick=0 means this component's late-frame lane never ran, so the self-pump never fired and PreSimulationInputTick - the only per-frame caller of CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every capture; compare lastCapturedFrame against frameIndex. captureRan>0 with overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no clock-skew LogError that leaves the silent age>maxFrameAge branch at CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio: overrideRejected is expected to be large even in a fully healthy run because it counts every poll on a frame where the driver published nothing (Sequence==0 early return). overrideApplied>0 with currentStateMove=(0,0) means the value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero. publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are the same event - those four driver numbers are not evidence about the override lane.
+SWIM16331|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 16016 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInputCalled=True blockMask=0x00000000 pdaOpen=False fabOpen=False pauseOpen=False inputEnabledNow=True - FAIL: the input path was open but the driver's MoveDelta never reached HectonPlayerMovement [SCHEDULE phase=SwimSurface wall=9.340s ticks=2 tickFloor=2 tickBox=61442 granted=5.000s yield=Timeboxed waitingOn=LocomotionHoldInProgress - TIMEBOXED: this phase ran PAST its box, so it held longer than designed rather than shorter. A threshold missed here is a real miss; a threshold met here was met on an unintended duration] [SCHEDULE phase=SwimDive wall=8.043s ticks=16013 tickFloor=2 tickBox=86018 granted=7.000s yield=Timeboxed waitingOn=LocomotionHoldInProgress - TIMEBOXED: this phase ran PAST its box, so it held longer than designed rather than shorter. A threshold missed here is a real miss; a threshold met here was met on an unintended duration]
+
+==== SRC halt API ====
+SystemDispatcher.cs:5192|                if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:5281|                    if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:5303|                            if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:5312|                if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6183|            if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6221|                if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6250|                    if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6267|                            if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6281|                            if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6319|                                if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6367|            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6381|                        if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6398|                                if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6424|            if (unscaledDeltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6436|                    if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6453|                            if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6476|            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6495|                        if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6516|                                if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6782|            if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6793|                    if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6813|                                if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6847|            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6863|                        if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6880|                                if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6904|            if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6917|                    if (SignalBusRegistry.IsSimulationHalted)
+SystemDispatcher.cs:6934|                            if (SignalBusRegistry.IsSimulationHalted)
+
+==== SRC census counters ====
+ConstructionManager.cs:255|        private bool _tickRegistered;
+ConstructionManager.cs:256|        private bool _lateFrameTickRegistered;
+ConstructionManager.cs:257|        private bool _logisticsServiceRegistered;
+ConstructionManager.cs:258|        private bool _habitatGraphServiceRegistered;
+ConstructionManager.cs:259|        private bool _habitatDeconstructionServiceRegistered;
+--
+ConstructionManager.cs:3594|        {
+ConstructionManager.cs:3595|            if (_lateFrameTickRegistered || !Application.isPlaying)
+ConstructionManager.cs:3596|                return;
+ConstructionManager.cs:3597|
+ConstructionManager.cs:3598|            if (GlobalRegistry.Dispatcher == null)
+--
+ConstructionManager.cs:3600|
+ConstructionManager.cs:3601|            _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+ConstructionManager.cs:3602|        }
+ConstructionManager.cs:3603|
+ConstructionManager.cs:3604|        private void TryUnregisterTick()
+--
+ConstructionManager.cs:3614|        {
+ConstructionManager.cs:3615|            if (!_lateFrameTickRegistered)
+ConstructionManager.cs:3616|                return;
+ConstructionManager.cs:3617|
+ConstructionManager.cs:3618|            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+--
+ConstructionManager.cs:3618|            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+ConstructionManager.cs:3619|            _lateFrameTickRegistered = false;
+ConstructionManager.cs:3620|        }
+ConstructionManager.cs:3621|
+ConstructionManager.cs:3622|        private void TryRegisterDispatcherLanes()
+--
+HectonFabricatorUI.cs:185|        private float _craftProgress;
+HectonFabricatorUI.cs:186|        private bool _lateFrameTickRegistered;
+HectonFabricatorUI.cs:187|        private float _pendingFabricatorVisualDeltaTime;
+HectonFabricatorUI.cs:188|        private bool _hasPendingFabricatorVisualTick;
+HectonFabricatorUI.cs:189|        private bool _pendingRecipeListVisibility;
+--
+HectonFabricatorUI.cs:667|        {
+HectonFabricatorUI.cs:668|            if (_lateFrameTickRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+HectonFabricatorUI.cs:669|                return;
+HectonFabricatorUI.cs:670|
+HectonFabricatorUI.cs:671|            _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+--
+HectonFabricatorUI.cs:670|
+HectonFabricatorUI.cs:671|            _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+HectonFabricatorUI.cs:672|        }
+HectonFabricatorUI.cs:673|
+HectonFabricatorUI.cs:674|        private void UnregisterLateFrameTick(bool clearPendingWork = true)
+--
+HectonFabricatorUI.cs:675|        {
+HectonFabricatorUI.cs:676|            if (_lateFrameTickRegistered)
+HectonFabricatorUI.cs:677|            {
+HectonFabricatorUI.cs:678|                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
+HectonFabricatorUI.cs:679|                _lateFrameTickRegistered = false;
+--
+HectonFabricatorUI.cs:678|                SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.UI);
+HectonFabricatorUI.cs:679|                _lateFrameTickRegistered = false;
+HectonFabricatorUI.cs:680|            }
+HectonFabricatorUI.cs:681|
+HectonFabricatorUI.cs:682|            if (!clearPendingWork)
+--
+HectonFabricatorUI.cs:789|                case GlobalRegistryServiceSlot.Dispatcher:
+HectonFabricatorUI.cs:790|                    bool needsLateFrameTick = _lateFrameTickRegistered ||
+HectonFabricatorUI.cs:791|                                             _isOpen ||
+HectonFabricatorUI.cs:792|                                             _isCrafting ||
+HectonFabricatorUI.cs:793|                                             _hasPendingFabricatorVisualTick ||
+--
+PhysicsApplySystem.cs:1602|        private bool _postFixedTickRegistered;
+PhysicsApplySystem.cs:1603|        private bool _lateFrameTickRegistered;
+PhysicsApplySystem.cs:1604|        private bool _hotSwapRegistered;
+PhysicsApplySystem.cs:1605|        private bool _frontBufferValidationReady;
+PhysicsApplySystem.cs:1606|        private bool _packetValidationScheduled;
+--
+PhysicsApplySystem.cs:2478|
+PhysicsApplySystem.cs:2479|            if (!_lateFrameTickRegistered)
+PhysicsApplySystem.cs:2480|                _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+PhysicsApplySystem.cs:2481|        }
+PhysicsApplySystem.cs:2482|
+--
+PhysicsApplySystem.cs:2479|            if (!_lateFrameTickRegistered)
+PhysicsApplySystem.cs:2480|                _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+PhysicsApplySystem.cs:2481|        }
+PhysicsApplySystem.cs:2482|
+PhysicsApplySystem.cs:2483|        private void TryUnregisterRuntimeLanes()
+--
+PhysicsApplySystem.cs:2496|
+PhysicsApplySystem.cs:2497|            if (_lateFrameTickRegistered)
+PhysicsApplySystem.cs:2498|            {
+PhysicsApplySystem.cs:2499|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+PhysicsApplySystem.cs:2500|                _lateFrameTickRegistered = false;
+--
+PhysicsApplySystem.cs:2499|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+PhysicsApplySystem.cs:2500|                _lateFrameTickRegistered = false;
+PhysicsApplySystem.cs:2501|            }
+PhysicsApplySystem.cs:2502|        }
+PhysicsApplySystem.cs:2503|
+--
+ToxicOutgassingChemistryRuntime.cs:151|        private bool _coldTickRegistered;
+ToxicOutgassingChemistryRuntime.cs:152|        private bool _lateFrameTickRegistered;
+ToxicOutgassingChemistryRuntime.cs:153|
+ToxicOutgassingChemistryRuntime.cs:154|        public static ToxicOutgassingChemistryRuntime Instance;
+ToxicOutgassingChemistryRuntime.cs:155|
+--
+ToxicOutgassingChemistryRuntime.cs:218|            _coldTickRegistered = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
+ToxicOutgassingChemistryRuntime.cs:219|            _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+ToxicOutgassingChemistryRuntime.cs:220|            HectonFloatingOrigin.RegisterListener(this);
+ToxicOutgassingChemistryRuntime.cs:221|        }
+ToxicOutgassingChemistryRuntime.cs:222|
+--
+ToxicOutgassingChemistryRuntime.cs:229|            HectonFloatingOrigin.UnregisterListener(this);
+ToxicOutgassingChemistryRuntime.cs:230|            if (_lateFrameTickRegistered)
+ToxicOutgassingChemistryRuntime.cs:231|            {
+ToxicOutgassingChemistryRuntime.cs:232|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+ToxicOutgassingChemistryRuntime.cs:233|                _lateFrameTickRegistered = false;
+--
+ToxicOutgassingChemistryRuntime.cs:232|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+ToxicOutgassingChemistryRuntime.cs:233|                _lateFrameTickRegistered = false;
+ToxicOutgassingChemistryRuntime.cs:234|            }
+ToxicOutgassingChemistryRuntime.cs:235|
+ToxicOutgassingChemistryRuntime.cs:236|            if (_coldTickRegistered)
+--
+ConnectionSplineBatchRenderer.cs:116|        private bool _registeredSlowTick;
+ConnectionSplineBatchRenderer.cs:117|        private bool _lateFrameTickDormant;
+ConnectionSplineBatchRenderer.cs:118|        private bool _dispatcherAvailable;
+ConnectionSplineBatchRenderer.cs:119|        private bool _registeredOriginShiftListener;
+ConnectionSplineBatchRenderer.cs:120|        private bool _registeredHotSwapListener;
+--
+ConnectionSplineBatchRenderer.cs:347|            _registeredLateFrameTick = false;
+ConnectionSplineBatchRenderer.cs:348|            _lateFrameTickDormant = false;
+ConnectionSplineBatchRenderer.cs:349|        }
+ConnectionSplineBatchRenderer.cs:350|
+ConnectionSplineBatchRenderer.cs:351|        private void TryRegisterOriginShiftListener()
+--
+ConnectionSplineBatchRenderer.cs:433|        {
+ConnectionSplineBatchRenderer.cs:434|            if (_lateFrameTickDormant && !s_logisticsPathHighlightDirty && !HasRenderableBatchWork())
+ConnectionSplineBatchRenderer.cs:435|                return;
+ConnectionSplineBatchRenderer.cs:436|
+ConnectionSplineBatchRenderer.cs:437|            _lateFrameTickDormant = false;
+--
+ConnectionSplineBatchRenderer.cs:436|
+ConnectionSplineBatchRenderer.cs:437|            _lateFrameTickDormant = false;
+ConnectionSplineBatchRenderer.cs:438|
+ConnectionSplineBatchRenderer.cs:439|            for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
+ConnectionSplineBatchRenderer.cs:440|                ProcessBatch(_batches[batchIndex]);
+--
+ConnectionSplineBatchRenderer.cs:442|            if (!s_logisticsPathHighlightDirty && !HasRenderableBatchWork())
+ConnectionSplineBatchRenderer.cs:443|                _lateFrameTickDormant = true;
+ConnectionSplineBatchRenderer.cs:444|        }
+ConnectionSplineBatchRenderer.cs:445|
+ConnectionSplineBatchRenderer.cs:446|        public void SlowTick()
+--
+ConnectionSplineBatchRenderer.cs:846|            {
+ConnectionSplineBatchRenderer.cs:847|                _lateFrameTickDormant = false;
+ConnectionSplineBatchRenderer.cs:848|                TryRegisterLateFrameTickable();
+ConnectionSplineBatchRenderer.cs:849|                return;
+ConnectionSplineBatchRenderer.cs:850|            }
+--
+ConnectionSplineBatchRenderer.cs:852|            if (_registeredLateFrameTick)
+ConnectionSplineBatchRenderer.cs:853|                _lateFrameTickDormant = true;
+ConnectionSplineBatchRenderer.cs:854|        }
+ConnectionSplineBatchRenderer.cs:855|
+ConnectionSplineBatchRenderer.cs:856|        private bool HasRenderableBatchWork()
+--
+InputDispatcher.cs:334|        private int _diagLateFrameTickCalls;
+InputDispatcher.cs:335|        private int _diagPumpFiredCalls;
+InputDispatcher.cs:336|        private int _diagPreSimTickCalls;
+InputDispatcher.cs:337|        private int _diagPreSimSubsteps;
+InputDispatcher.cs:338|        private int _diagCaptureRan;
+--
+InputDispatcher.cs:508|                // configuration while every tick lane this component owns may not be. See the block above
+InputDispatcher.cs:509|                // DiagRecordPumpFired.
+InputDispatcher.cs:510|                DiagRecordReadObservation(1);
+Inpu

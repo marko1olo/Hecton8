@@ -1,0 +1,49 @@
+public bool TryRegister(T item)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (item == null)
+            {
+                if (!_nullRegistrationLogged)
+                {
+                    Hecton8.Core.H8Debug.LogError(
+                        $"[RegistryBucket<{typeof(T).Name}>] Null registration is forbidden.");
+                    _nullRegistrationLogged = true;
+                }
+                return false;
+            }
+
+            if (_count >= _capacity)
+            {
+                if (!_capacityErrorLogged)
+                {
+                    Hecton8.Core.H8Debug.LogError(
+                        $"[GlobalRegistry] RegistryBucket<{typeof(T).Name}> capacity ({_capacity}) exceeded.");
+                    _capacityErrorLogged = true;
+                }
+                return false;
+            }
+
+            if (Contains(item))
+                return false;
+#else
+            if (item == null || _count >= _capacity || Contains(item))
+                return false;
+#endif
+            _items[_count++] = item;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _indexErrorLogged = false;
+            _destroyedEntryLogged = false;
+#endif
+            return true;
+        }
+
+        /// <summary>
+        /// Removes an item using O(1) swap-with-last tail compaction.
+        /// </summary>
+        /// <param name="item">Item instance to remove.</param>
+        /// <returns>True when the item was found and removed.</returns>
+        public bool Unregister(T i
+====
+            if (Contains(item))
+            if (item == null || _count >= _capacity || Contains(item))
+        public bool Contains(T item)

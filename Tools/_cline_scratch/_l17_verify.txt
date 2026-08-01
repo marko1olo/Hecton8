@@ -1,0 +1,13 @@
+DrainProbeFloatingOriginBootstrap def: OK
+FODRAIN marker: OK
+_probeFoDrainCalls: OK
+gameplay-tick drain: OK
+gameplay-window-start drain: OK
+worlddriver-begin drain: OK
+reset FO fields: OK
+SD L17 LateFrame comment: OK
+SD LateFrame TryFlush block: OK
+SD LateFrame bootstrap lock still checked: OK
+ALL=True
+probe Drain calls count=5
+sd TryFlush count=2

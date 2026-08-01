@@ -1,0 +1,3 @@
+Ошибка: Не удается найти процесс "Unity.exe".
+Ошибка: Не удается найти процесс "Unity Crash Handler64.exe".
+LOCK_CLEARED

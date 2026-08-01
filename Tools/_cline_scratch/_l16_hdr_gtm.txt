@@ -1,0 +1,90 @@
+### GameTickManager.cs lines=1195
+    3: // Edinstvennyy MonoBehaviour s Update/FixedUpdate v proekte.
+    6: // IFixedTickable, ISlowTickable. Menedzher vyzyvaet ih tsentralizovanno.
+   50: public sealed class GameTickManager : MonoBehaviour, IUpdatable, IFixedTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+   68: private static void ResetStaticState()
+   77: private static void RegisterEditorPlayModeHooks()
+   82: UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+   83: UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+   86: private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+  141: private TickList<IFixedTickable> _fixedTickables;
+  151: private static readonly uint _SlowTickBudgetWarningHash = unchecked((uint)LocHash.Compute("GameTickManager.SlowTickBudgetExceeded"));
+  152: private static readonly uint _GameTickManagerContextHash = unchecked((uint)LocHash.Compute(nameof(GameTickManager)));
+  167: private void Awake()
+  176: private void OnEnable()
+  192: private void OnDisable()
+  208: private void OnDestroy()
+  213: public void OnServiceShutdown()
+  218: private void ShutdownServiceState(bool clearTickLists)
+  245: private void UnregisterDispatcherLanes()
+  251: GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
+  256: private void TryRegisterDispatcherLanes()
+  267: GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
+  269: bool registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Core);
+  273: public void OnGlobalRegistryServiceReplaced(
+  293: private void TryRegisterHotSwapListener()
+  301: private void TryUnregisterHotSwapListener()
+  310: public void InitializeService()
+  342: private void RefreshServiceRegistrationAfterReloadCold()
+  348: private bool TryClaimActiveRuntimeAfterReloadCold()
+  365: private void OnApplicationQuit()
+  370: private void ClearTickLists()
+  392: public void Tick(float deltaTime)
+  449: private static bool ShouldLogUnexpectedDisable()
+  455: if (!UnityEditor.EditorApplication.isPlaying || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+  466: public void FixedTick(float fixedDeltaTime)
+  471: FixedUpdateHeapLockGuard.Begin();
+  476: float fdt = fixedDeltaTime;
+  485: IFixedTickable item = _fixedTickables.GetAt(i);
+  500: item.FixedTick(fdt);
+  515: FixedUpdateHeapLockGuard.End();
+  524: private void ResetSlowTickState()
+  529: private void ProcessSlowTickIfNeeded(float deltaTime)
+  556: private void ExecuteSlowTick()
+  622: private object SlowTickRoutineDisabled()
+  679: private int ResolveSlowTickProfilerEntryCount()
+  689: private void ResetSlowTickProfilerFrame()
+  699: private void RecordSlowTickSample(object owner, long elapsedTicks)
+  720: private void CommitSlowTickProfilerFrame(long elapsedTicks, int registeredCount)
+  760: public void Register(ITickable tickable)
+  767: public void Unregister(ITickable tickable)
+  773: /// <summary>Registriruet IFixedTickable (fizicheskiy shag).</summary>
+  774: public void Register(IFixedTickable tickable)
+  780: /// <summary>Snimaet IFixedTickable s obnovleniya.</summary>
+  781: public void Unregister(IFixedTickable tickable)
+  788: public void Register(ISlowTickable tickable)
+  795: public void Unregister(ISlowTickable tickable)
+  812: public void RegisterAll(object target)
+  820: if (target is IFixedTickable ft)
+  830: public void UnregisterAll(object target)
+  838: if (target is IFixedTickable ft)
+  852: /// <summary>Kol-vo zaregistrirovannyh IFixedTickable.</summary>
+  853: public int FixedTickableCount => _fixedTickables?.Count ?? 0;
+  859: //  TickList<T> — BUFERIZOVANNAYa KOLLEKTsIYa (nested class)
+  879: private bool AreTickListsReady()
+  886: private void EnsureInitialized()
+  892: _fixedTickables = new TickList<IFixedTickable>(64);
+  901: private sealed class TickList<T> where T : class
+  916: private sealed class ReferenceEqualityComparer : IEqualityComparer<T>
+  918: public static readonly ReferenceEqualityComparer Instance = new ReferenceEqualityComparer();
+  919: public bool Equals(T x, T y) => ReferenceEquals(x, y);
+  920: public int GetHashCode(T obj) => RuntimeHelpers.GetHashCode(obj);
+  927: public TickList(int initialCapacity)
+  944: public T GetAt(int index)
+  949: public void Clear()
+  968: public void Add(T item)
+  996: public void Remove(T item)
+ 1025: public void BeginIteration()
+ 1033: public void EndIteration()
+ 1048: private void FlushPending()
+ 1090: private static void RemoveRef(List<T> list, T item)
+ 1111: private static void SwapRemove(List<T> list, T item)
+ 1128: private static class FixedUpdateHeapLockGuard
+ 1130: private const string EditorPrefsKey = "Hecton8.FixedUpdateHeapLock.Enabled";
+ 1156: [UnityEditor.MenuItem("Tools/Hecton8/Compliance/Enable FixedUpdate Heap Lock")]
+ 1157: private static void Enable()
+ 1164: [UnityEditor.MenuItem("Tools/Hecton8/Compliance/Disable FixedUpdate Heap Lock")]
+ 1165: private static void Disable()
+ 1173: internal static void Begin()
+ 1182: internal static void End()
+ 1190: throw new InvalidOperationException("[FixedUpdateHeapLockGuard] Fatal Error: managed GC allocation detected during FixedUpdate. bytes=" + allocatedBytes);

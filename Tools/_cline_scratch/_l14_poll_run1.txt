@@ -1,0 +1,10 @@
+=== L14 POLL COMPACT ===
+ts=2026-07-31 22:53:19 pid=3976 alive=True
+log_bytes=21508 prev=None growing=False stagnant=n/a-first
+intent01max=None lastOverrideMove=None currentStateMove=None depth_span=None immersionMax=None
+readHop_seen=[] hop2_present=False Swim_FAIL=0 Swim_PASS=0 RESULT_failures=None
+verdict_draft=IN_PROGRESS
+--- last samples ---
+-h8MenuSeconds
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Module] Error: Access token is unavailable; failed to update

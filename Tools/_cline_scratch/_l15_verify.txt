@@ -1,0 +1,39 @@
+GR heal=3
+HPM L15=True
+ns=Hecton8.Gameplay
+using System;
+using Hecton8.Atmosphere;
+using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Fluids;
+using Hecton8.Core.Contracts.Physics;
+using Hecton8.Core.Memory;
+using Hecton8.Core.Contracts.Signals;
+using Hecton8.Audio;
+using Hecton8.Environment;
+using Hecton8.Interaction;
+using Hecton8.UI;
+using Hecton8.Meta;
+using Hecton8.Tools;
+using Hecton8.Visor;
+using Hecton8.World;
+using Hecton8.Inventory;
+using Hecton.Localization;
+using NASAPunk.Visor;
+using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
+using Unity.Collections;
+using Unity.Mathematics;
+using Unity.Jobs;
+using Unity.Profiling;
+using UnityEngine;
+using UnityEngine.Serialization;
+using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
+using BuoyancyObject = Hecton8.Physics.BuoyancyObject;
+ Assets/_Project/Scripts/Core/GlobalRegistry.cs  |  39 +-
+ Assets/_Project/Scripts/HectonPlayerMovement.cs |  25 +-
+ Tools/_cline_scratch/_l14_code_slices.txt       | 658 ++++++++++++------------
+ Tools/_cline_scratch/_l14_poll_out.txt          |  82 ++-
+ Tools/_cline_scratch/_l14_poll_state.json       |   6 +-
+ 5 files changed, 444 insertions(+), 366 deletions(-)

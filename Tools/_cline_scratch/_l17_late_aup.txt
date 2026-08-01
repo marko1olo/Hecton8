@@ -1,0 +1,446 @@
+==== LateFrame body 5440-5560 ====
+5440|            // the wall clock here would put machine load back into published simulation state and undo the
+5441|            // determinism the step-bounded dt buys.
+5442|            if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+5443|                return _stepBoundedDeltaSeconds * 1000f;
+5444|
+5445|            float deltaTime = UnityEngine.Time.unscaledDeltaTime;
+5446|            if (!math.isfinite(deltaTime) || deltaTime < 0f)
+5447|                return 0f;
+5448|
+5449|            return deltaTime * 1000f;
+5450|        }
+5451|
+5452|        private static float SanitizeNonNegativeMilliseconds(float milliseconds)
+5453|        {
+5454|            return math.isfinite(milliseconds) && milliseconds > 0f ? milliseconds : 0f;
+5455|        }
+5456|
+5457|        private static byte ResolveFramePacingSeverity(uint flags, float currentFrameMs, float preSimulationMs)
+5458|        {
+5459|            byte severity = 1;
+5460|            if ((flags & SimulationBucketPacingFlags.PreSimulationOverBudget) != 0u ||
+5461|                preSimulationMs > SimulationBucketConstants.PreSimulationBudgetMilliseconds)
+5462|                severity = 2;
+5463|            if ((flags & SimulationBucketPacingFlags.Impossible60Fps) != 0u ||
+5464|                currentFrameMs > SimulationBucketConstants.TargetFrameMilliseconds)
+5465|                severity = 3;
+5466|            if ((flags & SimulationBucketPacingFlags.NonFiniteCost) != 0u)
+5467|                severity = 4;
+5468|
+5469|            return severity;
+5470|        }
+5471|
+5472|        private static void RefreshPauseDepthOfFieldTarget()
+5473|        {
+5474|            bool active = _pauseMenuDepthOfFieldRequested || _pdaDepthOfFieldRequested;
+5475|            float targetWeight = active ? 1f : 0f;
+5476|            if (_pauseDepthOfFieldTargetActive == active &&
+5477|                math.abs(_pauseDepthOfFieldTargetWeight - targetWeight) <= 0.0001f)
+5478|                return;
+5479|
+5480|            float now = UnityEngine.Time.unscaledTime;
+5481|            _pauseDepthOfFieldBlendStartWeight = ResolvePauseDepthOfFieldWeight(now);
+5482|            _pauseDepthOfFieldWeight = _pauseDepthOfFieldBlendStartWeight;
+5483|            _pauseDepthOfFieldTargetWeight = targetWeight;
+5484|            _pauseDepthOfFieldBlendStartTime = now;
+5485|            _pauseDepthOfFieldTargetActive = active;
+5486|        }
+5487|
+5488|        private static float ResolvePauseDepthOfFieldWeight(float unscaledTime)
+5489|        {
+5490|            float normalized = PauseDepthOfFieldBlendSeconds > 0f
+5491|                ? math.saturate((unscaledTime - _pauseDepthOfFieldBlendStartTime) / PauseDepthOfFieldBlendSeconds)
+5492|                : 1f;
+5493|            return math.lerp(_pauseDepthOfFieldBlendStartWeight, _pauseDepthOfFieldTargetWeight, normalized);
+5494|        }
+5495|
+5496|        private static ICameraJuiceSystem ResolveCameraJuiceSystem()
+5497|        {
+5498|            return _cachedCameraJuiceSystem;
+5499|        }
+5500|
+5501|        private static void TickPauseDepthOfField(float unscaledTime)
+5502|        {
+5503|            _pauseDepthOfFieldWeight = ResolvePauseDepthOfFieldWeight(unscaledTime);
+5504|
+5505|            ICameraJuiceSystem cameraJuice = ResolveCameraJuiceSystem();
+5506|            if (cameraJuice != null)
+5507|                cameraJuice.ApplyPauseDepthOfFieldWeight(_pauseDepthOfFieldWeight);
+5508|        }
+5509|
+5510|        private void RunDispatcherLateFrame()
+5511|        {
+5512|#if UNITY_EDITOR
+5513|            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherLateFrame);
+5514|            long completeDispatcherTimestamp = 0L;
+5515|            bool dispatcherPhaseTimingStarted = false;
+5516|#endif
+5517|            if (IsOriginShiftBootstrapLocked)
+5518|                return;
+5519|            if (IsOriginShiftFrameLockedForCurrentFrame)
+5520|            {
+5521|                _dataVault?.UnlockAllocationsAfterAupShift(_aupPreShiftPauseSequence);
+5522|                return;
+5523|            }
+5524|
+5525|            try
+5526|            {
+5527|            DispatcherJobFence.BeginLateFrameSwapWindow();
+5528|            try
+5529|            {
+5530|                CompleteDispatcherSurfaceProbes();
+5531|                UpdatePauseFreezeFrameDitherState();
+5532|                UpdateVisualStaticGlitchState();
+5533|                TickPauseDepthOfField(UnityEngine.Time.unscaledTime);
+5534|#if UNITY_EDITOR
+5535|                completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
+5536|                dispatcherPhaseTimingStarted = true;
+5537|#endif
+5538|                CompleteFoveatedFrameJobs();
+5539|                _foveatedSimulationManager.VisualSyncTick();
+5540|                FlushSimulationBucketVisualSync();
+5541|                HectonXRRuntimeState.FlushVisualSyncShaderState();
+5542|                WfcLaserCutRuntime.FlushVisualSync();
+5543|                HectonShaderGlobalDataVaultBridge.FlushFallbackVisualSync();
+5544|                GlobalRegistry.FlushMathPrecisionShaderState();
+5545|                DistanceMath.FlushVisualSyncShaderState();
+5546|                ConnectionSplineBatchRenderer.FlushVisualSyncShaderState();
+5547|                HomeostasisBrain.FlushVisualSyncShaderState();
+5548|                RunMasterVisualSyncPhase();
+5549|                BeginLateFrameEventBudget();
+5550|                SetActiveLateFrameEventLane(_LateFrameTickablesQueueHash);
+5551|                using (_lateFrameProfilerMarker.Auto())
+5552|                {
+5553|                    for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+5554|                    {
+5555|                        RegistryBucket<ILateFrameTickable> lane = _lateFramePriorityLanes[laneIndex];
+5556|#if UNITY_EDITOR
+5557|                        lane.ValidateNoDestroyedEntriesDebug(nameof(ILateFrameTickable));
+5558|#endif
+5559|                        int count = lane.Count;
+5560|                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+==== gate 4682 context 4660-4720 ====
+4660|                    out NativeArray<int> cursorBuffer))
+4661|            {
+4662|                return;
+4663|            }
+4664|
+4665|            int cursor = cursorBuffer[0];
+4666|            if ((uint)cursor >= (uint)DispatcherBlackBoxFrameCount)
+4667|                cursor = 0;
+4668|
+4669|            uint dispatcherFrameId = ResolveCurrentDispatcherFrameId();
+4670|            bool nonFinite =
+4671|                !math.isfinite(CurrentFrameDeltaTime) ||
+4672|                !math.isfinite(CurrentFrameUnscaledDeltaTime) ||
+4673|                !math.isfinite(_timeDilationScalar) ||
+4674|                !math.isfinite(CurrentFixedInterpolationAlpha) ||
+4675|                !IsFiniteDouble(_timeSnapshot.Time) ||
+4676|                !IsFiniteDouble(_timeSnapshot.UnscaledTime);
+4677|            ushort flags = EncodeDispatcherQualityWeightQ8(_globalQualityWeight01);
+4678|            if (SimulationPaused)
+4679|                flags |= DispatcherBlackBoxFlagPaused;
+4680|            if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+4681|                flags |= DispatcherBlackBoxFlagAupBarrier;
+4682|            if (IsOriginShiftBootstrapLocked || IsOriginShiftFrameLockedForCurrentFrame)
+4683|                flags |= DispatcherBlackBoxFlagOriginShiftLock;
+4684|            if (nonFinite)
+4685|                flags |= DispatcherBlackBoxFlagNonFinite;
+4686|            if (_coreTickDilationFramesRemaining > 0 || _coreTickDilationRestorePending)
+4687|                flags |= DispatcherBlackBoxFlagCoreDilation;
+4688|            if (_temporalCompressionActive)
+4689|                flags |= DispatcherBlackBoxFlagTemporalCompression;
+4690|            if (_adrenalineDilationPhase != AdrenalineDilationPhaseNone)
+4691|                flags |= DispatcherBlackBoxFlagAdrenalineDilation;
+4692|
+4693|            DispatcherBlackBoxEntry entry = default;
+4694|            entry.Frame = dispatcherFrameId;
+4695|            entry.Sequence = ++_dispatcherBlackBoxSequence;
+4696|            entry.DilatedTime = IsFiniteDouble(_timeSnapshot.Time) && _timeSnapshot.Time >= 0d ? _timeSnapshot.Time : 0d;
+4697|            entry.UnscaledTime = IsFiniteDouble(_timeSnapshot.UnscaledTime) && _timeSnapshot.UnscaledTime >= 0d ? _timeSnapshot.UnscaledTime : 0d;
+4698|            entry.DeltaTime = math.isfinite(CurrentFrameDeltaTime) && CurrentFrameDeltaTime >= 0f ? CurrentFrameDeltaTime : 0f;
+4699|            entry.UnscaledDeltaTime = math.isfinite(CurrentFrameUnscaledDeltaTime) && CurrentFrameUnscaledDeltaTime >= 0f ? CurrentFrameUnscaledDeltaTime : 0f;
+4700|            entry.TimeDilationScalar = math.isfinite(_timeDilationScalar)
+4701|                ? math.clamp(_timeDilationScalar, TimeDilationMinimumScalar, HeadlessTimeDilationMaximumScalar)
+4702|                : 0f;
+4703|            entry.TickOverheadMilliseconds = SanitizeNonNegativeMilliseconds(ResolveCurrentFrameMilliseconds());
+4704|            entry.Flags = flags;
+4705|            entry.PendingSurfaceProbes = unchecked((ushort)math.min(ushort.MaxValue, math.max(0, _pendingDispatcherSurfaceProbeCount)));
+4706|            entry.ScheduledSurfaceProbes = unchecked((ushort)math.min(ushort.MaxValue, math.max(0, _scheduledDispatcherSurfaceProbeCount)));
+4707|            entry.HomeostasisPressureLevel = HomeostasisPressureLevel;
+4708|            entry.HomeostasisFoveatedTier = HomeostasisFoveatedTier;
+4709|            entry.AupPreShiftSequence = _aupPreShiftPauseSequence;
+4710|            entry.StateHash = ResolveDispatcherStateHash(flags, dispatcherFrameId);
+4711|            entry.KillSwitchMask = KillSwitchMask;
+4712|            ring[cursor] = entry;
+4713|
+4714|            cursor++;
+4715|            if (cursor >= DispatcherBlackBoxFrameCount)
+4716|                cursor = 0;
+4717|            cursorBuffer[0] = cursor;
+4718|
+4719|            if (nonFinite && !_dispatcherBlackBoxViolationPublished)
+4720|            {
+==== static reset lock 800-830 ====
+800|            _nextDispatcherPhaseWarningLogTime = 0f;
+801|            _nextFoveatedFrameWarningLogTime = 0f;
+802|#endif
+803|            _pauseDepthOfFieldWeight = 0f;
+804|            _pauseDepthOfFieldBlendStartTime = 0f;
+805|            _pauseDepthOfFieldBlendStartWeight = 0f;
+806|            _pauseDepthOfFieldTargetWeight = 0f;
+807|            _pauseMenuDepthOfFieldRequested = false;
+808|            _pdaDepthOfFieldRequested = false;
+809|            _pauseDepthOfFieldTargetActive = false;
+810|            _pauseFreezeFrameDitherActive = false;
+811|            _droppedEventsCounter = 0;
+812|            _visualStaticGlitchActive = false;
+813|            _visualStaticGlitchUntilTime = 0f;
+814|            Volatile.Write(ref _streamingStorageDebtMilli, 0);
+815|            Volatile.Write(ref _streamingStorageDebtSequence, 0);
+816|            Volatile.Write(ref _originShiftBootstrapLockCount, 0);
+817|            Volatile.Write(ref _originShiftFrameLockFrame, -1);
+818|            _lastFramePacingWarningFrame = -1;
+819|            _lastFramePacingHomeostasisFrame = -1;
+820|            Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);
+821|            Shader.SetGlobalFloat(_GamePausedId, 0f);
+822|            Shader.SetGlobalFloat(_HectonVisualStaticGlitchId, 0f);
+823|            Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, 0f);
+824|            Shader.SetGlobalFloat(_SimulationBucketInterpolationAlphaId, 0f);
+825|            _pendingSimulationBucketInterpolationAlpha = 0f;
+826|            _hasPendingSimulationBucketInterpolationAlpha = false;
+827|            _criticalPerformanceSpikeReported = false;
+828|            _temporalCompressionActive = false;
+829|            _temporalCompressionFrameCount = 0;
+830|            _pdaOverBudgetConsecutiveFrames = 0;
+==== aup pause field usage ====
+506|        private uint _aupPreShiftPauseFrameId;
+1815|            _aupPreShiftPauseFrameId = ResolveCurrentDispatcherFrameId();
+1818|        public void ReleaseAupPreShiftPause(uint shiftFrameId)
+1838|            dispatcher.RequestAupPreShiftPause(dispatcher.ResolveCurrentDispatcherFrameId());
+1969|            uint frame = ResolveCurrentDispatcherFrameId();
+2093|            _aupPreShiftPauseFrameId = 0u;
+2211|            uint frameId = ResolveCurrentDispatcherFrameId();
+2311|            ForceCompleteMasterFencesForAupRebase(ResolveCurrentDispatcherFrameId());
+2757|            uint frameId = ResolveCurrentDispatcherFrameId();
+2769|        private uint ResolveCurrentDispatcherFrameId()
+2787|            return ResolveMasterActiveBucket(ResolveCurrentDispatcherFrameId());
+4669|            uint dispatcherFrameId = ResolveCurrentDispatcherFrameId();
+4680|            if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+5232|                                        _aupPreShiftPauseFrameId == dispatcherFrameId;
+5258|                if (_aupPreShiftPauseFrameId == dispatcherFrameId)
+==== BuildMasterDispatcherTiming from 2755 ====
+2755|        private DispatcherTimingDTO BuildMasterDispatcherTiming(float deltaTime, float unscaledDeltaTime, float fixedDeltaTime = 0f)
+2756|        {
+2757|            uint frameId = ResolveCurrentDispatcherFrameId();
+2758|            uint activeBucket = ResolveMasterActiveBucket(frameId);
+2759|            uint activeBucketMask = 1u << (int)(activeBucket & 31u);
+2760|            DispatcherTimingDTO timing = default;
+2761|            timing.FrameDelta = deltaTime;
+2762|            timing.FixedDelta = fixedDeltaTime;
+2763|            timing.TimeScale = unscaledDeltaTime > 0f ? math.saturate(deltaTime / unscaledDeltaTime) : 0f;
+2764|            timing.ActiveBucketMask = activeBucketMask;
+2765|            timing.FrameId = frameId;
+2766|            return timing;
+2767|        }
+==== INPUTHOP emission ====
+1256|                "[H8_INPUTHOP] readHop=" + readHop +
+1254|            // owner: InputDispatcher
+1255|            Hecton8.Core.H8Debug.LogWarning(
+1256|                "[H8_INPUTHOP] readHop=" + readHop +
+1257|                " obs=" + _diagReadObservations +
+1258|                " | lateFrameTick=" + _diagLateFrameTickCalls +
+1259|                " pumpFired=" + _diagPumpFiredCalls +
+1260|                " presimTick=" + _diagPreSimTickCalls +
+1261|                " presimSubsteps=" + _diagPreSimSubsteps +
+1262|                " | captureRan=" + _diagCaptureRan +
+1263|                " captureSkippedByFrameGuard=" + _diagCaptureSkippedByFrameGuard +
+1264|                " | overrideApplied=" + _diagOverrideApplied +
+1265|                " overrideRejected=" + _diagOverrideRejected +
+1266|                " lastOverrideMove=(" + _diagLastOverrideMoveX + "," + _diagLastOverrideMoveY + ")" +
+1267|                " | blockMaskNonZero=" + _diagBlockMaskNonZero +
+1268|                " postMaskMove=(" + _diagLastPostMaskMoveX + "," + _diagLastPostMaskMoveY + ")" +
+1269|                " | publishAttempt=" + _diagPublishAttempts +
+1270|                " publishGuardFail=" + _diagPublishGuardFail +
+1271|                " publishBufferFail=" + _diagPublishBufferFail +
+1272|                " publishOk=" + _diagPublishOk +
+1273|                " | currentStateMove=(" + _currentState.MoveDelta.x + "," + _currentState.MoveDelta.y + ")" +
+1274|                " currentInputStateFrame=" + _currentInputState.Frame +
+1275|                " standardInputFrame=" + _standardInputFrame +
+1276|                " inputStateSequence=" + _inputStateSequence +
+1277|                " | initialized=" + _isInitialized +
+1278|                " regLateFrame=" + _registeredLateFrame +
+1279|                " regSlowTick=" + _registeredSlowTick +
+1280|                " regInputService=" + _registeredInputService +
+1281|                " vaultNull=" + (_dataVault == null) +
+1282|                " vaultBuffersReady=" + _deterministicVaultBuffersReady +
+1283|                " lastPresimFrame=" + _lastPreSimulationInputFrame +
+1284|                " lastCapturedFrame=" + _lastCapturedFrame +
+1285|                " frameIndex=" + Hecton8.Core.SystemDispatcher.CurrentFrameIndex +
+1286|                " frameId=" + Hecton8.Core.SystemDispatcher.CurrentFrameId +
+1287|                " - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the" +
+1288|                " override. lateFrameTick=0 means this component's late-frame lane never ran, so the" +
+1289|                " self-pump never fired and PreSimulationInputTick - the only per-frame caller of" +
+1290|                " CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override" +
+1291|                " lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every" +
+1292|                " capture; compare lastCapturedFrame against frameIndex. captureRan>0 with" +
+1293|                " overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no" +
+1294|                " clock-skew LogError that leaves the silent age>maxFrameAge branch at" +
+1295|                " CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio:" +
+---
+==== FO frame lock call 929 context ====
+899|        }
+900|
+901|        private void BeginShiftWorldImmediate(Vector3 shiftOffset)
+902|        {
+903|            if (!IsFiniteVector(shiftOffset))
+904|            {
+905|                CrashTelemetryBuffer.ReportNanPhysicsRecovery(shiftOffset, Vector3.zero);
+906|                return;
+907|            }
+908|
+909|            if (VectorLengthSq(shiftOffset) <= 0.0001f)
+910|                return;
+911|
+912|            if (_isShiftInProgress)
+913|                return;
+914|
+915|            _isShiftInProgress = true;
+916|            _ = ShiftWorldAsync(shiftOffset, destroyCancellationToken);
+917|        }
+918|
+919|        private async Awaitable ShiftWorldAsync(Vector3 shiftOffset, CancellationToken cancellationToken)
+920|        {
+921|            if (!IsFiniteVector(shiftOffset))
+922|            {
+923|                CrashTelemetryBuffer.ReportNanPhysicsRecovery(shiftOffset, Vector3.zero);
+924|                _isShiftInProgress = false;
+925|                return;
+926|            }
+927|
+928|            _isShiftInProgress = true;
+929|            SystemDispatcher.RequestOriginShiftFrameLock(SystemDispatcher.CurrentFrameIndex);
+930|            bool trackedBodiesPrepared = false;
+931|            bool trackedBodiesFinalized = false;
+932|            bool xrPoseLockActive = false;
+933|            bool vaultAllocationLockActive = false;
+934|            uint nextShiftSequence = _shiftSequence + 1u;
+935|            AupOriginShiftScheduleInfo aupScheduleInfo = default;
+936|            double aupRebaseElapsedMs = 0d;
+937|            int gen0CollectionCountBeforeShift = GC.CollectionCount(0);
+938|            HectonXRRuntimeState.BeginOriginShiftPoseLock();
+939|            xrPoseLockActive = HectonXRRuntimeState.IsXRActive;
+940|            PausePhysicsForShift();
+941|            IPhysicsService physicsService = GlobalRegistry.Physics;
+942|            try
+943|            {
+944|                cancellationToken.ThrowIfCancellationRequested();
+945|                IDataVault vault = _dataVault;
+946|                if (vault != null)
+947|                {
+948|                    AupOriginShiftCoordinator.OpenOrAcquireRuntimeStateForOwnerRoute(vault, out _);
+949|                    vault.LockAllocationsForAupShift(nextShiftSequence);
+950|                    vaultAllocationLockActive = true;
+951|                }
+952|
+953|                if (physicsService != null)
+954|                {
+955|                    physicsService.PrepareTrackedBodiesForOriginShift();
+956|                    trackedBodiesPrepared = true;
+957|                }
+958|
+959|                if (_shiftTargetsDirty)
+960|                    RebuildShiftTargetCache();
+961|
+962|                double3 shiftDouble = new double3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+963|                long aupRebaseStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+964|                JobHandle aupRebaseHandle = AupOriginShiftCoordinator.ScheduleVaultOriginRebase(
+965|                    vault,
+966|                    shiftOffset,
+967|                    _totalOffsetDouble + shiftDouble,
+968|                    nextShiftSequence,
+==== L16 log FO/lock/halt hits ====
+L334|  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <816f70bc2a9c
+L336|  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x00083] in <816f70bc2a9c
+L359|  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x0006a] in <816f70bc2a9c
+L361|  at System.Reflection.RuntimeMethodInfo.Invoke (System.Object obj, System.Reflection.BindingFlags invokeAttr, System.Reflection.Binder binder, System.Object[] parameters, System.Globalization.CultureInfo culture) [0x00083] in <816f70bc2a9c
+L643|[H8_PLAYPROBE] START scene=Assets/_Project/Scenes/00_BOOTSTRAP.unity warmupFrames=240 gameplayFrames=0 batchmode=True saveLeg=on saveSlot=0 saveSeconds=60 artifact='C:\hades\Hecton8\Docs\AgentLogs\h8_playprobe_v0_L16.json'
+L654|Opening scene 'Assets/_Project/Scenes/00_BOOTSTRAP.unity'
+L656|Loaded scene 'Assets/_Project/Scenes/00_BOOTSTRAP.unity'
+L691|Hecton8.Modding.ModLoader:Bootstrap () (at Assets/_Project/Scripts/ModdingAPI/ModLoader.cs:114)
+L707|Hecton8.Graphics.HectonVisualsOrchestrator:AutoBootstrap () (at Assets/_Project/Scripts/Graphics/HectonVisualsOrchestrator.cs:129)
+L727|Hecton8.Core.Determinism.LockstepStateValidator:BootstrapRuntimeOwner () (at Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:424)
+L791|[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node SystemDispatcher
+L798|Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__476:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5488)
+L799|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__476>:DoMoveNext ()
+L800|Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+L801|Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__415:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3595)
+L802|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__415>:DoMoveNext ()
+L803|Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.CancellationToken)
+L804|Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__388:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3029)
+L805|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__388>:DoMoveNext ()
+L806|Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+L807|Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2526)
+L808|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367>:DoMoveNext ()
+L809|Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Func`2<System.Threading.CancellationToken, UnityEngine.Awaitable`1<bool>>,System.Threading.C
+L810|Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__365:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2441)
+L811|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__365>:DoMoveNext ()
+L815|Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2556)
+L816|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367>:DoMoveNext ()
+L820|Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__371:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2670)
+L821|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__371>:DoMoveNext ()
+L831|(Filename: Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs Line: 5488)
+L833|[GameBootstrapper] Waiting for heartbeat for node SystemDispatcher
+L840|Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__476:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5495)
+L841|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__476>:DoMoveNext ()
+L842|Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+L843|Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__415:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3595)
+L844|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__415>:DoMoveNext ()
+L845|Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.CancellationToken)
+L846|Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__388:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3029)
+L847|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__388>:DoMoveNext ()
+L848|Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+L849|Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2526)
+L850|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367>:DoMoveNext ()
+L851|Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Func`2<System.Threading.CancellationToken, UnityEngine.Awaitable`1<bool>>,System.Threading.C
+L852|Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__365:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2441)
+L853|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__365>:DoMoveNext ()
+L857|Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2556)
+L858|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367>:DoMoveNext ()
+L862|Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__371:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2670)
+L863|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__371>:DoMoveNext ()
+L873|(Filename: Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs Line: 5495)
+L875|[GameBootstrapper] TryInitializeBootstrapDependencyNodeWithFallback for node GameTickManager
+L882|Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__476:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5488)
+L883|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__476>:DoMoveNext ()
+L884|Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+L885|Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__415:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3595)
+L886|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__415>:DoMoveNext ()
+L887|Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.CancellationToken)
+L888|Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__388:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3029)
+L889|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__388>:DoMoveNext ()
+L890|Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+L891|Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2526)
+L892|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367>:DoMoveNext ()
+L893|Hecton8.Bootstrap.GameBootstrapper:RunBootstrapPhaseAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,Hecton8.Core.BootstrapStepToken,System.Func`2<System.Threading.CancellationToken, UnityEngine.Awaitable`1<bool>>,System.Threading.C
+L894|Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__365:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2441)
+L895|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapStateMachineAsync>d__365>:DoMoveNext ()
+L899|Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2556)
+L900|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367>:DoMoveNext ()
+L904|Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__371:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2670)
+L905|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeMemoryPreWarmPhaseAsync>d__371>:DoMoveNext ()
+L915|(Filename: Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs Line: 5488)
+L917|[GameBootstrapper] Waiting for heartbeat for node GameTickManager
+L924|Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__476:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5495)
+L925|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeBootstrapLayerNodesAsync>d__476>:DoMoveNext ()
+L926|Hecton8.Bootstrap.GameBootstrapper:InitializeBootstrapLayerNodesAsync (Hecton8.Bootstrap.GameBootstrapper/BootstrapPhase,System.Threading.CancellationToken)
+L927|Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__415:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3595)
+L928|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreLayerAsync>d__415>:DoMoveNext ()
+L929|Hecton8.Bootstrap.GameBootstrapper:InitializeCoreLayerAsync (System.Threading.CancellationToken)
+L930|Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__388:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3029)
+L931|UnityEngine.Awaitable/AwaitableAsyncMethodBuilder`1/StateMachineBox`1<bool, Hecton8.Bootstrap.GameBootstrapper/<InitializeCoreServicesPhaseAsync>d__388>:DoMoveNext ()
+L932|Hecton8.Bootstrap.GameBootstrapper:InitializeCoreServicesPhaseAsync (System.Threading.CancellationToken)
+L933|Hecton8.Bootstrap.GameBootstrapper/<RunBootstrapPhaseAsync>d__367:MoveNext () (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:2526)
+...truncated...
+total_hits_shown=81

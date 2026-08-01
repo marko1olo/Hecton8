@@ -1,0 +1,33 @@
+### probe clock needles
+
+### dispatcher dilation/pause zero path
+501: private bool _simulationPaused;
+584: private static HeadlessTimeMode _headlessTimeMode = HeadlessTimeMode.WallClock;
+593: internal enum HeadlessTimeMode : byte
+629: public bool SimulationPaused => _simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon;
+723: return _headlessTimeMode == HeadlessTimeMode.StepBounded
+1742: public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+1795: if (!_simulationPaused)
+1800: _simulationPaused = true;
+1805: _simulationPaused = false;
+2021: _simulationPaused = false;
+2088: _simulationPaused = false;
+4980: double unscaledTime = _headlessTimeMode == HeadlessTimeMode.StepBounded
+4995: private float ConsumeFrameTimeDilationScalar()
+4997: if (_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon)
+5044: if (_simulationPaused)
+5210: float frameDilationScalar = ConsumeFrameTimeDilationScalar();
+5442: if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+6207: if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+6410: if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+6462: if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+6560: if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+6603: /// <summary>Active dispatcher time source. <see cref="HeadlessTimeMode.WallClock"/> unless a driver opted in.</summary>
+6604: internal static HeadlessTimeMode ActiveHeadlessTimeMode => _headlessTimeMode;
+6607: internal static bool IsStepBoundedTimeActive => _headlessTimeMode == HeadlessTimeMode.StepBounded;
+6611: _headlessTimeMode == HeadlessTimeMode.StepBounded ? _stepBoundedDeltaSeconds : 0f;
+6661: _headlessTimeMode = HeadlessTimeMode.StepBounded;
+6678: _headlessTimeMode = HeadlessTimeMode.WallClock;
+6698: /// The dispatcher's single unscaled-delta source. In <see cref="HeadlessTimeMode.WallClock"/> this
+6703: if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+6890: if (_headlessTimeMode == HeadlessTimeMode.StepBounded)

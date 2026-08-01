@@ -1,0 +1,100 @@
+720|                    SetPhase(TryStartNewGame() ? Phase.WaitingForSettle : Phase.Reporting);
+721|                    break;
+722|
+723|                case Phase.WaitingForSettle:
+724|                    TickWaitingForSettle();
+725|                    break;
+726|
+727|                case Phase.GameplayWarmup:
+728|                    if (!EditorApplication.isPlaying)
+729|                    {
+730|                        Debug.Log($"{Marker} LEFT PLAY MODE during gameplay warmup at frame {_gameplayFrames}");
+731|                        Finish(1);
+732|                        return;
+733|                    }
+734|
+735|                    _gameplayFrames++;
+736|
+737|                    // The window's clock starts on the first tick that actually pumps gameplay, which is
+738|                    // also the tick that starts the driver. See _gameplayWindowStartedAt for why sharing an
+739|                    // origin with the driver's budget is load-bearing and not tidiness.
+740|                    if (_gameplayWindowStartedAt <= 0.0)
+741|                    {
+742|                        _gameplayWindowStartedAt = EditorApplication.timeSinceStartup;
+743|                        double transitionTail = _gameplayWindowStartedAt - _phaseStartedAt;
+744|                        if (transitionTail > 1.0)
+745|                        {
+746|                            Debug.Log(
+747|                                $"{Marker} GAMEPLAY window clock starts here, {transitionTail:F3}s after " +
+748|                                "the settle transition. Measured from the transition instead, that tail " +
+749|                                "would have come straight out of the driver's schedule and truncated its " +
+750|                                "last phase.");
+751|                        }
+752|                    }
+753|
+754|                    // Content before measurement. This runs BEFORE the driver starts and OUTSIDE the
+755|                    // _worldDriverEnabled branch on purpose: a -h8SkipWorldDriver run is supposed to
+756|                    // measure an UNDRIVEN world, not an EMPTY one, and those are different claims.
+757|                    if (!_placementOwnersRepaired)
+758|                    {
+759|                        _placementOwnersRepaired = true;
+760|                        EnableDisabledPlacementOwnersInMemory();
+761|                    }
+762|
+763|                    // SECOND determinism-owner observation: the world scene has arrived, so every
+764|                    // LoadSceneMode.Single of the boot route has already happened. Comparing this against
+765|                    // the BootWarmup sample brackets the window in which the owner disappeared, in ONE run.
+766|                    // Latched by the sample's own Taken flag; the cold FindObjectsByType inside runs once.
+767|                    if (!_determinismOwnerAtGameplayStart.Taken)
+768|                    {
+769|                        SampleDeterminismOwner(ref _determinismOwnerAtGameplayStart, "FirstGameplayTick");
+770|
+771|                        // Order matters and is not cosmetic: the sample above is the EVIDENCE, and a revive
+772|                        // that ran first would overwrite the one observation that proves the owner is
+773|                        // missing in the shipped route.
+774|                        if (_determinismReviveRequested)
+775|                            TryReviveDeterminismOwner();
+776|                    }
+777|
+778|                    // The world driver rides THIS tick. It gets no Update, no coroutine and no timer of
+779|                    // its own, so the schedule advances only while the probe is genuinely pumping the
+780|                    // engine - the same discipline that stops "yield return null" hanging a batchmode run.
+781|                    if (_worldDriverEnabled)
+782|                    {
+783|                        if (!_worldDriverStarted)
+784|                        {
+785|                            _worldDriverStarted = true;
+786|                            H8_HeadlessWorldDriver.Begin();
+787|                            Debug.Log(
+788|                                $"{Marker} WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> " +
+789|                                "(PLIN) and CoreDeterminismSignals input-override; budget " +
+790|                                $"{H8_HeadlessWorldDriver.TotalBudgetSeconds:F0}s of the " +
+791|                                $"{_gameplaySeconds:F0}s gameplay window");
+792|                        }
+793|
+794|                        H8_HeadlessWorldDriver.Tick();
+795|                    }
+796|
+797|                    if (EditorApplication.timeSinceStartup - _gameplayWindowStartedAt >= _gameplaySeconds)
+798|                    {
+799|                        // The window is a WALL clock; what the driver still needs is TICKS. Closing on
+800|                        // the wall alone is what turned a schedule that had entered its Craft phase into
+801|                        // a NOT_EXERCISED row: the driver was stopped on the same tick that entered
+802|                        // Craft, so the phase got zero ticks and the mechanic was never looked at.
+803|                        if (_worldDriverStarted && TryGrantWorldDriverGrace())
+804|                            break;
+805|
+806|                        // Release the locomotion lane before the save leg, or the save would capture a
+807|                        // player under synthetic input and the save/load row would measure the driver.
+808|                        if (_worldDriverStarted)
+809|                        {
+810|                            H8_HeadlessWorldDriver.Stop(
+811|                                H8_HeadlessWorldDriver.StopCause.ProbeGameplayWindowClosed);
+812|                        }
+813|
+814|                        SetPhase(_saveLegEnabled ? Phase.SaveRoundTrip : Phase.Reporting);
+815|                    }
+816|
+817|                    break;
+818|
+819|                case Phase.SaveRoundTrip:

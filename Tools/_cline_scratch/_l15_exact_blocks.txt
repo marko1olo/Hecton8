@@ -1,0 +1,174 @@
+==== GR TryRegisterUpdatable ====
+public static bool TryRegisterUpdatable(IUpdatable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            if (!Application.isPlaying)
+                return false;
+
+            if (!TryEnsureDispatcherRegistration())
+                return false;
+            if (!_updatables.TryRegister(item))
+                return false;
+
+            if (!SystemDispatcher.Register(item, layer))
+            {
+                _updatables.Unregister(item);
+                return false;
+            }
+
+            return true;
+        }
+
+==== GR TryRegisterFixedTickable ====
+public static bool TryRegisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            if (!Application.isPlaying)
+                return false;
+
+            if (!TryEnsureDispatcherRegistration())
+                return false;
+            if (!_fixedTickables.TryRegister(item))
+                return false;
+
+            if (!SystemDispatcher.Register(item, layer))
+            {
+                _fixedTickables.Unregister(item);
+                return false;
+            }
+
+            return true;
+        }
+
+==== GR TryRegisterColdTickable ====
+public static bool TryRegisterColdTickable(IColdTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            if (!Application.isPlaying)
+                return false;
+
+            if (!TryEnsureDispatcherRegistration())
+                return false;
+            if (!_coldTickables.TryRegister(item))
+                return false;
+
+            if (!SystemDispatcher.Register(item, layer))
+            {
+                _coldTickables.Unregister(item);
+                return false;
+            }
+
+            return true;
+        }
+
+==== GR TryRegisterLateFrameTickable ====
+public static bool TryRegisterLateFrameTickable(ILateFrameTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            if (!Application.isPlaying)
+                return false;
+
+            if (!TryEnsureDispatcherRegistration())
+                return false;
+
+            return SystemDispatcher.Register(item, layer);
+        }
+
+==== SD Register IUpdatable ====
+public static bool Register(IUpdatable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            if (!GetLane(layer).TryRegister(item))
+                return false;
+
+            if (item is IFoveatedSimulationTarget foveatedTarget)
+                _foveatedSimulationManager.RegisterTarget(foveatedTarget);
+
+            return true;
+        }
+
+==== SD Register IFixedTickable ====
+public static bool Register(IFixedTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            return GetFixedLane(layer).TryRegister(item);
+        }
+
+==== SD Register IColdTickable ====
+public static bool Register(IColdTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            return GetColdLane(layer).TryRegister(item);
+        }
+
+==== SD Register ILateFrameTickable ====
+public static bool Register(ILateFrameTickable item, PriorityLayer layer)
+        {
+            if (item == null)
+                return false;
+
+            return GetLateFrameLane(layer).TryRegister(item);
+        }
+
+==== HPM Ensure+TryRegister ====
+public void EnsureDispatcherRegistration()
+        {
+            TryRegisterToDispatchers();
+        }
+
+        private void TryRegisterToDispatchers()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            // L14: sticky false -> TryRegister once. sticky true -> leave registered.
+            // Do NOT Unregister+Register every Ensure: WorldDriver calls Ensure every settle/swim
+            // tick; thrash would drop HPM from the fixed lane mid-hold. RegistryBucket.TryRegister
+            // returns false when Contains (not idempotent-true), so re-call alone cannot heal a
+            // missing entry either - membership loss is rare; SD L14 no longer bootstrap-skips
+            // Player lane, so once registered FixedTick runs for hop2/Sample/intent.
+            if (!_registeredTick)
+            {
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            }
+
+            if (!_registeredFixedTick)
+            {
+                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+            }
+
+
+            if (!_registeredColdTick)
+            {
+                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+            }
+
+            TryRegisterLateFrameTickable();
+
+            if (!_registeredPlayerMovementContracts)
+            {
+                IPlayerMovementContracts currentContracts = GlobalRegistry.PlayerMovementContracts;
+                if (currentContracts == null)
+                    GlobalRegistry.RegisterPlayerMovementContracts(this);
+
+                _registeredPlayerMovementContracts = ReferenceEquals(GlobalRegistry.PlayerMovementContracts, this);
+            }
+
+            if (!_registeredHotSwapListener)
+                _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+        }

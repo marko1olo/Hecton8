@@ -1,0 +1,14 @@
+fix(v0): arm step-bounded sim clock on PlayModeProbe batchmode route (L16)
+
+PlayModeProbe never called EnableStepBoundedTime. Batchmode WallClock often
+yields unscaledDeltaTime==0 so RunFixedStepAccumulator early-outs and
+HPM.FixedTick never runs — hop2 ABSENT and movementIntent01max=0 despite
+WorldDriver publishing hot overrides.
+
+Mirror HeadlessSimulationRunner.EnsureHeadlessSimulationClock:
+unpause + RequestHeadlessTimeDilation(100) + EnableStepBoundedTime(0.04)
+on gameplay window start and before WorldDriver.Begin, with throttled
+sustain during GameplayWarmup.
+
+Product-only. No mock hop2. No FixedTick/GetState from driver.
+Swim PASS still requires LIVE hop2 + intent>0.

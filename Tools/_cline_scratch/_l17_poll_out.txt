@@ -1,0 +1,38 @@
+ts=2026-08-01 04:39:01
+pid=12368 alive=False
+log_bytes=1062883 artifact=False
+fodrain=2 foLock_last=0 dispBoot_last=0
+simclock=2 stepBound1=True
+inputhop=1 lateUnfrozen=True pumpUnfrozen=False
+late=[33, 0] pump=[1]
+hop2_present=0 hop2_absent=0
+intent_max=None vals=[]
+swim=[]
+verdict=[]
+done=[]
+--- hits tail ---
+UnityEngine.DebugLogHandler:Internal_LogException(Exception, Object)
+UnityEngine.DebugLogHandler:LogException(Exception, Object)
+UnityEngine.Logger:LogException(Exception, Object)
+UnityEngine.Debug:LogException(Exception)
+Exception while executing InitializeOnLoad for ImguiElementUtils.Init
+MissingFieldException: Field not found: System.Action`1<UnityEngine.UIElements.IMGUIContainer> UnityEngine.UIElements.UIElementsUtility.s_BeginContainerCallback Due to: Could not find field in class
+  at (wrapper managed-to-native) System.Reflection.RuntimeMethodInfo.InternalInvoke(System.Reflection.RuntimeMethodInfo,object,object[],System.Exception&)
+Rethrow as TargetInvocationException: Exception has been thrown by the target of an invocation.
+UnityEngine.DebugLogHandler:Internal_LogException_Injected(Exception, IntPtr)
+UnityEngine.DebugLogHandler:Internal_LogException(Exception, Object)
+UnityEngine.DebugLogHandler:LogException(Exception, Object)
+UnityEngine.Logger:LogException(Exception, Object)
+UnityEngine.Debug:LogException(Exception)
+Hecton8.Bootstrap.GameBootstrapper:TryRegisterNoOpAudioFallback (string,System.Exception) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:6864)
+Hecton8.Bootstrap.GameBootstrapper:ReportAudioBootstrapStubInstalled (string,System.Exception) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:6903)
+Hecton8.Bootstrap.GameBootstrapper:TryRegisterNoOpAudioFallback (string,System.Exception) (at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:6866)
+MissingReferenceException: The variable worldPrefab of ItemData doesn't exist anymore.
+  at UnityEngine.Object+MarshalledUnityObject.TryThrowEditorNullExceptionObject (UnityEngine.Object unityObj, System.String parameterName) [0x000b4] in <baf9d421e5ac43acaf162d71aef6a04c>:0
+  at UnityEngine.Bindings.ThrowHelper.ThrowNullReferenceException (System.Object obj) [0x0000a] in <baf9d421e5ac43acaf162d71aef6a04c>:0
+[H8_PLAYPROBE] SIMCLOCK ensure reason=gameplay-window-start pausedBefore=0 dilBefore=0.9 dilAfter=100 pausedAfter=0 stepBoundBefore=0 stepBoundAfter=1 stepBoundOk=1 stepDt=0.04 armed=1
+[H8_PLAYPROBE] FODRAIN reason=gameplay-window-start flushClean=1 calls=1 clean=1 foHasOrigin=1 foShift=0 foPhysicsPause=0 foLock=0 foPendingScenes=0 foTargetsDirty=0 foBarrier=0 dispBoot=0 dispFrame=0 paused=0 dil=100 stepBound=1 gameReady=0
+[H8_PLAYPROBE] SIMCLOCK ensure reason=worlddriver-begin pausedBefore=0 dilBefore=100 dilAfter=100 pausedAfter=0 stepBoundBefore=1 stepBoundAfter=1 stepBoundOk=1 stepDt=0.04 armed=1
+[H8_PLAYPROBE] WORLDDRIVER begin - producing on SignalBus<PlayerInputSignal> (PLIN) and CoreDeterminismSignals input-override; budget 79s of the 90s gameplay window
+[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=33 pumpFired=1 presimTick=338 presimSubsteps=368 | captureRan=329 captureSkippedByFrameGuard=41 | overrideApplied=7 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=368 publishGuardFail=0 publishBufferFail=0 publishOk=368 | currentStateMove=(0,1) currentInputStateFrame=367 standardInputFrame=368 inp
+[H8_PLAYPROBE] FODRAIN reason=gameplay-tick flushClean=1 calls=243 clean=243 foHasOrigin=1 foShift=0 foPhysicsPause=0 foLock=0 foPendingScenes=0 foTargetsDirty=0 foBarrier=0 dispBoot=0 dispFrame=0 paused=0 dil=100 stepBound=1 gameReady=0

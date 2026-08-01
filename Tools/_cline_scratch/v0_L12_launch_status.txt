@@ -1,0 +1,16 @@
+start 31.07.2026 18:55:13,72
+repo=C:\hades\Hecton8
+HEAD=
+8e02edf3f
+fix=Tick_AdvancePhase_then_PublishLocomotionIntent+PhaseAuthorsInputIntent_clear
+LOCK_NO
+UNITY_OK
+launching
+method=Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe.Run
+log=Docs\AgentLogs\h8_playprobe_v0_L12.log
+artifact=Docs\AgentLogs\h8_playprobe_v0_L12.json
+flags=-batchmode -projectPath -executeMethod Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe.Run -h8StartGame 1 -h8TimeoutSeconds 900 -h8MenuSeconds 120 -h8SettleSeconds 180 -h8GameplaySeconds 90
+NO_QUIT=1 NO_NOGRAPHICS=1 NO_FORCEMENULOAD=1 NO_H8HEADLESS=
+PID=12928
+start_time=31.07.2026 18:55:14,18
+launched

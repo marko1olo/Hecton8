@@ -1,0 +1,180 @@
+=== TryRegisterToTickManager ===
+295|            TryRegisterToTickManager();
+328|        private void TryRegisterToTickManager()
+1644|                        TryRegisterToTickManager();
+
+=== RetryRuntimeStartToolGrantIfPending ===
+395|            RetryRuntimeStartToolGrantIfPending();
+492|        /// presentation; this lane only keeps <see cref="RetryRuntimeStartToolGrantIfPending"/>
+497|            RetryRuntimeStartToolGrantIfPending();
+1302|        /// The real retry now lives on <see cref="RetryRuntimeStartToolGrantIfPending"/>, driven from
+1364|                    // RetryRuntimeStartToolGrantIfPending. The deferral latch is therefore part of the gate,
+1396|                // ONCE, not once per attempt. RetryRuntimeStartToolGrantIfPending now calls this method from
+1451|        private void RetryRuntimeStartToolGrantIfPending()
+
+=== IFixedTickable ===
+45|    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, IFixedTickable, ILateFrameTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
+
+=== FixedTick ===
+45|    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, IFixedTickable, ILateFrameTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
+168|        private bool _registeredToFixedTick;
+343|            if (!_registeredToFixedTick)
+346|                // schedules few IUpdatable ticks while FixedTick runs continuously; without this
+349|                _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+362|            if (_registeredToFixedTick)
+364|                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+365|                _registeredToFixedTick = false;
+495|        public void FixedTick(float fixedDeltaTime)
+
+=== 0x1E ===
+347|                // lane STARTERGRANT stays deferred (L08 refusalMask 0x1E) and IsToolAvailableInSlot
+
+=== refusalMask ===
+347|                // lane STARTERGRANT stays deferred (L08 refusalMask 0x1E) and IsToolAvailableInSlot
+1414|                    " refusalMask=0x" + firstRefusalMask.ToString("X") +
+
+=== RuntimeStartToolGrant ===
+97|        [SerializeField] private int _debugRuntimeStartToolGrants;
+147|        private uint _lastRuntimeStartToolGrantRefusalMask;
+148|        private int _lastRuntimeStartToolGrantRefusedSlot = -1;
+149|        private int _lastRuntimeStartToolGrantRefusedItemHash;
+155|        private const int RuntimeStartToolGrantMaxRetryAttempts = 600;
+159|        private const int RuntimeStartToolGrantEagerAttempts = 16;
+162|        private const int RuntimeStartToolGrantRecoveryStride = 60;
+165|        private const int RuntimeStartToolGrantRefusalStride = 15;
+395|            RetryRuntimeStartToolGrantIfPending();
+492|        /// presentation; this lane only keeps <see cref="RetryRuntimeStartToolGrantIfPending"/>
+497|            RetryRuntimeStartToolGrantIfPending();
+1302|        /// The real retry now lives on <see cref="RetryRuntimeStartToolGrantIfPending"/>, driven from
+1364|                    // RetryRuntimeStartToolGrantIfPending. The deferral latch is therefore part of the gate,
+1385|            _debugRuntimeStartToolGrants += granted;
+1396|                // ONCE, not once per attempt. RetryRuntimeStartToolGrantIfPending now calls this method from
+1403|                _lastRuntimeStartToolGrantRefusalMask = firstRefusalMask;
+1404|                _lastRuntimeStartToolGrantRefusedSlot = firstRefusedSlot;
+1405|                _lastRuntimeStartToolGrantRefusedItemHash = firstRefusedItemHash;
+1451|        private void RetryRuntimeStartToolGrantIfPending()
+1460|            if (_runtimeStartToolGrantRetryAttempts >= RuntimeStartToolGrantMaxRetryAttempts)
+1462|                AnnounceRuntimeStartToolGrantGiveUpOnce();
+1477|            bool eager = _runtimeStartToolGrantRetryAttempts <= RuntimeStartToolGrantEagerAttempts;
+1481|                if (!eager && (_runtimeStartToolGrantRetryAttempts % RuntimeStartToolGrantRecoveryStride) != 0)
+1493|                     (_runtimeStartToolGrantRetryAttempts % RuntimeStartToolGrantRefusalStride) != 0)
+1514|        private void AnnounceRuntimeStartToolGrantGiveUpOnce()
+1545|                "quick-slot tool item for " + RuntimeStartToolGrantMaxRetryAttempts.ToString() +
+1550|                " firstRefusedSlot=" + _lastRuntimeStartToolGrantRefusedSlot.ToString() +
+1551|                " firstRefusalMask=0x" + _lastRuntimeStartToolGrantRefusalMask.ToString("X") +
+
+=== vault ===
+152|        // bootstrap step that could still be holding the inventory's vault lanes (arena growth, a raised
+160|        // Cold storage repair is ~54 vault lane binds. Asking more often than this does not make a dead
+1446|        /// While the grant is open it is a handful of field reads plus three vault-lane resolves - no
+
+=== STARTERGRANT ===
+347|                // lane STARTERGRANT stays deferred (L08 refusalMask 0x1E) and IsToolAvailableInSlot
+1298|        /// That is the whole reason the Tool row stayed blocked with <c>STARTERGRANT deferred</c> logged
+1407|                    "[PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one " +
+1422|                    "[PlayerToolManager] STARTERGRANT applied - the assigned quick-slot tool items are owned." +
+1428|                    "[PlayerToolManager] STARTERGRANT satisfied - every assigned quick-slot tool item was " +
+1544|                "[PlayerToolManager] STARTERGRANT ABANDONED - the player inventory refused every assigned " +
+
+=== IsToolAvailableInSlot ===
+305|            // loadout, which is exactly what IsToolAvailableInSlot reports on.
+347|                // lane STARTERGRANT stays deferred (L08 refusalMask 0x1E) and IsToolAvailableInSlot
+392|            // selectable at all (IsToolAvailableInSlot -> HasToolInInventory -> CountAvailableTotal), so it
+954|        public bool IsToolAvailableInSlot(int slotIndex)
+1279|        /// in the inventory. Slot availability IS ownership: <see cref="IsToolAvailableInSlot"/> resolves
+1357|                    // IsToolAvailableInSlot resolves through HasToolInInventory -> CountAvailableTotal, which
+1472|            // run reads IsToolAvailableInSlot after roughly a dozen dispatcher ticks, not a dozen seconds. A
+1546|                " dispatcher ticks, so IsToolAvailableInSlot stays false for every slot and the player has " +
+
+=== RegisterFixedTickable ===
+349|                _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+
+=== void Tick ===
+389|        public void Tick(float deltaTime)
+
+=== void Update ===
+
+=== Awake ===
+132|        /// Zapominaem pri Awake — eto «normalnoe» polozhenie instrumenta.
+259|        private void Awake()
+301|            // the headless route: slot 0 (Tool_Scanner_Held) carries DataArchaeologyRuntime, whose Awake
+1484|                // PlayerInventory cannot repair itself: a failed bind in its Awake sets enabled = false,
+
+=== OnEnable ===
+81|        [SerializeField] private bool warmupAssignedToolPoolsOnEnable = true;
+285|        private void OnEnable()
+300|            // managed exception out of Instantiate and takes the remainder of OnEnable with it. Measured on
+1288|        /// change there were exactly two callers - <c>OnEnable</c> and
+1290|        /// activationStep='Complete') <c>OnEnable</c> is hit twice: once inside <c>HectonPlayerSpawner</c>'s
+1437|        /// The grant's original two attempts both sat inside <c>OnEnable</c>, which on the headless route
+1485|                // which means its OnEnable never ran, which means its hot-swap listener was never
+1509|        /// session happens inside <c>OnEnable</c> during <c>Instantiate</c>, where "not ready yet" and
+1565|            if (_assignedPoolsWarmed || !warmupAssignedToolPoolsOnEnable)
+
+=== Start ===
+73|        [Header("Production Starter Loadout")]
+75|        [SerializeField] private bool grantAssignedToolItemsOnRuntimeStart = true;
+77|        [SerializeField, Min(0)] private int runtimeStartToolGrantBudget = 4;
+97|        [SerializeField] private int _debugRuntimeStartToolGrants;
+141|        private bool _runtimeStartToolGrantCompleted;
+142|        private int _runtimeStartToolGrantRetryAttempts;
+143|        private bool _runtimeStartToolGrantGiveUpAnnounced;
+144|        private bool _runtimeStartToolGrantRefusedAtLeastOnce;
+146|        private bool _runtimeStartToolGrantDeferralAnnounced;
+147|        private uint _lastRuntimeStartToolGrantRefusalMask;
+148|        private int _lastRuntimeStartToolGrantRefusedSlot = -1;
+149|        private int _lastRuntimeStartToolGrantRefusedItemHash;
+155|        private const int RuntimeStartToolGrantMaxRetryAttempts = 600;
+159|        private const int RuntimeStartToolGrantEagerAttempts = 16;
+162|        private const int RuntimeStartToolGrantRecoveryStride = 60;
+165|        private const int RuntimeStartToolGrantRefusalStride = 15;
+306|            TryGrantAssignedToolItemsOnRuntimeStart();
+345|                // Starter grant retry must not depend on render Tick alone. Batchmode / V0 probe
+395|            RetryRuntimeStartToolGrantIfPending();
+492|        /// presentation; this lane only keeps <see cref="RetryRuntimeStartToolGrantIfPending"/>
+497|            RetryRuntimeStartToolGrantIfPending();
+1302|        /// The real retry now lives on <see cref="RetryRuntimeStartToolGrantIfPending"/>, driven from
+1307|        private void TryGrantAssignedToolItemsOnRuntimeStart()
+1310|                _runtimeStartToolGrantCompleted ||
+1311|                !grantAssignedToolItemsOnRuntimeStart)
+1319|            int grantBudget = math.min(math.max(runtimeStartToolGrantBudget, 0), toolPrefabs.Length);
+1322|                _runtimeStartToolGrantCompleted = true;
+1364|                    // RetryRuntimeStartToolGrantIfPending. The deferral latch is therefore part of the gate,
+1368|                    if (refused == 0 && !_runtimeStartToolGrantDeferralAnnounced)
+1385|            _debugRuntimeStartToolGrants += granted;
+1386|            _runtimeStartToolGrantCompleted = refused == 0;
+1388|                _runtimeStartToolGrantRefusedAtLeastOnce = true;
+1396|                // ONCE, not once per attempt. RetryRuntimeStartToolGrantIfPending now calls this method from
+1399|                if (_runtimeStartToolGrantDeferralAnnounced)
+1402|                _runtimeStartToolGrantDeferralAnnounced = true;
+1403|                _lastRuntimeStartToolGrantRefusalMask = firstRefusalMask;
+1404|                _lastRuntimeStartToolGrantRefusedSlot = firstRefusedSlot;
+1405|                _lastRuntimeStartToolGrantRefusedItemHash = firstRefusedItemHash;
+1423|                    " retryAttempts=" + _runtimeStartToolGrantRetryAttempts.ToString());
+1439|        /// <see cref="TryGrantAssignedToolItemsOnRuntimeStart"/>. So any inventory condition that was not
+1445|        /// HOT-PATH COST. Once <c>_runtimeStartToolGrantCompleted</c> latches, this is a single bool read.
+1451|        private void RetryRuntimeStartToolGrantIfPending()
+1453|            if (_runtimeStartToolGrantCompleted ||
+1454|                !grantAssignedToolItemsOnRuntimeStart ||
+1460|            if (_runtimeStartToolGrantRetryAttempts >= RuntimeStartToolGrantMaxRetryAttempts)
+1462|                AnnounceRuntimeStartToolGrantGiveUpOnce();
+1466|            _runtimeStartToolGrantRetryAttempts++;
+1477|            bool eager = _runtimeStartToolGrantRetryAttempts <= RuntimeStartToolGrantEagerAttempts;
+1481|                if (!eager && (_runtimeStartToolGrantRetryAttempts % RuntimeStartToolGrantRecoveryStride) != 0)
+1492|                     _runtimeStartToolGrantRefusedAtLeastOnce &&
+1493|                     (_runtimeStartToolGrantRetryAttempts % RuntimeStartToolGrantRefusalStride) != 0)
+1501|            TryGrantAssignedToolItemsOnRuntimeStart();
+1514|        private void AnnounceRuntimeStartToolGrantGiveUpOnce()
+1516|            if (_runtimeStartToolGrantGiveUpAnnounced)
+1519|            _runtimeStartToolGrantGiveUpAnnounced = true;
+1545|                "quick-slot tool item for " + RuntimeStartToolGrantMaxRetryAttempts.ToString() +
+1550|                " firstRefusedSlot=" + _lastRuntimeStartToolGrantRefusedSlot.ToString() +
+1551|                " firstRefusalMask=0x" + _lastRuntimeStartToolGrantRefusalMask.ToString("X") +
+1747|            TryGrantAssignedToolItemsOnRuntimeStart();
+
+=== OnDisable ===
+311|        private void OnDisable()
+1295|        /// <c>OnDisable</c>, so the Player-slot notification that drives the rebind retry never reaches it -
+
+=== OnDestroy ===
+

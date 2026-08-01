@@ -1,0 +1,64 @@
+=== L16 POLL r=8 t=212s pid=12424 alive=True ===
+log_bytes=1609412 lines=16787 grew=True
+SIMCLOCK count=2 stepBound1=True last=reason=worlddriver-begin stepBoundAfter=1
+hop1_lines=0 hop2_lines=0 hop2_obs=0
+movementIntent01max_peak=0.0 values_tail=[0.0]
+currentStateMove nonzero=True first_nz=(0.0, 1.0) last=(0.0, 0.0)
+has_result=True compile_err=False
+result_lines=['[H8_PLAYPROBE] RESULT 1 Required Route row(s) reported FAIL on a run that was asked to start the game, so the exit code now reflects them. Read the MOMENT lines above for which rows and why.', '[H8_PLAYPROBE] RESULT failures=1']
+artifact=False snip=
+GATE clock_ok=True hop2_ok=False intent_ok=False
+done=True
+
+--- raw_json ---
+{
+  "ts": "2026-07-31T20:42:28.222033+00:00",
+  "elapsed_sec": 212,
+  "round": 8,
+  "pid": 12424,
+  "pid_alive": true,
+  "log_grew": true,
+  "status_tail": "_NO\nUNITY_OK\nlaunching\nmethod=Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe.Run\nlog=Docs\\AgentLogs\\h8_playprobe_v0_L16.log\nartifact=Docs\\AgentLogs\\h8_playprobe_v0_L16.json\nflags=-batchmode -projectPath -executeMethod Hecton8.EditorTools.Diagnostics.H8_HeadlessPlayModeProbe.Run -h8StartGame 1 -h8TimeoutSeconds 900 -h8MenuSeconds 120 -h8SettleSeconds 180 -h8GameplaySeconds 90\nNO_QUIT=1 NO_NOGRAPHICS=1 NO_FORCEMENULOAD=1 NO_H8HEADLESS=\nPID=12424\nstart_time=01.08.2026  0:38:16,48\nlaunched",
+  "summary": {
+    "log_bytes": 1609412,
+    "log_lines": 16787,
+    "simclock_count": 2,
+    "simclock_reasons": [
+      "gameplay-window-start",
+      "worlddriver-begin"
+    ],
+    "simclock_stepBoundAfter_any1": true,
+    "simclock_last": "reason=worlddriver-begin stepBoundAfter=1",
+    "hop2_line_count": 0,
+    "hop2_sample": [],
+    "hop2_obs_hits": 0,
+    "hop1_line_count": 0,
+    "movementIntent01max_values": [
+      0.0
+    ],
+    "movementIntent01max_peak": 0.0,
+    "currentStateMove_count": 6,
+    "currentStateMove_nonzero": true,
+    "currentStateMove_last": [
+      0.0,
+      0.0
+    ],
+    "currentStateMove_first_nonzero": [
+      0.0,
+      1.0
+    ],
+    "result_lines": [
+      "[H8_PLAYPROBE] RESULT 1 Required Route row(s) reported FAIL on a run that was asked to start the game, so the exit code now reflects them. Read the MOMENT lines above for which rows and why.",
+      "[H8_PLAYPROBE] RESULT failures=1"
+    ],
+    "has_result": true,
+    "swim_pass_mention": false,
+    "fail_mention": false,
+    "worlddriver_ticks": 21,
+    "fixedtick_mentions": 0,
+    "gameplay_window": true,
+    "compile_error": false
+  },
+  "artifact_exists": false,
+  "artifact_snip": ""
+}
