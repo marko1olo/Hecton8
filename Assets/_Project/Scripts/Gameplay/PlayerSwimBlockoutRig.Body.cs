@@ -464,6 +464,11 @@ namespace Hecton8.Gameplay
                 return;
 
             BodyModePose pose = ResolveBodyModePose(mode);
+            // Profile was accepted on this path and then ignored for every lower-body field.
+            // Hands/shoulders already read CurrentProfile (suit scale, guide bases); legs/fins
+            // must respond to the same authored cadence, kick mass and surface sync or a designer
+            // retune of SwimPresentationProfile only moves the arms.
+            ApplySwimProfileToBodyPose(ref pose, profile, mode);
             float lookDownWeight = ResolveLookDownWeight();
             float bodyTargetWeight = math.max(pose.BodyWeight, ResolveBodyTargetWeight(mode));
             float lowerBodyWeightScale = math.lerp(0.72f, 1f, math.saturate(lowerBodyVisibilityFloor * 2f));
@@ -606,6 +611,97 @@ namespace Hecton8.Gameplay
             _debugBodyVisualWeight = _bodyVisualWeight;
             _debugLowerBodyWeight = _lowerBodyVisualWeight;
 #endif
+        }
+
+        /// <summary>
+        /// Scales the mode-local lower-body pose by the active <see cref="SwimPresentationProfile"/>.
+        /// Mode tables stay the structural baseline; profile multiplies cadence, kick travel, fin pitch,
+        /// surface kick sync and suit-family mass so legs/fins track the same asset the arms already use.
+        /// </summary>
+        private static void ApplySwimProfileToBodyPose(
+            ref BodyModePose pose,
+            SwimPresentationProfile profile,
+            PlayerSwimPresentationMode mode)
+        {
+            if (profile == null)
+                return;
+
+            float cadenceReference;
+            float cadenceAuthored;
+            switch (mode)
+            {
+                case PlayerSwimPresentationMode.SurfaceTread:
+                    cadenceReference = 0.6f;
+                    cadenceAuthored = profile.SurfaceTreadCadence;
+                    break;
+                case PlayerSwimPresentationMode.SurfaceStroke:
+                    cadenceReference = 1.05f;
+                    cadenceAuthored = profile.SurfaceStrokeCadence;
+                    break;
+                case PlayerSwimPresentationMode.UnderwaterSprint:
+                    cadenceReference = 0.95f * 1.35f;
+                    cadenceAuthored = profile.UnderwaterStrokeCadence * profile.SprintCadenceMultiplier;
+                    break;
+                case PlayerSwimPresentationMode.Dry:
+                case PlayerSwimPresentationMode.None:
+                    cadenceReference = 1f;
+                    cadenceAuthored = 1f;
+                    break;
+                default:
+                    cadenceReference = 0.95f;
+                    cadenceAuthored = profile.UnderwaterStrokeCadence;
+                    break;
+            }
+
+            float cadenceScale = math.clamp(
+                cadenceAuthored / math.max(0.0001f, cadenceReference),
+                0.35f, 2.5f);
+            pose.KickCadenceScale *= cadenceScale;
+
+            const float kickTravelReference = 0.06f + 0.035f;
+            float kickTravelAuthored = profile.StrokeSurgeAmplitude + profile.StrokeVerticalAmplitude;
+            float kickTravelScale = math.clamp(kickTravelAuthored / kickTravelReference, 0.35f, 2.5f);
+            pose.KickAmplitude *= kickTravelScale;
+            pose.KickLift *= kickTravelScale;
+            pose.KickForward *= kickTravelScale;
+            pose.KickBackward *= kickTravelScale;
+
+            if (mode == PlayerSwimPresentationMode.SurfaceTread ||
+                mode == PlayerSwimPresentationMode.SurfaceStroke)
+            {
+                float handSync = math.saturate(profile.SurfaceHandSync);
+                pose.KickSync = math.lerp(pose.KickSync, handSync, 0.65f);
+            }
+
+            float glideDelta = math.saturate(profile.GlideBias) - 0.45f;
+            if (mode == PlayerSwimPresentationMode.UnderwaterGlide ||
+                mode == PlayerSwimPresentationMode.UnderwaterNeutral)
+            {
+                pose.Streamline = math.max(0f, pose.Streamline + glideDelta * 0.12f);
+            }
+
+            pose.PelvisDrop = math.max(0f, pose.PelvisDrop + (profile.InertialSinkAmplitude - 0.012f));
+
+            float finPitchScale = math.clamp(profile.StrokePitchAmplitude / 2.25f, 0.5f, 2f);
+            pose.FinPitch *= finPitchScale;
+
+            switch (profile.AuthoredStrokeStyle)
+            {
+                case SwimPresentationProfile.StrokeStyle.LightExpedition:
+                    pose.KickCadenceScale *= 1.08f;
+                    pose.KickAmplitude *= 0.94f;
+                    break;
+                case SwimPresentationProfile.StrokeStyle.HeavyIndustrial:
+                    pose.KickCadenceScale *= 0.82f;
+                    pose.KickAmplitude *= 1.12f;
+                    pose.PelvisDrop += 0.008f;
+                    break;
+                case SwimPresentationProfile.StrokeStyle.PoweredAssist:
+                    pose.KickCadenceScale *= 1.18f;
+                    pose.KickAmplitude *= 1.06f;
+                    pose.Streamline += 0.02f;
+                    break;
+            }
         }
 
         private BodyModePose ResolveBodyModePose(PlayerSwimPresentationMode mode)
