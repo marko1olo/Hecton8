@@ -1,0 +1,285 @@
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1241:        /// <see cref="CanServiceItemAdds"/>). This method must never be the thing that decides storage is
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1242-        /// healthy - it only removes staleness as an explanation for a refusal.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1243-        ///
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1244-        /// Ordering matters: call it AFTER the last allocation in a batch, never between allocations, or the
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1245-        /// next allocation invalidates what it just repaired.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1246-        /// </summary>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1247-        private void RefreshPlayerInventoryVaultHandlesCold()
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1248-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1249-            _itemHashes.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1250-            _stackCounts.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1251-            _itemCondition.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1252-            _itemDurability.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1253-            _craftLockedCounts.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1254-            _anchorStateFlags.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1255-            _itemStateFlags.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1256-            _itemGenetics.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1257-            _qualityMilli.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1258-            _durabilities.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1259-            _lastUpdateUnixSeconds.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1260-            _scavengeSimStackCounts.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1261-            _simulationOccupiedCells.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1262-            _anchorUnitMassKg.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1263-            _anchorUnitVolumeM3.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1264-            _anchorUnitRadiationSv.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1265-            _derivedMassVolumeScratch.TryRefreshHandle();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1266-            _radioactiveConversionAnchors.TryRefreshHandle();
+--
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1701:            // once, and TryRecoverRuntimeStorageCold lets the consumer that noticed re-arm it.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1702-            if (!TryBindRuntimeStorageCold())
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1703-            {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1704-                enabled = false;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1705-                return;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1706-            }
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1707-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1708-            if (_traumaDispatcher == null)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1709-                TryGetComponent(out _traumaDispatcher);
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1710-        }
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1711-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1712-        private void OnEnable()
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1713-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1714-            CacheRegistryServicesCold();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1715-            TryRegisterHotSwapListener();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1716-            TryRegisterSaveParticipant();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1717-            TryRegisterPostSimulationDispatcher();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1718-            TryRegisterSlowTick();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1719-            TryRegisterLateFrameTick();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1720-            TryRegisterPhysicsImpactListener();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1721-        }
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1722-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1723-        private void OnDisable()
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1724-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1725-            CaptureScavengingLootOracleSignals();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-1726-            ApplyDeferredScavengingLootOracleSignals();
+--
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2371:        // Refusal-reason bits for DescribeAddRefusalMask. Kept public because the only consumers are cold
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2372-        // callers that must PRINT the reason: a bare false from TryAddItem cannot distinguish "this inventory
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2373-        // can never store anything for the rest of the session" from "this one item does not fit right now",
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2374-        // and every caller that defers on a refusal has to make that distinction to be debuggable.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2375-        public const uint AddRefusalComponentDisabled = 1u << 0;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2376-        public const uint AddRefusalGridMissing = 1u << 1;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2377-        public const uint AddRefusalStackLaneDead = 1u << 2;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2378-        public const uint AddRefusalSimStackLaneDead = 1u << 3;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2379-        public const uint AddRefusalSimOccupancyLaneDead = 1u << 4;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2380-        public const uint AddRefusalCatalogMissing = 1u << 5;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2381-        public const uint AddRefusalHashZero = 1u << 6;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2382-        public const uint AddRefusalDescriptorMissing = 1u << 7;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2383-        public const uint AddRefusalPhysicalCapacity = 1u << 8;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2384-        public const uint AddRefusalGridPlacement = 1u << 9;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2385-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2386-        /// <summary>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2387-        /// COLD DIAGNOSTIC ONLY. Names which <see cref="TryAddItem"/> precondition is refusing a single-unit
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2388-        /// add; returns 0 when one unit would be accepted.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2389-        ///
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2390-        /// Why this exists: <see cref="TryAddItem"/> is the strictest add overload in the class - it gates on
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2391-        /// <c>CanAcceptQuantity</c> first, which additionally requires the two PREFLIGHT SCRATCH lanes
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2392-        /// (<c>_scavengeSimStackCounts</c>, <c>_simulationOccupiedCells</c>) to be live, while
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2393-        /// <c>TryAddItemWithState</c>/<c>TryAddItemWithGenetics</c> skip that gate entirely. Those lanes, and
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2394-        /// <c>_stackCounts</c>, are vault-backed and bound exactly once in <c>Awake</c> via
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2395-        /// <c>BindPlayerInventoryVaultBuffers</c>. If that bind fails, <c>Awake</c> sets <c>enabled = false</c>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2396-        /// and the loss is PERMANENT for the session: <c>Awake</c> never re-runs on
+--
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2408:        public uint DescribeAddRefusalMask(int itemHashId)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2409-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2410-            uint mask = 0u;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2411-            if (!enabled)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2412-                mask |= AddRefusalComponentDisabled;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2413-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2414-            if (_grid == null)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2415-                mask |= AddRefusalGridMissing;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2416-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2417-            if (!_stackCounts.IsCreated)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2418-                mask |= AddRefusalStackLaneDead;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2419-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2420-            if (!_scavengeSimStackCounts.IsCreated)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2421-                mask |= AddRefusalSimStackLaneDead;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2422-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2423-            if (!_simulationOccupiedCells.IsCreated)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2424-                mask |= AddRefusalSimOccupancyLaneDead;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2425-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2426-            if (itemCatalog == null)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2427-                mask |= AddRefusalCatalogMissing;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2428-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2429-            if (itemHashId == 0)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2430-                mask |= AddRefusalHashZero;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2431-            else if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2432-                mask |= AddRefusalDescriptorMissing;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2433-            else if (!CanAcceptAdditionalPhysicalCapacity(in runtimeDescriptor, 1))
+--
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2452:        /// <see cref="DescribeAddRefusalMask"/>. Note that <c>IsCreated</c> on a vault lane re-resolves
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2453-        /// through the vault instead of reading a cached flag - that is the point. A raised
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2454-        /// <c>GlobalDataVault</c> compaction fence makes <c>TryResolveHandle</c> refuse, which flips these
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2455-        /// to false and later back to true with no callback firing anywhere, so the only honest way to know
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2456-        /// is to ask at the moment of use.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2457-        /// </summary>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2458-        /// <remarks>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2459-        /// KNOWN RESIDUAL - do not "fix" this with a partial refresh. The three IsCreated checks below can
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2460-        /// go false long after a successful bind, because ANY other system allocating a vault buffer splits
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2461-        /// an arena free block and re-stamps meta.Version for every live buffer
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2462-        /// (GlobalDataVault.RebuildMetadataBlockIndices), staling all 49 of this component's cached
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2463-        /// descriptors at once. Refreshing only these three lanes here would make this method return true
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2464-        /// while the other 46 stay stale, and a write through a stale lane silently no-ops
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2465-        /// (InventoryVaultLane's indexer setter returns early when TryAcquireWriteLock refuses) - so
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2466-        /// TryAddItem would write the hash and drop the stack count, which is worse than refusing.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2467-        /// Recovery must stay all-or-nothing: whoever notices the refusal calls
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2468:        /// <see cref="TryRecoverRuntimeStorageCold"/>, which re-arms every lane together.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2469-        /// </remarks>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2470:        internal bool CanServiceItemAdds()
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2471-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2472-            return enabled &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2473-                   _grid != null &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2474-                   itemCatalog != null &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2475-                   _stackCounts.IsCreated &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2476-                   _scavengeSimStackCounts.IsCreated &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2477-                   _simulationOccupiedCells.IsCreated;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2478-        }
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2479-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2480-        /// <summary>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2481-        /// COLD. Ensures inventory storage is live, re-arming the vault bind if it is not, and returns
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2482-        /// whether <see cref="TryAddItem"/> can now do work. Cheap no-op when storage is already live, so a
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2483-        /// caller may treat this as "ensure storage" rather than "repair storage". Never call it from a
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2484-        /// per-frame path without a stride - it re-binds ~54 vault lanes.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2485-        ///
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2486-        /// WHY THIS HAS TO BE DRIVEN FROM OUTSIDE. <c>Awake</c> binds these lanes exactly once and sets
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2487-        /// <c>enabled = false</c> on any refusal. That also guarantees <c>OnEnable</c> never runs, so
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2488-        /// <c>TryRegisterHotSwapListener</c> never runs, so the
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2489-        /// <c>GlobalRegistryServiceSlot.DataVault</c> notification that would drive a rebind can never
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2490-        /// reach this component - and the DataVault case only calls <c>RebindPlayerInventoryVaultReferences</c>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2491-        /// anyway, which re-points at a vault without re-allocating anything. So a bind refusal that was
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2492-        /// only ever transient (raised compaction fence, key table or arena momentarily exhausted) became
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2493-        /// permanent for the session: every <c>TryAddItem</c> false, every <c>CountAvailableTotal</c> zero.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2494-        /// Recovery therefore belongs to whoever noticed the refusal; <c>PlayerToolManager</c>'s starter
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2495-        /// grant is the first consumer to do so.
+--
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2505:        internal bool TryRecoverRuntimeStorageCold()
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2506-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2507:            if (CanServiceItemAdds())
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2508-                return true;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2509-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2510-            // _grid == null means Awake has not completed its grid construction. Do not build the grid here:
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2511-            // InventoryGrid's constructor THROWS on allocation failure, and this method is reachable from a
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2512-            // dispatcher tick, where an escaping throw would amputate the caller's whole lane.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2513-            //
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2514-            // This used to be documented as "Awake bailed on the editor-only DTO layout guard", i.e. as a
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2515-            // permanent unrecoverable state. It is not that in practice: the layout guard's assertions are
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2516-            // satisfied by construction (see the note in Awake) and cannot fail, so the reachable meaning of
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2517-            // _grid == null is that Awake has not RUN yet - a consumer polled this component before its
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2518-            // Awake, which is ordinary on the AddComponent bootstrap route. Returning false is still correct,
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2519-            // but the caller must treat it as "not ready yet" and keep its retry budget alive rather than
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2520-            // reading it as the unrecoverable layout verdict and giving up.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2521-            if (_grid == null)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2522-                return false;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2523-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2524-            if (!TryBindRuntimeStorageCold())
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2525-                return false;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2526-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2527-            if (!enabled)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2528-                enabled = true;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2529-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2530:            return CanServiceItemAdds();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2531-        }
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2532-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2533-        /// <summary>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2534-        /// Binds every vault-backed lane and allocates the managed cold scratch this inventory needs.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2535-        /// Idempotent and re-entrant: the single owner of this sequence, called by <c>Awake</c> for the first
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2536:        /// bind and by <see cref="TryRecoverRuntimeStorageCold"/> for every re-arm after that.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2537-        /// </summary>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2538-        private bool TryBindRuntimeStorageCold()
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2539-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2540-            if (_grid == null)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2541-                return false;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2542-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2543-            CacheRegistryServicesCold();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2544-            int cellCount = columns * rows;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2545-            if (cellCount <= 0)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2546-            {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2547-                AnnounceRuntimeStorageFailureOnce("grid sizing");
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2548-                return false;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2549-            }
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2550-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2551-            if (!BindPlayerInventoryVaultBuffers(cellCount))
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2552-            {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2553-                AnnounceRuntimeStorageFailureOnce("GlobalDataVault lane binding");
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2554-                return false;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2555-            }
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2556-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2557-            if (!AllocateSalinityCorrosionScratchCold(cellCount))
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2558-            {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2559-                ReleasePlayerInventoryVaultBuffers();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2560-                AnnounceRuntimeStorageFailureOnce(
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2561-                    _salinityScratchFailureDetail == null
+--
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2570:            // TryRecoverRuntimeStorageCold, and a re-bind of buffers that already hold live data returns the
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2571-            // SAME pointers untouched (GlobalDataVault hands back the existing block whenever
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2572-            // existingMeta.Length >= requiredLength). Clearing on that path silently empties a populated
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2573-            // inventory with no log line and no save event - the player's items just cease to exist. So the
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2574-            // clear is skipped only when this component has itself already completed a bind-and-clear at this
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2575-            // exact cell count and has not released the lanes since; a release, a first bind, or a grid resize
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2576-            // all still clear.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2577-            if (!_vaultBuffersInitialized || _boundVaultCellCount != cellCount)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2578-            {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2579-                ClearPlayerInventoryVaultBuffersCold();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2580-                _vaultBuffersInitialized = true;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2581-                _boundVaultCellCount = cellCount;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2582-            }
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2583-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2584-            RegisterNativeMemorySentinel();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2585-            if (_sortBuffer == null || _sortBuffer.Length != cellCount)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2586-                _sortBuffer = new ItemPlacement[cellCount];
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2587-            // COLD ALLOC: ushort[cellCount] - bulk transfer merge-cap scratch - owner: PlayerInventory
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2588-            if (_bulkCompactionMaxStackBuffer == null || _bulkCompactionMaxStackBuffer.Length != cellCount)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2589-                _bulkCompactionMaxStackBuffer = new ushort[cellCount];
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2590-            // COLD ALLOC: ItemAcquiredSignal[ItemAcquiredSignal.ExpectedCapacity] - late-frame to slow-tick scavenging ingress - owner: PlayerInventory
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2591-            if (_pendingScavengingItemSignals == null)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2592-                _pendingScavengingItemSignals = new ItemAcquiredSignal[PendingScavengingItemSignalCapacity];
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2593-            // COLD ALLOC: PendingInventoryCommand[16] - late-frame to slow-tick command ingress - owner: PlayerInventory
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2594-            if (_pendingInventoryCommands == null)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2595-                _pendingInventoryCommands = new PendingInventoryCommand[PendingInventoryCommandSignalCapacity];
+--
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2603:            // scratch guard passes, this method returns true, and CanServiceItemAdds still reports false at the
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2604-            // first add - storage that reports itself healthy and refuses every item, which is the exact
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2605-            // failure mode this whole path is supposed to make impossible.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2606-            //
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2607-            // Anything added below this line that touches the vault needs the sweep moved after it.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2608-            RefreshPlayerInventoryVaultHandlesCold();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2609-            return true;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2610-        }
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2611-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2612-        private bool _runtimeStorageFailureAnnounced;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2613-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2614-        /// <summary>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2615-        /// Names the failing storage step ONCE per component. Cold: string building and Unity object context
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2616-        /// are fine here, and the latch is what keeps a strided retry from turning this into log spam.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2617-        ///
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2618-        /// <c>Awake</c> now has exactly ONE vault-bind bailout and it DOES route through here, because
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2619-        /// <see cref="TryBindRuntimeStorageCold"/> announces before every one of its three false returns
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2620-        /// (grid sizing, lane binding, scratch validation). So a bind failure is no longer invisible: this is
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2621-        /// the line to look for when the starter-tool grant presents as four assigned prefabs, four valid
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2622-        /// catalog entries and no inventory to grant into. Note the latch is per component and never reset,
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2623-        /// so a lane bind that fails, is announced, and is later repaired by
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2624:        /// <see cref="TryRecoverRuntimeStorageCold"/> leaves one stale error in the log with no paired
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2625-        /// recovery line - read this as "storage was dead at least once", not as "storage is dead now".
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2626-        /// </summary>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2627-        private void AnnounceRuntimeStorageFailureOnce(string failedStep)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2628-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2629-            if (_runtimeStorageFailureAnnounced)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2630-                return;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2631-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2632-            _runtimeStorageFailureAnnounced = true;
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2633-            Hecton8.Core.H8Debug.LogError(
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2634-                "[PlayerInventory] STORAGE UNAVAILABLE - " + failedStep + " failed, so this inventory " +
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2635-                "cannot store or report ANY item: every TryAddItem returns false and every " +
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2636-                "CountAvailableTotal returns 0 until it binds. object='" + name +
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2637-                "' columns=" + columns.ToString() +
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2638-                " rows=" + rows.ToString() +
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2639-                " cells=" + (columns * rows).ToString() +
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2640-                " dataVault=" + (_cachedDataVault != null ? "present" : "NULL") +
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2641-                " itemCatalog=" + (itemCatalog != null ? itemCatalog.name : "NULL") +
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2642-                " vaultBufferBase=" + _vaultBufferBase.ToString() +
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2643-                " gridAllocated=" + (_grid != null ? "yes" : "no") + ".",
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2644-                this);
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2645-        }
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2646-
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2647-        /// <summary>
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2648-        /// Preflights a mixed set of item quantities against one shared grid simulation without mutating live inventory.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs-2649-        /// </summary>

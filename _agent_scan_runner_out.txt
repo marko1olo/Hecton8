@@ -1,0 +1,88 @@
+18:    public sealed class HeadlessSimulationRunner : MonoBehaviour, IFastTickable, IFrostTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+42:        // the ecology schedules work until the frame's LateFrameTick completes it, because a Burst job owns
+47:        // RunFrostTick (:5267); the ecology's SlowTick calls ScheduleSectorSolve (EcosystemDirector.cs:2729),
+49:        // reached from the ecology's LateFrameTick (:2792), which the dispatcher runs in a LATER player-loop
+51:        // scheduled the solve, every FrostTick that follows it in that same frame - including this runner's,
+63:        // FIX 2026-07-30: day-boundary biomass sampling no longer runs in FrostTick. FrostTick only
+64:        // accumulates completed-day debt (_pendingDayAudits). The sample itself runs in LateFrameTick,
+65:        // AFTER ecology's Environment-lane LateFrameTick has called CompleteScheduledSimulation and
+80:        private const int MaxDailyAuditsPerFrostTick = 4;
+85:        private const float TimeDilationScalar = 100f;
+124:        private double _simulatedSeconds;
+125:        private double _dayAccumulatorSeconds;
+128:        // BootstrapState.IsGameReady (or bootstrap presence cleared). Measuring from BeginStartup
+130:        // dispatcher FrostTick — p0_gameready 2026-07-30 BOOTSTRAP_TIMEOUT at short-circuit.
+143:        // Day boundaries detected in FrostTick; biomass sample deferred to LateFrameTick (post job fence).
+174:        private bool _ecologyReady;
+222:                // either, because ColdTick only runs after RegisterRuntimeLanes.
+251:        private void Update()
+259:            // dependency chain burned ~180s; short-circuit PublishGameReady then immediate
+260:            // BOOTSTRAP_TIMEOUT with zero post-GameReady FrostTick budget.
+261:            if (_started && !_ecologyReady)
+263:                TryArmEcologyWaitClock();
+264:                // Ready-mark is a gate, not a sim-tick substitute. FrostTick can starve while
+267:                // TryMarkEcologyReady never ran (Frost-only). Same starvation-proof pattern as
+269:                TryMarkEcologyReady();
+270:                if (_ecologyReady)
+275:                MaybeLogEcologyWaitProgress();
+309:        public void FastTick(float deltaTime)
+319:            if (safeDelta > 0f && _ecologyReady)
+321:                _simulatedSeconds += safeDelta;
+322:                _dayAccumulatorSeconds += safeDelta;
+347:        public void LateFrameTick()
+376:            if (_ecologyReady && _pendingDayAudits > 0)
+377:                DrainPendingDayAudits();
+380:        public void FrostTick()
+385:            TryArmEcologyWaitClock();
+386:            TryMarkEcologyReady();
+387:            if (!_ecologyReady)
+397:            // same dispatcher update, and the job fence stays up until ecology's LateFrameTick. Queue
+398:            // day debt only; LateFrameTick drains it after the fence clears.
+401:            while (_dayAccumulatorSeconds >= _daySeconds &&
+403:                   auditsThisTick < MaxDailyAuditsPerFrostTick &&
+406:                _dayAccumulatorSeconds -= _daySeconds;
+421:            if (!_ecologyReady)
+423:                TryArmEcologyWaitClock();
+467:                RegisterRuntimeLanes();
+471:                GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+499:        private void RegisterRuntimeLanes()
+507:            _registeredFast = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Core);
+508:            _registeredFrost = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Core);
+511:            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+521:                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Core);
+527:                GlobalRegistry.UnregisterFrostTickable(this, PriorityLayer.Core);
+539:                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+574:            RegisterRuntimeLanes();
+630:            // ecology-ready transition instead - see TryMarkEcologyReady. This method runs the instant the
+657:        /// Uses IsGameReady so headless short-circuit and full ActivatePlayer paths both qualify.
+660:        private void TryArmEcologyWaitClock()
+667:            if (!BootstrapState.IsGameReady)
+702:                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0") +
+709:        private void MaybeLogEcologyWaitProgress()
+747:        private void TryMarkEcologyReady()
+755:            // see the deliveredTimeDilation note in WriteResult.
+756:            if (readyNow && !_ecologyReady)
+777:            _ecologyReady = readyNow;
+792:                return elapsed > 0.0 ? _simulatedSeconds / elapsed : 0.0;
+816:        /// Drains day-boundary audits deferred from FrostTick. Invoked only from LateFrameTick so the
+819:        private void DrainPendingDayAudits()
+824:                   auditsThisTick < MaxDailyAuditsPerFrostTick &&
+828:                ExecuteDailyAudit();
+833:        private void ExecuteDailyAudit()
+921:        /// Sampling now runs in LateFrameTick after the ecology job fence clears, so the 2026-07-29
+1255:            TryWriteResult(0, "SUCCESS");
+1269:            TryWriteResult(exitCode, status);
+1290:            // TryMarkEcologyReady sets Debug.unityLogger.filterLogType = LogType.Warning (:574) so
+1425:        private void WriteResult(int exitCode, string status)
+1446:                WriteInvariant(writer, _simulatedSeconds);
+1449:                // actually granted. SystemDispatcher.RunFastTick is a fixed-step substep loop capped at
+1450:                // MaxCadenceSubstepsPerFrame = 4 calls of FastTick(1/60) per frame, DISCARDING the overflow
+1453:                // need 1500 fps of full-world player loop. A reader who saw only "timeDilation": 100 would
+1456:                writer.Write(",\"timeDilationNominal\":");
+1457:                WriteInvariant(writer, TimeDilationScalar);
+1458:                writer.Write(",\"timeDilationDelivered\":");
+1490:                // was the opposite: TryMarkEcologyReady sets filterLogType = LogType.Warning (:574)
+1514:        private void TryWriteResult(int exitCode, string status)
+1518:                WriteResult(exitCode, status);
+1540:        /// see the field note in <see cref="WriteResult"/>.
+2010:        private sealed class HeadlessCsvWriter : IDisposable

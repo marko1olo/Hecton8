@@ -1,0 +1,18 @@
+1606|        private bool _registeredFixedTick;
+1755|            EnsureJuiceProcessor();
+4584|            EnsureJuiceProcessor();
+4732|            _registeredFixedTick = false;
+4744|        private void EnsureJuiceProcessor()
+4808|            if (_registeredTick && _registeredFixedTick && _registeredLateFrameTick) return;
+5026|            if (_registeredFixedTick)
+5029|                _registeredFixedTick = false;
+5470|        public void EnsureDispatcherRegistration()
+5485|            if (!_registeredFixedTick)
+5487|                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+5519|            if (_registeredFixedTick)
+5522|                _registeredFixedTick = false;
+8099|                if (IsGameplayInputBlockedByMenu())
+8221|            if (IsGameplayInputBlockedByMenu())
+9774|        private static bool IsGameplayInputBlockedByMenu()
+9776|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+9936|            EnsureJuiceProcessor();

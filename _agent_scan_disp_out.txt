@@ -1,0 +1,364 @@
+111:        private const float HeadlessTimeDilationMaximumScalar = 100f;
+112:        private const float TimeDilationPausedEpsilon = 0.0001f;
+492:        private float _timeDilationScalar = 1f;
+493:        private float _prePauseTimeDilationScalar = 1f;
+501:        private bool _simulationPaused;
+621:        public float TimeDilationScalar => _timeDilationScalar;
+629:        public bool SimulationPaused => _simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon;
+868:                RunDispatcherUpdateFromPlayerLoop);
+986:        private static void RunDispatcherUpdateFromPlayerLoop()
+992:            dispatcher.RunDispatcherUpdate();
+1739:            SetTimeDilationScalar(scalar, reasonHash, publishImmediate: true);
+1742:        public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+1746:            SetTimeDilationScalar(
+1749:                HeadlessTimeDilationMaximumScalar,
+1762:            if (SimulationPaused)
+1766:                ? math.clamp(scalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+1775:                _coreTickDilationRestoreScalar = _timeDilationScalar;
+1781:            SetTimeDilationScalar(safeScalar, reasonHash, publishImmediate: true);
+1791:        public void RequestSimulationPause(bool paused, uint reasonHash = 0u)
+1795:                if (!_simulationPaused)
+1796:                    _prePauseTimeDilationScalar = ResolvePauseRestoreScalar();
+1800:                _simulationPaused = true;
+1801:                SetTimeDilationScalar(0f, reasonHash, publishImmediate: true);
+1805:            _simulationPaused = false;
+1806:            SetTimeDilationScalar(_prePauseTimeDilationScalar, reasonHash, publishImmediate: true);
+1930:        private void SetTimeDilationScalar(float scalar, uint reasonHash, bool publishImmediate)
+1932:            SetTimeDilationScalar(
+1940:        private void SetTimeDilationScalar(
+1950:            if (math.abs(_timeDilationScalar - safeScalar) <= 0.0001f)
+1953:            _timeDilationScalar = safeScalar;
+1968:            float scalar = _timeDilationScalar;
+1976:            dilationSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+1985:            visualSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+1994:                    _prePauseTimeDilationScalar = signal.RestoreScalar;
+1996:                RequestSimulationPause(signal.Paused != 0, signal.SourceHash);
+2013:            _timeDilationScalar = 1f;
+2014:            _prePauseTimeDilationScalar = 1f;
+2021:            _simulationPaused = false;
+2086:            _timeDilationScalar = 1f;
+2087:            _prePauseTimeDilationScalar = 1f;
+2088:            _simulationPaused = false;
+4673:                !math.isfinite(_timeDilationScalar) ||
+4678:            if (SimulationPaused)
+4700:            entry.TimeDilationScalar = math.isfinite(_timeDilationScalar)
+4701:                ? math.clamp(_timeDilationScalar, TimeDilationMinimumScalar, HeadlessTimeDilationMaximumScalar)
+4995:        private float ConsumeFrameTimeDilationScalar()
+4997:            if (_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon)
+5001:                return _timeDilationScalar;
+5018:                : _timeDilationScalar;
+5020:                ? math.max(TimeDilationPausedEpsilon, restoreScalar)
+5044:            if (_simulationPaused)
+5085:            float currentScalar = math.isfinite(_timeDilationScalar)
+5086:                ? math.clamp(_timeDilationScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+5100:            _adrenalineDilationStartScalar = math.isfinite(_timeDilationScalar)
+5101:                ? math.clamp(_timeDilationScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+5123:                SetTimeDilationScalar(scalar, _adrenalineDilationSourceHash, publishImmediate: true);
+5136:            SetTimeDilationScalar(restoredScalar, _adrenalineDilationSourceHash, publishImmediate: true);
+5141:                ? math.clamp(_adrenalineDilationRestoreScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+5144:            SetTimeDilationScalar(finalScalar, AdrenalineDilationReasonHash, publishImmediate: true);
+5153:            SetTimeDilationScalar(_coreTickDilationRestoreScalar, _coreTickDilationReasonHash, publishImmediate: true);
+5158:        private void RunDispatcherUpdate()
+5210:                float frameDilationScalar = ConsumeFrameTimeDilationScalar();
+5284:                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+5318:                RunFastTick(deltaTime, blockGameplayLanes);
+5324:                RunFrostTick(deltaTime, blockGameplayLanes);
+5344:                CrashTelemetryBuffer.ReportTimeDilationState(_timeDilationScalar, tickOverheadMilliseconds);
+5587:            if (!SimulationPaused)
+6031:            bool paused = dispatcher != null && dispatcher.SimulationPaused;
+6253:                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6284:                            if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6365:        private void RunFastTick(float deltaTime, bool blockGameplayLanes)
+6384:                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6439:                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6498:                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6796:                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6866:                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6902:        private void RunFrostTick(float deltaTime, bool blockGameplayLanes)
+6920:                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+7115:        private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
+
+==== BODY @1742 ====
+1742:        public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+1743:        {
+1744:            ClearCoreTickDilationBurst();
+1745:            ClearAdrenalineDilation();
+1746:            SetTimeDilationScalar(
+1747:                scalar,
+1748:                TimeDilationMinimumScalar,
+1749:                HeadlessTimeDilationMaximumScalar,
+1750:                reasonHash,
+1751:                publishImmediate: true);
+1752:        }
+1753:
+1754:        /// <summary>
+1755:        /// Requests an exact frame-count core tick dilation burst.
+1756:        /// </summary>
+1757:        public void RequestCoreTickDilation(float scalar, int frameCount, uint reasonHash = 0u)
+1758:        {
+1759:            if (frameCount <= 0)
+1760:                return;
+1761:
+1762:            if (SimulationPaused)
+1763:                return;
+1764:
+1765:            float safeScalar = math.isfinite(scalar)
+1766:                ? math.clamp(scalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+1767:                : 1f;
+1768:
+1769:            if (_coreTickDilationRestorePending)
+1770:            {
+1771:                _coreTickDilationRestorePending = false;
+1772:            }
+1773:            else if (_coreTickDilationFramesRemaining <= 0)
+1774:            {
+1775:                _coreTickDilationRestoreScalar = _timeDilationScalar;
+1776:            }
+1777:
+1778:            _coreTickDilationScalar = safeScalar;
+1779:            _coreTickDilationFramesRemaining = math.max(_coreTickDilationFramesRemaining, frameCount);
+1780:            _coreTickDilationReasonHash = reasonHash;
+1781:            SetTimeDilationScalar(safeScalar, reasonHash, publishImmediate: true);
+1782:        }
+1783:
+1784:        public void SetThermalCriticalSlowTick(bool active)
+1785:        {
+1786:            _thermalCriticalSlowTickActive = active;
+1787:            if (active && _slowTickAccumulator > ThermalCriticalSlowTickIntervalSeconds)
+1788:                _slowTickAccumulator = ThermalCriticalSlowTickIntervalSeconds;
+1789:        }
+1790:
+1791:        public void RequestSimulationPause(bool paused, uint reasonHash = 0u)
+1792:        {
+1793:            if (paused)
+1794:            {
+1795:                if (!_simulationPaused)
+1796:                    _prePauseTimeDilationScalar = ResolvePauseRestoreScalar();
+
+==== BODY @1791 ====
+1791:        public void RequestSimulationPause(bool paused, uint reasonHash = 0u)
+1792:        {
+1793:            if (paused)
+1794:            {
+1795:                if (!_simulationPaused)
+1796:                    _prePauseTimeDilationScalar = ResolvePauseRestoreScalar();
+1797:
+1798:                ClearCoreTickDilationBurst();
+1799:                ClearAdrenalineDilation();
+1800:                _simulationPaused = true;
+1801:                SetTimeDilationScalar(0f, reasonHash, publishImmediate: true);
+1802:                return;
+1803:            }
+1804:
+1805:            _simulationPaused = false;
+1806:            SetTimeDilationScalar(_prePauseTimeDilationScalar, reasonHash, publishImmediate: true);
+1807:        }
+1808:
+1809:        public void RequestAupPreShiftPause(uint shiftFrameId)
+1810:        {
+1811:            SetAupJobAdmissionBarrier(active: true);
+1812:            _dataVault?.LockAllocationsForAupShift(shiftFrameId);
+1813:            ForceCompleteMasterFencesForAupRebase(shiftFrameId);
+1814:            _aupPreShiftPauseSequence = shiftFrameId;
+1815:            _aupPreShiftPauseFrameId = ResolveCurrentDispatcherFrameId();
+1816:        }
+1817:
+1818:        public void ReleaseAupPreShiftPause(uint shiftFrameId)
+1819:        {
+1820:            SetAupJobAdmissionBarrier(active: false);
+1821:        }
+1822:
+1823:        private void SetAupJobAdmissionBarrier(bool active)
+1824:        {
+1825:            IJobAdmissionService jobAdmission = _jobAdmission;
+1826:            if (jobAdmission == null || !jobAdmission.IsInitialized)
+1827:                return;
+1828:
+1829:            jobAdmission.SetAupBarrierActive(active);
+1830:        }
+1831:
+1832:        public static void RequestDebugAupHardFence()
+1833:        {
+1834:            SystemDispatcher dispatcher = ActiveRuntimeInstance;
+1835:            if (dispatcher == null)
+1836:                return;
+1837:
+1838:            dispatcher.RequestAupPreShiftPause(dispatcher.ResolveCurrentDispatcherFrameId());
+1839:        }
+1840:
+1841:        public static int ResolveInnerloopBatchCount(int elementCount, int minBatch, int maxBatch)
+1842:        {
+1843:            int safeMin = math.max(1, minBatch);
+1844:            int safeMax = math.max(safeMin, maxBatch);
+1845:            if (elementCount <= safeMin)
+
+==== BODY @1930 ====
+1930:        private void SetTimeDilationScalar(float scalar, uint reasonHash, bool publishImmediate)
+1931:        {
+1932:            SetTimeDilationScalar(
+1933:                scalar,
+1934:                TimeDilationMinimumScalar,
+1935:                TimeDilationMaximumScalar,
+1936:                reasonHash,
+1937:                publishImmediate);
+1938:        }
+1939:
+1940:        private void SetTimeDilationScalar(
+1941:            float scalar,
+1942:            float minimumScalar,
+1943:            float maximumScalar,
+1944:            uint reasonHash,
+1945:            bool publishImmediate)
+1946:        {
+1947:            float safeScalar = math.isfinite(scalar)
+1948:                ? math.clamp(scalar, minimumScalar, maximumScalar)
+1949:                : 1f;
+1950:            if (math.abs(_timeDilationScalar - safeScalar) <= 0.0001f)
+1951:                return;
+1952:
+1953:            _timeDilationScalar = safeScalar;
+1954:            _timeDilationSequence++;
+1955:            if (_timeDilationSequence == 0u)
+1956:                _timeDilationSequence = 1u;
+1957:
+1958:            if (publishImmediate)
+1959:                PublishTimeDilationState(reasonHash);
+1960:        }
+1961:
+1962:        private void PublishTimeDilationState(uint reasonHash)
+1963:        {
+1964:            if (_lastPublishedTimeDilationSequence == _timeDilationSequence)
+1965:                return;
+1966:
+1967:            _lastPublishedTimeDilationSequence = _timeDilationSequence;
+1968:            float scalar = _timeDilationScalar;
+1969:            uint frame = ResolveCurrentDispatcherFrameId();
+1970:            TimeDilationSignal dilationSignal = default;
+1971:            dilationSignal.Scalar = scalar;
+1972:            dilationSignal.UnscaledDeltaTime = CurrentFrameUnscaledDeltaTime;
+1973:            dilationSignal.Sequence = _timeDilationSequence;
+1974:            dilationSignal.Frame = frame;
+1975:            dilationSignal.ReasonHash = reasonHash;
+1976:            dilationSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+1977:            SimulationSignalRoute.TryQueueTimeDilation(in dilationSignal);
+1978:
+1979:            BulletTimeVisualSignal visualSignal = default;
+1980:            visualSignal.Intensity01 = math.saturate((BulletTimePostScalarThreshold - scalar) / BulletTimePostScalarThreshold);
+1981:            visualSignal.Scalar = scalar;
+1982:            visualSignal.Frame = frame;
+1983:            visualSignal.Sequence = _timeDilationSequence;
+1984:            visualSignal.QualityWeightBits = math.asuint(_globalQualityWeight01);
+
+==== BODY @1940 ====
+1940:        private void SetTimeDilationScalar(
+1941:            float scalar,
+1942:            float minimumScalar,
+1943:            float maximumScalar,
+1944:            uint reasonHash,
+1945:            bool publishImmediate)
+1946:        {
+1947:            float safeScalar = math.isfinite(scalar)
+1948:                ? math.clamp(scalar, minimumScalar, maximumScalar)
+1949:                : 1f;
+1950:            if (math.abs(_timeDilationScalar - safeScalar) <= 0.0001f)
+1951:                return;
+1952:
+1953:            _timeDilationScalar = safeScalar;
+1954:            _timeDilationSequence++;
+1955:            if (_timeDilationSequence == 0u)
+1956:                _timeDilationSequence = 1u;
+1957:
+1958:            if (publishImmediate)
+1959:                PublishTimeDilationState(reasonHash);
+1960:        }
+1961:
+1962:        private void PublishTimeDilationState(uint reasonHash)
+1963:        {
+1964:            if (_lastPublishedTimeDilationSequence == _timeDilationSequence)
+1965:                return;
+1966:
+1967:            _lastPublishedTimeDilationSequence = _timeDilationSequence;
+1968:            float scalar = _timeDilationScalar;
+1969:            uint frame = ResolveCurrentDispatcherFrameId();
+1970:            TimeDilationSignal dilationSignal = default;
+1971:            dilationSignal.Scalar = scalar;
+1972:            dilationSignal.UnscaledDeltaTime = CurrentFrameUnscaledDeltaTime;
+1973:            dilationSignal.Sequence = _timeDilationSequence;
+1974:            dilationSignal.Frame = frame;
+1975:            dilationSignal.ReasonHash = reasonHash;
+1976:            dilationSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+1977:            SimulationSignalRoute.TryQueueTimeDilation(in dilationSignal);
+1978:
+1979:            BulletTimeVisualSignal visualSignal = default;
+1980:            visualSignal.Intensity01 = math.saturate((BulletTimePostScalarThreshold - scalar) / BulletTimePostScalarThreshold);
+1981:            visualSignal.Scalar = scalar;
+1982:            visualSignal.Frame = frame;
+1983:            visualSignal.Sequence = _timeDilationSequence;
+1984:            visualSignal.QualityWeightBits = math.asuint(_globalQualityWeight01);
+1985:            visualSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+1986:            SimulationSignalRoute.TryQueueBulletTimeVisual(in visualSignal);
+1987:        }
+1988:
+1989:        private void DrainSimulationPauseSignals()
+1990:        {
+1991:            while (SignalBus<SimulationPauseSignal>.TryConsumeFrame(out SimulationPauseSignal signal))
+1992:            {
+1993:                if (signal.Paused == 0 && math.isfinite(signal.RestoreScalar) && signal.RestoreScalar > 0f)
+1994:                    _prePauseTimeDilationScalar = signal.RestoreScalar;
+
+==== BODY @4995 ====
+4995:        private float ConsumeFrameTimeDilationScalar()
+4996:        {
+4997:            if (_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon)
+4998:                return 0f;
+4999:
+5000:            if (_coreTickDilationFramesRemaining <= 0)
+5001:                return _timeDilationScalar;
+5002:
+5003:            float scalar = _coreTickDilationScalar;
+5004:            _coreTickDilationFramesRemaining--;
+5005:            if (_coreTickDilationFramesRemaining == 0)
+5006:            {
+5007:                _coreTickDilationScalar = 1f;
+5008:                _coreTickDilationRestorePending = true;
+5009:            }
+5010:
+5011:            return scalar;
+5012:        }
+5013:
+5014:        private float ResolvePauseRestoreScalar()
+5015:        {
+5016:            float restoreScalar = _coreTickDilationFramesRemaining > 0 || _coreTickDilationRestorePending
+5017:                ? _coreTickDilationRestoreScalar
+5018:                : _timeDilationScalar;
+5019:            return math.isfinite(restoreScalar)
+5020:                ? math.max(TimeDilationPausedEpsilon, restoreScalar)
+5021:                : 1f;
+5022:        }
+5023:
+5024:        private void ClearCoreTickDilationBurst()
+5025:        {
+5026:            _coreTickDilationScalar = 1f;
+5027:            _coreTickDilationRestoreScalar = 1f;
+5028:            _coreTickDilationFramesRemaining = 0;
+5029:            _coreTickDilationReasonHash = 0u;
+5030:            _coreTickDilationRestorePending = false;
+5031:        }
+5032:
+5033:        private void ClearAdrenalineDilation()
+5034:        {
+5035:            _adrenalineDilationStartScalar = 1f;
+5036:            _adrenalineDilationRestoreScalar = 1f;
+5037:            _adrenalineDilationElapsedSeconds = 0f;
+5038:            _adrenalineDilationSourceHash = 0u;
+5039:            _adrenalineDilationPhase = AdrenalineDilationPhaseNone;
+5040:        }
+5041:
+5042:        private void DrainAdrenalineDilationSignals(float unscaledDeltaTime)
+5043:        {
+5044:            if (_simulationPaused)
+5045:                return;
+5046:
+5047:            bool triggered = TryResolveAdrenalineDilationTrigger(out uint sourceHash);
+5048:            if (triggered &&
+5049:                (_adrenalineDilationPhase == AdrenalineDilationPhaseNone ||

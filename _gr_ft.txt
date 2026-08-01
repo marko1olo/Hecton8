@@ -1,0 +1,4 @@
+6530|        public static void RegisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+6532|            TryRegisterFixedTickable(item, layer);
+6541|        public static bool TryRegisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+6858|        public static void UnregisterFixedTickable(IFixedTickable item, PriorityLayer layer)

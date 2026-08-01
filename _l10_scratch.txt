@@ -1,0 +1,555 @@
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_idx.txt:39:40|=== driver movementIntent / LocomotionHold blocks ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_idx.txt:69:268|W2807|                .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_idx.txt:89:533|2807|                .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_idx.txt:119:1057|| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_idx.txt:120:1072|`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` ? `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3.py:5:outp = os.path.join(base, r"Tools\_cline_scratch\_l10_hop2_dig3_out.txt")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3.py:31:# IsPlayerInputEnabled, native manager bind, GetState vs CurrentInputState difference
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3.py:41:# dump GetState area and CurrentInputState and PublishDeterministic
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3.py:54:# Probe movementIntent measurement - larger context around those lines
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3.py:59:    if any(k in L for k in ("movementIntent", "LocomotionHold", "waitingOn", "HoldInProgress", "Intent01", "immersionMax", "_inputH", "MoveDelta")):
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3.py:75:        if any(k in L for k in ("LocomotionHold", "waitingOn", "PublishInput", "TryPublish", "override", "MoveDelta", "movementIntent", "Swim")):
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3.py:98:    for m in re.finditer(r'.{0,80}(Swim|waitingOn|LocomotionHold|movementIntent|readHop).{0,120}', jt):
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3.py:105:# ProcessPlayerInputFrame uses _inputManager - is it ever the NoOp?
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3.py:107:# If RegisteredInput is null, _inputManager null -> no hop2
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_heads.txt:4:3:ID 789:        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_heads.txt:7:6:ID 1204:        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_heads.txt:8:7:ID 1207:        private void DiagRecordReadObservation(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_heads.txt:9:8:ID 1359:        public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_heads.txt:12:11:=== GetState ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_heads.txt:50:301:L13156:[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOver
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_heads.txt:51:302:L13174:[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOve
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_heads.txt:52:303:L13192:[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOv
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_heads.txt:56:307:L23708:[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m ox
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2.py:5:outp = os.path.join(base, r"Tools\_cline_scratch\_l10_hop2_dig2_out.txt")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2.py:29:# InputDispatcher: IsPlayerInputEnabled, GetState, override, hop
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2.py:33:    r"GetState\s*\(",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2.py:36:    r"DiagRecordReadObservation|DiagEmitHopCensus|readHop",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2.py:56:# Probe: movementIntent, LocomotionHold, waitingOn, Swim measure
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2.py:59:    r"movementIntent",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2.py:65:    r"readHop",
+C:\hades\Hecton8\Tools\_cline_scratch\_hpm_slices_l10.txt:76: 8096|                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+C:\hades\Hecton8\Tools\_cline_scratch\_hpm_slices_l10.txt:78: 8098|                    Cursor.lockState = CursorLockMode.Locked;
+C:\hades\Hecton8\Tools\_cline_scratch\_hpm_slices_l10.txt:83: 8103|                ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_hpm_slices_l10.txt:100: 8120|            Cursor.lockState = CursorLockMode.None;
+C:\hades\Hecton8\Tools\_cline_scratch\_hpm_slices_l10.txt:108: 8130|        private void ProcessPlayerInputFrame()
+C:\hades\Hecton8\Tools\_cline_scratch\_hpm_slices_l10.txt:174: 8196|        /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+C:\hades\Hecton8\Tools\_cline_scratch\_hpm_slices_l10.txt:178: 8200|        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+C:\hades\Hecton8\Tools\_cline_scratch\_hpm_slices_l10.txt:179: 8201|        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+C:\hades\Hecton8\Tools\_cline_scratch\_hpm_slices_l10.txt:202: 8224|            ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_bodies.txt:119: 9767|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_bodies.txt:227:   40|            PlayerInputState state = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig.py:9:outp = os.path.join(base, r"Tools\_cline_scratch\_l10_hop2_dig_out.txt")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig.py:77:# Probe LocomotionHold / movementIntent / waitingOn
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig.py:80:    out.append("=== PROBE LocomotionHold/waitingOn/movementIntent/hop ===")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig.py:82:        if re.search(r"LocomotionHold|waitingOn|movementIntent|readHop|INPUTHOP|SampleGameplay|Swim", L, re.I):
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig.py:98:    keys = ("INPUTHOP", "readHop", "STARTERGRANT", "MOMENT", "Swim", "Tool BLOCKED",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig.py:99:            "LocomotionHold", "waitingOn", "suit", "juice", "FixedTick", "movementIntent",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_ascii.txt:40:=== driver movementIntent / LocomotionHold blocks ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_ascii.txt:268:W2807|                .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_ascii.txt:533:2807|                .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_ascii.txt:1057:| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_ascii.txt:1072:`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` ? `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_ascii.txt:1073:`FixedTick` applied locomotion/kinematics from stale `_input*` and **never** called `ProcessPlayerInputFrame`.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5.py:5:outp = os.path.join(base, r"Tools\_cline_scratch\_l10_hop2_dig5_out.txt")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5.py:16:        "movementIntent"
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:71:637|            Cursor.lockState = CursorLockMode.None;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:200:=== rest of pause ascii from GetState ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:201:`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` ? `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:202:=== GetState callers project ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:203:FlashlightTool.cs:377|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:204:HectonPlayerMovement.cs:7995|/// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:205:LaserCutter.cs:1316|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:206:LaserCutter.cs:1453|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:207:LaserCutter.cs:2165|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:208:PlayerTool.cs:821|PlayerInputState inputState = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:209:PlayerToolManager.cs:468|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:210:RepairTool.cs:994|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:211:SalvageSamplerTool.cs:207|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:212:StunPistolTool.cs:258|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:213:GlobalRegistry.cs:8640|public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:214:GlobalRegistryContracts.cs:1026|PlayerInputState GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:215:InputDispatcher.cs:789|/// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:216:InputDispatcher.cs:1359|public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:217:PrologueSequenceRegistryBridge.cs:738|PlayerInputState state = input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:218:HectonPlayerInputHandler.cs:40|PlayerInputState state = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:219:MantaScooter.cs:659|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:220:MantaScooter.cs:1277|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:221:MountablePlayerTransport.cs:495|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:222:PlayerSwimPresentationController.cs:2419|? _inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:223:PlayerSwimPresentationController.cs:2581|? _inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:224:KinematicTerminalInteractionBridge.cs:327|PlayerInputState state = _input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:225:HectonAPI.cs:265|return input.GetState().ActionsBitmask;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:226:OrbitalRelativityDirector.cs:719|PlayerInputState state = _inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:227:ToolKinematicsRuntime.cs:602|PlayerInputState inputState = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:228:DiegeticPanelController.cs:2444|PlayerInputState state = _input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:229:DiegeticTooltipSystem.cs:1352|PlayerInputState state = input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:230:PDADecryptionSpectrogramPanel.cs:630|PlayerInputState inputState = input != null ? input.GetState() : default;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:231:TerminalOsRuntime.cs:3240|PlayerInputState state = _input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:232:OpenXRManualOverrideLever.cs:552|PlayerInputState state = _inputService != null ? _inputService.GetState() : default;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:233:SargassumCutManager.cs:1393|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_ascii.txt:234:ReentrySequence1603EditTests.cs:274|Assert.That(ContainsOrdinal(skipGetter, "GetState()"), Is.False);
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig_out.txt:494:=== PROBE LocomotionHold/waitingOn/movementIntent/hop ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig_out.txt:501:P2127|            // reported FAIL with movementIntent01max=0.000. Read literally that says the input route is
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig_out.txt:544:H40|            PlayerInputState state = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig_out.txt:612:L13156|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMov
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig_out.txt:613:L13174|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMo
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig_out.txt:614:L13192|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskM
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig_out.txt:618:L23708|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vit
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:76:D789|        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:77:D790|        /// handed that zero out every frame, and HectonPlayerMovement.ProcessPlayerInputFrame
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:142:D1203|        /// <param name="readHop">
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:143:D1204|        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:144:D1205|        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:147:D1203|        /// <param name="readHop">
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:148:D1204|        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:149:D1205|        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:152:D1203|        /// <param name="readHop">
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:153:D1204|        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:154:D1205|        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:156:D1207|        private void DiagRecordReadObservation(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:158:D1205|        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:160:D1207|        private void DiagRecordReadObservation(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:166:D1235|            DiagEmitHopCensus(readHop);
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:178:D1251|        private void DiagEmitHopCensus(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:184:D1256|                "[H8_INPUTHOP] readHop=" + readHop +
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:220:D1359|        public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:224:D1359|        public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:288:D3892|            // published, movementIntent01max=0.000, Swim row FAIL with the input path fully open.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:291:D3892|            // published, movementIntent01max=0.000, Swim row FAIL with the input path fully open.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:296:D3892|            // published, movementIntent01max=0.000, Swim row FAIL with the input path fully open.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:505:P2127|            // reported FAIL with movementIntent01max=0.000. Read literally that says the input route is
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:1072:H13156|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBuffe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:1073:H13174|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBuff
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:1074:H13192|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBuf
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:1077:L23708|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_out.txt:1082:W23708|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_out.txt:40:=== driver movementIntent / LocomotionHold blocks ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_out.txt:268:W2807|                .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_out.txt:533:2807|                .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_out.txt:1057:| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_out.txt:1072:`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` → `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_out.txt:1073:`FixedTick` applied locomotion/kinematics from stale `_input*` and **never** called `ProcessPlayerInputFrame`.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:34:8200|        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:137:D1251|        private void DiagEmitHopCensus(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:142:D1256|                "[H8_INPUTHOP] readHop=" + readHop +
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:191:L13156|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) currentInputStateFrame=363 standardInputFrame=364 inputStateSequence=364 | initialized=True regLateFrame=True regSlowTick=True regInputService=True vaultNull=False vaultBuffersReady=True lastPresimFrame=334 lastCapturedFrame=334 frameIndex=334 frameId=0 - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the override. lateFrameTick=0 means this component's late-frame lane never ran, so the self-pump never fired and PreSimulationInputTick - the only per-frame caller of CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every capture; compare lastCapturedFrame against frameIndex. captureRan>0 with overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no clock-skew LogError that leaves the silent age>maxFrameAge branch at CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio: overrideRejected is expected to be large even in a fully healthy run because it counts every poll on a frame where the driver published nothing (Sequence==0 early return). overrideApplied>0 with currentStateMove=(0,0) means the value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero. publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are the same event - those four driver numbers are not evidence about the override lane.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:192:L13174|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) currentInputStateFrame=363 standardInputFrame=364 inputStateSequence=364 | initialized=True regLateFrame=True regSlowTick=True regInputService=True vaultNull=False vaultBuffersReady=True lastPresimFrame=335 lastCapturedFrame=334 frameIndex=335 frameId=0 - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the override. lateFrameTick=0 means this component's late-frame lane never ran, so the self-pump never fired and PreSimulationInputTick - the only per-frame caller of CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every capture; compare lastCapturedFrame against frameIndex. captureRan>0 with overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no clock-skew LogError that leaves the silent age>maxFrameAge branch at CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio: overrideRejected is expected to be large even in a fully healthy run because it counts every poll on a frame where the driver published nothing (Sequence==0 early return). overrideApplied>0 with currentStateMove=(0,0) means the value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero. publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are the same event - those four driver numbers are not evidence about the override lane.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:193:L13192|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBufferFail=0 publishOk=380 | currentStateMove=(0,1) currentInputStateFrame=379 standardInputFrame=380 inputStateSequence=380 | initialized=True regLateFrame=True regSlowTick=True regInputService=True vaultNull=False vaultBuffersReady=True lastPresimFrame=350 lastCapturedFrame=350 frameIndex=350 frameId=0 - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the override. lateFrameTick=0 means this component's late-frame lane never ran, so the self-pump never fired and PreSimulationInputTick - the only per-frame caller of CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every capture; compare lastCapturedFrame against frameIndex. captureRan>0 with overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no clock-skew LogError that leaves the silent age>maxFrameAge branch at CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio: overrideRejected is expected to be large even in a fully healthy run because it counts every poll on a frame where the driver published nothing (Sequence==0 early return). overrideApplied>0 with currentStateMove=(0,0) means the value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero. publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are the same event - those four driver numbers are not evidence about the override lane.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:195:[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInputCalled=True blockMask=0x00000000 - FAIL: the input path was open but the driver's MoveDelta never reached HectonPlayerMovement [SCHEDULE phase=SwimSurface wall=5.078s ticks=10994 tickFloor=2 tickBox=61442 granted=5.000s yield=Completed waitingOn=LocomotionHoldInProgress] [SCHEDULE phase=SwimDive wall=4.256s ticks=86018 tickFloor=2 tickBox=86018 granted=7.000s yield=PhaseTickCeiling waitingOn=LocomotionHoldInProgress - PHASE TICK CEILING: this phase spent its whole 86018-tick share of the schedule's pot inside its wall box, so it yielded on the tick axis. Its own share only - the phases after it kept theirs]
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:197:h8_playprobe_v0_L08.log|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=32 pumpFired=1 presimTick=318 presimSubsteps=343 | captureRan=314 captureSkippedByFrameGuard=31 | overrideApplied=1 overrideRejected=313 lastOverrideMove=(0,0) | blockMaskNonZero=0 postMaskMove=(0,0) | publishAttempt=343 publishGuardFail=0 publishBuffe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:198:h8_playprobe_v0_L08.log|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=32 pumpFired=1 presimTick=320 presimSubsteps=345 | captureRan=316 captureSkippedByFrameGuard=31 | overrideApplied=3 overrideRejected=313 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=345 publishGuardFail=0 publishBuff
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:199:h8_playprobe_v0_L08.log|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=32 pumpFired=1 presimTick=333 presimSubsteps=360 | captureRan=327 captureSkippedByFrameGuard=35 | overrideApplied=14 overrideRejected=313 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=360 publishGuardFail=0 publishBuf
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:200:h8_playprobe_v0_L08.log|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 95030 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:201:h8_playprobe_v0_L08.log|[H8_INPUTHOP] readHop=0 obs=351505 | lateFrameTick=32 pumpFired=1 presimTick=4121 presimSubsteps=4420 | captureRan=3936 captureSkippedByFrameGuard=486 | overrideApplied=856 overrideRejected=3080 lastOverrideMove=(0,0) | blockMaskNonZero=0 postMaskMove=(0,0) | publishAttempt=4420 publishGuardFail=401
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:203:h8_playprobe_v0_L07.log|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=33 pumpFired=1 presimTick=299 presimSubsteps=1196 | captureRan=299 captureSkippedByFrameGuard=899 | overrideApplied=2 overrideRejected=297 lastOverrideMove=(0,0) | blockMaskNonZero=0 postMaskMove=(0,0) | publishAttempt=1196 publishGuardFail=1196 publis
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:204:h8_playprobe_v0_L07.log|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=33 pumpFired=1 presimTick=302 presimSubsteps=1208 | captureRan=302 captureSkippedByFrameGuard=908 | overrideApplied=5 overrideRejected=297 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=1208 publishGuardFail=1208 publi
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:205:h8_playprobe_v0_L07.log|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=33 pumpFired=1 presimTick=324 presimSubsteps=1296 | captureRan=324 captureSkippedByFrameGuard=974 | overrideApplied=27 overrideRejected=297 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=1296 publishGuardFail=1296 publ
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:206:h8_playprobe_v0_L07.log|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 93935 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:207:h8_playprobe_v0_L07.log|[H8_INPUTHOP] readHop=0 obs=413452 | lateFrameTick=33 pumpFired=1 presimTick=4718 presimSubsteps=18872 | captureRan=4718 captureSkippedByFrameGuard=14156 | overrideApplied=838 overrideRejected=3880 lastOverrideMove=(0,0) | blockMaskNonZero=0 postMaskMove=(0,0) | publishAttempt=18872 publishGuardFail
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:520:8096|                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:522:8098|                    Cursor.lockState = CursorLockMode.Locked;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:527:8103|                ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:542:8224|            ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_out.txt:548:9767|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4.py:5:outp = os.path.join(base, r"Tools\_cline_scratch\_l10_hop2_dig4_out.txt")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4.py:28:out.append("=== driver movementIntent / LocomotionHold blocks ===")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4.py:30:    if any(k in L for k in ("_maxMovementIntent", "MovementIntent", "LocomotionHold", "ResolveRawInput", "inputH", "GetState", "CurrentInputState", "MoveDelta", "intent01")):
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4.py:76:# Prior hop2 residual notes in architect answers
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_out.txt:91:185|        public static bool IsAnyOpen => _openMenuCount > 0;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_out.txt:176:185|        public static bool IsAnyOpen => _openMenuCount > 0;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_out.txt:202:185|        public static bool IsAnyOpen => _openMenuCount > 0;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_out.txt:399:| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_out.txt:414:`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` → `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_out.txt:415:`FixedTick` applied locomotion/kinematics from stale `_input*` and **never** called `ProcessPlayerInputFrame`.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_out.txt:496:1. `movementIntent01max > 0` during Swim hold  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2.py:36:# also check GetState callers from pause_out rest
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2.py:37:pause = os.path.join(base, r"Tools\_cline_scratch\_l10_hop2_pause_ascii.txt")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2.py:39:out.append("=== rest of pause ascii from GetState ===")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2.py:41:    if "GetState callers" in L or L.startswith("Hecton") or "GetState" in L:
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2.py:57:op = os.path.join(base, r"Tools\_cline_scratch\_l10_hop2_pause2_out.txt")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause.py:5:outp = os.path.join(base, r"Tools\_cline_scratch\_l10_hop2_pause_out.txt")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause.py:21:        "IsAnyOpen", "IncrementOpen", "DecrementOpen", "_openMenu"
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause.py:52:menu = os.path.join(base, r"Tools\_cline_scratch\_l10_hop2_menu_ascii.txt")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause.py:61:# Check git log for SampleGameplay introduction and any hop2 notes
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause.py:62:# Also check if ProcessPlayerInputFrame could use wrong overload
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause.py:63:out.append("=== ProcessPlayerInputFrame + SampleGameplay disk verify ===")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause.py:67:# Who else calls GetState?
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause.py:68:out.append("=== GetState callers project ===")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause.py:79:        if ".GetState()" in t or "GetState()" in t:
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause.py:81:                if "GetState()" in L:
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_idx.py:2:p = r"C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_ascii.txt"
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_idx.py:3:op = r"C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_idx.txt"
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_idx.py:16:        or "movementIntent" in L
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_idx.py:22:        or "GetState" in L
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_idx.py:25:        or "readHop" in L
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_idx4.py:2:p = r"C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_ascii.txt"
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_idx4.py:3:op = r"C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig4_idx.txt"
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_idx4.py:16:        or "movementIntent" in L
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_idx4.py:18:        or "GetState" in L
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_idx2_run.txt:4:219:===== ProcessPlayerInputFrame 8120-8180 =====
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_idx2_run.txt:23:1077:LOG 13156:[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | 
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_idx2_run.txt:24:1078:LOG 13174:[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) |
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_idx2_run.txt:25:1079:LOG 13192:[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) 
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_idx2_run.txt:29:1083:LOG 23708:[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:76:D789|        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:77:D790|        /// handed that zero out every frame, and HectonPlayerMovement.ProcessPlayerInputFrame
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:142:D1203|        /// <param name="readHop">
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:143:D1204|        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:144:D1205|        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:147:D1203|        /// <param name="readHop">
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:148:D1204|        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:149:D1205|        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:152:D1203|        /// <param name="readHop">
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:153:D1204|        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:154:D1205|        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:156:D1207|        private void DiagRecordReadObservation(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:158:D1205|        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:160:D1207|        private void DiagRecordReadObservation(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:166:D1235|            DiagEmitHopCensus(readHop);
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:178:D1251|        private void DiagEmitHopCensus(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:184:D1256|                "[H8_INPUTHOP] readHop=" + readHop +
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:220:D1359|        public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:224:D1359|        public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:288:D3892|            // published, movementIntent01max=0.000, Swim row FAIL with the input path fully open.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:291:D3892|            // published, movementIntent01max=0.000, Swim row FAIL with the input path fully open.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:296:D3892|            // published, movementIntent01max=0.000, Swim row FAIL with the input path fully open.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:505:P2127|            // reported FAIL with movementIntent01max=0.000. Read literally that says the input route is
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:1072:H13156|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBuffe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:1073:H13174|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBuff
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:1074:H13192|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBuf
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:1077:L23708|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig2_ascii.txt:1082:W23708|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu.py:5:outp = os.path.join(base, r"Tools\_cline_scratch\_l10_hop2_menu_out.txt")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu.py:15:        if any(k in L for k in ("IsOpen", "IsMenuOpen", "IsAnyOpen", "static bool", "_isOpen", "SetOpen", "Open(", "Close(")):
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu.py:16:            if any(h in L for h in class_hints + ["IsOpen", "IsMenuOpen", "IsAnyOpen", "_isOpen", "static"]):
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu.py:38:        if re.search(r"(IsOpen|IsMenuOpen|IsAnyOpen)\s*(=>|\{)", L) or re.search(r"public static bool (IsOpen|IsMenuOpen|IsAnyOpen)", L):
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu.py:70:# L08 MEASURED residual section about hop2
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_idx2.py:25:            "readHop",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_idx2.py:26:            "movementIntent",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:34:8200|        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:137:D1251|        private void DiagEmitHopCensus(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:142:D1256|                "[H8_INPUTHOP] readHop=" + readHop +
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:191:L13156|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) currentInputStateFrame=363 standardInputFrame=364 inputStateSequence=364 | initialized=True regLateFrame=True regSlowTick=True regInputService=True vaultNull=False vaultBuffersReady=True lastPresimFrame=334 lastCapturedFrame=334 frameIndex=334 frameId=0 - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the override. lateFrameTick=0 means this component's late-frame lane never ran, so the self-pump never fired and PreSimulationInputTick - the only per-frame caller of CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every capture; compare lastCapturedFrame against frameIndex. captureRan>0 with overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no clock-skew LogError that leaves the silent age>maxFrameAge branch at CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio: overrideRejected is expected to be large even in a fully healthy run because it counts every poll on a frame where the driver published nothing (Sequence==0 early return). overrideApplied>0 with currentStateMove=(0,0) means the value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero. publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are the same event - those four driver numbers are not evidence about the override lane.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:192:L13174|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) currentInputStateFrame=363 standardInputFrame=364 inputStateSequence=364 | initialized=True regLateFrame=True regSlowTick=True regInputService=True vaultNull=False vaultBuffersReady=True lastPresimFrame=335 lastCapturedFrame=334 frameIndex=335 frameId=0 - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the override. lateFrameTick=0 means this component's late-frame lane never ran, so the self-pump never fired and PreSimulationInputTick - the only per-frame caller of CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every capture; compare lastCapturedFrame against frameIndex. captureRan>0 with overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no clock-skew LogError that leaves the silent age>maxFrameAge branch at CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio: overrideRejected is expected to be large even in a fully healthy run because it counts every poll on a frame where the driver published nothing (Sequence==0 early return). overrideApplied>0 with currentStateMove=(0,0) means the value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero. publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are the same event - those four driver numbers are not evidence about the override lane.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:193:L13192|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBufferFail=0 publishOk=380 | currentStateMove=(0,1) currentInputStateFrame=379 standardInputFrame=380 inputStateSequence=380 | initialized=True regLateFrame=True regSlowTick=True regInputService=True vaultNull=False vaultBuffersReady=True lastPresimFrame=350 lastCapturedFrame=350 frameIndex=350 frameId=0 - counters are in PIPELINE ORDER; the first zero from the left is the hop that dropped the override. lateFrameTick=0 means this component's late-frame lane never ran, so the self-pump never fired and PreSimulationInputTick - the only per-frame caller of CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override lane. lateFrameTick>0 with captureRan=0 means the CaptureState frame guard suppressed every capture; compare lastCapturedFrame against frameIndex. captureRan>0 with overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no clock-skew LogError that leaves the silent age>maxFrameAge branch at CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio: overrideRejected is expected to be large even in a fully healthy run because it counts every poll on a frame where the driver published nothing (Sequence==0 early return). overrideApplied>0 with currentStateMove=(0,0) means the value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero. publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being zero on the driver side ALL BY ITSELF, because _currentInputState and the signal push are the same event - those four driver numbers are not evidence about the override lane.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:195:[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInputCalled=True blockMask=0x00000000 - FAIL: the input path was open but the driver's MoveDelta never reached HectonPlayerMovement [SCHEDULE phase=SwimSurface wall=5.078s ticks=10994 tickFloor=2 tickBox=61442 granted=5.000s yield=Completed waitingOn=LocomotionHoldInProgress] [SCHEDULE phase=SwimDive wall=4.256s ticks=86018 tickFloor=2 tickBox=86018 granted=7.000s yield=PhaseTickCeiling waitingOn=LocomotionHoldInProgress - PHASE TICK CEILING: this phase spent its whole 86018-tick share of the schedule's pot inside its wall box, so it yielded on the tick axis. Its own share only - the phases after it kept theirs]
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:197:h8_playprobe_v0_L08.log|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=32 pumpFired=1 presimTick=318 presimSubsteps=343 | captureRan=314 captureSkippedByFrameGuard=31 | overrideApplied=1 overrideRejected=313 lastOverrideMove=(0,0) | blockMaskNonZero=0 postMaskMove=(0,0) | publishAttempt=343 publishGuardFail=0 publishBuffe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:198:h8_playprobe_v0_L08.log|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=32 pumpFired=1 presimTick=320 presimSubsteps=345 | captureRan=316 captureSkippedByFrameGuard=31 | overrideApplied=3 overrideRejected=313 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=345 publishGuardFail=0 publishBuff
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:199:h8_playprobe_v0_L08.log|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=32 pumpFired=1 presimTick=333 presimSubsteps=360 | captureRan=327 captureSkippedByFrameGuard=35 | overrideApplied=14 overrideRejected=313 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=360 publishGuardFail=0 publishBuf
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:200:h8_playprobe_v0_L08.log|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 95030 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:201:h8_playprobe_v0_L08.log|[H8_INPUTHOP] readHop=0 obs=351505 | lateFrameTick=32 pumpFired=1 presimTick=4121 presimSubsteps=4420 | captureRan=3936 captureSkippedByFrameGuard=486 | overrideApplied=856 overrideRejected=3080 lastOverrideMove=(0,0) | blockMaskNonZero=0 postMaskMove=(0,0) | publishAttempt=4420 publishGuardFail=401
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:203:h8_playprobe_v0_L07.log|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=33 pumpFired=1 presimTick=299 presimSubsteps=1196 | captureRan=299 captureSkippedByFrameGuard=899 | overrideApplied=2 overrideRejected=297 lastOverrideMove=(0,0) | blockMaskNonZero=0 postMaskMove=(0,0) | publishAttempt=1196 publishGuardFail=1196 publis
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:204:h8_playprobe_v0_L07.log|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=33 pumpFired=1 presimTick=302 presimSubsteps=1208 | captureRan=302 captureSkippedByFrameGuard=908 | overrideApplied=5 overrideRejected=297 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=1208 publishGuardFail=1208 publi
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:205:h8_playprobe_v0_L07.log|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=33 pumpFired=1 presimTick=324 presimSubsteps=1296 | captureRan=324 captureSkippedByFrameGuard=974 | overrideApplied=27 overrideRejected=297 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=1296 publishGuardFail=1296 publ
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:206:h8_playprobe_v0_L07.log|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 93935 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:207:h8_playprobe_v0_L07.log|[H8_INPUTHOP] readHop=0 obs=413452 | lateFrameTick=33 pumpFired=1 presimTick=4718 presimSubsteps=18872 | captureRan=4718 captureSkippedByFrameGuard=14156 | overrideApplied=838 overrideRejected=3880 lastOverrideMove=(0,0) | blockMaskNonZero=0 postMaskMove=(0,0) | publishAttempt=18872 publishGuardFail
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:520:8096|                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:522:8098|                    Cursor.lockState = CursorLockMode.Locked;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:527:8103|                ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:542:8224|            ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig5_ascii.txt:548:9767|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_ascii.txt:91:185|        public static bool IsAnyOpen => _openMenuCount > 0;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_ascii.txt:176:185|        public static bool IsAnyOpen => _openMenuCount > 0;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_ascii.txt:202:185|        public static bool IsAnyOpen => _openMenuCount > 0;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_ascii.txt:399:| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_ascii.txt:414:`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` ? `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_ascii.txt:415:`FixedTick` applied locomotion/kinematics from stale `_input*` and **never** called `ProcessPlayerInputFrame`.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_menu_ascii.txt:496:1. `movementIntent01max > 0` during Swim hold  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:27:185|        public static bool IsAnyOpen => _openMenuCount > 0;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:82:185|        public static bool IsAnyOpen => _openMenuCount > 0;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:136:| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:151:`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` ? `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:152:`FixedTick` applied locomotion/kinematics from stale `_input*` and **never** called `ProcessPlayerInputFrame`.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:233:1. `movementIntent01max > 0` during Swim hold  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:235:=== ProcessPlayerInputFrame + SampleGameplay disk verify ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:236:8130|        private void ProcessPlayerInputFrame()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:302:8196|        /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:306:8200|        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:307:8201|        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:330:8224|            ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:334:=== GetState callers project ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:335:FlashlightTool.cs:377|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:336:HectonPlayerMovement.cs:7995|/// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:337:LaserCutter.cs:1316|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:338:LaserCutter.cs:1453|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:339:LaserCutter.cs:2165|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:340:PlayerTool.cs:821|PlayerInputState inputState = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:341:PlayerToolManager.cs:468|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:342:RepairTool.cs:994|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:343:SalvageSamplerTool.cs:207|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:344:StunPistolTool.cs:258|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:345:GlobalRegistry.cs:8640|public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:346:GlobalRegistryContracts.cs:1026|PlayerInputState GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:347:InputDispatcher.cs:789|/// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:348:InputDispatcher.cs:1359|public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:349:PrologueSequenceRegistryBridge.cs:738|PlayerInputState state = input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:350:HectonPlayerInputHandler.cs:40|PlayerInputState state = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:351:MantaScooter.cs:659|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:352:MantaScooter.cs:1277|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:353:MountablePlayerTransport.cs:495|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:354:PlayerSwimPresentationController.cs:2419|? _inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:355:PlayerSwimPresentationController.cs:2581|? _inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:356:KinematicTerminalInteractionBridge.cs:327|PlayerInputState state = _input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:357:HectonAPI.cs:265|return input.GetState().ActionsBitmask;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:358:OrbitalRelativityDirector.cs:719|PlayerInputState state = _inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:359:ToolKinematicsRuntime.cs:602|PlayerInputState inputState = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:360:DiegeticPanelController.cs:2444|PlayerInputState state = _input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:361:DiegeticTooltipSystem.cs:1352|PlayerInputState state = input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:362:PDADecryptionSpectrogramPanel.cs:630|PlayerInputState inputState = input != null ? input.GetState() : default;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:363:TerminalOsRuntime.cs:3240|PlayerInputState state = _input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:364:OpenXRManualOverrideLever.cs:552|PlayerInputState state = _inputService != null ? _inputService.GetState() : default;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:365:SargassumCutManager.cs:1393|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_out.txt:366:ReentrySequence1603EditTests.cs:274|Assert.That(ContainsOrdinal(skipGetter, "GetState()"), Is.False);
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_run.txt:1:C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt 319
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:165:8196:        /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:169:8200:        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:170:8201:        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:193:8224:            ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:220:===== ProcessPlayerInputFrame 8120-8180 =====
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:221:8120:            Cursor.lockState = CursorLockMode.None;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:231:8130:        private void ProcessPlayerInputFrame()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:324:8096:                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:326:8098:                    Cursor.lockState = CursorLockMode.Locked;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:331:8103:                ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:348:8120:            Cursor.lockState = CursorLockMode.None;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:358:8130:        private void ProcessPlayerInputFrame()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:857:  789:        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:886:  1203:        /// <param name="readHop">
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:887:  1204:        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:888:  1205:        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:889:  1207:        private void DiagRecordReadObservation(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:890:  1235:            DiagEmitHopCensus(readHop);
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:892:  1251:        private void DiagEmitHopCensus(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:893:  1256:                "[H8_INPUTHOP] readHop=" + readHop +
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:900:  1359:        public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:969:  40:            PlayerInputState state = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:1078:LOG 13156:[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBuffe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:1079:LOG 13174:[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBuff
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:1080:LOG 13192:[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBuf
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:1084:LOG 23708:[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRe
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:1107:| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:1122:`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` → `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:1123:`FixedTick` applied locomotion/kinematics from stale `_input*` and **never** called `ProcessPlayerInputFrame`.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core_out.txt:1204:1. `movementIntent01max > 0` during Swim hold  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_idx2_out.txt:3:219:===== ProcessPlayerInputFrame 8120-8180 =====
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_idx2_out.txt:22:1077:LOG 13156:[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | 
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_idx2_out.txt:23:1078:LOG 13174:[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) |
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_idx2_out.txt:24:1079:LOG 13192:[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) 
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_idx2_out.txt:28:1083:LOG 23708:[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root.py:7:OUT = os.path.join(ROOT, r"Tools\_cline_scratch\_l10_hop2_root_out.txt")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root.py:10:# InputDispatcher GetState + CurrentInputState
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root.py:14:    if "GetState(" in l or "CurrentInputState" in l or "DiagRecordReadObservation" in l:
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root.py:16:# dump GetState method
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root.py:18:    if "public PlayerInputState GetState" in l:
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root.py:21:        r.append("=== GetState ===")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root.py:57:    "movementIntent01",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root.py:134:        if "LocomotionHold" in t or "waitingOn" in t or "movementIntent01" in t or "readHop" in t:
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root.py:143:                        "movementIntent",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root.py:144:                        "readHop",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_out.txt:274:1359|        public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_out.txt:509:P2127|            // reported FAIL with movementIntent01max=0.000. Read literally that says the input route is
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_out.txt:1131:W2807|                .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_out.txt:1347:L13156|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) cur
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_out.txt:1348:L13174|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) cu
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_out.txt:1349:L13192|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBufferFail=0 publishOk=380 | currentStateMove=(0,1) c
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_out.txt:1350:L23708|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInpu
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_out.txt:1351:SWIMFULL|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInputCalled=True blockMask=0x00000000 - FAIL: the input path was open but the driver's MoveDelta never reached HectonPlayerMovement [SCHEDULE phase=SwimSurface wall=5.078s ticks=10994 tickFloor=2 tickBox=61442 granted=5.000s yield=Completed waitingOn=LocomotionHoldInProgress] [SCHEDULE phase=SwimDive wall=4.256s ticks=86018 tickFloor=2 tickBox=86018 granted=7.000s yield=PhaseTickCeiling waitingOn=LocomotionHoldInProgress - PHASE TICK CEILING: this phase spent its whole 86018-tick share of the schedule's pot inside its wall box, so it yielded on the tick axis. Its own share only - the phases after it kept theirs]
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_out.txt:1369:9767|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_out.txt:1373:9767|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:27:185|        public static bool IsAnyOpen => _openMenuCount > 0;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:82:185|        public static bool IsAnyOpen => _openMenuCount > 0;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:136:| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:151:`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` ? `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:152:`FixedTick` applied locomotion/kinematics from stale `_input*` and **never** called `ProcessPlayerInputFrame`.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:233:1. `movementIntent01max > 0` during Swim hold  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:235:=== ProcessPlayerInputFrame + SampleGameplay disk verify ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:236:8130|        private void ProcessPlayerInputFrame()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:302:8196|        /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:306:8200|        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:307:8201|        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:330:8224|            ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:334:=== GetState callers project ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:335:FlashlightTool.cs:377|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:336:HectonPlayerMovement.cs:7995|/// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:337:LaserCutter.cs:1316|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:338:LaserCutter.cs:1453|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:339:LaserCutter.cs:2165|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:340:PlayerTool.cs:821|PlayerInputState inputState = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:341:PlayerToolManager.cs:468|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:342:RepairTool.cs:994|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:343:SalvageSamplerTool.cs:207|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:344:StunPistolTool.cs:258|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:345:GlobalRegistry.cs:8640|public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:346:GlobalRegistryContracts.cs:1026|PlayerInputState GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:347:InputDispatcher.cs:789|/// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:348:InputDispatcher.cs:1359|public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:349:PrologueSequenceRegistryBridge.cs:738|PlayerInputState state = input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:350:HectonPlayerInputHandler.cs:40|PlayerInputState state = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:351:MantaScooter.cs:659|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:352:MantaScooter.cs:1277|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:353:MountablePlayerTransport.cs:495|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:354:PlayerSwimPresentationController.cs:2419|? _inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:355:PlayerSwimPresentationController.cs:2581|? _inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:356:KinematicTerminalInteractionBridge.cs:327|PlayerInputState state = _input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:357:HectonAPI.cs:265|return input.GetState().ActionsBitmask;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:358:OrbitalRelativityDirector.cs:719|PlayerInputState state = _inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:359:ToolKinematicsRuntime.cs:602|PlayerInputState inputState = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:360:DiegeticPanelController.cs:2444|PlayerInputState state = _input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:361:DiegeticTooltipSystem.cs:1352|PlayerInputState state = input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:362:PDADecryptionSpectrogramPanel.cs:630|PlayerInputState inputState = input != null ? input.GetState() : default;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:363:TerminalOsRuntime.cs:3240|PlayerInputState state = _input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:364:OpenXRManualOverrideLever.cs:552|PlayerInputState state = _inputService != null ? _inputService.GetState() : default;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:365:SargassumCutManager.cs:1393|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause_ascii.txt:366:ReentrySequence1603EditTests.cs:274|Assert.That(ContainsOrdinal(skipGetter, "GetState()"), Is.False);
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:4:ID 789:        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:7:ID 1204:        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:8:ID 1207:        private void DiagRecordReadObservation(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:9:ID 1359:        public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:12:=== GetState ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:13:1359:        public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:58:40:            PlayerInputState state = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:152:HPM[movementIntent01] 8200:        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:242:9767:            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:298:  2127:            // reported FAIL with movementIntent01max=0.000. Read literally that says the input route is
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:302:L13156:[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) currentInputStateFrame=363 standardInputFrame=364 inp
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:303:L13174:[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) currentInputStateFrame=363 standardInputFrame=364 in
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:304:L13192:[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBufferFail=0 publishOk=380 | currentStateMove=(0,1) currentInputStateFrame=379 standardInputFrame=380 i
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:308:L23708:[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInputCalled=True blockMask=0x00000000 - FAIL: the inpu
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:339:| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:354:`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` → `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:355:`FixedTick` applied locomotion/kinematics from stale `_input*` and **never** called `ProcessPlayerInputFrame`.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_root_out.txt:436:1. `movementIntent01max > 0` during Swim hold  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:541:8224:            ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:544:=== HPM ProcessPlayerInputFrame @ 8130 ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:545:8130:        private void ProcessPlayerInputFrame()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:805:8130:        private void ProcessPlayerInputFrame()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:832:--- hit 1 @ 8201: readHop ---
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:834:8200:        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:835:8201:        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:844:--- hit 1 @ 8200: movementIntent ---
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:847:8200:        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:848:8201:        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:859:7995:        /// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:860:7996:        /// returns default (:8450), which sends ProcessPlayerInputFrame (:8079) down its else branch every
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:881:8130:        private void ProcessPlayerInputFrame()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:892:=== SEARCH InputDispatcher GetState hop ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:900:  789:/// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:901:  1204:/// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:902:  1359:public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:903:  1203:/// <param name="readHop">
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:904:  1205:/// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:905:  1207:private void DiagRecordReadObservation(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:906:  1235:DiagEmitHopCensus(readHop);
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:907:  1251:private void DiagEmitHopCensus(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:908:  1256:"[H8_INPUTHOP] readHop=" + readHop +
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:1024:  40:PlayerInputState state = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:1323:L13156:[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMov
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:1324:L13174:[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMo
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:1325:L13192:[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskM
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:1326:L23708:[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vit
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:1348:| Swim / movementIntent01 | **FAIL** | `movementIntent01max=0`, final `readHop=0` despite mid-run `postMaskMove=(0,1)` |
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:1363:`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` → `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect_out.txt:1364:`FixedTick` applied locomotion/kinematics from stale `_input*` and **never** called `ProcessPlayerInputFrame`.
+C:\hades\Hecton8\Tools\_cline_scratch\_slice_l10_bodies.py:35:        r"STARTERGRANT|INPUTHOP|readHop|Swim|movementIntent|LocomotionHold|"
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:71:637|            Cursor.lockState = CursorLockMode.None;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:200:=== rest of pause ascii from GetState ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:201:`HectonPlayerMovement.ProcessPlayerInputFrame()` (samples `InputDispatcher.GetState` ? `_inputH/_inputV/_inputVertical`) ran **only** on render `IUpdatable.Tick`.  
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:202:=== GetState callers project ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:203:FlashlightTool.cs:377|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:204:HectonPlayerMovement.cs:7995|/// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:205:LaserCutter.cs:1316|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:206:LaserCutter.cs:1453|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:207:LaserCutter.cs:2165|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:208:PlayerTool.cs:821|PlayerInputState inputState = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:209:PlayerToolManager.cs:468|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:210:RepairTool.cs:994|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:211:SalvageSamplerTool.cs:207|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:212:StunPistolTool.cs:258|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:213:GlobalRegistry.cs:8640|public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:214:GlobalRegistryContracts.cs:1026|PlayerInputState GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:215:InputDispatcher.cs:789|/// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:216:InputDispatcher.cs:1359|public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:217:PrologueSequenceRegistryBridge.cs:738|PlayerInputState state = input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:218:HectonPlayerInputHandler.cs:40|PlayerInputState state = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:219:MantaScooter.cs:659|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:220:MantaScooter.cs:1277|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:221:MountablePlayerTransport.cs:495|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:222:PlayerSwimPresentationController.cs:2419|? _inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:223:PlayerSwimPresentationController.cs:2581|? _inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:224:KinematicTerminalInteractionBridge.cs:327|PlayerInputState state = _input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:225:HectonAPI.cs:265|return input.GetState().ActionsBitmask;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:226:OrbitalRelativityDirector.cs:719|PlayerInputState state = _inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:227:ToolKinematicsRuntime.cs:602|PlayerInputState inputState = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:228:DiegeticPanelController.cs:2444|PlayerInputState state = _input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:229:DiegeticTooltipSystem.cs:1352|PlayerInputState state = input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:230:PDADecryptionSpectrogramPanel.cs:630|PlayerInputState inputState = input != null ? input.GetState() : default;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:231:TerminalOsRuntime.cs:3240|PlayerInputState state = _input.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:232:OpenXRManualOverrideLever.cs:552|PlayerInputState state = _inputService != null ? _inputService.GetState() : default;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:233:SargassumCutManager.cs:1393|? inputService.GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_pause2_out.txt:234:ReentrySequence1603EditTests.cs:274|Assert.That(ContainsOrdinal(skipGetter, "GetState()"), Is.False);
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core.py:44:    ("ProcessPlayerInputFrame", 8120, 8180),
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core.py:90:                        "GetState",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core.py:94:                        "readHop",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core.py:157:        "readHop",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_core.py:158:        "movementIntent",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_sections_idx.txt:17:543:=== HPM ProcessPlayerInputFrame @ 8130 ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_sections_idx.txt:40:831:--- hit 1 @ 8201: readHop ---
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_sections_idx.txt:41:843:--- hit 1 @ 8200: movementIntent ---
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_sections_idx.txt:45:891:=== SEARCH InputDispatcher GetState hop ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_fixedtick.txt:241:8096|                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_fixedtick.txt:243:8098|                    Cursor.lockState = CursorLockMode.Locked;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_fixedtick.txt:248:8103|                ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_fixedtick.txt:265:8120|            Cursor.lockState = CursorLockMode.None;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_fixedtick.txt:275:8130|        private void ProcessPlayerInputFrame()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_fixedtick.txt:341:8196|        /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_fixedtick.txt:345:8200|        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_fixedtick.txt:346:8201|        /// final readHop=0). Sampling here keeps kinematics authoritative on the fixed step without
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_fixedtick.txt:369:8224|            ProcessPlayerInputFrame();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hpm_fixedtick.txt:544:9767|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_sections_run.txt:18:543:=== HPM ProcessPlayerInputFrame @ 8130 ===
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_sections_run.txt:41:831:--- hit 1 @ 8201: readHop ---
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_sections_run.txt:42:843:--- hit 1 @ 8200: movementIntent ---
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_sections_run.txt:46:891:=== SEARCH InputDispatcher GetState hop ===
+C:\hades\Hecton8\Tools\_cline_scratch\_slice_l10_all.py:36:    find_lines(ih, ["TryReadFrame", "GetState", "CurrentInputState", "MoveDelta"])
+C:\hades\Hecton8\Tools\_cline_scratch\_slice_l10_all.py:63:find_lines(inp, ["DiagRecordReadObservation", "GetState", "CurrentInputState", "readHop"])
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_idx.txt:28:274|1359|        public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_idx.txt:37:509|P2127|            // reported FAIL with movementIntent01max=0.000. Read literally that says the input route is
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_idx.txt:42:1131|W2807|                .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_idx.txt:46:1347|L13156|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blo
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_idx.txt:47:1348|L13174|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | bl
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_idx.txt:48:1349|L13192|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | b
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_idx.txt:49:1350|L23708|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.24
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_idx.txt:50:1351|SWIMFULL|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect.py:2:"""L10 inspect: PTM verify + HPM hop2 early-outs + inventory recover path."""
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect.py:89:        "ProcessPlayerInputFrame",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect.py:121:    report.extend(slice_around(hpm_lines, "readHop", before=2, after=8, max_hits=6))
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect.py:122:    report.extend(slice_around(hpm_lines, "movementIntent", before=2, after=8, max_hits=6))
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect.py:126:    # InputDispatcher hop2
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect.py:127:    report.append("=== SEARCH InputDispatcher GetState hop ===")
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect.py:136:                if "hop" in t.lower() or "GetState" in t or "TryReadFrame" in t:
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect.py:139:                    for needle in ("hop", "GetState", "TryReadFrame", "readHop", "Publish"):
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect.py:185:            "readHop",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect.py:186:            "movementIntent",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect.py:205:                        "readHop",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_inspect.py:206:                        "movementIntent",
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_slices.txt:57:   40|            PlayerInputState state = inputService.GetState();
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_slices.txt:165:  789|        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_slices.txt:169: 1203|        /// <param name="readHop">
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_slices.txt:170: 1204|        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_slices.txt:171: 1205|        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_slices.txt:172: 1207|        private void DiagRecordReadObservation(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_slices.txt:173: 1235|            DiagEmitHopCensus(readHop);
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_slices.txt:174: 1251|        private void DiagEmitHopCensus(int readHop)
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_slices.txt:175: 1256|                "[H8_INPUTHOP] readHop=" + readHop +
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_slices.txt:178: 1359|        public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_ascii.txt:274:1359|        public PlayerInputState GetState()
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_ascii.txt:509:P2127|            // reported FAIL with movementIntent01max=0.000. Read literally that says the input route is
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_ascii.txt:1131:W2807|                .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_ascii.txt:1347:L13156|[H8_INPUTHOP] readHop=1 obs=240 | lateFrameTick=36 pumpFired=1 presimTick=331 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) cur
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_ascii.txt:1348:L13174|[H8_INPUTHOP] readHop=1 obs=1200 | lateFrameTick=36 pumpFired=1 presimTick=332 presimSubsteps=364 | captureRan=325 captureSkippedByFrameGuard=41 | overrideApplied=3 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=364 publishGuardFail=0 publishBufferFail=0 publishOk=364 | currentStateMove=(0,1) cu
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_ascii.txt:1349:L13192|[H8_INPUTHOP] readHop=1 obs=3600 | lateFrameTick=36 pumpFired=1 presimTick=347 presimSubsteps=380 | captureRan=337 captureSkippedByFrameGuard=45 | overrideApplied=15 overrideRejected=322 lastOverrideMove=(0,1) | blockMaskNonZero=0 postMaskMove=(0,1) | publishAttempt=380 publishGuardFail=0 publishBufferFail=0 publishOk=380 | currentStateMove=(0,1) c
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_ascii.txt:1350:L23708|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInpu
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_ascii.txt:1351:SWIMFULL|[H8_PLAYPROBE] MOMENT   FAIL          Swim               driver published 97014 input overrides; movementIntent01max=0.000 immersionMax=1.000 depthSampled=True depth=0.000..0.000 span=0.000m oxygen 139.240->139.240 pressure 1.000->1.000 vitalsFlags[o2=False pressure=False depth=False] inputServiceRegistered=True inputEnabled=True switchToPlayerInputCalled=True blockMask=0x00000000 - FAIL: the input path was open but the driver's MoveDelta never reached HectonPlayerMovement [SCHEDULE phase=SwimSurface wall=5.078s ticks=10994 tickFloor=2 tickBox=61442 granted=5.000s yield=Completed waitingOn=LocomotionHoldInProgress] [SCHEDULE phase=SwimDive wall=4.256s ticks=86018 tickFloor=2 tickBox=86018 granted=7.000s yield=PhaseTickCeiling waitingOn=LocomotionHoldInProgress - PHASE TICK CEILING: this phase spent its whole 86018-tick share of the schedule's pot inside its wall box, so it yielded on the tick axis. Its own share only - the phases after it kept theirs]
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_ascii.txt:1369:9767|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+C:\hades\Hecton8\Tools\_cline_scratch\_l10_hop2_dig3_ascii.txt:1373:9767|            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;

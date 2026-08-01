@@ -1,0 +1,50 @@
+Assets/_Project\Scripts\HectonPlayerMovement.cs:5470:public void EnsureDispatcherRegistration()
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:6441:if (!TryEnsureDispatcherRegistration())
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:6458:if (!TryEnsureDispatcherRegistration())
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:6478:if (!TryEnsureDispatcherRegistration())
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:6511:if (!TryEnsureDispatcherRegistration())
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:6549:if (!TryEnsureDispatcherRegistration())
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:6587:if (!TryEnsureDispatcherRegistration())
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:6620:if (!TryEnsureDispatcherRegistration())
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:6658:if (!TryEnsureDispatcherRegistration())
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:6691:if (!TryEnsureDispatcherRegistration())
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:6729:if (!TryEnsureDispatcherRegistration())
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:6759:if (!TryEnsureDispatcherRegistration())
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:7097:private static bool TryEnsureDispatcherRegistration()
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:5260:RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:5274:bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:5284:if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:5318:RunFastTick(deltaTime, blockGameplayLanes);
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:5319:RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:5320:RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:5321:RunBucketedSlowTick(blockGameplayLanes);
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:5322:RunSlowTick(deltaTime, blockGameplayLanes);
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:5323:RunColdTick(deltaTime, blockGameplayLanes);
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:5324:RunFrostTick(deltaTime, blockGameplayLanes);
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6181:private void RunFixedStepAccumulator(float dilatedDeltaTime, bool blockGameplayLanes)
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6224:DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6240:private void DispatchFixedStep(float fixedDeltaTime, bool blockGameplayLanes)
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6253:if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6284:if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6365:private void RunFastTick(float deltaTime, bool blockGameplayLanes)
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6384:if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6422:private void RunUnscaledFastTick(float unscaledDeltaTime, bool blockGameplayLanes)
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6439:if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6474:private void RunSlowTick(float deltaTime, bool blockGameplayLanes)
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6498:if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6780:private void RunBucketedSlowTick(bool blockGameplayLanes)
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6796:if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6845:private void RunColdTick(float deltaTime, bool blockGameplayLanes)
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6866:if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6902:private void RunFrostTick(float deltaTime, bool blockGameplayLanes)
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:6920:if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:7115:private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:7117:if (!blockGameplayLanes)
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:291:LocomotionHoldInProgress,
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2701:movement.EnsureDispatcherRegistration();
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2848:_waitReason = WaitReason.LocomotionHoldInProgress;
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2863:_waitReason = WaitReason.LocomotionHoldInProgress;
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:4795:case WaitReason.LocomotionHoldInProgress:
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:4896:.Append(" waitingOn=").Append(_phaseWaitReason[index].ToString());
+Assets/_Project\Scripts\Power\PowerDrainBillingRuntime.cs:75:// (TryEnsureDispatcherRegistration, GlobalRegistry.cs:7058).
+Assets/_Project\Tests\Editor\KelpShaderScalability1427EditTests.cs:1571:Assert.That(updateBody, Does.Contain("bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&"));

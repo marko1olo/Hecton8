@@ -1,0 +1,163 @@
+928-        private static float _pressureAtStart;
+929-        // Sentinels a candidate can always beat, per COMMON_SENSE.md: a min-fold seeded with 0 would report
+930-        // 0 m as the shallowest depth ever reached even if the player never left 40 m.
+931-        private static float _depthMin = float.MaxValue;
+932-        private static float _depthMax = float.MinValue;
+933:        private static float _maxMovementIntent;
+934-        private static float _maxImmersion;
+935-        private static float _oxygenLast;
+936-        private static float _pressureLast;
+937-        private static bool _sawVitalsOxygenFlag;
+938-        private static bool _sawVitalsPressureFlag;
+939-        private static bool _sawVitalsDepthFlag;
+940-        private static bool _inputEnabledEverObserved;
+941-        // Distinct from _inputEnabledEverObserved: GlobalRegistry.RegisteredInput can be null (nothing
+942-        // registered) or non-null with a closed action map, and those are different defects with different
+943-        // owners. One shared flag hid that difference for a full cycle.
+944-        private static bool _inputServiceEverObserved;
+945-        private static uint _inputBlockMaskLast;
+946-
+947-        // ── resource observations ─────────────────────────────────────────────────────────────────
+948-        private static bool _nodeFromWorld;
+949-        private static bool _spawnPointRegistered;
+950-        private static bool _populatorReady;
+951-        private static int _populatorLookupAttempts;
+952-        private static int _forcedPopulatorSlowTicks;
+953-        private static int _populatorNodesAtRegister;
+954-        private static float _nodeHealthAtToolUse;
+955-        private static float _nodeHealthAfterToolUse;
+956-        private static bool _nodeDepleted;
+957-        private static bool _sawPickupHover;
+958-        private static bool _interactPublished;
+--
+1305-            _swimBaselineTaken = false;
+1306-            _oxygenAtStart = 0f;
+1307-            _pressureAtStart = 0f;
+1308-            _depthMin = float.MaxValue;
+1309-            _depthMax = float.MinValue;
+1310:            _maxMovementIntent = 0f;
+1311-            _maxImmersion = 0f;
+1312-            _oxygenLast = 0f;
+1313-            _pressureLast = 0f;
+1314-            _sawVitalsOxygenFlag = false;
+1315-            _sawVitalsPressureFlag = false;
+1316-            _sawVitalsDepthFlag = false;
+1317-            _inputEnabledEverObserved = false;
+1318-            _inputServiceEverObserved = false;
+1319-            _inputBlockMaskLast = 0u;
+1320-
+1321-            _nodeFromWorld = false;
+1322-            _spawnPointRegistered = false;
+1323-            _populatorReady = false;
+1324-            _populatorLookupAttempts = 0;
+1325-            _forcedPopulatorSlowTicks = 0;
+1326-            _populatorNodesAtRegister = 0;
+1327-            _nodeHealthAtToolUse = 0f;
+1328-            _nodeHealthAfterToolUse = 0f;
+1329-            _nodeDepleted = false;
+1330-            _sawPickupHover = false;
+1331-            _interactPublished = false;
+1332-            _sawManualPickupAcquire = false;
+1333-            _manualPickupQuantity = 0;
+1334-            _nodeDamageEffectResolved = false;
+1335-            _nodeDamageEffectAccepted = false;
+--
+1616-            }
+1617-
+1618-            Hecton8.Gameplay.HectonPlayerMovement movement = _movement;
+1619-            if (movement != null)
+1620-            {
+1621:                float intent = movement.CurrentMovementIntent01;
+1622:                if (intent > _maxMovementIntent)
+1623:                    _maxMovementIntent = intent;
+1624-
+1625-                float immersion = movement.WaterImmersionRatio;
+1626-                if (immersion > _maxImmersion)
+1627-                    _maxImmersion = immersion;
+1628-            }
+1629-
+1630-            System.ReadOnlySpan<SurvivalVitalsChangedSignal> vitals =
+1631-                SignalBus<SurvivalVitalsChangedSignal>.GetFrameSnapshot();
+1632-            for (int i = 0; i < vitals.Length; i++)
+1633-            {
+1634-                uint flags = vitals[i].Flags;
+1635-                if ((flags & SurvivalVitalsChangedSignalFlags.Oxygen) != 0u)
+1636-                    _sawVitalsOxygenFlag = true;
+1637-                if ((flags & SurvivalVitalsChangedSignalFlags.Pressure) != 0u)
+1638-                    _sawVitalsPressureFlag = true;
+1639-                if ((flags & SurvivalVitalsChangedSignalFlags.Depth) != 0u)
+1640-                    _sawVitalsDepthFlag = true;
+1641-            }
+1642-
+1643-            System.ReadOnlySpan<ItemAcquiredSignal> acquired =
+1644-                SignalBus<ItemAcquiredSignal>.GetFrameSnapshot();
+1645-            for (int i = 0; i < acquired.Length; i++)
+1646-            {
+1647-                ItemAcquiredSignal signal = acquired[i];
+1648-                if (signal.SourceKind == ItemAcquiredSignalSourceKinds.ManualPickup)
+--
+2768-            }
+2769-        }
+2770-
+2771-        /// <summary>
+2772-        /// Swim row acceptance. Three independent facts, and the row only passes when all three hold:
+2773:        ///   1. the driver's MoveDelta reached the locomotion owner (CurrentMovementIntent01 moved),
+2774-        ///   2. depth actually spanned a range (surface AND dive happened, not just one),
+2775-        ///   3. oxygen/pressure were readable and moved, corroborated by the vitals lane.
+2776-        /// Anything less is Partial or Blocked with the measured numbers attached, because "the harness
+2777-        /// ran" is not the same claim as "the route is proven".
+2778-        /// </summary>
+2779-        private static void LatchSwimVerdict()
+2780-        {
+2781-            if (_latched[RowSwim])
+2782-                return;
+2783-
+2784-            if (!_swimBaselineTaken)
+2785-                return;
+2786-
+2787-            // Sentinel-safe: _depthMin seeds at float.MaxValue and _depthMax at float.MinValue, so an
+2788-            // unsampled fold reads as ordered-backwards rather than as a 6.8e38 metre span. Reporting the
+2789-            // sentinel as a measurement is exactly the silent-degeneracy trap this project keeps hitting.
+2790-            bool depthSampled = _depthMax >= _depthMin;
+2791-            float depthMinShown = depthSampled ? _depthMin : 0f;
+2792-            float depthMaxShown = depthSampled ? _depthMax : 0f;
+2793-            float depthSpan = depthSampled ? _depthMax - _depthMin : 0f;
+2794-            float oxygenDelta = Mathf.Abs(_oxygenLast - _oxygenAtStart);
+2795-            float pressureDelta = Mathf.Abs(_pressureLast - _pressureAtStart);
+2796:            bool intentReachedMovement = _maxMovementIntent >= MinMovementIntent01;
+2797-            bool depthMoved = depthSpan >= MinDepthSpanMeters;
+2798-            bool vitalsMoved =
+2799-                oxygenDelta >= MinOxygenDelta ||
+2800-                pressureDelta >= MinPressureDelta ||
+2801-                _sawVitalsOxygenFlag ||
+2802-                _sawVitalsPressureFlag ||
+2803-                _sawVitalsDepthFlag;
+2804-
+2805-            _detail.Clear();
+2806-            _detail.Append("driver published ").Append(_publishedOverrides)
+2807:                .Append(" input overrides; movementIntent01max=").Append(F(_maxMovementIntent))
+2808-                .Append(" immersionMax=").Append(F(_maxImmersion))
+2809-                .Append(" depthSampled=").Append(depthSampled)
+2810-                .Append(" depth=").Append(F(depthMinShown)).Append("..").Append(F(depthMaxShown))
+2811-                .Append(" span=").Append(F(depthSpan))
+2812-                .Append("m oxygen ").Append(F(_oxygenAtStart)).Append("->").Append(F(_oxygenLast))
+2813-                .Append(" pressure ").Append(F(_pressureAtStart)).Append("->").Append(F(_pressureLast))
+2814-                .Append(" vitalsFlags[o2=").Append(_sawVitalsOxygenFlag)
+2815-                .Append(" pressure=").Append(_sawVitalsPressureFlag)
+2816-                .Append(" depth=").Append(_sawVitalsDepthFlag)
+2817-                .Append("] inputServiceRegistered=").Append(_inputServiceEverObserved)
+2818-                .Append(" inputEnabled=").Append(_inputEnabledEverObserved)
+2819-                .Append(" switchToPlayerInputCalled=").Append(_switchedToPlayerInput)
+2820-                .Append(" blockMask=0x").Append(_inputBlockMaskLast.ToString("X8", CultureInfo.InvariantCulture));
+2821-
+2822-            if (!_inputServiceEverObserved)
+2823-            {
+2824-                _detail.Append(" - BLOCKER GATE 1: GlobalRegistry's Input slot was EMPTY for the whole ")
+2825-                    .Append("window. No IInputService was ever registered, so IsPlayerInputEnabled was ")
+2826-                    .Append("never reachable and the leading null check in HectonPlayerInputHandler.cs:37 ")
+2827-                    .Append("rejected every frame. This is a registration lifetime defect, not a disabled ")
+2828-                    .Append("action map");
+2829-                Latch(RowSwim, RowVerdict.Blocked);
+2830-                return;
+2831-            }
+2832-

@@ -1,0 +1,95 @@
+6181|        private void RunFixedStepAccumulator(float dilatedDeltaTime, bool blockGameplayLanes)
+6182|        {
+6183|            if (SignalBusRegistry.IsSimulationHalted)
+6184|                return;
+6185|
+6186|            if (dilatedDeltaTime <= 0f)
+6187|            {
+6188|                _temporalCompressionActive = false;
+6189|                RefreshFixedInterpolationAlpha();
+6190|                return;
+6191|            }
+6192|
+6193|            double maxAccumulatedTime = FixedStepSeconds * MaxFixedSubstepsPerFrame;
+6194|            double requestedAccumulatedTime = _fixedStepAccumulator + dilatedDeltaTime;
+6195|            bool compressionActive = requestedAccumulatedTime > maxAccumulatedTime;
+6196|            _temporalCompressionActive = compressionActive;
+6197|            if (compressionActive)
+6198|            {
+6199|                _temporalCompressionFrameCount++;
+6200|                CrashTelemetryBuffer.ReportTemporalCompression();
+6201|
+6202|                // Temporal compression is the fixed lane's version of the slow lane's discarded surplus:
+6203|                // the Math.Min below throws away requested-minus-max seconds of physics and fixed-tick
+6204|                // time, and only a frame COUNT was ever recorded for it - never the seconds lost. Under
+6205|                // step-bounded time this must not happen at all, so say so once and loudly. This sits
+6206|                // inside the already-rare compression branch, so it costs nothing on a normal frame.
+6207|                if (_headlessTimeMode == HeadlessTimeMode.StepBounded)
+6208|                {
+6209|                    ReportStepBoundedClamp(
+6210|                        StepBoundedClampLaneFixed,
+6211|                        FixedStepSeconds,
+6212|                        requestedAccumulatedTime - maxAccumulatedTime);
+6213|                }
+6214|            }
+6215|
+6216|            _fixedStepAccumulator = System.Math.Min(requestedAccumulatedTime, maxAccumulatedTime);
+6217|
+6218|            int substepCount = 0;
+6219|            while (_fixedStepAccumulator >= FixedStepSeconds && substepCount < MaxFixedSubstepsPerFrame)
+6220|            {
+6221|                if (SignalBusRegistry.IsSimulationHalted)
+6222|                    break;
+6223|
+6224|                DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
+6225|                _fixedStepAccumulator -= FixedStepSeconds;
+6226|                substepCount++;
+6227|            }
+6228|
+6229|            if (substepCount >= MaxFixedSubstepsPerFrame && _fixedStepAccumulator >= FixedStepSeconds)
+6230|                _fixedStepAccumulator = 0d;
+6231|
+6232|            RefreshFixedInterpolationAlpha();
+6233|        }
+6234|
+6235|        private void RefreshFixedInterpolationAlpha()
+6236|        {
+6237|            CurrentFixedInterpolationAlpha = math.saturate((float)(_fixedStepAccumulator / FixedStepSeconds));
+6238|        }
+6239|
+6240|        private void DispatchFixedStep(float fixedDeltaTime, bool blockGameplayLanes)
+6241|        {
+6242|#if UNITY_EDITOR && HECTON_HEAP_LOCK_GUARD
+6243|            long heapBefore = Profiler.GetMonoUsedSizeLong();
+6244|#endif
+6245|            using (_fixedUpdateProfilerMarker.Auto())
+6246|            {
+6247|                RunMasterFixedSimulationBridge(fixedDeltaTime);
+6248|                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+6249|                {
+6250|                    if (SignalBusRegistry.IsSimulationHalted)
+6251|                        return;
+6252|
+6253|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6254|                        continue;
+6255|
+6256|                    RegistryBucket<IFixedTickable> lane = _fixedPriorityLanes[laneIndex];
+6257|#if UNITY_EDITOR
+6258|                    lane.ValidateNoDestroyedEntriesDebug(nameof(IFixedTickable));
+6259|#endif
+6260|                    using (_fixedLaneProfilerMarkers[laneIndex].Auto())
+6261|                    {
+6262|                        int count = lane.Count;
+6263|
+6264|                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+6265|                        {
+6266|                            lane.GetAt(itemIndex).FixedTick(fixedDeltaTime);
+6267|                            if (SignalBusRegistry.IsSimulationHalted)
+6268|                                return;
+6269|                        }
+6270|                    }
+6271|                }
+6272|
+6273|                using (_postFixedProfilerMarker.Auto())
+6274|                {
+6275|                    DispatcherJobFence.BeginPostFixedSwapWindow();

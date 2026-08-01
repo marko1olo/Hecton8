@@ -1,0 +1,8 @@
+38|// IsAnyOpen stays true, HPM SampleGameplay zeros input without GetState (hop2 starve).
+40|_openMenuCount = 0;
+89|private static int _openMenuCount;
+189|public static bool IsAnyOpen => _openMenuCount > 0;
+754|if (_openMenuCount < int.MaxValue)
+755|_openMenuCount++;
+760|if (_openMenuCount > 0)
+761|_openMenuCount--;

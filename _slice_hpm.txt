@@ -1,0 +1,42 @@
+58:    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IInitializable, IGlobalRegistryHotSwapListener, IPlayerMovementContracts, IPlayerKinematicsMovementRuntime, IPlayerCuttingTensionService, IPlayerHypoxiaPresentationSink, IBootstrapProductionPlayerMovementAuthority
+120:        private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
+164:        private const int SpeculativeHoverFixedTicksAfterAupShift = 1;
+1606:        private bool _registeredFixedTick;
+4732:            _registeredFixedTick = false;
+4761:        private PlayerTransportPreset PrepareFixedTickDependencies()
+4808:            if (_registeredTick && _registeredFixedTick && _registeredLateFrameTick) return;
+5026:            if (_registeredFixedTick)
+5028:                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+5029:                _registeredFixedTick = false;
+5418:            _aupSpeculativeHoverTicks = SpeculativeHoverFixedTicksAfterAupShift;
+5476:            if (!_registeredFixedTick)
+5478:                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+5510:            if (_registeredFixedTick)
+5512:                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+5513:                _registeredFixedTick = false;
+7995:        /// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+7996:        /// returns default (:8450), which sends ProcessPlayerInputFrame (:8079) down its else branch every
+8055:            _inputHandler.TryReadFrame(inputService, jumpBufferTime, false, out HectonPlayerInputFrame frame, out _);
+8067:        public void Tick(float deltaTime)
+8090:                if (IsGameplayInputBlockedByMenu())
+8103:                ProcessPlayerInputFrame();
+8130:        private void ProcessPlayerInputFrame()
+8134:                _inputHandler.TryReadFrame(
+8196:        /// WHY THIS EXISTS ON FixedTick. ProcessPlayerInputFrame historically ran only from the
+8198:        /// long fixed steps) drive locomotion almost entirely through FixedTick while render Tick
+8200:        /// had already published a non-zero MoveDelta (L08: publishOk>0, movementIntent01max=0,
+8208:        private void SampleGameplayLocomotionInputForFixedStep()
+8212:            if (IsGameplayInputBlockedByMenu())
+8224:            ProcessPlayerInputFrame();
+9765:        private static bool IsGameplayInputBlockedByMenu()
+9826:        //  FixedTick Ã¢â‚¬â€ PHYSICS
+9921:        public void FixedTick(float fixedDeltaTime)
+9930:                // before each FixedTick (batchmode / catch-up), and PrepareTransportAndFrameState
+9932:                SampleGameplayLocomotionInputForFixedStep();
+9937:                bool wasGroundedLastFixedTick = _isGrounded;
+10075:                TryStartWaterEntryImpact(previousWaterImmersionRatio, wasGroundedLastFixedTick, currentVerticalVelocity);
+10087:                FinalizeFixedTick(fixedDeltaTime, suit, exosuitKinematicAuthority);
+10117:            PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
+10226:        private void FinalizeFixedTick(float fixedDeltaTime, SuitData suit, bool exosuitKinematicAuthority)
+12263:        private void TryStartWaterEntryImpact(float previousWaterImmersionRatio, bool wasGroundedLastFixedTick, float entryVerticalVelocity)
+12265:            if (IsInDryInterior() || wasGroundedLastFixedTick || previousWaterImmersionRatio > 0.01f || _waterImmersionRatio <= 0.01f)

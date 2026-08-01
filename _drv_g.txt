@@ -1,0 +1,13 @@
+291|            LocomotionHoldInProgress,
+2649|        /// SwitchToUIInput or sticky IsOpen cannot starve hop2 (GetState) for the whole phase.
+2669|            if (Hecton8.UI.PauseMenuController.IsAnyOpen)
+2692|            // L13: Re-assert HPM Player fixed-tick registration so SampleGameplay/GetState (hop2)
+2701|                movement.EnsureDispatcherRegistration();
+2723|            // every settle tick. L10 measured hop2-starve: SampleGameplayLocomotionInputForFixedStep
+2834|            // enough if anything re-opens UI mid-window (L10: hop2 never fired).
+2848|            _waitReason = WaitReason.LocomotionHoldInProgress;
+2863|            _waitReason = WaitReason.LocomotionHoldInProgress;
+2925|                .Append(" pauseOpen=").Append(Hecton8.UI.PauseMenuController.IsAnyOpen)
+2989|            _detail.Append(" - FAIL: the input path was open but the driver's MoveDelta never reached ")
+4795|                case WaitReason.LocomotionHoldInProgress:
+4896|                .Append(" waitingOn=").Append(_phaseWaitReason[index].ToString());

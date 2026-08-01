@@ -1,0 +1,309 @@
+============================================================
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonPlayerMovement.cs
+total 15307
+hits 10
+58:     public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IInitializable, IGlobalRegistryHo
+5028:                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+5478:                 _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+5512:                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+8197:         /// render IUpdatable.Tick path. Batchmode and physics-heavy schedules (headless V0 probe,
+8208:         private void SampleGameplayLocomotionInputForFixedStep()
+9921:         public void FixedTick(float fixedDeltaTime)
+9932:                 SampleGameplayLocomotionInputForFixedStep();
+10087:                 FinalizeFixedTick(fixedDeltaTime, suit, exosuitKinematicAuthority);
+10226:         private void FinalizeFixedTick(float fixedDeltaTime, SuitData suit, bool exosuitKinematicAuthority)
+--- class context ---
+53: 
+54: namespace Hecton8.Gameplay
+55: {
+56:     [DisallowMultipleComponent]
+57:     [RequireComponent(typeof(Rigidbody))]
+58:     public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IInitializable, IGlobalRegistryHo
+59:     {
+60:         private int _signalPushDropCount;
+61:         [StructLayout(LayoutKind.Explicit, Size = 96)]
+62:         private struct CinematicFocusTelemetryEntry
+63:         {
+64:             [FieldOffset(0)]
+65:             public long PlayerGridX;
+66:             [FieldOffset(8)]
+67:             public long PlayerGridY;
+68:             [FieldOffset(16)]
+69:             public long PlayerGridZ;
+70:             [FieldOffset(24)]
+71:             public long TargetGridX;
+72:             [FieldOffset(32)]
+73:             public long TargetGridY;
+74:             [FieldOffset(40)]
+75:             public long TargetGridZ;
+76:             [FieldOffset(48)]
+77:             public float3 TargetDirection;
+78:             [FieldOffset(60)]
+79:             public float DistanceSq;
+80:             [FieldOffset(64)]
+81:             public float PullWeight;
+82:             [FieldOffset(68)]
+83:             public float SubtitleAlpha01;
+84:             [FieldOffset(72)]
+85:             public uint Frame;
+86:             [FieldOffset(76)]
+87:             public uint FocusHash;
+88:             [FieldOffset(80)]
+--- TryRegister near 4391 ---
+4391:         private void TryRegisterDependencyRebinds()
+4392:         {
+4393:             if (!_registeredHotSwapListener)
+4394:                 _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+4395:         }
+4396: 
+4397:         private void TryUnregisterDependencyRebinds()
+4398:         {
+4399:             if (_registeredHotSwapListener)
+4400:             {
+4401:                 GlobalRegistry.TryUnregisterHotSwapListener(this);
+4402:                 _registeredHotSwapListener = false;
+4403:             }
+4404:         }
+4405: 
+4406:         private void UnregisterPlayerMovementContracts()
+4407:         {
+4408:             if (!_registeredPlayerMovementContracts)
+4409:                 return;
+4410: 
+4411:             GlobalRegistry.UnregisterPlayerMovementContracts(this);
+4412:             _registeredPlayerMovementContracts = false;
+4413:         }
+4414: 
+4415:         private void ClearInjectedDependencies()
+4416:         {
+4417:             _audioService = null;
+4418:             _settingsRuntime = null;
+4419:             _localizationRuntime = null;
+4420:             _localizationStressHudRefreshSink = null;
+4421:             _spectrumRuntime = null;
+4422:             _resourceDistributionRuntime = null;
+4423:             _gasDynamicsRuntime = null;
+4424:             _fluidSurfaceRuntime = null;
+4425:             _terrainProviderRuntime = null;
+4426:             _abyssalFlowGpuRuntime = null;
+4427:             _inputServiceRuntime = null;
+4428:             _playerInventoryService = null;
+4429:             _voxelEngineRuntime = null;
+4430:             _sargassumDragRuntime = null;
+4431:             _thermodynamicsRuntime = null;
+4432:             _suitUpgradeRuntime = null;
+4433:             _oceanKinematicsRuntime = null;
+4434:             _playerSensoryRuntime = null;
+4435:         }
+4436: 
+4437:         Vector2 IPlayerMovementPoseReadModel.CurrentLocalWaveSlope => _dynamicWaveLocalSlope;
+4438: 
+4439:         bool IPlayerMovementPoseReadModel.TryGetRuntimePosition(out Vector3 position)
+4440:         {
+4441:             position = ResolveBodyRuntimePosition();
+4442:             return true;
+4443:         }
+4444: 
+4445:         void IPlayerMovementForceSink.QueueExternalAcceleration(Vector3 acceleration)
+4446:         {
+4447:             QueueSubsystemExternalAcceleration(acceleration);
+4448:         }
+4449: 
+4450:         void IPlayerMovementForceSink.QueueExternalVelocityChange(Vector3 velocityChange)
+4451:         {
+4452:             QueueSubsystemExternalVelocityChange(velocityChange);
+4453:         }
+4454: 
+4455:         void IPlayerMovementEnvironmentSink.RequestExternalHullStress(float normalizedStress)
+4456:         {
+4457:             RequestExternalHullStress(normalizedStress);
+4458:         }
+4459: 
+4460:         void IPlayerMovementEnvironmentSink.RequestLocalGravityOverride(Vector3 gravityVector, float holdSeconds)
+4461:         {
+4462:             RequestLocalGravityOverride(gravityVector, holdSeconds);
+4463:         }
+4464: 
+4465:         void IPlayerHypoxiaPresentationSink.RequestHypoxiaVisorDistortion(float intensity, float holdDuration, float recoverySpeed)
+4466:         {
+4467:             float oxygenLevel01 = _survivalSystem != null ? _survivalSystem.OxygenNormalized : 1f;
+4468:             float safeThreshold = 0.8f;
+4469:             System.Numerics.Vector2 hypoxiaVisorBlur = Hecton8.PureLogic.Systems.HypoxiaVisorBlurIntensityCalculator.Compute(oxygenLevel01, holdDuration, recoverySpeed, safeThreshold, 0.2f, 10f, 0.5f, 5f, 10f);
+4470:             TriggerHypoxiaVisorDistortion(Mathf.Max(intensity, hypoxiaVisorBlur.X), holdDuration, recoverySpeed);
+4471:         }
+
+--- ALL registration-related method signatures ---
+4207:         public void OnRegister()
+4391:         private void TryRegisterDependencyRebinds()
+4397:         private void TryUnregisterDependencyRebinds()
+4406:         private void UnregisterPlayerMovementContracts()
+5012:         private void UnregisterGlobalLifecycleListeners()
+5466:         private void TryRegisterToDispatchers()
+5502:         private void UnregisterDispatcherTicks()
+5529:         private void TryRegisterLateFrameTickable()
+9144:         private void RegisterVrComfortVisualBounce(float intensity01)
+============================================================
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerToolManager.cs
+total 3085
+hits 23
+45:     public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, IFixedTickable, ILateFrameTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
+167:         private bool _registeredToTick;
+168:         private bool _registeredToFixedTick;
+169:         private bool _registeredToLateFrame;
+295:             TryRegisterToTickManager();
+328:         private void TryRegisterToTickManager()
+330:             if ((_registeredToTick && _registeredToLateFrame) || !Application.isPlaying)
+336:             if (!_registeredToTick)
+338:                 _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+341:             if (!_registeredToLateFrame)
+342:                 _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+343:             if (!_registeredToFixedTick)
+349:                 _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+356:             if (!_registeredToTick && !_registeredToLateFrame)
+359:             if (_registeredToTick)
+362:             if (_registeredToFixedTick)
+364:                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+365:                 _registeredToFixedTick = false;
+367:             if (_registeredToLateFrame)
+370:             _registeredToTick = false;
+371:             _registeredToLateFrame = false;
+495:         public void FixedTick(float fixedDeltaTime)
+1644:                         TryRegisterToTickManager();
+--- PTM TryRegisterToTickManager ---
+328:         private void TryRegisterToTickManager()
+329:         {
+330:             if ((_registeredToTick && _registeredToLateFrame) || !Application.isPlaying)
+331:                 return;
+332: 
+333:             if (GlobalRegistry.Dispatcher == null)
+334:                 return;
+335: 
+336:             if (!_registeredToTick)
+337:             {
+338:                 _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+339:             }
+340: 
+341:             if (!_registeredToLateFrame)
+342:                 _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+343:             if (!_registeredToFixedTick)
+344:             {
+345:                 // Starter grant retry must not depend on render Tick alone. Batchmode / V0 probe
+346:                 // schedules few IUpdatable ticks while FixedTick runs continuously; without this
+347:                 // lane STARTERGRANT stays deferred (L08 refusalMask 0x1E) and IsToolAvailableInSlot
+348:                 // never becomes true before ToolEquip latches Blocked.
+349:                 _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+350:             }
+351: 
+352:         }
+353: 
+354:         private void TryUnregisterFromTickManager(bool clearPendingPresentation = true)
+355:         {
+356:             if (!_registeredToTick && !_registeredToLateFrame)
+357:                 return;
+358: 
+359:             if (_registeredToTick)
+360:                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+361: 
+362:             if (_registeredToFixedTick)
+363:             {
+364:                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+365:                 _registeredToFixedTick = false;
+366:             }
+367:             if (_registeredToLateFrame)
+368:                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+369: 
+370:             _registeredToTick = false;
+371:             _registeredToLateFrame = false;
+372:             if (clearPendingPresentation)
+373:             {
+374:                 _pendingToolPoseFlush = false;
+375:                 _pendingToolPoseTransform = null;
+376:                 _pendingToolGripOffsets = null;
+377:                 _hasPendingHandAnchorLocalPosition = false;
+378:             }
+
+============================================================
+PlayerInventory key methods
+1572:                     "(STORAGE UNAVAILABLE above) instead.");
+1624:         public InventoryGrid Grid => _grid;
+1679:                 // STORAGE UNAVAILABLE line, which names _cachedDataVault when the GlobalDataVault service is
+2371:         // Refusal-reason bits for DescribeAddRefusalMask. Kept public because the only consumers are cold
+2408:         public uint DescribeAddRefusalMask(int itemHashId)
+2470:         internal bool CanServiceItemAdds()
+2505:         internal bool TryRecoverRuntimeStorageCold()
+2538:         private bool TryBindRuntimeStorageCold()
+2634:                 "[PlayerInventory] STORAGE UNAVAILABLE - " + failedStep + " failed, so this inventory " +
+--- CanServiceItemAdds @ 2470 ---
+2470:         internal bool CanServiceItemAdds()
+2471:         {
+2472:             return enabled &&
+2473:                    _grid != null &&
+2474:                    itemCatalog != null &&
+2475:                    _stackCounts.IsCreated &&
+2476:                    _scavengeSimStackCounts.IsCreated &&
+2477:                    _simulationOccupiedCells.IsCreated;
+2478:         }
+--- TryRecoverRuntimeStorageCold @ 2505 ---
+2505:         internal bool TryRecoverRuntimeStorageCold()
+2506:         {
+2507:             if (CanServiceItemAdds())
+2508:                 return true;
+2509: 
+2510:             // _grid == null means Awake has not completed its grid construction. Do not build the grid here:
+2511:             // InventoryGrid's constructor THROWS on allocation failure, and this method is reachable from a
+2512:             // dispatcher tick, where an escaping throw would amputate the caller's whole lane.
+2513:             //
+2514:             // This used to be documented as "Awake bailed on the editor-only DTO layout guard", i.e. as a
+2515:             // permanent unrecoverable state. It is not that in practice: the layout guard's assertions are
+2516:             // satisfied by construction (see the note in Awake) and cannot fail, so the reachable meaning of
+2517:             // _grid == null is that Awake has not RUN yet - a consumer polled this component before its
+2518:             // Awake, which is ordinary on the AddComponent bootstrap route. Returning false is still correct,
+2519:             // but the caller must treat it as "not ready yet" and keep its retry budget alive rather than
+2520:             // reading it as the unrecoverable layout verdict and giving up.
+2521:             if (_grid == null)
+2522:                 return false;
+2523: 
+2524:             if (!TryBindRuntimeStorageCold())
+2525:                 return false;
+2526: 
+2527:             if (!enabled)
+2528:                 enabled = true;
+2529: 
+2530:             return CanServiceItemAdds();
+2531:         }
+--- DescribeAddRefusalMask @ 2408 ---
+2408:         public uint DescribeAddRefusalMask(int itemHashId)
+2409:         {
+2410:             uint mask = 0u;
+2411:             if (!enabled)
+2412:                 mask |= AddRefusalComponentDisabled;
+2413: 
+2414:             if (_grid == null)
+2415:                 mask |= AddRefusalGridMissing;
+2416: 
+2417:             if (!_stackCounts.IsCreated)
+2418:                 mask |= AddRefusalStackLaneDead;
+2419: 
+2420:             if (!_scavengeSimStackCounts.IsCreated)
+2421:                 mask |= AddRefusalSimStackLaneDead;
+2422: 
+2423:             if (!_simulationOccupiedCells.IsCreated)
+2424:                 mask |= AddRefusalSimOccupancyLaneDead;
+2425: 
+2426:             if (itemCatalog == null)
+2427:                 mask |= AddRefusalCatalogMissing;
+2428: 
+2429:             if (itemHashId == 0)
+2430:                 mask |= AddRefusalHashZero;
+2431:             else if (!TryGetRuntimeDescriptor(itemHashId, out ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor))
+2432:                 mask |= AddRefusalDescriptorMissing;
+2433:             else if (!CanAcceptAdditionalPhysicalCapacity(in runtimeDescriptor, 1))
+2434:                 mask |= AddRefusalPhysicalCapacity;
+2435: 
+2436:             // Everything named above passed, so the only remaining refusal inside CanAcceptQuantity is the
+2437:             // simulated placement itself - the grid genuinely has no free footprint for this item.
+2438:             if (mask == 0u && !CanAcceptQuantity(itemHashId, 1))
+2439:                 mask |= AddRefusalGridPlacement;
+2440: 
+2441:             return mask;
+2442:         }

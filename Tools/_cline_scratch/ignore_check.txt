@@ -1,3 +1,0 @@
-.gitignore:201:Docs/AgentLogs/	Docs/AgentLogs/H8_V0_PLAYTEST_SMOKE_GATE.json
-.gitignore:201:Docs/AgentLogs/	Docs/AgentLogs/v0_kcc_gate_2026-07-30.log
-.gitignore:201:Docs/AgentLogs/	Docs/AgentLogs/headless_smoke_20260730_p0fix.log

@@ -1,0 +1,24 @@
+45:    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, IFixedTickable, ILateFrameTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
+168:        private bool _registeredToFixedTick;
+330:            if ((_registeredToTick && _registeredToLateFrame && _registeredToFixedTick) || !Application.isPlaying)
+343:            if (!_registeredToFixedTick)
+346:                // schedules few IUpdatable ticks while FixedTick runs continuously; without this
+347:                // lane STARTERGRANT stays deferred (L08 refusalMask 0x1E) and IsToolAvailableInSlot
+349:                _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+356:            if (!_registeredToTick && !_registeredToLateFrame && !_registeredToFixedTick)
+362:            if (_registeredToFixedTick)
+364:                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+365:                _registeredToFixedTick = false;
+395:            RetryRuntimeStartToolGrantIfPending();
+492:        /// presentation; this lane only keeps <see cref="RetryRuntimeStartToolGrantIfPending"/>
+495:        public void FixedTick(float fixedDeltaTime)
+497:            RetryRuntimeStartToolGrantIfPending();
+1298:        /// That is the whole reason the Tool row stayed blocked with <c>STARTERGRANT deferred</c> logged
+1302:        /// The real retry now lives on <see cref="RetryRuntimeStartToolGrantIfPending"/>, driven from
+1364:                    // RetryRuntimeStartToolGrantIfPending. The deferral latch is therefore part of the gate,
+1396:                // ONCE, not once per attempt. RetryRuntimeStartToolGrantIfPending now calls this method from
+1407:                    "[PlayerToolManager] STARTERGRANT deferred - the player inventory refused at least one " +
+1422:                    "[PlayerToolManager] STARTERGRANT applied - the assigned quick-slot tool items are owned." +
+1428:                    "[PlayerToolManager] STARTERGRANT satisfied - every assigned quick-slot tool item was " +
+1451:        private void RetryRuntimeStartToolGrantIfPending()
+1544:                "[PlayerToolManager] STARTERGRANT ABANDONED - the player inventory refused every assigned " +

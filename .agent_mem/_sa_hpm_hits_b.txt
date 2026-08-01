@@ -1,0 +1,48 @@
+meplayLocomotionInputForFixedStep()
+8212|            if (IsGameplayInputBlockedByMenu())
+8216|                _inputH = 0f;
+8217|                _inputV = 0f;
+8218|                _inputVertical = 0f;
+8224|            ProcessPlayerInputFrame();
+8643|            _juiceInput.hasMovementInput = (_inputH != 0f || _inputV != 0f || _inputVertical != 0f) ? (byte)1 : (byte)0;
+8644|            _juiceInput.inputH = _inputH;
+8656|            _juiceInput.swimVerticalInput = _inputVertical;
+8968|                ApproximatePlanarMagnitude(_inputH, _inputV),
+8969|                math.abs(_inputVertical)));
+9105|            bool manualRollIntent = math.abs(_inputH) >= vrManualRollInputThreshold && math.abs(_inputV) <= 0.25f;
+9224|                ? math.saturate(math.max(math.abs(_inputVertical), ResolveActiveTransportBoost01()))
+9765|        private static bool IsGameplayInputBlockedByMenu()
+9826|        //  FixedTick Ã¢â‚¬â€ PHYSICS
+9921|        public void FixedTick(float fixedDeltaTime)
+9930|                // before each FixedTick (batchmode / catch-up), and PrepareTransportAndFrameState
+9932|                SampleGameplayLocomotionInputForFixedStep();
+9937|                bool wasGroundedLastFixedTick = _isGrounded;
+10075|                TryStartWaterEntryImpact(previousWaterImmersionRatio, wasGroundedLastFixedTick, currentVerticalVelocity);
+10087|                FinalizeFixedTick(fixedDeltaTime, suit, exosuitKinematicAuthority);
+10117|            PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
+10187|                bool hasLandInput = _inputH != 0f || _inputV != 0f;
+10226|        private void FinalizeFixedTick(float fixedDeltaTime, SuitData suit, bool exosuitKinematicAuthority)
+10713|            return _inputV > surfaceDiveForwardCommit;
+11005|            float counterIntent = math.max(math.saturate(_inputVertical), upwardLookT * math.saturate(_inputV));
+11122|            Vector3 inputDirection = _cachedTransform.forward * _inputV +
+11123|                                     _cachedTransform.right * _inputH +
+11124|                                     Vector3.up * _inputVertical;
+11924|                float demandT = math.max(transportBoost01, math.saturate(_inputV));
+12263|        private void TryStartWaterEntryImpact(float previousWaterImmersionRatio, bool wasGroundedLastFixedTick, float entryVerticalVelocity)
+12265|            if (IsInDryInterior() || wasGroundedLastFixedTick || previousWaterImmersionRatio > 0.01f || _waterImmersionRatio <= 0.01f)
+13725|            if (_inputV <= 0.05f)
+13895|            float gatedInputH = IsCriticalStaminaFailureActive ? 0f : _inputH;
+13896|            float gatedInputV = IsCriticalStaminaFailureActive ? 0f : _inputV;
+13897|            float gatedInputVertical = IsCriticalStaminaFailureActive ? 0f : _inputVertical;
+14143|                bool thrusterActive = math.abs(_inputVertical) > 0.01f || ResolveActiveTransportPropulsionForce() > 0.01f;
+14337|                float absInputH = math.isfinite(_inputH) ? math.abs(_inputH) : 0f;
+14338|                float absInputV = math.isfinite(_inputV) ? math.abs(_inputV) : 0f;
+14340|                float inputIntent = math.max(planarInputIntent, math.isfinite(_inputVertical) ? math.abs(_inputVertical) : 0f);
+14377|            if (_inputH == 0f && _inputV == 0f) return;
+14384|                _moveDirection = ResolveTransportPlatformRelativeWalkInputWorldDirection(_inputH, _inputV);
+14390|                _moveDirection.x = sinYaw * _inputV + cosYaw * _inputH;
+14392|                _moveDirection.z = cosYaw * _inputV - sinYaw * _inputH;
+14570|                float planarInputMagnitude = ApproximatePlanarMagnitude(_inputH, _inputV);
+14571|                bool surfaceIdleDrift = _isSurfaceSwimming && planarInputMagnitude <= crestFlowIdleInputThreshold && math.abs(_inputVertical) <= crestFlowIdleInputThreshold;
+14635|            float planarInputMagnitude = ApproximatePlanarMagnitude(_inputH, _inputV);
+14636|            float vertical

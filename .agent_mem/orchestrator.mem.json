@@ -1,0 +1,27 @@
+{
+  "role": "orchestrator",
+  "head": "e05dee87f875529893680fcf549891931b36fc1a",
+  "branch": "main",
+  "task": "L10_MEASURED_FAIL_to_L11_swim_fix",
+  "updated": "2026-07-31T15:48:00+04:00",
+  "l10": {
+    "status": "FAIL",
+    "failures": 1,
+    "swim": "FAIL movementIntent01max=0",
+    "jsonOnDisk": false,
+    "starterGrantMask": "0x1E",
+    "readHopFinal": 0,
+    "publishGuardFail": 4035,
+    "publishOk": 461,
+    "earlyStateMove": "(0,1)",
+    "l09Sufficiency": "DISPROVED_for_swim"
+  },
+  "next": [
+    "discover SampleGameplay/GetState/publishGuard root",
+    "product fix swim intent",
+    "vault 0x1E if dig proves",
+    "L11 probe",
+    "allowlist commit push"
+  ],
+  "policy": "no_mocks no_desktop_dumps product_only_commit"
+}

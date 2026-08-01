@@ -1,0 +1,20 @@
+14:    public sealed class HectonScanMarkerSystem : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IScanEventListener, IGlobalRegistryHotSwapListener
+65:        private bool _lateFrameRegistered;
+98:            TryRegisterHotSwapListener();
+99:            ScanEvents.Register(this);
+100:            RegisterTick();
+101:            RegisterLateFrameTick();
+140:                        RegisterTick();
+141:                        RegisterLateFrameTick();
+165:            RegisterLateFrameTick();
+430:        /// <see cref="OnEnable"/> reaches this method at :96, before <c>TryRegisterHotSwapListener()</c>,
+431:        /// <c>ScanEvents.Register(this)</c>, <c>RegisterTick()</c> and <c>RegisterLateFrameTick()</c> (:97-100).
+523:        private void RegisterTick()
+531:            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+543:        private void RegisterLateFrameTick()
+545:            if (_lateFrameRegistered || !Application.isPlaying)
+551:            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+556:            if (!_lateFrameRegistered)
+560:            _lateFrameRegistered = false;
+569:        private void TryRegisterHotSwapListener()
+574:            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);

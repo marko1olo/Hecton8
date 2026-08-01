@@ -1,0 +1,262 @@
+C:\hades\Hecton8\Assets\_Project\Scripts\Audio\Synthesis\VocalBankPlaybackRuntime.cs:1606:                using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+C:\hades\Hecton8\Assets\_Project\Scripts\Audio\Synthesis\VocalBankPlaybackRuntime.cs:1884:            using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+C:\hades\Hecton8\Assets\_Project\Scripts\Audio\Synthesis\DynamicMusic\DynamicMusicGranularSynthesizer.cs:613:                using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:393:            NativeArray<SteeringSdfConfigDTO> sdfConfig = _steeringSdfConfig.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:394:            NativeArray<SteeringProfileDTO> profiles = _steeringProfiles.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:395:            NativeArray<SteeringParamsDTO> parameters = _steeringParams.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:459:            NativeArray<int> activeSlots = _activeSlots.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:460:            NativeArray<CognitionInput> inputs = _inputs.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:461:            NativeArray<PackedCognitionOutput> outputs = _outputs.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:462:            NativeArray<SteeringParamsDTO> steeringParams = _steeringParams.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:463:            NativeArray<SteeringAvoidanceDTO> avoidance = _steeringAvoidance.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:464:            NativeArray<SteeringWhiskerResultDTO> whiskers = _steeringWhiskers.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:465:            NativeArray<KinematicStateDTO> kinematics = _leviathanKinematicStates.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:466:            NativeArray<SteeringTelemetryEntry> telemetry = _steeringTelemetryRing.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:467:            NativeArray<int> telemetryCursor = _steeringTelemetryCursor.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:468:            NativeArray<float> sdf = _steeringMockSdf.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:469:            NativeArray<SteeringSdfConfigDTO> sdfConfig = _steeringSdfConfig.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:470:            NativeArray<SteeringProfileDTO> profiles = _steeringProfiles.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:787:            NativeArray<SteeringTelemetryEntry> telemetry = _steeringTelemetryRing.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:788:            NativeArray<int> cursor = _steeringTelemetryCursor.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:975:            NativeArray<SteeringParamsDTO> parameters = _steeringParams.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:1005:            NativeArray<SteeringProfileDTO> profiles = _steeringProfiles.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:1014:            NativeArray<SteeringProfileDTO> profiles = _steeringProfiles.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs:1015:            NativeArray<byte> scratch = _steeringCsvScratch.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:796:                return array.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2655:            ClearArray(array.Open());
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2660:            return _acousticMemoryFloat4Bank.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2665:            return _apexCortexTuning.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2670:            return _predatorTargetHashBucketHeads.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2675:            return _predatorTargetHashNext.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2680:            return _mesofaunaTargetHashBucketHeads.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2685:            return _mesofaunaTargetHashNext.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2720:            NativeArray<MesofaunaStateDTO> states = _mesofaunaStates.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2721:            NativeArray<MesofaunaTargetDTO> mockTargets = _mesofaunaMockTargets.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2722:            NativeArray<MesofaunaVisualSyncDTO> visualSync = _mesofaunaVisualSync.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2723:            NativeArray<MesofaunaTelemetryEntry> telemetry = _mesofaunaTelemetryRing.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2724:            NativeArray<MesofaunaTuningDTO> tuning = _mesofaunaTuning.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2725:            NativeArray<MesofaunaSpeciesProfileDTO> speciesProfiles = _mesofaunaSpeciesProfiles.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2726:            NativeArray<int> speciesProfileCount = _mesofaunaSpeciesProfileCount.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:2727:            NativeArray<byte> csvScratch = _mesofaunaCsvScratch.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:3581:            NativeArray<MesofaunaSpeciesProfileDTO> profiles = _mesofaunaSpeciesProfiles.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs:3593:            NativeArray<byte> scratch = _mesofaunaCsvScratch.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:433:                NativeArray<AcousticCounter64DTO> count = _acousticSdfStimulusCounter.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:434:                NativeArray<int> profileCount = _acousticHearingProfileCount.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:435:                NativeArray<AcousticHearingProfileDTO> profiles = _acousticHearingProfiles.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:436:                NativeArray<AcousticTuningDTO> tuning = _acousticSdfTuning.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:576:            NativeArray<AcousticStimulusDTO> stimuli = _acousticSdfStimuli.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:577:            NativeArray<AcousticCounter64DTO> counter = _acousticSdfStimulusCounter.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:821:            NativeArray<AcousticCounter64DTO> counter = _acousticSdfStimulusCounter.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:894:                NativeArray<AcousticTuningDTO> tuningArray = _acousticSdfTuning.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:918:            NativeArray<AcousticStimulusDTO> stimuli = _acousticSdfStimuli.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:919:            NativeArray<AcousticCounter64DTO> stimulusCounter = _acousticSdfStimulusCounter.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:920:            NativeArray<AcousticEvaluationResultDTO> results = _acousticSdfResults.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:921:            NativeArray<SensoryTelemetryEntry> telemetryRing = _acousticSdfTelemetryRing.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:922:            NativeArray<int> telemetryCursor = _acousticSdfTelemetryCursor.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:923:            NativeArray<AcousticHearingProfileDTO> profiles = _acousticHearingProfiles.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:924:            NativeArray<int> profileCount = _acousticHearingProfileCount.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:925:            NativeArray<AcousticTuningDTO> tuningArray = _acousticSdfTuning.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:1058:            NativeArray<AcousticEvaluationResultDTO> results = _acousticSdfResults.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:1059:            NativeArray<SensoryTelemetryEntry> telemetry = _acousticSdfTelemetryRing.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:1060:            NativeArray<int> cursor = _acousticSdfTelemetryCursor.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:1222:            NativeArray<SensoryTelemetryEntry> telemetry = _acousticSdfTelemetryRing.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:1223:            NativeArray<int> cursor = _acousticSdfTelemetryCursor.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:1387:            NativeArray<AcousticTuningDTO> tuningArray = _acousticSdfTuning.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:1412:            NativeArray<byte> scratch = _acousticCsvScratch.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:1413:            NativeArray<AcousticHearingProfileDTO> profiles = _acousticHearingProfiles.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs:1414:            NativeArray<int> profileCount = _acousticHearingProfileCount.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\HectonPlayerMovement.cs:9767:            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Authoring\InteriorFinisherHeadlessBake1608.cs:8:// public member is InteriorFinisherStudio1608.Open() (InteriorFinisherStudio1608.cs
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\Combat\BallisticsRuntime.cs:910:                using (FileStream stream = File.Open(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\SystemDispatcher.cs:1202:        public static void RequestPauseDepthOfField(bool active)
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\SystemDispatcher.cs:3615:                using (FileStream stream = File.Open(
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\Scheduling\JobSchedulingProfileCatalog.cs:93:                using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\Bridge\Editor\H8PrefabRegistryWindow.cs:262:                    H8PrefabRegistryWindow.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerFlashlight.cs:995:            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+C:\hades\Hecton8\Assets\_Project\Scripts\Interaction\PlayerInteraction.cs:656:            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+C:\hades\Hecton8\Assets\_Project\Scripts\Physics\Vehicles\SubmarineDynamicsRuntime_Gyroscopes.cs:646:                using FileStream stream = File.Open(_gyroProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+C:\hades\Hecton8\Assets\_Project\Scripts\Physics\Vehicles\SubmarineDynamicsRuntime.cs:1768:                using FileStream stream = File.Open(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+C:\hades\Hecton8\Assets\_Project\Scripts\Physics\Vehicles\SubmarineDynamicsRuntime.cs:1855:                using FileStream stream = File.Open(_hullProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:69:        private float _nextPauseMenuDiagnosticTime;
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:309:                await WaitUntilAsync(HasPauseMenuInWorld, "Pause menu resolve in world", cancellationToken);
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:310:                if (!HasPauseMenuInWorld())
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:312:                    Fail("PauseMenuController not found after world load.");
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:317:                _pauseVerifier.TestPauseMenuNavigation();
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:433:                    TryLogPauseMenuDiagnostics(label);
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:495:        private bool HasPauseMenuInWorld()
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:501:            return VerificationRuntimeProbe.ResolvePauseMenu() != null;
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:599:        private void TryLogPauseMenuDiagnostics(string reason)
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:601:            if (Time.realtimeSinceStartup < _nextPauseMenuDiagnosticTime)
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:604:            _nextPauseMenuDiagnosticTime = Time.realtimeSinceStartup + 2f;
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:605:            LogPauseMenuDiagnostics(reason);
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:608:        private void LogPauseMenuDiagnostics(string reason)
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:612:            bool hasPauseMenu = VerificationRuntimeProbe.ResolvePauseMenu() != null;
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:615:                $"[ShellSmoke] PauseMenuDiag reason={reason} scene={activeSceneName} " +
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:616:                $"isWorld={isWorld} hasPauseMenu={hasPauseMenu}");
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:642:                await WaitUntilAsync(HasPauseMenuInWorld, "Pause menu resolve in world", cancellationToken);
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:643:                if (!HasPauseMenuInWorld())
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:645:                    Fail("PauseMenuController not found after world load.");
+C:\hades\Hecton8\Assets\_Project\Scripts\Dev\ShellVerificationRuntimeSmokeTester.cs:650:                _pauseVerifier.TestPauseMenuNavigation();
+C:\hades\Hecton8\Assets\_Project\Scripts\Physiology\Editor\DcsPhysiologyTunerWindow.cs:14:            HaldaneanDecompressionTunerWindow.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Physiology\Editor\DcsPhysiologyTunerWindow.cs:19:            HaldaneanDecompressionTunerWindow.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Rendering\WaterOptics\WaterOpticsRuntime.cs:1046:                using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\BlackBoxBinaryReader.cs:149:            using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:1904:        ///   Pause has no entry at all - PauseMenuController listens to InputManager.OnPause
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:1905:        ///     (PauseMenuController.cs:2908), an InputAction callback that no snapshot producer can reach.
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2605:        ///     entry PauseMenuController.cs:728 and HectonFabricatorUI.cs:644 use when a menu closes - the
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:4395:                        .Append("PRODUCES it. Nothing reads it off a snapshot - PauseMenuController binds ")
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:4396:                        .Append("InputManager.OnPause instead (PauseMenuController.cs:2908), an InputAction ")
+C:\hades\Hecton8\Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs:1423:                using FileStream stream = File.Open(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DodReplayScrubberWindow.cs:115:            using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DodReplayScrubberWindow.cs:254:            using (FileStream stream = File.Open(_path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:18:        private const string PauseMenuPath = "Assets/_Project/Scripts/UI/PauseMenuController.cs";
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1067:            string pauseMenu = File.ReadAllText(Path.GetFullPath(PauseMenuPath));
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1081:            AssertNoGlobalRegistryGet(pauseMenu, PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1108:            AssertHotMethodClean(pauseMenu, "UnscaledFastTick", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1109:            AssertHotMethodClean(pauseMenu, "LateFrameTick", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1110:            AssertHotMethodClean(pauseMenu, "ResolveCurrentUnscaledTimeSeconds", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1111:            AssertHotMethodClean(pauseMenu, "AdvancePauseInputState", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1112:            AssertHotMethodClean(pauseMenu, "ProcessPendingPauseMenuCommands", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1113:            AssertHotMethodClean(pauseMenu, "RefreshPauseSectionInteractionGate", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1114:            AssertHotMethodClean(pauseMenu, "ApplyPauseSectionInteractionGate", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1115:            AssertHotMethodClean(pauseMenu, "FlushPendingDefaultSelection", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1116:            AssertHotMethodClean(pauseMenu, "FlushPendingPauseSelectionClear", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1117:            AssertHotMethodClean(pauseMenu, "ClearPauseSelection", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1118:            AssertHotMethodClean(pauseMenu, "SelectDefaultButtonForSection", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1119:            AssertHotMethodClean(pauseMenu, "IsDefaultSelectionTargetEligible", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1120:            AssertHotMethodClean(pauseMenu, "ResolveSectionGroup", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1121:            AssertHotMethodClean(pauseMenu, "SyncVisualStyleLateFrame", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1122:            AssertHotMethodClean(pauseMenu, "SyncVisualConceptLateFrame", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1123:            AssertPauseMenuTimeSourcesFinite(pauseMenu);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1200:            AssertPhaseRoute(pauseMenu, "UnscaledFastTick", "LateFrameTick", "_pauseMenuCameraController?.Advance", PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1201:            AssertPauseMenuUsesUnscaledPresentationDelta(pauseMenu);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1202:            AssertPauseMenuLocksSectionInteractionDuringCameraRoute(pauseMenu);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1210:            AssertDataVaultWriteLocksFlattened(pauseMenu, PauseMenuPath);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1260:        private static void AssertPauseMenuTimeSourcesFinite(string pauseMenu)
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1913:        private static void AssertPauseMenuUsesUnscaledPresentationDelta(string pauseMenu)
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\DiegeticMenu1611SmokeTester.cs:1994:        private static void AssertPauseMenuLocksSectionInteractionDuringCameraRoute(string pauseMenu)
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\PersistenceUxSmokeTester.cs:63:            string pauseMenuController = ReadProjectFile("Assets/_Project/Scripts/UI/PauseMenuController.cs");
+C:\hades\Hecton8\Assets\_Project\Scripts\World\FloraInteractionManager.cs:4768:                using FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\ModdingSDK\ExternalStarterKitWorkbenchWindow.cs:1440:                using (FileStream packageStream = File.Open(packagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\ModdingSDK\ExternalStarterKitWorkbenchWindow.cs:1614:            using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\ModdingSDK\ExternalStarterKitWorkbenchWindow.cs:1621:            using (Stream stream = entry.Open())
+C:\hades\Hecton8\Assets\_Project\Scripts\Editor\ModdingSDK\ExternalStarterKitWorkbenchWindow.cs:2286:            using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+C:\hades\Hecton8\Assets\_Project\Scripts\World\FloraAmbientSway\FloraAmbientSwayRuntime.cs:1023:                    using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+C:\hades\Hecton8\Assets\_Project\Scripts\World\Editor\Synchronous_IO_Scanner.cs:97:            if (line.IndexOf("File.Open(", StringComparison.Ordinal) >= 0) return "File.Open";
+C:\hades\Hecton8\Assets\_Project\Scripts\UIRuntimeSmokeTester.cs:24:        [SerializeField] private PauseMenuController pauseMenu;
+C:\hades\Hecton8\Assets\_Project\Scripts\UIRuntimeSmokeTester.cs:91:                Hecton8.Core.H8Debug.LogWarning("[UISmoke] Missing PlayerPDA or PauseMenuController.");
+C:\hades\Hecton8\Assets\_Project\Scripts\UIRuntimeSmokeTester.cs:111:                playerPDA.Open(0);
+C:\hades\Hecton8\Assets\_Project\Scripts\UIRuntimeSmokeTester.cs:144:                pauseMenu.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\UIRuntimeSmokeTester.cs:165:                    playerPDA.Open(2);
+C:\hades\Hecton8\Assets\_Project\Scripts\UIRuntimeSmokeTester.cs:282:                pauseMenu = PauseMenuController.ActiveRuntimeInstance;
+C:\hades\Hecton8\Assets\_Project\Scripts\UIRuntimeSmokeTester.cs:284:                    pauseMenu = FindSceneObjectIncludingInactive<PauseMenuController>();
+C:\hades\Hecton8\Assets\_Project\Scripts\UIRuntimeSmokeTester.cs:287:                    PauseMenuHost host = FindSceneObjectIncludingInactive<PauseMenuHost>();
+C:\hades\Hecton8\Assets\_Project\Scripts\UIRuntimeSmokeTester.cs:294:                    GameObject pauseRoot = FindSceneGameObjectIncludingInactive("PauseMenu_Root");
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:37:        private PauseMenuController _pauseMenu;
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:44:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:121:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:129:        public void TestPauseMenuNavigation()
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:134:            _ = TestPauseMenuFlowAsync(destroyCancellationToken);
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:142:        private async Awaitable TestPauseMenuFlowAsync(CancellationToken cancellationToken)
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:148:                ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:153:                    LogVerification("FAIL pause flow: PauseMenuController not found.");
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:174:                    () => _pauseMenu.IsOpen && IsPauseMenuVisible(),
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:178:                bool pauseStateValid = IsGamePaused() && IsPauseMenuVisible() && IsPauseInputModeValid();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:190:                    () => !_pauseMenu.IsOpen && !IsPauseMenuVisible(),
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:266:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:270:            bool menuVisible = IsPauseMenuVisible();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:284:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:288:            bool menuHidden = !IsPauseMenuVisible();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:300:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:304:            _pauseMenu.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:310:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:320:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:329:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:339:        private bool IsPauseMenuVisible()
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:341:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:342:            return VerificationRuntimeProbe.IsPauseMenuVisible(_pauseMenu);
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:363:        private void ResolvePauseMenu()
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\PauseSystemVerifier.cs:368:            _pauseMenu = VerificationRuntimeProbe.ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\VerificationRuntimeProbe.cs:48:        public static PauseMenuController ResolvePauseMenu()
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\VerificationRuntimeProbe.cs:50:            PauseMenuController runtimePauseMenu = PauseMenuController.ActiveRuntimeInstance;
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\VerificationRuntimeProbe.cs:51:            if (runtimePauseMenu != null)
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\VerificationRuntimeProbe.cs:52:                return runtimePauseMenu;
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\VerificationRuntimeProbe.cs:54:            PauseMenuController pauseMenu = FindSceneObjectIncludingInactive<PauseMenuController>();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\VerificationRuntimeProbe.cs:58:            PauseMenuHost host = FindSceneObjectIncludingInactive<PauseMenuHost>();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\VerificationRuntimeProbe.cs:61:                host.TryGetComponent(out PauseMenuController controller);
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\VerificationRuntimeProbe.cs:73:        public static Button ResolvePauseExitToMenuButton(PauseMenuController pauseMenu)
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\VerificationRuntimeProbe.cs:81:        public static bool IsPauseMenuVisible(PauseMenuController pauseMenu)
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\VerificationRuntimeProbe.cs:96:        public static bool HasPauseSelection(PauseMenuController pauseMenu)
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:48:        private PauseMenuController _pauseMenu;
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:189:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:192:                Fail("Pause to Gameplay", "PauseMenuController not found.");
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:207:            _pauseMenu.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:320:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:323:                Fail("Input Restoration", "PauseMenuController not found.");
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:333:            _pauseMenu.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:363:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:369:                _pauseMenu.Open();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:416:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:419:                   VerificationRuntimeProbe.IsPauseMenuVisible(_pauseMenu) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:426:            ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:428:                   !VerificationRuntimeProbe.IsPauseMenuVisible(_pauseMenu) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:544:        private void ResolvePauseMenu()
+C:\hades\Hecton8\Assets\_Project\Scripts\Tools\StateRecoveryVerifier.cs:549:            _pauseMenu = VerificationRuntimeProbe.ResolvePauseMenu();
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuHost.cs:7:    public sealed class PauseMenuHost : MonoBehaviour
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuHost.cs:9:        [SerializeField] private string rootName = "PauseMenu_Root";
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuHost.cs:36:            root.TryGetComponent(out PauseMenuController controller);
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuHost.cs:38:                controller = root.gameObject.AddComponent<PauseMenuController>();
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuHost.cs:40:            if (!root.TryGetComponent(out PauseMenuController _))
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:23:    public sealed class PauseMenuController : MonoBehaviour, IUnscaledFastTickable, ILateFrameTickable, ISaveEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:25:        private const byte PauseMenuCommandPause = 1 << 0;
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:26:        private const byte PauseMenuCommandCancel = 1 << 1;
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:27:        internal static PauseMenuController ActiveRuntimeInstance { get; private set; }
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:28:        private const string PauseMenuRootName = "PauseMenu_Root";
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:31:        private const float MaxPauseMenuPresentationDeltaSeconds = 0.1f;
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:61:        private const uint PauseMenuSignalSourceHash = 0x50415553u; // PAUS
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:99:        private bool _pauseRequested;
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:172:        // COLD ALLOC: char[128] - pause-menu save status fallback buffer when transient pool leases are exhausted - owner: PauseMenuController
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:174:        // COLD ALLOC: char[96] - settings language status staging buffer - owner: PauseMenuController
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:176:        // COLD ALLOC: char[128] - settings menu style status staging buffer - owner: PauseMenuController
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:178:        // COLD ALLOC: char[128] - settings menu concept status staging buffer - owner: PauseMenuController
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:180:        // COLD ALLOC: char[64] - save slot button label staging buffer - owner: PauseMenuController
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:182:        // COLD ALLOC: char[64] - pause-menu modal title staging buffer copied into ModalWindow title string - owner: PauseMenuController
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:184:        // COLD ALLOC: char[192] - modal save-error staging buffer copied directly into TMP - owner: PauseMenuController
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:239:                SourceHash = PauseMenuSignalSourceHash,
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:251:                dispatcher.RequestSimulationPause(paused, PauseMenuSignalSourceHash);
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:253:                    dispatcher.RequestTimeDilation(restoreScalar, PauseMenuSignalSourceHash);
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:497:            if (_pauseRequested)
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:499:                _pauseRequested = false;
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:500:                QueuePauseMenuCommand(PauseMenuCommandPause);
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:506:                QueuePauseMenuCommand(PauseMenuCommandCancel);
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:515:                    MaxPauseMenuPresentationDeltaSeconds,
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:520:            ProcessPendingPauseMenuCommands();
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:544:            return math.isfinite(deltaTime) ? math.min(MaxPauseMenuPresentationDeltaSeconds, math.max(0f, deltaTime)) : 0f;
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:553:        private void ProcessPendingPauseMenuCommands()
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:559:                if ((pendingCommands & PauseMenuCommandPause) != 0)
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:561:                if ((pendingCommands & PauseMenuCommandCancel) != 0)
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:566:        private void QueuePauseMenuCommand(byte command)
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:622:            _pauseRequested = false;
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:639:            SystemDispatcher.RequestPauseDepthOfField(true);
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:710:            _pauseRequested = false;
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:714:            SystemDispatcher.RequestPauseDepthOfField(false);
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:1019:            if (self.name == PauseMenuRootName)
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:1022:            Transform existing = self.Find(PauseMenuRootName);
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:1026:            GameObject go = new GameObject(PauseMenuRootName, typeof(RectTransform));
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:1502:            Hecton8.Core.H8Debug.LogError("[PauseMenuController] Save failed.");
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:1735:            Hecton8.Core.H8Debug.LogError("[PauseMenuController] Fatal pause-menu state.");
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:1820:                    Hecton8.Core.H8Debug.LogError("[PauseMenuController] User options save failed during quit.");
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:1832:                nameof(PauseMenuController),
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:1833:                "PauseMenu Quit",
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:2850:                GameObject eventSystemRoot = new GameObject("EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] — pause-menu fallback event system root — owner: PauseMenuController
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:2916:            _pauseRequested = false;
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuController.cs:2922:            _pauseRequested = true;
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseControlsPanel.cs:37:        [SerializeField] private PauseMenuController pauseMenu;
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseControlsPanel.cs:222:        public void Configure(PauseMenuController owner, TMP_FontAsset labels, TMP_FontAsset bindings)
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuAudioIntegration.cs:7:    /// Audio integration for PauseMenuController.
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuAudioIntegration.cs:14:    public sealed class PauseMenuAudioIntegration : MonoBehaviour, IGlobalRegistryHotSwapListener
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuAudioIntegration.cs:80:        public void OnPauseMenuOpened()
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PauseMenuAudioIntegration.cs:95:        public void OnPauseMenuClosed()
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:1809:        /// were <c>MainMenuController</c> (menu scene), <c>PauseMenuController</c> (only while paused),
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PDAEncyclopediaStreamer.cs:3153:                ? _h8lrLoreStore.Open(Path.GetFullPath(h8lrPathOverride), _vault, in _h8lrMirrorHandle)
+C:\hades\Hecton8\Assets\_Project\Scripts\UI\PDAEncyclopediaStreamer.cs:3176:                _babelStore.Open(Path.GetFullPath(dictionaryPathOverride));

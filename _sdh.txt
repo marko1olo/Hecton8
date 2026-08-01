@@ -1,0 +1,32 @@
+5260|                    RunUnscaledFastTick(unscaledDeltaTime, blockGameplayLanes: false);
+5274|                bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&
+5284|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+5318|                RunFastTick(deltaTime, blockGameplayLanes);
+5319|                RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+5320|                RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
+5321|                RunBucketedSlowTick(blockGameplayLanes);
+5322|                RunSlowTick(deltaTime, blockGameplayLanes);
+5323|                RunColdTick(deltaTime, blockGameplayLanes);
+5324|                RunFrostTick(deltaTime, blockGameplayLanes);
+6181|        private void RunFixedStepAccumulator(float dilatedDeltaTime, bool blockGameplayLanes)
+6224|                DispatchFixedStep((float)FixedStepSeconds, blockGameplayLanes);
+6240|        private void DispatchFixedStep(float fixedDeltaTime, bool blockGameplayLanes)
+6253|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6266|                            lane.GetAt(itemIndex).FixedTick(fixedDeltaTime);
+6284|                            if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6365|        private void RunFastTick(float deltaTime, bool blockGameplayLanes)
+6384|                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6422|        private void RunUnscaledFastTick(float unscaledDeltaTime, bool blockGameplayLanes)
+6439|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6474|        private void RunSlowTick(float deltaTime, bool blockGameplayLanes)
+6498|                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6780|        private void RunBucketedSlowTick(bool blockGameplayLanes)
+6796|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6845|        private void RunColdTick(float deltaTime, bool blockGameplayLanes)
+6866|                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+6902|        private void RunFrostTick(float deltaTime, bool blockGameplayLanes)
+6920|                    if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+7115|        private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
+7117|            if (!blockGameplayLanes)
+7122|            return laneIndex == GetLaneIndex(PriorityLayer.Player);
+7133|                case PriorityLayer.Player:

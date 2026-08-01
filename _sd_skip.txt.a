@@ -1,0 +1,36 @@
+7110|            System.Array.Clear(_pendingDispatcherSurfaceProbeRequestIds, 0, _pendingDispatcherSurfaceProbeRequestIds.Length);
+7111|            System.Array.Clear(_scheduledDispatcherSurfaceProbeReceivers, 0, _scheduledDispatcherSurfaceProbeReceivers.Length);
+7112|            System.Array.Clear(_scheduledDispatcherSurfaceProbeRequestIds, 0, _scheduledDispatcherSurfaceProbeRequestIds.Length);
+7113|        }
+7114|
+7115|        private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
+7116|        {
+7117|            if (!blockGameplayLanes)
+7118|                return false;
+7119|
+7120|            // Bootstrap gates the player lane only. World/environment systems must keep
+7121|            // ticking so startup queues, residency, and spawn drains can complete.
+7122|            return laneIndex == GetLaneIndex(PriorityLayer.Player);
+7123|        }
+7124|
+7125|        private static int GetLaneIndex(PriorityLayer layer)
+7126|        {
+7127|            switch (layer)
+7128|            {
+7129|                case PriorityLayer.Core:
+7130|                    return 0;
+7131|                case PriorityLayer.Environment:
+7132|                    return 1;
+7133|                case PriorityLayer.Player:
+7134|                    return 2;
+7135|                case PriorityLayer.UI:
+7136|                    return 3;
+7137|                default:
+7138|                    return 0;
+7139|            }
+7140|        }
+7141|
+7142|        private static long BeginDispatcherPhaseTiming()
+7143|        {
+7144|#if UNITY_EDITOR
+7145|            return System.Diagnostics.Stopwatch.GetTimestamp();

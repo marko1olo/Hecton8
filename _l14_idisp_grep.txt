@@ -1,0 +1,39 @@
+328|        // Read the census emitted by DiagEmitHopCensus - the counters are declared and printed in PIPELINE
+330|        // DiagRecordReadObservation for why the census is emitted from a read accessor and not from a tick.
+509|                // DiagRecordPumpFired.
+510|                DiagRecordReadObservation(1);
+751|            DiagRecordLateFrameTick();
+789|        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+816|            DiagRecordPumpFired();
+869|        private void DiagRecordPumpFired()
+876|        private void DiagRecordLateFrameTick()
+883|        private void DiagRecordPreSimTick()
+890|        private void DiagRecordPreSimSubstep()
+897|        private void DiagRecordCaptureSkippedByFrameGuard()
+904|        private void DiagRecordCaptureRan()
+911|        private void DiagRecordOverrideOutcome(bool applied, Vector2 consumedMove)
+926|        private void DiagRecordPostBlockMask(uint blockMask, Vector2 postMaskMove)
+937|        private void DiagRecordPublishAttempt()
+944|        private void DiagRecordPublishGuardFail()
+952|        private void DiagRecordPublishBufferFail()
+1192|        private void DiagRecordPublishOk()
+1203|        /// <param name="readHop">
+1204|        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+1205|        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+1207|        private void DiagRecordReadObservation(int readHop)
+1235|            DiagEmitHopCensus(readHop);
+1246|            DiagEmitHopCensus(0);
+1251|        private void DiagEmitHopCensus(int readHop)
+1256|                "[H8_INPUTHOP] readHop=" + readHop +
+1322|            DiagRecordPreSimTick();
+1342|                DiagRecordPreSimSubstep();
+1359|        public PlayerInputState GetState()
+1361|            DiagRecordReadObservation(2);
+1389|            DiagRecordPublishAttempt();
+1392|                DiagRecordPublishGuardFail();
+1411|                    DiagRecordPublishBufferFail();
+1464|                DiagRecordPublishOk();
+3832|                DiagRecordCaptureSkippedByFrameGuard();
+3837|            DiagRecordCaptureRan();
+3895|            DiagRecordOverrideOutcome(automationOverrideApplied, state.MoveDelta);
+3901|            DiagRecordPostBlockMask(activeInputBlockMask, state.MoveDelta);

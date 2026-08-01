@@ -1,0 +1,40 @@
+45:    public sealed class PlayerToolManager : MonoBehaviour, ITickable, IUpdatable, IFixedTickable, ILateFrameTickable, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
+168:        private bool _registeredToFixedTick;
+214:        private bool _hotSwapListenerRegistered;
+293:            TryRegisterHotSwapListener();
+295:            TryRegisterToTickManager();
+305:            // loadout, which is exactly what IsToolAvailableInSlot reports on.
+328:        private void TryRegisterToTickManager()
+330:            if ((_registeredToTick && _registeredToLateFrame && _registeredToFixedTick) || !Application.isPlaying)
+338:                _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+342:                _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+343:            if (!_registeredToFixedTick)
+346:                // schedules few IUpdatable ticks while FixedTick runs continuously; without this
+347:                // lane STARTERGRANT stays deferred (L08 refusalMask 0x1E) and IsToolAvailableInSlot
+349:                _registeredToFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+356:            if (!_registeredToTick && !_registeredToLateFrame && !_registeredToFixedTick)
+362:            if (_registeredToFixedTick)
+364:                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+365:                _registeredToFixedTick = false;
+392:            // selectable at all (IsToolAvailableInSlot -> HasToolInInventory -> CountAvailableTotal), so it
+395:            RetryRuntimeStartToolGrantIfPending();
+492:        /// presentation; this lane only keeps <see cref="RetryRuntimeStartToolGrantIfPending"/>
+495:        public void FixedTick(float fixedDeltaTime)
+497:            RetryRuntimeStartToolGrantIfPending();
+629:            if (worldRegistry.TryRegisterDroppedItem(toolData, 1, dropPosition, inheritedVelocityChange))
+954:        public bool IsToolAvailableInSlot(int slotIndex)
+1279:        /// in the inventory. Slot availability IS ownership: <see cref="IsToolAvailableInSlot"/> resolves
+1302:        /// The real retry now lives on <see cref="RetryRuntimeStartToolGrantIfPending"/>, driven from
+1357:                    // IsToolAvailableInSlot resolves through HasToolInInventory -> CountAvailableTotal, which
+1364:                    // RetryRuntimeStartToolGrantIfPending. The deferral latch is therefore part of the gate,
+1396:                // ONCE, not once per attempt. RetryRuntimeStartToolGrantIfPending now calls this method from
+1451:        private void RetryRuntimeStartToolGrantIfPending()
+1472:            // run reads IsToolAvailableInSlot after roughly a dozen dispatcher ticks, not a dozen seconds. A
+1546:                " dispatcher ticks, so IsToolAvailableInSlot stays false for every slot and the player has " +
+1644:                        TryRegisterToTickManager();
+1825:        private void TryRegisterHotSwapListener()
+1827:            if (_hotSwapListenerRegistered || !Application.isPlaying)
+1830:            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+1835:            if (!_hotSwapListenerRegistered)
+1839:            _hotSwapListenerRegistered = false;
+1917:            ModuleStatusEvents.Register(this);

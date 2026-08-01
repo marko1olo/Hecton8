@@ -1,0 +1,97 @@
+7994:        /// NoOpInputService null object (GlobalRegistry.cs:920-936) and kept it for the whole session -
+7995:        /// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+7996:        /// returns default (:8450), which sends ProcessPlayerInputFrame (:8079) down its else branch every
+7997-        /// render tick, zeroing _inputH/_inputV/_inputVertical and therefore the intent vector published at
+7998-        /// :10019. The InputDispatcher's own history says this window is real: its Input slot has already
+7999-        /// been observed emptied by a scene transition (InputDispatcher.cs:2838-2863).
+8000-        ///
+8001-        /// RegisteredInput is the raw slot (GlobalRegistry.cs:949) and never substitutes the null object, so
+8002-        /// binding off it cannot latch onto a service that is disabled by construction; a null slot leaves
+8003-        /// _inputManager null, which every consumer here already null-checks, and the next call rebinds.
+8004-        /// Cost is one static field read plus two ReferenceEquals - this method already ran every render
+8005-        /// tick through PrepareRenderTickDependencies (:4722), it just returned early.
+8006-        /// </summary>
+8007-        private void ResolveInputManagerBinding()
+8008-        {
+8009-            IInputService currentManager = GlobalRegistry.RegisteredInput;
+8010-            _inputServiceRuntime = currentManager;
+8011-            if (_resolvedInputManager &&
+8012-                ReferenceEquals(_inputManager, currentManager) &&
+8013-                ReferenceEquals(_subscribedInputManager, currentManager))
+8014-            {
+8015-                return;
+8016-            }
+8017-
+8018-            UnsubscribeFromInput();
+8019-            _inputManager = currentManager;
+8020-            _resolvedInputManager = true;
+8021-            SubscribeToInput();
+8022-        }
+8023-
+8024-        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8025-        //  SPRINT EVENTS (for CameraJuiceSystem integration)
+8026-        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+--
+8045:            if (inputService == null || !inputService.IsPlayerInputEnabled)
+8046-            {
+8047-                _currentInputState = default;
+8048-                _cachedMoveInput = Vector2.zero;
+8049-                _cachedVerticalInput = 0f;
+8050-                _pendingLookInput = Vector2.zero;
+8051-                SetSprintingState(false);
+8052-                return;
+8053-            }
+8054-
+8055-            _inputHandler.TryReadFrame(inputService, jumpBufferTime, false, out HectonPlayerInputFrame frame, out _);
+8056-            _currentInputState = frame.State;
+8057-            _cachedMoveInput = frame.MoveInput;
+8058-            _cachedVerticalInput = frame.VerticalInput;
+8059-            _pendingLookInput = Vector2.zero;
+8060-            SetSprintingState(frame.SprintHeld != 0);
+8061-        }
+8062-
+8063-        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8064-        //  Tick Ã¢â‚¬â€ INPUT + CAMERA (render framerate)
+8065-        // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+8066-
+8067-        public void Tick(float deltaTime)
+8068-        {
+8069-            SuitData suit = currentSuitData;
+8070-            if (suit == null) return;
+8071-            if (_juiceProcessor == null) return;
+8072-
+8073-            using (_tickProfilerMarker.Auto())
+8074-            {
+8075-                _currentRenderDeltaTime = math.max(0.0001f, deltaTime);
+--
+8132:            if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+8133-            {
+8134-                _inputHandler.TryReadFrame(
+8135-                    _inputManager,
+8136-                    jumpBufferTime,
+8137-                    out HectonPlayerInputFrame inputFrame,
+8138-                    out bool jumpBuffered);
+8139-                _currentInputState = inputFrame.State;
+8140-                _cachedMoveInput = inputFrame.MoveInput;
+8141-                _cachedVerticalInput = inputFrame.VerticalInput;
+8142-                _pendingLookInput = inputFrame.LookInput;
+8143-                if (jumpBuffered)
+8144-                {
+8145-                    _jumpRequested = true;
+8146-                    _jumpBufferTimer = jumpBufferTime;
+8147-                }
+8148-
+8149-                Vector2 lookDelta = _pendingLookInput;
+8150-                _pendingLookInput = Vector2.zero;
+8151-                ApplyLookInput(lookDelta);
+8152-
+8153-                _inputH = _cachedMoveInput.x;
+8154-                _inputV = _cachedMoveInput.y;
+8155-                _inputVertical = _isWalking ? 0f : ResolveVerticalInput();
+8156-                if (IsAuthoritativeVehicleTransportActive())
+8157-                {
+8158-                    _inputH = 0f;
+8159-                    _inputV = 0f;
+8160-                    _inputVertical = 0f;
+8161-                }
+8162-                SetSprintingState(inputFrame.SprintHeld != 0);

@@ -1,0 +1,20 @@
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\PlayerInventoryManager.cs:14:    public sealed class PlayerInventoryManager : MonoBehaviour, IPlayerInventoryService, ISlowTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory_SoaQuery.cs:30:    public sealed partial class PlayerInventory
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:34:    public partial class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IPhysicsImpactEventListener, IGlobalRegistryHotSwapListener, IMappedInventoryWriteCommitSink
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1241:        /// <see cref="CanServiceItemAdds"/>). This method must never be the thing that decides storage is
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1572:                    "(STORAGE UNAVAILABLE above) instead.");
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1679:                // STORAGE UNAVAILABLE line, which names _cachedDataVault when the GlobalDataVault service is
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1701:            // once, and TryRecoverRuntimeStorageCold lets the consumer that noticed re-arm it.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2371:        // Refusal-reason bits for DescribeAddRefusalMask. Kept public because the only consumers are cold
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2408:        public uint DescribeAddRefusalMask(int itemHashId)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2452:        /// <see cref="DescribeAddRefusalMask"/>. Note that <c>IsCreated</c> on a vault lane re-resolves
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2468:        /// <see cref="TryRecoverRuntimeStorageCold"/>, which re-arms every lane together.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2470:        internal bool CanServiceItemAdds()
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2505:        internal bool TryRecoverRuntimeStorageCold()
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2507:            if (CanServiceItemAdds())
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2530:            return CanServiceItemAdds();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2536:        /// bind and by <see cref="TryRecoverRuntimeStorageCold"/> for every re-arm after that.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2570:            // TryRecoverRuntimeStorageCold, and a re-bind of buffers that already hold live data returns the
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2603:            // scratch guard passes, this method returns true, and CanServiceItemAdds still reports false at the
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2624:        /// <see cref="TryRecoverRuntimeStorageCold"/> leaves one stale error in the log with no paired
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2634:                "[PlayerInventory] STORAGE UNAVAILABLE - " + failedStep + " failed, so this inventory " +

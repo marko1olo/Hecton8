@@ -1,0 +1,264 @@
+==== Assets/_Project/Scripts/GameTickManager.cs (1) ====
+401:                !BootstrapState.IsGameReady &&
+==== Assets/_Project/Scripts/ITickable.cs (4) ====
+69:        float TimeDilationScalar { get; }
+70:        bool SimulationPaused { get; }
+76:        void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u);
+78:        void RequestSimulationPause(bool paused, uint reasonHash = 0u);
+==== Assets/_Project/Scripts/HectonFloatingOrigin.cs (38) ====
+104:        private bool _physicsPauseActive;
+209:                return origin != null && origin._physicsPauseActive;
+313:        internal static bool TryFlushInitialSceneRebaseBeforeTicks()
+324:            // Pending loaded scenes acquire SceneRebaseTickLock; the previous early-return
+325:            // here (and in ProcessPending) left that lock held while FO.Tick - the only
+326:            // ResumePhysicsAfterShift driver - was starved by IsOriginShiftBootstrapLocked.
+329:            if (origin._physicsPauseActive &&
+332:                origin.ResumePhysicsAfterShift();
+336:                origin.ProcessPendingSceneSynchronization();
+340:            // to apply, complete the barrier so ResumePhysicsAfterShift can finish and
+342:            if (origin._physicsPauseActive &&
+347:                origin.ResumePhysicsAfterShift();
+353:                   !origin._physicsPauseActive;
+361:        internal static void CopyBootstrapDrainSnapshot(
+385:            physicsPauseActive = origin._physicsPauseActive;
+566:                    origin._physicsPauseActive ||
+681:            ReleaseSceneRebaseTickLock();
+692:                if (_physicsPauseActive)
+736:            if (_physicsPauseActive)
+739:                    ResumePhysicsAfterShift();
+823:            if (_hasPendingImmediateShiftVisualSync && !_isShiftInProgress && !_physicsPauseActive)
+831:            if (_pendingSceneSynchronizationVisualSync && !_isShiftInProgress && !_physicsPauseActive)
+834:                ProcessPendingSceneSynchronization();
+1161:            _physicsPauseActive = true;
+1167:            if (!origin._physicsPauseActive)
+1196:        private void ResumePhysicsAfterShift()
+1198:            if (!_physicsPauseActive)
+1205:            _physicsPauseActive = false;
+2239:        private void AcquireSceneRebaseTickLock()
+2248:        private void ReleaseSceneRebaseTickLock()
+2282:            // under pause kept SceneRebaseTickLock alive (see ProcessPending finally) and
+2283:            // starved Frost/Slow via IsOriginShiftBootstrapLocked. Rebuild is read-only
+2295:                ReleaseSceneRebaseTickLock();
+2298:        private void ProcessPendingSceneSynchronization()
+2301:            // Physics pause previously early-returned here, which left SceneRebaseTickLock
+2331:                    ReleaseSceneRebaseTickLock();
+2347:            AcquireSceneRebaseTickLock();
+2364:                ReleaseSceneRebaseTickLock();
+==== Assets/_Project/Scripts/Core/SystemDispatcher.cs (80) ====
+111:        private const float HeadlessTimeDilationMaximumScalar = 100f;
+144:        private const float AdrenalineTargetTimeDilationScalar = 0.5f;
+492:        private float _timeDilationScalar = 1f;
+493:        private float _prePauseTimeDilationScalar = 1f;
+503:        private uint _timeDilationSequence;
+617:        internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
+621:        public float TimeDilationScalar => _timeDilationScalar;
+629:        public bool SimulationPaused => _simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon;
+681:            [FieldOffset(32)] public float TimeDilationScalar;
+868:                RunDispatcherUpdateFromPlayerLoop);
+986:        private static void RunDispatcherUpdateFromPlayerLoop()
+992:            dispatcher.RunDispatcherUpdate();
+1739:            SetTimeDilationScalar(scalar, reasonHash, publishImmediate: true);
+1742:        public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+1746:            SetTimeDilationScalar(
+1749:                HeadlessTimeDilationMaximumScalar,
+1762:            if (SimulationPaused)
+1775:                _coreTickDilationRestoreScalar = _timeDilationScalar;
+1781:            SetTimeDilationScalar(safeScalar, reasonHash, publishImmediate: true);
+1791:        public void RequestSimulationPause(bool paused, uint reasonHash = 0u)
+1796:                    _prePauseTimeDilationScalar = ResolvePauseRestoreScalar();
+1801:                SetTimeDilationScalar(0f, reasonHash, publishImmediate: true);
+1806:            SetTimeDilationScalar(_prePauseTimeDilationScalar, reasonHash, publishImmediate: true);
+1930:        private void SetTimeDilationScalar(float scalar, uint reasonHash, bool publishImmediate)
+1932:            SetTimeDilationScalar(
+1940:        private void SetTimeDilationScalar(
+1950:            if (math.abs(_timeDilationScalar - safeScalar) <= 0.0001f)
+1953:            _timeDilationScalar = safeScalar;
+1954:            _timeDilationSequence++;
+1955:            if (_timeDilationSequence == 0u)
+1956:                _timeDilationSequence = 1u;
+1964:            if (_lastPublishedTimeDilationSequence == _timeDilationSequence)
+1967:            _lastPublishedTimeDilationSequence = _timeDilationSequence;
+1968:            float scalar = _timeDilationScalar;
+1973:            dilationSignal.Sequence = _timeDilationSequence;
+1976:            dilationSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+1983:            visualSignal.Sequence = _timeDilationSequence;
+1985:            visualSignal.Flags = (byte)(SimulationPaused ? 1 : 0);
+1994:                    _prePauseTimeDilationScalar = signal.RestoreScalar;
+1996:                RequestSimulationPause(signal.Paused != 0, signal.SourceHash);
+2013:            _timeDilationScalar = 1f;
+2014:            _prePauseTimeDilationScalar = 1f;
+2086:            _timeDilationScalar = 1f;
+2087:            _prePauseTimeDilationScalar = 1f;
+2090:            _timeDilationSequence = 0u;
+4673:                !math.isfinite(_timeDilationScalar) ||
+4678:            if (SimulationPaused)
+4682:            if (IsOriginShiftBootstrapLocked || IsOriginShiftFrameLockedForCurrentFrame)
+4700:            entry.TimeDilationScalar = math.isfinite(_timeDilationScalar)
+4701:                ? math.clamp(_timeDilationScalar, TimeDilationMinimumScalar, HeadlessTimeDilationMaximumScalar)
+4995:        private float ConsumeFrameTimeDilationScalar()
+4997:            if (_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon)
+5001:                return _timeDilationScalar;
+5018:                : _timeDilationScalar;
+5085:            float currentScalar = math.isfinite(_timeDilationScalar)
+5086:                ? math.clamp(_timeDilationScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+5088:            float targetScalar = math.min(currentScalar, AdrenalineTargetTimeDilationScalar);
+5100:            _adrenalineDilationStartScalar = math.isfinite(_timeDilationScalar)
+5101:                ? math.clamp(_timeDilationScalar, TimeDilationPausedEpsilon, TimeDilationMaximumScalar)
+5102:                : AdrenalineTargetTimeDilationScalar;
+5121:                    AdrenalineTargetTimeDilationScalar,
+5123:                SetTimeDilationScalar(scalar, _adrenalineDilationSourceHash, publishImmediate: true);
+5136:            SetTimeDilationScalar(restoredScalar, _adrenalineDilationSourceHash, publishImmediate: true);
+5144:            SetTimeDilationScalar(finalScalar, AdrenalineDilationReasonHash, publishImmediate: true);
+5153:            SetTimeDilationScalar(_coreTickDilationRestoreScalar, _coreTickDilationReasonHash, publishImmediate: true);
+5158:        private void RunDispatcherUpdate()
+5210:                float frameDilationScalar = ConsumeFrameTimeDilationScalar();
+5230:                bool aupBarrierActive = IsOriginShiftBootstrapLocked ||
+5246:                if (IsOriginShiftBootstrapLocked)
+5248:                    if (!HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks())
+5251:                    if (IsOriginShiftBootstrapLocked)
+5276:                                          !BootstrapState.IsGameReady;
+5324:                RunFrostTick(deltaTime, blockGameplayLanes);
+5344:                CrashTelemetryBuffer.ReportTimeDilationState(_timeDilationScalar, tickOverheadMilliseconds);
+5517:            if (IsOriginShiftBootstrapLocked)
+5587:            if (!SimulationPaused)
+6031:            bool paused = dispatcher != null && dispatcher.SimulationPaused;
+6902:        private void RunFrostTick(float deltaTime, bool blockGameplayLanes)
+7122:            return laneIndex == GetLaneIndex(PriorityLayer.Player);
+7133:                case PriorityLayer.Player:
+==== Assets/_Project/Scripts/Core/BootstrapContracts/BootstrapState.cs (4) ====
+22:        public static bool IsGameReady { get; private set; }
+53:        public static void PublishGameReady(bool isGameReady)
+55:            IsGameReady = isGameReady;
+93:            IsGameReady = false;
+==== Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs (33) ====
+46:        // SystemDispatcher.RunDispatcherUpdate (SystemDispatcher.cs:5106) RunSlowTick (:5265) runs BEFORE
+47:        // RunFrostTick (:5267); the ecology's SlowTick calls ScheduleSectorSolve (EcosystemDirector.cs:2729),
+66:        // cleared HasPendingSimulationJob. Runner LateFrame is registered at PriorityLayer.Player so
+85:        private const float TimeDilationScalar = 100f;
+128:        // BootstrapState.IsGameReady (or bootstrap presence cleared). Measuring from BeginStartup
+259:            // dependency chain burned ~180s; short-circuit PublishGameReady then immediate
+265:                // FO bootstrap lock / frame lock / dilation=0 hold RunDispatcherUpdate off the
+267:                // TryMarkEcologyReady never ran (Frost-only). Same starvation-proof pattern as
+269:                TryMarkEcologyReady();
+273:                // all Frost/LateFrame while IsOriginShiftBootstrapLocked holds.
+274:                HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+386:            TryMarkEcologyReady();
+471:                GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+511:            _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+539:                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+630:            // ecology-ready transition instead - see TryMarkEcologyReady. This method runs the instant the
+657:        /// Uses IsGameReady so headless short-circuit and full ActivatePlayer paths both qualify.
+667:            if (!BootstrapState.IsGameReady)
+671:            LogRunnerLifecycle("ecology wait clock armed (GameReady)");
+679:            bool foFlushClean = HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+680:            HectonFloatingOrigin.CopyBootstrapDrainSnapshot(
+688:            bool dispBootstrapLocked = SystemDispatcher.IsOriginShiftBootstrapLocked;
+702:                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0") +
+707:        /// Periodic pre-ecology wait trace so external BATCH_TIMEOUT still leaves FO lock state on disk.
+723:            HectonFloatingOrigin.CopyBootstrapDrainSnapshot(
+732:                "ecology wait progress t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
+743:                " dispBootstrapLocked=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
+747:        private void TryMarkEcologyReady()
+759:                LogRunnerLifecycle("ecology ready (ecosystem initialized)");
+1290:            // TryMarkEcologyReady sets Debug.unityLogger.filterLogType = LogType.Warning (:574) so
+1448:                // nominal scalar is what Time.timeScale was set to; the delivered one is what the dispatcher
+1457:                WriteInvariant(writer, TimeDilationScalar);
+1490:                // was the opposite: TryMarkEcologyReady sets filterLogType = LogType.Warning (:574)
+==== Assets/_Project/Scripts/QA/Headless/Editor/HeadlessSimulationBatchRunner.cs (1) ====
+46:        // second is 4 * fps / 60 = fps / 15 — reaching the runner's nominal TimeDilationScalar of 100 would
+==== BACKLOG.md (3) ====
+5:- **Root:** `TryMarkEcologyReady` only invoked from `FrostTick`. Frost never delivered while wait clock ran (dispatcher master-sim path starved or deltaTime<=0). Ready predicate (`ecosystem.IsInitialized`) was true the e
+6:- **Fix applied:** call `TryMarkEcologyReady` from runner `Update` wait path (starvation-proof gate, same pattern as wait-clock move off ColdTick). Lifecycle log on first ready. Wait-progress adds frostReg + dispFrameLoc
+14:- [ ] P0 | headless ecology post-GameReady FO bootstrap-lock soft-deadlock | root: QueuePendingLoadedScene acquires SceneRebaseTickLock while ProcessPending/TryFlush early-return on _physicsPauseActive; FO.Tick (ResumePh
+==== Docs/AgentLogs/p0_fo_bootstrap_lock_drain_20260731.md (7) ====
+5:- **Biggest miss:** armed ecology wait clock ≠ ecology ready. GameReady short-circuit succeeded; FrostTick starve under `IsOriginShiftBootstrapLocked` kept `TryMarkEcologyReady` from ever observing `EcosystemDirector.IsI
+10:1. `QueuePendingLoadedScene` → `AcquireSceneRebaseTickLock` → `SystemDispatcher.RequestOriginShiftBootstrapLock`.
+11:2. `ProcessPendingSceneSynchronization` / `TryFlushInitialSceneRebaseBeforeTicks` early-returned on `_physicsPauseActive`.
+12:3. `FO.Tick` is the only normal `ResumePhysicsAfterShift` driver and is skipped while bootstrap lock held (`SystemDispatcher` ~5246).
+16:- `ProcessPendingSceneSynchronization`: block only on `_isShiftInProgress`.
+18:- `TryFlushInitialSceneRebaseBeforeTicks`: drive physics resume frame-gate; drain pending; if barrier stuck with empty pending, `CompleteSceneRebaseBarrier` + resume.
+19:- `CopyBootstrapDrainSnapshot` + runner 15s wait progress / richer BOOTSTRAP_TIMEOUT diag.
+==== Docs/AgentLogs/p0_ecology_ready_frost_starve_20260731.md (4) ====
+10:TryMarkEcologyReady() lived only on IFrostTickable.FrostTick.
+14:Ready-mark is a **gate**, not a substitute for sim ticks. Same starvation-proof pattern as moving the ecology wait clock off ColdTick onto MonoBehaviour.Update (p0_gameready).
+19:2. TryMarkEcologyReady()  // NEW
+23:On first ready transition: LogRunnerLifecycle("ecology ready (ecosystem initialized)") before log filter muzzles Log.
+==== Docs/AgentLogs/HANDOFF_p0_ecology_clock_20260731.md (37) ====
+36:Close **P0 ecology-clock**: headless ecology smoke must arm wait clock at GameReady, mark ecology ready, advance simulated days under time dilation, write daily CSV + SUCCESS result.
+50:  80b2d9764 fix(headless): mark ecology ready from Update wait path (Frost starve gate)  ← ecology fix
+57:- `80b2d9764` Update-path TryMarkEcologyReady
+92:[HEADLESS] ecology ready (ecosystem initialized)
+119:**Root:** `QueuePendingLoadedScene` → `AcquireSceneRebaseTickLock` → `RequestOriginShiftBootstrapLock` while `_physicsPauseActive` made `ProcessPending` / `TryFlush` early-return → lock never drained → `SystemDispatcher.
+121:**Fix:** `HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks` resumes physics under pause; ProcessPending/TryPrepare no longer early-return solely on physics pause; `CopyBootstrapDrainSnapshot` for diag.
+129:**Root:** `TryMarkEcologyReady` only called from `FrostTick`. FO fixed so foLock=0, but Frost still not delivering (or not yet) while `ecoInit=1` entire wait → mark never ran → eventually BOOTSTRAP_TIMEOUT on older runs.
+137:    TryMarkEcologyReady();
+140:    HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
+145:Also: first-transition log `"ecology ready (ecosystem initialized)"`; wait progress adds `frostReg=` + `dispFrameLocked=`.
+147:**LIVE proved (pid 21516):** line present, error CS=0. Ready flipped **before** GameReady wait-clock arm was needed (eco init during env bootstrap; Update path marks immediately). So we never saw `ecology wait clock arme
+156:After `"ecology ready (ecosystem initialized)"`:
+169:- `RunFrostTick`: **early-return if `deltaTime <= 0f`**
+170:- `ConsumeFrameTimeDilationScalar`: returns **0** if `_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon (1e-4)`
+173:- `RequestHeadlessTimeDilation(100)` clamps to `HeadlessTimeDilationMaximumScalar = 100` (normal max is 4)
+174:- Bootstrap lane skip: only **Player** lane when `!IsGameReady` — runner Frost/Fast are **Core** → not skipped by bootstrap gate
+175:- Runner LateFrame is **Player** lane → **skipped while `!IsGameReady`** even if day debt queued. Headless short-circuit does `PublishGameReady` — need to confirm GameReady is true post-ready. Prior FO smoke armed wait c
+177:  - **block Player LateFrame** → audits never drain even if Frost queues debt
+180:### 5.3 Barrier early-returns in `RunDispatcherUpdate` (lines ~5246–5262)
+182:if (IsOriginShiftBootstrapLocked) { flush; if still locked return; }
+185:// else RunFastTick / RunFrostTick / ...
+193:// ConsumeFrameTimeDilationScalar
+194:if (_simulationPaused || _timeDilationScalar <= TimeDilationPausedEpsilon)
+197:// RequestSimulationPause(true) → _simulationPaused=true; SetTimeDilationScalar(0f)
+198:// RequestSimulationPause(false) → restore _prePauseTimeDilationScalar
+202:GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+212:| H1 | `_simulationPaused==true` or dilation scalar≈0 entire post-ready window | Add Warning diag in runner Update/Frost: `simPaused`, `TimeDilationScalar`, `deltaTime`, `dayAcc`, `pendingAudits`, `gameReady`, `dispBoots
+213:| H2 | GameReady false → Player LateFrame skipped; Frost may queue but audits never drain | Diag `BootstrapState.IsGameReady` + `_pendingDayAudits` growth | Ensure headless PublishGameReady before/with ready; or move day
+223:| Dispatcher | `Assets/_Project/Scripts/Core/SystemDispatcher.cs` | `@617` bootstrap lock; `@619` frame lock; `@629` SimulationPaused; `@1742` RequestHeadlessTimeDilation; `@1791` RequestSimulationPause; `@4995` ConsumeF
+226:| API | `Assets/_Project/Scripts/ITickable.cs` | `SimulationPaused`, `RequestHeadlessTimeDilation`, `RequestSimulationPause` |
+248:In `HeadlessSimulationRunner`, when ecology becomes ready **and/or** when ecology wait clock arms (GameReady):
+251:2. If `d.SimulationPaused` → `d.RequestSimulationPause(false, RunnerHash)`.
+252:3. Re-assert `d.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash)`.
+295:- 2026-07-31: ecology ready gate PROVED (`80b2d9764`)
+317:- [x] Ready-mark on Update fixed + pushed `80b2d9764` + proved ecology ready line
+321:- [ ] Product fix: unpause + re-RequestHeadlessTimeDilation on ready/GameReady (+ optional sustain)
+322:- [ ] Confirm GameReady true before expecting Player LateFrame audits; fix bootstrap short-circuit if not
+==== Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs (13) ====
+731:        public static bool IsGameReady => BootstrapState.IsGameReady;
+1642:                BootstrapState.PublishGameReady(false);
+3161:                        // SystemDispatcher.ShouldSkipLaneDuringBootstrap skips PriorityLayer.Player
+3162:                        // while !BootstrapState.IsGameReady. LateFrame biomass drain is on Player
+3165:                        BootstrapState.PublishGameReady(true);
+3167:                        Debug.Log("[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached + PublishGameReady on bootstrap");
+3188:                if (!_sceneActivationRequested && BootstrapState.IsGameReady)
+3190:                    Debug.Log("[GameBootstrapper-DEBUG] Scene not bootstrap, IsGameReady=true");
+3451:            BootstrapState.PublishGameReady(false);
+7661:            BootstrapState.PublishGameReady(false);
+7787:                BootstrapState.PublishGameReady(true);
+7794:                BootstrapState.PublishGameReady(false);
+7804:                BootstrapState.PublishGameReady(false);
+==== Assets/_Project/Scripts/Tools/PauseSystemVerifier.cs (5) ====
+268:            bool simulationPaused = IsSimulationPaused();
+286:            bool simulationResumed = !IsSimulationPaused();
+330:            return _pauseMenu != null && _pauseMenu.IsOpen && IsSimulationPaused();
+333:        private bool IsSimulationPaused()
+336:            return dispatcher != null ? dispatcher.SimulationPaused : SimulationSignalRoute.SimulationPaused;
+==== Assets/_Project/Scripts/UI/PauseMenuAudioIntegration.cs (7) ====
+85:            if (!playWhenPaused && IsSimulationPaused())
+100:            if (!playWhenPaused && IsSimulationPaused())
+115:            if (!playWhenPaused && IsSimulationPaused())
+130:            if (!playWhenPaused && IsSimulationPaused())
+145:            if (!playWhenPaused && IsSimulationPaused())
+151:        private bool IsSimulationPaused()
+154:            return dispatcher != null ? dispatcher.SimulationPaused : SimulationSignalRoute.SimulationPaused;
+==== Assets/_Project/Scripts/UI/PauseMenuController.cs (7) ====
+101:        private float _cachedTimeDilationScalar = 1f;
+247:                dispatcher.RequestSimulationPause(paused, PauseMenuSignalSourceHash);
+516:            ProcessPendingPauseMenuCommands();
+549:        private void ProcessPendingPauseMenuCommands()
+627:                _cachedTimeDilationScalar = dispatcher != null
+628:                    ? dispatcher.TimeDilationScalar
+722:                float restoreScalar = math.max(0.0001f, _cachedTimeDilationScalar);
+==== Assets/_Project/Scripts/Core/BootstrapContracts/BootstrapStatus.cs (4) ====
+124:            UnityEngine.Time.timeScale = 1f;
+191:            UnityEngine.Time.timeScale = 1f;
+260:            UnityEngine.Time.timeScale = 1f;
+306:            UnityEngine.Time.timeScale = 1f;

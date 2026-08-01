@@ -1,0 +1,4 @@
+4597:            _waterImmersionRatio = ComputeImmersionRatio();
+4602:                _waterImmersionRatio = 0f;
+10145:            _waterImmersionRatio = ComputeImmersionRatio();
+10151:                _waterImmersionRatio = 0f;

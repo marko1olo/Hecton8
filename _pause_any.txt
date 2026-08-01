@@ -1,0 +1,6 @@
+33:        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+34:        private static void ResetActiveRuntimeForSubsystemRegistration()
+38:            // IsAnyOpen stays true, HPM SampleGameplay zeros input without GetState (hop2 starve).
+189:        public static bool IsAnyOpen => _openMenuCount > 0;
+625:            RegisterOpenMenu();
+752:        private static void RegisterOpenMenu()

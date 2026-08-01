@@ -1,0 +1,19 @@
+14:    public sealed class HectonScanMarkerSystem : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IScanEventListener, IGlobalRegistryHotSwapListener
+82:        private void Awake()
+92:        private void OnEnable()
+98:            TryRegisterHotSwapListener();
+126:        public void OnGlobalRegistryServiceReplaced(
+127:            GlobalRegistryServiceSlot serviceSlot,
+131:            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+133:                if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+430:        /// <see cref="OnEnable"/> reaches this method at :96, before <c>TryRegisterHotSwapListener()</c>,
+454:                // Report LAST and once. OnEnable continues to its four registration calls after this returns, so
+531:            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+539:            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+551:            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+559:            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+565:            _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
+566:            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+569:        private void TryRegisterHotSwapListener()
+574:            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+582:            GlobalRegistry.TryUnregisterHotSwapListener(this);

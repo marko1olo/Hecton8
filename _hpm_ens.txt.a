@@ -1,0 +1,91 @@
+5460|                GlobalTelemetryBus.PublishPerformanceWarning(_cinematicFocusTelemetryHash, _cinematicFocusHash, shiftData.Sequence);
+5461|            }
+5462|
+5463|            _sargassumMovementInfluence?.ApplyOriginShiftOffset(shiftOffset);
+5464|        }
+5465|
+5466|        /// <summary>
+5467|        /// L13: Product entry so gameplay bootstrap / headless route can re-assert Player fixed+update
+5468|        /// lane registration if OnEnable raced an empty Dispatcher. Does not mock input.
+5469|        /// </summary>
+5470|        public void EnsureDispatcherRegistration()
+5471|        {
+5472|            TryRegisterToDispatchers();
+5473|        }
+5474|
+5475|        private void TryRegisterToDispatchers()
+5476|        {
+5477|            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+5478|                return;
+5479|
+5480|            if (!_registeredTick)
+5481|            {
+5482|                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+5483|            }
+5484|
+5485|            if (!_registeredFixedTick)
+5486|            {
+5487|                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+5488|            }
+5489|
+5490|            if (!_registeredColdTick)
+5491|            {
+5492|                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+5493|            }
+5494|
+5495|            TryRegisterLateFrameTickable();
+5496|
+5497|            if (!_registeredPlayerMovementContracts)
+5498|            {
+5499|                IPlayerMovementContracts currentContracts = GlobalRegistry.PlayerMovementContracts;
+5500|                if (currentContracts == null)
+5501|                    GlobalRegistry.RegisterPlayerMovementContracts(this);
+5502|
+5503|                _registeredPlayerMovementContracts = ReferenceEquals(GlobalRegistry.PlayerMovementContracts, this);
+5504|            }
+5505|
+5506|            if (!_registeredHotSwapListener)
+5507|                _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+5508|
+5509|        }
+5510|
+5511|        private void UnregisterDispatcherTicks()
+5512|        {
+5513|            if (_registeredTick)
+5514|            {
+5515|                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+5516|                _registeredTick = false;
+5517|            }
+5518|
+5519|            if (_registeredFixedTick)
+5520|            {
+5521|                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+5522|                _registeredFixedTick = false;
+5523|            }
+5524|
+5525|            if (_registeredColdTick)
+5526|            {
+5527|                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+5528|                _registeredColdTick = false;
+5529|            }
+5530|
+5531|            if (_registeredLateFrameTick)
+5532|            {
+5533|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+5534|                _registeredLateFrameTick = false;
+5535|            }
+5536|        }
+5537|
+5538|        private void TryRegisterLateFrameTickable()
+5539|        {
+5540|            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+5541|                return;
+5542|
+5543|            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+5544|        }
+5545|
+5546|        private void MarkLateFramePresentationDirty()
+5547|        {
+5548|            // Late-frame ticking is lifecycle-registered; hot queues only mutate pending presentation state.
+5549|        }
+5550|

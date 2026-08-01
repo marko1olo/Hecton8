@@ -1,0 +1,51 @@
+7090|
+7091|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+7092|            Debug.LogError(report);
+7093|#endif
+7094|            throw new CriticalBootException(report);
+7095|        }
+7096|
+7097|        private static bool TryEnsureDispatcherRegistration()
+7098|        {
+7099|            if (_dispatcher != null)
+7100|                return true;
+7101|
+7102|#if UNITY_EDITOR || DEVELOPMENT_BUILD
+7103|            if (!_dispatcherRegistrationErrorLogged)
+7104|            {
+7105|                _dispatcherRegistrationErrorLogged = true;
+7106|                Debug.LogError("[GlobalRegistry] SystemDispatcher is not registered. Bootstrap must create and register it before runtime tick registration.");
+7107|            }
+7108|#endif
+7109|            return false;
+7110|        }
+7111|
+7112|        internal static bool TryBeginResolution(GlobalRegistryResolutionScope scope)
+7113|        {
+7114|            uint scopeMask = 1u << (int)scope;
+7115|            if ((_resolutionMask & scopeMask) != 0u)
+7116|            {
+7117|                ThrowDependencyCycle(scope);
+7118|            }
+7119|
+7120|            if (IsPlayerResolutionScope(scope) && (_resolutionMask & PlayerResolutionMask) != 0u)
+7121|            {
+7122|                ThrowDependencyCycle(scope);
+7123|            }
+7124|
+7125|            _resolutionMask |= scopeMask;
+7126|            return true;
+7127|        }
+7128|
+7129|        internal static void EndResolution(GlobalRegistryResolutionScope scope)
+7130|        {
+7131|            _resolutionMask &= ~(1u << (int)scope);
+7132|        }
+7133|
+7134|        private static bool IsResolving(GlobalRegistryResolutionScope scope)
+7135|        {
+7136|            return (_resolutionMask & (1u << (int)scope)) != 0u;
+7137|        }
+7138|
+7139|        private static bool IsResolvingAny(uint mask)
+7140|        {

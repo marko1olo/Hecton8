@@ -1,0 +1,233 @@
+1743:        public void SetSuit(SuitData newSuit)
+1744-        {
+1745-            if (newSuit == null)
+1746-            {
+1747-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+1748-                Hecton8.Core.H8Debug.LogWarning("[HectonPlayerMovement] null suit.", this);
+1749-#endif
+1750-                return;
+1751-            }
+1752-
+1753:            currentSuitData = newSuit;
+1754-            ApplySuitToRigidbody();
+1755-            EnsureJuiceProcessor();
+1756-            _juiceProcessor.Initialize(leanIntoTurn);
+1757-            UpdateSuitDiagnostics();
+1758-        }
+1759-
+1760-        /// <summary>
+1761-        /// Applies a runtime-only multiplier to underwater thrust and swim-speed ceilings.
+1762-        /// </summary>
+1763-        /// <param name="multiplier">Runtime swim-speed multiplier.</param>
+1764-        public void SetRuntimeSwimSpeedMultiplier(float multiplier)
+1765-        {
+1766-            _runtimeSwimSpeedMultiplier = math.clamp(multiplier, 0.5f, 3f);
+1767-        }
+1768-
+1769-        /// <summary>
+1770-        /// Applies voxel streaming backpressure without overwriting buffs, injury penalties, or emergency movement gates.
+1771-        /// </summary>
+1772-        internal void SetRuntimeVoxelBackpressureSwimSpeedMultiplier(float multiplier)
+1773-        {
+1774-            _runtimeVoxelBackpressureSwimSpeedMultiplier = math.clamp(multiplier, 0.5f, 1f);
+1775-        }
+1776-
+1777-        /// <summary>
+1778-        /// Applies a body-state penalty without overwriting external runtime swim buffs.
+1779-        /// </summary>
+1780-        internal void SetRuntimeInjurySwimSpeedMultiplier(float multiplier)
+1781-        {
+1782-            _runtimeInjurySwimSpeedMultiplier = math.clamp(multiplier, 0.35f, 1f);
+1783-        }
+--
+2595:        private void EnsurePlayerRuntimeSubsystems()
+2596-        {
+2597-            if (!TryGetComponent(out _playerMotor))
+2598-            {
+2599-                _playerMotor = gameObject.AddComponent<HectonPlayerMotor>(); // COLD ALLOC: HectonPlayerMotor[1] - locomotion rigidbody force bridge - owner: HectonPlayerMovement
+2600-            }
+2601-
+2602-            if (!TryGetComponent(out _environmentHandler))
+2603-            {
+2604-                _environmentHandler = gameObject.AddComponent<HectonPlayerEnvironmentHandler>(); // COLD ALLOC: HectonPlayerEnvironmentHandler[1] - environment acceleration/velocity buffer - owner: HectonPlayerMovement
+2605-            }
+2606-
+2607-            if (!TryGetComponent(out _stateMachine))
+2608-            {
+2609-                _stateMachine = gameObject.AddComponent<HectonPlayerStateMachine>(); // COLD ALLOC: HectonPlayerStateMachine[1] - locomotion mode and wipeout state mirror - owner: HectonPlayerMovement
+2610-            }
+2611-
+2612-            if (!TryGetComponent(out _waterTransitionHandler))
+2613-            {
+2614-                _waterTransitionHandler = gameObject.AddComponent<WaterTransitionHandler>(); // COLD ALLOC: WaterTransitionHandler[1] - event-driven water entry/exit gravity owner - owner: HectonPlayerMovement
+2615-            }
+2616-
+2617-            if (_playerMotor != null)
+2618-                _playerMotor.Bind(_rb, _capsuleCollider);
+2619-
+2620-            if (_environmentHandler != null)
+2621-                _environmentHandler.Bind(this, _playerMotor);
+2622-
+2623-            if (_stateMachine != null)
+2624-            {
+2625-                _stateMachine.SyncLocomotionMode(_currentLocomotionMode);
+--
+4263:            EnsurePlayerRuntimeSubsystems();
+4264-
+4265-            if (_environmentHandler != null)
+4266-                _environmentHandler.Bind(this, _playerMotor);
+4267-
+4268-            if (_cameraRig != null)
+4269-                _cameraRig.Bind(playerCamera, _cameraComponent);
+4270-        }
+4271-
+4272-        public void OnGlobalRegistryServiceReplaced(
+4273-            GlobalRegistryServiceSlot serviceSlot,
+4274-            object previousService,
+4275-            object currentService)
+4276-        {
+4277-            switch (serviceSlot)
+4278-            {
+4279-                case GlobalRegistryServiceSlot.DataVault:
+4280-                    _playerKinematicsNativeState.Dispose();
+4281-                    DisposeCinematicFocusBlackBox();
+4282-                    _dataVault = currentService as IDataVault;
+4283-                    EnsurePlayerKinematicsNativeState();
+4284-                    EnsureCinematicFocusBlackBox();
+4285-                    break;
+4286-                case GlobalRegistryServiceSlot.Dispatcher:
+4287-                    UnregisterDispatcherTicks();
+4288-                    if (currentService != null && isActiveAndEnabled)
+4289-                        TryRegisterToDispatchers();
+4290-                    break;
+4291-                case GlobalRegistryServiceSlot.Audio:
+4292-                    CacheAudioService(currentService as IAudioService);
+4293-                    break;
+--
+4527:            EnsurePlayerRuntimeSubsystems();
+4528-
+4529-            _resolvedSwimPresentationController = true;
+4530-            _resolvedPlayerToolManager = false;
+4531-            _resolvedPlayerTransportCoordinator = false;
+4532-            _resolvedPhysicalInteractionHandler = true;
+4533-            _resolvedHeavyTowWinch = true;
+4534-            CacheBaseCollisionProfile();
+4535-            ResolvePlayerToolManagerCold();
+4536-            ResolvePlayerTransportCoordinatorCold();
+4537-
+4538-            _rb.interpolation = RigidbodyInterpolation.Interpolate;
+4539-            _rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
+4540-            _rb.freezeRotation = true;
+4541-            _rb.constraints = RigidbodyConstraints.FreezeRotation;
+4542-            _rb.useGravity = false;
+4543-            _baseCenterOfMass = _rb.centerOfMass;
+4544-            _lastAppliedCenterOfMass = _baseCenterOfMass;
+4545-            _playerState.SyncKinematic(_rb.position, ResolveAuthoritativeLinearVelocity(Vector3.zero));
+4546-            _playerState.SyncEncumbrance(_runtimeInventoryLoad01, _runtimeInventoryLoadMovementMultiplier);
+4547-            EnsurePlayerKinematicsNativeState();
+4548-            EnsureCinematicFocusBlackBox();
+4549-            RefreshCinematicFocusTierGateCold();
+4550-            RecordLastValidAup(_playerState.AbsolutePosition);
+4551-
+4552-            // Cache camera component for FOV manipulation
+4553-            if (playerCamera != null)
+4554-                playerCamera.TryGetComponent(out _cameraComponent);
+4555-            if (!TryGetComponent(out _cameraRig))
+4556-            {
+4557-                _cameraRig = gameObject.AddComponent<HectonPlayerCameraRig>(); // COLD ALLOC: HectonPlayerCameraRig[1] â€” dedicated player camera owner consuming locomotion camera state â€” owner: HectonPlayerMovement
+--
+4560:            EnsurePlayerRuntimeSubsystems();
+4561-
+4562-            float initialYaw = ExtractWorldYaw(_cachedTransform.forward, 0f);
+4563-            _cameraYaw = initialYaw;
+4564-            _bodyYaw = initialYaw;
+4565-            _bodyYawVelocity = 0f;
+4566-
+4567-            if (playerCamera != null)
+4568-            {
+4569-                _cameraPitch = -ExtractLocalPitchDegrees(playerCamera.localRotation);
+4570-                _cameraPitch = math.clamp(_cameraPitch, pitchMin, pitchMax);
+4571-                _cameraBaseLocalPos = playerCamera.localPosition;
+4572-            }
+4573-
+4574-            if (_cameraComponent != null)
+4575-                baseFov = _cameraComponent.fieldOfView;
+4576-
+4577-            _cachedGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
+4578-            _cachedGravityMagnitude = MagnitudeFromRsqrt(_cachedGravity);
+4579-            _smoothedGroundNormal = Vector3.up;
+4580-            RefreshGroundSlopeCache();
+4581-            if (_rb.linearDamping != 0f)
+4582-                _rb.linearDamping = 0f;
+4583-            InitializeRenderInterpolationState();
+4584-            EnsureJuiceProcessor();
+4585-            _juiceProcessor.Initialize(leanIntoTurn);
+4586-
+4587-            // Ã¢â€â‚¬Ã¢â€â‚¬ Crest integration Ã¢â€â‚¬Ã¢â€â‚¬
+4588-            _fallbackWaterSurfaceY = ResolveFallbackWaterSurfaceY();
+4589-            _dynamicWaterSurfaceY = _fallbackWaterSurfaceY;
+4590-            _dynamicWaterSurfaceNormal = Vector3.up;
+--
+4781:            EnsurePlayerRuntimeSubsystems();
+4782-            EnsurePlayerKinematicsNativeState();
+4783-            EnsureCinematicFocusBlackBox();
+4784-            RefreshCinematicFocusTierGateCold();
+4785-            _playerKinematicsTelemetryDumpedThisFault = false;
+4786-            if (_rb != null)
+4787-            {
+4788-                _playerState.SyncKinematic(ResolveBodyRuntimePosition(), ResolveAuthoritativeLinearVelocity(Vector3.zero));
+4789-                RecordLastValidAup(_playerState.AbsolutePosition);
+4790-            }
+4791-            if (_cameraRig != null)
+4792-                _cameraRig.Bind(playerCamera, _cameraComponent);
+4793-            ToggleBuoyancy(true);
+4794-            if (!_registeredOriginShiftListener)
+4795-            {
+4796-                HectonFloatingOrigin.RegisterListener(this);
+4797-                _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
+4798-            }
+4799-            TryRegisterToDispatchers();
+4800-        }
+4801-
+4802-        private void Start()
+4803-        {
+4804-            if (_survivalSystem == null)
+4805-                TryGetComponent(out _survivalSystem);
+4806-
+4807-            OnDependencyInject();
+4808-            if (_registeredTick && _registeredFixedTick && _registeredLateFrameTick) return;
+4809-            TryRegisterToDispatchers();
+4810-
+4811-            BindInventoryLoadSource();
+--
+12483:            if (currentSuitData == null) return;
+12484-            CacheAuthoritativeBodyMassKg(currentSuitData.mass);
+12485-            _rb.mass = currentSuitData.mass;
+12486-            _rb.useGravity = false;
+12487-            if (_rb.linearDamping != 0f)
+12488-                _rb.linearDamping = 0f;
+12489-
+12490-            if (_isWalking)
+12491-            {
+12492-                _currentLinearDamping = IsInDryInterior() ? 0f : currentSuitData.walkDrag;
+12493-            }
+12494-            else
+12495-            {
+12496-                _currentLinearDamping = 0f;
+12497-            }
+12498-        }
+12499-
+12500-        private void ApplyModePhysics(SuitData suit)
+12501-        {
+12502-            if (!_isWalking || IsInDryInterior())
+12503-            {
+12504-                _currentLinearDamping = 0f;
+12505-            }
+12506-        }
+12507-
+12508-        private void SmoothDampingTransition(float fixedDeltaTime, SuitData suit)
+12509-        {
+12510-            float targetDamping;
+12511-            if (_isWalking)
+12512-            {
+12513-                if (IsInDryInterior())

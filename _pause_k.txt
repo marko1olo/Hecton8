@@ -1,0 +1,11 @@
+38|            // IsAnyOpen stays true, HPM SampleGameplay zeros input without GetState (hop2 starve).
+90|        private static bool _pendingMainMenuCleanup;
+91|        private static bool _mainMenuCleanupHookRegistered;
+187|        public bool IsOpen => _isOpen;
+189|        public static bool IsAnyOpen => _openMenuCount > 0;
+326|        private static bool IsSaveServiceUsable(ISaveService saveService)
+607|            if (PlayerPDA.IsOpen && playerPDA != null)
+1612|        private static bool CopyUpperAsciiStringToBuffer(
+2942|        private static bool IsNewerInputSequence(uint candidate, uint current)
+2952|            if (PlayerPDA.IsOpen || HectonFabricatorUI.IsMenuOpen)
+2995|        private static bool IsNumericOnlyFont(TMP_FontAsset font)

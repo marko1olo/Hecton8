@@ -1,0 +1,68 @@
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1093:                BindVaultLane(ref _itemHashes, 0, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1094:                BindVaultLane(ref _stackCounts, 1, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1095:                BindVaultLane(ref _itemCondition, 2, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1096:                BindVaultLane(ref _itemDurability, ItemDurabilityVaultOrdinal, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1097:                BindVaultLane(ref _craftLockedCounts, 4, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1098:                BindVaultLane(ref _anchorStateFlags, 5, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1099:                BindVaultLane(ref _itemStateFlags, ItemStateFlagsVaultOrdinal, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1100:                BindVaultLane(ref _itemGenetics, 7, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1101:                BindVaultLane(ref _qualityMilli, QualityMilliVaultOrdinal, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1102:                BindVaultLane(ref _durabilities, DurabilitiesVaultOrdinal, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1103:                BindVaultLane(ref _lastUpdateUnixSeconds, 10, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1104:                BindVaultLane(ref _scavengeSimStackCounts, 11, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1105:                BindVaultLane(ref _simulationOccupiedCells, 12, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1106:                BindVaultLane(ref _anchorUnitMassKg, 13, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1107:                BindVaultLane(ref _anchorUnitVolumeM3, 14, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1108:                BindVaultLane(ref _anchorUnitRadiationSv, 15, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1109:                BindVaultLane(ref _derivedMassVolumeScratch, 21, 1) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1110:                BindVaultLane(ref _radioactiveConversionAnchors, 22, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1111:                BindVaultLane(ref _radioactiveHalfLifeCounters, 23, 2) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1112:                BindVaultLane(ref _thermalRunawayByAnchor, 24, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1113:                BindVaultLane(ref _thermalRunawayPairs, 25, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1114:                BindVaultLane(ref _thermalRunawayCounters, 26, 2) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1115:                BindVaultLane(ref _inventoryShadowBuffer, 27, InventoryShadowBufferBytes) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1116:                BindVaultLane(ref _inventoryBlackBox, 28, InventoryBlackBoxCapacity) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1117:                BindVaultLane(ref _salinityCorrosionJobResult, SalinityCorrosionJobResultVaultOrdinal, InventoryCorrosionConstants.ResultRequiredLength) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1118:                BindVaultLane(ref _salinityBrokenItemHashes, SalinityBrokenItemHashesVaultOrdinal, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1119:                BindVaultLane(ref _salinityCorrosionBlackBox, 31, InventoryBlackBoxCapacity) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1120:                BindVaultLane(ref _salinityChangedSlotsScratch, SalinityChangedSlotsScratchVaultOrdinal, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1121:                BindVaultLane(ref _salinityNextDurabilityScratch, SalinityNextDurabilityScratchVaultOrdinal, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1122:                BindVaultLane(ref _salinityNextDurabilityBytesScratch, SalinityNextDurabilityBytesScratchVaultOrdinal, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1123:                BindVaultLane(ref _salinityNextQualityMilliScratch, SalinityNextQualityMilliScratchVaultOrdinal, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1124:                BindVaultLane(ref _salinityNextStateFlagsScratch, SalinityNextStateFlagsScratchVaultOrdinal, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1125:                BindVaultLane(ref _defragItemHashes, 32, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1126:                BindVaultLane(ref _defragItemCounts, 33, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1127:                BindVaultLane(ref _defragCategories, 34, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1128:                BindVaultLane(ref _defragMaxStacks, 35, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1129:                BindVaultLane(ref _defragRarities, 36, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1130:                BindVaultLane(ref _defragWidths, 37, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1131:                BindVaultLane(ref _defragHeights, 38, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1132:                BindVaultLane(ref _defragFlags, 39, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1133:                BindVaultLane(ref _defragStateFlags, 40, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1134:                BindVaultLane(ref _defragGenetics, 41, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1135:                BindVaultLane(ref _defragQualityMilli, 42, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1136:                BindVaultLane(ref _defragDurabilities, 43, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1137:                BindVaultLane(ref _defragLastUpdateUnixSeconds, 44, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1138:                BindVaultLane(ref _defragUnitMassKg, 45, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1139:                BindVaultLane(ref _defragUnitVolumeM3, 46, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1140:                BindVaultLane(ref _defragUnitRadiationSv, 47, cellCount) &&
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1141:                BindVaultLane(ref _defragResult, 48, InventoryDefragResultSlots.RequiredLength);
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1149:                // MANDATORY, not a tidy-up. Every BindVaultLane call above allocates a vault buffer, and a
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1164:        private bool BindVaultLane<T>(
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1241:        /// <see cref="CanServiceItemAdds"/>). This method must never be the thing that decides storage is
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1572:                    "(STORAGE UNAVAILABLE above) instead.");
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1679:                // STORAGE UNAVAILABLE line, which names _cachedDataVault when the GlobalDataVault service is
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:1701:            // once, and TryRecoverRuntimeStorageCold lets the consumer that noticed re-arm it.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2371:        // Refusal-reason bits for DescribeAddRefusalMask. Kept public because the only consumers are cold
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2408:        public uint DescribeAddRefusalMask(int itemHashId)
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2452:        /// <see cref="DescribeAddRefusalMask"/>. Note that <c>IsCreated</c> on a vault lane re-resolves
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2468:        /// <see cref="TryRecoverRuntimeStorageCold"/>, which re-arms every lane together.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2470:        internal bool CanServiceItemAdds()
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2505:        internal bool TryRecoverRuntimeStorageCold()
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2507:            if (CanServiceItemAdds())
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2530:            return CanServiceItemAdds();
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2536:        /// bind and by <see cref="TryRecoverRuntimeStorageCold"/> for every re-arm after that.
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2570:            // TryRecoverRuntimeStorageCold, and a re-bind of buffers that already hold live data returns the
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2603:            // scratch guard passes, this method returns true, and CanServiceItemAdds still reports false at the
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2624:        /// <see cref="TryRecoverRuntimeStorageCold"/> leaves one stale error in the log with no paired
+C:\hades\Hecton8\Assets\_Project\Scripts\PlayerInventory.cs:2634:                "[PlayerInventory] STORAGE UNAVAILABLE - " + failedStep + " failed, so this inventory " +

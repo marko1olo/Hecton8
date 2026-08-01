@@ -1,0 +1,17 @@
+323|        // SystemDispatcher leaves it in - see PumpPreSimulationInputIfDispatcherSkipped.
+330|        // DiagRecordReadObservation for why the census is emitted from a read accessor and not from a tick.
+335|        private int _diagPumpFiredCalls;
+509|                // DiagRecordPumpFired.
+510|                DiagRecordReadObservation(1);
+753|            PumpPreSimulationInputIfDispatcherSkipped();
+789|        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+807|        private void PumpPreSimulationInputIfDispatcherSkipped()
+816|            DiagRecordPumpFired();
+869|        private void DiagRecordPumpFired()
+872|            _diagPumpFiredCalls++;
+1204|        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+1207|        private void DiagRecordReadObservation(int readHop)
+1256|                "[H8_INPUTHOP] readHop=" + readHop +
+1259|                " pumpFired=" + _diagPumpFiredCalls +
+1359|        public PlayerInputState GetState()
+1361|            DiagRecordReadObservation(2);

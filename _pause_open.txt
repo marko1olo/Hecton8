@@ -1,0 +1,41 @@
+180|        // COLD ALLOC: char[64] - save slot button label staging buffer - owner: PauseMenuController
+181|        private readonly char[] _saveSlotLabelBuffer = new char[64];
+182|        // COLD ALLOC: char[64] - pause-menu modal title staging buffer copied into ModalWindow title string - owner: PauseMenuController
+183|        private readonly char[] _modalTitleBuffer = new char[64];
+184|        // COLD ALLOC: char[192] - modal save-error staging buffer copied directly into TMP - owner: PauseMenuController
+185|        private readonly char[] _modalMessageBuffer = new char[192];
+186|
+187|        public bool IsOpen => _isOpen;
+188|        public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
+189|        public static bool IsAnyOpen => _openMenuCount > 0;
+190|        public MenuVisualStyle VisualStyle => visualStyle;
+191|        public MenuVisualConcept VisualConcept => visualConcept;
+192|
+193|        public void SetVisualStyle(MenuVisualStyle style)
+194|        {
+195|            if (visualStyle == style)
+196|                return;
+197|
+198|            visualStyle = style;
+199|            _visualStyleApplier?.ForceNextApply();
+200|            _visualConceptDecorApplier?.ForceNextApply();
+201|        }
+202|
+203|        public void SetVisualStyleQualityOverride(float qualityOverride)
+204|        {
+205|            visualStyleQualityOverride = math.clamp(qualityOverride, -1f, 1f);
+206|            _visualStyleApplier?.ForceNextApply();
+207|            _visualConceptDecorApplier?.ForceNextApply();
+208|        }
+209|
+210|        public void SetVisualConcept(MenuVisualConcept concept)
+211|        {
+212|            if (visualConcept == concept)
+213|                return;
+214|
+215|            visualConcept = concept;
+216|            _visualConceptApplier?.ForceNextApply();
+217|            _visualConceptDecorApplier?.ForceNextApply();
+218|        }
+219|
+220|        public void SetVisualConceptQualityOverride(float qualityOverride)

@@ -1,5 +1,0 @@
-﻿75c883fd4 chore(auto): cement working tree 2026-07-30 15:19:11
-05e5c8956 docs: project reality map - what is proven vs merely committed
-2a094c573 chore(auto): cement working tree 2026-07-30 13:51:18
-effa674c0 docs(tests): rationale for the stale-assertion repair cemented in 568a19cca
-568a19cca chore(auto): cement working tree 2026-07-30 13:23:03

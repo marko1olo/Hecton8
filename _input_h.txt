@@ -1,0 +1,135 @@
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs:13:        public bool TryReadFrame(
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-14-            IInputService inputService,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-15-            float jumpBufferSeconds,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-16-            out HectonPlayerInputFrame frame,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-17-            out bool jumpBuffered)
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-18-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs:19:            return TryReadFrame(
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-20-                inputService,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-21-                jumpBufferSeconds,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-22-                consumeBufferedJump: true,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-23-                out frame,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-24-                out jumpBuffered);
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-25-        }
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-26-
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs:27:        public bool TryReadFrame(
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-28-            IInputService inputService,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-29-            float jumpBufferSeconds,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-30-            bool consumeBufferedJump,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-31-            out HectonPlayerInputFrame frame,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-32-            out bool jumpBuffered)
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-33-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-34-            frame = default;
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-35-            jumpBuffered = false;
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-36-
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-37-            if (inputService == null || !inputService.IsPlayerInputEnabled)
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-38-                return false;
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-39-
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs:40:            PlayerInputState state = inputService.GetState();
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-41-            Vector2 moveInput = state.MoveDelta;
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-42-            Vector2 lookInput = state.LookDelta;
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-43-            float verticalInput = state.VerticalDelta;
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-44-            if (!IsFinite(moveInput) || !IsFinite(lookInput) || !math.isfinite(verticalInput))
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-45-                return false;
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-46-
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-47-            frame = new HectonPlayerInputFrame(
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-48-                state,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-49-                ClampUnitInput(moveInput),
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-50-                lookInput,
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-51-                math.clamp(verticalInput, -1f, 1f),
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-52-                state.HasAction(PlayerInputAction.Sprint));
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-53-            jumpBuffered = consumeBufferedJump && inputService.TryConsumeBufferedAction(PlayerBufferedAction.Jump, jumpBufferSeconds);
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-54-            return true;
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-55-        }
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-56-
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-57-        public static float ResolveVerticalInput(in PlayerInputState state)
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-58-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-59-            return math.clamp(state.VerticalDelta, -1f, 1f);
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-60-        }
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-61-
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-62-        private static bool IsFinite(Vector2 value)
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-63-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-64-            return math.isfinite(value.x) && math.isfinite(value.y);
+C:\hades\Hecton8\Assets\_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs-65-        }
+--
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs:789:        /// snapshot taken by the cold CaptureState calls in InitializeService/OnEnable, GetState() (:735)
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs:790:        /// handed that zero out every frame, and HectonPlayerMovement.ProcessPlayerInputFrame
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-791-        /// (HectonPlayerMovement.cs:8100-8102) wrote zeroes into _inputH/_inputV/_inputVertical, which is
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-792-        /// the sole source of the intent vector published at HectonPlayerMovement.cs:10019. The deterministic
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-793-        /// input ring was equally dead - _standardInputFrame never advanced past 0.
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-794-        ///
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-795-        /// The real repair belongs in SystemDispatcher (re-resolve the cached service when it is not
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-796-        /// initialized, instead of trusting a one-shot cold read). Until that lands, this owner refuses to
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-797-        /// depend on another system's stale cache for its own cadence: the late-frame lane is registered by
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-798-        /// TryRegisterToDispatcher (:2878) through GlobalRegistry.TryRegisterLateFrameTickable and is walked
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-799-        /// every dispatcher frame (SystemDispatcher.cs:5410-5419), so it is a lane this component can prove
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-800-        /// it is on. The frame guard means that once the dispatcher calls PreSimulationInputTick again this
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-801-        /// method costs one int compare and returns - no double substep, no double publish.
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-802-        ///
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-803-        /// Late-frame is after the updatable walk, so in the degraded configuration consumers see the
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-804-        /// override one frame later than they would from pre-simulation. That is a one-frame latency on a
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-805-        /// lane that was previously producing nothing at all.
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-806-        /// </summary>
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-807-        private void PumpPreSimulationInputIfDispatcherSkipped()
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-808-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-809-            if (!_isInitialized)
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-810-                return;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-811-
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-812-            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-813-            if (_lastPreSimulationInputFrame == currentFrame)
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-814-                return;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-815-
+--
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs:1204:        /// 0 = end-of-session final census, 1 = CurrentInputState (driver-side), 2 = GetState
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1205-        /// (movement-side). readHop=2 appearing at all proves HectonPlayerMovement is reading this service.
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1206-        /// </param>
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1207-        private void DiagRecordReadObservation(int readHop)
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1208-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1209-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1210-            _diagReadObservations++;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1211-
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1212-            // Monotone stage gate rather than equality against the thresholds: these counters are plain
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1213-            // int increments off two accessors, so an exact-value test could be stepped over and lose the
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1214-            // whole report. This cannot be skipped.
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1215-            int threshold;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1216-            switch (_diagReportsEmitted)
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1217-            {
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1218-                case 0:
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1219-                    threshold = DiagReportAtObservation1;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1220-                    break;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1221-                case 1:
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1222-                    threshold = DiagReportAtObservation2;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1223-                    break;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1224-                case 2:
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1225-                    threshold = DiagReportAtObservation3;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1226-                    break;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1227-                default:
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1228-                    return;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1229-            }
+--
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs:1359:        public PlayerInputState GetState()
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1360-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1361-            DiagRecordReadObservation(2);
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1362-            return _currentState;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1363-        }
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1364-
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1365-        public bool TryGetInputState(uint frame, out InputState state)
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1366-        {
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1367-            if (!TryReadInputBuffer(in _inputStateBridgeRingHandle, DeterministicInputRingCapacity, out NativeArray<InputState>.ReadOnly inputStateRing))
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1368-            {
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1369-                state = default;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1370-                return false;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1371-            }
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1372-
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1373-            InputState candidate = inputStateRing[(int)(frame % DeterministicInputRingCapacity)];
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1374-            if (candidate.Frame == frame)
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1375-            {
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1376-                state = candidate;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1377-                return true;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1378-            }
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1379-
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1380-            state = default;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1381-            return false;
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1382-        }
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1383-
+C:\hades\Hecton8\Assets\_Project\Scripts\Core\InputDispatcher.cs-1384-        private void PublishDeterministicInputState(uint currentFrame)

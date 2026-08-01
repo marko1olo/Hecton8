@@ -1,0 +1,791 @@
+4760|
+4761|        private PlayerTransportPreset PrepareFixedTickDependencies()
+4762|        {
+4763|            return ResolveActiveTransportPreset();
+4764|        }
+4765|
+4766|        private void OnEnable()
+4767|        {
+4768|            SargassumGlobalDragManager.Register(this);
+4769|            SpectrumEvents.RegisterSonarPingListener(this);
+4770|            OnRegister();
+4771|            OnDependencyInject();
+4772|            TryRegisterDependencyRebinds();
+4773|            if (_survivalSystem == null)
+4774|                TryGetComponent(out _survivalSystem);
+4775|            BindInventoryLoadSource();
+4776|            ResolvePlayerToolManagerCold();
+4777|            ResolvePlayerTransportCoordinatorCold();
+4778|            ResolveSwimPresentationControllerCold();
+4779|            ResolveUnderwaterVisualsCold();
+4780|            ResolveInputManagerBinding();
+4781|            EnsurePlayerRuntimeSubsystems();
+4782|            EnsurePlayerKinematicsNativeState();
+4783|            EnsureCinematicFocusBlackBox();
+4784|            RefreshCinematicFocusTierGateCold();
+4785|            _playerKinematicsTelemetryDumpedThisFault = false;
+4786|            if (_rb != null)
+4787|            {
+4788|                _playerState.SyncKinematic(ResolveBodyRuntimePosition(), ResolveAuthoritativeLinearVelocity(Vector3.zero));
+4789|                RecordLastValidAup(_playerState.AbsolutePosition);
+4790|            }
+4791|            if (_cameraRig != null)
+4792|                _cameraRig.Bind(playerCamera, _cameraComponent);
+4793|            ToggleBuoyancy(true);
+4794|            if (!_registeredOriginShiftListener)
+4795|            {
+4796|                HectonFloatingOrigin.RegisterListener(this);
+4797|                _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
+4798|            }
+4799|            TryRegisterToDispatchers();
+4800|        }
+4801|
+4802|        private void Start()
+4803|        {
+4804|            if (_survivalSystem == null)
+4805|                TryGetComponent(out _survivalSystem);
+4806|
+4807|            OnDependencyInject();
+4808|            if (_registeredTick && _registeredFixedTick && _registeredLateFrameTick) return;
+4809|            TryRegisterToDispatchers();
+4810|
+4811|            BindInventoryLoadSource();
+4812|            ResolveInputManagerBinding();
+4813|            if (useCrestOceanHeight && !_crestAvailable)
+4814|                InitOceanKinematics();
+4815|        }
+4816|
+4817|        private void OnDisable()
+4818|        {
+4819|            SargassumGlobalDragManager.Unregister(this);
+4820|            SpectrumEvents.UnregisterSonarPingListener(this);
+4821|            TryUnregisterDependencyRebinds();
+4822|            UnregisterPlayerMovementContracts();
+4823|            UnbindInventoryLoadSource();
+4824|            UnsubscribeFromInput();
+4825|            _cachedMoveInput = Vector2.zero;
+4826|            _pendingLookInput = Vector2.zero;
+4827|            _cachedVerticalInput = 0f;
+4828|            ResetFootstepAudioMaterialCache();
+4829|
+4830|            ResetVrComfortRuntimeState();
+4831|            ClearPendingPresentationSync();
+4832|            ResetUnderwaterSomaticRuntimeState();
+4833|            ResetEnvironmentalDragAndTensionRuntimeState();
+4834|
+4835|            _stateMachine?.ResetRuntimeState();
+4836|            _waterTransitionHandler?.ResetRuntimeState();
+4837|            _playerState.ResetTransient();
+4838|            _playerMotor?.ResetRuntimeState();
+4839|
+4840|            ApplyResolvedCollisionProfile(1f, 1f, 0f);
+4841|            ApplyCenterOfMassIfChanged(_baseCenterOfMass);
+4842|
+4843|            ResetTransportPlatformRuntimeState();
+4844|            InvalidateMovementProbeCaches();
+4845|            ResetLegacyCollisionProbeHits();
+4846|            ResetRenderInterpolationRuntimeState();
+4847|
+4848|            ToggleBuoyancy(true);
+4849|
+4850|            UnregisterGlobalLifecycleListeners();
+4851|
+4852|            _playerKinematicsNativeState.Dispose();
+4853|            ClearCinematicFocus(true);
+4854|            DisposeCinematicFocusBlackBox();
+4855|            _lastValidAupWriteIndex = 0;
+4856|            _lastValidAupCount = 0;
+4857|            ClearInjectedDependencies();
+4858|        }
+4859|
+4860|        private void ResetVrComfortRuntimeState()
+4861|        {
+4862|            _vrSnapTurnArmed = true;
+4863|            _vrComfortVignette01 = 0f;
+4864|            _vrComfortVisualBounce01 = 0f;
+4865|            _vrComfortPeripheralBlur01 = 0f;
+4866|            _vrComfortKickSignal01 = 0f;
+4867|            _vrComfortSway = Vector2.zero;
+4868|            _vrComfortMotionVector = Vector2.zero;
+4869|            _vrComfortVelocitySq01 = 0f;
+4870|            _vrHorizonRollDampingInitialized = false;
+4871|            _vrComfortGravityScaleInitialized = false;
+4872|            InvalidateVrComfortShaderPublishCache();
+4873|            ApplyVrComfortShaderSignals(false, 0f, 0f, 0f, Vector2.zero, 0f, Vector2.zero);
+4874|            FlushVrComfortShaderSignals();
+4875|        }
+4876|
+4877|        private void ResetUnderwaterSomaticRuntimeState()
+4878|        {
+4879|            _underwaterSomaticPhase = 0f;
+4880|            _underwaterSomaticWeight = 0f;
+4881|            _underwaterSomaticPitchOffset = 0f;
+4882|            _underwaterSomaticYawOffset = 0f;
+4883|            _underwaterSomaticFatigue01 = 0f;
+4884|            _underwaterSomaticFatigueBreathCooldownTimer = 0f;
+4885|        }
+4886|
+4887|        private void ResetEnvironmentalDragAndTensionRuntimeState()
+4888|        {
+4889|            _externalEnvironmentalDragRequestedMultiplier = 1f;
+4890|            _externalEnvironmentalDragCurrentMultiplier = 1f;
+4891|            _externalEnvironmentalDragHoldTimer = 0f;
+4892|            _externalEnvironmentalDragRequestedThisStep = false;
+4893|            _cuttingTensionAnchorRequestedWS = Vector3.zero;
+4894|            _cuttingTensionAnchorCurrentWS = Vector3.zero;
+4895|            _cuttingTensionAnchorNormalRequestedWS = Vector3.up;
+4896|            _cuttingTensionAnchorNormalCurrentWS = Vector3.up;
+4897|            _cuttingTensionHoldTimer = 0f;
+4898|            _cuttingTensionCurrentForce = 0f;
+4899|            _cuttingTensionRequestedThisStep = false;
+4900|            _debugSargassumEntanglementDragRequest = 1f;
+4901|            _shoreBuoyancyBlend = 1f;
+4902|            _bottomClearance = float.PositiveInfinity;
+4903|            _bottomNormal = Vector3.up;
+4904|            _surfaceWavePoseRotation = Quaternion.identity;
+4905|            _underwaterTurbulencePoseRotation = Quaternion.identity;
+4906|            _transportCavitationEfficiency = 1f;
+4907|            _previousTransportForwardVelocity = 0f;
+4908|            _wetLensSignalIntensity = 0f;
+4909|            _wetLensPulseCooldownTimer = 0f;
+4910|            _underwaterStressSignalIntensity = 0f;
+4911|            _dynamicWaveLocalSlope = Vector2.zero;
+4912|            _dynamicWaveLongitudinalGradient = Vector3.zero;
+4913|            _dynamicWaveLateralGradient = Vector3.zero;
+4914|            _sargassumFieldDensity01 = 0f;
+4915|            _sargassumMatBuoyancyBlend = 0f;
+4916|            _sargassumHighStrainIntensity = 0f;
+4917|            _sargassumHighStrainTimer = 0f;
+4918|            _abyssalThermalFlowSample = default;
+4919|            _abyssalThermalFlowSample.DragMultiplier = 1f;
+4920|            _abyssalThermalFlowVelocityWS = Vector3.zero;
+4921|            _abyssalFlowAdvectionVelocityWS = Vector3.zero;
+4922|            _undertowVector = Vector3.zero;
+4923|            _undertowIntensity = 0f;
+4924|            _wipeoutTimer = 0f;
+4925|            _wipeoutSeverity = 0f;
+4926|            _transportBailoutCooldownTimer = 0f;
+4927|            _transportEvaLockTicks = 0;
+4928|            _recentBreachExitTimer = 0f;
+4929|            _surfaceBreachFluidDragBypassTimer = 0f;
+4930|            _surfaceGaspUnderwaterTimer = 0f;
+4931|            _surfaceGaspCooldownTimer = 0f;
+4932|            _sargassumRestRecoveryBlend = 0f;
+4933|            _surfaceGaspSubmergedLatch = false;
+4934|            _requestedTransportCollisionHeightScale = 1f;
+4935|            _requestedTransportCollisionRadiusScale = 1f;
+4936|            _requestedTransportCollisionCenterYOffset = 0f;
+4937|            _dynamicCollisionTuck01 = 0f;
+4938|            _physicalTraumaCollisionWeight = 0f;
+4939|            _physicalTraumaCollisionHoldTimer = 0f;
+4940|            _exosuitJumpJetWakePulseTimer = 0f;
+4941|            _exosuitGrappleAnchorRequestedWS = Vector3.zero;
+4942|            _exosuitGrappleAnchorCurrentWS = Vector3.zero;
+4943|            _exosuitGrappleHoldTimer = 0f;
+4944|            _exosuitGrappleCurrentForce = 0f;
+4945|            _exosuitGrappleRequestedThisStep = false;
+4946|            ResetHeavyTowRuntimeResponse();
+4947|            _abyssalDowndraftCooldownTimer = 0f;
+4948|            _abyssalDowndraftActiveTimer = 0f;
+4949|            _abyssalDowndraftIntensity = 0f;
+4950|            _abyssalDowndraftVelocityChange = Vector3.zero;
+4951|            ResetAbyssalCurrentShearRuntime();
+4952|            _abyssalFlowNoiseBoundaryCooldownTimer = 0f;
+4953|            _previousAbyssalNoisyFlow = Vector3.zero;
+4954|            _abyssalTransportTurbulencePitchOffset = 0f;
+4955|            _abyssalTransportTurbulenceYawOffset = 0f;
+4956|            _hullStressIntensity = 0f;
+4957|            _hullStressGroanCooldownTimer = 0f;
+4958|            _hullStressHudCorruptionRefreshTimer = 0f;
+4959|            _fatalPressureSequenceTimer = 0f;
+4960|            _fatalPressureSequenceGlitchPulseTimer = 0f;
+4961|            _fatalPressureSequenceIntensity = 0f;
+4962|            _fatalPressureRearmTimer = 0f;
+4963|            _fatalPressureLookYawAnchor = _cameraYaw;
+4964|            _fatalPressureLookPitchAnchor = _cameraPitch;
+4965|            ClearFatalPressureNotificationDiagnostics();
+4966|            _activeSonarPingCooldownTimer = 0f;
+4967|            _thermalUpdraftIntensity = 0f;
+4968|            _thermalUpdraftVelocityChange = Vector3.zero;
+4969|            _externalThermalUpdraftVelocityChange = Vector3.zero;
+4970|            _externalThermalUpdraftRequestedThisStep = false;
+4971|            _queuedExternalKinematicAcceleration = Vector3.zero;
+4972|            _queuedExternalKinematicVelocityChange = Vector3.zero;
+4973|            _wallKickCooldownTimer = 0f;
+4974|            _ladderSplineSnapActive = false;
+4975|            _ladderSplineSnapAxisWorld = Vector3.zero;
+4976|            _aupSpeculativeHoverTicks = 0;
+4977|            _aupSpeculativeHoverHeightMeters = 0f;
+4978|            _lastProcessedKccSlideFeedbackFrame = -1;
+4979|            _thermalUpdraftTraumaCooldownTimer = 0f;
+4980|            _vegetationDensityLinearDamping = 0f;
+4981|        }
+4982|
+4983|        private void ResetTransportPlatformRuntimeState()
+4984|        {
+4985|            _activeTransportPlatform = null;
+4986|            _activeTransportPlatformBehaviour = null;
+4987|            _activeTransportPlatformTransform = null;
+4988|            _transportPlatformRotationInitialized = false;
+4989|            _lastTransportPlatformPosition = Vector3.zero;
+4990|            _currentTransportPlatformPosition = Vector3.zero;
+4991|            _lastTransportPlatformAup = default;
+4992|            _currentTransportPlatformAup = default;
+4993|            _lastTransportPlatformRotation = Quaternion.identity;
+4994|            _currentTransportPlatformRotation = Quaternion.identity;
+4995|            _transportPlatformDeltaRotation = Quaternion.identity;
+4996|            _cachedTransportPlatformLocalToWorldMatrix = Matrix4x4.identity;
+4997|            _cachedTransportPlatformWorldToLocalMatrix = Matrix4x4.identity;
+4998|            _cachedTransportPlatformBasisRotation = Quaternion.identity;
+4999|            _cachedTransportPlatformSpatialFrameValid = false;
+5000|            _transportPlatformAupFrameValid = false;
+5001|            _useFixedFrameSpatialCache = false;
+5002|        }
+5003|
+5004|        private void ResetRenderInterpolationRuntimeState()
+5005|        {
+5006|            _renderInterpolatedLinearVelocity = Vector3.zero;
+5007|            _renderInterpolatedCameraYaw = _cameraYaw;
+5008|            _renderInterpolatedBodyYaw = _bodyYaw;
+5009|            _renderInterpolationStateInitialized = false;
+5010|        }
+5011|
+5012|        private void UnregisterGlobalLifecycleListeners()
+5013|        {
+5014|            if (_registeredOriginShiftListener)
+5015|            {
+5016|                HectonFloatingOrigin.UnregisterListener(this);
+5017|                _registeredOriginShiftListener = false;
+5018|            }
+5019|
+5020|            if (_registeredTick)
+5021|            {
+5022|                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+5023|                _registeredTick = false;
+5024|            }
+5025|
+5026|            if (_registeredFixedTick)
+5027|            {
+5028|                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+5029|                _registeredFixedTick = false;
+5030|            }
+5031|
+5032|            if (_registeredColdTick)
+5033|            {
+5034|                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+5035|                _registeredColdTick = false;
+5036|            }
+5037|
+5038|            if (_registeredLateFrameTick)
+5039|            {
+5040|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+5041|                _registeredLateFrameTick = false;
+5042|            }
+5043|
+5044|            if (_registeredPlayerMovementContracts)
+5045|            {
+5046|                GlobalRegistry.UnregisterPlayerMovementContracts(this);
+5047|                _registeredPlayerMovementContracts = false;
+5048|            }
+5049|
+5050|            if (_registeredHotSwapListener)
+5051|            {
+5052|                GlobalRegistry.TryUnregisterHotSwapListener(this);
+5053|                _registeredHotSwapListener = false;
+5054|            }
+5055|        }
+5056|
+5057|        private void OnCollisionEnter(Collision collision)
+5058|        {
+5059|            CaptureLegacyCollisionContacts(collision);
+5060|        }
+5061|
+5062|        private void OnCollisionStay(Collision collision)
+5063|        {
+5064|            CaptureLegacyCollisionContacts(collision);
+5065|        }
+5066|
+5067|        private void OnCollisionExit(Collision collision)
+5068|        {
+5069|            if (collision == null)
+5070|                return;
+5071|
+5072|            Collider collider = collision.collider;
+5073|            if (collider == null)
+5074|                return;
+5075|
+5076|            int colliderId = unchecked((int)EntityId.ToULong(collider.GetEntityId()));
+5077|            if (colliderId == 0)
+5078|                return;
+5079|
+5080|            for (int i = _legacyCollisionProbeHitCount - 1; i >= 0; i--)
+5081|            {
+5082|                if (GetHitColliderInstanceId(in _legacyCollisionProbeHitBuffer[i]) != colliderId)
+5083|                    continue;
+5084|
+5085|                int last = _legacyCollisionProbeHitCount - 1;
+5086|                _legacyCollisionProbeHitBuffer[i] = _legacyCollisionProbeHitBuffer[last];
+5087|                _legacyCollisionProbeFrameBuffer[i] = _legacyCollisionProbeFrameBuffer[last];
+5088|                _legacyCollisionProbeHitBuffer[last] = default;
+5089|                _legacyCollisionProbeFrameBuffer[last] = -1;
+5090|                _legacyCollisionProbeHitCount = last;
+5091|            }
+5092|        }
+5093|
+5094|        private void CaptureLegacyCollisionContacts(Collision collision)
+5095|        {
+5096|            if (collision == null ||
+5097|                HectonFloatingOrigin.IsShiftInProgress)
+5098|            {
+5099|                return;
+5100|            }
+5101|
+5102|            int layerMask = ResolveMovementGroundLayerMask();
+5103|            if (layerMask == 0)
+5104|                return;
+5105|
+5106|            int contactCount = collision.GetContacts(_collisionContactBuffer);
+5107|            if (contactCount <= 0)
+5108|                return;
+5109|
+5110|            if (_legacyCollisionProbeShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
+5111|                ResetLegacyCollisionProbeHits();
+5112|
+5113|            int currentFrame = SystemDispatcher.CurrentFrameIndex;
+5114|            int safeContactCount = math.min(contactCount, _collisionContactBuffer.Length);
+5115|            for (int i = 0; i < safeContactCount; i++)
+5116|            {
+5117|                ContactPoint contact = _collisionContactBuffer[i];
+5118|                Collider hitCollider = ResolveOtherCollisionCollider(in contact, collision.collider);
+5119|                if (hitCollider == null)
+5120|                    continue;
+5121|
+5122|                int hitColliderId = unchecked((int)EntityId.ToULong(hitCollider.GetEntityId()));
+5123|                if (hitColliderId == 0 || hitColliderId == _playerColliderInstanceId)
+5124|                    continue;
+5125|
+5126|                int layerBit = 1 << hitCollider.gameObject.layer;
+5127|                if ((layerMask & layerBit) == 0)
+5128|                    continue;
+5129|
+5130|                Vector3 point = contact.point;
+5131|                Vector3 normal = ResolveCollisionContactNormal(point, contact.normal);
+5132|                if (!IsFiniteVector(point) || !IsFiniteVector(normal))
+5133|                    continue;
+5134|
+5135|                int writeIndex = ResolveLegacyCollisionProbeWriteIndex(hitColliderId, currentFrame);
+5136|                if (writeIndex < 0)
+5137|                    continue;
+5138|
+5139|                float downwardDistance = math.max(0f, _groundCheckOrigin.y - point.y);
+5140|                _legacyCollisionProbeHitBuffer[writeIndex] = new PlayerMovementSurfaceHit
+5141|                {
+5142|                    point = HectonPlayerMotor.SafeVelocity(point, _fixedFrameBodyPosition),
+5143|                    normal = NormalizeVectorRsqrt(normal, Vector3.up),
+5144|                    distance = downwardDistance,
+5145|                    collider = hitCollider,
+5146|                    ColliderInstanceId = hitColliderId
+5147|                };
+5148|                _legacyCollisionProbeFrameBuffer[writeIndex] = currentFrame;
+5149|                _legacyCollisionProbeFrame = currentFrame;
+5150|                _legacyCollisionProbeShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+5151|            }
+5152|        }
+5153|
+5154|        private int ResolveLegacyCollisionProbeWriteIndex(int colliderInstanceId, int currentFrame)
+5155|        {
+5156|            if (colliderInstanceId == 0)
+5157|                return -1;
+5158|
+5159|            int count = math.min(_legacyCollisionProbeHitCount, _legacyCollisionProbeHitBuffer.Length);
+5160|            int staleIndex = -1;
+5161|            int oldestIndex = count > 0 ? 0 : -1;
+5162|            int oldestFrame = count > 0 ? _legacyCollisionProbeFrameBuffer[0] : int.MaxValue;
+5163|
+5164|            for (int i = 0; i < count; i++)
+5165|            {
+5166|                if (GetHitColliderInstanceId(in _legacyCollisionProbeHitBuffer[i]) == colliderInstanceId)
+5167|                    return i;
+5168|
+5169|                int sampleFrame = _legacyCollisionProbeFrameBuffer[i];
+5170|                int age = currentFrame - sampleFrame;
+5171|                if ((age < 0 || age > KinematicContactMaxAgeFrames) && staleIndex < 0)
+5172|                    staleIndex = i;
+5173|
+5174|                if (sampleFrame < oldestFrame)
+5175|                {
+5176|                    oldestFrame = sampleFrame;
+5177|                    oldestIndex = i;
+5178|                }
+5179|            }
+5180|
+5181|            if (staleIndex >= 0)
+5182|                return staleIndex;
+5183|
+5184|            if (count < _legacyCollisionProbeHitBuffer.Length)
+5185|            {
+5186|                _legacyCollisionProbeHitCount = count + 1;
+5187|                return count;
+5188|            }
+5189|
+5190|            return oldestIndex;
+5191|        }
+5192|
+5193|        private Collider ResolveOtherCollisionCollider(in ContactPoint contact, Collider fallback)
+5194|        {
+5195|            Collider candidate = contact.otherCollider;
+5196|            if (candidate == null || candidate == _capsuleCollider)
+5197|                candidate = contact.thisCollider;
+5198|            if (candidate == null || candidate == _capsuleCollider)
+5199|                candidate = fallback;
+5200|            if (candidate == _capsuleCollider)
+5201|                return null;
+5202|            return candidate;
+5203|        }
+5204|
+5205|        private Vector3 ResolveCollisionContactNormal(Vector3 point, Vector3 rawNormal)
+5206|        {
+5207|            Vector3 normal = NormalizeVectorRsqrt(rawNormal, Vector3.up);
+5208|            Vector3 bodyCenter = _useFixedFrameSpatialCache ? _fixedFrameCapsuleCenterWS : ResolveBodyRuntimePosition();
+5209|            Vector3 toBody = bodyCenter - point;
+5210|            if (IsFiniteVector(toBody) && toBody.sqrMagnitude > 0.000001f)
+5211|            {
+5212|                float facing = normal.x * toBody.x + normal.y * toBody.y + normal.z * toBody.z;
+5213|                if (facing < 0f)
+5214|                    normal = -normal;
+5215|            }
+5216|
+5217|            return normal;
+5218|        }
+5219|
+5220|        private void ResetLegacyCollisionProbeHits()
+5221|        {
+5222|            int count = math.min(_legacyCollisionProbeHitCount, _legacyCollisionProbeHitBuffer.Length);
+5223|            for (int i = 0; i < count; i++)
+5224|            {
+5225|                _legacyCollisionProbeHitBuffer[i] = default;
+5226|                _legacyCollisionProbeFrameBuffer[i] = -1;
+5227|            }
+5228|
+5229|            _legacyCollisionProbeHitCount = 0;
+5230|            _legacyCollisionProbeFrame = -1;
+5231|            _legacyCollisionProbeShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+5232|        }
+5233|
+5234|        private void BindInventoryLoadSource()
+5235|        {
+5236|            PlayerInventory resolvedInventory = ResolveInventoryLoadSource();
+5237|            if (resolvedInventory == null)
+5238|                return;
+5239|
+5240|            if (_inventoryLoadSource == resolvedInventory)
+5241|            {
+5242|                BaselineInventoryLoadSignalRevision();
+5243|                HandleInventoryLoadChanged();
+5244|                return;
+5245|            }
+5246|
+5247|            UnbindInventoryLoadSource();
+5248|            _inventoryLoadSource = resolvedInventory;
+5249|            BaselineInventoryLoadSignalRevision();
+5250|            HandleInventoryLoadChanged();
+5251|        }
+5252|
+5253|        private void UnbindInventoryLoadSource()
+5254|        {
+5255|            _inventoryLoadSource = null;
+5256|            _boundInventoryLoadSignalSource = null;
+5257|            _inventoryLoadSignalHash = 0u;
+5258|            _lastInventoryLoadSignalRevision = 0u;
+5259|            _runtimeInventoryTotalMassKg = 0f;
+5260|            _runtimeInventoryLoadRatio = 0f;
+5261|            _runtimeInventoryLoad01 = 0f;
+5262|            _runtimeInventoryUpwardSwimMultiplier = 1f;
+5263|            SetRuntimeInventoryLoadMovementMultiplier(1f);
+5264|        }
+5265|
+5266|        private PlayerInventory ResolveInventoryLoadSource()
+5267|        {
+5268|            if (_inventoryLoadSource != null)
+5269|                return _inventoryLoadSource;
+5270|
+5271|            if (TryGetComponent(out PlayerInventory localInventory))
+5272|                return localInventory;
+5273|
+5274|            return _playerInventoryService != null ? _playerInventoryService.Inventory : null;
+5275|        }
+5276|
+5277|        private void RefreshInventoryLoadSignalFilter()
+5278|        {
+5279|            if (ReferenceEquals(_boundInventoryLoadSignalSource, _inventoryLoadSource))
+5280|                return;
+5281|
+5282|            _boundInventoryLoadSignalSource = _inventoryLoadSource;
+5283|            _inventoryLoadSignalHash = ResolveInventoryLoadSignalHash(_inventoryLoadSource);
+5284|            _lastInventoryLoadSignalRevision = _inventoryLoadSource != null ? unchecked((uint)_inventoryLoadSource.InventoryVersion) : 0u;
+5285|        }
+5286|
+5287|        private void BaselineInventoryLoadSignalRevision()
+5288|        {
+5289|            RefreshInventoryLoadSignalFilter();
+5290|            _lastInventoryLoadSignalRevision = _inventoryLoadSource != null ? unchecked((uint)_inventoryLoadSource.InventoryVersion) : 0u;
+5291|        }
+5292|
+5293|        private bool ConsumeInventoryLoadSignals()
+5294|        {
+5295|            RefreshInventoryLoadSignalFilter();
+5296|            uint inventoryHash = _inventoryLoadSignalHash;
+5297|            if (inventoryHash == 0u)
+5298|                return false;
+5299|
+5300|            bool changed = false;
+5301|            System.ReadOnlySpan<InventoryChangedSignal> signals = SignalBus<InventoryChangedSignal>.GetFrameSnapshot();
+5302|            for (int i = 0; i < signals.Length; i++)
+5303|            {
+5304|                ref readonly InventoryChangedSignal signal = ref signals[i];
+5305|                if (signal.InventoryHash != inventoryHash ||
+5306|                    signal.Revision == 0u ||
+5307|                    (_lastInventoryLoadSignalRevision != 0u && signal.Revision <= _lastInventoryLoadSignalRevision))
+5308|                {
+5309|                    continue;
+5310|                }
+5311|
+5312|                _lastInventoryLoadSignalRevision = signal.Revision;
+5313|                changed = true;
+5314|            }
+5315|
+5316|            return changed;
+5317|        }
+5318|
+5319|        private static uint ResolveInventoryLoadSignalHash(PlayerInventory inventory)
+5320|        {
+5321|            return inventory != null && inventory.gameObject != null
+5322|                ? unchecked((uint)EntityId.ToULong(inventory.gameObject.GetEntityId()))
+5323|                : 0u;
+5324|        }
+5325|
+5326|        private void HandleInventoryLoadChanged()
+5327|        {
+5328|            float totalMassKg = 0f;
+5329|            if (_inventoryLoadSource != null)
+5330|            {
+5331|                ref readonly float currentWeightKg = ref _inventoryLoadSource.CurrentWeightKg;
+5332|                totalMassKg = currentWeightKg;
+5333|            }
+5334|
+5335|            float carryCapacityKg = ResolveInventoryCarryCapacityKg();
+5336|            ApplyRuntimeInventoryMassLoad(totalMassKg, carryCapacityKg);
+5337|        }
+5338|
+5339|        private float ResolveInventoryCarryCapacityKg()
+5340|        {
+5341|            return _survivalSystem != null && _survivalSystem.Stats != null
+5342|                ? math.max(0.01f, _survivalSystem.Stats.CarryCapacityKg)
+5343|                : 200f;
+5344|        }
+5345|
+5346|        private static float ResolveInventoryLoadMovementMultiplier(float totalMassKg, float carryCapacityKg)
+5347|        {
+5348|            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeMovementMultiplier(
+5349|                totalMassKg,
+5350|                carryCapacityKg,
+5351|                InventoryLoadMinimumMovementMultiplier);
+5352|        }
+5353|
+5354|        private float ResolveRuntimeInventoryLoadMovementMultiplier()
+5355|        {
+5356|            return _runtimeInventoryLoadMovementMultiplier;
+5357|        }
+5358|
+5359|        private static float ResolveInventoryLoad01(float totalMassKg, float carryCapacityKg)
+5360|        {
+5361|            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeLoad01(totalMassKg, carryCapacityKg);
+5362|        }
+5363|
+5364|        private static float ResolveInventoryLoadRatio(float totalMassKg, float carryCapacityKg)
+5365|        {
+5366|            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeLoadRatio(totalMassKg, carryCapacityKg);
+5367|        }
+5368|
+5369|        internal static bool IsCriticalInventoryLoad(float totalMassKg, float carryCapacityKg)
+5370|        {
+5371|            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.IsCriticalInventoryLoad(
+5372|                ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg),
+5373|                CriticalEncumbranceRatio);
+5374|        }
+5375|
+5376|        internal static bool ShouldTriggerCriticalStaminaFailure(float encumbranceRatio, float stamina01)
+5377|        {
+5378|            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ShouldTriggerCriticalStaminaFailure(
+5379|                encumbranceRatio,
+5380|                stamina01,
+5381|                CriticalEncumbranceRatio,
+5382|                CriticalStaminaFailureThreshold01);
+5383|        }
+5384|
+5385|        internal static Vector3 ResolveCriticalEncumbranceSwimForce(Vector3 swimForce, bool criticallyEncumbered)
+5386|        {
+5387|            if (!criticallyEncumbered || swimForce.y <= 0f)
+5388|                return swimForce;
+5389|
+5390|            swimForce.y = 0f;
+5391|            return swimForce;
+5392|        }
+5393|
+5394|        internal static float ResolveInventoryLoadMovementMultiplierFromLoad(float load01)
+5395|        {
+5396|            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeMovementMultiplierFromLoad(
+5397|                load01,
+5398|                InventoryLoadMinimumMovementMultiplier);
+5399|        }
+5400|
+5401|        internal static float ResolveInventoryUpwardSwimMultiplierFromLoad(float load01)
+5402|        {
+5403|            return Hecton8.PureLogic.Systems.PlayerEffortLoadCalculator.ComputeUpwardSwimMultiplier(
+5404|                load01,
+5405|                InventoryUpwardSwimMinimumMultiplier);
+5406|        }
+5407|
+5408|        /// <inheritdoc />
+5409|        public void OnOriginShift(in OriginShiftEventData shiftData)
+5410|        {
+5411|            Vector3 shiftOffset = shiftData.ShiftOffset;
+5412|            if (!IsFiniteVector(shiftOffset) || shiftOffset.sqrMagnitude <= 0.000001f)
+5413|                return;
+5414|
+5415|            InvalidateMovementProbeCaches();
+5416|            _ladderSplineSnapActive = false;
+5417|            _ladderSplineSnapAxisWorld = Vector3.zero;
+5418|            _aupSpeculativeHoverTicks = SpeculativeHoverFixedTicksAfterAupShift;
+5419|            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents;
+5420|            _aupSpeculativeHoverHeightMeters = physicsStateEvents != null
+5421|                ? physicsStateEvents.ResolveSpeculativeHoverHeightMeters(
+5422|                    SpeculativeHoverBaseHeightMeters,
+5423|                    _currentTimer)
+5424|                : SpeculativeHoverBaseHeightMeters;
+5425|
+5426|            _lastTransportPlatformPosition -= shiftOffset;
+5427|            _currentTransportPlatformPosition -= shiftOffset;
+5428|            _cuttingTensionAnchorRequestedWS -= shiftOffset;
+5429|            _cuttingTensionAnchorCurrentWS -= shiftOffset;
+5430|            _exosuitGrappleAnchorRequestedWS -= shiftOffset;
+5431|            _exosuitGrappleAnchorCurrentWS -= shiftOffset;
+5432|            _surfaceLockTargetY -= shiftOffset.y;
+5433|            _fallbackWaterSurfaceY -= shiftOffset.y;
+5434|            _dynamicWaterSurfaceY -= shiftOffset.y;
+5435|            float3 shiftOffset3 = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+5436|            _playerKinematicsNativeState.ApplyOriginShift(_dataVault, shiftOffset3);
+5437|
+5438|            if (_abyssalThermalFlowSample.IsCableZone != 0)
+5439|                _abyssalThermalFlowSample.CableAnchorWS -= shiftOffset;
+5440|
+5441|            if (_useFixedFrameSpatialCache)
+5442|            {
+5443|                _fixedFrameBodyPosition -= shiftOffset;
+5444|                _fixedFrameCapsuleCenterWS -= shiftOffset;
+5445|                _fixedFrameBodyBottomY -= shiftOffset.y;
+5446|                _fixedFrameBodyTopY -= shiftOffset.y;
+5447|                _fixedFrameBodyEyeY -= shiftOffset.y;
+5448|                _groundCheckOrigin -= shiftOffset;
+5449|            }
+5450|
+5451|            if (_renderInterpolationStateInitialized)
+5452|            {
+5453|                _previousRenderInterpolationState.BodyPosition -= shiftOffset;
+5454|                _currentRenderInterpolationState.BodyPosition -= shiftOffset;
+5455|            }
+5456|
+5457|            if (_cinematicFocusActive)
+5458|            {
+5459|                _cinematicFocusLastDistanceSq = 0f;
+5460|                GlobalTelemetryBus.PublishPerformanceWarning(_cinematicFocusTelemetryHash, _cinematicFocusHash, shiftData.Sequence);
+5461|            }
+5462|
+5463|            _sargassumMovementInfluence?.ApplyOriginShiftOffset(shiftOffset);
+5464|        }
+5465|
+5466|        /// <summary>
+5467|        /// L13: Product entry so gameplay bootstrap / headless route can re-assert Player fixed+update
+5468|        /// lane registration if OnEnable raced an empty Dispatcher. Does not mock input.
+5469|        /// </summary>
+5470|        public void EnsureDispatcherRegistration()
+5471|        {
+5472|            TryRegisterToDispatchers();
+5473|        }
+5474|
+5475|        private void TryRegisterToDispatchers()
+5476|        {
+5477|            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+5478|                return;
+5479|
+5480|            if (!_registeredTick)
+5481|            {
+5482|                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+5483|            }
+5484|
+5485|            if (!_registeredFixedTick)
+5486|            {
+5487|                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+5488|            }
+5489|
+5490|            if (!_registeredColdTick)
+5491|            {
+5492|                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+5493|            }
+5494|
+5495|            TryRegisterLateFrameTickable();
+5496|
+5497|            if (!_registeredPlayerMovementContracts)
+5498|            {
+5499|                IPlayerMovementContracts currentContracts = GlobalRegistry.PlayerMovementContracts;
+5500|                if (currentContracts == null)
+5501|                    GlobalRegistry.RegisterPlayerMovementContracts(this);
+5502|
+5503|                _registeredPlayerMovementContracts = ReferenceEquals(GlobalRegistry.PlayerMovementContracts, this);
+5504|            }
+5505|
+5506|            if (!_registeredHotSwapListener)
+5507|                _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+5508|
+5509|        }
+5510|
+5511|        private void UnregisterDispatcherTicks()
+5512|        {
+5513|            if (_registeredTick)
+5514|            {
+5515|                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+5516|                _registeredTick = false;
+5517|            }
+5518|
+5519|            if (_registeredFixedTick)
+5520|            {
+5521|                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+5522|                _registeredFixedTick = false;
+5523|            }
+5524|
+5525|            if (_registeredColdTick)
+5526|            {
+5527|                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+5528|                _registeredColdTick = false;
+5529|            }
+5530|
+5531|            if (_registeredLateFrameTick)
+5532|            {
+5533|                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+5534|                _registeredLateFrameTick = false;
+5535|            }
+5536|        }
+5537|
+5538|        private void TryRegisterLateFrameTickable()
+5539|        {
+5540|            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+5541|                return;
+5542|
+5543|            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+5544|        }
+5545|
+5546|        private void MarkLateFramePresentationDirty()
+5547|        {
+5548|            // Late-frame ticking is lifecycle-registered; hot queues only mutate pending presentation state.
+5549|        }
+5550|

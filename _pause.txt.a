@@ -1,0 +1,80 @@
+1|using System;
+2|using Hecton8.Bootstrap;
+3|using Hecton8.Core;
+4|using Hecton8.Core.Contracts.Signals;
+5|using Hecton8.Optimization;
+6|using Hecton8.SaveSystem;
+7|using Hecton8.Crafting;
+8|using Hecton.Localization;
+9|using Hecton.UI.MainMenu;
+10|using TMPro;
+11|using Unity.Mathematics;
+12|using UnityEngine;
+13|using UnityEngine.EventSystems;
+14|using UnityEngine.InputSystem;
+15|using UnityEngine.InputSystem.UI;
+16|using UnityEngine.SceneManagement;
+17|using UnityEngine.UI;
+18|
+19|namespace Hecton8.UI
+20|{
+21|    [DisallowMultipleComponent]
+22|    [AddComponentMenu("Hecton8/UI/Pause Menu Controller")]
+23|    public sealed class PauseMenuController : MonoBehaviour, IUnscaledFastTickable, ILateFrameTickable, ISaveEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+24|    {
+25|        private const byte PauseMenuCommandPause = 1 << 0;
+26|        private const byte PauseMenuCommandCancel = 1 << 1;
+27|        internal static PauseMenuController ActiveRuntimeInstance { get; private set; }
+28|        private const string PauseMenuRootName = "PauseMenu_Root";
+29|        private const string DefaultMainMenuSceneName = "01_MAIN_MENU";
+30|        private const uint DiegeticPauseHapticSourceHash = 0x504D3131u; // PM11
+31|        private const float MaxPauseMenuPresentationDeltaSeconds = 0.1f;
+32|
+33|        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+34|        private static void ResetActiveRuntimeForSubsystemRegistration()
+35|        {
+36|            // Domain reload may be disabled (Editor Enter Play Mode Options).
+37|            // Sticky open-count must not leak across play sessions - otherwise
+38|            // IsAnyOpen stays true, HPM SampleGameplay zeros input without GetState (hop2 starve).
+39|            ActiveRuntimeInstance = null;
+40|            _openMenuCount = 0;
+41|        }
+42|
+43|        private enum PauseSection
+44|        {
+45|            Main = 0,
+46|            Saves = 1,
+47|            Help = 2,
+48|            Settings = 3
+49|        }
+50|
+51|        private static readonly Color ShellBg = new Color(0.03f, 0.07f, 0.09f, 0.92f);
+52|        private static readonly Color HeaderBg = new Color(0.07f, 0.16f, 0.18f, 0.86f);
+53|        private static readonly Color PanelBg = new Color(0.05f, 0.11f, 0.13f, 0.82f);
+54|        private static readonly Color Primary = new Color(0.46f, 0.98f, 0.94f, 0.96f);
+55|        private static readonly Color Dim = new Color(0.78f, 0.96f, 0.93f, 0.84f);
+56|        private static readonly Color DimLow = new Color(0.56f, 0.74f, 0.71f, 0.72f);
+57|        private static readonly Color ButtonBg = new Color(0.08f, 0.16f, 0.18f, 0.84f);
+58|        private static readonly Color ButtonHover = new Color(0.12f, 0.24f, 0.28f, 0.94f);
+59|        private static readonly Color Rule = new Color(0.46f, 0.98f, 0.94f, 0.18f);
+60|        private static readonly Action<AsyncOperation> _onMainMenuCleanupCompleted = HandleMainMenuCleanupCompleted;
+61|        private const uint PauseMenuSignalSourceHash = 0x50415553u; // PAUS
+62|        private static readonly int SettingsLanguageHintKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_LANGUAGE_HINT.AsSpan());
+63|        private static readonly int SettingsCycleLanguageKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_CYCLE_LANGUAGE.AsSpan());
+64|        private static readonly int ErrorSaveManagerUnavailableKeyHash = LocHash.Compute(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE.AsSpan());
+65|        private static readonly int ErrorSaveCrashedMessageKeyHash = LocHash.Compute(LocalizationKeys.ERROR_SAVE_CRASHED_MESSAGE.AsSpan());
+66|        private static readonly int ErrorSaveFailedMessageKeyHash = LocHash.Compute(LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE.AsSpan());
+67|        private static readonly int ErrorLoadFailedMessageKeyHash = LocHash.Compute(LocalizationKeys.ERROR_LOAD_FAILED_MESSAGE.AsSpan());
+68|        private static readonly int WarningBackupUsedTitleKeyHash = LocHash.Compute(LocalizationKeys.WARNING_BACKUP_USED_TITLE.AsSpan());
+69|        private static readonly int WarningBackupUsedMessageKeyHash = LocHash.Compute(LocalizationKeys.WARNING_BACKUP_USED_MESSAGE.AsSpan());
+70|        private static readonly int WarningSaveRepairedTitleKeyHash = LocHash.Compute(LocalizationKeys.WARNING_SAVE_REPAIRED_TITLE.AsSpan());
+71|        private static readonly int WarningSaveRepairedMessageKeyHash = LocHash.Compute(LocalizationKeys.WARNING_SAVE_REPAIRED_MESSAGE.AsSpan());
+72|        private static readonly int SettingsLanguageOwnerUnavailableKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_LANGUAGE_OWNER_UNAVAILABLE.AsSpan());
+73|        private static readonly int SettingsCurrentLanguageKeyHash = LocHash.Compute(LocalizationKeys.SETTINGS_CURRENT_LANGUAGE.AsSpan());
+74|
+75|        [Header("References")]
+76|        [SerializeField] private PlayerPDA playerPDA;
+77|        [SerializeField] private TMP_FontAsset labelFont;
+78|        [SerializeField] private TMP_FontAsset numericFont;
+79|
+80|        [Header("Settings")]

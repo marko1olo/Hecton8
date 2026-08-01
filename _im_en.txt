@@ -1,0 +1,42 @@
+180|        private InputActionMap _playerActionMap;
+277|        public bool IsPlayerInputEnabled => TryGetActionMapEnabled(_playerActionMap);
+322|            if (_playerActionMap == null)
+439|                SafeEnableActionMap(_playerActionMap);
+450|            _restorePlayerInputOnEnable = IsActionMapEnabledForStateCapture(_playerActionMap);
+452|            SafeDisableActionMapForTeardown(_playerActionMap);
+465|            EnablePlayerInput();
+470|            if (_inputMapsInitialized && TryValidateActionMap(_playerActionMap, scheduleRecoveryOnFailure: true))
+501|            _playerActionMap = _runtimeInputActionAsset.FindActionMap("Player");
+504|            if (_playerActionMap == null)
+541|            _moveAction = _playerActionMap.FindAction("Movement");
+542|            _lookAction = _playerActionMap.FindAction("Look");
+543|            _jumpAction = _playerActionMap.FindAction("Jump");
+544|            _sprintAction = _playerActionMap.FindAction("Sprint");
+545|            _interactAction = _playerActionMap.FindAction("Interact");
+546|            _flashlightAction = _playerActionMap.FindAction("Flashlight");
+547|            _pdaAction = _playerActionMap.FindAction("PDA");
+548|            _pauseAction = _playerActionMap.FindAction("Pause");
+549|            _toolSlot1Action = _playerActionMap.FindAction("ToolSlot1");
+550|            _toolSlot2Action = _playerActionMap.FindAction("ToolSlot2");
+551|            _toolSlot3Action = _playerActionMap.FindAction("ToolSlot3");
+552|            _toolSlot4Action = _playerActionMap.FindAction("ToolSlot4");
+553|            _primaryActionAction = _playerActionMap.FindAction("PrimaryAction");
+554|            _secondaryActionAction = _playerActionMap.FindAction("SecondaryAction");
+555|            _verticalMovementAction = _playerActionMap.FindAction("VerticalMovement");
+556|            _inventoryAction = _playerActionMap.FindAction("Inventory");
+1019|        public void EnablePlayerInput()
+1025|            SafeEnableActionMap(_playerActionMap);
+1028|        public void DisablePlayerInput()
+1031|            SafeDisableActionMap(_playerActionMap);
+1052|        public void SwitchToPlayerInput()
+1058|            EnablePlayerInput();
+1069|                EnablePlayerInput();
+1073|            DisablePlayerInput();
+1089|                    return _playerActionMap?.FindAction(actionName);
+1113|                    return _playerActionMap;
+2542|                bool playerRestored = !_restorePlayerInputOnEnable || TrySetActionMapEnabled(_playerActionMap, enable: true, scheduleRecoveryOnFailure: false);
+2566|                _playerActionMap = actionMap;
+2990|            if (_inputMapsInitialized && TryValidateActionMap(_playerActionMap, scheduleRecoveryOnFailure: true))
+2994|            return _inputMapsInitialized && TryValidateActionMap(_playerActionMap, scheduleRecoveryOnFailure: true);
+3026|            SafeDisableActionMapForTeardown(_playerActionMap);
+3031|            _playerActionMap = null;

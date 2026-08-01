@@ -1,0 +1,251 @@
+9900|
+9901|            currentGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
+9902|            if (currentGravity.sqrMagnitude > MinLocalGravitySqr)
+9903|                return currentGravity;
+9904|
+9905|            return Vector3.down * HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
+9906|        }
+9907|
+9908|        private static Vector3 BlendGravityVectorCheap(Vector3 startGravity, Vector3 targetGravity, float blend01)
+9909|        {
+9910|            float t = math.saturate(blend01);
+9911|            Vector3 blended = startGravity + ((targetGravity - startGravity) * t);
+9912|            if (blended.sqrMagnitude > MinLocalGravitySqr)
+9913|                return blended;
+9914|
+9915|            return t < 0.5f ? startGravity : targetGravity;
+9916|        }
+9917|
+9918|        private Vector3 ResolveBodyRuntimePosition()
+9919|        {
+9920|            if (_useFixedFrameSpatialCache && MathGuard.IsFinite(_fixedFrameBodyPosition))
+9921|                return HectonPlayerMotor.SafeVelocity(_fixedFrameBodyPosition);
+9922|
+9923|            Vector3 statePosition = ResolvePlayerAupRuntimePosition();
+9924|            if (MathGuard.IsFinite(statePosition))
+9925|                return HectonPlayerMotor.SafeVelocity(statePosition);
+9926|
+9927|            return _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.position) : Vector3.zero;
+9928|        }
+9929|
+9930|        public void FixedTick(float fixedDeltaTime)
+9931|        {
+9932|            // L13: Sample locomotion BEFORE suit/juice physics gates. hop2 (GetState) must not
+9933|            // depend on suit asset or juice processor being ready ? L12 proved dispatcher already
+9934|            // holds non-zero MoveDelta while movementIntent01max stayed 0 because these early-outs
+9935|            // skipped SampleGameplayLocomotionInputForFixedStep for the whole Swim window.
+9936|            EnsureJuiceProcessor();
+9937|            SampleGameplayLocomotionInputForFixedStep();
+9938|
+9939|            SuitData suit = currentSuitData;
+9940|            if (suit == null)
+9941|                return;
+9942|
+9943|            using (_fixedTickProfilerMarker.Auto())
+9944|            {
+9945|
+9946|                PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+9947|
+9948|                float previousWaterImmersionRatio = _waterImmersionRatio;
+9949|                bool wasGroundedLastFixedTick = _isGrounded;
+9950|
+9951|                _rb.useGravity = false;
+9952|
+9953|                if (_isWalking)
+9954|                {
+9955|                    _bodyYaw = _cameraYaw;
+9956|                    _bodyYawVelocity = 0f;
+9957|                }
+9958|                else
+9959|                {
+9960|                    float bodyYawOmega = suit.bodyYawSpringOmega *
+9961|                        ResolveHeavyCarryBodyYawSpringMultiplier() *
+9962|                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
+9963|                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
+9964|                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+9965|                }
+9966|
+9967|                _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
+9968|                _wasGroundedLastFrame = _isGrounded;
+9969|
+9970|                GroundCheck();
+9971|                _playerMotor?.SetGroundedState(_isGrounded);
+9972|
+9973|                UpdateWaterImmersion(fixedDeltaTime);
+9974|
+9975|                ApplyLadderSplineSnapFromAsyncProbe(initialExosuitKinematicAuthority);
+9976|
+9977|                float physicsImmersion = _smoothedImmersionRatio;
+9978|                float feetDepth = GetFeetDepthBelowSurface(EffectiveWaterSurfaceY);
+9979|                bool hasImmediateShoreFooting = _isGrounded && feetDepth <= shoreWalkFootDepth;
+9980|                bool isShallowEnoughForShore = physicsImmersion < swimTransitionThreshold || hasImmediateShoreFooting;
+9981|                bool isDryLand = physicsImmersion <= 0.01f;
+9982|
+9983|                if (_isGrounded && isDryLand)
+9984|                {
+9985|                    _dryGroundGraceTimer = dryGroundGraceTime;
+9986|                }
+9987|                else if (_dryGroundGraceTimer > 0f)
+9988|                {
+9989|                    _dryGroundGraceTimer -= fixedDeltaTime;
+9990|                    if (_dryGroundGraceTimer < 0f)
+9991|                        _dryGroundGraceTimer = 0f;
+9992|                }
+9993|
+9994|                if (_isGrounded && isShallowEnoughForShore)
+9995|                {
+9996|                    _shoreGroundGraceTimer = shoreGroundGraceTime;
+9997|                }
+9998|                else if (_shoreGroundGraceTimer > 0f)
+9999|                {
+10000|                    _shoreGroundGraceTimer -= fixedDeltaTime;
+10001|                    if (_shoreGroundGraceTimer < 0f)
+10002|                        _shoreGroundGraceTimer = 0f;
+10003|                }
+10004|
+10005|                AdvanceCooldownTimers(fixedDeltaTime);
+10006|                AdvanceFatalPressureSequence(fixedDeltaTime);
+10007|                UpdateWipeoutState(fixedDeltaTime);
+10008|                UpdateShoreBuoyancyBlend(fixedDeltaTime, physicsImmersion, feetDepth);
+10009|                UpdateVegetationDensityLinearDamping(fixedDeltaTime);
+10010|
+10011|                bool hasDryGroundSupport = _isGrounded || (_dryGroundGraceTimer > 0f && isDryLand);
+10012|                bool hasShoreGroundSupport = hasImmediateShoreFooting || (_shoreGroundGraceTimer > 0f && isShallowEnoughForShore);
+10013|                bool groundedOnDryLand = hasDryGroundSupport && isDryLand;
+10014|                bool groundedOnShore = hasShoreGroundSupport && isShallowEnoughForShore;
+10015|
+10016|                bool exosuitActive = IsExosuitTransportActive();
+10017|                bool exosuitKinematicAuthority = TrySubmitExosuitKinematicAuthority(exosuitActive);
+10018|
+10019|                ToggleBuoyancy(!exosuitActive);
+10020|                RefreshSurfaceBreachLock(physicsImmersion);
+10021|                UpdateSurfaceDiveCommitTimer(fixedDeltaTime, activeTransportPreset);
+10022|
+10023|                float targetGravityScale = exosuitActive
+10024|                    ? exosuitNegativeBuoyancyScale
+10025|                    : groundedOnShore ? 1f : 1f - math.saturate(physicsImmersion * gravityFadeRate);
+10026|                _gravityScale = ResolveVrComfortGravityScale(targetGravityScale, fixedDeltaTime);
+10027|
+10028|                if (!exosuitKinematicAuthority && _gravityScale > 0.001f)
+10029|                {
+10030|                    float mass = ResolveAuthoritativeBodyMassKg();
+10031|                    _forceVector.x = _cachedGravity.x * mass * _gravityScale;
+10032|                    _forceVector.y = _cachedGravity.y * mass * _gravityScale;
+10033|                    _forceVector.z = _cachedGravity.z * mass * _gravityScale;
+10034|                    QueueEnvironmentalForce(_forceVector);
+10035|                }
+10036|
+10037|                if ((exosuitActive && _isGrounded) || groundedOnShore)
+10038|                {
+10039|                    _snapScale = 1f;
+10040|                }
+10041|                else
+10042|                {
+10043|                    _snapScale = 1f - math.saturate(physicsImmersion * snapFadeRate);
+10044|                }
+10045|
+10046|                bool shouldWalk = ShouldUseLandLocomotion(physicsImmersion, hasShoreGroundSupport, hasImmediateShoreFooting);
+10047|                bool shouldStartSurfaceDiveAssist =
+10048|                    !shouldWalk &&
+10049|                    !IsInDryInterior() &&
+10050|                    physicsImmersion >= surfaceBreachMinImmersion &&
+10051|                    GetHeadDepthBelowSurface(EffectiveWaterSurfaceY) <= surfaceDiveBreakDepth &&
+10052|                    HasCommittedSurfaceDive(activeTransportPreset);
+10053|
+10054|                if (shouldWalk)
+10055|                {
+10056|                    _surfaceDiveAssistTimer = 0f;
+10057|                }
+10058|                else if (shouldStartSurfaceDiveAssist && _surfaceDiveAssistTimer <= 0f)
+10059|                {
+10060|                    _surfaceDiveAssistTimer = surfaceDiveAssistDuration;
+10061|                }
+10062|
+10063|                bool wasWalkingBeforeModeResolution = _isWalking;
+10064|                if (shouldWalk != _isWalking)
+10065|                {
+10066|                    _isWalking = shouldWalk;
+10067|                    if (_isWalking)
+10068|                        ApplyShorelineWalkHandoffVelocity(wasWalkingBeforeModeResolution, hasShoreGroundSupport, hasImmediateShoreFooting);
+10069|                    ApplyModePhysics(suit);
+10070|                    UpdateModeDiagnostics();
+10071|                }
+10072|
+10073|                _isSurfaceSwimming = !exosuitActive && !_isWalking && ResolveSurfaceSwimState(physicsImmersion, activeTransportPreset);
+10074|                _currentLocomotionMode = ResolveLocomotionMode(physicsImmersion);
+10075|                SyncStateMachineContext(exosuitActive, physicsImmersion, groundedOnDryLand, groundedOnShore);
+10076|                _environmentHandler?.ExecuteStep(fixedDeltaTime, !exosuitKinematicAuthority);
+10077|                ApplyQueuedExternalKinematicForces(fixedDeltaTime, !exosuitKinematicAuthority);
+10078|                ApplyHighSpeedWipeoutSweep(fixedDeltaTime, !exosuitKinematicAuthority);
+10079|                UpdateSurfaceLockState(fixedDeltaTime);
+10080|                UpdateWaterPresentationPose(fixedDeltaTime);
+10081|                UpdateDynamicCollisionProfile(fixedDeltaTime, exosuitKinematicAuthority);
+10082|                UpdateHeavyTowRuntimeResponse(fixedDeltaTime, exosuitKinematicAuthority);
+10083|                UpdateWetLensSignal(fixedDeltaTime);
+10084|                UpdateHeadSurfaceRecovery(fixedDeltaTime);
+10085|                UpdateTransportCriticalBailout();
+10086|                UpdateModeDiagnostics();
+10087|                TryStartWaterEntryImpact(previousWaterImmersionRatio, wasGroundedLastFixedTick, currentVerticalVelocity);
+10088|                TryPlaySurfacePierceSplashAudio(previousWaterImmersionRatio, currentVerticalVelocity);
+10089|                TryStartSurfaceBreachArc(previousWaterImmersionRatio, currentVerticalVelocity);
+10090|                ApplyHydrostaticExitWeighting(previousWaterImmersionRatio);
+10091|
+10092|                SmoothDampingTransition(fixedDeltaTime, suit);
+10093|                TryApplyKinematicWallKick(exosuitKinematicAuthority);
+10094|
+10095|                ProcessJumpInput(fixedDeltaTime, exosuitActive, groundedOnDryLand, groundedOnShore);
+10096|
+10097|                ApplyLocomotionPhysics(fixedDeltaTime, suit, activeTransportPreset, exosuitActive, exosuitKinematicAuthority, groundedOnDryLand, groundedOnShore);
+10098|
+10099|                FinalizeFixedTick(fixedDeltaTime, suit, exosuitKinematicAuthority);
+10100|            }
+10101|        }
+10102|
+10103|        private PlayerTransportPreset PrepareTransportAndFrameState(float fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority)
+10104|        {
+10105|            RefreshVrComfortSettingsCache();
+10106|            AdvanceMovementProbeCacheFrame();
+10107|
+10108|            if (_transportEvaLockTicks > 0)
+10109|                _transportEvaLockTicks--;
+10110|
+10111|            if (_transportBailoutCooldownTimer > 0f)
+10112|            {
+10113|                _transportBailoutCooldownTimer -= fixedDeltaTime;
+10114|                if (_transportBailoutCooldownTimer < 0f)
+10115|                    _transportBailoutCooldownTimer = 0f;
+10116|            }
+10117|
+10118|            _currentFixedDeltaTime = fixedDeltaTime;
+10119|            RefreshActiveGravity(fixedDeltaTime);
+10120|            Vector3 bodyRuntimePosition = ResolveBodyRuntimePosition();
+10121|            Vector3 authoritativeVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
+10122|            currentVerticalVelocity = authoritativeVelocity.y;
+10123|
+10124|            _playerState.SyncKinematic(bodyRuntimePosition, authoritativeVelocity);
+10125|            _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
+10126|            WritePlayerKinematicsSnapshot(bodyRuntimePosition, authoritativeVelocity, _lastPlayerKinematicsIntendedMovement);
+10127|            _useFixedFrameSpatialCache = true;
+10128|
+10129|            PlayerTransportPreset activeTransportPreset = PrepareFixedTickDependencies();
+10130|            _stateMachine?.AdvanceFixed(fixedDeltaTime);
+10131|
+10132|            ITransportPlatform previousTransportPlatform = _activeTransportPlatform;
+10133|            Transform previousTransportPlatformTransform = _activeTransportPlatformTransform;
+10134|            ResolveActiveTransportPlatform();
+10135|            if (_transportEvaLockTicks <= 0 &&
+10136|                previousTransportPlatform != null &&
+10137|                _activeTransportPlatform == null)
+10138|            {
+10139|                ExecuteTransportEvaHandoff(previousTransportPlatform, previousTransportPlatformTransform);
+10140|            }
+10141|
+10142|            bool exosuitActive = IsExosuitTransportActive();
+10143|            initialExosuitKinematicAuthority = exosuitActive && ExosuitKinematicAuthority.HasActiveAuthority();
+10144|
+10145|            SyncTransportPlatformRotation();
+10146|            RefreshFixedFrameSpatialCache();
+10147|            ApplyTransportPlatformCarrierMotion(fixedDeltaTime, initialExosuitKinematicAuthority);
+10148|            RefreshFixedFrameSpatialCache();
+10149|            RefreshSharedGroundSweepBuffer();
+10150|

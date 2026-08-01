@@ -1,0 +1,78 @@
+14:    public sealed class HectonScanMarkerSystem : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IScanEventListener, IGlobalRegistryHotSwapListener
+16:        private const int MaxMarkers = 64;
+20:        // COLD ALLOC: List<VisorHUDController>[2] — HUD camera resolve scratch — owner: HectonScanMarkerSystem
+23:        private struct ActiveMarker
+47:        private ActiveMarker[] _markers;
+48:        private ulong _activeMarkerMask;
+52:        private Material _runtimeMarkerMaterial;
+53:        private Mesh _runtimeMarkerMesh;
+54:        // COLD ALLOC: Matrix4x4[64] — instanced marker draw mirror — owner: HectonScanMarkerSystem
+55:        private readonly Matrix4x4[] _markerMatrixMirror = new Matrix4x4[MaxMarkers];
+65:        private bool _lateFrameRegistered;
+69:        private bool _invalidMarkerResourcesAnnounced;
+82:        private void Awake()
+84:            // COLD ALLOC: ActiveMarker[64] — fixed scan marker slot buffer — owner: HectonScanMarkerSystem
+85:            _markers = new ActiveMarker[MaxMarkers];
+92:        private void OnEnable()
+98:            TryRegisterHotSwapListener();
+99:            ScanEvents.Register(this);
+100:            RegisterTick();
+101:            RegisterLateFrameTick();
+106:            ScanEvents.Unregister(this);
+120:            _runtimeMarkerMaterial = null;
+121:            _runtimeMarkerMesh = null;
+140:                        RegisterTick();
+141:                        RegisterLateFrameTick();
+156:        public void Tick(float deltaTime)
+158:            if (_activeMarkerMask == 0UL)
+161:            UpdateMarkerTimers(deltaTime);
+162:            if (_activeMarkerMask == 0UL)
+165:            RegisterLateFrameTick();
+170:            if (_activeMarkerMask == 0UL)
+179:            RenderMarkers();
+182:        public void OnScanEvent(in ScanEventPayload payload)
+184:            if ((ScanEventType)payload.EventType != ScanEventType.NodeFound)
+195:            ulong activeMask = _activeMarkerMask;
+209:            _markers[writeSlot] = new ActiveMarker
+215:            _activeMarkerMask |= 1UL << writeSlot;
+216:            _writeIndex = (_writeIndex + 1) & (MaxMarkers - 1);
+219:        private void UpdateMarkerTimers(float deltaTime)
+221:            ulong activeMask = _activeMarkerMask;
+231:                    _activeMarkerMask &= ~bit;
+236:        private void RenderMarkers()
+238:            if (hudCamera == null || _playerTransform == null || _runtimeMarkerMaterial == null || _runtimeMarkerMesh == null)
+241:            int visibleCount = BuildMarkerMatrices();
+246:                _runtimeMarkerMesh,
+248:                _runtimeMarkerMaterial,
+259:        private int BuildMarkerMatrices()
+261:            ulong activeMask = _activeMarkerMask;
+282:                ActiveMarker marker = _markers[i];
+430:        /// <see cref="OnEnable"/> reaches this method at :96, before <c>TryRegisterHotSwapListener()</c>,
+431:        /// <c>ScanEvents.Register(this)</c>, <c>RegisterTick()</c> and <c>RegisterLateFrameTick()</c> (:97-100).
+451:                _runtimeMarkerMesh = null;
+452:                _runtimeMarkerMaterial = null;
+454:                // Report LAST and once. OnEnable continues to its four registration calls after this returns, so
+456:                if (shouldReportInvalidResources && !_invalidMarkerResourcesAnnounced)
+458:                    _invalidMarkerResourcesAnnounced = true;
+459:                    LogInvalidScanMarkerResources(
+470:            if (!ReferenceEquals(_runtimeMarkerMesh, markerMesh))
+471:                _runtimeMarkerMesh = markerMesh;
+473:            if (!ReferenceEquals(_runtimeMarkerMaterial, markerMaterial))
+474:                _runtimeMarkerMaterial = markerMaterial;
+483:        private static void LogInvalidScanMarkerResources(
+492:                Hecton8.Core.H8Debug.LogError("HectonScanMarkerSystem: serialized field 'markerMesh' is unassigned while 'markerMaterial' or Initialize supplied the other half of the pair. No scan marker renders this session - AreRuntimeResourcesReady stays false. Scan events, the update tick and the late-frame tick all stay registered. Assign the authored marker quad mesh in the inspector or pass it to Initialize.");
+496:                Hecton8.Core.H8Debug.LogError("HectonScanMarkerSystem: the mesh assigned to 'markerMesh' has no indexed submesh 0 (subMeshCount is 0 or GetIndexCount(0) is 0), so the instanced marker draw would submit no triangles. No scan marker renders this session. Reimport or replace that mesh asset with one that carries an index buffer.");
+501:                Hecton8.Core.H8Debug.LogError("HectonScanMarkerSystem: serialized field 'markerMaterial' is unassigned while 'markerMesh' or Initialize supplied the other half of the pair. No scan marker renders this session - AreRuntimeResourcesReady stays false. Every registration stays live. Runtime material generation is forbidden: assign the authored marker material in the inspector or pass it to Initialize.");
+507:                Hecton8.Core.H8Debug.LogError("HectonScanMarkerSystem: the material assigned to 'markerMaterial' has a null shader - the shader asset it referenced is missing or failed to compile. No scan marker renders this session. Repair that material's shader reference.");
+513:                Hecton8.Core.H8Debug.LogError("HectonScanMarkerSystem: the material assigned to 'markerMaterial' has Enable GPU Instancing OFF, which the instanced marker draw requires. No scan marker renders this session. Tick 'Enable GPU Instancing' on that material asset.");
+519:            return _runtimeMarkerMesh != null &&
+520:                   _runtimeMarkerMaterial != null;
+523:        private void RegisterTick()
+531:            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+543:        private void RegisterLateFrameTick()
+545:            if (_lateFrameRegistered || !Application.isPlaying)
+551:            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+556:            if (!_lateFrameRegistered)
+560:            _lateFrameRegistered = false;
+569:        private void TryRegisterHotSwapListener()
+574:            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);

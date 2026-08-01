@@ -1,2 +1,0 @@
-launching at 2026-07-30 22:12:21
-C:\Users\Admin\AppData\Local\Programs\Python\Python313\python.exe C:\hades\Hecton8\Tools\RunUnityBatchGate.py --method Hecton8.QA.Headless.Editor.HeadlessSimulationBatchRunner.Run --log C:\hades\Hecton8\Docs\AgentLogs\headless_smoke_20260730_p0_gameready.log --timeout 600 --max-cpu 50 -- -h8headless -h8headlessDays 5 -h8headlessDaySeconds 60

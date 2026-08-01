@@ -1,0 +1,23 @@
+2125-            // locked - which is correct designed behaviour, not a bug. The driver still runs and still
+2126-            // publishes: in Logs/omega_route20.log it published 47,344 input overrides and the Swim row
+2127:            // reported FAIL with movementIntent01max=0.000. Read literally that says the input route is
+2128-            // broken. It is not; the input route delivered every one of those overrides to a player that
+2129-            // was not permitted to move.
+2130-            //
+2131-            // So the verdict becomes Blocked and names the upstream cause, while the driver's measured
+2132-            // numbers are kept verbatim - a row that hides its own measurements to look tidier would be
+2133-            // worse than one that mislabels them. Blocked is the right word by this file's own definition
+2134-            // at RecordContentBlockedMoments: the route WAS attempted and WAS obstructed at runtime, which
+2135-            // is exactly what happened, unlike the content-absent rows that were never attempted at all.
+2136-            //
+2137-            // Only downgrades. A row that already passed with gameReady false would be a contradiction
+2138-            // worth seeing, so a Pass is never rewritten into a Blocked.
+2139-            MomentVerdict verdict = (MomentVerdict)(byte)H8_HeadlessWorldDriver.GetVerdict(driverRow);
+2140-            if (!BootstrapState.IsGameReady && verdict != MomentVerdict.Pass)
+2141-            {
+2142-                RecordMoment(
+2143-                    momentName,
+2144-                    MomentVerdict.Blocked,
+2145-                    "UPSTREAM-BLOCKED: scene activation never completed, so ActivatePlayer() never ran and " +
+2146-                    "the player stayed held by the Kinematic Arrest Gate. Input reached it and moved " +
+2147-                    "nothing because movement was not permitted yet, so this row measures the boot, not " +

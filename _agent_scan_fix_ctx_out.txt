@@ -1,0 +1,365 @@
+==== RUNNER 1-220 ====
+1:using System;
+2:using System.Globalization;
+3:using System.IO;
+4:using System.Runtime.InteropServices;
+5:using System.Threading;
+6:using Hecton8.Core;
+7:using Hecton8.Core.Memory;
+8:using Hecton8.Core.Contracts.Signals;
+9:using Hecton8.World;
+10:using Unity.Collections;
+11:using Unity.Mathematics;
+12:using UnityEngine;
+13:
+14:namespace Hecton8.QA.Headless
+15:{
+16:    [DisallowMultipleComponent]
+17:    [DefaultExecutionOrder(-9000)]
+18:    public sealed class HeadlessSimulationRunner : MonoBehaviour, IFastTickable, IFrostTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+19:    {
+20:        private static int s_x001HeadlessSimulationRunnerSignalPushDropCount;
+21:        private const string RunnerName = "HEADLESS_SIMULATION_RUNNER";
+22:        private const string RuntimeRootName = "[HeadlessSimulationRunner]";
+23:        private const string CommandLineArg = "-h8headless";
+24:        private const string LegacyCommandLineArg = "-headless";
+25:        private const string DaysArg = "-h8headlessDays";
+26:        private const string DaySecondsArg = "-h8headlessDaySeconds";
+27:        private const string StartupTimeoutArg = "-h8headlessStartupTimeout";
+28:        private const string EnvironmentFlagName = "H8_HEADLESS_SIMULATION";
+29:        private const string FlagRelativePath = "Temp/H8_HEADLESS_SIMULATION.flag";
+30:        private const string CsvRelativePath = "Docs/AgentLogs/HeadlessSimulationDaily_HEADLESS_SIMULATION_RUNNER.csv";
+31:        private const string ResultRelativePath = "Docs/AgentLogs/HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json";
+32:        private const string H8MemoryDumpRelativePath = "Docs/AgentLogs/H8Memory_HEADLESS_SIMULATION_RUNNER.txt";
+33:        private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_SIMULATION_RUNNER.bin";
+34:        private const int BlackboxFrameCapacity = 300;
+35:        private const int BlackboxEntrySizeBytes = 64;
+36:        private const int MemoryWindowDays = 10;
+37:        private const int MaxConsecutiveMemoryWindowFailures = 3;
+38:        // Same shape and same number as the memory window above, for the same reason: the answer can be
+39:        // "not right now" rather than "never". IEcosystemDirectorService.TryGetGlobalBiomassAudit returns
+40:        // false for six distinct conditions (EcosystemDirector.cs:3406-3417 and the IsFinite tail at :3451)
+41:        // and one of them is a transient job fence: HasPendingSimulationJob() (:3407) is true from the frame
+42:        // the ecology schedules work until the frame's LateFrameTick completes it, because a Burst job owns
+43:        // the biomass buffers and reading them would be the job-safety violation that guard exists to avoid.
+44:        //
+45:        // That fence is not rare, and the dispatcher makes it deterministic rather than unlucky. Inside ONE
+46:        // SystemDispatcher.RunDispatcherUpdate (SystemDispatcher.cs:5106) RunSlowTick (:5265) runs BEFORE
+47:        // RunFrostTick (:5267); the ecology's SlowTick calls ScheduleSectorSolve (EcosystemDirector.cs:2729),
+48:        // which sets _solveScheduled = true; _solveScheduled is cleared only in CompleteScheduledSolve,
+49:        // reached from the ecology's LateFrameTick (:2792), which the dispatcher runs in a LATER player-loop
+50:        // phase (RunDispatcherLateFrame, SystemDispatcher.cs:5453). So on any frame where a slow tick
+51:        // scheduled the solve, every FrostTick that follows it in that same frame - including this runner's,
+52:        // which is where the day boundary is evaluated - is guaranteed to be told "unavailable".
+53:        //
+54:        // The two _solveScheduled sites are named rather than numbered on purpose: they moved 53 lines during
+55:        // the writing of this comment (5405 -> 5458 for the set, 5731 -> 5784 for the clear) because
+56:        // EcosystemDirector.cs is under concurrent edit. Search the symbol, not the line.
+57:        //
+58:        // Treating that identically to a dead ecology meant one day boundary landing inside a job fence
+59:        // aborted the whole run and blamed the ecology. Tolerance is bounded, never unbounded: three
+60:        // CONSECUTIVE unsampled days still fail, and FinishRunIfTargetReached refuses to report SUCCESS for a
+61:        // run that never sampled once.
+62:        //
+63:        // FIX 2026-07-30: day-boundary biomass sampling no longer runs in FrostTick. FrostTick only
+64:        // accumulates completed-day debt (_pendingDayAudits). The sample itself runs in LateFrameTick,
+65:        // AFTER ecology's Environment-lane LateFrameTick has called CompleteScheduledSimulation and
+66:        // cleared HasPendingSimulationJob. Runner LateFrame is registered at PriorityLayer.Player so
+67:        // the lane order Core -> Environment -> Player -> UI guarantees ecology completes first.
+68:        // Streak only advances on a true dead/empty ecology (audit false with no pending job), never
+69:        // on the deterministic same-frame fence that used to make every day "unsampled".
+70:        private const int MaxConsecutiveEcologySampleFailures = 3;
+71:        // CSV Flags bit for "this day produced no biomass sample at all". Deliberately NOT bit 0: bit 0 is
+72:        // the only bit EcosystemBiomassAuditSample.Flags can ever carry (EcosystemDirector.cs:3422 seeds
+73:        // flags = 0u, :3433 is the single `flags |= 1u`), and it means "a sampled cell was non-finite or
+74:        // negative". The old code wrote 1u for the unsampled row too, which was harmless only while an
+75:        // unsampled day killed the run immediately and could therefore only ever be the last row. Now that
+76:        // unsampled days are tolerated and interleave with good ones, a reader has to be able to tell
+77:        // "no sample" from "sampled, one bad cell" - so the marker gets its own bit.
+78:        private const uint CsvFlagEcologySampleUnavailable = 1u << 8;
+79:        private const int MaxSignalsDrainedPerFrame = 128;
+80:        private const int MaxDailyAuditsPerFrostTick = 4;
+81:        private const int DefaultTargetDays = 100;
+82:        private const int AupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
+83:        private const float DefaultDaySeconds = 3600f;
+84:        private const float DefaultStartupTimeoutSeconds = 180f;
+85:        private const float TimeDilationScalar = 100f;
+86:        private const float GhostSpeedMetersPerSecond = 85f;
+87:        private const float NativeBytesToMegabytes = 1f / (1024f * 1024f);
+88:        private const uint RunnerHash = 0x48385141u;
+89:        private const uint SuccessHash = 0x48385130u;
+90:        private const uint LeakHash = 0x48384C45u;
+91:        private const uint EcologyCollapseHash = 0x48384543u;
+92:        // 'H','8','N','S' - never sampled. Distinct from EcologyCollapseHash on purpose: the blackbox ring
+93:        // stores only the reason hash, so a run that reached its target day count without ever obtaining a
+94:        // biomass sample must not be indistinguishable from one whose predators actually died out.
+95:        private const uint EcologyNeverSampledHash = 0x48384E53u;
+96:        private const uint GasInvalidHash = 0x48384741u;
+97:        private const uint NaNHash = 0x48384E41u;
+98:        private const uint TimeoutHash = 0x4838544Fu;
+99:        private const uint AupShiftHash = 0x48384155u;
+100:        private const uint CsvWriteHash = 0x48384353u;
+101:        private const uint DataVaultUnavailableHash = 0x48384456u;
+102:        private const uint EvidenceBlackboxWriteFailed = 1u << 0;
+103:        private const uint EvidenceResultWriteFailed = 1u << 1;
+104:        private const uint EvidenceCsvWriteFailed = 1u << 2;
+105:        private const SystemID OwnerSystemId = SystemID.QAHeadless;
+106:        private const BufferID GhostStateBufferId = BufferID.HeadlessSimulationGhostState;
+107:        private const BufferID BlackboxBufferId = BufferID.HeadlessSimulationBlackBox;
+108:        private const BufferID MemoryWindowBytesBufferId = BufferID.HeadlessSimulationMemoryWindowBytes;
+109:        private const BufferID MemoryWindowH8BytesBufferId = BufferID.HeadlessSimulationMemoryWindowH8Bytes;
+110:        private const BufferID MemoryWindowAllocationCountsBufferId = BufferID.HeadlessSimulationMemoryWindowAllocationCounts;
+111:
+112:        private static HeadlessSimulationRunner _instance;
+113:
+114:        private VaultGenerationHandle<GhostState> _ghostStateHandle;
+115:        private VaultGenerationHandle<HeadlessTelemetryEntry> _blackboxHandle;
+116:        private VaultGenerationHandle<long> _memoryWindowBytesHandle;
+117:        private VaultGenerationHandle<long> _memoryWindowH8BytesHandle;
+118:        private VaultGenerationHandle<int> _memoryWindowAllocationCountsHandle;
+119:        private IDataVault _dataVault;
+120:        private HeadlessCsvWriter _csvWriter;
+121:        private string _resultPath;
+122:        private string _blackboxPath;
+123:        private double _ghostSeconds;
+124:        private double _simulatedSeconds;
+125:        private double _dayAccumulatorSeconds;
+126:        private double _startupTime;
+127:        // Wall clock for ecology-ready budget. Armed only after lanes are live AND
+128:        // BootstrapState.IsGameReady (or bootstrap presence cleared). Measuring from BeginStartup
+129:        // falsely burned the entire 180s budget during dependency init before GameReady opened
+130:        // dispatcher FrostTick — p0_gameready 2026-07-30 BOOTSTRAP_TIMEOUT at short-circuit.
+131:        private double _ecologyWaitStartRealtime;
+132:        private int _ecologyWaitDiagBucket = -1;
+133:        private float _daySeconds = DefaultDaySeconds;
+134:        private float _startupTimeoutSeconds = DefaultStartupTimeoutSeconds;
+135:        private int _targetDays = DefaultTargetDays;
+136:        private int _completedDays;
+137:        private int _memoryWindowCursor;
+138:        private int _memoryWindowCount;
+139:        private int _memoryWindowFailureStreak;
+140:        private int _ecologySampleFailureStreak;
+141:        private int _ecologySampledDayCount;
+142:        private int _ecologyUnsampledDayCount;
+143:        // Day boundaries detected in FrostTick; biomass sample deferred to LateFrameTick (post job fence).
+144:        private int _pendingDayAudits;
+145:        private int _blackboxCursor;
+146:        private int _progressionSignalCount;
+147:        private int _crashSignalCount;
+148:        private int _gasInvalidRoomId = -1;
+149:        private int _debugLogDeliveredCount;
+150:        private int _previousTargetFrameRate;
+151:        private int _previousVSyncCount;
+152:        private int _previousCaptureFramerate;
+153:        private long _lastMemoryBytes;
+154:        private long _lastH8MemoryBytes;
+155:        private float _lastPreyBiomass;
+156:        private float _lastPredatorBiomass;
+157:        private GhostState _pendingGhostState;
+158:        private LogType _previousLogFilter;
+159:        private uint _lastProgressionHash;
+160:        private uint _lastCrashReasonHash;
+161:        private uint _lastSyntheticShiftSequence;
+162:        private uint _actualOriginShiftCount;
+163:        private uint _evidenceFailureFlags;
+164:        private bool _previousRunInBackground;
+165:        private bool _started;
+166:        private bool _registeredFast;
+167:        private bool _registeredFrost;
+168:        private bool _registeredCold;
+169:        private bool _registeredLate;
+170:        private bool _registeredHotSwap;
+171:        private bool _originListenerRegistered;
+172:        private bool _ghostStepPending;
+173:        private bool _ghostStateInitialized;
+174:        private bool _ecologyReady;
+175:        private double _simulationStartRealtime;
+176:        private bool _finished;
+177:        private bool _runtimePolicyCaptured;
+178:        private bool _awaitingDispatcher;
+179:
+180:        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+181:        private static void AutoCreate()
+182:        {
+183:            if (_instance != null || !ShouldRunStatic())
+184:                return;
+185:
+186:            GameObject root = new GameObject(RuntimeRootName);
+187:            _instance = root.AddComponent<HeadlessSimulationRunner>();
+188:            DontDestroyOnLoad(root);
+189:        }
+190:
+191:        private void Start()
+192:        {
+193:            if (!ShouldRunStatic())
+194:            {
+195:                Destroy(gameObject);
+196:                return;
+197:            }
+198:
+199:            if (_instance != null && _instance != this)
+200:            {
+201:                Destroy(gameObject);
+202:                return;
+203:            }
+204:
+205:            _instance = this;
+206:            DontDestroyOnLoad(gameObject);
+207:            LogRunnerLifecycle("runner installed and started");
+208:            BeginStartup();
+209:        }
+210:
+211:        private void BeginStartup()
+212:        {
+213:            try
+214:            {
+215:                InitializeColdState();
+216:                // Do NOT await NextFrameAsync for the dispatcher gate. In -batchmode
+217:                // AwaitableDebtMonitor.NextFrameAsync is Task.Yield + MainThreadAsync; the
+218:                // runner continuation is not guaranteed to resume while bootstrap holds the
+219:                // main await chain. Evidence: headless_smoke_20260730_p0fix.log logs
+220:                // "waiting for dispatcher" then SystemDispatcher init + SceneActivate
+1287:        private static void LogRunnerLifecycle(string message)
+1288:        {
+1289:            // LogWarning, not Log, and that is the whole point of this method existing.
+1290:            // TryMarkEcologyReady sets Debug.unityLogger.filterLogType = LogType.Warning (:574) so
+1291:            // first-party Debug.Log spam cannot drown a 100-day batchmode log, and it is installed at :377
+1292:            // the instant the dispatcher wait succeeds. Unity drops LogType.Log at the managed Logger
+1293:            // BEFORE it reaches either the log file or Application.logMessageReceived - so that filter was
+1294:            // also eating this method's own verdict line. In the 2026-07-29 run, FailAndQuit wrote
+1295:            // [ECOLOGY_UNAVAILABLE] to the result JSON at :1025 and logged it at :1026; the JSON is on disk
+1296:            // and the string "[HEADLESS] fail" appears zero times in all 27,107 log lines. Two separate
+1297:            // investigations then read the resulting managed-log silence as a bootstrap deadlock and
+1298:            // diagnosed the wrong subsystem entirely, because the last surviving managed line happened to
+1299:            // be a GameBootstrapper node.
+1300:            //
+1301:            // A harness whose own verdict is filtered out by its own logging policy is worse than one that
+1302:            // never logged: it produces confident wrong answers instead of no answer. Lifecycle events are
+1303:            // cold (install, the pre-wait gate, and the two quit paths) so promoting them costs nothing at
+1304:            // cadence, and Warning is the correct severity for a line whose whole job is to survive.
+1305:            Debug.LogWarning("[HEADLESS] " + message);
+1306:        }
+1307:
+1308:        private void PublishCrashSignal(int exitCode, uint reasonHash, byte severity)
+1309:        {
+1310:            SignalBus<CrashTelemetrySignal>.TryPushTracked(new CrashTelemetrySignal
+1311:            {
+
+==== DILATION CALL SITES ====
+Assets/_Project/Scripts\ITickable.cs:76:void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u);
+Assets/_Project/Scripts\Core\SystemDispatcher.cs:111:private const float HeadlessTimeDilationMaximumScalar = 100f;
+Assets/_Project/Scripts\Core\SystemDispatcher.cs:1742:public void RequestHeadlessTimeDilation(float scalar, uint reasonHash = 0u)
+Assets/_Project/Scripts\Core\SystemDispatcher.cs:1749:HeadlessTimeDilationMaximumScalar,
+Assets/_Project/Scripts\Core\SystemDispatcher.cs:4701:? math.clamp(_timeDilationScalar, TimeDilationMinimumScalar, HeadlessTimeDilationMaximumScalar)
+Assets/_Project/Scripts\Core\Determinism\LockstepStateValidator.cs:1883:_dispatcher?.RequestHeadlessTimeDilation(10f, ReasonGhostReplayHash);
+Assets/_Project/Scripts\QA\Headless\HeadlessSimulationRunner.cs:471:GlobalRegistry.TickDispatcher?.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+Assets/_Project/Scripts\QA\Headless\HeadlessStressFractureBot.cs:371:ApplyHeadlessTimeDilation();
+Assets/_Project/Scripts\QA\Headless\HeadlessStressFractureBot.cs:433:ApplyHeadlessTimeDilation();
+Assets/_Project/Scripts\QA\Headless\HeadlessStressFractureBot.cs:954:RestoreHeadlessTimeDilation();
+Assets/_Project/Scripts\QA\Headless\HeadlessStressFractureBot.cs:957:private void ApplyHeadlessTimeDilation()
+Assets/_Project/Scripts\QA\Headless\HeadlessStressFractureBot.cs:964:dispatcher.RequestHeadlessTimeDilation(TimeDilationScalar, RunnerHash);
+Assets/_Project/Scripts\QA\Headless\HeadlessStressFractureBot.cs:969:private void RestoreHeadlessTimeDilation()
+
+==== BACKLOG ecology hits ====
+BL2:
+BL3:## Open — P0 ecology-ready Frost starve (2026-07-31)
+BL4:- **Symptom (live smoke after FO lock-drain):** foLock=0 ecoInit=1 from t=0 through t=480s+; `_ecologyReady` never set; BOOTSTRAP_TIMEOUT / BATCH_TIMEOUT.
+BL5:- **Root:** `TryMarkEcologyReady` only invoked from `FrostTick`. Frost never delivered while wait clock ran (dispatcher master-sim path starved or deltaTime<=0). Ready predicate (`ecosystem.IsInitialized`) was true the entire wait.
+---
+BL3:## Open — P0 ecology-ready Frost starve (2026-07-31)
+BL4:- **Symptom (live smoke after FO lock-drain):** foLock=0 ecoInit=1 from t=0 through t=480s+; `_ecologyReady` never set; BOOTSTRAP_TIMEOUT / BATCH_TIMEOUT.
+BL5:- **Root:** `TryMarkEcologyReady` only invoked from `FrostTick`. Frost never delivered while wait clock ran (dispatcher master-sim path starved or deltaTime<=0). Ready predicate (`ecosystem.IsInitialized`) was true the entire wait.
+BL6:- **Fix applied:** call `TryMarkEcologyReady` from runner `Update` wait path (starvation-proof gate, same pattern as wait-clock move off ColdTick). Lifecycle log on first ready. Wait-progress adds frostReg + dispFrameLocked.
+---
+BL4:- **Symptom (live smoke after FO lock-drain):** foLock=0 ecoInit=1 from t=0 through t=480s+; `_ecologyReady` never set; BOOTSTRAP_TIMEOUT / BATCH_TIMEOUT.
+BL5:- **Root:** `TryMarkEcologyReady` only invoked from `FrostTick`. Frost never delivered while wait clock ran (dispatcher master-sim path starved or deltaTime<=0). Ready predicate (`ecosystem.IsInitialized`) was true the entire wait.
+BL6:- **Fix applied:** call `TryMarkEcologyReady` from runner `Update` wait path (starvation-proof gate, same pattern as wait-clock move off ColdTick). Lifecycle log on first ready. Wait-progress adds frostReg + dispFrameLocked.
+BL7:- **Not a mock:** ready-mark is a harness gate; day audits still require Frost/LateFrame once ready. Frost starve root for day advance remains open if dilation/pause zeros master sim.
+---
+BL5:- **Root:** `TryMarkEcologyReady` only invoked from `FrostTick`. Frost never delivered while wait clock ran (dispatcher master-sim path starved or deltaTime<=0). Ready predicate (`ecosystem.IsInitialized`) was true the entire wait.
+BL6:- **Fix applied:** call `TryMarkEcologyReady` from runner `Update` wait path (starvation-proof gate, same pattern as wait-clock move off ColdTick). Lifecycle log on first ready. Wait-progress adds frostReg + dispFrameLocked.
+BL7:- **Not a mock:** ready-mark is a harness gate; day audits still require Frost/LateFrame once ready. Frost starve root for day advance remains open if dilation/pause zeros master sim.
+BL8:- Evidence: Docs/AgentLogs/p0_ecology_ready_frost_starve_20260731.md
+---
+BL6:- **Fix applied:** call `TryMarkEcologyReady` from runner `Update` wait path (starvation-proof gate, same pattern as wait-clock move off ColdTick). Lifecycle log on first ready. Wait-progress adds frostReg + dispFrameLocked.
+BL7:- **Not a mock:** ready-mark is a harness gate; day audits still require Frost/LateFrame once ready. Frost starve root for day advance remains open if dilation/pause zeros master sim.
+BL8:- Evidence: Docs/AgentLogs/p0_ecology_ready_frost_starve_20260731.md
+BL9:
+---
+BL7:- **Not a mock:** ready-mark is a harness gate; day audits still require Frost/LateFrame once ready. Frost starve root for day advance remains open if dilation/pause zeros master sim.
+BL8:- Evidence: Docs/AgentLogs/p0_ecology_ready_frost_starve_20260731.md
+BL9:
+BL10:## Completed
+---
+BL10:## Completed
+BL11:- [x] P0 | ship a6c96w abs-col spall into texture.py | Tools/Blender/h8forge/texture.py | proof@2048 seeds 0,1,2,7,13 p95_max=0.4590 eros_min=0.3417 all_run all_eros PASS | 568a19cca (cement auto-bundled product+scratch; do not amend)
+BL12:
+BL13:## Open P0
+---
+BL12:
+BL13:## Open P0
+BL14:- [ ] P0 | headless ecology post-GameReady FO bootstrap-lock soft-deadlock | root: QueuePendingLoadedScene acquires SceneRebaseTickLock while ProcessPending/TryFlush early-return on _physicsPauseActive; FO.Tick (ResumePhysics) starved by SystemDispatcher.IsOriginShiftBootstrapLocked => FrostTick never runs, TryMarkEcologyReady never sees EcosystemDirector.IsInitialized | FIX APPLIED 2026-07-30 21:26 UTC: HectonFloatingOrigin drain under physics pause (ProcessPending+TryPrepare+TryFlush resume/barrier complete); HeadlessSimulationRunner wait progress diag foLock/physicsPause/pendingScenes | DoD still OPEN until smoke: status not in ECOLOGY_UNAVAILABLE|BATCH_TIMEOUT|BOOTSTRAP_TIMEOUT AND ecologySampledDays>0 AND timeDilationDelivered>0 | prior FAIL evidence: Docs/AgentLogs/headless_smoke_20260731_p0_ecology_clock_asmfix.log + BATCH_TIMEOUT stub JSON | real-game screenshots still REQUIRED (headless green alone = DECLINED)
+BL15:- [ ] P0 | DECLINED until real-game: Geology@2048 headless-only; KCC FAIL 0x42; Debris EXEMPT; RuntimeSmokeTester; README art; V0 Swim; Docs/Screenshots/V0_Playtest empty
+---
+BL13:## Open P0
+BL14:- [ ] P0 | headless ecology post-GameReady FO bootstrap-lock soft-deadlock | root: QueuePendingLoadedScene acquires SceneRebaseTickLock while ProcessPending/TryFlush early-return on _physicsPauseActive; FO.Tick (ResumePhysics) starved by SystemDispatcher.IsOriginShiftBootstrapLocked => FrostTick never runs, TryMarkEcologyReady never sees EcosystemDirector.IsInitialized | FIX APPLIED 2026-07-30 21:26 UTC: HectonFloatingOrigin drain under physics pause (ProcessPending+TryPrepare+TryFlush resume/barrier complete); HeadlessSimulationRunner wait progress diag foLock/physicsPause/pendingScenes | DoD still OPEN until smoke: status not in ECOLOGY_UNAVAILABLE|BATCH_TIMEOUT|BOOTSTRAP_TIMEOUT AND ecologySampledDays>0 AND timeDilationDelivered>0 | prior FAIL evidence: Docs/AgentLogs/headless_smoke_20260731_p0_ecology_clock_asmfix.log + BATCH_TIMEOUT stub JSON | real-game screenshots still REQUIRED (headless green alone = DECLINED)
+BL15:- [ ] P0 | DECLINED until real-game: Geology@2048 headless-only; KCC FAIL 0x42; Debris EXEMPT; RuntimeSmokeTester; README art; V0 Swim; Docs/Screenshots/V0_Playtest empty
+BL16:
+---
+BL14:- [ ] P0 | headless ecology post-GameReady FO bootstrap-lock soft-deadlock | root: QueuePendingLoadedScene acquires SceneRebaseTickLock while ProcessPending/TryFlush early-return on _physicsPauseActive; FO.Tick (ResumePhysics) starved by SystemDispatcher.IsOriginShiftBootstrapLocked => FrostTick never runs, TryMarkEcologyReady never sees EcosystemDirector.IsInitialized | FIX APPLIED 2026-07-30 21:26 UTC: HectonFloatingOrigin drain under physics pause (ProcessPending+TryPrepare+TryFlush resume/barrier complete); HeadlessSimulationRunner wait progress diag foLock/physicsPause/pendingScenes | DoD still OPEN until smoke: status not in ECOLOGY_UNAVAILABLE|BATCH_TIMEOUT|BOOTSTRAP_TIMEOUT AND ecologySampledDays>0 AND timeDilationDelivered>0 | prior FAIL evidence: Docs/AgentLogs/headless_smoke_20260731_p0_ecology_clock_asmfix.log + BATCH_TIMEOUT stub JSON | real-game screenshots still REQUIRED (headless green alone = DECLINED)
+BL15:- [ ] P0 | DECLINED until real-game: Geology@2048 headless-only; KCC FAIL 0x42; Debris EXEMPT; RuntimeSmokeTester; README art; V0 Swim; Docs/Screenshots/V0_Playtest empty
+BL16:
+BL17:## Salvaged fix from closed PR #1714
+---
+
+==== BOOTSTRAP headless short-circuit ~3140-3180 ====
+GB3136:            {
+GB3137:                Scene activeScene = SceneManager.GetActiveScene();
+GB3138:                // Headless ecology/batch runs stay on 00_BOOTSTRAP. A stale PlayerPrefs handoff
+GB3139:                // (GameStartContextHolder, up to 900s TTL) used to win before the headless short-circuit
+GB3140:                // and enter LoadGameplaySceneFromBootstrapHandoffAsync, which awaits NextFrameAsync until
+GB3141:                // scene load completes. In -batchmode that await is Task.Yield, not a player-loop tick,
+GB3142:                // so progress never advances → BATCH_TIMEOUT with no MarkMainMenu / no ecology samples.
+GB3143:                // Headless must win first: clear any cold handoff and mark menu reached without loading.
+GB3144:                Debug.Log(
+GB3145:                    $"[GameBootstrapper-DEBUG] InitializeSceneActivatePhaseAsync: activeScene={activeScene.name} headless={_headlessBootMode}");
+GB3146:                if (IsBootstrapScene(activeScene))
+GB3147:                {
+GB3148:                    if (_headlessBootMode)
+GB3149:                    {
+GB3150:                        if (TryResolveBootstrapGameplayHandoffScene(out string ignoredHeadlessHandoffScene))
+GB3151:                        {
+GB3152:                            Debug.Log(
+GB3153:                                "[GameBootstrapper-DEBUG] Headless SceneActivate ignoring stale gameplay handoff '" +
+GB3154:                                ignoredHeadlessHandoffScene +
+GB3155:                                "' (remain on bootstrap; ecology runner does not need 01_MAIN_MENU / gameplay scene).");
+GB3156:                        }
+GB3157:
+GB3158:                        GameStartContextHolder.Reset();
+GB3159:                        BootstrapStatus.MarkMainMenuReached();
+GB3160:                        // Headless short-circuit previously only MarkMainMenuReached.
+GB3161:                        // SystemDispatcher.ShouldSkipLaneDuringBootstrap skips PriorityLayer.Player
+GB3162:                        // while !BootstrapState.IsGameReady. LateFrame biomass drain is on Player
+GB3163:                        // (HeadlessSimulationRunner), so ecology never advances without this.
+GB3164:                        // Full ExecuteSceneActivationAsync publishes GameReady~7749; headless must mirror.
+GB3165:                        BootstrapState.PublishGameReady(true);
+GB3166:                        BootstrapState.PublishBootstrapPresence(false);
+GB3167:                        Debug.Log("[GameBootstrapper-DEBUG] Headless SceneActivate short-circuit: MarkMainMenuReached + PublishGameReady on bootstrap");
+GB3168:                        return true;
+GB3169:                    }
+GB3170:
+GB3171:                    if (TryResolveBootstrapGameplayHandoffScene(out string gameplaySceneName))
+GB3172:                    {
+GB3173:                        Debug.Log("[GameBootstrapper-DEBUG] LoadGameplaySceneFromBootstrapHandoffAsync");
+GB3174:                        return await LoadGameplaySceneFromBootstrapHandoffAsync(gameplaySceneName, ct);
+GB3175:                    }
+GB3176:
+GB3177:                    GameStartContextHolder.Reset();
+GB3178:
+GB3179:#if UNITY_EDITOR
+GB3180:                    if (HectonForceSandboxScene)
+GB3181:                    {
+GB3182:                        return await LoadSandboxSceneAsync(ct);
+GB3183:                    }
+GB3184:#endif
+GB3185:                    return await LoadMainMenuAsync(ct);

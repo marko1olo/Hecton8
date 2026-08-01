@@ -1,0 +1,102 @@
+IDLINES 5757
+326|        // Per-hop counters for the automation-override lane. Editor/dev only; every write goes through a
+330|        // DiagRecordReadObservation for why the census is emitted from a read accessor and not from a tick.
+444|        private PlayerInputState _currentState;
+509|                // DiagRecordPumpFired.
+510|                DiagRecordReadObservation(1);
+537|        public bool IsPlayerInputEnabled => _nativeInputManager != null && _nativeInputManager.IsPlayerInputEnabled;
+751|            DiagRecordLateFrameTick();
+763|        /// caller of CaptureState (:719), and CaptureState is the only place the automation-override lane is
+786|        /// overrides; movementIntent01max=0.000 ... inputServiceRegistered=True inputEnabled=True
+787|        /// blockMask=0x00000000". Both input gates open, the override lane published all run, and not one
+788|        /// override was ever consumed because the consumer never ticked. _currentState kept the all-zero
+804|        /// override one frame later than they would from pre-simulation. That is a one-frame latency on a
+816|            DiagRecordPumpFired();
+821|        // Automation-override hop census.
+824|        // "movementIntent01max=0.000 ... inputServiceRegistered=True inputEnabled=True
+825|        // switchToPlayerInputCalled=True blockMask=0x00000000", and the VERBSWEEP row as
+826|        // "overrideFlagSeen=False overridesPublished=152 ... lastResolvedButtons=0x00000000 atFrame=0" plus
+830|        // H8_HeadlessWorldDriver.cs:1153-1157 samples overrideFlagSeen, atFrame, lastResolvedButtons and
+836|        // event. InputStateSignal=0 therefore forces overrideFlagSeen=False, atFrame=0 and
+837|        // lastResolvedButtons=0 REGARDLESS of whether the override lane was consumed. The driver's own hint
+842|        //      ran. CaptureState is its only per-frame caller, so _currentState stayed at the all-zero cold
+858|        // zero from the left is the break point: lateFrameTick=0 is H1; lateFrameTick>0 with publishOk=0 and
+859|        // a nonzero publishGuardFail/publishBufferFail is H2's publish gate; overrideRejected>0 with
+860|        // overrideApplied=0 is the consume gate.
+869|        private void DiagRecordPumpFired()
+876|        private void DiagRecordLateFrameTick()
+883|        private void DiagRecordPreSimTick()
+890|        private void DiagRecordPreSimSubstep()
+897|        private void DiagRecordCaptureSkippedByFrameGuard()
+904|        private void DiagRecordCaptureRan()
+911|        private void DiagRecordOverrideOutcome(bool applied, Vector2 consumedMove)
+926|        private void DiagRecordPostBlockMask(uint blockMask, Vector2 postMaskMove)
+929|            if (blockMask != 0u)
+937|        private void DiagRecordPublishAttempt()
+944|        private void DiagRecordPublishGuardFail()
+952|        private void DiagRecordPublishBufferFail()
+1043|        // Logs/h8_probe7.log reports "publishAttempt=1240 publishGuardFail=1240 publishBufferFail=0
+1044|        // publishOk=0" on all three emissions, so TryAcquireInputMutationGuard refuses 100% of publishes and
+1192|        private void DiagRecordPublishOk()
+1207|        private void DiagRecordReadObservation(int readHop)
+1264|                " | overrideApplied=" + _diagOverrideApplied +
+1265|                " overrideRejected=" + _diagOverrideRejected +
+1266|                " lastOverrideMove=(" + _diagLastOverrideMoveX + "," + _diagLastOverrideMoveY + ")" +
+1267|                " | blockMaskNonZero=" + _diagBlockMaskNonZero +
+1270|                " publishGuardFail=" + _diagPublishGuardFail +
+1272|                " publishOk=" + _diagPublishOk +
+1273|                " | currentStateMove=(" + _currentState.MoveDelta.x + "," + _currentState.MoveDelta.y + ")" +
+1288|                " override. lateFrameTick=0 means this component's late-frame lane never ran, so the" +
+1290|                " CaptureState - never ran; check regLateFrame and TryRegisterToDispatcher, NOT the override" +
+1293|                " overrideApplied=0 means TryConsumeLatestInputOverride rejected every publish - with no" +
+1295|                " CoreDeterminismSignals.cs:197. Read overrideApplied, NOT the applied/rejected ratio:" +
+1296|                " overrideRejected is expected to be large even in a fully healthy run because it counts" +
+1298|                " overrideApplied>0 with currentStateMove=(0,0) means the" +
+1299|                " value was consumed and then erased downstream; read postMaskMove and blockMaskNonZero." +
+1300|                " publishOk=0 explains overrideFlagSeen/atFrame/lastResolvedButtons/InputStateSignal being" +
+1302|                " the same event - those four driver numbers are not evidence about the override lane.");
+1322|            DiagRecordPreSimTick();
+1342|                DiagRecordPreSimSubstep();
+1361|            DiagRecordReadObservation(2);
+1362|            return _currentState;
+1389|            DiagRecordPublishAttempt();
+1392|                DiagRecordPublishGuardFail();
+1411|                    DiagRecordPublishBufferFail();
+1416|                InputState rawState = BuildInputState(_currentState, currentFrame, unchecked(++_inputStateSequence));
+1417|                InputStateDTO rawDto = BuildInputStateDto(_currentState);
+1464|                DiagRecordPublishOk();
+1505|                MoveAxis = new float2(source.MoveDelta.x, source.MoveDelta.y),
+1748|            Vector2 move = source.MoveDelta;
+1775|            _currentState.MoveDelta = new Vector2(move.x, move.y);
+1776|            _currentState.LookDelta = new Vector2(look.x, look.y);
+1777|            _currentState.VerticalDelta = math.clamp(state.Vertical * InputState.AxisInvQuantizeScale, -1f, 1f);
+1778|            _currentState.ActionsBitmask = state.ButtonsBitmask;
+1779|            _visualLookDelta = _currentState.LookDelta;
+1863|                //     MoveDelta/LookDelta/ActionsBitmask every frame - input dies looking exactly like "the
+2248|        // reports publishGuardFail=1240 of 1240 attempts, i.e. the guard was contended for that whole run.
+3687|        /// IsPlayerInputEnabled was ever asked.
+3832|                DiagRecordCaptureSkippedByFrameGuard();
+3837|            DiagRecordCaptureRan();
+3849|                if (inputManager.IsPlayerInputEnabled)
+3860|                    state.MoveDelta = new Vector2(moveAxis.x, moveAxis.y);
+3891|            // poll - never consuming, never clearing. Measured effect in Logs/omega_route28.log: 124 overrides
+3895|            DiagRecordOverrideOutcome(automationOverrideApplied, state.MoveDelta);
+3901|            DiagRecordPostBlockMask(activeInputBlockMask, state.MoveDelta);
+3908|            PublishInputSchemeTelemetryIfChanged(state.CurrentInputSchemeHash, state.PlatformInputFlags, (uint)currentFrame);
+3910|            _currentState = state;
+3962|        private void ApplyInputBlockMask(ref PlayerInputState state, uint blockMask)
+3964|            if (blockMask == 0u)
+3967|            if ((blockMask & (uint)InputBlockMaskFlags.BlockMovement) != 0u)
+3969|                state.MoveDelta = Vector2.zero;
+3974|            if ((blockMask & (uint)InputBlockMaskFlags.BlockLook) != 0u)
+3977|            if ((blockMask & (uint)InputBlockMaskFlags.BlockTools) != 0u)
+3980|            if ((blockMask & (uint)InputBlockMaskFlags.BlockDiscrete) != 0u)
+4099|        private void PublishInputSchemeTelemetryIfChanged(uint schemeHash, uint flags, uint frame)
+4105|            GlobalTelemetryBus.PublishInputSchemeHash(schemeHash, flags, frame);
+4110|            if (!CoreDeterminismSignals.TryConsumeLatestInputOverride(currentFrame, 2u, out InputSignal overrideSignal))
+4113|            state.MoveDelta = new Vector2(overrideSignal.MoveDelta.x, overrideSignal.MoveDelta.y);
+4114|            state.LookDelta = new Vector2(overrideSignal.LookDelta.x, overrideSignal.LookDelta.y);
+4116|            state.VerticalDelta = math.clamp(overrideSignal.VerticalDelta, -1f, 1f);
+4120|            state.ActionsBitmask = overrideSignal.ActionsBitmask;
+4122|            state.CurrentInputSchemeHash = overrideSignal.CurrentInputSchemeHash;
+5536|            _currentState = default;

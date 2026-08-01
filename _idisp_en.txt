@@ -1,0 +1,80 @@
+537:        public bool IsPlayerInputEnabled => _nativeInputManager != null && _nativeInputManager.IsPlayerInputEnabled;
+538-
+539-        internal INativeInputManagerRuntime NativeInputRuntime => _nativeInputManager;
+540-
+541-        /// <summary>
+542-        /// Binds the bootstrap-owned native input action owner used by this dispatcher.
+543-        /// </summary>
+544-        /// <param name="inputManager">Native input manager validated by the bootstrapper.</param>
+545-        public void BindNativeInputManager(INativeInputManagerRuntime inputManager)
+546-        {
+547-            if (ReferenceEquals(_nativeInputManager, inputManager))
+548-                return;
+549-
+550-            UnsubscribeFromNativeInput();
+551-            _nativeInputManager = inputManager;
+552-            CachePollingActions();
+553-            SubscribeToNativeInput();
+554-            CaptureState();
+555-        }
+556-
+557-        /// <inheritdoc />
+558-        public event System.Action OnInteract;
+559-
+560-        /// <inheritdoc />
+561-        public event System.Action OnPrimaryAction;
+562-
+--
+3687:        /// IsPlayerInputEnabled was ever asked.
+3688-        ///
+3689-        /// Identical call and identical purpose to WorldStateManager.cs:85. PersistRuntimeService is inert
+3690-        /// outside play mode and inert when no GameBootstrapper owns startup, and it returns after one
+3691-        /// transform compare once the parent already matches, so this cold entry point pays nothing on
+3692-        /// re-entry.
+3693-        /// </summary>
+3694-        private void TryPersistRuntimeOwner()
+3695-        {
+3696-            Hecton8.Bootstrap.GameBootstrapper.PersistRuntimeService(this);
+3697-        }
+3698-
+3699-        private void TryRegisterInputService()
+3700-        {
+3701-            if (!_isInitialized)
+3702-                return;
+3703-
+3704-            if (_registeredInputService)
+3705-                return;
+3706-
+3707-            if (ReferenceEquals(GlobalRegistry.RegisteredInput, this))
+3708-            {
+3709-                _registeredInputService = true;
+3710-                return;
+3711-            }
+3712-
+--
+3849:                if (inputManager.IsPlayerInputEnabled)
+3850-                {
+3851-                    InputProfileDTO profile = ReadInputProfile();
+3852-                    Vector2 rawMove = ReadActionVector2(_pollMoveAction);
+3853-                    Vector2 rawLook = ReadActionVector2(_pollLookAction);
+3854-                    float2 moveAxis = ApplyAnalogDeadzone(new float2(rawMove.x, rawMove.y), in profile);
+3855-                    float2 lookAxis = ResolveAupAgnosticLookDelta(new float2(rawLook.x, rawLook.y), in profile);
+3856-                    Vector2 lookDelta = new Vector2(lookAxis.x, lookAxis.y);
+3857-                    if (_lookBlendActive)
+3858-                        lookDelta = AdvanceLookHotSwapBlend(lookDelta, deltaTime);
+3859-
+3860-                    state.MoveDelta = new Vector2(moveAxis.x, moveAxis.y);
+3861-                    state.LookDelta = lookDelta;
+3862-                    state.ScrollDelta = ReadActionVector2(_pollScrollWheelAction);
+3863-                    state.VerticalDelta = math.clamp(ReadActionFloat(_pollVerticalMovementAction), -1f, 1f);
+3864-                    SteamDeckInputPal.Capture(ref state, deltaTime);
+3865-                    _lastDeliveredLookDelta = state.LookDelta;
+3866-                }
+3867-            }
+3868-
+3869-            _pendingLookDelta = Vector2.zero;
+3870-            _latchedActionBits = 0u;
+3871-            if (HectonXRRuntimeState.IsXRActive)
+3872-            {
+3873-                RefreshXRInputSnapshot();
+3874-                actionBits |= CaptureXRToolActionBitsAndPublishSignal(currentFrame);

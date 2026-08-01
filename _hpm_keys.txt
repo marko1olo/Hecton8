@@ -1,0 +1,22 @@
+1606|        private bool _registeredFixedTick;
+1906|        public float CurrentMovementIntent01 => math.saturate(math.sqrt(math.max(0f, math.lengthsq(_lastPlayerKinematicsIntendedMovement))));
+4732|            _registeredFixedTick = false;
+4808|            if (_registeredTick && _registeredFixedTick && _registeredLateFrameTick) return;
+5026|            if (_registeredFixedTick)
+5029|                _registeredFixedTick = false;
+5485|            if (!_registeredFixedTick)
+5487|                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+5519|            if (_registeredFixedTick)
+5522|                _registeredFixedTick = false;
+8004|        /// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+8064|            _inputHandler.TryReadFrame(inputService, jumpBufferTime, false, out HectonPlayerInputFrame frame, out _);
+8076|        public void Tick(float deltaTime)
+8099|                if (IsGameplayInputBlockedByMenu())
+8143|                _inputHandler.TryReadFrame(
+8217|        private void SampleGameplayLocomotionInputForFixedStep()
+8221|            if (IsGameplayInputBlockedByMenu())
+9774|        private static bool IsGameplayInputBlockedByMenu()
+9930|        public void FixedTick(float fixedDeltaTime)
+9932|            // L13: Sample locomotion BEFORE suit/juice physics gates. hop2 (GetState) must not
+9935|            // skipped SampleGameplayLocomotionInputForFixedStep for the whole Swim window.
+9937|            SampleGameplayLocomotionInputForFixedStep();

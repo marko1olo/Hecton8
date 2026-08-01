@@ -1,0 +1,202 @@
+8085-                    _activeSonarPingCooldownTimer -= deltaTime;
+8086-                    if (_activeSonarPingCooldownTimer < 0f)
+8087-                        _activeSonarPingCooldownTimer = 0f;
+8088-                }
+8089-
+8090:                if (IsGameplayInputBlockedByMenu())
+8091-                {
+8092-                    HandleMenuBlockedInput(deltaTime, suit);
+8093-                    return;
+8094-                }
+8095-
+8096-                if (_inputCleared || Cursor.lockState != CursorLockMode.Locked)
+8097-                {
+8098-                    Cursor.lockState = CursorLockMode.Locked;
+8099-                    Cursor.visible = false;
+8100-                    _inputCleared = false;
+8101-                }
+8102-
+8103-                ProcessPlayerInputFrame();
+8104-                ProcessWipeoutInputOverride();
+8105-                ProcessLocomotionPresentationAndJuice(deltaTime, suit);
+8106-            }
+8107-        }
+8108-
+8109-        private void HandleMenuBlockedInput(float deltaTime, SuitData suit)
+8110-        {
+8111-            _currentInputState = default;
+8112-            _pendingLookInput = Vector2.zero;
+8113-            _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
+8114-            SetSprintingState(false);
+8115-            _inputCleared = true;
+8116-            _lastKinematicRepairProbe = default;
+8117-            _lastKinematicRepairSnapPoint = default;
+8118-            _kinematicRepairStateBits &= ~KinematicRepairStateHasSnapBit;
+8119-            ResetKinematicRepairProbeReuseGate();
+8120-            Cursor.lockState = CursorLockMode.None;
+8121-            Cursor.visible = true;
+8122-            UpdateRenderInterpolationState();
+8123-            BuildJuiceInput(deltaTime, suit);
+8124-            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+8125-            UpdateUnderwaterSomaticCameraOffsets(deltaTime);
+8126-            ApplyCameraState();
+8127-            UpdateVrComfortSignals(deltaTime, Vector3.zero, 0f);
+8128-        }
+8129-
+8130-        private void ProcessPlayerInputFrame()
+--
+8203-        ///
+8204-        /// Look / juice / cursor remain render-owned on Tick. Menu block zeros locomotion only -
+8205-        /// full HandleMenuBlockedInput stays on Tick so camera/cursor presentation is not driven
+8206-        /// from the physics step.
+8207-        /// </summary>
+8208:        private void SampleGameplayLocomotionInputForFixedStep()
+8209-        {
+8210-            ResolveInputManagerBinding();
+8211-
+8212:            if (IsGameplayInputBlockedByMenu())
+8213-            {
+8214-                _currentInputState = default;
+8215-                _pendingLookInput = Vector2.zero;
+8216-                _inputH = 0f;
+8217-                _inputV = 0f;
+8218-                _inputVertical = 0f;
+8219-                _mouseXDelta = 0f;
+8220-                SetSprintingState(false);
+8221-                return;
+8222-            }
+8223-
+8224-            ProcessPlayerInputFrame();
+8225-            ProcessWipeoutInputOverride();
+8226-        }
+8227-
+8228-        private void ProcessLocomotionPresentationAndJuice(float deltaTime, SuitData suit)
+8229-        {
+8230-            ConsumeKinematicRepairTargetProbe();
+8231-            ScheduleKinematicRepairTargetProbe();
+8232-            UpdateRenderInterpolationState();
+8233-            _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
+8234-            _velocity = _feedbackVelocity;
+8235-            float currentSpeed = ApproximateVectorMagnitude(_velocity);
+8236-            float renderCameraYaw = CameraYaw;
+8237-            float yawDelta = DeltaAngleDegrees(_prevYawForMomentum, renderCameraYaw);
+8238-            UpdateVrComfortSignals(deltaTime, _velocity, yawDelta);
+8239-
+8240-            if (_swimPresentationController != null)
+8241-            {
+8242-                _swimPresentationController.SyncFromLocomotion(deltaTime, true);
+8243-                _debugLastSwimPresentationDriveFrame = SystemDispatcher.CurrentFrameIndex;
+8244-            }
+8245-
+8246-            BuildJuiceInput(deltaTime, suit);
+8247-            _juiceInput.speedDelta = currentSpeed - _prevSpeed;
+8248-            _juiceInput.yawDelta = yawDelta;
+8249-            _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
+8250-
+8251-            _prevSpeed = currentSpeed;
+8252-            _prevYawForMomentum = renderCameraYaw;
+--
+9760-                return _activeTransportPlatform.PlatformTransform;
+9761-
+9762-            return null;
+9763-        }
+9764-
+9765:        private static bool IsGameplayInputBlockedByMenu()
+9766-        {
+9767-            return HectonFabricatorUI.IsMenuOpen || PlayerPDA.IsOpen || PauseMenuController.IsAnyOpen;
+9768-        }
+9769-
+9770-        private void RefreshActiveGravity(float fixedDeltaTime)
+9771-        {
+9772-            if (_localGravityOverrideActive && _localGravityOverrideTimer > 0f)
+9773-            {
+9774-                _localGravityOverrideTimer = math.max(0f, _localGravityOverrideTimer - math.max(0f, fixedDeltaTime));
+9775-                _cachedGravity = ResolveBlendedLocalGravity(fixedDeltaTime);
+9776-                if (_localGravityOverrideTimer <= 0f)
+9777-                    _localGravityOverrideActive = false;
+9778-            }
+9779-            else
+9780-            {
+9781-                _cachedGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
+9782-                _localGravityOverrideActive = false;
+9783-                _localGravityOverrideBlendTimer = 0f;
+9784-                _localGravityOverrideBlendStart = _cachedGravity;
+9785-            }
+9786-
+9787-            _cachedGravityMagnitude = MagnitudeFromRsqrt(_cachedGravity);
+9788-            if (_cachedGravityMagnitude <= 0.0001f)
+9789-            {
+9790-                _cachedGravity = ResolveAupCenterGravity(UnityEngine.Physics.gravity);
+9791-                _cachedGravityMagnitude = MagnitudeFromRsqrt(_cachedGravity);
+9792-            }
+9793-
+9794-            if (_localGravityOverrideActive && _cachedGravityMagnitude > 0.0001f)
+9795-                _smoothedGroundNormal = -_cachedGravity / _cachedGravityMagnitude;
+9796-        }
+9797-
+9798-        private Vector3 ResolveAupCenterGravity(Vector3 fallbackGravity)
+9799-        {
+9800-            Vector3 safeFallback = HectonPlayerMotor.SafeVelocity(fallbackGravity);
+9801-            float gravityMagnitude = MagnitudeFromRsqrt(safeFallback);
+9802-            if (gravityMagnitude <= 0.0001f)
+9803-                gravityMagnitude = HectonPhysicsContract.GravityMetersPerSecondSquaredConst;
+9804-
+9805-            double3 absolutePosition = _playerState.PredictedAbsolutePosition.ToAbsoluteDouble3();
+--
+9916-                return HectonPlayerMotor.SafeVelocity(statePosition);
+9917-
+9918-            return _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.position) : Vector3.zero;
+9919-        }
+9920-
+9921:        public void FixedTick(float fixedDeltaTime)
+9922-        {
+9923-            SuitData suit = currentSuitData;
+9924-            if (suit == null) return;
+9925-            if (_juiceProcessor == null) return;
+9926-
+9927-            using (_fixedTickProfilerMarker.Auto())
+9928-            {
+9929-                // Fixed-step locomotion must sample input here. Render Tick is not guaranteed
+9930-                // before each FixedTick (batchmode / catch-up), and PrepareTransportAndFrameState
+9931-                // snapshots intent from _input* immediately below.
+9932:                SampleGameplayLocomotionInputForFixedStep();
+9933-
+9934-                PlayerTransportPreset activeTransportPreset = PrepareTransportAndFrameState(fixedDeltaTime, out float currentVerticalVelocity, out bool initialExosuitKinematicAuthority);
+9935-
+9936-                float previousWaterImmersionRatio = _waterImmersionRatio;
+9937-                bool wasGroundedLastFixedTick = _isGrounded;
+9938-
+9939-                _rb.useGravity = false;
+9940-
+9941-                if (_isWalking)
+9942-                {
+9943-                    _bodyYaw = _cameraYaw;
+9944-                    _bodyYawVelocity = 0f;
+9945-                }
+9946-                else
+9947-                {
+9948-                    float bodyYawOmega = suit.bodyYawSpringOmega *
+9949-                        ResolveHeavyCarryBodyYawSpringMultiplier() *
+9950-                        ResolveTransportBodyYawResponsivenessScale(activeTransportPreset) *
+9951-                        ResolveHullStressTurnResponsivenessScale(activeTransportPreset);
+9952-                    _bodyYaw = SpringDampAngle(_bodyYaw, _cameraYaw, ref _bodyYawVelocity, bodyYawOmega, fixedDeltaTime);
+9953-                }
+9954-
+9955-                _juiceProcessor.TrackVerticalVelocity(currentVerticalVelocity);
+9956-                _wasGroundedLastFrame = _isGrounded;
+9957-
+9958-                GroundCheck();
+9959-                _playerMotor?.SetGroundedState(_isGrounded);
+9960-
+9961-                UpdateWaterImmersion(fixedDeltaTime);
+9962-
+9963-                ApplyLadderSplineSnapFromAsyncProbe(initialExosuitKinematicAuthority);
+9964-
+9965-                float physicsImmersion = _smoothedImmersionRatio;
+9966-                float feetDepth = GetFeetDepthBelowSurface(EffectiveWaterSurfaceY);
+9967-                bool hasImmediateShoreFooting = _isGrounded && feetDepth <= shoreWalkFootDepth;
+9968-                bool isShallowEnoughForShore = physicsImmersion < swimTransitionThreshold || hasImmediateShoreFooting;
+9969-                bool isDryLand = physicsImmersion <= 0.01f;
+9970-
+9971-                if (_isGrounded && isDryLand)
+9972-                {

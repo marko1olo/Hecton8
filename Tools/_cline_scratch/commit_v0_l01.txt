@@ -1,6 +1,0 @@
-docs(playtest): V0-L01 KCC gate MEASURED FAIL + headless finished
-
-- Ledger: V0-L01 overallPass=false flags Escape|SdfInvalid (0x42), claimsWorldPlayable=false
-- Ledger: V0-L05 headless ecology finished; short-circuit OK; no biomass PASS
-- Force-add gate JSON + v0_kcc_gate log under Docs/AgentLogs (gitignored dir)
-- Captain checklist remains all open — no PLAYER screenshots

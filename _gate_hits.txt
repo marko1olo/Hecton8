@@ -1,0 +1,93 @@
+Assets/_Project\Scripts\FlashlightTool.cs:376:PlayerInputState inputState = TryGetInputService(out IInputService inputService) && inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\GameTickManager.cs:400:BootstrapState.HasActiveInstance &&
+Assets/_Project\Scripts\GameTickManager.cs:401:!BootstrapState.IsGameReady &&
+Assets/_Project\Scripts\HectonPlayerMovement.cs:4262:ResolveInputManagerBinding();
+Assets/_Project\Scripts\HectonPlayerMovement.cs:4740:ResolveInputManagerBinding();
+Assets/_Project\Scripts\HectonPlayerMovement.cs:4754:ResolveInputManagerBinding();
+Assets/_Project\Scripts\HectonPlayerMovement.cs:4780:ResolveInputManagerBinding();
+Assets/_Project\Scripts\HectonPlayerMovement.cs:4812:ResolveInputManagerBinding();
+Assets/_Project\Scripts\HectonPlayerMovement.cs:8004:/// its IsPlayerInputEnabled is a hardcoded false (GlobalRegistry.cs:8431) and its GetState()
+Assets/_Project\Scripts\HectonPlayerMovement.cs:8016:private void ResolveInputManagerBinding()
+Assets/_Project\Scripts\HectonPlayerMovement.cs:8054:if (inputService == null || !inputService.IsPlayerInputEnabled)
+Assets/_Project\Scripts\HectonPlayerMovement.cs:8141:if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
+Assets/_Project\Scripts\HectonPlayerMovement.cs:8219:ResolveInputManagerBinding();
+Assets/_Project\Scripts\LaserCutter.cs:1315:PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\LaserCutter.cs:1452:PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\LaserCutter.cs:2164:PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\MainMenuController.cs:1530:if (BootstrapStatus.BootStarted || BootstrapState.HasActiveInstance)
+Assets/_Project\Scripts\PlayerTool.cs:818:if (inputService == null || !inputService.IsPlayerInputEnabled || !IsEquipped)
+Assets/_Project\Scripts\PlayerToolManager.cs:467:PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\RepairTool.cs:993:PlayerInputState inputState = TryGetInputService(out IInputService inputService) && inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\SalvageSamplerTool.cs:206:PlayerInputState inputState = TryGetInputService(out IInputService inputService) && inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\StunPistolTool.cs:257:PlayerInputState inputState = TryGetInputService(out IInputService inputService) && inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\WorldProceduralScatterDirector.cs:1406:if (!_runtimeScatterCallbacksActive || !waitForGameBootstrapper || BootstrapState.IsGameReady)
+Assets/_Project\Scripts\WorldProceduralScatterDirector.cs:1490:if (BootstrapState.HasActiveInstance)
+Assets/_Project\Scripts\WorldProceduralScatterDirector.cs:1501:_bootstrapRuntimeState.Present = BootstrapState.HasActiveInstance ? (byte)1 : (byte)0;
+Assets/_Project\Scripts\Bootstrap\BootstrapRouteEnforcer.cs:77:if (BootstrapStatus.BootStarted || BootstrapState.HasActiveInstance)
+Assets/_Project\Scripts\Bootstrap\GameBootstrapper.cs:731:public static bool IsGameReady => BootstrapState.IsGameReady;
+Assets/_Project\Scripts\Bootstrap\GameBootstrapper.cs:733:public static bool HasActiveInstance => BootstrapState.HasActiveInstance;
+Assets/_Project\Scripts\Bootstrap\GameBootstrapper.cs:3162:// while !BootstrapState.IsGameReady. LateFrame biomass drain is on Player
+Assets/_Project\Scripts\Bootstrap\GameBootstrapper.cs:3188:if (!_sceneActivationRequested && BootstrapState.IsGameReady)
+Assets/_Project\Scripts\Bootstrap\GameBootstrapper.cs:3190:Debug.Log("[GameBootstrapper-DEBUG] Scene not bootstrap, IsGameReady=true");
+Assets/_Project\Scripts\Bootstrap\GameBootstrapper.cs:8328:while (Application.isPlaying && BootstrapState.HasActiveInstance && !registry.AreResidentWorldPrefabPoolsReady())
+Assets/_Project\Scripts\Core\GlobalRegistry.cs:8621:public bool IsPlayerInputEnabled => false;
+Assets/_Project\Scripts\Core\GlobalRegistryContracts.cs:930:bool IsPlayerInputEnabled { get; }
+Assets/_Project\Scripts\Core\InputDispatcher.cs:537:public bool IsPlayerInputEnabled => _nativeInputManager != null && _nativeInputManager.IsPlayerInputEnabled;
+Assets/_Project\Scripts\Core\InputDispatcher.cs:3687:/// IsPlayerInputEnabled was ever asked.
+Assets/_Project\Scripts\Core\InputDispatcher.cs:3849:if (inputManager.IsPlayerInputEnabled)
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:5275:BootstrapState.HasActiveInstance &&
+Assets/_Project\Scripts\Core\SystemDispatcher.cs:5276:!BootstrapState.IsGameReady;
+Assets/_Project\Scripts\Core\BootstrapContracts\BootstrapState.cs:17:public static class BootstrapState
+Assets/_Project\Scripts\Core\BootstrapContracts\BootstrapState.cs:22:public static bool IsGameReady { get; private set; }
+Assets/_Project\Scripts\Core\BootstrapContracts\BootstrapState.cs:27:public static bool HasActiveInstance { get; private set; }
+Assets/_Project\Scripts\Core\BootstrapContracts\BootstrapState.cs:46:HasActiveInstance = hasActiveInstance;
+Assets/_Project\Scripts\Core\BootstrapContracts\BootstrapState.cs:55:IsGameReady = isGameReady;
+Assets/_Project\Scripts\Core\BootstrapContracts\BootstrapState.cs:93:IsGameReady = false;
+Assets/_Project\Scripts\Core\BootstrapContracts\BootstrapState.cs:94:HasActiveInstance = false;
+Assets/_Project\Scripts\Core\BootstrapContracts\InputBindingServiceContracts.cs:235:bool IsPlayerInputEnabled { get; }
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessPlayModeProbe.cs:2140:if (!BootstrapState.IsGameReady && verdict != MomentVerdict.Pass)
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessPlayModeProbe.cs:2452:// BootstrapState.IsGameReady is the missing bit and nothing else in the project is: it is
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessPlayModeProbe.cs:2455:bool gameReady = BootstrapState.IsGameReady;
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:1581:if (input.IsPlayerInputEnabled)
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2633:///   GATE 2, IInputService.IsPlayerInputEnabled. Resolves to
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2634:///     _nativeInputManager.IsPlayerInputEnabled (InputDispatcher.cs:409) and from there to
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2781:.Append("slot is empty, so IsPlayerInputEnabled was never reachable and the leading ")
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2791:.Append("invoked on the registered service and IsPlayerInputEnabled still never read ")
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2928:GlobalRegistry.RegisteredInput.IsPlayerInputEnabled);
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2933:.Append("window. No IInputService was ever registered, so IsPlayerInputEnabled was ")
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:2944:.Append("IInputService.IsPlayerInputEnabled was false for the whole window, so ")
+Assets/_Project\Scripts\Editor\Diagnostics\H8_HeadlessWorldDriver.cs:3414:_detail.Append("; IsPlayerInputEnabled was false, so PlayerToolManager never read the ")
+Assets/_Project\Scripts\Gameplay\BaseAirlock.cs:1941:_inputWasEnabledBeforeCycle = _cycleInputManager.IsPlayerInputEnabled;
+Assets/_Project\Scripts\Gameplay\HectonPlayerInputHandler.cs:37:if (inputService == null || !inputService.IsPlayerInputEnabled)
+Assets/_Project\Scripts\Gameplay\MantaScooter.cs:658:PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\Gameplay\MantaScooter.cs:1276:PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\Gameplay\MountablePlayerTransport.cs:494:PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\Gameplay\PlayerSwimPresentationController.cs:2418:PlayerInputState inputState = _inputService != null && _inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\Gameplay\PlayerSwimPresentationController.cs:2580:PlayerInputState inputState = _inputService != null && _inputService.IsPlayerInputEnabled
+Assets/_Project\Scripts\Input\InputManager.cs:277:public bool IsPlayerInputEnabled => TryGetActionMapEnabled(_playerActionMap);
+Assets/_Project\Scripts\ModdingAPI\HectonAPI.cs:734:public static bool IsGameReady => GetIsGameReady();
+Assets/_Project\Scripts\ModdingAPI\HectonAPI.cs:736:private static bool GetIsGameReady()
+Assets/_Project\Scripts\ModdingAPI\HectonAPI.cs:738:ThrowIfNoActiveMod("World.IsGameReady");
+Assets/_Project\Scripts\ModdingAPI\HectonAPI.cs:739:return GameBootstrapper.IsGameReady;
+Assets/_Project\Scripts\Prologue\Space\OrbitalRelativityDirector.cs:717:if (consumeInput && _inputService != null && _inputService.IsInitialized && _inputService.IsPlayerInputEnabled)
+Assets/_Project\Scripts\QA\Headless\HeadlessSimulationRunner.cs:137:// BootstrapState.IsGameReady (or bootstrap presence cleared). Measuring from BeginStartup
+Assets/_Project\Scripts\QA\Headless\HeadlessSimulationRunner.cs:681:/// Uses IsGameReady so headless short-circuit and full ActivatePlayer paths both qualify.
+Assets/_Project\Scripts\QA\Headless\HeadlessSimulationRunner.cs:689:// GameReady is the hard signal. HasActiveInstance==false alone is insufficient
+Assets/_Project\Scripts\QA\Headless\HeadlessSimulationRunner.cs:691:if (!BootstrapState.IsGameReady)
+Assets/_Project\Scripts\QA\Headless\HeadlessSimulationRunner.cs:729:" gameReady=" + (BootstrapState.IsGameReady ? "1" : "0") +
+Assets/_Project\Scripts\QA\Headless\HeadlessSimulationRunner.cs:730:" hasBootstrap=" + (BootstrapState.HasActiveInstance ? "1" : "0"));
+Assets/_Project\Scripts\QA\Headless\HeadlessSimulationRunner.cs:858:" gameReady=" + (BootstrapState.IsGameReady ? "1" : "0"));
+Assets/_Project\Scripts\QA\Headless\HeadlessSimulationRunner.cs:926:" gameReady=" + (BootstrapState.IsGameReady ? "1" : "0") +
+Assets/_Project\Scripts\Tools\PauseSystemVerifier.cs:351:return inputManager.IsUIInputEnabled && !inputManager.IsPlayerInputEnabled;
+Assets/_Project\Scripts\Tools\PauseSystemVerifier.cs:360:return inputManager.IsPlayerInputEnabled && !inputManager.IsUIInputEnabled;
+Assets/_Project\Scripts\Tools\StateRecoveryVerifier.cs:474:return inputManager.IsUIInputEnabled && !inputManager.IsPlayerInputEnabled;
+Assets/_Project\Scripts\Tools\StateRecoveryVerifier.cs:483:return inputManager.IsPlayerInputEnabled && !inputManager.IsUIInputEnabled;
+Assets/_Project\Scripts\Tools\ToolKinematics\ToolKinematicsRuntime.cs:597:bool liveInputAvailable = inputInitialized && inputService.IsPlayerInputEnabled;
+Assets/_Project\Scripts\UI\HectonSystemsDebugUI.cs:1338:if (GameBootstrapper.IsGameReady)
+Assets/_Project\Scripts\UI\HectonSystemsDebugUI.cs:1341:if (GameBootstrapper.HasActiveInstance)
+Assets/_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:1829:/// Gated on <see cref="GameBootstrapper.HasActiveInstance"/> so no notification surface is constructed for
+Assets/_Project\Scripts\UI\SuitHUDV4CanvasOverlay.cs:1839:if (!GameBootstrapper.HasActiveInstance)
+Assets/_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:8202:BootstrapState.HasActiveInstance &&
+Assets/_Project\Scripts\World\HectonMapMagicVegetationBridge.cs:8203:!BootstrapState.IsGameReady)
+Assets/_Project\Scripts\World\SargassumCutManager.cs:1392:PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
+Assets/_Project\Tests\Editor\InputBindingContractsEditTests.cs:2719:public bool IsPlayerInputEnabled => true;

@@ -1,0 +1,30 @@
+34|        private static void ResetActiveRuntimeForSubsystemRegistration()
+38|            // IsAnyOpen stays true, HPM SampleGameplay zeros input without GetState (hop2 starve).
+40|            _openMenuCount = 0;
+89|        private static int _openMenuCount;
+96|        private bool _isOpen;
+187|        public bool IsOpen => _isOpen;
+188|        public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
+189|        public static bool IsAnyOpen => _openMenuCount > 0;
+383|            bool restorePlayerInput = _isOpen && ShouldRestorePlayerInputOnDisable();
+603|            if (_isOpen)
+624|            _isOpen = true;
+625|            RegisterOpenMenu();
+659|            if (!_isOpen)
+699|            if (_isOpen)
+708|            bool wasOpen = _isOpen;
+709|            _isOpen = false;
+713|                UnregisterOpenMenu();
+752|        private static void RegisterOpenMenu()
+754|            if (_openMenuCount < int.MaxValue)
+755|                _openMenuCount++;
+758|        private static void UnregisterOpenMenu()
+760|            if (_openMenuCount > 0)
+761|                _openMenuCount--;
+1249|            if (previousSection != section && _isOpen)
+1741|            bool wasOpen = _isOpen;
+1742|            _isOpen = false;
+1746|                UnregisterOpenMenu();
+2046|            if (!_isOpen)
+2949|            if (_isOpen)
+2960|            if (!_isOpen)

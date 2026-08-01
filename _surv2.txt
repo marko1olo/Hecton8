@@ -1,0 +1,21 @@
+244:    public sealed class HectonSurvivalSystem : MonoBehaviour, ISlowTickable, ILateFrameTickable, ISaveable, IGlobalRegistryHotSwapListener, IPlayerSurvivalEnvironmentReadModel, IPlayerBleedingReadModel
+666:        private void OnEnable()
+671:            TryRegisterHotSwapListener();
+672:            TryRegisterTickOwners();
+677:            TryRegisterSaveParticipant();
+730:        /// all - frozen at whatever Awake/OnEnable last saw. PlayerRuntimeContextService republishes the
+776:        private void TryRegisterSaveParticipant()
+814:        private void TryRegisterTickOwners()
+832:            //   1. GlobalRegistry.Dispatcher null at OnEnable. The old combined pre-guard returned before
+833:            //      TryRegisterSlowTickable, so GlobalRegistry's own "SystemDispatcher is not registered"
+836:            //   2. TryRegisterSlowTickable returning false on bucket or lane capacity. HectonPlayerSpawner
+850:                _registeredSlowTickable = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
+853:                _registeredLateFrameTickable = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+921:            TryRegisterTickOwners();
+953:                        TryRegisterSaveParticipant();
+959:                    TryRegisterSaveParticipant();
+975:                        TryRegisterTickOwners();
+980:        private void TryRegisterHotSwapListener()
+985:            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+1095:            TryRegisterTickOwners();
+2925:            if (GlobalTelemetryBus.TryRegisterBlackboxSource(

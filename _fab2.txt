@@ -1,0 +1,5 @@
+229:        public static bool IsMenuOpen { get; private set; }
+245:        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+248:            IsMenuOpen = false;
+494:            IsMenuOpen = true;
+626:            IsMenuOpen = false;

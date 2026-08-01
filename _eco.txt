@@ -1,0 +1,83 @@
+18:    public sealed class HeadlessSimulationRunner : MonoBehaviour, IFastTickable, IFrostTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+42:        // the ecology schedules work until the frame's LateFrameTick completes it, because a Burst job owns
+47:        // RunFrostTick (:5267); the ecology's SlowTick calls ScheduleSectorSolve (EcosystemDirector.cs:2729),
+49:        // reached from the ecology's LateFrameTick (:2792), which the dispatcher runs in a LATER player-loop
+58:        // Treating that identically to a dead ecology meant one day boundary landing inside a job fence
+59:        // aborted the whole run and blamed the ecology. Tolerance is bounded, never unbounded: three
+65:        // AFTER ecology's Environment-lane LateFrameTick has called CompleteScheduledSimulation and
+67:        // the lane order Core -> Environment -> Player -> UI guarantees ecology completes first.
+68:        // Streak only advances on a true dead/empty ecology (audit false with no pending job), never
+87:        // accumulates dayAcc despite dil=100. Step-bounded time is the product headless clock:
+134:        private double _dayAccumulatorSeconds;
+136:        // Wall clock for ecology-ready budget. Armed only after lanes are live AND
+140:        private double _ecologyWaitStartRealtime;
+141:        private int _ecologyWaitDiagBucket = -1;
+151:        private int _ecologySampleFailureStreak;
+152:        private int _ecologySampledDayCount;
+153:        private int _ecologyUnsampledDayCount;
+185:        private bool _ecologyReady;
+267:            // Wall-clock ecology timeout must NOT depend on ColdTick (ticks can starve).
+272:            if (_started && !_ecologyReady)
+281:                if (!_ecologyReady)
+287:                    if (_ecologyWaitStartRealtime > 0.0 &&
+288:                        Time.realtimeSinceStartupAsDouble - _ecologyWaitStartRealtime > _startupTimeoutSeconds)
+299:            if (_started && _ecologyReady && !_finished)
+303:                MaybeEnsureHeadlessSimulationClockSustain();
+342:            if (safeDelta > 0f && _ecologyReady)
+345:                _dayAccumulatorSeconds += safeDelta;
+376:            // aborts before we charge ecology for a day the harness could not advance.
+397:            // Biomass sample after ecology LateFrame (Environment lane) completed scheduled jobs.
+399:            if (_ecologyReady && _pendingDayAudits > 0)
+410:            if (!_ecologyReady)
+419:            // Do NOT sample biomass here. SlowTick (ecology) schedules the sector solve earlier in this
+420:            // same dispatcher update, and the job fence stays up until ecology's LateFrameTick. Queue
+424:            while (_dayAccumulatorSeconds >= _daySeconds &&
+429:                _dayAccumulatorSeconds -= _daySeconds;
+444:            if (!_ecologyReady)
+447:                if (_ecologyWaitStartRealtime > 0.0 &&
+448:                    Time.realtimeSinceStartupAsDouble - _ecologyWaitStartRealtime > _startupTimeoutSeconds)
+494:                // Unpause+dilation at register. Re-asserted again at ecology-ready / GameReady.
+495:                EnsureHeadlessSimulationClock("lanes-registered");
+534:            // Player lane runs after Environment: ecology LateFrame completes jobs before this runner samples.
+654:            // ecology-ready transition instead - see TryMarkEcologyReady. This method runs the instant the
+680:        /// Arms the ecology-ready wall clock once bootstrap has opened gameplay ticks.
+686:            if (_ecologyWaitStartRealtime > 0.0)
+694:            _ecologyWaitStartRealtime = Time.realtimeSinceStartupAsDouble;
+695:            LogRunnerLifecycle("ecology wait clock armed (GameReady)");
+698:            EnsureHeadlessSimulationClock("game-ready");
+716:            // FailAndQuit muzzles Log after ecologyReady; we are pre-ready so Log is fine.
+734:        /// Periodic pre-ecology wait trace so external BATCH_TIMEOUT still leaves FO lock state on disk.
+738:            if (_ecologyWaitStartRealtime <= 0.0)
+741:            double waited = Time.realtimeSinceStartupAsDouble - _ecologyWaitStartRealtime;
+743:            if (bucket <= _ecologyWaitDiagBucket)
+746:            _ecologyWaitDiagBucket = bucket;
+759:                "ecology wait progress t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
+783:            if (readyNow && !_ecologyReady)
+786:                LogRunnerLifecycle("ecology ready (ecosystem initialized)");
+795:                // [ECOLOGY_UNAVAILABLE] verdict misread that silence as a stall and blamed the ecology,
+806:                EnsureHeadlessSimulationClock("ecology-ready");
+809:            _ecologyReady = readyNow;
+816:        /// dayAcc; EnableStepBoundedTime supplies a real fixed unscaled dt per update.
+818:        private void EnsureHeadlessSimulationClock(string reason)
+838:            // Idempotent: EnableStepBoundedTime resets elapsed only when first arming; keep armed.
+841:                stepBoundOk = SystemDispatcher.EnableStepBoundedTime(HeadlessStepBoundedDeltaSeconds);
+862:        /// While ecology is ready and no day has completed, periodically re-assert the real clock
+865:        private void MaybeEnsureHeadlessSimulationClockSustain()
+867:            if (!_ecologyReady || _finished || _completedDays > 0)
+888:            EnsureHeadlessSimulationClock("post-ready-sustain");
+892:        /// Throttled post-ready Warning diag so BATCH_TIMEOUT still leaves pause/dilation/dayAcc on disk.
+896:            if (!_ecologyReady || _finished || _simulationStartRealtime <= 0.0)
+922:                " dayAcc=" + _dayAccumulatorSeconds.ToString("0.###", CultureInfo.InvariantCulture) +
+977:        /// ecology job fence from the same frame's SlowTick has already been completed.
+1034:                _ecologyUnsampledDayCount++;
+1040:                // ecology: headless with zero seeded biomass cells still fails by day 3.
+1041:                _ecologySampleFailureStreak++;
+1042:                if (_ecologySampleFailureStreak >= MaxConsecutiveEcologySampleFailures)
+1060:            _ecologySampleFailureStreak = 0;
+1061:            _ecologySampledDayCount++;
+1081:        /// Sampling now runs in LateFrameTick after the ecology job fence clears, so the 2026-07-29
+1093:            if (_ecologySampledDayCount <= 0)
+1642:                writer.Write(",\"ecologySampledDays\":");
+1643:                WriteInvariant(writer, _ecologySampledDayCount);
+1644:                writer.Write(",\"ecologyUnsampledDays\":");
+1645:                WriteInvariant(writer, _ecologyUnsampledDayCount);
