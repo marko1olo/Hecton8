@@ -42,23 +42,40 @@ namespace Hecton8.Editor
             "Interactable",
         };
 
+        private const string BootstrapScenePath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
+
         [MenuItem("Window/HECTON-8/Validate Bootstrap Architecture")]
         public static void ValidateBootstrapArchitecture()
         {
-            Scene bootstrapScene = SceneManager.GetSceneByPath(
-                "Assets/_Project/Scenes/00_BOOTSTRAP.unity");
+            // Compile-proof / CI path: -executeMethod must never open DisplayDialog
+            // (batchmode aborts with "This should not be called in batch mode").
+            bool batch = Application.isBatchMode;
+            Scene bootstrapScene = SceneManager.GetSceneByPath(BootstrapScenePath);
 
-            if (!bootstrapScene.IsValid())
+            if (!bootstrapScene.IsValid() || !bootstrapScene.isLoaded)
             {
-                EditorUtility.DisplayDialog(
-                    "Bootstrap Validation",
-                    "❌ 00_BOOTSTRAP.unity not found or not loaded.",
-                    "OK");
+                // OpenScene is additive-safe for a one-shot audit; batchmode never has the scene
+                // already open, so the previous IsValid-only gate always failed there.
+                bootstrapScene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(
+                    BootstrapScenePath,
+                    UnityEditor.SceneManagement.OpenSceneMode.Single);
+            }
+
+            if (!bootstrapScene.IsValid() || !bootstrapScene.isLoaded)
+            {
+                string missing = "[BootstrapArchitectureValidator] FAIL: 00_BOOTSTRAP.unity not found or not loaded at " + BootstrapScenePath;
+                Debug.LogError(missing);
+                if (!batch)
+                    EditorUtility.DisplayDialog("Bootstrap Validation", missing, "OK");
+                if (batch)
+                    EditorApplication.Exit(1);
                 return;
             }
 
             GameObject[] rootObjects = bootstrapScene.GetRootGameObjects();
             string report = "=== BOOTSTRAP ARCHITECTURE VALIDATION ===\n\n";
+            bool managersOk = true;
+            bool buildSettingsOk = true;
 
             // ── Check for required managers ──
             report += "REQUIRED MANAGERS:\n";
@@ -67,6 +84,8 @@ namespace Hecton8.Editor
                 string managerName = REQUIRED_MANAGERS[managerIndex];
                 bool found = FindObjectInScene(bootstrapScene, managerName) != null;
                 report += $"  {(found ? "✓" : "✗")} {managerName}\n";
+                if (!found)
+                    managersOk = false;
             }
 
             report += "\nOBJECTS IN ROOT:\n";
@@ -108,19 +127,37 @@ namespace Hecton8.Editor
                 string firstScene = EditorBuildSettings.scenes[0].path;
                 bool isBootstrapFirst = firstScene.Contains("00_BOOTSTRAP");
                 report += $"  {(isBootstrapFirst ? "✓" : "✗")} First scene: {firstScene}\n";
+                if (!isBootstrapFirst)
+                    buildSettingsOk = false;
             }
             else
             {
                 report += "  ✗ No scenes in Build Settings!\n";
+                buildSettingsOk = false;
             }
 
-            Debug.Log(report);
+            bool passed = managersOk && buildSettingsOk && !foundForbidden;
+            report += "\nRESULT: " + (passed ? "PASS" : "FAIL") + "\n";
 
-            EditorUtility.DisplayDialog(
-                "Bootstrap Validation Report",
-                report,
-                "OK");
+            // Always emit the report. Architecture FAIL is LogError so CI greps can see it,
+            // but batchmode still exits 0: this method is the project's compile-proof entry
+            // and managers may be code-constructed (GameBootstrapper) rather than scene-named.
+            if (passed)
+                Debug.Log(report);
+            else
+                Debug.LogError(report);
+
+            if (!batch)
+            {
+                EditorUtility.DisplayDialog(
+                    "Bootstrap Validation Report",
+                    report,
+                    "OK");
+            }
+            // batchmode: rely on -quit; do not EditorApplication.Exit(1) on soft FAIL.
         }
+
+
 
         private static GameObject FindObjectInScene(Scene scene, string name)
         {
