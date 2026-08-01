@@ -44,22 +44,28 @@ namespace Hecton8.QA.Headless.Editor
         // then DISCARDS the overflow (SystemDispatcher.cs:6245-6246 clamps the accumulator back to one
         // interval). The runner advances its day counter by that fixed 1/60, so simulated seconds per real
         // second is 4 * fps / 60 = fps / 15 — reaching the runner's nominal TimeDilationScalar of 100 would
-        // need 1500 fps of full-world player loop. At a realistic batchmode 60-200 fps the harness delivers
-        // 4x-13x, so the 100-day default is 7.5 to 25 hours of wall clock, not one.
+        // need 1500 fps of full-world player loop. MEASURED batchmode dilation on this project sits near
+        // 3.5x (BUILD_PLAYTEST_ISSUES.md headless entry): a 100-day default is therefore ~28.6 h wall, not
+        // "one hour" and not the 7.5-25 h band the prior arithmetic claimed at optimistic 4x-13x.
         //
         // So the watchdog now DERIVES from the workload it is watching instead of asserting a number. A
         // watchdog that does not know what it guards is not a safety net, it is a coin flip: too small and
         // every honest run is killed, too large and a hang costs a night. The fixed part covers a cold Bee
         // compile and play-mode entry; the variable part is the simulated span converted at a deliberately
-        // PESSIMISTIC 4x, because being killed at the finish line destroys the whole run while overshooting
-        // only costs idle minutes on a genuine hang.
+        // PESSIMISTIC 3x (below the measured 3.5x floor), because being killed at the finish line destroys
+        // the whole run while overshooting only costs idle minutes on a genuine hang.
+        //
+        // THE PRIOR 6 h CEILING WAS ITSELF A FALSE FAILURE. At measured 3.5x the default 100-day span needs
+        // ~28.6 h wall; clamping the derived budget to 6 h guaranteed BATCH_TIMEOUT on every healthy full
+        // run. Ceiling is now 36 h so the derived 100-day budget (~33.4 h at 3x + fixed) is admitted, while a
+        // true hang still dies inside one machine-night rather than hanging the Unity slot forever.
         //
         // Practical consequence, worth stating because it is the difference between a useful first run and a
         // no-op: pass -h8headlessDays 5 -h8headlessDaySeconds 60 for a smoke run. That is 300 simulated
         // seconds, minutes rather than hours, and it exercises every lane the 100-day run does.
         private const double TimeoutFixedSeconds = 420.0;
-        private const double PessimisticDilation = 4.0;
-        private const double TimeoutCeilingSeconds = 6.0 * 60.0 * 60.0;
+        private const double PessimisticDilation = 3.0;
+        private const double TimeoutCeilingSeconds = 36.0 * 60.0 * 60.0;
 
         private static double ResolveTimeoutSeconds()
         {
