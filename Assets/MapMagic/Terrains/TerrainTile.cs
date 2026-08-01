@@ -133,12 +133,20 @@ namespace MapMagic.Terrains
 		}
 
 		/// <summary>
-		/// L19 product guard: Unity fake-null and destroyed native Terrain/GameObject must not call SetActive.
+		/// L19/L19b product guard: Unity fake-null, destroyed TerrainData, and half-torn-down
+		/// Terrain GameObjects must not reach SetActive (L19 LIVE still native-crashed inside
+		/// GameObject.SetActive_Injected from set_ActiveTerrain line 120 despite null checks).
 		/// </summary>
 		private static bool IsLiveTerrain(Terrain terrain)
 		{
 			// UnityEngine.Object overloaded == handles destroyed wrappers.
-			return terrain != null && terrain.gameObject != null;
+			if (terrain == null)
+				return false;
+			// terrainData is cleared before the Terrain wrapper becomes fake-null during teardown.
+			if (terrain.terrainData == null)
+				return false;
+			GameObject go = terrain.gameObject;
+			return go != null;
 		}
 
 		private static void SafeSetTerrainActive(Terrain terrain, bool active)
@@ -148,9 +156,28 @@ namespace MapMagic.Terrains
 			GameObject go = terrain.gameObject;
 			if (go == null)
 				return;
-			if (go.activeSelf == active)
+			// Re-check after property reads: concurrent ApplyRoutine teardown can invalidate between checks.
+			if (terrain == null || terrain.terrainData == null)
 				return;
-			go.SetActive(active);
+			bool currentlyActive;
+			try
+			{
+				currentlyActive = go.activeSelf;
+			}
+			catch (System.Exception)
+			{
+				return;
+			}
+			if (currentlyActive == active)
+				return;
+			try
+			{
+				go.SetActive(active);
+			}
+			catch (System.Exception)
+			{
+				// Native/managed half-destroyed Terrain: swallow and leave LOD selection unchanged.
+			}
 		}
 
 
