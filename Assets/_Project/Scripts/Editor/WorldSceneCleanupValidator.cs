@@ -58,42 +58,66 @@ namespace Hecton8.Editor
         [MenuItem("Hecton8/Validate World Scene Cleanup", priority = 100)]
         public static void ValidateWorldSceneCleanup()
         {
+            // Compile-proof / CI path: -executeMethod must never open DisplayDialog
+            // (batchmode aborts with "This should not be called in batch mode").
+            bool batch = Application.isBatchMode;
             Scene currentScene = SceneManager.GetActiveScene();
 
             if (currentScene.path != ProductionWorldScene)
             {
-                if (!EditorUtility.DisplayDialog(
-                    "Load Production World Scene?",
-                    $"Current scene: {currentScene.name}\n\nLoad {ProductionWorldScene} for validation?",
-                    "Load",
-                    "Cancel"))
+                if (!batch)
                 {
-                    return;
+                    if (!EditorUtility.DisplayDialog(
+                        "Load Production World Scene?",
+                        $"Current scene: {currentScene.name}\n\nLoad {ProductionWorldScene} for validation?",
+                        "Load",
+                        "Cancel"))
+                    {
+                        return;
+                    }
+
+                    EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
                 }
 
-                EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
-                EditorSceneManager.OpenScene(ProductionWorldScene, OpenSceneMode.Single);
+                currentScene = EditorSceneManager.OpenScene(ProductionWorldScene, OpenSceneMode.Single);
+            }
+
+            if (!currentScene.IsValid() || !currentScene.isLoaded || currentScene.path != ProductionWorldScene)
+            {
+                string missing = "[WorldSceneCleanupValidator] FAIL: 02_HECTON_WORLD.unity not found or not loaded at " + ProductionWorldScene;
+                Debug.LogError(missing);
+                if (!batch)
+                    EditorUtility.DisplayDialog("World Scene Cleanup Validation", missing, "OK");
+                if (batch)
+                    EditorApplication.Exit(1);
+                return;
             }
 
             List<GameObject> tempObjects = new List<GameObject>(64); // COLD ALLOC: temp object collection for validation
             List<GameObject> suspiciousObjects = new List<GameObject>(64); // COLD ALLOC: suspicious object collection for validation
 
-            GameObject[] rootObjects = SceneManager.GetActiveScene().GetRootGameObjects();
-            foreach (GameObject root in rootObjects)
+            GameObject[] rootObjects = currentScene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < rootObjects.Length; rootIndex++)
             {
-                ScanHierarchy(root.transform, tempObjects, suspiciousObjects);
+                GameObject root = rootObjects[rootIndex];
+                if (root != null)
+                    ScanHierarchy(root.transform, tempObjects, suspiciousObjects);
             }
 
-            StringBuilder report = new StringBuilder();
+            StringBuilder report = new StringBuilder(4096);
             report.AppendLine("═══════════════════════════════════════════════════════");
             report.AppendLine("HECTON-8 — World Scene Cleanup Validation Report");
             report.AppendLine("═══════════════════════════════════════════════════════");
             report.AppendLine();
-            report.AppendLine($"Scene: {SceneManager.GetActiveScene().name}");
-            report.AppendLine($"Path: {SceneManager.GetActiveScene().path}");
+
+            report.Append("Scene: ");
+            report.AppendLine(currentScene.name);
+            report.Append("Path: ");
+            report.AppendLine(currentScene.path);
             report.AppendLine();
 
-            if (tempObjects.Count == 0 && suspiciousObjects.Count == 0)
+            bool passed = tempObjects.Count == 0 && suspiciousObjects.Count == 0;
+            if (passed)
             {
                 report.AppendLine("✓ NO TEMPORARY OBJECTS FOUND");
                 report.AppendLine();
@@ -103,15 +127,17 @@ namespace Hecton8.Editor
             {
                 if (tempObjects.Count > 0)
                 {
-                    report.AppendLine($"✗ TEMPORARY OBJECTS FOUND: {tempObjects.Count}");
+                    report.Append("✗ TEMPORARY OBJECTS FOUND: ");
+                    report.Append(tempObjects.Count);
+                    report.AppendLine();
                     report.AppendLine();
                     report.AppendLine("These objects have temp/trial/staging/smoke naming:");
                     report.AppendLine();
 
-                    foreach (GameObject obj in tempObjects)
+                    for (int i = 0; i < tempObjects.Count; i++)
                     {
-                        string path = GetGameObjectPath(obj);
-                        report.AppendLine($"  • {path}");
+                        report.Append("  • ");
+                        report.AppendLine(GetGameObjectPath(tempObjects[i]));
                     }
 
                     report.AppendLine();
@@ -119,15 +145,17 @@ namespace Hecton8.Editor
 
                 if (suspiciousObjects.Count > 0)
                 {
-                    report.AppendLine($"⚠ SUSPICIOUS OBJECTS FOUND: {suspiciousObjects.Count}");
+                    report.Append("⚠ SUSPICIOUS OBJECTS FOUND: ");
+                    report.Append(suspiciousObjects.Count);
+                    report.AppendLine();
                     report.AppendLine();
                     report.AppendLine("These objects contain temp/trial/staging keywords:");
                     report.AppendLine();
 
-                    foreach (GameObject obj in suspiciousObjects)
+                    for (int i = 0; i < suspiciousObjects.Count; i++)
                     {
-                        string path = GetGameObjectPath(obj);
-                        report.AppendLine($"  • {path}");
+                        report.Append("  • ");
+                        report.AppendLine(GetGameObjectPath(suspiciousObjects[i]));
                     }
 
                     report.AppendLine();
@@ -147,35 +175,51 @@ namespace Hecton8.Editor
             }
 
             report.AppendLine("═══════════════════════════════════════════════════════");
+            report.Append("RESULT: ");
+            report.AppendLine(passed ? "PASS" : "FAIL");
+            string reportText = report.ToString();
 
-            Debug.Log(report.ToString());
-
-            if (tempObjects.Count > 0 || suspiciousObjects.Count > 0)
-            {
-                EditorUtility.DisplayDialog(
-                    "World Scene Cleanup Validation",
-                    $"Found {tempObjects.Count} temporary objects and {suspiciousObjects.Count} suspicious objects.\n\nSee Console for full report.",
-                    "OK");
-            }
+            // Soft FAIL is LogError so CI greps can see it; batchmode still exits 0
+            // (scene cleanliness is audit, not a compile gate).
+            if (passed)
+                Debug.Log(reportText);
             else
+                Debug.LogError(reportText);
+
+            if (!batch)
             {
-                EditorUtility.DisplayDialog(
-                    "World Scene Cleanup Validation",
-                    "✓ Scene is clean!\n\nNo temporary objects found.",
-                    "OK");
+                if (!passed)
+                {
+                    EditorUtility.DisplayDialog(
+                        "World Scene Cleanup Validation",
+                        $"Found {tempObjects.Count} temporary objects and {suspiciousObjects.Count} suspicious objects.\n\nSee Console for full report.",
+                        "OK");
+                }
+                else
+                {
+                    EditorUtility.DisplayDialog(
+                        "World Scene Cleanup Validation",
+                        "✓ Scene is clean!\n\nNo temporary objects found.",
+                        "OK");
+                }
             }
+            // batchmode: rely on -quit; do not EditorApplication.Exit(1) on soft FAIL.
         }
 
         [MenuItem("Hecton8/Select All Temp Objects in Scene", priority = 101)]
         public static void SelectAllTempObjects()
         {
+            // Interactive Selection-only tool; still must not abort batchmode if invoked.
+            bool batch = Application.isBatchMode;
             List<GameObject> tempObjects = new List<GameObject>(64); // COLD ALLOC: temp object collection for selection
             List<GameObject> suspiciousObjects = new List<GameObject>(64); // COLD ALLOC: suspicious object collection for selection
 
             GameObject[] rootObjects = SceneManager.GetActiveScene().GetRootGameObjects();
-            foreach (GameObject root in rootObjects)
+            for (int rootIndex = 0; rootIndex < rootObjects.Length; rootIndex++)
             {
-                ScanHierarchy(root.transform, tempObjects, suspiciousObjects);
+                GameObject root = rootObjects[rootIndex];
+                if (root != null)
+                    ScanHierarchy(root.transform, tempObjects, suspiciousObjects);
             }
 
             List<GameObject> allFound = new List<GameObject>(tempObjects.Count + suspiciousObjects.Count); // COLD ALLOC: combined selection list
@@ -184,16 +228,22 @@ namespace Hecton8.Editor
 
             if (allFound.Count == 0)
             {
-                EditorUtility.DisplayDialog(
-                    "Select Temp Objects",
-                    "No temporary objects found in scene.",
-                    "OK");
+                Debug.Log("[WorldSceneCleanupValidator] No temporary objects found in scene.");
+                if (!batch)
+                {
+                    EditorUtility.DisplayDialog(
+                        "Select Temp Objects",
+                        "No temporary objects found in scene.",
+                        "OK");
+                }
                 return;
             }
 
-            Selection.objects = allFound.ToArray();
+            if (!batch)
+                Selection.objects = allFound.ToArray();
             Debug.Log($"Selected {allFound.Count} temporary/suspicious objects in scene.");
         }
+
 
         private static void ScanHierarchy(Transform root, List<GameObject> tempObjects, List<GameObject> suspiciousObjects)
         {
