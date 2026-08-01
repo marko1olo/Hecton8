@@ -8577,6 +8577,16 @@ namespace Hecton8.Bootstrap
                 // ProceduralLoreDirector and NarrativeProgressionBridge hit permanent null.
                 // Factory + call here after GasDynamics so lore sinks bind.
                 Hecton8.Narrative.AudioLogSystem.EnsureRuntimeInstance();
+
+                // LoreDatabaseManager is the sole GlobalRegistry.LoreDatabase owner
+                // (lore unlock read-model / scan fragment catalog).
+                // GUID 42a7b5625bed8574794366fcc0149275 has ZERO live scene/prefab hits.
+                // HectonLoreSystemsRoot only constructs via editor ContextMenu.
+                // No Ensure existed; OnEnable only registers when already present.
+                // HectonDiscoveryManager, ResearchDirector and ScannableFragment
+                // hit permanent null. Factory + call here after AudioLogSystem
+                // so lore unlock sinks bind with audio-log discovery.
+                Hecton8.Narrative.LoreDatabaseManager.EnsureRuntimeInstance();
             }
 
 

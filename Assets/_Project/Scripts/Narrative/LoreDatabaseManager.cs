@@ -262,6 +262,45 @@ namespace Hecton8.Narrative
             BuildRecordLookupCold();
         }
 
+
+        /// <summary>
+        /// Resolve-or-create the sole GlobalRegistry.LoreDatabase owner.
+        /// GUID 42a7b5625bed8574794366fcc0149275 has ZERO live scene/prefab hits
+        /// (only Assets/_Recovery leftovers). HectonLoreSystemsRoot.SetupAllSystems
+        /// is editor ContextMenu-only and does not run in play mode.
+        /// OnEnable only registers when already present; without this factory
+        /// HectonDiscoveryManager, ResearchDirector and ScannableFragment hit
+        /// permanent null on the lore unlock read-model.
+        /// </summary>
+        public static LoreDatabaseManager EnsureRuntimeInstance()
+        {
+            LoreDatabaseManager registered = GlobalRegistry.LoreDatabase;
+            if (IsLoreDatabaseRuntimeUsable(registered))
+                return registered;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterLoreDatabaseRuntime(registered);
+                registered._serviceRegistered = false;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[LoreDatabaseManager]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<LoreDatabaseManager>();
+        }
+
+        private static bool IsLoreDatabaseRuntimeUsable(LoreDatabaseManager manager)
+        {
+            return !ReferenceEquals(manager, null) &&
+                   manager != null &&
+                   !manager._runtimeOwnerAborted &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled;
+        }
+
         private void OnEnable()
         {
             if (_runtimeOwnerAborted)
