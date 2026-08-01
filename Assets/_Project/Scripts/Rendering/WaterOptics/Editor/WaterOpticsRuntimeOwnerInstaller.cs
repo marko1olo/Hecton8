@@ -8,38 +8,60 @@ using UnityEngine.SceneManagement;
 
 namespace Hecton8.Rendering.WaterOptics.Editor
 {
-    internal static class WaterOpticsRuntimeOwnerInstaller
+    /// <summary>
+    /// Installs WaterOpticsRuntime on the bootstrap scene host.
+    /// Batchmode-safe: no DisplayDialog; soft FAIL when busy; saveScene=false in batch
+    /// so CI does not mutate 00_BOOTSTRAP.unity on disk.
+    /// </summary>
+    public static class WaterOpticsRuntimeOwnerInstaller
     {
-        internal const string MenuPath = "Hecton8/Rendering/Water Optics/Install Runtime Owner In Bootstrap Scene";
-        internal const string BootstrapScenePath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
+        public const string MenuPath = "Hecton8/Rendering/Water Optics/Install Runtime Owner In Bootstrap Scene";
+        public const string BootstrapScenePath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
         private const string PreferredBootstrapRootName = "[BOOTSTRAPPER]";
 
         [MenuItem(MenuPath)]
-        internal static void InstallRuntimeOwnerInBootstrapScene()
+        public static void InstallRuntimeOwnerInBootstrapScene()
         {
+            bool batch = Application.isBatchMode;
+
             if (EditorApplication.isCompiling || EditorApplication.isUpdating || Application.isPlaying)
             {
-                EditorUtility.DisplayDialog(
-                    "Water Optics Runtime Owner",
-                    "Editor is compiling, updating, or playing. Install the runtime owner after the editor is idle.",
-                    "OK");
+                Debug.LogError(
+                    "[WaterOpticsRuntimeOwnerInstaller] RESULT: FAIL — Editor busy (compiling/updating/playing).");
+                if (!batch)
+                {
+                    EditorUtility.DisplayDialog(
+                        "Water Optics Runtime Owner",
+                        "Editor is compiling, updating, or playing. Install the runtime owner after the editor is idle.",
+                        "OK");
+                }
+
                 return;
             }
 
-            if (!TryInstallRuntimeOwnerInBootstrapScene(saveScene: true, out string failure, out bool changed))
+            // Batch: never save scene — prove open/find/attach path without committing scene dirt.
+            bool saveScene = !batch;
+            if (!TryInstallRuntimeOwnerInBootstrapScene(saveScene, out string failure, out bool changed))
             {
-                EditorUtility.DisplayDialog("Water Optics Runtime Owner", failure, "OK");
+                Debug.LogError(
+                    "[WaterOpticsRuntimeOwnerInstaller] RESULT: FAIL — " + failure);
+                if (!batch)
+                    EditorUtility.DisplayDialog("Water Optics Runtime Owner", failure, "OK");
                 return;
             }
 
-            string message = changed
-                ? "WaterOpticsRuntime owner was attached to the bootstrap scene."
+            string detail = changed
+                ? (batch
+                    ? "WaterOpticsRuntime would attach (batch: scene not saved)."
+                    : "WaterOpticsRuntime owner was attached to the bootstrap scene.")
                 : "WaterOpticsRuntime owner is already authored in the bootstrap scene.";
 
-            EditorUtility.DisplayDialog("Water Optics Runtime Owner", message, "OK");
+            Debug.Log("[WaterOpticsRuntimeOwnerInstaller] RESULT: PASS — " + detail);
+            if (!batch)
+                EditorUtility.DisplayDialog("Water Optics Runtime Owner", detail, "OK");
         }
 
-        internal static bool TryInstallRuntimeOwnerInBootstrapScene(
+        public static bool TryInstallRuntimeOwnerInBootstrapScene(
             bool saveScene,
             out string failure,
             out bool changed)
@@ -101,7 +123,9 @@ namespace Hecton8.Rendering.WaterOptics.Editor
             if (!scene.IsValid() || !scene.isLoaded)
                 return false;
 
-            WaterOpticsRuntime[] runtimes = UnityEngine.Object.FindObjectsByType<WaterOpticsRuntime>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            WaterOpticsRuntime[] runtimes = UnityEngine.Object.FindObjectsByType<WaterOpticsRuntime>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
             for (int i = 0; i < runtimes.Length; i++)
             {
                 if (runtimes[i].gameObject.scene == scene)
