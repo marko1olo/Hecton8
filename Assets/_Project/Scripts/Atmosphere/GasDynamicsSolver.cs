@@ -303,6 +303,47 @@ namespace Hecton8.Atmosphere
         public float LastCadenceSeconds => _lastCadenceSeconds;
         int ISystem.TickCount => _tickCount;
 
+        /// <summary>
+        /// Resolve-or-create the sole GlobalRegistry.GasDynamics owner.
+        /// GUID e001add545b58c34eb202fbfcab9c3a2 has ZERO scene/prefab hits.
+        /// OnEnable only registers when already present; without this factory
+        /// ConstructionManager, HectonPlayerMovement, PlayerKinematicsRuntime,
+        /// ShinobuPhysiologyRuntime, AbyssalThermalManager, PowerGridManager and
+        /// HeadlessSimulationRunner hit permanent null.
+        /// </summary>
+        public static GasDynamicsSolver EnsureRuntimeInstance()
+        {
+            IGasDynamicsSolver registered = GlobalRegistry.GasDynamics;
+            GasDynamicsSolver typed = registered as GasDynamicsSolver;
+            if (IsGasDynamicsRuntimeUsable(typed))
+                return typed;
+
+            if (!ReferenceEquals(typed, null))
+            {
+                GlobalRegistry.UnregisterGasDynamicsSolver(typed);
+                typed._registeredRegistry = false;
+            }
+            else if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterGasDynamicsSolver(registered);
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[GasDynamicsSolver]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<GasDynamicsSolver>();
+        }
+
+        private static bool IsGasDynamicsRuntimeUsable(GasDynamicsSolver solver)
+        {
+            return !ReferenceEquals(solver, null) &&
+                   solver != null &&
+                   solver._registeredRegistry &&
+                   solver.isActiveAndEnabled;
+        }
+
         private void OnEnable()
         {
             if (!Application.isPlaying)

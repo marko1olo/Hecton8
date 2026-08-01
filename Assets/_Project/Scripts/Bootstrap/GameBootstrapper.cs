@@ -8557,6 +8557,16 @@ namespace Hecton8.Bootstrap
                 // BiomeMatrixDirector, ConstructionManager and SubmarineStructuralGrid hit
                 // permanent null. Factory + call here after discovery so presentation sinks bind.
                 Hecton8.World.AbyssalFluidDecalManager.EnsureRuntimeInstance();
+
+                // GasDynamicsSolver is the sole GlobalRegistry.GasDynamics owner
+                // (habitat O2/CO2/N2, breach diffusion, scrubber, toxicity).
+                // GUID e001add545b58c34eb202fbfcab9c3a2 has ZERO scene/prefab hits.
+                // No Ensure existed; OnEnable only registers when already present.
+                // ConstructionManager, HectonPlayerMovement, PlayerKinematicsRuntime,
+                // ShinobuPhysiologyRuntime, AbyssalThermalManager, PowerGridManager
+                // and HeadlessSimulationRunner hit permanent null. Factory + call
+                // here after fluid decals so atmosphere sinks bind.
+                Hecton8.Atmosphere.GasDynamicsSolver.EnsureRuntimeInstance();
             }
 
 
