@@ -8508,7 +8508,16 @@ namespace Hecton8.Bootstrap
                 // 0b66cb54cbdfba54aa2267ecb4982579. Collapse/death debris FX never spawn in a
                 // shipped build. Same shape as AutonomousExtractor: call the existing factory.
                 Hecton8.Gameplay.DebrisManager.EnsureRuntimeInstance();
+
+                // DockingAutopilotService is the sole IDockingAutopilotService owner and had no
+                // construction site of any kind. No AddComponent, no scene/prefab GUID hit for
+                // 3d6fecc0d76140547a5275b902b63c4b. Live consumer VehicleDockingModule.cs:1845
+                // caches GlobalRegistry.DockingAutopilot permanently null, so docking spline
+                // acquire/evaluate never arms. Factory now lives on the service itself
+                // (EnsureRuntimeInstance); call it here so the registry slot is live.
+                Hecton8.Vehicles.Automation.DockingAutopilotService.EnsureRuntimeInstance();
             }
+
 
             finally
             {

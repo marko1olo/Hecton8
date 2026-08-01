@@ -326,10 +326,51 @@ namespace Hecton8.Vehicles.Automation
         public ServiceHeartbeatState HeartbeatState => _heartbeatState;
         public bool IsServiceReady => IsReady;
 
+        // DockingAutopilotService is the sole IDockingAutopilotService owner and had no construction
+        // site of any kind. No AddComponent, no scene/prefab GUID hit for
+        // 3d6fecc0d76140547a5275b902b63c4b. Live consumer VehicleDockingModule.cs:1845 caches
+        // GlobalRegistry.DockingAutopilot permanently null. Same shape as DebrisManager: ship
+        // EnsureRuntimeInstance and call it from bootstrap.
+
+        private const string RuntimeRootName = "__HECTON_DOCKING_AUTOPILOT_RUNTIME";
+
+        /// <summary>
+        /// Cold-path resolve-or-create for the docking autopilot owner. Idempotent.
+        /// </summary>
+        public static DockingAutopilotService EnsureRuntimeInstance()
+        {
+            if (GlobalRegistry.DockingAutopilot is DockingAutopilotService registered && registered != null)
+                return registered;
+
+            DockingAutopilotService existing = FindFirstObjectByType<DockingAutopilotService>(FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                if (!existing.gameObject.activeSelf)
+                    existing.gameObject.SetActive(true);
+                if (!existing.enabled)
+                    existing.enabled = true;
+                return existing;
+            }
+
+            GameObject root = GameObject.Find(RuntimeRootName);
+            if (root == null)
+                root = new GameObject(RuntimeRootName); // COLD ALLOC: GameObject[1] - docking autopilot runtime root - owner: DockingAutopilotService
+
+            root.hideFlags = HideFlags.None;
+            if (!root.activeSelf)
+                root.SetActive(true);
+
+            if (!root.TryGetComponent(out DockingAutopilotService service))
+                service = root.AddComponent<DockingAutopilotService>();
+
+            return service;
+        }
+
         private void OnEnable()
         {
             InitializeService();
         }
+
 
         private void OnDisable()
         {
