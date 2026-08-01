@@ -110,7 +110,7 @@ Not proven by that log:
 | ~~Crafting is unreachable~~ RETRACTED — `Fabricator` IS in the binary world scene; my grep was text-only | `[?]` | none; see the retraction note |
 | ~~Nine authoring buttons were never pressed~~ RETRACTED — the world scene is binary and was saved | `[?]` | none; see the retraction note |
 | Four scenes are BINARY, so every text GUID search in this repo silently under-reports | `[~]` | `Tools/SceneGuidReachability.py` added `46625dc38`; still owed: the older docs re-tested with it |
-| The authored swim profile is dropped for the entire lower body — accepted parameter, never read | `[!]` | a designer retunes `SwimPresentationProfile` and the legs/fins respond |
+| The authored swim profile is dropped for the entire lower body — accepted parameter, never read | `[c]` | STATIC CLOSED `5dd92fa69` — `ApplySwimProfileToBodyPose` wired; visual/designer proof still owed |
 | No creature carries `FaunaBrain` — its guid occurs in exactly one file, its own `.cs.meta` | `[!]` | a creature that moves under its own brain in a build |
 | World-content sockets are Editor-authored only, and `WorldShippingContentFilter` drops 10 of the 14 | `[~]` | settle whether `Tool_TrialRange` ships, then port or press |
 | A failed save is invisible in the GAMEPLAY HUD (the main menu shows a real modal) | `[!]` | force a save write failure in a build and watch the gameplay HUD |
@@ -596,27 +596,24 @@ load-bearing and must not inherit this conclusion.
 
 ### The authored swim profile never reaches the lower body — verified 2026-07-29
 
-`Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.Body.cs:457` declares
-`SwimPresentationProfile profile` as the second parameter of `ApplyFullBodyPose`, and the identifier `profile`
-appears **exactly once in the whole file** — that declaration. I ran that search myself. The call site at
-`PlayerSwimBlockoutRig.cs:481` passes a real profile, so the parameter is supplied and discarded.
+> **STATIC CLOSED 2026-08-01 (`5dd92fa69`).** `ApplyFullBodyPose` now calls `ApplySwimProfileToBodyPose`
+> after `ResolveBodyModePose`. Mode tables stay the structural baseline; the active
+> `SwimPresentationProfile` scales kick cadence/travel, surface kick sync, glide streamline, inertial
+> pelvis drop, fin pitch and stroke-style mass. Unity batchmode `ValidateBootstrapArchitecture`: 0 CS
+> errors, exit 0. Visual/designer retune proof still owed before `[x]`.
 
-Consequence: torso, pelvis, thighs, calves and fins are posed from hardcoded literals and mode-keyed poses,
-while the designer-authored ScriptableObject that is supposed to tune them is thrown away. The arms and hands
-path consumes that same asset heavily, so a designer retuning it sees the upper body respond and the lower body
-refuse — which reads as a broken asset rather than as a dropped parameter, and is why this survives.
+`Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.Body.cs` previously declared
+`SwimPresentationProfile profile` as the second parameter of `ApplyFullBodyPose`, and the identifier
+`profile` appeared **exactly once in the whole file** — that declaration. The call site at
+`PlayerSwimBlockoutRig.cs` passed a real profile, so the parameter was supplied and discarded.
 
-This is the second signature the project's own rules name as its dominant failure mode: *"a parameter accepted
-then ignored (one made every creature of a species share an identical genome)"*. Found by looking for that
-signature deliberately: 847 mechanical candidates across the tree, 846 benign, this one real. The other named
-signature — a min/max fold seeded with a sentinel that cannot lose — came back **verified clean** across 83
-candidates, which is worth recording as a result rather than a non-event.
+Consequence (pre-fix): torso, pelvis, thighs, calves and fins were posed from hardcoded literals and
+mode-keyed poses, while the designer-authored ScriptableObject that is supposed to tune them was thrown
+away. The arms and hands path consumed that same asset heavily, so a designer retuning it saw the upper
+body respond and the lower body refuse.
 
-**Deliberately NOT fixed here, and the reason is the rule rather than caution.** Mapping `StrokeVerticalAmplitude`
-or `StrokePitchAmplitude` onto a hardcoded torso literal means choosing a multiplier and a blend, which is
-player-visible visual judgement. `TASTE.md` and the Visual Reference Parity Gate reserve that for someone with
-the reference images open, and inventing an animation curve to close a ticket is how a plausible-looking wrong
-fix ships. The gap is filed with the exact line so whoever owns swim presentation answers it in minutes.
+This was the second signature the project's own rules name as its dominant failure mode: *"a parameter
+accepted then ignored"*. Found by looking for that signature deliberately among mechanical candidates.
 
 `FIRST_20_MINUTES`: swim is stage 4 of the route chain, so this is on the critical path for how the first
 twenty minutes *feel* rather than for whether they function.
