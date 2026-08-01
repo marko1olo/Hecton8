@@ -233,7 +233,9 @@ namespace Hecton8.EditorTools.Diagnostics
         // unpause + headless dilation + EnableStepBoundedTime so the product dispatcher supplies a
         // real fixed unscaled dt per update. Probe is INPUT PRODUCER only via WorldDriver; this is
         // the simulation CLOCK arm, not a mock hop2 path.
-        private const float ProbeTimeDilationScalar = 100f;
+        // L18: dil=1.0 — step-bound (L16) already supplies non-zero unscaled dt for FixedTick.
+        // dil=100 caused PhysX AABB (L17a) / MapMagic LOD (L17b) crashes and fixed-lane temporal compression every frame; not required for Swim hop2 route.
+        private const float ProbeTimeDilationScalar = 1f;
         private const float ProbeStepBoundedDeltaSeconds = 0.04f;
         private const float ProbeClockEnsureIntervalSeconds = 5f;
         private const uint ProbeSimClockHash = 0x48385043u; // 'H8PC'

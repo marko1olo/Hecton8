@@ -1315,6 +1315,9 @@ namespace Hecton8.Core
 
         public void PreSimulationInputTick(float deltaTime)
         {
+            // L18: heal LateFrame/Slow lane membership after ClearAllLanes while PreSim still runs.
+            TryRegisterToDispatcher();
+
             // Stamped for BOTH callers (SystemDispatcher.cs:5054 and the late-frame self-pump), so whichever
             // one reaches the frame first suppresses the other. Written before any early exit inside the
             // substep loop so a frame that legitimately produces zero substeps still counts as ticked.
@@ -3630,8 +3633,20 @@ namespace Hecton8.Core
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
+            // L18: sticky alone is insufficient (L15 HPM Fixed parity). ClearAllLanes / soft-reset
+            // can empty the Core late-frame lane while _registeredLateFrame stays true, so this
+            // owner never re-TryRegisters. PreSim still advances (direct IInputDeterminismService
+            // call) while lateFrameTick freezes and hop2 starves (Fixed also cleared until healed).
+            // Do NOT Unregister+Register thrash — verify lane membership, clear sticky when missing.
+            if (_registeredLateFrame &&
+                !SystemDispatcher.GetLateFrameLane(PriorityLayer.Core).Contains(this))
+                _registeredLateFrame = false;
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+
+            if (_registeredSlowTick &&
+                !SystemDispatcher.GetSlowLane(PriorityLayer.Core).Contains(this))
+                _registeredSlowTick = false;
             if (!_registeredSlowTick)
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
             TryRegisterHapticSynthesisPostSimulation();
