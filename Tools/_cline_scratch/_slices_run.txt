@@ -1,9 +1,0 @@
-wrote C:\hades\Hecton8\Tools\_cline_scratch\_slices_out.txt chars 93101 hold_hits 4
-Traceback (most recent call last):
-  File "C:\hades\Hecton8\Tools\_cline_scratch\_slice.py", line 84, in <module>
-    print(text[:25000])
-    ~~~~~^^^^^^^^^^^^^^
-  File "C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1251.py", line 19, in encode
-    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
-           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-UnicodeEncodeError: 'charmap' codec can't encode characters in position 19812-19869: character maps to <undefined>

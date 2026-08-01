@@ -1,4 +1,0 @@
-Assets/_Project/Scripts/Editor/Diagnostics/H8_HeadlessPlayModeProbe.cs
-Docs/V0_Playtest/NEXT_CHAT_L16.md
-Docs/V0_Playtest/V0_L15_LIVE_RESULTS.md
-Docs/V0_Playtest/V0_L16_BATCHMODE_STEP_BOUNDED_CLOCK.md

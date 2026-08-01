@@ -1,9 +1,0 @@
-VERIFY OK
-  EnsureProbeSimulationClock YES
-  MaybeEnsureProbeSimulationClockSustain YES
-  ProbeStepBoundedDeltaSeconds YES
-  SIMCLOCK ensure YES
-  _probeSimClockArmed = false YES
-  gameplay-window-start YES
-  worlddriver-begin YES
-lines 4273
