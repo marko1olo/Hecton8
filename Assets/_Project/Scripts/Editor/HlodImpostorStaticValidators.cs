@@ -22,7 +22,8 @@ namespace Hecton8.Editor
         [MenuItem("Hecton8/Rendering/HLOD Impostor/Validate Layouts", false, 2520)]
         public static void ValidateLayoutsMenu()
         {
-            ValidateLayouts(true);
+            // -executeMethod entry: never open DisplayDialog in batchmode.
+            ValidateLayouts(!Application.isBatchMode);
         }
 
         [MenuItem("Hecton8/Rendering/HLOD Impostor/Run Static Archaeology", false, 2521)]
@@ -45,6 +46,12 @@ namespace Hecton8.Editor
 
         public static bool ValidateLayouts(bool showDialog)
         {
+            // Compile-proof / CI path: -executeMethod must never open DisplayDialog
+            // (batchmode aborts with "This should not be called in batch mode").
+            bool batch = Application.isBatchMode;
+            if (batch)
+                showDialog = false;
+
             bool valid = true;
             StringBuilder builder = new StringBuilder(512);
             int configSize = UnsafeUtility.SizeOf<ImpostorConfigDTO>();
@@ -67,11 +74,21 @@ namespace Hecton8.Editor
             valid &= AssertEqual((int)Marshal.OffsetOf<HlodImpostorProfileRecord>(nameof(HlodImpostorProfileRecord.ViewCount)), 64, "Profile ViewCount offset", builder);
             valid &= AssertEqual((int)Marshal.OffsetOf<HlodImpostorProfileRecord>(nameof(HlodImpostorProfileRecord.HemisphereOnly)), 84, "Profile HemisphereOnly offset", builder);
 
-            if (showDialog)
+            string report = valid
+                ? "[HlodImpostorStaticValidators] RESULT: PASS — Explicit layouts valid."
+                : "[HlodImpostorStaticValidators] RESULT: FAIL\n" + builder;
+            if (valid)
+                Debug.Log(report);
+            else
+                Debug.LogError(report);
+
+            if (showDialog && !batch)
                 EditorUtility.DisplayDialog("HLOD Impostor Layouts", valid ? "Explicit layouts valid." : builder.ToString(), "OK");
 
+            // Soft layout FAIL stays exit 0 under -quit; hard fail is not used here.
             return valid;
         }
+
 
         public static void RunStaticArchaeology(bool logToConsole)
         {
