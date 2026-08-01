@@ -8451,6 +8451,15 @@ namespace Hecton8.Bootstrap
                 Hecton8.Narrative.NarrativeRuntimeInstaller.EnsurePlayerSystems(playerObject);
                 Hecton8.Audio.AtmosphericAudioRuntimeInstaller.EnsurePlayerSystems(playerObject);
 
+                // AcousticZoneController is the sole owner of GlobalRegistry.AcousticZone /
+                // AcousticZoneReadModel / AcousticZoneMadnessCueSink / ToolAcousticCues and had no
+                // construction site of any kind (no AddComponent, no scene/prefab GUID
+                // 46c4f463f7190a04b9285cb2b4cc7f63). Four live consumers cached the permanent null:
+                // HectonSurfaceWeatherDirector.cs:836, DeepPsychosisController.cs:340,
+                // HectonMusicDirector.cs:1573, MantaScooter.cs:2608. Surface/interior/underwater
+                // snapshot transitions and tool acoustic cues never armed.
+                Hecton8.Audio.AtmosphericAudioRuntimeInstaller.EnsureRuntimeSystems();
+
                 // GlobalWeatherDirector is the only IWeatherService in the project and was never
                 // constructed, so GlobalRegistry.Weather was permanently null and TEN live consumers
                 // cached that null: HectonCelestialEngine.cs:2096, SolarPanel.cs:296,
