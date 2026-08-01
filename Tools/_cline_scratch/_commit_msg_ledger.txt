@@ -1,3 +1,0 @@
-docs(v0): L08 MEASURED ledger (swim/tools FixedTick root causes)
-
-Records L08 PASS/FAIL matrix, product fixes in 5b8c23aba, L09 acceptance.

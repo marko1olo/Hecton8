@@ -1,3 +1,0 @@
-42884
-PID=42884 start_time=31.07.2026 23:21:54,47
-status_file=C:\hades\Hecton8\Tools\_cline_scratch\v0_L15_launch_status.txt

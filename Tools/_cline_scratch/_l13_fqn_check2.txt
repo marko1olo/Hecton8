@@ -1,4 +1,0 @@
-bare_as True
-bare_find True
-fqn_find False
-FIXED_MARKER False
