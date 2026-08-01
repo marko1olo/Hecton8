@@ -43,11 +43,11 @@ namespace Hecton8.AI.Editor
             Material leviathanMaterial = EnsureMaterial("Mat_LeviathanProxy.mat", new Color(0.75f, 0.22f, 0.22f));
             Material droneMaterial = EnsureMaterial("Mat_DroneProxy.mat", new Color(0.70f, 0.86f, 1.00f));
 
-            // expectMonoBehaviours mirrors kinematicOnly, which is the ONLY reason a proxy legitimately has
-            // no brain: BuildRoot puts AddComponent<FaunaBrain>() and AddComponent<ScannableTarget>() inside
-            // if (!kinematicOnly). Kept as an explicit argument at the call site rather than inferred inside
-            // EnsureProxyPrefab, so the two flags cannot drift apart silently.
-            EnsureProxyPrefab(SmallPassiveProxyPath, BuildRoot("SmallPassiveProxy", PrimitiveType.Sphere, passiveMaterial, new Vector3(0.8f, 0.45f, 1.2f), AddSmallPassiveCollider, kinematicOnly: true), expectMonoBehaviours: false);
+            // Ambient / default role resolves to SmallPassiveProxy (ResolveDefaultProxyPrefab).
+            // A brainless ambient shell means the most common creature role cannot move or flee.
+            // Historical kinematicOnly:true path skipped Rigidbody+FaunaBrain+ScannableTarget together;
+            // that left the on-disk prefab as geometry+trigger only. All six proxies now carry a brain.
+            EnsureProxyPrefab(SmallPassiveProxyPath, BuildRoot("SmallPassiveProxy", PrimitiveType.Sphere, passiveMaterial, new Vector3(0.8f, 0.45f, 1.2f), AddSmallPassiveCollider));
             EnsureProxyPrefab(TerritorialProxyPath, BuildRoot("TerritorialProxy", PrimitiveType.Capsule, territorialMaterial, new Vector3(1.2f, 0.9f, 2.0f), AddTerritorialCollider));
             EnsureProxyPrefab(HunterProxyPath, BuildRoot("HunterProxy", PrimitiveType.Capsule, hunterMaterial, new Vector3(1.4f, 1.0f, 2.6f), AddHunterCollider));
             EnsureProxyPrefab(HeavyHunterProxyPath, BuildRoot("HeavyHunterProxy", PrimitiveType.Capsule, heavyHunterMaterial, new Vector3(2.0f, 1.4f, 3.8f), AddHeavyHunterCollider));
@@ -203,13 +203,12 @@ namespace Hecton8.AI.Editor
         /// diagnostic exiting 0 after its work threw, and the same remedy: verify the artifact, then speak.
         /// </para>
         /// <para>
-        /// <paramref name="expectMonoBehaviours"/> exists because ONE of the six proxies legitimately has
-        /// none: <c>SmallPassiveProxy</c> is built with <c>kinematicOnly: true</c>, and BuildRoot places both
-        /// AddComponent calls inside <c>if (!kinematicOnly)</c>. Demanding a brain in all six would make a
-        /// CORRECT run fail. A verifier stricter than the pipeline it verifies is its own defect, and this
-        /// project has already shipped one - a terrain layer check that would have refused every input size
-        /// the bake path accepts.
+        /// <paramref name="expectMonoBehaviours"/> defaults true. The historical kinematic-only ambient
+        /// exception was removed: Ambient/default roles resolve to SmallPassiveProxy, so that prefab must
+        /// carry FaunaBrain like the other five. Keep the flag only if a future non-AI shell is reintroduced
+        /// deliberately at the call site.
         /// </para>
+
         /// </summary>
         private static void EnsureProxyPrefab(string assetPath, GameObject root, bool expectMonoBehaviours = true)
         {
