@@ -5748,11 +5748,12 @@ namespace Hecton8.Bootstrap
         /// </summary>
         /// <remarks>
         /// This node is enumerated, ordered, phase-mapped to <see cref="BootstrapPhase.Environment"/> and
-        /// heartbeat-probed exactly like a wired dependency, but nothing installs the service. The only
-        /// implementer of <c>IDebrisService</c> is <c>DebrisManager</c>
-        /// (Assets/_Project/Scripts/Gameplay/DebrisManager.cs), and its <c>EnsureRuntimeInstance</c> factory has
-        /// no caller anywhere in the project. This initializer used to be a bare <c>return true;</c>, so the boot
-        /// log and the node graph both reported DebrisManager READY while creating nothing at all.
+        /// heartbeat-probed exactly like a wired dependency. The only implementer of <c>IDebrisService</c> is
+        /// <c>DebrisManager</c> (Assets/_Project/Scripts/Gameplay/DebrisManager.cs). The node initializer now
+        /// calls <c>DebrisManager.EnsureRuntimeInstance</c> before this report so a live owner is installed when
+        /// possible. This report still records a loud exemption if the factory leaves the slot empty, so boot
+        /// never silently claims READY for a missing debris owner.
+
         /// <para>
         /// Returning <c>false</c> is deliberately NOT the refusal used here, because a false return from a
         /// bootstrap node is fatal to the entire game, not just to the node: the caller logs
@@ -5785,11 +5786,12 @@ namespace Hecton8.Bootstrap
                 ResolveBootstrapDependencyNodeName(BootstrapDependencyNode.DebrisManager));
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError(
-                "[GameBootstrapper] DebrisManager is declared as a bootstrap dependency but is NOT installed. " +
-                "GlobalRegistry.Debris is empty and nothing calls DebrisManager.EnsureRuntimeInstance, so there " +
-                "is no debris owner this session and every IDebrisService.SpawnBurst call is dropped. " +
+                "[GameBootstrapper] DebrisManager is declared as a bootstrap dependency but is NOT installed " +
+                "after DebrisManager.EnsureRuntimeInstance. GlobalRegistry.Debris is empty, so every " +
+                "IDebrisService.SpawnBurst call is dropped this session. " +
                 "This node is EXEMPT, not ready. Boot continues on purpose: nothing in the startup graph " +
                 "depends on the Debris slot, and failing the node would abort the whole boot.");
+
 #endif
             return true;
         }
@@ -5905,8 +5907,15 @@ namespace Hecton8.Bootstrap
 
                 case BootstrapDependencyNode.DebrisManager:
                 {
+                    // DebrisManager.EnsureRuntimeInstance already existed at :136 with full
+                    // resolve-or-create + inactive-root handling, but had ZERO callers. The node
+                    // used to only ReportDebrisManagerBootstrapNodeState (loud exemption, no install).
+                    // Call the factory first so GlobalRegistry.Debris is live; the report then
+                    // records a real installed owner instead of a permanent exemption.
+                    DebrisManager.EnsureRuntimeInstance();
                     return ReportDebrisManagerBootstrapNodeState();
                 }
+
 
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService:
                 {
@@ -8487,7 +8496,20 @@ namespace Hecton8.Bootstrap
                 // shipped build. No new installer file for this one: wrapping an existing public static
                 // factory in another static method is pure indirection.
                 Hecton8.Construction.AutonomousExtractorSystem.TryEnsureRuntimeOwner(out _);
+
+                // DebrisManager is the sole IDebrisService owner and already ships
+                // DebrisManager.EnsureRuntimeInstance at :136 - complete with FindFirstObjectByType
+                // fallback, inactive-root handling, and AddComponent. It had ZERO callers.
+                // Bootstrap DiagnoseMissingCriticalSystems already names the empty slot at :5767
+                // ("DebrisManager.EnsureRuntimeInstance exists but is never called"). Live consumers
+                // that hit the permanent null: StructureIntegrity.cs:2316 (SpawnBurst on collapse),
+                // StructureModule.cs:2198 (SpawnBurst), Creature.cs:4817 (SpawnBurst on death),
+                // HectonFluidEngine.cs:2193 (GlobalRegistry.Debris). No scene/prefab GUID hit for
+                // 0b66cb54cbdfba54aa2267ecb4982579. Collapse/death debris FX never spawn in a
+                // shipped build. Same shape as AutonomousExtractor: call the existing factory.
+                Hecton8.Gameplay.DebrisManager.EnsureRuntimeInstance();
             }
+
             finally
             {
                 if (installerPublicationGateOpen)
