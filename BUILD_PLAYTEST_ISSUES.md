@@ -111,16 +111,16 @@ Not proven by that log:
 | ~~Nine authoring buttons were never pressed~~ RETRACTED — the world scene is binary and was saved | `[?]` | none; see the retraction note |
 | Four scenes are BINARY, so every text GUID search in this repo silently under-reports | `[~]` | `Tools/SceneGuidReachability.py` added `46625dc38`; still owed: the older docs re-tested with it |
 | The authored swim profile is dropped for the entire lower body — accepted parameter, never read | `[c]` | STATIC CLOSED `5dd92fa69` — `ApplySwimProfileToBodyPose` wired; visual/designer proof still owed |
-| No creature carries `FaunaBrain` — its guid occurs in exactly one file, its own `.cs.meta` | `[!]` | a creature that moves under its own brain in a build |
+| No creature carries `FaunaBrain` — its guid occurs in exactly one file, its own `.cs.meta` | `[c]` | STATIC CLOSED — guid `f97102d76d9d9d04f95ccebcd55b7079` on 5 GeneratedProxies prefabs (Drone/HeavyHunter/Hunter/Leviathan/Territorial); runtime creature-move proof still owed |
 | World-content sockets are Editor-authored only, and `WorldShippingContentFilter` drops 10 of the 14 | `[~]` | settle whether `Tool_TrialRange` ships, then port or press |
-| A failed save is invisible in the GAMEPLAY HUD (the main menu shows a real modal) | `[!]` | force a save write failure in a build and watch the gameplay HUD |
+| A failed save is invisible in the GAMEPLAY HUD (the main menu shows a real modal) | `[c]` | STATIC CLOSED `62a310140` — `EnsureSaveFailureNotificationBridgeCold` + `HUDSaveNotificationLink.ShowCritical`; Play Mode force-fail proof still owed |
 | ~~Notifications never reach the player: `HUDNotification` had zero instances~~ FIXED 2026-07-29, `5caea2a5e` | `[~]` | Play Mode: a warning visible on screen once |
 | ~~Every notification delivered twice (two drains, different hashes, suppressor never matched)~~ FIXED `cc377a985` | `[~]` | Play Mode: exactly one toast per event |
 | ~~Headless world sim could not finish its own default run~~ FIXED `60a7ed08d` — **and the run has now actually happened**, see the section below | `[x]` | RUN EXISTS 2026-07-29: `[ECOLOGY_UNAVAILABLE]`, 1 of 5 days, JSON on disk |
 | ~~The headless sim runs and the ecology inside it is empty: prey `0.000`, predator `0.000`~~ **RETRACTED — those zeros were never measured.** They are `default(EcosystemBiomassAuditSample)` written by the failure branch itself | `[?]` | none; the premise was wrong, see the correction below |
-| **`-h8headless` skips `BootstrapPhase.Player` entirely, so the ecology is never told where to look** — the harness's success condition is structurally unreachable in the mode it runs in | `[!]` | one CSV day row with non-zero biomass, from a run whose ecology was actually asked a question it could answer |
-| **The harness's own verdict line is filtered out by its own log policy.** `filterLogType = LogType.Warning` (`HeadlessSimulationRunner.cs:483`) eats every `Debug.Log` — including `[HEADLESS] fail` and all `[GameBootstrapper]` node progress | `[!]` | a run whose log contains its own terminal verdict |
-| Default headless config still cannot finish: 100 days x 3600 s at the measured 3.5x needs **28.6 h** against a 6 h `TimeoutCeilingSeconds` (`HeadlessSimulationBatchRunner.cs:62`) | `[!]` | a raised ceiling, or a documented maximum day count |
+| **`-h8headless` skips `BootstrapPhase.Player` entirely, so the ecology is never told where to look** — the harness's success condition is structurally unreachable in the mode it runs in | `[c]` | STATIC CLOSED `a040eaf7f` — `TryResolveSeedObserverAup` fallback + `EnsurePlayerSectorRegistered` five-cell seed; non-zero biomass CSV proof still owed |
+| **The harness's own verdict line is filtered out by its own log policy.** `filterLogType = LogType.Warning` (`HeadlessSimulationRunner.cs:483`) eats every `Debug.Log` — including `[HEADLESS] fail` and all `[GameBootstrapper]` node progress | `[c]` | STATIC CLOSED `3391c34c7`+`2223dc10b` — `FailAndQuit` uses `LogWarning`; filter deferred to `TryMarkEcologyReady`; log-contains-verdict proof still owed |
+| Default headless config still cannot finish: 100 days x 3600 s at the measured 3.5x needs **28.6 h** against a 6 h `TimeoutCeilingSeconds` (`HeadlessSimulationBatchRunner.cs:62`) | `[c]` | STATIC CLOSED `e387379c2` — `TimeoutCeilingSeconds` 36h + `PessimisticDilation` 3.0 at `HeadlessSimulationBatchRunner.cs:67-68`; full 100-day run proof still owed |
 | **Measured time dilation is 3.5x against a nominal 100x** — below the 4x floor the batch runner's own comment calls pessimistic (`HeadlessSimulationBatchRunner.cs:61`) | `[x]` | measured: `timeDilationDelivered: 3.500491` |
 | A missing asmdef reference cost a whole batchmode run, and neither the lock-free gate nor the unit tests could see it | `[x]` | fixed; see `The build break that ate the first headless run` |
 
@@ -796,7 +796,7 @@ output directories, `DroneProxy.prefab`'s missing `m_Script`, and three of the s
 reported and not independently re-checked by me. No Unity run, no build, no player session. Pressing any of
 these buttons is an authoring action with scene consequences and needs the owner's go-ahead, not a subagent's.
 
-| A failed save is shown to the player as a completed save | `[!]` | force a save write failure in a build and watch the HUD |
+| A failed save is shown to the player as a completed save | `[c]` | STATIC CLOSED `62a310140` — `EnsureSaveFailureNotificationBridgeCold` + `HUDSaveNotificationLink.ShowCritical`; Play Mode force-fail proof still owed |
 
 ### A failed save is rendered as success — verified 2026-07-29
 
