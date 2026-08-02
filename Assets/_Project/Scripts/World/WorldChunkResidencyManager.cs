@@ -1495,6 +1495,20 @@ namespace Hecton8.World
             if (IsWorldChunkResidencyRuntimeUsable(active))
                 return active;
 
+            // StreamingBackpressureRuntime is NOT a scene hot-swap slot. After LockReady, eviction +
+            // reconstruct leaves the slot empty and the replacement's TryRegister throws
+            // CriticalBootException (ready-lock). Prefer any still-alive owner over replacement.
+            // Mirrors GCMonitor.EnsureRuntimeOwnership: ask IsRuntimeServicePublicationOpen FIRST.
+            bool publicationOpen = GlobalRegistry.IsRuntimeServicePublicationOpen<IStreamingBackpressureService>();
+            if (!publicationOpen)
+            {
+                if (!ReferenceEquals(registered, null) && registered != null)
+                    return registered;
+                if (!ReferenceEquals(active, null) && active != null)
+                    return active;
+                return null;
+            }
+
             if (!ReferenceEquals(registered, null))
             {
                 GlobalRegistry.UnregisterStreamingBackpressureRuntime(registered);
@@ -2605,8 +2619,20 @@ namespace Hecton8.World
 
             if (!_registeredBackpressureService)
             {
-                GlobalRegistry.RegisterStreamingBackpressureRuntime(this);
-                _registeredBackpressureService = ReferenceEquals(GlobalRegistry.StreamingBackpressure, this);
+                // Non-hot-swap slot: post-Ready registration of a different owner throws CriticalBootException.
+                // Same-instance re-entry is safe (RegisterServiceAllowSameInstance early-returns). Decline
+                // takeover instead of clearing the world streaming owner under ready-lock (GCMonitor pattern).
+                IStreamingBackpressureService incumbent = GlobalRegistry.StreamingBackpressure;
+                if (!ReferenceEquals(incumbent, this) &&
+                    !GlobalRegistry.IsRuntimeServicePublicationOpen<IStreamingBackpressureService>())
+                {
+                    // Leave _registeredBackpressureService false; OnEnable already demotes duplicates.
+                }
+                else
+                {
+                    GlobalRegistry.RegisterStreamingBackpressureRuntime(this);
+                    _registeredBackpressureService = ReferenceEquals(GlobalRegistry.StreamingBackpressure, this);
+                }
             }
 
             if (!_registeredAirlockEvents)

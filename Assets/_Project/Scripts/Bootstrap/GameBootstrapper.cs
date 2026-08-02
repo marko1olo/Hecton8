@@ -5903,8 +5903,16 @@ namespace Hecton8.Bootstrap
                     // create + InitializeService for heartbeat). Wire the construction site here so
                     // the Environment-phase node is actually READY instead of permanently EXEMPT.
                     Hecton8.Gameplay.DebrisManager.EnsureRuntimeInstance();
+
+                    // WorldChunkResidencyManager (IStreamingBackpressureService) — sole owner.
+                    // StreamingBackpressureRuntime is NOT a scene hot-swap slot. Must publish before
+                    // LockReady; post-Ready EnsureRuntimeInstance + TryRegister throws
+                    // CriticalBootException (ready-lock). WorldRuntimeInstaller deliberately skips
+                    // construction; this Environment-phase site is the pre-Ready construction path.
+                    Hecton8.World.WorldChunkResidencyManager.EnsureRuntimeInstance();
                     return ReportDebrisManagerBootstrapNodeState();
                 }
+
 
 
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService:
