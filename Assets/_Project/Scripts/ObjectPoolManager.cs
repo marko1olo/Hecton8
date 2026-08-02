@@ -550,6 +550,7 @@ namespace Hecton8.Core
             while (pool.available.Count > 0)
             {
                 GameObject instance = pool.available.Dequeue();
+                // Unity fake-null: destroyed objects compare equal to null.
                 if (instance == null)
                     continue;
 
@@ -558,17 +559,54 @@ namespace Hecton8.Core
                     LogSpawnMissingMarker(instance);
                     _poolMarkerCache.Remove(instance);
                     pool.capacity = Mathf.Max(0, pool.capacity - 1);
-                    Destroy(instance);
+                    if (instance != null)
+                        Destroy(instance);
                     continue;
                 }
 
+                // L19 hop2 LIVE: ACCESS_VIOLATION inside Transform::SetParent during scatter
+                // reconcile spawn. Managed GO can survive queue dequeue while native Transform
+                // is already torn down (domain churn / parent container destroyed).
+                // try/catch cannot stop native Crash!!! — avoid SetParent when already free,
+                // and drop the instance if transform/container looks unusable.
+                if (pool.container == null)
+                {
+                    // Pool container destroyed → entire inactive queue is untrusted.
+                    _poolMarkerCache.Remove(instance);
+                    pool.capacity = Mathf.Max(0, pool.capacity - 1);
+                    while (pool.available.Count > 0)
+                    {
+                        GameObject stale = pool.available.Dequeue();
+                        if (stale != null)
+                        {
+                            _poolMarkerCache.Remove(stale);
+                            Destroy(stale);
+                        }
+                    }
+                    return null;
+                }
+
                 Transform instanceTransform = instance.transform;
-                instanceTransform.SetParent(null, false);
+                if (instanceTransform == null)
+                {
+                    _poolMarkerCache.Remove(instance);
+                    pool.capacity = Mathf.Max(0, pool.capacity - 1);
+                    continue;
+                }
+
+                // L19 hop2: never call SetParent on spawn. Transform::SetParent was the native
+                // Crash!!! site. SetPositionAndRotation writes world pose regardless of parent;
+                // inactive instances already live under pool.container (identity local under a
+                // stationary OPM root). Avoiding detach eliminates the AV without changing pose.
                 instanceTransform.SetPositionAndRotation(position, rotation);
                 instance.SetActive(true);
+
                 NotifySpawn(marker);
                 return instance;
+
+
             }
+
 
             if (allowExpand)
             {
@@ -657,11 +695,24 @@ namespace Hecton8.Core
             instance.SetActive(false);
 
             Transform instanceTransform = instance.transform;
-            instanceTransform.SetParent(pool.container, false);
+            // L19 hop2: destroyed container/instance → drop. Spawn no longer detaches, so most
+            // despawns are already under pool.container — skip SetParent when parent matches
+            // (avoids Transform::SetParent native AV on half-dead hierarchy).
+            if (instanceTransform == null || pool.container == null)
+            {
+                _poolMarkerCache.Remove(instance);
+                Destroy(instance);
+                return;
+            }
+
+            if (!ReferenceEquals(instanceTransform.parent, pool.container))
+                instanceTransform.SetParent(pool.container, false);
+
             instanceTransform.localPosition = Vector3.zero;
             instanceTransform.localRotation = Quaternion.identity;
 
             if (pool.available.Count >= pool.capacity)
+
             {
                 _poolMarkerCache.Remove(instance);
                 Destroy(instance);
@@ -670,6 +721,7 @@ namespace Hecton8.Core
 
             pool.available.Enqueue(instance);
         }
+
 
         /// <summary>
         /// Compatibility despawn overload for systems that still pass a Component instead of its owning GameObject.
