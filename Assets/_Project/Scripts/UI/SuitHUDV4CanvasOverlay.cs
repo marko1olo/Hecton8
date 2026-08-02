@@ -378,7 +378,7 @@ namespace Hecton8.UI
             }
         }
 
-        private const int LayoutRevision = 12;
+        private const int LayoutRevision = 13;
         private const float AutoResolveRetryInterval = 1f;
         private static readonly Vector2 DefaultUiReferenceResolution = new Vector2(1600f, 900f);
         [Header("References")]
@@ -3922,17 +3922,19 @@ namespace Hecton8.UI
             Anchor(_telemetryBraceLower.rectTransform, new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(14f, 12f), new Vector2(18f, 2f));
             _telemetryBraceLower.rectTransform.localEulerAngles = Vector3.zero;
 
+            // VISION_LOCKS: visor glass owns only Oxygen + Depth/Pressure + hazard warnings.
+            // Depth and Pressure are first-class critical metrics on telemetryRoot (not secondary chrome).
             _depthLabel = CreateText("DepthLabel", _telemetryRoot, 28f, FontStyles.Bold, TextAlignmentOptions.Right, 0.96f);
             Anchor(_depthLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-18f, -24f), new Vector2(152f, 34f));
+
+            _pressureLabel = CreateText("PressureLabel", _telemetryRoot, 16f, FontStyles.Bold, TextAlignmentOptions.Right, 0.78f);
+            Anchor(_pressureLabel.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-18f, -52f), new Vector2(152f, 22f));
 
             _telemetrySupplementRoot = CreateRect("TelemetrySupplementRoot", _telemetryRoot);
             Stretch(_telemetrySupplementRoot, 0f, 0f, 0f, 0f);
 
             _temperatureLabel = CreateText("TemperatureLabel", _telemetrySupplementRoot, 14f, FontStyles.Normal, TextAlignmentOptions.Right, 0.82f);
             Anchor(_temperatureLabel.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-18f, 18f), new Vector2(152f, 20f));
-
-            _pressureLabel = CreateText("PressureLabel", _telemetrySupplementRoot, 13f, FontStyles.Normal, TextAlignmentOptions.Right, 0.62f);
-            Anchor(_pressureLabel.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-18f, 0f), new Vector2(152f, 18f));
 
             _loadLabel = CreateText("LoadLabel", _telemetrySupplementRoot, 12f, FontStyles.Bold, TextAlignmentOptions.Right, 0.72f);
             Anchor(_loadLabel.rectTransform, new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-18f, -18f), new Vector2(152f, 18f));
@@ -3962,7 +3964,9 @@ namespace Hecton8.UI
             EnsureActionProgressHudBinding(_root);
 
             EnsureIsolatedDynamicCanvas(_reticleRoot, DynamicCanvasCadenceBucket.HighCadence);
+            // Depth + Pressure are first-class critical metrics: isolate each so canvas rebuilds stay local.
             EnsureIsolatedDynamicCanvas(_depthLabel.rectTransform, DynamicCanvasCadenceBucket.LowCadence);
+            EnsureIsolatedDynamicCanvas(_pressureLabel.rectTransform, DynamicCanvasCadenceBucket.LowCadence);
             EnsureIsolatedDynamicCanvas(_telemetrySupplementRoot, DynamicCanvasCadenceBucket.LowCadence);
             EnsureIsolatedDynamicCanvas(_statusLabel.rectTransform, DynamicCanvasCadenceBucket.HighCadence);
             EnsureIsolatedDynamicCanvas(_oxygenGauge.Root, DynamicCanvasCadenceBucket.HighCadence);
@@ -4236,19 +4240,23 @@ namespace Hecton8.UI
 
         private void ApplySectionVisibility(bool biosRecoveryMode)
         {
-            SetCanvasGroupVisible(_ornamentCanvasGroup, !biosRecoveryMode);
-            SetCanvasGroupVisible(_headerCanvasGroup, !biosRecoveryMode);
-            SetCanvasGroupVisible(_telemetryChromeCanvasGroup, !biosRecoveryMode);
-            SetCanvasGroupVisible(_telemetrySupplementCanvasGroup, !biosRecoveryMode);
+            // VISION_LOCKS L189: visor glass owns only Oxygen + Depth/Pressure + hazard warnings.
+            // Non-critical chrome stays off the glass (header/compass, ornament veils, temp/load,
+            // health/power rings, quickbar). Bios recovery keeps the same critical set.
+            _ = biosRecoveryMode;
+            SetCanvasGroupVisible(_ornamentCanvasGroup, false);
+            SetCanvasGroupVisible(_headerCanvasGroup, false);
+            SetCanvasGroupVisible(_telemetryChromeCanvasGroup, false);
+            SetCanvasGroupVisible(_telemetrySupplementCanvasGroup, false);
             SetCanvasGroupVisible(_statusCanvasGroup, true);
-            SetCanvasGroupVisible(_quickbarCanvasGroup, true);
+            SetCanvasGroupVisible(_quickbarCanvasGroup, false);
 
             if (_oxygenGauge.CanvasGroup != null)
                 SetCanvasGroupVisible(_oxygenGauge.CanvasGroup, true);
             if (_healthGauge.CanvasGroup != null)
-                SetCanvasGroupVisible(_healthGauge.CanvasGroup, !biosRecoveryMode);
+                SetCanvasGroupVisible(_healthGauge.CanvasGroup, false);
             if (_powerGauge.CanvasGroup != null)
-                SetCanvasGroupVisible(_powerGauge.CanvasGroup, !biosRecoveryMode);
+                SetCanvasGroupVisible(_powerGauge.CanvasGroup, false);
         }
 
         private void ApplyBiosBackdrop(bool biosRecoveryMode)
@@ -4463,19 +4471,24 @@ namespace Hecton8.UI
             {
                 if (_biosRecoveryMode)
                 {
+                    // VISION_LOCKS: bios recovery keeps the critical set (O2 + Depth/Pressure + hazard status).
                     _appliedDepthWhisperVersion = int.MinValue;
                     _appliedTemperatureWhisperVersion = int.MinValue;
                     _appliedPressureWhisperVersion = int.MinValue;
                     int roundedDepth = RoundToIntFast(localizedDepth);
+                    int pressureTenths = RoundToIntFast(pressure * 10f);
                     ResolveMetricIntBuffer(_depthTemplateBuffer, _depthTemplateLength, ref _depthDisplayBuffer, roundedDepth, out char[] depthBuffer, out int depthLength);
+                    ResolveMetricFloatTenthsBuffer(_pressureTemplateBuffer, _pressureTemplateLength, ref _pressureDisplayBuffer, pressure, out char[] pressureBuffer, out int pressureLength);
                     SetDisplayBufferIfChanged(_depthLabel, depthBuffer, depthLength, localizedRtl, Alpha(primary, 0.98f), roundedDepth, false, 0f, 0, 0, ref _appliedDepthWhisperVersion, ref _appliedDepthColor);
+                    SetDisplayBufferIfChanged(_pressureLabel, pressureBuffer, pressureLength, localizedRtl, Alpha(primary, 0.78f), pressureTenths, false, 0f, 0, 0, ref _appliedPressureWhisperVersion, ref _appliedPressureColor);
                     SetCanvasGroupVisible(_telemetrySupplementCanvasGroup, false);
                 }
                 else if (hullStressWhisperMode)
                 {
                     SetDisplayBufferIfChanged(_depthLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedPrimary, 0.96f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 211, ref _appliedDepthWhisperVersion, ref _appliedDepthColor);
                     SetDisplayBufferIfChanged(_temperatureLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedDim, 0.84f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 223, ref _appliedTemperatureWhisperVersion, ref _appliedTemperatureColor);
-                    SetDisplayBufferIfChanged(_pressureLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedDim, 0.64f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 227, ref _appliedPressureWhisperVersion, ref _appliedPressureColor);
+                    // Pressure is first-class (with Depth); keep it brighter than secondary chrome.
+                    SetDisplayBufferIfChanged(_pressureLabel, hullStressWhisperBuffer, hullStressWhisperLength, localizedRtl, Alpha(pulsedPrimary, 0.78f), hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 227, ref _appliedPressureWhisperVersion, ref _appliedPressureColor);
                     _hasAppliedDepthValue = false;
                     _hasAppliedTemperatureTenths = false;
                     _hasAppliedPressureTenths = false;
@@ -4493,7 +4506,7 @@ namespace Hecton8.UI
                     ResolveMetricFloatTenthsBuffer(_pressureTemplateBuffer, _pressureTemplateLength, ref _pressureDisplayBuffer, pressure, out char[] pressureBuffer, out int pressureLength);
                     SetDisplayBufferIfChanged(_depthLabel, depthBuffer, depthLength, localizedRtl, Alpha(pulsedPrimary, 0.96f), roundedDepth, true, displayCorruptionIntensity, _corruptionFrameVersion, 211, ref _appliedDepthWhisperVersion, ref _appliedDepthColor);
                     SetDisplayBufferIfChanged(_temperatureLabel, temperatureBuffer, temperatureLength, localizedRtl, Alpha(pulsedDim, 0.84f), temperatureTenths, true, displayCorruptionIntensity, _corruptionFrameVersion, 223, ref _appliedTemperatureWhisperVersion, ref _appliedTemperatureColor);
-                    SetDisplayBufferIfChanged(_pressureLabel, pressureBuffer, pressureLength, localizedRtl, Alpha(pulsedDim, 0.64f), pressureTenths, true, displayCorruptionIntensity, _corruptionFrameVersion, 227, ref _appliedPressureWhisperVersion, ref _appliedPressureColor);
+                    SetDisplayBufferIfChanged(_pressureLabel, pressureBuffer, pressureLength, localizedRtl, Alpha(pulsedPrimary, 0.78f), pressureTenths, true, displayCorruptionIntensity, _corruptionFrameVersion, 227, ref _appliedPressureWhisperVersion, ref _appliedPressureColor);
                     _hasAppliedDepthValue = false;
                     _hasAppliedTemperatureTenths = false;
                     _hasAppliedPressureTenths = false;
@@ -4505,7 +4518,7 @@ namespace Hecton8.UI
                     _appliedPressureWhisperVersion = int.MinValue;
                     SetMetricIntTemplateIfChanged(_depthLabel, _depthTemplateBuffer, _depthTemplateLength, ref _depthDisplayBuffer, RoundToIntFast(localizedDepth), localizedRtl, Alpha(pulsedPrimary, 0.96f), ref _appliedDepthValue, ref _hasAppliedDepthValue, ref _appliedDepthColor);
                     SetMetricFloatTenthsTemplateIfChanged(_temperatureLabel, _temperatureTemplateBuffer, _temperatureTemplateLength, ref _temperatureDisplayBuffer, localizedTemperature, localizedRtl, Alpha(pulsedDim, 0.84f), ref _appliedTemperatureTenths, ref _hasAppliedTemperatureTenths, ref _appliedTemperatureColor);
-                    SetMetricFloatTenthsTemplateIfChanged(_pressureLabel, _pressureTemplateBuffer, _pressureTemplateLength, ref _pressureDisplayBuffer, pressure, localizedRtl, Alpha(pulsedDim, 0.64f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
+                    SetMetricFloatTenthsTemplateIfChanged(_pressureLabel, _pressureTemplateBuffer, _pressureTemplateLength, ref _pressureDisplayBuffer, pressure, localizedRtl, Alpha(pulsedPrimary, 0.78f), ref _appliedPressureTenths, ref _hasAppliedPressureTenths, ref _appliedPressureColor);
                 }
 
                 _lastStreamedOxygen01 = oxygen;
@@ -5310,7 +5323,9 @@ namespace Hecton8.UI
             ILocalizationStressPresentationReadModel manager = _localizationRuntime;
             bool hasLocalizationRuntime = manager != null;
             _localizedMeasurementLanguage = manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
-            BuildMetricTemplate(ref _depthTemplateBuffer, out _depthTemplateLength, _HudDepthKeyHash, ResolveDistanceUnitKeyHash(_localizedMeasurementLanguage), DepthNumberToken.AsSpan(), prependNegativeSign: true, hasLocalizationRuntime: hasLocalizationRuntime);
+            // Depth is a non-negative magnitude (meters/feet below surface). No decorative leading minus —
+            // a fixed "-" made the reading look like altitude/negative depth and confused players.
+            BuildMetricTemplate(ref _depthTemplateBuffer, out _depthTemplateLength, _HudDepthKeyHash, ResolveDistanceUnitKeyHash(_localizedMeasurementLanguage), DepthNumberToken.AsSpan(), prependNegativeSign: false, hasLocalizationRuntime: hasLocalizationRuntime);
             BuildMetricTemplate(ref _temperatureTemplateBuffer, out _temperatureTemplateLength, _HudTemperatureKeyHash, ResolveTemperatureUnitKeyHash(_localizedMeasurementLanguage), FixedTenthsNumberToken.AsSpan(), prependNegativeSign: false, hasLocalizationRuntime: hasLocalizationRuntime);
             BuildMetricTemplate(ref _pressureTemplateBuffer, out _pressureTemplateLength, _HudPressureKeyHash, _HudAtmKeyHash, FixedTenthsNumberToken.AsSpan(), prependNegativeSign: false, hasLocalizationRuntime: hasLocalizationRuntime);
         }
