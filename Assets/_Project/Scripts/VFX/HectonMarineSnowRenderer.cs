@@ -3847,6 +3847,12 @@ namespace Hecton8.Environment
             if (!_staticBindingsDirty)
                 return;
 
+            // L19d native Crash!!!: ComputeShader::SetValueParam / SetVector on a null or
+            // destroyed marineSnowCompute during LateFrameTick world prime. Keep dirty so
+            // bindings retry once authored compute/material assets are alive.
+            if (marineSnowCompute == null || marineSnowMaterial == null)
+                return;
+
             if (_particleBufferA == null ||
                 _particleBufferB == null ||
                 _particleMetaBufferA == null ||
