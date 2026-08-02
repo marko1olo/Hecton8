@@ -49,7 +49,8 @@ namespace Hecton8.Bootstrap
 
             // Player-build construction path: no authored/bootstrap instance reachable.
             // Gate owns async scene activation ordering; without create, LoadSceneAsync
-            // consumers stall when bootstrap reorders or skips the CoreServices wire.            GameObject runtimeRoot = new GameObject("[SceneInstantiationGate]"); // COLD ALLOC: GameObject[1] - bootstrap-owned async scene activation gate root - owner: SceneInstantiationGate
+            // consumers stall when bootstrap reorders or skips the CoreServices wire.
+            GameObject runtimeRoot = new GameObject("[SceneInstantiationGate]"); // COLD ALLOC: GameObject[1] - bootstrap-owned async scene activation gate root - owner: SceneInstantiationGate
             return runtimeRoot.AddComponent<SceneInstantiationGate>();
         }
 

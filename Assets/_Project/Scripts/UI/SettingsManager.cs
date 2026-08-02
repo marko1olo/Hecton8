@@ -100,7 +100,7 @@ namespace Hecton8.UI
             }
 
             SettingsManager existing =
-                Object.FindFirstObjectByType<SettingsManager>(FindObjectsInactive.Include);
+                UnityEngine.Object.FindFirstObjectByType<SettingsManager>(FindObjectsInactive.Include);
             if (existing != null)
             {
                 s_runtimeInstance = existing;

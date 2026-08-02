@@ -287,7 +287,8 @@ namespace Hecton8.Core
 
             // Player-build construction path: no authored/bootstrap instance reachable.
             // Floating origin owns AUP/origin rebase authority; without create, world
-            // simulation loses continuous coordinate space when bootstrap reorders.            GameObject runtimeRoot = new GameObject("[HectonFloatingOrigin]"); // COLD ALLOC: GameObject[1] - bootstrap-owned AUP/floating-origin authority - owner: HectonFloatingOrigin
+            // simulation loses continuous coordinate space when bootstrap reorders.
+            GameObject runtimeRoot = new GameObject("[HectonFloatingOrigin]"); // COLD ALLOC: GameObject[1] - bootstrap-owned AUP/floating-origin authority - owner: HectonFloatingOrigin
             return runtimeRoot.AddComponent<HectonFloatingOrigin>();
         }
 

@@ -8546,7 +8546,10 @@ namespace Hecton8.Bootstrap
                 Hecton8.AtlasSignal.AtlasSignalSystem.EnsureRuntimeInstance();
                 Hecton8.AtlasSignal.AtlasSignalDecoder.EnsureRuntimeInstance();
                 Hecton8.World.SargassumGlobalDragManager.EnsureRuntimeInstance();
-                Hecton8.AI.Ambient.AmbientBiotaDirector.EnsureRuntimeInstance();
+                // AmbientBiotaDirector lives in Hecton8.AI.Ambient (references Core).
+                // Direct call would form a Core↔Ambient cycle; reflect the factory instead.
+                TryEnsureRuntimeServiceByReflection(
+                    "Hecton8.AI.Ambient.AmbientBiotaDirector, Hecton8.AI.Ambient");
                 Hecton8.Vehicles.Automation.DockingAutopilotService.EnsureRuntimeInstance();
                 Hecton8.Construction.FluidPipeGraphRuntime.EnsureRuntimeInstance();
                 Hecton8.Atmosphere.GasDynamicsSolver.EnsureRuntimeInstance();
@@ -8576,14 +8579,15 @@ namespace Hecton8.Bootstrap
             // second resolve is cheap (usable-instance early-out) and covers that race.
             Hecton8.UI.SubtitleManager.EnsureRuntimeInstance();
 
-            // DynamicMusicGranularSynthesizer: Player.prefab authors the component on a GO that is
-            // not the AudioListener host. Old EnsureRuntimeInstanceForScene was resolve-only on
-            // listener.gameObject and silently no-op'd. Post-player-publish covers the race where
-            // AfterSceneLoad ran before player OnEnable published the camera/listener.
-            Hecton8.Audio.Synthesis.DynamicMusicGranularSynthesizer.EnsureRuntimeInstance();
+            // DynamicMusicGranularSynthesizer lives in Hecton8.Audio.Synthesis.DynamicMusic
+            // (references Core). Direct call would form a Core↔Synthesis cycle; reflect instead.
+            // Player.prefab authors the component on a GO that is not the AudioListener host.
+            // Post-player-publish covers the race where AfterSceneLoad ran before player OnEnable
+            // published the camera/listener.
+            TryEnsureRuntimeServiceByReflection(
+                "Hecton8.Audio.Synthesis.DynamicMusicGranularSynthesizer, Hecton8.Audio.Synthesis.DynamicMusic");
 
         }
-
 
         private void ApplyShippingSceneCleanup(Scene scene)
         {
