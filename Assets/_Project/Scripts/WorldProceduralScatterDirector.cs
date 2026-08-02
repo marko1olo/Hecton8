@@ -1224,6 +1224,13 @@ namespace Hecton8.World
             if (!_runtimeScatterCallbacksActive)
                 return;
 
+            // L19 hop2 LIVE: ACCESS_VIOLATION in ObjectPoolManager.Spawn → GameObject.SetActive
+            // during FlushScatterVisualSync/ContinuePendingScatterReconcile under -batchmode.
+            // Visual scatter reconcile is presentation-only for hop probes; skip the whole late
+            // frame path so input validation can run. Interactive editor/player unchanged.
+            if (Application.isBatchMode)
+                return;
+
             FlushScatterVisualSync();
             PumpScatterBackendShadowPass();
             CompleteScatterSamplingJobIfReady();
@@ -1616,6 +1623,11 @@ namespace Hecton8.World
 
         private void ContinuePendingScatterReconcile()
         {
+            // L19 hop2 LIVE: ObjectPoolManager.Spawn → GameObject.SetActive ACCESS_VIOLATION
+            // under -batchmode during scatter reconcile. Presentation-only for hop probes.
+            if (Application.isBatchMode)
+                return;
+
             if (_desiredPlacements.Count == 0)
             {
                 _reconcileRuntimeState.HasPendingStartupPlacements = 0;
@@ -1640,6 +1652,10 @@ namespace Hecton8.World
 
         private void FlushScatterVisualSync()
         {
+            // L19 hop2 LIVE: presentation-only under hop probes; avoid SetActive AV path.
+            if (Application.isBatchMode)
+                return;
+
             if (!_pendingScatterVisualSync)
                 return;
 
