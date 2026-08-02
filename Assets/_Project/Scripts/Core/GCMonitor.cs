@@ -47,9 +47,13 @@ namespace Hecton8.Core
                 runtime._runtimeOwnerRejected = true;
             }
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // GC sentinel owns Gen0/Gen1/Gen2 pressure sampling; without create the slot stays
+            // null when bootstrap reorders or skips EnsureGCMonitorRegistered.
             GameObject runtimeRoot = new GameObject("[GCMonitor]"); // COLD ALLOC: GameObject[1] - bootstrap-owned GC sentinel root - owner: GCMonitor
             return runtimeRoot.AddComponent<GCMonitor>();
         }
+
 
         public void InitializeService()
         {
