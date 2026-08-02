@@ -327,6 +327,11 @@ namespace Hecton8.Equipment.Auxiliary
                 _lastCadenceHz = AuxiliaryEquipmentMath.ResolveCadenceHz(_lastQualityWeight, in tuning);
                 _lastCameraAup = ResolveCameraAup();
                 double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
+                int mockCount = math.min(AuxiliaryEquipmentConstants.MockDeploymentCount, deploymentCapacity);
+                // Host owns ActiveCount write — keeps Burst jobs free of Deployments/ActiveCount pair.
+                if (views.ActiveCount.IsCreated && views.ActiveCount.Length > 0)
+                    views.ActiveCount[0] = mockCount;
+
                 GenerateMockAuxiliaryDeploymentsJob job = new GenerateMockAuxiliaryDeploymentsJob
                 {
                     Deployments = views.Deployments,
@@ -335,10 +340,9 @@ namespace Hecton8.Equipment.Auxiliary
                     ActiveEquipment = views.ActiveEquipment,
                     RouteCounters = views.RouteCounters,
                     VfxMatrices = views.VfxMatrices,
-                    ActiveCount = views.ActiveCount,
                     Tuning = tuning,
                     OriginAup = origin,
-                    RequestedCount = math.min(AuxiliaryEquipmentConstants.MockDeploymentCount, deploymentCapacity),
+                    RequestedCount = mockCount,
                     FrameIndex = _frameIndex
                 };
 
@@ -346,12 +350,13 @@ namespace Hecton8.Equipment.Auxiliary
                 {
                     Deployments = views.Deployments,
                     States = views.States,
-                    ActiveCount = views.ActiveCount,
+                    ActiveCount = mockCount,
                     VfxMatrices = views.VfxMatrices,
                     CameraAup = _lastCameraAup,
                     GlobalQualityWeight = _lastQualityWeight,
                     VfxScale = tuning.VfxScale
                 };
+
 
                 _pendingStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
                 JobHandle mockHandle = job.Schedule(deploymentCapacity, JobBatchSize);
@@ -531,6 +536,7 @@ namespace Hecton8.Equipment.Auxiliary
                 _lastCadenceHz = AuxiliaryEquipmentMath.ResolveCadenceHz(_lastQualityWeight, in tuning);
                 _lastCameraAup = ResolveCameraAup();
 
+                int activeBound = ResolveActiveBound(views);
                 UpdateDeployedAuxiliaryJob updateJob = new UpdateDeployedAuxiliaryJob
                 {
                     Deployments = views.Deployments,
@@ -538,8 +544,11 @@ namespace Hecton8.Equipment.Auxiliary
                     TetherAnchors = views.TetherAnchors,
                     ActiveEquipment = views.ActiveEquipment,
                     RouteCounters = views.RouteCounters,
-                    ActiveCount = views.ActiveCount,
+                    // Scalar bound — UpdateDeployedAuxiliaryJob.ActiveCount is int (not vault NativeArray).
+                    // Avoids Burst aliasing when vault resolve returns a same-pointer view pair.
+                    ActiveCount = activeBound,
                     FlareWriter = SignalBus<AuxiliaryFlareLightSignal>.OpenParallelWriter(),
+
                     FlareWriterBudget = SignalBus<AuxiliaryFlareLightSignal>.ParallelWriterBudget,
                     SonarWriter = SignalBus<AuxiliarySonarRequestSignal>.OpenParallelWriter(),
                     SonarWriterBudget = SignalBus<AuxiliarySonarRequestSignal>.ParallelWriterBudget,
@@ -555,7 +564,7 @@ namespace Hecton8.Equipment.Auxiliary
                 {
                     Deployments = views.Deployments,
                     States = views.States,
-                    ActiveCount = views.ActiveCount,
+                    ActiveCount = activeBound,
                     VfxMatrices = views.VfxMatrices,
                     CameraAup = _lastCameraAup,
                     GlobalQualityWeight = _lastQualityWeight,
@@ -564,6 +573,7 @@ namespace Hecton8.Equipment.Auxiliary
 
                 _pendingStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
                 JobHandle updateHandle = updateJob.Schedule(deploymentCapacity, JobBatchSize);
+
                 _pendingHandle = vfxJob.Schedule(deploymentCapacity, JobBatchSize, updateHandle);
                 H8Memory.RegisterActiveJob(SystemID.GameplayTools, _pendingHandle);
                 _jobActive = true;

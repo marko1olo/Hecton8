@@ -44,7 +44,7 @@ namespace Hecton8.Equipment.Auxiliary
         [NoAlias] public NativeArray<AuxiliaryActiveEquipmentDTO> ActiveEquipment;
         [NoAlias] public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;
         [NoAlias] public NativeArray<AuxiliaryVfxMatrixDTO> VfxMatrices;
-        [NoAlias] public NativeArray<int> ActiveCount;
+        // ActiveCount is host-owned (written before Schedule) — not a Burst peer of Deployments.
         public AuxiliaryTuningDTO Tuning;
         public double3 OriginAup;
         public int RequestedCount;
@@ -53,10 +53,9 @@ namespace Hecton8.Equipment.Auxiliary
         public void Execute(int index)
         {
             int safeCount = math.clamp(RequestedCount, 0, Deployments.Length);
-            if (index == 0 && ActiveCount.IsCreated && ActiveCount.Length > 0)
-                ActiveCount[0] = safeCount;
 
             ref DeployedAuxiliaryDTO deployment = ref AuxiliaryNativeAccess.WriteRef(Deployments, index);
+
             ref AuxiliaryStateDTO state = ref AuxiliaryNativeAccess.WriteRef(States, index);
             ref AuxiliaryActiveEquipmentDTO active = ref AuxiliaryNativeAccess.WriteRef(ActiveEquipment, index);
             if ((uint)index < (uint)RouteCounters.Length)
@@ -134,8 +133,13 @@ namespace Hecton8.Equipment.Auxiliary
         [NoAlias] public NativeArray<AuxiliaryStateDTO> States;
         [NoAlias] public NativeArray<AuxiliaryTetherAnchorDTO> TetherAnchors;
         [NoAlias] public NativeArray<AuxiliaryActiveEquipmentDTO> ActiveEquipment;
-        [ReadOnly, NoAlias] public NativeArray<int> ActiveCount;
+        // Scalar bound only — ActiveCount vault buffer is not a job peer of Deployments.
+        // Passing the vault NativeArray alongside Deployments can surface Burst aliasing
+        // (two containers, same pointer) when the host resolve path reuses a generation view.
+        // Host already computes activeBound via ResolveActiveBound before Schedule.
+        public int ActiveCount;
         [NoAlias] public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;
+
         // SAFETY_JUSTIFICATION_PARAGRAPH_1: AuxiliaryEquipmentRouterRuntime schedules UpdateDeployedAuxiliaryJob with IJobParallelFor.Schedule, chains it into _pendingHandle through StageAuxiliaryVFXJob, and registers the combined handle through H8Memory.RegisterActiveJob(SystemID.GameplayTools, _pendingHandle).
         // SAFETY_JUSTIFICATION_PARAGRAPH_2: These fields are SignalBus ParallelWriter producer lanes only; each Execute index appends independent signal records and never reads or aliases queue storage, deployment buffers, state buffers, tether buffers, or VFX buffers.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3: LateFrameTick finalizes _pendingHandle through DispatcherJobFence.TryFinalizeCompleted before buffer unlock/readback, and teardown uses the forced dispatcher fence before releasing Vault handles, so queue writers cannot outlive the scheduled producer window.
@@ -158,11 +162,10 @@ namespace Hecton8.Equipment.Auxiliary
             ref AuxiliaryActiveEquipmentDTO active = ref AuxiliaryNativeAccess.WriteRef(ActiveEquipment, index);
             active = default;
 
-            int activeLength = ActiveCount.IsCreated && ActiveCount.Length > 0
-                ? math.clamp(ActiveCount[0], 0, Deployments.Length)
-                : 0;
+            int activeLength = math.clamp(ActiveCount, 0, Deployments.Length);
             if (index >= activeLength)
                 return;
+
 
             ref DeployedAuxiliaryDTO deployment = ref AuxiliaryNativeAccess.WriteRef(Deployments, index);
             if (deployment.PrefabHashID == 0u || deployment.RemainingLifetime <= 0f)
@@ -396,7 +399,8 @@ namespace Hecton8.Equipment.Auxiliary
     {
         [ReadOnly, NoAlias] public NativeArray<DeployedAuxiliaryDTO> Deployments;
         [ReadOnly, NoAlias] public NativeArray<AuxiliaryStateDTO> States;
-        [ReadOnly, NoAlias] public NativeArray<int> ActiveCount;
+        // Scalar bound — same contract as UpdateDeployedAuxiliaryJob.ActiveCount (int).
+        public int ActiveCount;
         [NoAlias] public NativeArray<AuxiliaryVfxMatrixDTO> VfxMatrices;
         public double3 CameraAup;
         public float GlobalQualityWeight;
@@ -405,10 +409,9 @@ namespace Hecton8.Equipment.Auxiliary
         public void Execute(int index)
         {
             ref AuxiliaryVfxMatrixDTO matrix = ref AuxiliaryNativeAccess.WriteRef(VfxMatrices, index);
-            int activeLength = ActiveCount.IsCreated && ActiveCount.Length > 0
-                ? math.clamp(ActiveCount[0], 0, Deployments.Length)
-                : 0;
+            int activeLength = math.clamp(ActiveCount, 0, Deployments.Length);
             if ((uint)index >= (uint)Deployments.Length || index >= activeLength)
+
             {
                 matrix = default;
                 return;
