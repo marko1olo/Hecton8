@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Globalization;
 using Hecton.Localization;
@@ -322,12 +322,63 @@ namespace Hecton8.UI
 #endif
         }
 
+        /// <summary>
+        /// Ensures the sole subtitle owner exists under the live suit-HUD canvas.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="SubtitleManager"/> is the sole owner of
+        /// <see cref="GlobalRegistry.Subtitles"/> and had zero scene/prefab GUID hits
+        /// (2007393d93d7376438891f11d8ec3a10), including under Suit_HUD_Canvas.prefab.
+        /// Construction previously sat behind <c>#if UNITY_EDITOR || DEVELOPMENT_BUILD</c>,
+        /// so a shipped player build never AddComponent'd the owner and
+        /// <see cref="GlobalRegistry.Subtitles"/> stayed permanently null. Vocal-warning
+        /// / Babel / audio-log subtitle cues therefore never rendered outside editor/dev.
+        /// </remarks>
+        /// <returns>Live subtitle owner, or null when no HUD canvas is available yet.</returns>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void EnsureRuntimeInstance()
+        public static SubtitleManager EnsureRuntimeInstance()
         {
-            if (s_activeInstance != null)
-                return;
+            if (IsSubtitleRuntimeInstanceUsable(s_activeInstance))
+                return s_activeInstance;
 
+            if (IsSubtitleRegisteredRuntimeUsable(GlobalRegistry.Subtitles))
+            {
+                s_activeInstance = GlobalRegistry.Subtitles;
+                return s_activeInstance;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            Canvas targetCanvas = ResolveSubtitleHostCanvas();
+            if (targetCanvas == null)
+                return null;
+
+            SubtitleManager authoredSubtitleManager = targetCanvas.GetComponentInChildren<SubtitleManager>(true);
+            if (authoredSubtitleManager != null)
+            {
+                s_activeInstance = authoredSubtitleManager;
+                return authoredSubtitleManager;
+            }
+
+            // Player builds previously skipped this path entirely (editor/dev ifdef).
+            // EnsureBuilt constructs TMP/waveform children at Awake - no authored prefab required.
+            GameObject owner = new GameObject("SubtitleManager", typeof(RectTransform)); // COLD ALLOC: GameObject[1] - runtime subtitle owner under suit HUD canvas - owner: SubtitleManager
+            owner.layer = targetCanvas.gameObject.layer;
+
+            owner.TryGetComponent(out RectTransform rect);
+            rect.SetParent(targetCanvas.transform, false);
+
+            SubtitleManager created = owner.AddComponent<SubtitleManager>();
+            return created != null ? created : s_activeInstance;
+        }
+
+        /// <summary>
+        /// Resolves the suit-HUD canvas that should host the subtitle strip.
+        /// Prefers the live overlay, then the named primary canvas, then any overlay canvas.
+        /// </summary>
+        private static Canvas ResolveSubtitleHostCanvas()
+        {
             SuitHUDV4CanvasOverlay overlay = null;
             SuitHUDV4CanvasOverlay.TryResolveActiveRuntime(ref overlay);
             Canvas targetCanvas = overlay != null
@@ -335,26 +386,33 @@ namespace Hecton8.UI
                 : null;
             if (targetCanvas == null && overlay != null)
                 overlay.TryGetComponent(out targetCanvas);
-            if (targetCanvas == null)
-                return;
+            if (targetCanvas != null)
+                return targetCanvas;
 
-            SubtitleManager authoredSubtitleManager = targetCanvas.GetComponentInChildren<SubtitleManager>(true);
-            if (authoredSubtitleManager != null)
+            // Overlay may not have claimed ActiveRuntimeInstance yet (AfterSceneLoad race, or
+            // Suit_HUD_Canvas prefab spawned later). Fall back to the named primary HUD canvas.
+            Canvas[] canvases = UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None); // COLD ALLOC: Canvas[] - one-shot host canvas resolve - owner: SubtitleManager
+            Canvas namedHud = null;
+            Canvas anyOverlay = null;
+            for (int i = 0; i < canvases.Length; i++)
             {
-                s_activeInstance = authoredSubtitleManager;
-                return;
+                Canvas candidate = canvases[i];
+                if (candidate == null)
+                    continue;
+
+                if (namedHud == null &&
+                    string.Equals(candidate.gameObject.name, "Suit_HUD_Canvas", StringComparison.Ordinal))
+                {
+                    namedHud = candidate;
+                }
+
+                if (anyOverlay == null && candidate.renderMode == RenderMode.ScreenSpaceOverlay)
+                    anyOverlay = candidate;
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            GameObject owner = new GameObject("SubtitleManager", typeof(RectTransform));
-            owner.layer = targetCanvas.gameObject.layer;
-
-            owner.TryGetComponent(out RectTransform rect);
-            rect.SetParent(targetCanvas.transform, false);
-
-            owner.AddComponent<SubtitleManager>();
-#endif
+            return namedHud != null ? namedHud : anyOverlay;
         }
+
 
         private void Awake()
         {
