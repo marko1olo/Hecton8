@@ -9,14 +9,14 @@ using UnityEngine;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL pin: ChemicalInfluenceGrid must keep Player-build EnsureRuntimeInstance
+    /// Soft-FAIL pin: GasDynamicsSolver must keep Player-build EnsureRuntimeInstance
     /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    internal sealed class ChemicalInfluenceGridRuntimeConstructionValidator :
+    internal sealed class GasDynamicsSolverRuntimeConstructionValidator :
         IPreprocessBuildWithReport
     {
         private const string RuntimeRelativePath =
-            "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs";
+            "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
@@ -48,27 +48,27 @@ namespace Hecton8.Editor
                 if (!File.Exists(runtimePath))
                 {
                     Debug.LogError(
-                        "[ChemicalInfluenceGridRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        "[GasDynamicsSolverRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
                         RuntimeRelativePath);
                     return;
                 }
 
                 string runtimeSource = File.ReadAllText(runtimePath);
-                Pin(runtimeSource, "static ChemicalInfluenceGrid EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "static GasDynamicsSolver EnsureRuntimeInstance", RuntimeRelativePath);
                 Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
-                Pin(runtimeSource, "AddComponent<ChemicalInfluenceGrid>", RuntimeRelativePath);
-                Pin(runtimeSource, "new GameObject(RuntimeRootName)", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<GasDynamicsSolver>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[GasDynamicsSolver]\")", RuntimeRelativePath);
 
                 if (File.Exists(bootstrapPath))
                 {
                     string bootstrapSource = File.ReadAllText(bootstrapPath);
-                    Pin(bootstrapSource, "ChemicalInfluenceGrid.EnsureRuntimeInstance", BootstrapRelativePath);
+                    Pin(bootstrapSource, "GasDynamicsSolver.EnsureRuntimeInstance", BootstrapRelativePath);
                 }
             }
             catch (Exception exception)
             {
                 Debug.LogError(
-                    "[ChemicalInfluenceGridRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    "[GasDynamicsSolverRuntimeConstructionValidator] SOFT-FAIL exception: " +
                     exception.Message);
             }
         }
@@ -78,7 +78,7 @@ namespace Hecton8.Editor
             if (source.IndexOf(token, StringComparison.Ordinal) < 0)
             {
                 Debug.LogError(
-                    "[ChemicalInfluenceGridRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    "[GasDynamicsSolverRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
                     token +
                     "' in " +
                     pathLabel);

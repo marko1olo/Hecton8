@@ -331,7 +331,8 @@ namespace Hecton8.Atmosphere
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Sole GasDynamics owner; must construct when bootstrap reorders.
             GameObject runtimeRoot = new GameObject("[GasDynamicsSolver]"); // COLD ALLOC
             return runtimeRoot.AddComponent<GasDynamicsSolver>();
         }

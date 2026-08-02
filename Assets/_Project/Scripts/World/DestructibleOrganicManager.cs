@@ -2318,7 +2318,8 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Sole OrganicToolHits owner; must construct when bootstrap reorders.
             GameObject runtimeRoot = new GameObject("[DestructibleOrganicManager]"); // COLD ALLOC
             return runtimeRoot.AddComponent<DestructibleOrganicManager>();
         }

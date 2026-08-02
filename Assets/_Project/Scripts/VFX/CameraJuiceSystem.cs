@@ -1,5 +1,5 @@
 // ============================================================================
-// HECTON-8 — CameraJuiceSystem.cs
+// HECTON-8 вЂ” CameraJuiceSystem.cs
 // Camera shake, FOV effects, and post-processing modulation system.
 // Zero-GC hot paths, 1.0ms frame budget, native tick-driven transitions.
 // ============================================================================
@@ -37,7 +37,7 @@ namespace Hecton8.VFX
     [DisallowMultipleComponent]
     public sealed partial class CameraJuiceSystem : MonoBehaviour, ICameraJuiceSystem, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpactEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
-        // ═══ CACHED REFERENCES ═══
+        // в•ђв•ђв•ђ CACHED REFERENCES в•ђв•ђв•ђ
         [StructLayout(LayoutKind.Explicit, Size = CameraJuiceTelemetryEntrySizeBytes)]
         private struct CameraJuiceTelemetryEntry
         {
@@ -138,7 +138,7 @@ namespace Hecton8.VFX
         [SerializeField, Min(0.1f), Tooltip("Maximum renderer length scale for stretched speed-line particles.")]
         private float _speedLineMaxStretch = 5f;
 
-        // ═══ SHAKE STATE ═══
+        // в•ђв•ђв•ђ SHAKE STATE в•ђв•ђв•ђ
         private Vector3 _shakeOffset;
         private const int MAX_ACTIVE_SHAKES = 8;
         private const float MAX_SHAKE_DISPLACEMENT = 0.5f;
@@ -178,7 +178,7 @@ namespace Hecton8.VFX
         private float _submarineImpactShakeSign = 1f;
         private int _lastSeismicSignalSequence;
 
-        // ═══ FOV STATE ═══
+        // в•ђв•ђв•ђ FOV STATE в•ђв•ђв•ђ
         public enum FOVState { Idle, SprintKick, DamageRecoil }
         private FOVState _fovState = FOVState.Idle;
         private float _baseFOV;
@@ -199,13 +199,13 @@ namespace Hecton8.VFX
         private const float ProjectionFovDirtyEpsilon = 0.001f;
         private const float FovPresentationCalmEpsilon = 0.01f;
 
-        // ═══ POST-PROCESSING STATE ═══
+        // в•ђв•ђв•ђ POST-PROCESSING STATE в•ђв•ђв•ђ
         private Vignette _healthVignette;
         private DepthOfField _interactionDoF;
         private bool _postProcessingEnabled = true;
         private bool _healthO2EffectsEnabled = true;
 
-        // ═══ BIOME PROFILE ═══
+        // в•ђв•ђв•ђ BIOME PROFILE в•ђв•ђв•ђ
         [Header("Biome Settings")]
         [SerializeField, Tooltip("Fallback biome profile used when no biome is specified or the target biome is invalid.")]
         private BiomeProfile _defaultFallbackBiome;
@@ -216,7 +216,7 @@ namespace Hecton8.VFX
         private float _biomeBlendElapsed;
         private bool _biomeBlendActive;
 
-        // ═══ INTERACTION FOCUS ═══
+        // в•ђв•ђв•ђ INTERACTION FOCUS в•ђв•ђв•ђ
         private IInteractable _focusTarget;
         private Transform _focusTargetTransform;
         private float _focusDistance;
@@ -234,8 +234,8 @@ namespace Hecton8.VFX
         private const float PauseDofGaussianMaxRadius = 1f;
         private const int TransparentFxLayerIndex = 1;
 
-        // ═══ SETTINGS ═══
-        [Header("── Settings ──────────────────")]
+        // в•ђв•ђв•ђ SETTINGS в•ђв•ђв•ђ
+        [Header("в”Ђв”Ђ Settings в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Tooltip("Fallback biome profile used when transitioning to a null biome.")]
         private BiomeProfile _fallbackBiomeProfile;
 
@@ -318,7 +318,7 @@ namespace Hecton8.VFX
         [SerializeField, Range(1, MAX_ACTIVE_SHAKES), Tooltip("Maximum simultaneous shakes retained while VRAM pressure is critical.")]
         private int _adaptiveCriticalMaxActiveShakes = 3;
 
-        // ═══ PUBLIC SETTINGS PROPERTIES ═══
+        // в•ђв•ђв•ђ PUBLIC SETTINGS PROPERTIES в•ђв•ђв•ђ
 
         /// <summary>
         /// Camera shake intensity multiplier (0 = off, 1 = default, 2 = double).
@@ -360,7 +360,7 @@ namespace Hecton8.VFX
             set => _depthOfFieldEnabled = value;
         }
 
-        // ═══ TICK REGISTRATION ═══
+        // в•ђв•ђв•ђ TICK REGISTRATION в•ђв•ђв•ђ
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
@@ -368,7 +368,7 @@ namespace Hecton8.VFX
         private bool _hotSwapRegistered;
         private int _dependencyResolveSlowTickCountdown;
 
-        // ═══ EFFECT ENABLE FLAGS ═══
+        // в•ђв•ђв•ђ EFFECT ENABLE FLAGS в•ђв•ђв•ђ
         private bool _shakeEnabled = true;
         private bool _fovEnabled = true;
         private bool _sprintFOVEnabled = true;
@@ -382,10 +382,10 @@ namespace Hecton8.VFX
         private byte _adaptiveVRAMPressureState = VramPressureStateCodes.Stable;
         private bool _adaptiveDisableInteractionDoF;
 
-        // ═══ SHADER PROPERTY IDS ═══
+        // в•ђв•ђв•ђ SHADER PROPERTY IDS в•ђв•ђв•ђ
         // Note: Volume overrides use direct .value assignment, not MaterialPropertyBlock
 
-        // ═══ DEBUG ═══
+        // в•ђв•ђв•ђ DEBUG в•ђв•ђв•ђ
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _frameBudgetLogCooldownSeconds;
         private const string DebugPressureStable = "Stable";
@@ -401,7 +401,7 @@ namespace Hecton8.VFX
         [SerializeField] private int _debugAdaptiveMaxActiveShakes = MAX_ACTIVE_SHAKES;
 #endif
 
-        // ═══ LIFECYCLE ═══
+        // в•ђв•ђв•ђ LIFECYCLE в•ђв•ђв•ђ
 
         /// <summary>
         /// Ensures a live <see cref="CameraJuiceSystem"/> is registered as
@@ -433,7 +433,8 @@ namespace Hecton8.VFX
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Sole CameraJuice owner; must construct when bootstrap reorders.
             GameObject runtimeRoot = new GameObject("[CameraJuiceSystem]"); // COLD ALLOC
             return runtimeRoot.AddComponent<CameraJuiceSystem>();
         }
@@ -910,7 +911,7 @@ namespace Hecton8.VFX
 
         }
 
-        // ═══ ITICKABLE ═══
+        // в•ђв•ђв•ђ ITICKABLE в•ђв•ђв•ђ
 
         /// <summary>
         /// Per-frame update for camera shake, FOV, and depth-of-field focus distance.
@@ -1006,7 +1007,7 @@ namespace Hecton8.VFX
             RecordCameraJuiceTelemetry();
         }
 
-        // ═══ ISLOWTICKABLE ═══
+        // в•ђв•ђв•ђ ISLOWTICKABLE в•ђв•ђв•ђ
 
         /// <summary>
         /// 2Hz update for health and O2 post-processing effects.
@@ -1057,7 +1058,7 @@ namespace Hecton8.VFX
 #endif
         }
 
-        // ═══ ISAVEABLE ═══
+        // в•ђв•ђв•ђ ISAVEABLE в•ђв•ђв•ђ
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogDuplicateInstanceDetected()
@@ -1192,7 +1193,7 @@ namespace Hecton8.VFX
             if (_runtimeOwnerAborted || data == null) return;
         }
 
-        // ═══ PUBLIC API ═══
+        // в•ђв•ђв•ђ PUBLIC API в•ђв•ђв•ђ
 
         /// <summary>
         /// Applies the dispatcher-owned pause menu depth-of-field isolation weight.
@@ -1373,7 +1374,7 @@ namespace Hecton8.VFX
             // Note: AO and Fog require additional URP components
         }
 
-        // ═══ READ-ONLY PROPERTIES ═══
+        // в•ђв•ђв•ђ READ-ONLY PROPERTIES в•ђв•ђв•ђ
 
         public int ActiveShakeCount =>
             _trauma > 0.001f || _cameraJuiceLastTraumaScalar > 0.001f ? 1 : 0;
@@ -1386,7 +1387,7 @@ namespace Hecton8.VFX
         public int DebugAdaptiveMaxActiveShakes => _adaptiveMaxActiveShakes;
         public bool DebugAdaptiveDisableInteractionDoF => _adaptiveDisableInteractionDoF;
 
-        // ═══ PRIVATE METHODS ═══
+        // в•ђв•ђв•ђ PRIVATE METHODS в•ђв•ђв•ђ
 
         private void ConsumePlayerSprintSignals()
         {
@@ -1995,7 +1996,7 @@ namespace Hecton8.VFX
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             int maxParticles = math.max(1, _speedLineMaxParticles);
-            // COLD ALLOC: GameObject[1] + ParticleSystem[1] — camera-local cinematic speed-line emitter — owner: CameraJuiceSystem
+            // COLD ALLOC: GameObject[1] + ParticleSystem[1] вЂ” camera-local cinematic speed-line emitter вЂ” owner: CameraJuiceSystem
             GameObject speedLineObject = new GameObject("PFX_Camera_SpeedLines");
             speedLineObject.layer = TransparentFxLayerIndex;
             speedLineObject.transform.SetParent(_cameraTransform, false);
@@ -2917,7 +2918,7 @@ namespace Hecton8.VFX
         }
 #endif
 
-        // ═══ EDITOR GIZMOS ═══
+        // в•ђв•ђв•ђ EDITOR GIZMOS в•ђв•ђв•ђ
 
         private static T ResolveComponentInParents<T>(Transform start) where T : Component
         {

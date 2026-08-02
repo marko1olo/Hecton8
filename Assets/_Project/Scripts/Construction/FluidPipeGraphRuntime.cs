@@ -177,7 +177,8 @@ namespace Hecton8.Construction
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Sole FluidPipeGraph owner; must construct when bootstrap reorders.
             GameObject runtimeRoot = new GameObject("[FluidPipeGraphRuntime]"); // COLD ALLOC
             return runtimeRoot.AddComponent<FluidPipeGraphRuntime>();
         }

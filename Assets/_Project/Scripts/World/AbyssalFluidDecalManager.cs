@@ -60,7 +60,7 @@ namespace Hecton8.World
         private static readonly int _WakeThresholdId = Shader.PropertyToID("_WakeThreshold");
         private static Mesh s_sharedQuadMesh;
 
-        [Header("── Runtime Wiring ──────────────────")]
+        [Header("в”Ђв”Ђ Runtime Wiring в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField]
         [Tooltip("Authored fluid decal material. Runtime material creation is forbidden for this draw path.")]
         private Material decalMaterial;
@@ -69,7 +69,7 @@ namespace Hecton8.World
         [Tooltip("Routes fluid aftermath decals through the fullscreen deferred decal pass; mesh draw remains only as an explicit fallback.")]
         private bool screenSpaceFluidDecals = true;
 
-        [Header("── Decal Simulation ─────────────────")]
+        [Header("в”Ђв”Ђ Decal Simulation в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Range(1, 32)]
         [Tooltip("Hard cap for simultaneous abyssal fluid decals.")]
         private int maxDecalCount = 12;
@@ -199,7 +199,8 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Sole AbyssalFluidDecals owner; must construct when bootstrap reorders.
             GameObject runtimeRoot = new GameObject("[AbyssalFluidDecalManager]"); // COLD ALLOC
             return runtimeRoot.AddComponent<AbyssalFluidDecalManager>();
         }

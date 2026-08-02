@@ -9,14 +9,14 @@ using UnityEngine;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL pin: ChemicalInfluenceGrid must keep Player-build EnsureRuntimeInstance
+    /// Soft-FAIL pin: HectonDiscoveryManager must keep Player-build EnsureRuntimeInstance
     /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    internal sealed class ChemicalInfluenceGridRuntimeConstructionValidator :
+    internal sealed class HectonDiscoveryManagerRuntimeConstructionValidator :
         IPreprocessBuildWithReport
     {
         private const string RuntimeRelativePath =
-            "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs";
+            "Assets/_Project/Scripts/HectonDiscoveryManager.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
@@ -48,27 +48,27 @@ namespace Hecton8.Editor
                 if (!File.Exists(runtimePath))
                 {
                     Debug.LogError(
-                        "[ChemicalInfluenceGridRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        "[HectonDiscoveryManagerRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
                         RuntimeRelativePath);
                     return;
                 }
 
                 string runtimeSource = File.ReadAllText(runtimePath);
-                Pin(runtimeSource, "static ChemicalInfluenceGrid EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "static HectonDiscoveryManager EnsureRuntimeInstance", RuntimeRelativePath);
                 Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
-                Pin(runtimeSource, "AddComponent<ChemicalInfluenceGrid>", RuntimeRelativePath);
-                Pin(runtimeSource, "new GameObject(RuntimeRootName)", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<HectonDiscoveryManager>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[HectonDiscoveryManager]\")", RuntimeRelativePath);
 
                 if (File.Exists(bootstrapPath))
                 {
                     string bootstrapSource = File.ReadAllText(bootstrapPath);
-                    Pin(bootstrapSource, "ChemicalInfluenceGrid.EnsureRuntimeInstance", BootstrapRelativePath);
+                    Pin(bootstrapSource, "HectonDiscoveryManager.EnsureRuntimeInstance", BootstrapRelativePath);
                 }
             }
             catch (Exception exception)
             {
                 Debug.LogError(
-                    "[ChemicalInfluenceGridRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    "[HectonDiscoveryManagerRuntimeConstructionValidator] SOFT-FAIL exception: " +
                     exception.Message);
             }
         }
@@ -78,7 +78,7 @@ namespace Hecton8.Editor
             if (source.IndexOf(token, StringComparison.Ordinal) < 0)
             {
                 Debug.LogError(
-                    "[ChemicalInfluenceGridRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    "[HectonDiscoveryManagerRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
                     token +
                     "' in " +
                     pathLabel);
