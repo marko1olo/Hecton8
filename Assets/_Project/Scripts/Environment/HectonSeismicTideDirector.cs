@@ -1328,7 +1328,8 @@ namespace Hecton8.Environment
 
             // Player-build construction path: no authored/bootstrap instance reachable.
             // Seismic tide owns ISeismicDirector publish; without create, tide/pressure
-            // consumers miss the director when bootstrap reorders Environment wiring.            GameObject runtimeRoot = new GameObject("[HectonSeismicTideDirector]"); // COLD ALLOC: GameObject[1] - bootstrap-owned seismic tide runtime root - owner: HectonSeismicTideDirector
+            // consumers miss the director when bootstrap reorders Environment wiring.
+            GameObject runtimeRoot = new GameObject("[HectonSeismicTideDirector]"); // COLD ALLOC: GameObject[1] - bootstrap-owned seismic tide runtime root - owner: HectonSeismicTideDirector
             return runtimeRoot.AddComponent<HectonSeismicTideDirector>();
         }
 

@@ -479,7 +479,7 @@ namespace Hecton8.Core
                 return registeredInstance;
 
             CrashTelemetryBuffer existing =
-                Object.FindFirstObjectByType<CrashTelemetryBuffer>(FindObjectsInactive.Include);
+                UnityEngine.Object.FindFirstObjectByType<CrashTelemetryBuffer>(FindObjectsInactive.Include);
             if (existing != null)
                 return existing;
 

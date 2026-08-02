@@ -1662,7 +1662,7 @@ namespace Hecton8.Physics
             }
 
             PhysicsApplySystem existing =
-                Object.FindFirstObjectByType<PhysicsApplySystem>(FindObjectsInactive.Include);
+                UnityEngine.Object.FindFirstObjectByType<PhysicsApplySystem>(FindObjectsInactive.Include);
             if (existing != null)
             {
                 s_runtimeInstance = existing;

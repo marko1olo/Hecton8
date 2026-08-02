@@ -1414,7 +1414,8 @@ namespace Hecton8.Gameplay
 
             // Player-build construction path: no authored/bootstrap instance reachable.
             // Contextual IK owns somatic target frames; without create, VR/physical IK
-            // consumers miss the owner when bootstrap reorders Player-layer wiring.            GameObject runtimeRoot = new GameObject("[ContextualPhysicalIkRuntime]"); // COLD ALLOC: GameObject[1] - persistent contextual IK runtime owner - owner: ContextualPhysicalIkRuntime
+            // consumers miss the owner when bootstrap reorders Player-layer wiring.
+            GameObject runtimeRoot = new GameObject("[ContextualPhysicalIkRuntime]"); // COLD ALLOC: GameObject[1] - persistent contextual IK runtime owner - owner: ContextualPhysicalIkRuntime
             runtime = runtimeRoot.AddComponent<ContextualPhysicalIkRuntime>();
             GlobalRegistry.RegisterContextualPhysicalIkRuntime(runtime);
             return runtime;

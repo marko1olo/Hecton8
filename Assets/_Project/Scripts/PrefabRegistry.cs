@@ -199,10 +199,11 @@ namespace Hecton8.Core
             try
             {
 
-                // COLD ALLOC: GameObject[1] â€” runtime prefab registry fallback when direct bootstrap path is missing â€” owner: PrefabRegistry
+                // COLD ALLOC: GameObject[1] — runtime prefab registry fallback when direct bootstrap path is missing — owner: PrefabRegistry
                 // Player-build construction path: no authored/bootstrap instance reachable.
                 // Prefab catalog owns cold prefab lookups; without create, spawn/resolve
-                // paths miss the registry when bootstrap reorders or skips EnsurePrefabRegistry.                GameObject runtimeRoot = new GameObject("[PrefabRegistry]");
+                // paths miss the registry when bootstrap reorders or skips EnsurePrefabRegistry.
+                GameObject runtimeRoot = new GameObject("[PrefabRegistry]");
                 return runtimeRoot.AddComponent<PrefabRegistry>();
             }
             finally
