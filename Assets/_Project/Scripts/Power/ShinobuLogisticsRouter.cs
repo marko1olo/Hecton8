@@ -455,6 +455,11 @@ namespace Hecton8.Power
                 if (!_hasGraph)
                     BuildEmergencyMockGraph();
 
+                // BuildEmergencyMockGraph may ScheduleCsrRebuild; _counters is job-owned until fenced.
+                // Defer adjacency/solve reads to the next SlowTick after the top-of-method fence.
+                if (_csrRebuildPending)
+                    return;
+
                 if (_counters[CounterAdjacencyEntryCount] <= 0)
                     return;
 

@@ -3236,37 +3236,44 @@ namespace Hecton8.Crafting
         {
             sourceMesh = null;
             actualMaterial = null;
-            if (prefab == null)
+            // Missing/destroyed ItemData.worldPrefab must fall through to ResolveAssemblyFallbackMesh.
+            // Unity fake-null is not always enough for missing serialized asset refs in batchmode:
+            // member access throws MissingReferenceException (L19d probe :3242).
+            if (ReferenceEquals(prefab, null) || prefab == null)
                 return false;
 
-            prefab.TryGetComponent(out MeshFilter sourceFilter);
-            prefab.TryGetComponent(out MeshRenderer sourceRenderer);
-            if (sourceFilter == null)
-                sourceFilter = ComponentReferenceUtility.ResolveOwnedComponent<MeshFilter>(prefab.transform);
-            if (sourceRenderer == null)
-                sourceRenderer = ComponentReferenceUtility.ResolveOwnedComponent<MeshRenderer>(prefab.transform);
-
-            if (sourceFilter != null)
+            try
             {
-                sourceMesh = sourceFilter.sharedMesh;
-                actualMaterial = sourceRenderer != null ? sourceRenderer.sharedMaterial : null;
+                prefab.TryGetComponent(out MeshFilter sourceFilter);
+                prefab.TryGetComponent(out MeshRenderer sourceRenderer);
+                if (sourceFilter == null)
+                    sourceFilter = ComponentReferenceUtility.ResolveOwnedComponent<MeshFilter>(prefab.transform);
+                if (sourceRenderer == null)
+                    sourceRenderer = ComponentReferenceUtility.ResolveOwnedComponent<MeshRenderer>(prefab.transform);
+
+                if (sourceFilter != null)
+                {
+                    sourceMesh = sourceFilter.sharedMesh;
+                    actualMaterial = sourceRenderer != null ? sourceRenderer.sharedMaterial : null;
+                }
+
+                if (sourceMesh != null)
+                    return true;
+
+                SkinnedMeshRenderer skinnedRenderer = ComponentReferenceUtility.ResolveOwnedComponent<SkinnedMeshRenderer>(prefab.transform);
+                if (skinnedRenderer == null)
+                    return false;
+
+                sourceMesh = skinnedRenderer.sharedMesh;
+                actualMaterial = skinnedRenderer.sharedMaterial;
+                return sourceMesh != null;
             }
-
-            if (sourceMesh != null)
-                return true;
-
-            SkinnedMeshRenderer skinnedRenderer = ComponentReferenceUtility.ResolveOwnedComponent<SkinnedMeshRenderer>(prefab.transform);
-            if (skinnedRenderer == null)
+            catch (MissingReferenceException)
             {
+                sourceMesh = null;
+                actualMaterial = null;
                 return false;
             }
-
-            sourceMesh = skinnedRenderer.sharedMesh;
-            actualMaterial = skinnedRenderer.sharedMaterial;
-            if (sourceMesh != null)
-                return true;
-
-            return false;
         }
 
         /// <summary>
