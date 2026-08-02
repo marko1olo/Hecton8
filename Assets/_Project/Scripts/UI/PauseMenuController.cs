@@ -910,20 +910,16 @@ namespace Hecton8.UI
 
             if (_diegeticPanelController == null && !TryGetComponent(out _diegeticPanelController))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 _diegeticPanelController = gameObject.AddComponent<DiegeticPanelController>(); // COLD ALLOC: pause-menu diegetic panel projection owner.
-#else
-                return;
-#endif
             }
 
             if (_diegeticRaycastReceiver == null && !TryGetComponent(out _diegeticRaycastReceiver))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 _diegeticRaycastReceiver = gameObject.AddComponent<DiegeticMenuRaycastReceiver>(); // COLD ALLOC: pause-menu fixed button receiver.
-#else
-                return;
-#endif
             }
 
             if (_diegeticRaycastReceiver != null)
@@ -2846,13 +2842,11 @@ namespace Hecton8.UI
 
             if (eventSystem == null)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                GameObject eventSystemRoot = new GameObject("EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] — pause-menu fallback event system root — owner: PauseMenuController
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
+                GameObject eventSystemRoot = new GameObject("EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] - pause-menu fallback event system root - owner: PauseMenuController
                 eventSystemRoot.hideFlags = HideFlags.DontSave;
                 eventSystemRoot.TryGetComponent(out eventSystem);
-#else
-                return;
-#endif
             }
 
             if (eventSystem == null)
