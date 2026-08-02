@@ -3019,10 +3019,10 @@ namespace Hecton8.Audio
 
             if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
             {
-                if (ambientSource.isPlaying)
+                if (ambientSource.isActiveAndEnabled && ambientSource.isPlaying)
                     ambientSource.Stop();
 
-                if (!ambientSource.mute)
+                if (ambientSource.isActiveAndEnabled && !ambientSource.mute)
                     ambientSource.mute = true;
 
                 ApplySourceLevelAcousticFallback(zone);
@@ -3035,8 +3035,16 @@ namespace Hecton8.Audio
             if (ambientSource.mute != shouldMute)
                 ambientSource.mute = shouldMute;
 
-            if (shouldBeAudible && !ambientSource.isPlaying && ambientSource.clip != null)
+            // AudioSource.Play throws InvalidOperationException when the component is disabled
+            // (menu unload / Step-8 teardown can disable the player ambient source mid-LateFrame).
+            if (shouldBeAudible &&
+                !ambientSource.isPlaying &&
+                ambientSource.clip != null &&
+                ambientSource.isActiveAndEnabled &&
+                ambientSource.enabled)
+            {
                 ambientSource.Play();
+            }
 
             UpdateAmbientLoopMix(zone);
             ApplySourceLevelAcousticFallback(zone);

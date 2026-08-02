@@ -64,6 +64,7 @@ namespace Hecton8.World
         private const int ComputeDisableReasonOversizedThreadGroup = 10;
         private const int ComputeDisableReasonUnsupportedCompute = 11;
         private const int ComputeDisableReasonDispatchGroupLimit = 12;
+        private const int ComputeDisableReasonGraphicsBufferAllocFailure = 13;
         private const uint PortableThreadGroupMaxSize = 256u;
         private const int PortableMaxDispatchGroupsPerDimension = 65535;
         private const int FaunaSimulationBucketMask = SimulationBucketConstants.StandardSlowBucketMask;
@@ -1775,6 +1776,7 @@ namespace Hecton8.World
         private bool _computeKernelBindingsValid;
         private bool _computeStaticBuffersBound;
         private bool _computeDispatchDisabled;
+        private bool _graphicsBuffersPermanentlyFailed;
         private bool _coldSupportsComputeShaders;
         private Texture _boundComputeDensityTexture;
         private Texture _boundComputeCutMaskTexture;
@@ -1960,7 +1962,8 @@ namespace Hecton8.World
                 return;
 
             CacheGraphicsCapabilitiesCold();
-            _computeDispatchDisabled = false;
+            if (!_graphicsBuffersPermanentlyFailed)
+                _computeDispatchDisabled = false;
             EnsureBoidMaterialBindingReady();
             SanitizeSettings();
             RefreshRenderLayerCache();
@@ -1969,7 +1972,8 @@ namespace Hecton8.World
             _simulationBucketerProbeAttempted = false;
             RefreshColdRegistryDependencies();
             RefreshDependencies();
-            EnsureBuffers();
+            if (!_graphicsBuffersPermanentlyFailed)
+                EnsureBuffers();
             RefreshThreatVoxelPayloadVisualSync();
             RefreshSpawnData(force: true);
             PrimeFoveatedSimulationDecision(0f, RefreshCameraDistanceSq());
@@ -1985,7 +1989,8 @@ namespace Hecton8.World
                 return;
 
             CacheGraphicsCapabilitiesCold();
-            _computeDispatchDisabled = false;
+            if (!_graphicsBuffersPermanentlyFailed)
+                _computeDispatchDisabled = false;
             InvalidateViewPoseCache();
             ResetDependencyProbeCache();
             EnsureBoidMaterialBindingReady();
@@ -1995,7 +2000,8 @@ namespace Hecton8.World
             TryRegisterHotSwapListener();
             RefreshColdRegistryDependencies();
             RefreshDependencies();
-            EnsureBuffers();
+            if (!_graphicsBuffersPermanentlyFailed)
+                EnsureBuffers();
             RefreshThreatVoxelPayloadVisualSync();
             RefreshSpawnData(force: true);
             PrimeFoveatedSimulationDecision(0f, RefreshCameraDistanceSq());
@@ -2876,6 +2882,9 @@ namespace Hecton8.World
 
         private void EnsureBuffers()
         {
+            if (_graphicsBuffersPermanentlyFailed)
+                return;
+
             _boidMeshVertexCount = boidMesh != null ? boidMesh.vertexCount : 0;
 
             // Runs before the guard, mirroring HectonMarineSnowRenderer.cs:3356 -> :3359. One call site
@@ -2950,6 +2959,16 @@ namespace Hecton8.World
             if (sensoryBuffersChanged)
                 ResetBoidSensoryThreatUploadCache();
             buffersChanged |= sensoryBuffersChanged;
+
+            // Under -nographics LockBufferForWrite GraphicsBuffer ctor can fail (NRE inside native).
+            // Ensure* now returns false instead of throwing; soft-disable + release so LateFrame
+            // cannot touch half-alive GPU state (MarineSnow authority pattern).
+            if (!HasAliveRequiredSimulationGraphicsBuffers())
+            {
+                DisableAfterGraphicsBufferAllocFailure();
+                return;
+            }
+
             EnsureFallbackAbyssalFlowTexture();
             if (buffersChanged)
                 _computeStaticBuffersBound = false;
@@ -3021,24 +3040,52 @@ namespace Hecton8.World
 
         private bool HasRequiredMicroFaunaGpuState()
         {
-            return _boidsBufferA != null &&
-                   _boidsBufferB != null &&
-                   _grazingAnchorBuffer != null &&
-                   _massiveThreatBuffer != null &&
-                   _formationBeaconBuffer != null &&
-                   _formationObstacleBuffer != null &&
-                   _leviathanNodeBuffer != null &&
-                   _latchStatsBuffer != null &&
-                   _pbdCorrectionBuffer != null &&
-                   _threatGridBuffer != null &&
-                   _threatVoxelBuffer != null &&
-                   _spatialGridCountBuffer != null &&
-                   _spatialGridCellBuffer != null &&
-                   _simulationFrameBuffer != null &&
-                   _predatorAupFallbackBuffer != null &&
-                   _boidSensoryThreatBufferA != null &&
-                   _boidSensoryThreatBufferB != null &&
+            return !_graphicsBuffersPermanentlyFailed &&
+                   !_computeDispatchDisabled &&
+                   HasAliveRequiredSimulationGraphicsBuffers() &&
                    _computeKernelBindingsValid;
+        }
+
+        private bool HasAliveRequiredSimulationGraphicsBuffers()
+        {
+            return IsGraphicsBufferAlive(_boidsBufferA) &&
+                   IsGraphicsBufferAlive(_boidsBufferB) &&
+                   IsGraphicsBufferAlive(_grazingAnchorBuffer) &&
+                   IsGraphicsBufferAlive(_massiveThreatBuffer) &&
+                   IsGraphicsBufferAlive(_formationBeaconBuffer) &&
+                   IsGraphicsBufferAlive(_formationObstacleBuffer) &&
+                   IsGraphicsBufferAlive(_leviathanNodeBuffer) &&
+                   IsGraphicsBufferAlive(_latchStatsBuffer) &&
+                   IsGraphicsBufferAlive(_pbdCorrectionBuffer) &&
+                   IsGraphicsBufferAlive(_threatGridBuffer) &&
+                   IsGraphicsBufferAlive(_threatVoxelBuffer) &&
+                   IsGraphicsBufferAlive(_spatialGridCountBuffer) &&
+                   IsGraphicsBufferAlive(_spatialGridCellBuffer) &&
+                   IsGraphicsBufferAlive(_simulationFrameBuffer) &&
+                   IsGraphicsBufferAlive(_predatorAupFallbackBuffer) &&
+                   IsGraphicsBufferAlive(_boidSensoryThreatBufferA) &&
+                   IsGraphicsBufferAlive(_boidSensoryThreatBufferB);
+        }
+
+        private void DisableAfterGraphicsBufferAllocFailure()
+        {
+            if (_graphicsBuffersPermanentlyFailed && _computeDispatchDisabled)
+                return;
+
+            _graphicsBuffersPermanentlyFailed = true;
+            _hasSpawnData = false;
+            _spawnBufferUploadRequested = false;
+            _grazingAnchorUploadRequested = false;
+            _massiveThreatUploadRequested = false;
+            _formationBeaconUploadRequested = false;
+            _formationObstacleUploadRequested = false;
+            _activeLeviathanUploadRequested = false;
+            _queuedSpawnBufferUploadCount = 0;
+            ReleaseBuffers(keepLatchStatsBuffer: false);
+            DisableComputeDispatch(ComputeDisableReasonGraphicsBufferAllocFailure);
+
+            // SystemDispatcher does not honor enabled=false; leave LateFrame registered so
+            // RenderStaticFallback can still run, but GPU paths stay latched off.
         }
 
         private bool RefreshActiveBoidCount()
@@ -3089,6 +3136,14 @@ namespace Hecton8.World
 
         private void UploadSpawnDataToBoidBuffersVisualSync(int uploadCount)
         {
+            if (_graphicsBuffersPermanentlyFailed ||
+                _computeDispatchDisabled ||
+                !IsGraphicsBufferAlive(_boidsBufferA) ||
+                !IsGraphicsBufferAlive(_boidsBufferB))
+            {
+                return;
+            }
+
             if (!TryAcquireSargassumWriteLock(
                     in _boidStateHandle,
                     BufferID.SargassumBoidState,
@@ -3102,8 +3157,16 @@ namespace Hecton8.World
                 if (safeUploadCount <= 0)
                     return;
 
-                GraphicsBufferUploadUtility.UploadNativeArray(_boidsBufferA, boidState, safeUploadCount);
-                GraphicsBufferUploadUtility.UploadNativeArray(_boidsBufferB, boidState, safeUploadCount);
+                try
+                {
+                    GraphicsBufferUploadUtility.UploadNativeArray(_boidsBufferA, boidState, safeUploadCount);
+                    GraphicsBufferUploadUtility.UploadNativeArray(_boidsBufferB, boidState, safeUploadCount);
+                }
+                catch (System.Exception)
+                {
+                    DisableAfterGraphicsBufferAllocFailure();
+                    return;
+                }
                 _debugConsumedBoidCount = 0;
                 _feedingFrenzyWindowStartTime = -1f;
                 _feedingFrenzyKillCount = 0;
@@ -3146,10 +3209,18 @@ namespace Hecton8.World
             {
                 _activeGrazingAnchorCount = math.clamp(_activeGrazingAnchorCount, 0, math.min(grazingAnchorCount, grazingAnchors.Length));
                 _debugGrazingAnchorCount = _activeGrazingAnchorCount;
-                if (_activeGrazingAnchorCount <= 0 || _grazingAnchorBuffer == null)
+                if (_activeGrazingAnchorCount <= 0 || !IsGraphicsBufferAlive(_grazingAnchorBuffer))
                     return;
 
-                GraphicsBufferUploadUtility.UploadNativeArray(_grazingAnchorBuffer, grazingAnchors, _activeGrazingAnchorCount);
+                try
+                {
+                    GraphicsBufferUploadUtility.UploadNativeArray(_grazingAnchorBuffer, grazingAnchors, _activeGrazingAnchorCount);
+                }
+                catch (System.Exception)
+                {
+                    DisableAfterGraphicsBufferAllocFailure();
+                    return;
+                }
             }
             finally
             {
@@ -3607,7 +3678,7 @@ namespace Hecton8.World
         private static bool EnsureBufferCapacity(ref GraphicsBuffer buffer, int minimumCount, int stride)
         {
             int safeMinimumCount = math.max(1, minimumCount);
-            if (buffer != null && buffer.stride == stride && buffer.count >= safeMinimumCount)
+            if (IsGraphicsBufferAlive(buffer) && buffer.stride == stride && buffer.count >= safeMinimumCount)
                 return false;
 
             return EnsureBuffer(ref buffer, safeMinimumCount, stride);
@@ -3752,6 +3823,9 @@ namespace Hecton8.World
                 return false;
 
             if (boidCompute == null || boidMaterial == null || boidMesh == null)
+                return false;
+
+            if (_graphicsBuffersPermanentlyFailed)
                 return false;
 
             _computeDispatchDisabled = false;
@@ -5826,19 +5900,30 @@ namespace Hecton8.World
         {
             // COLD ALLOC: GraphicsBuffer[16 float4] - zero predator AUP fallback binding until EncounterDirector publishes active threats.
             bool changed = EnsureBuffer(ref _predatorAupFallbackBuffer, PredatorAupBufferCapacity, PredatorAupStride);
-            if (!changed || _predatorAupFallbackBuffer == null)
-                return changed;
+            if (!IsGraphicsBufferAlive(_predatorAupFallbackBuffer))
+                return false;
+            if (!changed)
+                return false;
 
-            var mapped = _predatorAupFallbackBuffer.LockBufferForWrite<float4>(0, PredatorAupBufferCapacity);
             try
             {
-                for (int i = 0; i < PredatorAupBufferCapacity; i++)
-                    mapped[i] = float4.zero;
+                var mapped = _predatorAupFallbackBuffer.LockBufferForWrite<float4>(0, PredatorAupBufferCapacity);
+                try
+                {
+                    for (int i = 0; i < PredatorAupBufferCapacity; i++)
+                        mapped[i] = float4.zero;
+                }
+                finally
+                {
+                    _predatorAupFallbackBuffer.UnlockBufferAfterWrite<float4>(PredatorAupBufferCapacity);
+                }
             }
-            finally
+            catch (System.Exception)
             {
-                _predatorAupFallbackBuffer.UnlockBufferAfterWrite<float4>(PredatorAupBufferCapacity);
+                ReleaseBuffer(ref _predatorAupFallbackBuffer);
+                return false;
             }
+
             return true;
         }
 
@@ -8883,17 +8968,41 @@ namespace Hecton8.World
 
         private bool TryEnsureBoidIndirectArgsBufferCold()
         {
-            if (_boidIndirectArgsBuffer != null)
+            if (IsGraphicsBufferAlive(_boidIndirectArgsBuffer))
                 return false;
 
-            _boidIndirectArgsBuffer = new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments,
-                GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                1,
-                GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - VAT micro-fauna indirect draw args - owner: SargassumMicroFaunaBoids
+            if (_boidIndirectArgsBuffer != null)
+            {
+                if (_boidIndirectArgsBuffer.IsValid())
+                    _boidIndirectArgsBuffer.Release();
+                _boidIndirectArgsBuffer = null;
+            }
+
+            // COLD ALLOC: GraphicsBuffer[1] - VAT micro-fauna indirect draw args - owner: SargassumMicroFaunaBoids
+            // Under -nographics LockBufferForWrite can throw NullReferenceException inside the native ctor.
+            try
+            {
+                _boidIndirectArgsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size);
+            }
+            catch (System.Exception)
+            {
+                _boidIndirectArgsBuffer = null;
+                return false;
+            }
+
+            if (!IsGraphicsBufferAlive(_boidIndirectArgsBuffer))
+            {
+                _boidIndirectArgsBuffer = null;
+                return false;
+            }
+
             _boidIndirectArgsMesh = null;
             _boidIndirectArgsInstanceCount = -1;
-            return _boidIndirectArgsBuffer != null;
+            return true;
         }
 
         private bool HasBoidIndirectArgsBufferReady()
@@ -8903,29 +9012,45 @@ namespace Hecton8.World
 
         private bool UploadBoidIndirectArgs(Mesh mesh, int instanceCount)
         {
-            if (mesh == null || instanceCount <= 0 || !HasBoidIndirectArgsBufferReady())
+            if (mesh == null ||
+                instanceCount <= 0 ||
+                _graphicsBuffersPermanentlyFailed ||
+                _computeDispatchDisabled ||
+                !HasBoidIndirectArgsBufferReady() ||
+                !IsGraphicsBufferAlive(_boidIndirectArgsBuffer))
+            {
                 return false;
+            }
 
             if (_boidIndirectArgsMesh == mesh && _boidIndirectArgsInstanceCount == instanceCount)
                 return true;
 
-            var mappedArgs =
-                _boidIndirectArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
             try
             {
-                mappedArgs[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                var mappedArgs =
+                    _boidIndirectArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
+                try
                 {
-                    indexCountPerInstance = mesh.GetIndexCount(0),
-                    instanceCount = (uint)instanceCount,
-                    startIndex = mesh.GetIndexStart(0),
-                    baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
-                    startInstance = 0u
-                };
+                    mappedArgs[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                    {
+                        indexCountPerInstance = mesh.GetIndexCount(0),
+                        instanceCount = (uint)instanceCount,
+                        startIndex = mesh.GetIndexStart(0),
+                        baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                        startInstance = 0u
+                    };
+                }
+                finally
+                {
+                    _boidIndirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                }
             }
-            finally
+            catch (System.Exception)
             {
-                _boidIndirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                DisableAfterGraphicsBufferAllocFailure();
+                return false;
             }
+
             _boidIndirectArgsMesh = mesh;
             _boidIndirectArgsInstanceCount = instanceCount;
             return true;
@@ -9504,7 +9629,8 @@ namespace Hecton8.World
             if (buffer == null)
                 return;
 
-            buffer.Release();
+            if (buffer.IsValid())
+                buffer.Release();
             buffer = null;
         }
 
@@ -10239,6 +10365,12 @@ namespace Hecton8.World
                 return;
 
             _computeDispatchDisabled = true;
+            if (reasonCode == ComputeDisableReasonGraphicsBufferAllocFailure ||
+                reasonCode == ComputeDisableReasonUnsupportedCompute)
+            {
+                _graphicsBuffersPermanentlyFailed = true;
+            }
+
             ResetComputeKernelBindings();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             LogComputeDispatchDisabled(ResolveComputeDisableReasonMessage(reasonCode), this);
@@ -10274,6 +10406,8 @@ namespace Hecton8.World
                     return "Compute shaders unsupported by active platform.";
                 case ComputeDisableReasonDispatchGroupLimit:
                     return "Compute dispatch group count exceeds portable per-dimension ceiling.";
+                case ComputeDisableReasonGraphicsBufferAllocFailure:
+                    return "GraphicsBuffer allocation failed (LockBufferForWrite unsupported or headless GPU path).";
                 default:
                     return "Unknown compute dispatch failure.";
             }
