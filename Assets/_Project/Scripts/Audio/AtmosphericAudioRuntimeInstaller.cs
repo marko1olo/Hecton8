@@ -134,7 +134,7 @@ namespace Hecton8.Audio
             {
                 // No authored AudioListener on camera/player - nothing to host the critical
                 // audio owners on. Prefer an existing listener anywhere before giving up.
-                listener = Object.FindFirstObjectByType<AudioListener>(FindObjectsInactive.Include);
+                listener = UnityEngine.Object.FindFirstObjectByType<AudioListener>(FindObjectsInactive.Include);
                 if (listener == null)
                     return;
             }
