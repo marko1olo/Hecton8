@@ -8487,12 +8487,20 @@ namespace Hecton8.Bootstrap
                 // shipped build. No new installer file for this one: wrapping an existing public static
                 // factory in another static method is pure indirection.
                 Hecton8.Construction.AutonomousExtractorSystem.TryEnsureRuntimeOwner(out _);
+
+                // WorldChunkResidencyManager is the sole GlobalRegistry.StreamingBackpressure owner
+                // (IStreamingBackpressureService). WorldRuntimeInstaller deliberately skips install
+                // (hot-swap token denied for StreamingBackpressureRuntime). ZERO live scene/prefab
+                // hits; OnEnable-only registration never runs without a construction site.
+                // Pre-Ready bootstrap lane (this gated block) is the correct owner path.
+                Hecton8.World.WorldChunkResidencyManager.EnsureRuntimeInstance();
             }
             finally
             {
                 if (installerPublicationGateOpen)
                     GlobalRegistry.EndSceneRuntimePublicationGate();
             }
+
 
             BootstrapState.PublishCurrentPlayerObject(playerObject);
         }
