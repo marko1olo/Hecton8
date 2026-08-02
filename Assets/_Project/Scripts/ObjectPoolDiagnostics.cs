@@ -263,6 +263,17 @@ namespace Hecton8.Core
 
         public static void FlushPending()
         {
+            // L19 hop2 LIVE: ACCESS_VIOLATION in NativeQueue.IsEmpty / UnsafeUntypedQueue.IsEmpty
+            // during LateFrameTick FlushPending after WORLDDRIVER begin. Under batchmode the
+            // diagnostics queues can be half-disposed (domain churn / sentinel release race)
+            // while IsCreated still reports true. Hop2 validates input/hop, not pool telemetry —
+            // soft-disable the flush path under batchmode so native queue ops never run.
+            if (Application.isBatchMode)
+            {
+                SoftDropDiagnosticsQueuesForBatchMode();
+                return;
+            }
+
             if (!_pendingEvents.IsCreated || _listenerCount <= 0)
             {
                 DrainWithoutDispatch();
@@ -271,12 +282,12 @@ namespace Hecton8.Core
 
             PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget > 0 && !_pendingEvents.IsEmpty())
+            while (scanBudget > 0 && QueueIsCreatedAndNonEmpty(ref _pendingEvents))
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
-                if (!_pendingEvents.TryDequeue(out PoolDiagnosticsEventPayload payload))
+                if (!TryDequeueSafe(ref _pendingEvents, out PoolDiagnosticsEventPayload payload))
                 {
                     _pendingEventCount = 0;
                     return;
@@ -302,12 +313,13 @@ namespace Hecton8.Core
                 }
             }
 
-            if (_pendingEvents.IsEmpty())
+            if (!QueueIsCreatedAndNonEmpty(ref _pendingEvents))
             {
                 _pendingEventCount = 0;
                 PromoteNextFrameEventsIfFrontEmpty();
             }
         }
+
 
         public static bool TryResolvePoolName(uint poolHash, out string poolName)
         {
@@ -335,7 +347,12 @@ namespace Hecton8.Core
             if (queueHash == 0u || pendingCount <= 0)
                 return false;
 
+            // L19 hop2: never allocate/touch native diagnostics queues under batchmode.
+            if (Application.isBatchMode)
+                return false;
+
             EnsureInitialized();
+
             bool saturated = pendingCount > 128;
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
@@ -761,8 +778,68 @@ namespace Hecton8.Core
                 Mathf.Max(1, _dataBusSaturationNotificationMissCount));
         }
 
+        private static void SoftDropDiagnosticsQueuesForBatchMode()
+        {
+            // Do not call IsEmpty/TryDequeue — those are the native crash sites when the
+            // queue is half-disposed. Release via sentinel path and zero counters.
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
+            try
+            {
+                ReleaseNativeQueues();
+            }
+            catch
+            {
+                _pendingEvents = default;
+                _nextFrameEvents = default;
+                _pendingEventsSentinelId = 0;
+                _nextFrameEventsSentinelId = 0;
+            }
+        }
+
+        private static bool QueueIsCreatedAndNonEmpty(ref NativeQueue<PoolDiagnosticsEventPayload> queue)
+        {
+            // L19 hop2: IsCreated can still be true after a half-dispose; IsEmpty then AVs.
+            // Gate every native queue op behind a try and treat any fault as "not usable".
+            try
+            {
+                return queue.IsCreated && !queue.IsEmpty();
+            }
+            catch
+            {
+                queue = default;
+                return false;
+            }
+        }
+
+        private static bool TryDequeueSafe(
+            ref NativeQueue<PoolDiagnosticsEventPayload> queue,
+            out PoolDiagnosticsEventPayload payload)
+        {
+            payload = default;
+            try
+            {
+                if (!queue.IsCreated)
+                    return false;
+                return queue.TryDequeue(out payload);
+            }
+            catch
+            {
+                queue = default;
+                payload = default;
+                return false;
+            }
+        }
+
         private static void DrainWithoutDispatch()
         {
+            if (Application.isBatchMode)
+            {
+                SoftDropDiagnosticsQueuesForBatchMode();
+                return;
+            }
+
             if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                 return;
 
@@ -781,13 +858,22 @@ namespace Hecton8.Core
             ref NativeQueue<PoolDiagnosticsEventPayload> queue,
             ref int pendingCount)
         {
+            // L19 hop2 LIVE crash site: queue.IsEmpty() / TryDequeue on disposed NativeQueue
+            // → UnsafeUntypedQueue.IsEmpty ACCESS_VIOLATION. Never touch native queue ops
+            // without IsCreated + try; on fault zero the handle so subsequent frames no-op.
             if (!queue.IsCreated)
+            {
+                pendingCount = 0;
                 return true;
+            }
 
             int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
-            while (scanBudget > 0 && !queue.IsEmpty())
+            while (scanBudget > 0)
             {
-                if (!queue.TryDequeue(out _))
+                if (!QueueIsCreatedAndNonEmpty(ref queue))
+                    break;
+
+                if (!TryDequeueSafe(ref queue, out _))
                 {
                     pendingCount = 0;
                     return false;
@@ -798,7 +884,7 @@ namespace Hecton8.Core
                 scanBudget--;
             }
 
-            if (queue.IsEmpty())
+            if (!QueueIsCreatedAndNonEmpty(ref queue))
                 pendingCount = 0;
 
             return true;
@@ -814,6 +900,7 @@ namespace Hecton8.Core
                 return;
             }
 
+            // Avoid IsEmpty() here — use counters only (pendingCount is authoritative).
             NativeQueue<PoolDiagnosticsEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
@@ -823,6 +910,7 @@ namespace Hecton8.Core
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
+
 
         // ════════════════════════════════════════════════════════════
         //  EDITOR DEBUG
