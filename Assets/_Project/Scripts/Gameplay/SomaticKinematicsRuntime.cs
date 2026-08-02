@@ -1215,9 +1215,9 @@ namespace Hecton8.Gameplay
 
             if (!playerRoot.TryGetComponent(out SomaticKinematicsRuntime _))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 playerRoot.AddComponent<SomaticKinematicsRuntime>(); // COLD ALLOC: SomaticKinematicsRuntime[1] - SHINOBU math KCC bridge attached to player root - owner: SHINOBU_06
-#endif
             }
         }
 

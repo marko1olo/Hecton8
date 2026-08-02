@@ -412,9 +412,9 @@ namespace Hecton8.Gameplay
                 enableLegacyPhysXAutoLevelInstall &&
                 _ballastController == null)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 _ballastController = gameObject.AddComponent<SubmarineAutoLevelBallastController>();
-#endif
             }
         }
 

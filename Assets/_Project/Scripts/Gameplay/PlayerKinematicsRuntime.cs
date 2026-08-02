@@ -1655,9 +1655,9 @@ namespace Hecton8.Gameplay
 
             if (!playerRoot.TryGetComponent(out PlayerKinematicsRuntime _))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 playerRoot.AddComponent<PlayerKinematicsRuntime>(); // COLD ALLOC: PlayerKinematicsRuntime[1] - player kinematics bridge install - owner: PlayerRuntimeContextService
-#endif
             }
         }
 

@@ -201,10 +201,9 @@ namespace Hecton.Localization
 
             if (!TryGetComponent<FontStreamingManager>(out _))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                gameObject.AddComponent<FontStreamingManager>(); // COLD ALLOC: FontStreamingManager[1] — runtime staged localized font swap owner — owner: LocalizationManager
-
-#endif
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
+                gameObject.AddComponent<FontStreamingManager>(); // COLD ALLOC: FontStreamingManager[1] - runtime staged localized font swap owner - owner: LocalizationManager
             }
 
             LocRegistry.BindBabelVaultCold(GlobalRegistry.DataVault);
