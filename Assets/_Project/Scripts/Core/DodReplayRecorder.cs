@@ -445,7 +445,9 @@ namespace Hecton8.Core
             if (!Application.isPlaying)
                 return null;
 
-            GameObject recorderObject = new GameObject("DOD Replay Recorder"); // COLD ALLOC: GameObject[1] - debug replay owner - owner: DodReplayRecorder
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // DOD replay owns burst panic / full-state dumps; without create, debug
+            // capture paths no-op when bootstrap or panic sites skip explicit wiring.            GameObject recorderObject = new GameObject("DOD Replay Recorder"); // COLD ALLOC: GameObject[1] - debug replay owner - owner: DodReplayRecorder
             return recorderObject.AddComponent<DodReplayRecorder>();
         }
 

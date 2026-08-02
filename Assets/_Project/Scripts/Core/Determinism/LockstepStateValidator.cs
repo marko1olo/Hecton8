@@ -451,7 +451,9 @@ namespace Hecton8.Core.Determinism
                 return instance;
             }
 
-            GameObject owner = new GameObject("Lockstep State Validator"); // COLD ALLOC: GameObject[1] - core determinism post-simulation owner - owner: LockstepStateValidator
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Lockstep validator owns BufferID.LockstepMasterStateHash; without create,
+            // the run hashes nothing after bootstrap scene handoff.            GameObject owner = new GameObject("Lockstep State Validator"); // COLD ALLOC: GameObject[1] - core determinism post-simulation owner - owner: LockstepStateValidator
             owner.hideFlags = HideFlags.HideInHierarchy;
 
             // Park under the project persistent root BEFORE AddComponent so OnEnable observes the final
