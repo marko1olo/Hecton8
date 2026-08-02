@@ -6429,17 +6429,18 @@ namespace Hecton8.Bootstrap
 
         private static Hecton8.Core.RuntimeWatchdog EnsureRuntimeWatchdogRegistered()
         {
+            // Resolve-or-create is owned by RuntimeWatchdog.EnsureRuntimeInstance
+            // (GlobalRegistry.RuntimeWatchdog + player-build AddComponent + InitializeService).
+            // Bootstrap no longer duplicates the construction path.
             Hecton8.Core.RuntimeWatchdog watchdog = Hecton8.Core.RuntimeWatchdog.EnsureRuntimeInstance();
             if (watchdog == null)
-            {
-                GameObject runtimeRoot = new GameObject(RuntimeWatchdogRuntimeName); // COLD ALLOC: GameObject[1] - bootstrap-owned runtime liveness watchdog root - owner: GameBootstrapper
-                watchdog = runtimeRoot.AddComponent<Hecton8.Core.RuntimeWatchdog>();
-            }
+                return null;
 
             PersistRuntimeService(watchdog);
             watchdog.InitializeService();
             return watchdog;
         }
+
 
         private static Hecton8.Core.GCMonitor EnsureGCMonitorRegistered()
         {

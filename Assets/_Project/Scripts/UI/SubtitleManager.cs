@@ -361,9 +361,11 @@ namespace Hecton8.UI
                 return authoredSubtitleManager;
             }
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
             // Player builds previously skipped this path entirely (editor/dev ifdef).
             // EnsureBuilt constructs TMP/waveform children at Awake - no authored prefab required.
             GameObject owner = new GameObject("SubtitleManager", typeof(RectTransform)); // COLD ALLOC: GameObject[1] - runtime subtitle owner under suit HUD canvas - owner: SubtitleManager
+
             owner.layer = targetCanvas.gameObject.layer;
 
             owner.TryGetComponent(out RectTransform rect);
