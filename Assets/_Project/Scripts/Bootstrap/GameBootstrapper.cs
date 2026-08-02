@@ -8497,134 +8497,12 @@ namespace Hecton8.Bootstrap
                 // factory in another static method is pure indirection.
                 Hecton8.Construction.AutonomousExtractorSystem.TryEnsureRuntimeOwner(out _);
 
-                // DebrisManager is the sole IDebrisService owner and already ships
-                // DebrisManager.EnsureRuntimeInstance at :136 - complete with FindFirstObjectByType
-                // fallback, inactive-root handling, and AddComponent. It had ZERO callers.
-                // Bootstrap DiagnoseMissingCriticalSystems already names the empty slot at :5767
-                // ("DebrisManager.EnsureRuntimeInstance exists but is never called"). Live consumers
-                // that hit the permanent null: StructureIntegrity.cs:2316 (SpawnBurst on collapse),
-                // StructureModule.cs:2198 (SpawnBurst), Creature.cs:4817 (SpawnBurst on death),
-                // HectonFluidEngine.cs:2193 (GlobalRegistry.Debris). No scene/prefab GUID hit for
-                // 0b66cb54cbdfba54aa2267ecb4982579. Collapse/death debris FX never spawn in a
-                // shipped build. Same shape as AutonomousExtractor: call the existing factory.
-                Hecton8.Gameplay.DebrisManager.EnsureRuntimeInstance();
-
-                // DockingAutopilotService is the sole IDockingAutopilotService owner and had no
-                // construction site of any kind. No AddComponent, no scene/prefab GUID hit for
-                // 3d6fecc0d76140547a5275b902b63c4b. Live consumer VehicleDockingModule.cs:1845
-                // caches GlobalRegistry.DockingAutopilot permanently null, so docking spline
-                // acquire/evaluate never arms. Factory now lives on the service itself
-                // (EnsureRuntimeInstance); call it here so the registry slot is live.
-                Hecton8.Vehicles.Automation.DockingAutopilotService.EnsureRuntimeInstance();
-
-                // SubtitleManager is the sole GlobalRegistry.Subtitles owner. GUID
-                // 2007393d93d7376438891f11d8ec3a10 has ZERO scene/prefab hits (including
-                // Suit_HUD_Canvas.prefab). Construction used to live only behind
-                // #if UNITY_EDITOR || DEVELOPMENT_BUILD, so player builds never installed
-                // the owner and every subtitle consumer hit a permanent null. Ensure now
-                // constructs in player builds and parents under the HUD overlay canvas when
-                // present; call here after player/HUD publication so AfterSceneLoad cannot
-                // race an empty canvas set.
-                Hecton8.UI.SubtitleManager.EnsureRuntimeInstance();
-
-                // CameraJuiceSystem is the sole ICameraJuiceSystem / GlobalRegistry.CameraJuice owner.
-                // GUID 394c096b405b1e745b881283ae9a05c6 has ZERO scene/prefab hits. No Ensure existed;
-                // Awake/OnEnable only register when already present. SceneRuntimeService BeginInputReclaimFov
-                // and SystemDispatcher consumers hit permanent null. Factory + call here after player
-                // publication so TryResolveCamera can bind PlayerCamera.
-                Hecton8.VFX.CameraJuiceSystem.EnsureRuntimeInstance();
-
-                // MissionManager is the sole GlobalRegistry.Missions owner (quest compatibility facade).
-                // GUID 118565efc6b6f054c835c8316440c86f has ZERO scene/prefab hits. No Ensure existed;
-                // Awake/OnEnable only register when already present. Save mission lanes and director
-                // bridge compatibility consumers hit permanent null. Factory + call here after player
-                // publication so QuestSystem hot-swap can bind when available.
-                Hecton8.Gameplay.MissionManager.EnsureRuntimeInstance();
-
-                // HectonDiscoveryManager is the sole GlobalRegistry.Discovery owner (biome + fauna
-                // bestiary progression). GUID 56aa89edaf4f263419dd966a1cc4c197 has ZERO scene/prefab
-                // hits. No Ensure existed; OnEnable only registers when already present.
-                // DynamicDifficultyDirector, GlobalProfileManager, PlayerExplorationTracker and
-                // PlayerAchievementRegistry hit permanent null. Factory + call here after player
-                // publication so save/discovery lanes can bind when available.
-                Hecton8.Gameplay.HectonDiscoveryManager.EnsureRuntimeInstance();
-
-                // AbyssalFluidDecalManager is the sole GlobalRegistry.FluidDecalPresentation /
-                // AbyssalFluidDecals owner (cable fluid, rupture, wake silt, pressure spray).
-                // GUID 932634fcdd3b41b091f6c33d24230da6 has ZERO scene/prefab hits. No Ensure
-                // existed; OnEnable only registers when already present. BaseModule,
-                // HabitatIntegrityManager, LogisticsPipeNode, HectonPlayerMotor, VehicleMotor,
-                // BiomeMatrixDirector, ConstructionManager and SubmarineStructuralGrid hit
-                // permanent null. Factory + call here after discovery so presentation sinks bind.
-                Hecton8.World.AbyssalFluidDecalManager.EnsureRuntimeInstance();
-
-                // GasDynamicsSolver is the sole GlobalRegistry.GasDynamics owner
-                // (habitat O2/CO2/N2, breach diffusion, scrubber, toxicity).
-                // GUID e001add545b58c34eb202fbfcab9c3a2 has ZERO scene/prefab hits.
-                // No Ensure existed; OnEnable only registers when already present.
-                // ConstructionManager, HectonPlayerMovement, PlayerKinematicsRuntime,
-                // ShinobuPhysiologyRuntime, AbyssalThermalManager, PowerGridManager
-                // and HeadlessSimulationRunner hit permanent null. Factory + call
-                // here after fluid decals so atmosphere sinks bind.
-                Hecton8.Atmosphere.GasDynamicsSolver.EnsureRuntimeInstance();
-
-                // AudioLogSystem is the sole GlobalRegistry.AudioLogs owner
-                // (discovered log mask, PDA archive, narrative unlock playback).
-                // GUID ca4d93977437b664fbbf3dcd8b694d38 has ZERO live scene/prefab hits.
-                // HectonLoreSystemsRoot only constructs via editor ContextMenu.
-                // No Ensure existed; OnEnable only registers when already present.
-                // NarrativeDiscovery, AudioLogPickup, PDADataLogTab, FirstHourDirector,
-                // ProceduralLoreDirector and NarrativeProgressionBridge hit permanent null.
-                // Factory + call here after GasDynamics so lore sinks bind.
-                Hecton8.Narrative.AudioLogSystem.EnsureRuntimeInstance();
-
-                // LoreDatabaseManager is the sole GlobalRegistry.LoreDatabase owner
-                // (lore unlock read-model / scan fragment catalog).
-                // GUID 42a7b5625bed8574794366fcc0149275 has ZERO live scene/prefab hits.
-                // HectonLoreSystemsRoot only constructs via editor ContextMenu.
-                // No Ensure existed; OnEnable only registers when already present.
-                // HectonDiscoveryManager, ResearchDirector and ScannableFragment
-                // hit permanent null. Factory + call here after AudioLogSystem
-                // so lore unlock sinks bind with audio-log discovery.
-                Hecton8.Narrative.LoreDatabaseManager.EnsureRuntimeInstance();
-                // DestructibleOrganicManager is the sole GlobalRegistry.OrganicToolHits owner
-                // (indirect-flora harvest health / tool-hit service).
-                // GUID e21070ca5e8272b4aa0678faa365a3e1 has ZERO live scene/prefab hits.
-                // No Ensure existed; OnEnable only registers when already present.
-                // Tool-hit and flora harvest consumers hit permanent null.
-                // Factory + call here after LoreDatabaseManager so world harvest binds
-                // with narrative discovery owners already published.
-                Hecton8.World.DestructibleOrganicManager.EnsureRuntimeInstance();
-                // AtlasSignalSystem is the sole GlobalRegistry.AtlasSignal owner
-                // (Atlas-6 pulse / reveal read-model).
-                // GUID a9addf4847ba6d64396043aeeec51fb3 has ZERO live scene/prefab hits.
-                // HectonLoreSystemsRoot only constructs via editor ContextMenu.
-                // No Ensure existed; OnEnable only registers when already present.
-                // AudioLog, decoder and discovery consumers hit permanent null.
-                // Factory + call here after DestructibleOrganicManager so signal
-                // owners publish with world harvest already available.
-                Hecton8.AtlasSignal.AtlasSignalSystem.EnsureRuntimeInstance();
-                // AtlasSignalDecoder is the sole GlobalRegistry.AtlasSignalDecoder owner
-                // (Atlas-6 phase decode / quest handoff).
-                // GUID bca3aaf40fff8ea459345f06a7f5592b has ZERO live scene/prefab hits.
-                // HectonLoreSystemsRoot only constructs via editor ContextMenu.
-                // No Ensure existed; OnEnable only registers when already present.
-                // Phase/quest consumers hit permanent null.
-                // Factory + call here after AtlasSignalSystem so decoder binds to
-                // the published signal read-model.
-                Hecton8.AtlasSignal.AtlasSignalDecoder.EnsureRuntimeInstance();
-                // FluidPipeGraphRuntime: sole IFluidPipeGraphService owner.
-                // GUID ffc0ea3d61e66f842999d9cc00327913 has ZERO live scene/prefab hits;
-                // electrolysis / physiology consumers hit permanent null without this path.
-                Hecton8.Construction.FluidPipeGraphRuntime.EnsureRuntimeInstance();
-                // SargassumGlobalDragManager: sole SargassumDrag / ISargassumDragReadModel owner.
-                // GUID fcf340598bd22a94ab47ed42a25868ee has ZERO live scene/prefab hits;
-                // drag-field / scavenger consumers hit permanent null without this path.
-                Hecton8.World.SargassumGlobalDragManager.EnsureRuntimeInstance();
-                // SargassumCutManager: sole SargassumCut / ISargassumCutWriteService owner.
-                // GUID ff5d403710d1d0e4bb43e3210c59df5c has ZERO live scene/prefab hits;
-                // cut-mask / GPU fauna consumers hit permanent null without this path.
-                Hecton8.World.SargassumCutManager.EnsureRuntimeInstance();
+                // WorldChunkResidencyManager is the sole GlobalRegistry.StreamingBackpressure owner
+                // (IStreamingBackpressureService). WorldRuntimeInstaller deliberately skips install
+                // (hot-swap token denied for StreamingBackpressureRuntime). ZERO live scene/prefab
+                // hits; OnEnable-only registration never runs without a construction site.
+                // Pre-Ready bootstrap lane (this gated block) is the correct owner path.
+                Hecton8.World.WorldChunkResidencyManager.EnsureRuntimeInstance();
             }
 
 
@@ -8633,6 +8511,7 @@ namespace Hecton8.Bootstrap
                 if (installerPublicationGateOpen)
                     GlobalRegistry.EndSceneRuntimePublicationGate();
             }
+
 
             BootstrapState.PublishCurrentPlayerObject(playerObject);
         }

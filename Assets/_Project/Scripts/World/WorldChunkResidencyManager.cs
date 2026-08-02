@@ -863,6 +863,16 @@ namespace Hecton8.World
         private bool _registeredAirlockEvents;
         private bool _registeredBackpressureService;
         private bool _registeredHotSwap;
+
+        /// <summary>
+        /// Registry-backed runtime instance. Null if not initialized.
+        /// </summary>
+        private static WorldChunkResidencyManager s_activeRuntime;
+
+        /// <summary>
+        /// Active resolve-or-create owner for GlobalRegistry.StreamingBackpressure.
+        /// </summary>
+        public static WorldChunkResidencyManager Instance => s_activeRuntime;
         private IAsyncPersistenceService _asyncPersistenceService;
         private IDataVault _dataVault;
         private IJobAdmissionService _jobAdmissionService;
@@ -1471,6 +1481,55 @@ namespace Hecton8.World
             return false;
         }
 
+        /// <summary>
+        /// Resolve-or-create the sole GlobalRegistry.StreamingBackpressure owner for player builds.
+        /// WorldRuntimeInstaller deliberately skips this owner (OnEnable registration ordering risk).
+        /// </summary>
+        public static WorldChunkResidencyManager EnsureRuntimeInstance()
+        {
+            WorldChunkResidencyManager registered = GlobalRegistry.StreamingBackpressure as WorldChunkResidencyManager;
+            if (IsWorldChunkResidencyRuntimeUsable(registered))
+                return registered;
+
+            WorldChunkResidencyManager active = s_activeRuntime;
+            if (IsWorldChunkResidencyRuntimeUsable(active))
+                return active;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterStreamingBackpressureRuntime(registered);
+                if (registered != null)
+                    registered._registeredBackpressureService = false;
+            }
+
+            if (!ReferenceEquals(active, null) && active != null && !ReferenceEquals(active, registered))
+            {
+                if (active._registeredBackpressureService)
+                {
+                    GlobalRegistry.UnregisterStreamingBackpressureRuntime(active);
+                    active._registeredBackpressureService = false;
+                }
+                if (ReferenceEquals(s_activeRuntime, active))
+                    s_activeRuntime = null;
+            }
+            else if (!ReferenceEquals(active, null) && active == null)
+            {
+                s_activeRuntime = null;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[WorldChunkResidencyManager]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<WorldChunkResidencyManager>();
+        }
+
+        private static bool IsWorldChunkResidencyRuntimeUsable(WorldChunkResidencyManager manager)
+        {
+            return manager != null && manager._registeredBackpressureService && manager.isActiveAndEnabled;
+        }
+
         private void Awake()
         {
             _chunkResidencyRuntimeSeconds = 0f;
@@ -1486,6 +1545,13 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (!ReferenceEquals(s_activeRuntime, null) && !ReferenceEquals(s_activeRuntime, this) && s_activeRuntime != null)
+            {
+                enabled = false;
+                return;
+            }
+
+            s_activeRuntime = this;
             TryRegister();
         }
 
@@ -1496,12 +1562,16 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
+
             TryUnregister();
             TryUnregisterHotSwap();
             CompleteResidencyJobForTeardown();
             ReleaseAllChunks();
             ClearColdServiceCache();
         }
+
 
         private void OnDestroy()
         {
