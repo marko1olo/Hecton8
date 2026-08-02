@@ -403,6 +403,41 @@ namespace Hecton8.VFX
 
         // ═══ LIFECYCLE ═══
 
+        /// <summary>
+        /// Ensures a live <see cref="CameraJuiceSystem"/> is registered as
+        /// <see cref="GlobalRegistry.CameraJuice"/> / <see cref="ICameraJuiceSystem"/>.
+        /// Script GUID 394c096b405b1e745b881283ae9a05c6 has ZERO scene/prefab hits.
+        /// No factory existed; Awake/OnEnable only register when already present.
+        /// SceneRuntimeService BeginInputReclaimFov and SystemDispatcher consumers hit a
+        /// permanent null without this path. Prefer calling after player publication so
+        /// <c>TryResolveCamera</c> can bind PlayerCamera.
+        /// </summary>
+        public static CameraJuiceSystem EnsureRuntimeInstance()
+        {
+            ICameraJuiceSystem registered = GlobalRegistry.CameraJuice;
+            if (IsCameraJuiceRuntimeUsable(registered))
+                return registered as CameraJuiceSystem;
+
+            CameraJuiceSystem stale = registered as CameraJuiceSystem;
+            if (!ReferenceEquals(stale, null))
+            {
+                GlobalRegistry.UnregisterCameraJuiceRuntime(registered);
+                stale._serviceRegistered = false;
+            }
+            else if (!ReferenceEquals(registered, null))
+            {
+                // Foreign ICameraJuiceSystem implementor owns the slot.
+                return null;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[CameraJuiceSystem]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<CameraJuiceSystem>();
+        }
+
         private void Awake()
         {
             if (Application.isPlaying && !TryRegisterToGlobalRegistry())

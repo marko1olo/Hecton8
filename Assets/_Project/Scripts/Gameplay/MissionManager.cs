@@ -36,11 +36,46 @@ namespace Hecton8.Gameplay
 
         public static MissionManager Instance => s_activeRuntime;
 
+        /// <summary>
+        /// Resolve-or-create the sole MissionManager / GlobalRegistry.Missions owner.
+        /// Script GUID 118565efc6b6f054c835c8316440c86f has ZERO scene/prefab hits.
+        /// Awake/OnEnable only register when already present; without this factory the
+        /// mission facade slot stays permanently null (save mission lanes + director bridge
+        /// compatibility consumers).
+        /// </summary>
+        public static MissionManager EnsureRuntimeInstance()
+        {
+            MissionManager registered = GlobalRegistry.Missions;
+            if (IsMissionRuntimeUsable(registered))
+                return registered;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterMissionRuntime(registered);
+                registered._serviceRegistered = false;
+                if (ReferenceEquals(s_activeRuntime, registered))
+                    s_activeRuntime = null;
+            }
+            else if (!ReferenceEquals(s_activeRuntime, null) && IsMissionRuntimeUsable(s_activeRuntime))
+            {
+                GlobalRegistry.RegisterMissionRuntime(s_activeRuntime);
+                return s_activeRuntime;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[MissionManager]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<MissionManager>();
+        }
+
         private void Awake()
         {
             if (TryAbortForUsableExistingRuntime())
                 return;
         }
+
 
         private void OnEnable()
         {

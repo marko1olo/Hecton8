@@ -797,6 +797,35 @@ namespace Hecton8.AtlasSignal
             Destroy(gameObject);
         }
 
+
+        /// <summary>
+        /// Resolve-or-create the sole AtlasSignalSystem runtime owner for
+        /// GlobalRegistry.AtlasSignal (Atlas-6 pulse / reveal read-model).
+        /// Script GUID a9addf4847ba6d64396043aeeec51fb3 has ZERO live scene/prefab hits.
+        /// HectonLoreSystemsRoot.SetupAllSystems is editor ContextMenu-only.
+        /// No Ensure existed; OnEnable only registers when already present.
+        /// AudioLog, decoder, and discovery consumers hit permanent null without this path.
+        /// </summary>
+        public static AtlasSignalSystem EnsureRuntimeInstance()
+        {
+            AtlasSignalSystem registered = GlobalRegistry.AtlasSignal;
+            if (IsAtlasSignalRuntimeUsable(registered))
+                return registered;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterAtlasSignalRuntime(registered);
+                registered._serviceRegistered = false;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[AtlasSignalSystem]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<AtlasSignalSystem>();
+        }
+
         private static bool IsAtlasSignalRuntimeUsable(AtlasSignalSystem system)
         {
             return !ReferenceEquals(system, null) &&

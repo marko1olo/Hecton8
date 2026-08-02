@@ -68,12 +68,12 @@ namespace Hecton8.Core
             if (!Application.isPlaying)
                 return null;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Player-build construction path (not editor-only): zero authored scene/prefab hits
+            // for EnvironmentRuntimeContextService GUID cbd923421b7c8d2438eaa99d10ba0449 and
+            // owned HazardZoneManager GUID 008e5f84c0b54c23a0b2341464541d1e. Bootstrap
+            // TryResolveBootstrapNode already calls EnsureRuntimeInstance + InitializeService.
             GameObject runtimeRoot = new GameObject("[EnvironmentRuntimeContextService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned environment runtime context root - owner: EnvironmentRuntimeContextService
             return runtimeRoot.AddComponent<EnvironmentRuntimeContextService>();
-#else
-            return null;
-#endif
         }
 
         /// <summary>
@@ -216,15 +216,17 @@ namespace Hecton8.Core
                 return _hazardZoneManager;
 
             TryGetComponent(out _hazardZoneManager);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Player-build construction path (not editor-only): HazardZoneManager has zero
+            // authored scene/prefab hits (GUID 008e5f84c0b54c23a0b2341464541d1e). Owned by
+            // EnvironmentRuntimeContextService; InitializeService always calls this.
             if (_hazardZoneManager == null)
             {
                 _hazardZoneManager = gameObject.AddComponent<HazardZoneManager>(); // COLD ALLOC: HazardZoneManager[1] - environment-owned runtime hazard registry - owner: EnvironmentRuntimeContextService
             }
-#endif
 
             return _hazardZoneManager;
         }
+
 
         private bool EnsureSingletonOwnership()
         {

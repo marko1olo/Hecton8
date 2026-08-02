@@ -2286,6 +2286,43 @@ namespace Hecton8.World
                     IsDestructibleOrganicRuntimeUsable(manager));
         }
 
+
+        /// <summary>
+        /// Resolve-or-create the sole DestructibleOrganicManager runtime owner for
+        /// GlobalRegistry.OrganicToolHits (indirect-flora harvest / tool-hit service).
+        /// Script GUID e21070ca5e8272b4aa0678faa365a3e1 has ZERO live scene/prefab hits.
+        /// No Ensure existed; OnEnable only registers when already present.
+        /// Tool-hit consumers and flora harvest sinks hit permanent null without this path.
+        /// </summary>
+        public static DestructibleOrganicManager EnsureRuntimeInstance()
+        {
+            DestructibleOrganicManager active = _activeRuntimeInstance;
+            if (IsDestructibleOrganicRuntimeUsable(active))
+                return active;
+
+            IOrganicToolHitService registered = GlobalRegistry.OrganicToolHits;
+            DestructibleOrganicManager registeredManager = registered as DestructibleOrganicManager;
+            if (IsDestructibleOrganicRuntimeUsable(registeredManager))
+                return registeredManager;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterOrganicToolHitService(registered);
+                if (!ReferenceEquals(registeredManager, null))
+                    registeredManager._organicToolHitServiceRegistered = false;
+            }
+
+            if (!ReferenceEquals(active, null) && active == null)
+                _activeRuntimeInstance = null;
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[DestructibleOrganicManager]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<DestructibleOrganicManager>();
+        }
+
         private static bool IsDestructibleOrganicRuntimeUsable(DestructibleOrganicManager manager)
         {
             return manager != null &&

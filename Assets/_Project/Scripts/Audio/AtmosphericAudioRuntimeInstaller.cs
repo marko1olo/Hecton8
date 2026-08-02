@@ -131,22 +131,28 @@ namespace Hecton8.Audio
                 playerObject.TryGetComponent(out listener);
 
             if (listener == null)
-                return;
+            {
+                // No authored AudioListener on camera/player - nothing to host the critical
+                // audio owners on. Prefer an existing listener anywhere before giving up.
+                listener = Object.FindFirstObjectByType<AudioListener>(FindObjectsInactive.Include);
+                if (listener == null)
+                    return;
+            }
 
+            // PlayerCriticalProceduralAudioRenderer is the sole thruster/critical procedural
+            // audio owner and had zero scene/prefab GUID hits (d837e0b45d8800643bbc1f384302325a).
+            // Installer previously only warned and returned, so BindToPlayer never ran and
+            // thruster audio stayed on the legacy PlayerThrusterAudio path (or silent).
+            // Construct on the live listener.
             if (!listener.TryGetComponent(out PlayerCriticalProceduralAudioRenderer renderer))
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogWarning("[AtmosphericAudioRuntimeInstaller] Missing authored PlayerCriticalProceduralAudioRenderer on active listener. Runtime component creation is disabled.", listener);
-#endif
-                return;
-            }
+                renderer = listener.gameObject.AddComponent<PlayerCriticalProceduralAudioRenderer>();
 
+            // VocalWarningSystem is the sole vocal-warning owner and had zero scene/prefab
+            // GUID hits (36c8bbdca4a5c1b4396cb80c386fba8f). Installer previously only warned.
+            // 41 external refs cache null permanently without this AddComponent.
             if (!listener.TryGetComponent(out VocalWarningSystem _))
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogWarning("[AtmosphericAudioRuntimeInstaller] Missing authored VocalWarningSystem on active listener. Runtime component creation is disabled.", listener);
-#endif
-            }
+                listener.gameObject.AddComponent<VocalWarningSystem>();
+
 
             renderer.BindToPlayer(playerObject);
 
@@ -159,6 +165,7 @@ namespace Hecton8.Audio
                 legacyThrusterAudio.enabled = false;
             }
         }
+
     }
 }
 

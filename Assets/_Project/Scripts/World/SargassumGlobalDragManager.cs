@@ -941,6 +941,50 @@ namespace Hecton8.World
         /// Active owner-published runtime instance.
         /// </summary>
         public static SargassumGlobalDragManager Instance => s_activeRuntimeInstance;
+
+        /// <summary>
+        /// Resolve-or-create the sole SargassumGlobalDragManager owner for GlobalRegistry.SargassumDrag.
+        /// Script GUID fcf340598bd22a94ab47ed42a25868ee has ZERO live scene/prefab hits; without this
+        /// path ISargassumDragReadModel / drag-field consumers stay permanent null.
+        /// </summary>
+        public static SargassumGlobalDragManager EnsureRuntimeInstance()
+        {
+            SargassumGlobalDragManager registered = GlobalRegistry.SargassumDrag;
+            if (IsSargassumDragRuntimeUsable(registered))
+                return registered;
+
+            SargassumGlobalDragManager active = s_activeRuntimeInstance;
+            if (IsSargassumDragRuntimeUsable(active))
+                return active;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterSargassumDragRuntime(registered);
+                if (registered != null)
+                    registered._serviceRegistered = false;
+            }
+
+            if (!ReferenceEquals(active, null) && active == null)
+            {
+                s_activeRuntimeInstance = null;
+            }
+            else if (!ReferenceEquals(active, null) && !IsSargassumDragRuntimeUsable(active))
+            {
+                if (ReferenceEquals(s_activeRuntimeInstance, active))
+                    s_activeRuntimeInstance = null;
+                if (active != null)
+                    active._serviceRegistered = false;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[SargassumGlobalDragManager]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<SargassumGlobalDragManager>();
+        }
+
+
         public int SavePriority => 45;
         public int LoadPriority => 45;
 

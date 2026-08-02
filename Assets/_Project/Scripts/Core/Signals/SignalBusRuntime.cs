@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -1720,9 +1720,15 @@ namespace Hecton8.Core.Contracts.Signals
         private static bool ResolveFatalInterrupt()
         {
             Type type = typeof(T);
+            // KillSwitchSignal is intentionally NOT fatal.
+            // HomeostasisBrain publishes it on every pressure-mask / LOD transition
+            // (routine load shedding). Treating it as FatalInterrupt permanently set
+            // SignalBusRegistry.IsSimulationHalted on the first pressure blip, which
+            // blocked SystemDispatcher FastTick and froze ecology dayAcc at 0 in
+            // headless smoke (simHalted=1 from post-ready t=0 / stepIdx≈4).
+            // True hard-stops remain: player-lethal pressure and lockstep system glitch.
             return type == typeof(PlayerFatalPressureSignal) ||
-                   type == typeof(SystemGlitchSignal) ||
-                   type == typeof(KillSwitchSignal);
+                   type == typeof(SystemGlitchSignal);
         }
 
         private static bool ResolveCoalescesByAupGrid()

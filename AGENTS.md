@@ -176,6 +176,8 @@ Do not invent new prefixes, folders, manager APIs, tick overloads, service names
 
 ## Absolute Standards (The "Zero Mocks" Rule)
 
+[RULE] THE NATIVE-FIRST LAW (ZERO CRUTCH SCRIPTS): You are ABSOLUTELY FORBIDDEN from creating Python, Bash, Node, or PowerShell wrapper scripts (`_patch_*.py`, `_wire_*.py`, etc.) to edit, append, test, or generate code. You MUST edit source files natively using `replace_file_content`. Any attempt to bypass direct file editing with a script is a CRITICAL COMPLIANCE FAILURE.
+
 [RULE] NO boilerplate. NO placeholders. NO `// TODO`. NO mock interfaces.
 Every line produced by ANY agent MUST be production-ready, mathematically pure, Burst-compiled C# or URP HLSL.
 Zero tolerance for algorithmic laziness (e.g., unnormalized splat weights, heavy noise calculations inside hot loops, ignored Data-Oriented Design rules).

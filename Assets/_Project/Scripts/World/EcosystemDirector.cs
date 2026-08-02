@@ -4185,8 +4185,25 @@ namespace Hecton8.World
 
             bool hasCapacity = _biomassCarryingCapacity.TryResolveReadOnly(out NativeArray<float>.ReadOnly carryingCapacity);
             int count = math.min(_activeBiomassCellCount, math.min(preyFront.Length, predatorFront.Length));
+            // Headless smoke has no player pawn. SlowTick should seed via EnsurePlayerSectorRegistered,
+            // but if that path silently no-ops (lock/views miss) the audit stays empty forever and
+            // HeadlessSimulationRunner fails ECOLOGY_UNAVAILABLE on the first day. Last-chance seed
+            // here, then re-resolve fronts so the same call can succeed.
             if (count <= 0)
-                return false;
+            {
+                EnsurePlayerSectorRegistered();
+                if (!_preyBiomassFront.TryResolveReadOnly(out preyFront) ||
+                    !_predatorBiomassFront.TryResolveReadOnly(out predatorFront))
+                {
+                    return false;
+                }
+
+                hasCapacity = _biomassCarryingCapacity.TryResolveReadOnly(out carryingCapacity);
+                count = math.min(_activeBiomassCellCount, math.min(preyFront.Length, predatorFront.Length));
+                if (count <= 0)
+                    return false;
+            }
+
 
             float preySum = 0f;
             float predatorSum = 0f;
@@ -5799,38 +5816,102 @@ namespace Hecton8.World
             if (TryResolvePlayerAup(out observerAup))
                 return true;
 
+            // Already have biomass cells from a previous seed/solve — nothing more to resolve.
             if (_activeBiomassCellCount > 0)
+            {
+                observerAup = default;
                 return false;
+            }
 
-            return TryResolveAupFromRuntimeOrigin(Vector3.zero, out observerAup);
+            // Headless / pre-spawn: prefer the current floating-origin anchor.
+            if (TryResolveAupFromRuntimeOrigin(Vector3.zero, out observerAup))
+                return true;
+
+            // Last-resort absolute zero. Headless smoke has no player pawn and FloatingOrigin
+            // may still report a non-finite CurrentTotalOffsetDouble before the first shift
+            // bind — without this fallback EnsurePlayerSectorRegistered never sets
+            // _hasPlayerSectorAup, ActiveCellCount stays 0, and HeadlessSimulationRunner
+            // fails with ECOLOGY_UNAVAILABLE after the first day advance.
+            observerAup = AbsoluteUniversePosition.FromAbsolutePosition(double3.zero);
+            return observerAup.IsFinite();
         }
+
 
         private void EnsurePlayerSectorRegistered()
         {
-            if (HasPendingSimulationJob())
+            // Already seeded — nothing to do. (Avoid spam when audit/SlowTick call this every frame.)
+            if (_activeBiomassCellCount > 0 && _activeSectorCount > 0)
                 return;
+
+            // Headless day-advance can call the audit path before a SlowTick has completed a
+            // previously scheduled empty solve. Force-complete so seed is not starved forever by
+            // HasPendingSimulationJob() == true (that left ActiveCellCount=0 and ECOLOGY_UNAVAILABLE).
+            if (HasPendingSimulationJob())
+                CompleteScheduledSimulation(forceComplete: true);
+
+            if (HasPendingSimulationJob())
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning(
+                    "[EcosystemDirector] EnsurePlayerSectorRegistered blocked: pending simulation job " +
+                    $"after force-complete (solveScheduled={_solveScheduled} genomeScheduled={_genomeMutationScheduled}).");
+#endif
+                return;
+            }
 
             if (!TryResolveSeedObserverAup(out AbsoluteUniversePosition playerAup))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Only warn while tables are still empty — once seeded, resolve may intentionally fail.
+                if (_activeBiomassCellCount <= 0)
+                {
+                    Debug.LogWarning(
+                        "[EcosystemDirector] EnsurePlayerSectorRegistered blocked: seed observer AUP unresolved.");
+                }
+#endif
                 return;
+            }
+
 
             if (!TryLockSectorSolveJobBuffers())
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                bool hasViews = HasSectorSolveJobViews();
+                bool hasVault = _dataVault != null;
+                Debug.LogWarning(
+                    "[EcosystemDirector] EnsurePlayerSectorRegistered blocked: TryLockSectorSolveJobBuffers failed " +
+                    $"(hasViews={hasViews} vault={(hasVault ? 1 : 0)} locksHeld={_solveJobLocksHeld} " +
+                    $"activeCells={_activeBiomassCellCount} activeSectors={_activeSectorCount}).");
+#endif
                 return;
+            }
 
             try
             {
-                ResolveOrCreateSectorSlot(QuantizeSector(in playerAup), seedWithBaseline: true);
+                int sectorSlot = ResolveOrCreateSectorSlot(QuantizeSector(in playerAup), seedWithBaseline: true);
                 int2 macroCell = QuantizeBiomassMacroCell(in playerAup);
-                ResolveOrCreateBiomassCellSlot(macroCell, seedWithBaseline: true);
+                int centerCell = ResolveOrCreateBiomassCellSlot(macroCell, seedWithBaseline: true);
                 ResolveOrCreateBiomassCellSlot(macroCell + new int2(1, 0), seedWithBaseline: false);
                 ResolveOrCreateBiomassCellSlot(macroCell + new int2(-1, 0), seedWithBaseline: false);
                 ResolveOrCreateBiomassCellSlot(macroCell + new int2(0, 1), seedWithBaseline: false);
                 ResolveOrCreateBiomassCellSlot(macroCell + new int2(0, -1), seedWithBaseline: false);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (_activeBiomassCellCount <= 0 || _activeSectorCount <= 0)
+                {
+                    Debug.LogWarning(
+                        "[EcosystemDirector] EnsurePlayerSectorRegistered finished with empty tables " +
+                        $"(sectorSlot={sectorSlot} centerCell={centerCell} " +
+                        $"activeCells={_activeBiomassCellCount} activeSectors={_activeSectorCount}).");
+                }
+#endif
+
             }
             finally
             {
                 UnlockSectorSolveJobBuffers();
             }
         }
+
 
         /// <summary>
         /// Expands the populated sector frontier one ring outward from every already-populated sector so

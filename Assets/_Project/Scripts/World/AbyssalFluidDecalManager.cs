@@ -176,6 +176,42 @@ namespace Hecton8.World
         private int _lastScreenSpaceDecalCopyFrame;
         private int _pressureSprayMatrixCount;
 
+        /// <summary>
+        /// Resolve-or-create the sole AbyssalFluidDecalManager / GlobalRegistry.FluidDecalPresentation owner.
+        /// Script GUID 932634fcdd3b41b091f6c33d24230da6 has ZERO scene/prefab hits.
+        /// OnEnable only registers when already present; without this factory BaseModule,
+        /// HabitatIntegrityManager, LogisticsPipeNode, HectonPlayerMotor, VehicleMotor,
+        /// BiomeMatrixDirector, ConstructionManager and SubmarineStructuralGrid hit permanent null.
+        /// Profile-null-safe: missing decalMaterial logs once and mesh draw no-ops.
+        /// </summary>
+        public static AbyssalFluidDecalManager EnsureRuntimeInstance()
+        {
+            AbyssalFluidDecalManager registered = GlobalRegistry.AbyssalFluidDecals;
+            if (IsFluidDecalRuntimeUsable(registered))
+                return registered;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterAbyssalFluidDecalRuntime(registered);
+                registered._serviceRegistered = false;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[AbyssalFluidDecalManager]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<AbyssalFluidDecalManager>();
+        }
+
+        private static bool IsFluidDecalRuntimeUsable(AbyssalFluidDecalManager manager)
+        {
+            return !ReferenceEquals(manager, null) &&
+                   manager != null &&
+                   manager._serviceRegistered &&
+                   manager.isActiveAndEnabled;
+        }
+
         private void Awake()
         {
             SanitizeSettings();

@@ -213,6 +213,37 @@ namespace Hecton8.Narrative
         }
 #endif
 
+
+        /// <summary>
+        /// Resolve-or-create the sole GlobalRegistry.AudioLogs owner.
+        /// GUID ca4d93977437b664fbbf3dcd8b694d38 has ZERO live scene/prefab hits
+        /// (only Assets/_Recovery leftovers). HectonLoreSystemsRoot.SetupAllSystems
+        /// is editor ContextMenu-only and does not run in play mode.
+        /// OnEnable only registers when already present; without this factory
+        /// NarrativeDiscovery, AudioLogPickup, PDADataLogTab, FirstHourDirector,
+        /// ProceduralLoreDirector, NarrativeProgressionBridge, AtlasSignalSystem,
+        /// HectonPlayerHealth and EmergencyServiceRelay hit permanent null.
+        /// </summary>
+        public static AudioLogSystem EnsureRuntimeInstance()
+        {
+            AudioLogSystem registered = GlobalRegistry.AudioLogs;
+            if (IsAudioLogSystemUsable(registered))
+                return registered;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterAudioLogRuntime(registered);
+                registered._serviceRegistered = false;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[AudioLogSystem]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<AudioLogSystem>();
+        }
+
         private void OnEnable()
         {
             if (!TryRegisterService())

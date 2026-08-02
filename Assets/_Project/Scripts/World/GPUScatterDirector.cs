@@ -296,6 +296,11 @@ namespace Hecton8.World
         private bool _coldSupportsComputeShaders;
         private bool _coldUsesReversedZBuffer;
         private bool _runtimeDependencyResolveRequested;
+        // Stage 7: when WorldProceduralScatterDirector owns placement, GPU path is presentation-only.
+        private bool _presentationOnlyMode;
+        /// <summary>True when dual-owner gate forced presentation-only (no second placement ownership).</summary>
+        public bool IsPresentationOnlyMode => _presentationOnlyMode;
+
         private int _clearDensityKernel = -1;
         private int _generateKernel = -1;
         private int _compactKernel = -1;
@@ -406,6 +411,17 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            // Stage 7: dual-owner fail-closed — WorldProceduralScatterDirector is sole placement owner.
+            // GPU path may only act as presentation/render when hybrid placement ownership is live.
+            if (WorldProceduralScatterDirector.HasRuntimeScatterOwner())
+            {
+                _presentationOnlyMode = true;
+                Debug.Log(
+                    "[H8_SCATTER_DUAL_OWNER] GPUScatterDirector Awake: WorldProceduralScatterDirector is live placement owner. " +
+                    "Entering presentation-only mode (no second placement ownership).",
+                    this);
+            }
+
             _activeInstance = this;
             CacheGraphicsCapabilitiesCold();
 #if UNITY_EDITOR
@@ -427,6 +443,15 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            // Stage 7: re-check dual-owner on enable (script order / hot-enable).
+            if (WorldProceduralScatterDirector.HasRuntimeScatterOwner())
+            {
+                _presentationOnlyMode = true;
+                Debug.Log(
+                    "[H8_SCATTER_DUAL_OWNER] GPUScatterDirector OnEnable: presentation-only (placement owner is WorldProceduralScatterDirector).",
+                    this);
+            }
+
             _activeInstance = this;
             CacheGraphicsCapabilitiesCold();
 #if UNITY_EDITOR
@@ -445,6 +470,7 @@ namespace Hecton8.World
             TryRegisterOriginShiftListener();
             TryRegister();
         }
+
 
         private void OnDisable()
         {
@@ -503,6 +529,7 @@ namespace Hecton8.World
 
         /// <summary>
         /// Generates and renders the current player-centered scatter field.
+        /// Stage 7: when presentation-only, skip GPU placement generation (WorldProcedural owns placement).
         /// </summary>
         public void LateFrameTick()
         {
@@ -510,8 +537,19 @@ namespace Hecton8.World
             if (deltaTime < 0f)
                 return;
 
+            // Dual-owner fail-closed: no second placement stream while WorldProcedural owns placements.
+            if (_presentationOnlyMode)
+            {
+                // Keep mod instance flush + biome globals path light; do not dispatch GenerateScatterInstances.
+                if (HasMissingRuntimeDependencies())
+                    _runtimeDependencyResolveRequested = true;
+                FlushModInstanceLayer();
+                return;
+            }
+
             if (HasMissingRuntimeDependencies())
                 _runtimeDependencyResolveRequested = true;
+
 
             if (!HasScatterRuntimeResourcesReady() ||
                 viewCamera == null ||

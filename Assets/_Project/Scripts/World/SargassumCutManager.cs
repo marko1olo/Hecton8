@@ -320,6 +320,50 @@ namespace Hecton8.World
         public static SargassumCutManager Instance => s_activeRuntimeInstance;
 
         /// <summary>
+        /// Resolve-or-create the sole SargassumCutManager owner for GlobalRegistry.SargassumCut.
+        /// Script GUID ff5d403710d1d0e4bb43e3210c59df5c has ZERO live scene/prefab hits; without this
+        /// path ISargassumCutWriteService / cut-mask consumers stay permanent null.
+        /// </summary>
+        public static SargassumCutManager EnsureRuntimeInstance()
+        {
+            SargassumCutManager registered = GlobalRegistry.SargassumCut;
+            if (IsSargassumCutRuntimeUsable(registered))
+                return registered;
+
+            SargassumCutManager active = s_activeRuntimeInstance;
+            if (IsSargassumCutRuntimeUsable(active))
+                return active;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterSargassumCutRuntime(registered);
+                if (registered != null)
+                    registered._serviceRegistered = false;
+            }
+
+            if (!ReferenceEquals(active, null) && active == null)
+            {
+                s_activeRuntimeInstance = null;
+            }
+            else if (!ReferenceEquals(active, null) && !IsSargassumCutRuntimeUsable(active))
+            {
+                if (ReferenceEquals(s_activeRuntimeInstance, active))
+                    s_activeRuntimeInstance = null;
+                if (active != null)
+                    active._serviceRegistered = false;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[SargassumCutManager]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<SargassumCutManager>();
+        }
+
+
+
+        /// <summary>
         /// Current cut mask texture used by shaders and GPU fauna.
         /// </summary>
         public RenderTexture CutMaskTexture => _maskRead;
