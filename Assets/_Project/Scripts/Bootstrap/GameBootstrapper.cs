@@ -8488,12 +8488,18 @@ namespace Hecton8.Bootstrap
                 // factory in another static method is pure indirection.
                 Hecton8.Construction.AutonomousExtractorSystem.TryEnsureRuntimeOwner(out _);
 
+                // LODSystemManager: sole GlobalRegistry.LODSystem owner (distance LOD coordinator).
+                // Script GUID e0f5a77c84ce58b40b9c6e6871d1c469 — ZERO live scene/prefab hits.
+                // Factory already exists; this is the missing construction site for player builds.
+                Hecton8.World.LODSystemManager.EnsureRuntimeInstance();
+
                 // WorldChunkResidencyManager is the sole GlobalRegistry.StreamingBackpressure owner
                 // (IStreamingBackpressureService). WorldRuntimeInstaller deliberately skips install
                 // (hot-swap token denied for StreamingBackpressureRuntime). ZERO live scene/prefab
                 // hits; OnEnable-only registration never runs without a construction site.
                 // Pre-Ready bootstrap lane (this gated block) is the correct owner path.
                 Hecton8.World.WorldChunkResidencyManager.EnsureRuntimeInstance();
+
 
                 // SubtitleManager is the sole GlobalRegistry.Subtitles owner. Zero scene/prefab
                 // GUID hits (2007393d93d7376438891f11d8ec3a10), including Suit_HUD_Canvas.prefab.
