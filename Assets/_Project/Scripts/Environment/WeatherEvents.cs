@@ -330,22 +330,99 @@ namespace Hecton8.Environment
 
         private static bool EnqueuePayload(in WeatherEventPayload payload)
         {
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
-            {
-                ReportEventOverflow();
+            // Sentinel / Step-8 world-prime teardown can free NativeQueue storage while the
+            // managed struct still reports IsCreated, leaving capacity 0. Rebuild before write.
+            EnsureInitialized();
+            if (!TryValidateQueuesOrRebuild())
                 return false;
-            }
 
             if (_isDispatching)
             {
+                if (_nextFrameEventCount >= PendingEventCapacity)
+                {
+                    ReportEventOverflow();
+                    return false;
+                }
+
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
                 return true;
             }
 
+            if (_pendingEventCount >= PendingEventCapacity)
+            {
+                ReportEventOverflow();
+                return false;
+            }
+
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
             return true;
+        }
+
+        /// <summary>
+        /// Returns false when queues cannot be made writable (allocator/sentinel failure).
+        /// Rebuilds when either lane is missing or still reports capacity-0 after dispose races.
+        /// </summary>
+        private static bool TryValidateQueuesOrRebuild()
+        {
+            if (_pendingEvents.IsCreated && _nextFrameEvents.IsCreated)
+            {
+                // Detect zombie queues: IsCreated but cannot accept items (capacity 0 after free).
+                // NativeQueue has no public Capacity; Count==0 after dispose race is not enough.
+                // Probe via persistent counters: if counts are non-negative and IsCreated, OK
+                // unless a prior Enqueue threw capacity-0 (latched by rebuild request).
+                if (!_forceQueueRebuild)
+                    return true;
+            }
+
+            ReleaseNativeQueues();
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _forceQueueRebuild = false;
+            _isDispatching = false;
+
+            try
+            {
+                EnsureInitialized();
+            }
+            catch
+            {
+                return false;
+            }
+
+            return _pendingEvents.IsCreated && _nextFrameEvents.IsCreated;
+        }
+
+        private static bool TryEnqueuePayload(in WeatherEventPayload payload)
+        {
+            try
+            {
+                return EnqueuePayload(payload);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Unity NativeQueue throws when storage was freed (capacity 0) after sentinel teardown.
+                if (ex.Message != null && ex.Message.IndexOf("capacity", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    _forceQueueRebuild = true;
+                    ReleaseNativeQueues();
+                    _pendingEventCount = 0;
+                    _nextFrameEventCount = 0;
+                    _isDispatching = false;
+                    try
+                    {
+                        EnsureInitialized();
+                        return EnqueuePayload(payload);
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }
+
+                throw;
+            }
         }
 
         public static void DropPendingAmbient()
@@ -355,10 +432,20 @@ namespace Hecton8.Environment
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
+            _forceQueueRebuild = false;
         }
 
         private static void EnsureInitialized()
         {
+            // If only one lane survived teardown, drop both so prewarm capacities stay paired.
+            if (_pendingEvents.IsCreated != _nextFrameEvents.IsCreated)
+            {
+                ReleaseNativeQueues();
+                _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
+                _isDispatching = false;
+            }
+
             try
             {
                 if (!_pendingEvents.IsCreated)
@@ -366,6 +453,7 @@ namespace Hecton8.Environment
                     _pendingEvents = new NativeQueue<WeatherEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<WeatherEventPayload>[32] — deferred weather event lane — owner: WeatherEvents
                     RegisterNativeQueue(ref _pendingEvents, PendingEventCapacity, nameof(_pendingEvents), out _pendingEventsSentinelId);
                     PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                    _pendingEventCount = 0;
                 }
 
                 if (!_nextFrameEvents.IsCreated)
@@ -373,6 +461,7 @@ namespace Hecton8.Environment
                     _nextFrameEvents = new NativeQueue<WeatherEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<WeatherEventPayload>[32] — next-frame weather event lane prevents same-frame reentrant dispatch — owner: WeatherEvents
                     RegisterNativeQueue(ref _nextFrameEvents, PendingEventCapacity, nameof(_nextFrameEvents), out _nextFrameEventsSentinelId);
                     PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+                    _nextFrameEventCount = 0;
                 }
             }
             catch
@@ -380,6 +469,8 @@ namespace Hecton8.Environment
                 ReleaseNativeQueues();
                 _pendingEventCount = 0;
                 _nextFrameEventCount = 0;
+                _isDispatching = false;
+                _forceQueueRebuild = true;
                 throw;
             }
         }
