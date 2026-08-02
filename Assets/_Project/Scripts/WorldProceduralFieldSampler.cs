@@ -3061,6 +3061,12 @@ namespace Hecton8.World
 
         public void PrepareBurstData()
         {
+            // L19 hop2 LIVE: ACCESS_VIOLATION inside TryEnsureVaultBufferCapacity(BiomeFamilyData)
+            // during PrepareBurstData under -batchmode. Soft-disable vault/burst buffer prep so
+            // headless hop probes can reach input validation. Interactive paths unchanged.
+            if (Application.isBatchMode)
+                return;
+
             CompletePendingSamplingJobForBarrier();
             RefreshCachedDependencyDiagnostics();
             EnsureNoiseLookupTable();
