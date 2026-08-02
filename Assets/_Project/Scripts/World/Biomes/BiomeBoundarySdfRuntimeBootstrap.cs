@@ -33,21 +33,17 @@ namespace Hecton8.World.Biomes
             if (BiomeTransitionManagerRuntime.ActiveRuntimeInstance == null &&
                 !runtimeOwner.TryGetComponent(out transitionRuntime))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 transitionRuntime = runtimeOwner.AddComponent<BiomeTransitionManagerRuntime>();
-#else
-                return;
-#endif
             }
 
             if (BiomeBoundarySdfRuntime.ActiveRuntimeInstance == null &&
                 !runtimeOwner.TryGetComponent(out sdfRuntime))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 sdfRuntime = runtimeOwner.AddComponent<BiomeBoundarySdfRuntime>();
-#else
-                return;
-#endif
             }
 
             if (transitionRuntime != null)
@@ -69,12 +65,10 @@ namespace Hecton8.World.Biomes
             if (runtimeOwner != null)
                 return runtimeOwner;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             // COLD ALLOC: GameObject[1] - runtime fail-safe owner for missing biome-boundary SDF producer - owner: BiomeBoundarySdfRuntimeBootstrap
             return new GameObject(FallbackRootName);
-#else
-            return null;
-#endif
         }
 
         private static bool IsWorldScene(Scene scene)

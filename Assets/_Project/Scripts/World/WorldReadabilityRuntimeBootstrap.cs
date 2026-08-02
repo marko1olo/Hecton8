@@ -51,15 +51,15 @@ namespace Hecton8.World
                 return;
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             WorldReadabilityDirector runtimeDirector = runtimeOwner.AddComponent<WorldReadabilityDirector>();
             runtimeDirector.ApplyRuntimeDependencies(runtimeWorldZoneDirector, runtimeBiomeMatrixDirector);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Hecton8.Core.H8Debug.LogWarning(
                 "[WorldReadabilityRuntimeBootstrap] Spawned WorldReadabilityDirector at runtime because the active scene had none. " +
                 "Owner='" + runtimeOwner.name + "'. This is a fail-safe, not a substitute for authored setup.");
-#else
-            return;
 #endif
         }
 
@@ -73,14 +73,14 @@ namespace Hecton8.World
             if (EmergencyServiceRelay.ActiveCount <= 0)
                 return;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             runtimeOwner.AddComponent<EmergencyServiceRelayDirector>();
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Hecton8.Core.H8Debug.LogWarning(
                 "[WorldReadabilityRuntimeBootstrap] Spawned EmergencyServiceRelayDirector at runtime because the active scene had none. " +
                 "Owner='" + runtimeOwner.name + "'. This is a fail-safe, not a substitute for authored setup.");
-#else
-            return;
 #endif
         }
 
@@ -91,12 +91,10 @@ namespace Hecton8.World
             if (runtimeOwner != null)
                 return runtimeOwner;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            // COLD ALLOC: GameObject[1] — runtime fail-safe owner for missing onboarding directors — owner: WorldReadabilityRuntimeBootstrap
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
+            // COLD ALLOC: GameObject[1] - runtime fail-safe owner for missing onboarding directors - owner: WorldReadabilityRuntimeBootstrap
             return new GameObject("WorldReadabilityDirector_Root");
-#else
-            return null;
-#endif
         }
     }
 }
