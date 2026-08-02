@@ -8588,6 +8588,42 @@ namespace Hecton8.Bootstrap
 
         }
 
+        /// <summary>
+        /// Player-build-safe reflection ensure for factories that live outside Hecton8.Core.
+        /// The editor/dev overload above is ifdef-gated; this path must compile in player builds
+        /// so AmbientBiota / DynamicMusic cold ensure does not form a Core↔feature asmdef cycle.
+        /// </summary>
+        private static bool TryEnsureRuntimeServiceByReflection(string assemblyQualifiedTypeName)
+        {
+            if (string.IsNullOrEmpty(assemblyQualifiedTypeName))
+                return false;
+
+            Type serviceType = Type.GetType(assemblyQualifiedTypeName, throwOnError: false);
+            if (serviceType == null)
+                return false;
+
+            MethodInfo ensureMethod = serviceType.GetMethod(
+                "EnsureRuntimeInstance",
+                BindingFlags.Public | BindingFlags.Static,
+                binder: null,
+                types: Type.EmptyTypes,
+                modifiers: null);
+            if (ensureMethod == null)
+                return false;
+
+            try
+            {
+                object instance = ensureMethod.Invoke(null, null);
+                if (instance is Component component)
+                    PersistRuntimeService(component);
+                return instance != null;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
         private void ApplyShippingSceneCleanup(Scene scene)
         {
             int suppressedCount = WorldShippingContentFilter.DeactivateSuppressedSceneObjects(
