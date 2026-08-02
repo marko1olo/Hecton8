@@ -53,7 +53,7 @@ namespace Hecton8.Gameplay
 
         // COLD ALLOC: HashSet<int>[DiscoveredBiomeCapacity] - discovered biome ids keyed by biome registry id - owner: HectonDiscoveryManager
         private readonly HashSet<int> _discoveredBiomeIds = new HashSet<int>(DiscoveredBiomeCapacity);
-        // COLD ALLOC: Dictionary<uint,byte>[64] — runtime fauna bestiary observation counters keyed by scan entry hash — owner: HectonDiscoveryManager
+        // COLD ALLOC: Dictionary<uint,byte>[64] вЂ” runtime fauna bestiary observation counters keyed by scan entry hash вЂ” owner: HectonDiscoveryManager
         private readonly Dictionary<uint, byte> _faunaInteractionCounts = new Dictionary<uint, byte>(64);
         private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(160); // COLD ALLOC: char[160] - biome discovery notification staging buffer - owner: HectonDiscoveryManager
         private bool _registeredWithSaveManager;
@@ -118,7 +118,8 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Sole Discovery owner; must construct when bootstrap reorders.
             GameObject runtimeRoot = new GameObject("[HectonDiscoveryManager]"); // COLD ALLOC
             return runtimeRoot.AddComponent<HectonDiscoveryManager>();
         }

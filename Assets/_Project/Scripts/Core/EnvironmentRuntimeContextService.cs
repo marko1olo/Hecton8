@@ -69,9 +69,8 @@ namespace Hecton8.Core
                 return null;
 
             // Player-build construction path (not editor-only): zero authored scene/prefab hits
-            // for EnvironmentRuntimeContextService GUID cbd923421b7c8d2438eaa99d10ba0449 and
-            // owned HazardZoneManager GUID 008e5f84c0b54c23a0b2341464541d1e. Bootstrap
-            // TryResolveBootstrapNode already calls EnsureRuntimeInstance + InitializeService.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Environment + HazardZone context root; zero authored GUID hits in player builds.
             GameObject runtimeRoot = new GameObject("[EnvironmentRuntimeContextService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned environment runtime context root - owner: EnvironmentRuntimeContextService
             return runtimeRoot.AddComponent<EnvironmentRuntimeContextService>();
         }

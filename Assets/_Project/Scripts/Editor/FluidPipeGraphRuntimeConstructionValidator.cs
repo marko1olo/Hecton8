@@ -9,14 +9,14 @@ using UnityEngine;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL pin: DestructibleOrganicManager must keep Player-build EnsureRuntimeInstance
+    /// Soft-FAIL pin: FluidPipeGraphRuntime must keep Player-build EnsureRuntimeInstance
     /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    internal sealed class DestructibleOrganicManagerRuntimeConstructionValidator :
+    internal sealed class FluidPipeGraphRuntimeConstructionValidator :
         IPreprocessBuildWithReport
     {
         private const string RuntimeRelativePath =
-            "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs";
+            "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
@@ -48,27 +48,27 @@ namespace Hecton8.Editor
                 if (!File.Exists(runtimePath))
                 {
                     Debug.LogError(
-                        "[DestructibleOrganicManagerRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        "[FluidPipeGraphRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
                         RuntimeRelativePath);
                     return;
                 }
 
                 string runtimeSource = File.ReadAllText(runtimePath);
-                Pin(runtimeSource, "static DestructibleOrganicManager EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "static FluidPipeGraphRuntime EnsureRuntimeInstance", RuntimeRelativePath);
                 Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
-                Pin(runtimeSource, "AddComponent<DestructibleOrganicManager>", RuntimeRelativePath);
-                Pin(runtimeSource, "new GameObject(\"[DestructibleOrganicManager]\")", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<FluidPipeGraphRuntime>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[FluidPipeGraphRuntime]\")", RuntimeRelativePath);
 
                 if (File.Exists(bootstrapPath))
                 {
                     string bootstrapSource = File.ReadAllText(bootstrapPath);
-                    Pin(bootstrapSource, "DestructibleOrganicManager.EnsureRuntimeInstance", BootstrapRelativePath);
+                    Pin(bootstrapSource, "FluidPipeGraphRuntime.EnsureRuntimeInstance", BootstrapRelativePath);
                 }
             }
             catch (Exception exception)
             {
                 Debug.LogError(
-                    "[DestructibleOrganicManagerRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    "[FluidPipeGraphRuntimeConstructionValidator] SOFT-FAIL exception: " +
                     exception.Message);
             }
         }
@@ -78,7 +78,7 @@ namespace Hecton8.Editor
             if (source.IndexOf(token, StringComparison.Ordinal) < 0)
             {
                 Debug.LogError(
-                    "[DestructibleOrganicManagerRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    "[FluidPipeGraphRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
                     token +
                     "' in " +
                     pathLabel);

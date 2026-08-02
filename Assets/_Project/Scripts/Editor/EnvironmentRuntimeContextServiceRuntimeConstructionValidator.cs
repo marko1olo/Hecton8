@@ -9,14 +9,14 @@ using UnityEngine;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL pin: DestructibleOrganicManager must keep Player-build EnsureRuntimeInstance
+    /// Soft-FAIL pin: EnvironmentRuntimeContextService must keep Player-build EnsureRuntimeInstance
     /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    internal sealed class DestructibleOrganicManagerRuntimeConstructionValidator :
+    internal sealed class EnvironmentRuntimeContextServiceRuntimeConstructionValidator :
         IPreprocessBuildWithReport
     {
         private const string RuntimeRelativePath =
-            "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs";
+            "Assets/_Project/Scripts/Core/EnvironmentRuntimeContextService.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
@@ -48,27 +48,27 @@ namespace Hecton8.Editor
                 if (!File.Exists(runtimePath))
                 {
                     Debug.LogError(
-                        "[DestructibleOrganicManagerRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        "[EnvironmentRuntimeContextServiceRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
                         RuntimeRelativePath);
                     return;
                 }
 
                 string runtimeSource = File.ReadAllText(runtimePath);
-                Pin(runtimeSource, "static DestructibleOrganicManager EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "static EnvironmentRuntimeContextService EnsureRuntimeInstance", RuntimeRelativePath);
                 Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
-                Pin(runtimeSource, "AddComponent<DestructibleOrganicManager>", RuntimeRelativePath);
-                Pin(runtimeSource, "new GameObject(\"[DestructibleOrganicManager]\")", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<EnvironmentRuntimeContextService>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[EnvironmentRuntimeContextService]\")", RuntimeRelativePath);
 
                 if (File.Exists(bootstrapPath))
                 {
                     string bootstrapSource = File.ReadAllText(bootstrapPath);
-                    Pin(bootstrapSource, "DestructibleOrganicManager.EnsureRuntimeInstance", BootstrapRelativePath);
+                    Pin(bootstrapSource, "EnvironmentRuntimeContextService.EnsureRuntimeInstance", BootstrapRelativePath);
                 }
             }
             catch (Exception exception)
             {
                 Debug.LogError(
-                    "[DestructibleOrganicManagerRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    "[EnvironmentRuntimeContextServiceRuntimeConstructionValidator] SOFT-FAIL exception: " +
                     exception.Message);
             }
         }
@@ -78,7 +78,7 @@ namespace Hecton8.Editor
             if (source.IndexOf(token, StringComparison.Ordinal) < 0)
             {
                 Debug.LogError(
-                    "[DestructibleOrganicManagerRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    "[EnvironmentRuntimeContextServiceRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
                     token +
                     "' in " +
                     pathLabel);
