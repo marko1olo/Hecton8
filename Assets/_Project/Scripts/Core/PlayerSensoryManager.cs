@@ -111,9 +111,13 @@ namespace Hecton8.Core
                 return null;
             }
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Sensory owns player camera/listener publish into GlobalRegistry; without create
+            // DynamicMusic/HUD/spatial audio resolve permanently miss the player host.
             GameObject runtimeRoot = new GameObject("[PlayerSensoryManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player sensory service root - owner: PlayerSensoryManager
             return runtimeRoot.AddComponent<PlayerSensoryManager>();
         }
+
 
         /// <summary>
         /// Explicitly initializes the service and registers it into <see cref="GlobalRegistry"/>.
