@@ -8518,7 +8518,19 @@ namespace Hecton8.Bootstrap
                 // Construction previously sat behind UNITY_EDITOR || DEVELOPMENT_BUILD, so player
                 // AI frames and chemical queue APIs never got a grid.
                 Hecton8.World.ChemicalInfluenceGrid.EnsureRuntimeInstance();
+
+                // World interaction / FX / narrative owners with EnsureRuntimeInstance factories
+                // already pinned by soft-FAIL validators, but ZERO bootstrap construction sites.
+                // Scene/prefab GUID hits are only self/validator references for several of these;
+                // OnEnable registration never runs without a construction site in player builds.
+                Hecton8.World.SargassumCutManager.EnsureRuntimeInstance();
+                Hecton8.World.DestructibleOrganicManager.EnsureRuntimeInstance();
+                Hecton8.World.AbyssalFluidDecalManager.EnsureRuntimeInstance();
+                Hecton8.Gameplay.MissionManager.EnsureRuntimeInstance();
+                Hecton8.VFX.CameraJuiceSystem.EnsureRuntimeInstance();
+                Hecton8.Narrative.AudioLogSystem.EnsureRuntimeInstance();
             }
+
 
 
             finally
