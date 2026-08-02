@@ -6486,17 +6486,15 @@ namespace Hecton8.Bootstrap
 
         private static PrefabRegistry EnsurePrefabRegistry()
         {
-            PrefabRegistry registry = null;
-            if (PrefabRegistry.TryResolveActiveRuntime(ref registry))
-            {
-                PersistRuntimeService(registry);
-                return registry;
-            }
+            // Resolve-or-create is owned by PrefabRegistry.EnsureRuntimeInstance
+            // (active runtime slot + player-build AddComponent).
+            // Bootstrap no longer duplicates the construction path.
+            PrefabRegistry registry = PrefabRegistry.EnsureRuntimeInstance();
+            if (registry == null)
+                return null;
 
-            GameObject runtimeRoot = new GameObject(PrefabRegistryRuntimeName); // COLD ALLOC: GameObject[1] - bootstrap-owned prefab registry fallback - owner: GameBootstrapper
-            PrefabRegistry createdRegistry = runtimeRoot.AddComponent<PrefabRegistry>();
-            PersistRuntimeService(createdRegistry);
-            return createdRegistry;
+            PersistRuntimeService(registry);
+            return registry;
         }
 
         private static PersistentWorldRegistry EnsurePersistentWorldRegistry()
