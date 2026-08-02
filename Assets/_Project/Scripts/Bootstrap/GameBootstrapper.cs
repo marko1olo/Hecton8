@@ -6729,8 +6729,19 @@ namespace Hecton8.Bootstrap
                 return sceneAudioService;
             }
 
+            // Prefab PFB_SpatialAudioManagerRoot exists but is not parented under GameBootstrapper
+            // in player builds; authored child walk returns null and the node used to fall through
+            // to NoOpAudio. Factory constructs the sole Audio owner so InitializeService can run.
+            SpatialAudioManager constructed = SpatialAudioManager.EnsureRuntimeInstance();
+            if (constructed != null)
+            {
+                PersistRuntimeService(constructed);
+                return constructed;
+            }
+
             return null;
         }
+
 
         private static SpatialAudioManager ResolveAuthoredSpatialAudioManager()
         {
