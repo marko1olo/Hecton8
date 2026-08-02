@@ -1,20 +1,20 @@
 {
   "gate": "H8_V0PlaytestSmokeGate",
   "version": "2026-07-30",
-  "utc": "2026-07-30T11:32:52.8981387Z",
+  "utc": "2026-08-02T17:47:23.6192421Z",
   "claimsWorldPlayable": "false",
   "notes": "KCC headless only. WORLD boot / save / fauna / tools / death not executed by this gate.",
   "kccConeContractPass": "true",
   "kccConeDisplacementPerFrameM": 1.6666667461395264,
   "kccConeTuningMaxSpeedMps": 950,
-  "kccRunReturnedPass": "false",
-  "kccErrorFlagsHex": "0x00000042",
-  "kccFailureCount": 743920,
+  "kccRunReturnedPass": "true",
+  "kccErrorFlagsHex": "0x00000000",
+  "kccFailureCount": 0,
   "kccDriftErrorMm": 0,
-  "kccAvgUsPerFrame": 30.513700485229492,
+  "kccAvgUsPerFrame": 58.353458404541016,
   "kccManagedBytes": 0,
   "kccPrecisionDriftClear": "true",
-  "overallPass": "false",
-  "status": "FAIL"
+  "overallPass": "true",
+  "status": "PASS"
 
 }
