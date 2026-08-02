@@ -257,11 +257,14 @@ namespace Hecton8.Tools
                 return null;
             }
 
-            GameObject runtimeRoot = new GameObject("[ModularEquipmentEngine]"); // COLD ALLOC: GameObject[1] — bootstrap-owned equipment runtime root — owner: ModularEquipmentEngine
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Zero live scene/prefab GUID hits; without create, IModularEquipmentService stays null.
+            GameObject runtimeRoot = new GameObject("[ModularEquipmentEngine]"); // COLD ALLOC: GameObject[1] - bootstrap-owned equipment runtime root - owner: ModularEquipmentEngine
             ModularEquipmentEngine engine = runtimeRoot.AddComponent<ModularEquipmentEngine>();
             engine.InitializeService();
             return engine;
         }
+
 
         public void InitializeService()
         {
