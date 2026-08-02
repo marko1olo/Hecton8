@@ -1798,7 +1798,10 @@ namespace Hecton8.World
             _floraSwayEntityMassMultiplier = Mathf.Clamp(_floraSwayEntityMassMultiplier, 0f, 4f);
             _wakeTrailQualityMilli = ResolveWakeTrailQualityMilli();
             _wakeTrailRuntimeResolution = ResolveWakeTrailResolutionForQualityWeight(_wakeTrailQualityMilli * 0.001f);
-            _supportsWakeTrailComputeCold = SystemInfo.supportsComputeShaders;
+            _supportsWakeTrailComputeCold =
+                SystemInfo.supportsComputeShaders &&
+                SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGBHalf) &&
+                SystemInfo.SupportsRandomWriteOnRenderTextureFormat(RenderTextureFormat.ARGBHalf);
             RefreshVegetationBridgeCold();
             _destructibleOrganicManager = ResolveDestructibleOrganicManagerCold();
             _toxicSporeStableHashId = string.IsNullOrWhiteSpace(_toxicSporeStableId) ? 0 : LocHash.Compute(_toxicSporeStableId);
@@ -8696,6 +8699,18 @@ namespace Hecton8.World
             // so allocating first stranded two ARGBHalf RenderTextures, two structured GraphicsBuffers and the
             // WakeTrailStampCommands vault buffer for the lifetime of the component on every project that ships
             // without Hecton_VegetationWakeTrailSim.compute assigned.
+            if (!_supportsWakeTrailComputeCold)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError(
+                    "[FloraInteractionManager] Wake trail compute/ARGBHalf random-write unsupported. Disabling wake trail.",
+                    this);
+#endif
+                _wakeTrailDisabled = true;
+                ReleaseWakeTrailResources();
+                return;
+            }
+
             TryAutoAssignWakeTrailSimulationCompute();
             if (_wakeTrailSimulationCompute == null)
             {
@@ -8712,6 +8727,21 @@ namespace Hecton8.World
 
             if (_wakeTrailWrite == null)
                 _wakeTrailWrite = CreateWakeTrailTexture("__VegetationWakeTrail_B");
+
+            if (_wakeTrailRead == null ||
+                _wakeTrailWrite == null ||
+                !_wakeTrailRead.IsCreated() ||
+                !_wakeTrailWrite.IsCreated())
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError(
+                    "[FloraInteractionManager] Wake trail ping-pong RTs failed to allocate. Disabling wake trail.",
+                    this);
+#endif
+                _wakeTrailDisabled = true;
+                ReleaseWakeTrailResources();
+                return;
+            }
 
             EnsureWakeTrailStampCommandBuffer(clearExisting: false);
 
@@ -9161,8 +9191,20 @@ namespace Hecton8.World
 
         private void ClearWakeTrailTextures()
         {
-            if (_wakeTrailRead == null || _wakeTrailWrite == null)
+            if (_wakeTrailDisabled || _wakeTrailRead == null || _wakeTrailWrite == null)
                 return;
+
+            // Headless/-nographics can leave the managed RT non-null after Create fails
+            // (ARGBHalf random-write unsupported). Never bind a non-created RT as active.
+            if (!_wakeTrailRead.IsCreated() || !_wakeTrailWrite.IsCreated())
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError("[FloraInteractionManager] Wake trail RT not created (random-write unsupported?). Disabling wake trail.", this);
+#endif
+                _wakeTrailDisabled = true;
+                ReleaseWakeTrailResources();
+                return;
+            }
 
             RenderTexture active = RenderTexture.active;
             RenderTexture.active = _wakeTrailRead;
@@ -9202,6 +9244,19 @@ namespace Hecton8.World
 
         private RenderTexture CreateWakeTrailTexture(string textureName)
         {
+            // Under -nographics / headless the driver often rejects UAV random-write on ARGBHalf
+            // (logged as RGBA16 SFloat). Bail before Create so we never hand a fake RT to SetActive.
+            if (!SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGBHalf) ||
+                !SystemInfo.SupportsRandomWriteOnRenderTextureFormat(RenderTextureFormat.ARGBHalf))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError(
+                    "[FloraInteractionManager] Wake trail ARGBHalf random-write unsupported on this device. Disabling wake trail.",
+                    this);
+#endif
+                return null;
+            }
+
             RenderTexture texture = new RenderTexture(_wakeTrailRuntimeResolution, _wakeTrailRuntimeResolution, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear)
             {
                 name = textureName,
@@ -9212,7 +9267,18 @@ namespace Hecton8.World
                 enableRandomWrite = true,
                 hideFlags = HideFlags.HideAndDontSave
             }; // COLD ALLOC: RenderTexture[1] - persistent vegetation wake trail ping-pong target - owner: FloraInteractionManager
-            texture.Create();
+
+            if (!texture.Create() || !texture.IsCreated())
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Hecton8.Core.H8Debug.LogError(
+                    "[FloraInteractionManager] Wake trail RenderTexture.Create failed. Disabling wake trail.",
+                    this);
+#endif
+                ReleaseWakeTrailTexture(ref texture);
+                return null;
+            }
+
             return texture;
         }
 
