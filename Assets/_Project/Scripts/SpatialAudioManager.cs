@@ -542,9 +542,38 @@ namespace Hecton8.Audio
 
         internal static SpatialAudioManager ActiveRuntimeInstance { get; private set; }
 
+        /// <summary>
+        /// Resolve-or-create the sole GlobalRegistry.Audio / AudioVirtualization owner.
+        /// Bootstrap previously only GetComponentInChildren'd an authored child; prefab exists
+        /// (PFB_SpatialAudioManagerRoot) but is not parented under GameBootstrapper in player
+        /// builds, so the Audio node stayed EXEMPT and NoOpAudio filled the slot.
+        /// </summary>
+        public static SpatialAudioManager EnsureRuntimeInstance()
+        {
+            SpatialAudioManager active = ActiveRuntimeInstance;
+            if (IsSpatialAudioRuntimeUsable(active))
+                return active;
+
+            IAudioService registered = GlobalRegistry.Audio;
+            SpatialAudioManager asManager = registered as SpatialAudioManager;
+            if (IsSpatialAudioRuntimeUsable(asManager))
+                return asManager;
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: prefab is authored but not scene-parented under bootstrap.
+            GameObject runtimeRoot = new GameObject("[SpatialAudioManager]"); // COLD ALLOC
+            SpatialAudioManager created = runtimeRoot.AddComponent<SpatialAudioManager>();
+            created.InitializeService();
+            return created;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+
         private static void ResetStaticState()
         {
+
             SpatialAudioManager activeRuntime = ActiveRuntimeInstance;
             if (activeRuntime != null)
                 activeRuntime.ShutdownServiceState(releaseRuntimeResources: true);
