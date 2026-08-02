@@ -8530,7 +8530,21 @@ namespace Hecton8.Bootstrap
                 Hecton8.Gameplay.MissionManager.EnsureRuntimeInstance();
                 Hecton8.VFX.CameraJuiceSystem.EnsureRuntimeInstance();
                 Hecton8.Narrative.AudioLogSystem.EnsureRuntimeInstance();
+
+                // Second wave: factories + soft-FAIL validators already present; bootstrap wire
+                // was the missing construction site (scene/prefab hits absent or self-only).
+                Hecton8.Gameplay.HazardZoneManager.EnsureRuntimeInstance();
+                Hecton8.AtlasSignal.AtlasSignalSystem.EnsureRuntimeInstance();
+                Hecton8.AtlasSignal.AtlasSignalDecoder.EnsureRuntimeInstance();
+                Hecton8.World.SargassumGlobalDragManager.EnsureRuntimeInstance();
+                Hecton8.AI.Ambient.AmbientBiotaDirector.EnsureRuntimeInstance();
+                Hecton8.Vehicles.Automation.DockingAutopilotService.EnsureRuntimeInstance();
+                Hecton8.Construction.FluidPipeGraphRuntime.EnsureRuntimeInstance();
+                Hecton8.Atmosphere.GasDynamicsSolver.EnsureRuntimeInstance();
+                Hecton8.Gameplay.HectonDiscoveryManager.EnsureRuntimeInstance();
+                Hecton8.Narrative.LoreDatabaseManager.EnsureRuntimeInstance();
             }
+
 
 
 
