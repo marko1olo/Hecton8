@@ -372,11 +372,11 @@ namespace Hecton8.Items
             if (_buoyancy == null)
             {
                 if (!TryGetComponent(out _buoyancy))
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                {
+                    // Player-build construction path: no authored/bootstrap instance reachable.
+                    // Must construct in player builds when bootstrap reorders or skips registration.
                     _buoyancy = gameObject.AddComponent<BuoyancyObject>();
-#else
-                    return;
-#endif
+                }
             }
 
             if (itemData.worldBuoyancyProfile != null)
