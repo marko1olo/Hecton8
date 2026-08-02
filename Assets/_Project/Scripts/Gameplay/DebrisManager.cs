@@ -144,7 +144,8 @@ namespace Hecton8.Gameplay
                 return null;
             }
 
-            GameObject runtimeRoot = new GameObject("[DebrisManager]");
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            GameObject runtimeRoot = new GameObject("[DebrisManager]"); // COLD ALLOC
             DebrisManager manager = runtimeRoot.AddComponent<DebrisManager>();
             // Awake registers the slot but does not flip IServiceHeartbeat.IsServiceReady.
             // Bootstrap WaitForBootstrapDependencyHeartbeatAsync gates on IsServiceReady; call
@@ -153,6 +154,7 @@ namespace Hecton8.Gameplay
                 manager.InitializeService();
             return manager;
         }
+
 
         /// <summary>
         /// Registers the service into <see cref="GlobalRegistry"/> and marks heartbeat ready.

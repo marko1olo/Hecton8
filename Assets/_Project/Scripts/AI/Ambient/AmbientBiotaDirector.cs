@@ -196,6 +196,60 @@ namespace Hecton8.AI.Ambient
         public NativeArray<AmbientBiotaState>.ReadOnly BiotaStates =>
             !_jobPending && TryResolveBiotaStateBuffer(out NativeArray<AmbientBiotaState> states) ? states.AsReadOnly() : default;
 
+        // AmbientBiotaDirector is the sole IAmbientBiotaService owner and lives in
+        // Hecton8.AI.Ambient (autoReferenced: false). No other assembly can AddComponent it, and
+        // no scene/prefab GUID hit exists for 560a1d1e41eb4e9e81bc73402e4c7807. Live consumers
+        // cache the permanent null: EcosystemDirector.cs:1917, Creature.cs:1226/7320,
+        // WorldChunkResidencyManager.cs:2576. Self-bootstrap via RuntimeInitialize is the only
+        // path that can construct this owner without breaking the asmdef fence.
+        private const string RuntimeRootName = "__HECTON_AMBIENT_BIOTA_RUNTIME";
+
+        /// <summary>
+        /// Cold-path resolve-or-create for the ambient biota owner. Idempotent.
+        /// </summary>
+        public static AmbientBiotaDirector EnsureRuntimeInstance()
+        {
+            AmbientBiotaDirector existing = FindFirstObjectByType<AmbientBiotaDirector>(FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                if (!existing.gameObject.activeSelf)
+                    existing.gameObject.SetActive(true);
+                if (!existing.enabled)
+                    existing.enabled = true;
+                return existing;
+            }
+
+            if (GlobalRegistry.AmbientBiota is AmbientBiotaDirector registered && registered != null)
+                return registered;
+
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Live consumers (EcosystemDirector, Creature, WorldChunkResidencyManager) cache
+            // GlobalRegistry.AmbientBiota permanently null without this create path.
+            GameObject root = GameObject.Find(RuntimeRootName);
+            if (root == null)
+                root = new GameObject(RuntimeRootName); // COLD ALLOC: GameObject[1] - ambient biota runtime root - owner: AmbientBiotaDirector
+
+            root.hideFlags = HideFlags.None;
+            if (!root.activeSelf)
+                root.SetActive(true);
+
+            if (!root.TryGetComponent(out AmbientBiotaDirector director))
+                director = root.AddComponent<AmbientBiotaDirector>();
+
+            return director;
+        }
+
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void EnsureRuntimeInstanceOnLoad()
+        {
+            // Edit-mode domain reloads and batch validators must not spawn a play-mode owner.
+            if (!Application.isPlaying)
+                return;
+
+            EnsureRuntimeInstance();
+        }
+
         private void OnEnable()
         {
             if (!Application.isPlaying)
@@ -209,6 +263,7 @@ namespace Hecton8.AI.Ambient
             TryRegisterHotSwapListener();
             RegisterRuntime();
         }
+
 
         private void OnDisable()
         {
