@@ -1,5 +1,14 @@
 # Auto-detect text files and normalize line endings.
-* text=auto
+* text=auto eol=lf
+*.cs text eol=lf
+*.shader text eol=lf
+*.hlsl text eol=lf
+*.cginc text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
 # Keep Unity serialized assets byte-stable.
 *.meta -text
 *.asset -text

@@ -99,6 +99,47 @@ namespace Hecton8.World
 
         public static LODSystemManager Instance => s_activeRuntime;
 
+        /// <summary>
+        /// Resolve-or-create the sole GlobalRegistry.LODSystem owner for player builds.
+        /// Script GUID e0f5a77c84ce58b40b9c6e6871d1c469 has ZERO live scene/prefab hits.
+        /// </summary>
+        public static LODSystemManager EnsureRuntimeInstance()
+        {
+            LODSystemManager registered = GlobalRegistry.LODSystem;
+            if (IsLodSystemRuntimeUsable(registered))
+                return registered;
+
+            LODSystemManager active = s_activeRuntime;
+            if (IsLodSystemRuntimeUsable(active))
+                return active;
+
+            if (!ReferenceEquals(registered, null))
+            {
+                GlobalRegistry.UnregisterLODSystemRuntime(registered);
+                if (registered != null)
+                    registered._serviceRegistered = false;
+            }
+
+            if (!ReferenceEquals(active, null) && active != null && !ReferenceEquals(active, registered))
+            {
+                if (active._serviceRegistered)
+                {
+                    GlobalRegistry.UnregisterLODSystemRuntime(active);
+                    active._serviceRegistered = false;
+                }
+                if (ReferenceEquals(s_activeRuntime, active))
+                    s_activeRuntime = null;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[LODSystemManager]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<LODSystemManager>();
+        }
+
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR SETTINGS
         // ══════════════════════════════════════════════════════════

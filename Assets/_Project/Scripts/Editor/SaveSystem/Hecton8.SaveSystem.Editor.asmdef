@@ -4,6 +4,9 @@
     "references": [
         "Hecton8.Core",
         "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
+        "Hecton8.SaveSystem",
+        "Unity.Collections",
         "Unity.Mathematics"
     ],
     "includePlatforms": [

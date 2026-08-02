@@ -96,8 +96,11 @@ namespace Hecton8.Editor.Validation
             Report.AppendLine();
 
             // 2) Runtime arena boot via GlobalDataVault (player-equivalent path).
+            // Resident publish path: successful load must leave arena IsLoaded + IsWriteLocked
+            // (LockReady after validate) — same contract GameBootstrapper binds at player boot.
             bool loadOk = false;
             bool isLoaded = false;
+            bool writeLocked = false;
             H8DataBlobLoadStatus loadStatus = H8DataBlobLoadStatus.None;
             uint magic = 0u;
             ushort formatVersion = 0;
@@ -115,6 +118,8 @@ namespace Hecton8.Editor.Validation
                 // Match StressProbe RunFileLoadProof: vault, path, appVersionHash=0, worldSeed=0, failIfMissing=false.
                 loadOk = H8StaticDataArena.TryInitializeFromFile(vault, blobPath, 0u, 0u, false, out loadStatus);
                 isLoaded = H8StaticDataArena.IsLoaded;
+                // Measure publish lock BEFORE Shutdown — LockReady runs inside TryInitializeFromFile on success.
+                writeLocked = H8StaticDataArena.IsWriteLocked;
 
                 if (isLoaded)
                 {
@@ -132,6 +137,7 @@ namespace Hecton8.Editor.Validation
             {
                 loadOk = false;
                 isLoaded = false;
+                writeLocked = false;
                 loadError = ex.GetType().Name + ": " + ex.Message;
             }
             finally
@@ -139,9 +145,11 @@ namespace Hecton8.Editor.Validation
                 H8StaticDataArena.Shutdown();
             }
 
+            bool writeLockedOk = writeLocked;
             Report.Append("loadOk=").Append(loadOk ? 1 : 0);
             Report.Append(" loadStatus=").Append(loadStatus.ToString());
             Report.Append(" isLoaded=").Append(isLoaded ? 1 : 0);
+            Report.Append(" writeLockedOk=").Append(writeLockedOk ? 1 : 0);
             Report.Append(" magicOk=").Append(magicOk ? 1 : 0);
             Report.Append(" versionOk=").Append(versionOk ? 1 : 0);
             Report.Append(" magic=0x").Append(magic.ToString("X8", CultureInfo.InvariantCulture));
@@ -154,10 +162,12 @@ namespace Hecton8.Editor.Validation
             Report.AppendLine();
 
             bool statusLoaded = loadStatus == H8DataBlobLoadStatus.Loaded;
+            // Stage 4 resident publish: load must publish write-lock (LockReady) so bootstrap bind is immutable.
             bool passed = checksumOk &&
                           loadOk &&
                           statusLoaded &&
                           isLoaded &&
+                          writeLockedOk &&
                           magicOk &&
                           versionOk &&
                           arenaByteLength > 0 &&
@@ -169,10 +179,12 @@ namespace Hecton8.Editor.Validation
             Report.Append(" loadOk=").Append(loadOk ? 1 : 0);
             Report.Append(" statusLoaded=").Append(statusLoaded ? 1 : 0);
             Report.Append(" isLoaded=").Append(isLoaded ? 1 : 0);
+            Report.Append(" writeLockedOk=").Append(writeLockedOk ? 1 : 0);
             Report.Append(" magicOk=").Append(magicOk ? 1 : 0);
             Report.Append(" versionOk=").Append(versionOk ? 1 : 0);
             Report.Append(" fileBytes=").Append(fileBytes.ToString(CultureInfo.InvariantCulture));
             Report.AppendLine();
+
 
             string reportText = Report.ToString();
             if (passed)

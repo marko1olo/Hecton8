@@ -39,11 +39,16 @@ namespace Hecton8.World
             return HasRuntimeScatterOwner() ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
         }
 
-        private static bool HasRuntimeScatterOwner()
+        /// <summary>
+        /// Stage 7: true when WorldProceduralScatterDirector is the live placement owner.
+        /// Used by GPUScatterDirector dual-owner fail-closed gate (presentation-only path).
+        /// </summary>
+        internal static bool HasRuntimeScatterOwner()
         {
             WorldProceduralScatterDirector owner = s_activeRuntimeInstance;
             return owner != null && owner._runtimeScatterCallbacksActive;
         }
+
 
         /// <summary>
         /// True once the world-generation owner is registered in the global registry.
