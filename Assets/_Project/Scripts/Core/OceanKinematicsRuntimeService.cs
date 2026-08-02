@@ -61,9 +61,13 @@ namespace Hecton8.Core
                 return null;
             }
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Crest/plugin kinematics selection registers through this owner; without create,
+            // GlobalRegistry.OceanKinematics stays null and world load/kinematics degrade.
             GameObject runtimeRoot = new GameObject("[OceanKinematicsRuntimeService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned ocean kinematics selector root - owner: OceanKinematicsRuntimeService
             return runtimeRoot.AddComponent<OceanKinematicsRuntimeService>();
         }
+
 
         /// <summary>
         /// Explicitly initializes the service and registers it into <see cref="GlobalRegistry"/>.
