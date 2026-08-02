@@ -8503,6 +8503,13 @@ namespace Hecton8.Bootstrap
                 // hits; OnEnable-only registration never runs without a construction site.
                 // Pre-Ready bootstrap lane (this gated block) is the correct owner path.
                 Hecton8.World.WorldChunkResidencyManager.EnsureRuntimeInstance();
+
+                // SubtitleManager is the sole GlobalRegistry.Subtitles owner. Zero scene/prefab
+                // GUID hits (2007393d93d7376438891f11d8ec3a10), including Suit_HUD_Canvas.prefab.
+                // Construction previously sat behind UNITY_EDITOR || DEVELOPMENT_BUILD, so player
+                // builds never AddComponent'd the owner and vocal/Babel/audio-log cues stayed mute.
+                // Factory parents under suit-HUD canvas (overlay / named canvas fallback).
+                Hecton8.UI.SubtitleManager.EnsureRuntimeInstance();
             }
 
 
@@ -8514,6 +8521,10 @@ namespace Hecton8.Bootstrap
 
 
             BootstrapState.PublishCurrentPlayerObject(playerObject);
+            // HUD canvas may finish claiming ActiveRuntimeInstance after player publish;
+            // second resolve is cheap (usable-instance early-out) and covers that race.
+            Hecton8.UI.SubtitleManager.EnsureRuntimeInstance();
+
         }
 
         private void ApplyShippingSceneCleanup(Scene scene)
