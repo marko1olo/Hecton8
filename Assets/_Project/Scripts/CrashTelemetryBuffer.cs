@@ -463,18 +463,31 @@ namespace Hecton8.Core
         public bool IsInitialized => _ringBuffer.IsCreated;
 
         /// <summary>
-        /// Ensures a live telemetry owner exists.
+        /// Resolve-or-create the sole GlobalRegistry.CrashTelemetry owner.
+        /// Hot fault reporters (NaN physics, bootstrap safe-halt, job admission) read
+        /// GlobalRegistry.CrashTelemetry; without a complete factory, player builds that skip
+        /// or reorder EnsureCrashTelemetryBufferRegistered permanently lose crash snapshots.
         /// </summary>
         /// <returns>Live telemetry owner.</returns>
         public static CrashTelemetryBuffer EnsureRuntimeInstance()
         {
+            if (!Application.isPlaying)
+                return null;
+
             CrashTelemetryBuffer registeredInstance = GlobalRegistry.CrashTelemetry;
             if (registeredInstance != null)
                 return registeredInstance;
 
-            GameObject telemetryObject = new GameObject("[CrashTelemetryBuffer]");
+            CrashTelemetryBuffer existing =
+                Object.FindFirstObjectByType<CrashTelemetryBuffer>(FindObjectsInactive.Include);
+            if (existing != null)
+                return existing;
+
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            GameObject telemetryObject = new GameObject("[CrashTelemetryBuffer]"); // COLD ALLOC
             return telemetryObject.AddComponent<CrashTelemetryBuffer>();
         }
+
 
         /// <summary>
         /// Reports a physics NaN recovery into the telemetry error stream.
