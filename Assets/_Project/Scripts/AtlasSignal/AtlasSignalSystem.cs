@@ -821,7 +821,8 @@ namespace Hecton8.AtlasSignal
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             GameObject runtimeRoot = new GameObject("[AtlasSignalSystem]"); // COLD ALLOC
             return runtimeRoot.AddComponent<AtlasSignalSystem>();
         }

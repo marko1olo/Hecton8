@@ -9,14 +9,14 @@ using UnityEngine;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL pin: SpatialAudioManager must keep Player-build EnsureRuntimeInstance
+    /// Soft-FAIL pin: ProceduralLadderClimbRuntime must keep Player-build EnsureRuntimeInstance
     /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    internal sealed class SpatialAudioManagerRuntimeConstructionValidator :
+    internal sealed class ProceduralLadderClimbRuntimeConstructionValidator :
         IPreprocessBuildWithReport
     {
         private const string RuntimeRelativePath =
-            "Assets/_Project/Scripts/SpatialAudioManager.cs";
+            "Assets/_Project/Scripts/Animation/Locomotion/ProceduralLadderClimbRuntime.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
@@ -48,27 +48,23 @@ namespace Hecton8.Editor
                 if (!File.Exists(runtimePath))
                 {
                     Debug.LogError(
-                        "[SpatialAudioManagerRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        "[ProceduralLadderClimbRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
                         RuntimeRelativePath);
                     return;
                 }
 
                 string runtimeSource = File.ReadAllText(runtimePath);
-                Pin(runtimeSource, "static SpatialAudioManager EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "static ProceduralLadderClimbRuntime EnsureRuntimeInstance", RuntimeRelativePath);
                 Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
-                Pin(runtimeSource, "AddComponent<SpatialAudioManager>", RuntimeRelativePath);
-                Pin(runtimeSource, "new GameObject(\"[SpatialAudioManager]\")", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<ProceduralLadderClimbRuntime>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[ProceduralLadderClimbRuntime]\")", RuntimeRelativePath);
 
-                if (File.Exists(bootstrapPath))
-                {
-                    string bootstrapSource = File.ReadAllText(bootstrapPath);
-                    Pin(bootstrapSource, "SpatialAudioManager.EnsureRuntimeInstance", BootstrapRelativePath);
-                }
+                // No GameBootstrapper EnsureRuntimeInstance wire required for this owner.
             }
             catch (Exception exception)
             {
                 Debug.LogError(
-                    "[SpatialAudioManagerRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    "[ProceduralLadderClimbRuntimeConstructionValidator] SOFT-FAIL exception: " +
                     exception.Message);
             }
         }
@@ -78,7 +74,7 @@ namespace Hecton8.Editor
             if (source.IndexOf(token, StringComparison.Ordinal) < 0)
             {
                 Debug.LogError(
-                    "[SpatialAudioManagerRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    "[ProceduralLadderClimbRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
                     token +
                     "' in " +
                     pathLabel);

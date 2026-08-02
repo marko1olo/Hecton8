@@ -1,30 +1,30 @@
 // ============================================================================
-// HECTON-8 — LODSystemManager.cs
+// HECTON-8 вЂ” LODSystemManager.cs
 // Central coordinator for automatic LOD (Level of Detail) management.
 //
 // RESPONSIBILITIES:
-//   • Register/unregister LODGroup components
-//   • Resolve a capped camera-relative distance slice
-//   • Apply LOD transitions (crossfade/discrete)
-//   • Manage quality presets (Low/Medium/High)
-//   • Persist LOD settings via SaveManager
+//   вЂў Register/unregister LODGroup components
+//   вЂў Resolve a capped camera-relative distance slice
+//   вЂў Apply LOD transitions (crossfade/discrete)
+//   вЂў Manage quality presets (Low/Medium/High)
+//   вЂў Persist LOD settings via SaveManager
 //
 // ARCHITECTURE:
-//   • GlobalRegistry.LODSystem is the authoritative runtime lookup.
-//   • ITickable — registers with GameTickManager
-//   • ISaveable — persists quality settings
-//   • Zero-GC — pre-allocated collections and fixed distance scratch
-//   • AUP-backed far-distance precision beyond floating origin
+//   вЂў GlobalRegistry.LODSystem is the authoritative runtime lookup.
+//   вЂў ITickable вЂ” registers with GameTickManager
+//   вЂў ISaveable вЂ” persists quality settings
+//   вЂў Zero-GC вЂ” pre-allocated collections and fixed distance scratch
+//   вЂў AUP-backed far-distance precision beyond floating origin
 //
 // PERFORMANCE:
-//   • Target: < 0.2ms per frame for 64 LODGroups
-//   • Zero GC allocations in hot paths
-//   • Squared distance calculations (no sqrt)
+//   вЂў Target: < 0.2ms per frame for 64 LODGroups
+//   вЂў Zero GC allocations in hot paths
+//   вЂў Squared distance calculations (no sqrt)
 //
 // INTEGRATION:
-//   • GameTickManager — ITickable registration
-//   • SaveManager — ISaveable (LoadPriority=5)
-//   • AbsoluteUniversePosition — far-distance precision beyond floating origin
+//   вЂў GameTickManager вЂ” ITickable registration
+//   вЂў SaveManager вЂ” ISaveable (LoadPriority=5)
+//   вЂў AbsoluteUniversePosition вЂ” far-distance precision beyond floating origin
 // ============================================================================
 
 using System;
@@ -59,15 +59,15 @@ namespace Hecton8.World
     /// </summary>
     /// <remarks>
     /// ZERO-GC ARCHITECTURE:
-    ///   • Pre-allocated collections with capacity
-    ///   • Fixed hot-path distance scratch
-    ///   • No LINQ, no string operations in hot paths
-    ///   • Struct-based data where possible
+    ///   вЂў Pre-allocated collections with capacity
+    ///   вЂў Fixed hot-path distance scratch
+    ///   вЂў No LINQ, no string operations in hot paths
+    ///   вЂў Struct-based data where possible
     ///
     /// PERFORMANCE TARGET:
-    ///   • LOD processing: < 0.2ms per frame
-    ///   • Distance solve: 64 groups per frame
-    ///   • Total: < 0.2ms per frame
+    ///   вЂў LOD processing: < 0.2ms per frame
+    ///   вЂў Distance solve: 64 groups per frame
+    ///   вЂў Total: < 0.2ms per frame
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-150)] // Run before gameplay systems
@@ -88,9 +88,9 @@ namespace Hecton8.World
         private const uint LODRegistrationCapacityWarningHash = 0x4C4F4443u;
         private const uint LODSystemContextHash = 0x4C4F4453u;
 
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
         //  SINGLETON
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
         /// <summary>
         /// Registry-backed runtime instance. Null if not initialized.
@@ -134,24 +134,25 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             GameObject runtimeRoot = new GameObject("[LODSystemManager]"); // COLD ALLOC
             return runtimeRoot.AddComponent<LODSystemManager>();
         }
 
 
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
         //  INSPECTOR SETTINGS
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
-        [Header("── LOD Configuration ──────────────────")]
+        [Header("в”Ђв”Ђ LOD Configuration в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Tooltip("Quality preset (Low/Medium/High)")]
         private LODQualityPreset _qualityPreset = LODQualityPreset.Medium;
 
         [SerializeField, Tooltip("Crossfade distance threshold (meters)")]
         private float _crossfadeDistanceThreshold = 50f;
 
-        [Header("── Performance ──────────────────")]
+        [Header("в”Ђв”Ђ Performance в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Tooltip("Authoring cap for registered LOD groups. Clamped to 2048 prewarmed slots; runtime Tick applies a hard 64-group hot-path batch.")]
         private int _maxLODGroupsPerFrame = 500;
 
@@ -161,9 +162,9 @@ namespace Hecton8.World
         [SerializeField, Tooltip("Optional explicit main camera reference. Falls back to cold-path camera resolve.")]
         private Camera _cameraReference;
 
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
         //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
         // COLD ALLOC: List<LODGroup>[2048] - registered LOD groups - owner: LODSystemManager
         private readonly List<LODGroup> _registeredLODGroups = new List<LODGroup>(MaxRegisteredLODGroupCapacity);
@@ -224,9 +225,9 @@ namespace Hecton8.World
 
         private float _lodSystemCPUTime;
 
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
         //  PUBLIC PROPERTIES
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
         /// <summary>
         /// Count of registered LOD groups.
@@ -250,9 +251,9 @@ namespace Hecton8.World
         /// </summary>
         public int LastFrameTransitionCount => _lastFrameTransitionCount;
 
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
         //  LIFECYCLE
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -575,9 +576,9 @@ namespace Hecton8.World
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
         //  ITICKABLE IMPLEMENTATION
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
         /// <summary>
         /// Main LOD system update loop.
@@ -643,9 +644,9 @@ namespace Hecton8.World
             return math.isfinite(_lodRuntimeClockSeconds) ? _lodRuntimeClockSeconds : 0f;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
         //  ISAVEABLE IMPLEMENTATION
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
         /// <summary>
         /// Save priority (Core system).
@@ -686,9 +687,9 @@ namespace Hecton8.World
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
         //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
         /// <summary>
         /// Register LODGroup for automatic management.
@@ -817,9 +818,9 @@ namespace Hecton8.World
             ApplyQualityPreset(preset);
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE METHODS — DISTANCE CALCULATION
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
+        //  PRIVATE METHODS вЂ” DISTANCE CALCULATION
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
         private void CalculateDistanceSlice()
         {
@@ -908,9 +909,9 @@ namespace Hecton8.World
             _scheduledLODGroupBatchCount = 0;
         }
 
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
         //  HOT-PATH DISTANCE CHEAT
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
         private static float ResolveCameraDistanceSqr(
             in AbsoluteUniversePosition cameraAup,
@@ -1292,13 +1293,13 @@ namespace Hecton8.World
             }
         }
 
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
         //  EDITOR GIZMOS
-        // ══════════════════════════════════════════════════════════
+        // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
         #if UNITY_EDITOR
 
-        [Header("── Gizmos ──────────────────")]
+        [Header("в”Ђв”Ђ Gizmos в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Tooltip("Enable LOD Gizmos visualization")]
         private bool _enableGizmos = false;
 

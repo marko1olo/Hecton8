@@ -115,7 +115,7 @@ namespace Hecton8.Animation.Locomotion
         /// <summary>
         /// Ensures a live ProceduralLadderClimbRuntime is registered for climb requests.
         /// Player builds must construct here: GUID has zero scene/prefab hits and ClimbableLadder
-        /// routes exclusively through TryBeginClimb → EnsureRuntimeInstance.
+        /// routes exclusively through TryBeginClimb в†’ EnsureRuntimeInstance.
         /// </summary>
         internal static ProceduralLadderClimbRuntime EnsureRuntimeInstance()
         {
@@ -129,7 +129,8 @@ namespace Hecton8.Animation.Locomotion
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path (not editor/dev-only): zero authored scene/prefab hits.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             GameObject runtimeRoot = new GameObject("[ProceduralLadderClimbRuntime]"); // COLD ALLOC: GameObject[1] - scene-local animation locomotion runtime root - owner: ProceduralLadderClimbRuntime
             return runtimeRoot.AddComponent<ProceduralLadderClimbRuntime>();
         }

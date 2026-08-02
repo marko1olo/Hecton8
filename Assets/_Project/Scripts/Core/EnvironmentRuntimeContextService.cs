@@ -68,7 +68,6 @@ namespace Hecton8.Core
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path (not editor-only): zero authored scene/prefab hits
             // Player-build construction path: no authored/bootstrap instance reachable.
             // Environment + HazardZone context root; zero authored GUID hits in player builds.
             GameObject runtimeRoot = new GameObject("[EnvironmentRuntimeContextService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned environment runtime context root - owner: EnvironmentRuntimeContextService

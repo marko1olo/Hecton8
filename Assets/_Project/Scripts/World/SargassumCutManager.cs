@@ -111,7 +111,7 @@ namespace Hecton8.World
         private static readonly int _DamageVolumeInvSizeParamId = Shader.PropertyToID("_HectonDamageVolumeInvSizeParam");
         private static readonly int _DamageVolumeResolutionId = Shader.PropertyToID("_HectonDamageVolumeResolution");
 
-        [Header("── Runtime Wiring ──────────────────")]
+        [Header("в”Ђв”Ђ Runtime Wiring в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField]
         [Tooltip("Primary runtime source for the active floating sargassum residency bounds.")]
         private HectonMapMagicVegetationBridge mapMagicVegetationBridge;
@@ -140,7 +140,7 @@ namespace Hecton8.World
         [Tooltip("Optional debris burst emitter triggered whenever a global cut stamp is written.")]
         private SargassumDebrisParticleSystem debrisParticleSystem;
 
-        [Header("── Cut Mask RT ──────────────────")]
+        [Header("в”Ђв”Ђ Cut Mask RT в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Range(512, 2048)]
         [Tooltip("Resolution of the square world-space cut mask render texture.")]
         private int maskResolution = 512;
@@ -157,7 +157,7 @@ namespace Hecton8.World
         [Tooltip("Recovery speed in mask-value units per second. Lower values keep cuts open for longer.")]
         private float recoveryPerSecond = 0.15f;
 
-        [Header("── Damage Volume ──────────────────")]
+        [Header("в”Ђв”Ђ Damage Volume в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Range(32, 128)]
         [Tooltip("Resolution of the cubic XZ damage volume texture sampled by terrain shaders.")]
         private int damageVolumeResolution = 64;
@@ -174,7 +174,7 @@ namespace Hecton8.World
         [Tooltip("Per-update recovery applied to the 3D damage volume.")]
         private float damageVolumeRecoveryPerSecond = 0.04f;
 
-        [Header("── Scooter Cutting ──────────────────")]
+        [Header("в”Ђв”Ђ Scooter Cutting в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Range(0.1f, 6f)]
         [Tooltip("World-space radius carved by an active Manta scooter propeller.")]
         private float scooterCutRadius = 2.2f;
@@ -187,7 +187,7 @@ namespace Hecton8.World
         [Tooltip("Forward offset applied to the active Manta scooter transform before stamping.")]
         private float scooterForwardOffset = 0.75f;
 
-        [Header("── Knife Cutting ──────────────────")]
+        [Header("в”Ђв”Ђ Knife Cutting в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Range(0.1f, 3f)]
         [Tooltip("World-space radius carved by a knife swing.")]
         private float knifeCutRadius = 0.85f;
@@ -212,7 +212,7 @@ namespace Hecton8.World
         [Tooltip("How long freshly cut rock scars stay thermally active before they settle into the cold charred mask.")]
         private float shaderScarLifetime = 8f;
 
-        [Header("── Diagnostics ──────────────────")]
+        [Header("в”Ђв”Ђ Diagnostics в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField]
         [Tooltip("Approximate remaining cut energy. When it decays to zero, the manager stops blitting until a new cut arrives.")]
         private float _debugMaskEnergy;
@@ -356,7 +356,8 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             GameObject runtimeRoot = new GameObject("[SargassumCutManager]"); // COLD ALLOC
             return runtimeRoot.AddComponent<SargassumCutManager>();
         }

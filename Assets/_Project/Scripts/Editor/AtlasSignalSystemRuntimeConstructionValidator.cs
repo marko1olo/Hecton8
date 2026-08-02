@@ -9,14 +9,14 @@ using UnityEngine;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL pin: SpatialAudioManager must keep Player-build EnsureRuntimeInstance
+    /// Soft-FAIL pin: AtlasSignalSystem must keep Player-build EnsureRuntimeInstance
     /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    internal sealed class SpatialAudioManagerRuntimeConstructionValidator :
+    internal sealed class AtlasSignalSystemRuntimeConstructionValidator :
         IPreprocessBuildWithReport
     {
         private const string RuntimeRelativePath =
-            "Assets/_Project/Scripts/SpatialAudioManager.cs";
+            "Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
@@ -48,27 +48,27 @@ namespace Hecton8.Editor
                 if (!File.Exists(runtimePath))
                 {
                     Debug.LogError(
-                        "[SpatialAudioManagerRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        "[AtlasSignalSystemRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
                         RuntimeRelativePath);
                     return;
                 }
 
                 string runtimeSource = File.ReadAllText(runtimePath);
-                Pin(runtimeSource, "static SpatialAudioManager EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "static AtlasSignalSystem EnsureRuntimeInstance", RuntimeRelativePath);
                 Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
-                Pin(runtimeSource, "AddComponent<SpatialAudioManager>", RuntimeRelativePath);
-                Pin(runtimeSource, "new GameObject(\"[SpatialAudioManager]\")", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<AtlasSignalSystem>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[AtlasSignalSystem]\")", RuntimeRelativePath);
 
                 if (File.Exists(bootstrapPath))
                 {
                     string bootstrapSource = File.ReadAllText(bootstrapPath);
-                    Pin(bootstrapSource, "SpatialAudioManager.EnsureRuntimeInstance", BootstrapRelativePath);
+                    Pin(bootstrapSource, "AtlasSignalSystem.EnsureRuntimeInstance", BootstrapRelativePath);
                 }
             }
             catch (Exception exception)
             {
                 Debug.LogError(
-                    "[SpatialAudioManagerRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    "[AtlasSignalSystemRuntimeConstructionValidator] SOFT-FAIL exception: " +
                     exception.Message);
             }
         }
@@ -78,7 +78,7 @@ namespace Hecton8.Editor
             if (source.IndexOf(token, StringComparison.Ordinal) < 0)
             {
                 Debug.LogError(
-                    "[SpatialAudioManagerRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    "[AtlasSignalSystemRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
                     token +
                     "' in " +
                     pathLabel);

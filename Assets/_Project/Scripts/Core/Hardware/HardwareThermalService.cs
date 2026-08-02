@@ -201,6 +201,8 @@ namespace Hecton8.Core.Hardware
                 return;
             }
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             GameObject serviceObject = new GameObject("[HardwareThermalService]");
             serviceObject.AddComponent<HardwareThermalService>();
         }

@@ -112,17 +112,17 @@ namespace Hecton8.Narrative
         private static readonly bool _audioGlitchParametersLayoutValid =
             _audioGlitchParametersRuntimeSizeBytes == AudioGlitchParametersSizeBytes &&
             (_audioGlitchParametersRuntimeSizeBytes & (NativeDtoAlignmentBytes - 1)) == 0;
-        // COLD ALLOC: HashSet<uint>[1024] — discovered audio-log hashes per save — owner: AudioLogSystem
+        // COLD ALLOC: HashSet<uint>[1024] вЂ” discovered audio-log hashes per save вЂ” owner: AudioLogSystem
         private readonly HashSet<uint> _discoveredLogHashes = new HashSet<uint>(ResolvedLogHashCapacity);
-        // COLD ALLOC: Dictionary<uint,AudioLogData>[1024] — resolved log lookup by stable log hash — owner: AudioLogSystem
+        // COLD ALLOC: Dictionary<uint,AudioLogData>[1024] вЂ” resolved log lookup by stable log hash вЂ” owner: AudioLogSystem
         private readonly Dictionary<uint, AudioLogData> _logLookupByHash = new Dictionary<uint, AudioLogData>(ResolvedLogHashCapacity);
-        // COLD ALLOC: Dictionary<AudioLogData,uint>[1024] — resolved log reverse lookup by asset reference — owner: AudioLogSystem
+        // COLD ALLOC: Dictionary<AudioLogData,uint>[1024] вЂ” resolved log reverse lookup by asset reference вЂ” owner: AudioLogSystem
         private readonly Dictionary<AudioLogData, uint> _hashByLog = new Dictionary<AudioLogData, uint>(ResolvedLogHashCapacity);
-        // COLD ALLOC: Dictionary<uint,uint>[1024] — audio log discovery notification hash lookup — owner: AudioLogSystem
+        // COLD ALLOC: Dictionary<uint,uint>[1024] вЂ” audio log discovery notification hash lookup вЂ” owner: AudioLogSystem
         private readonly Dictionary<uint, uint> _discoveryNotificationHashByLogHash = new Dictionary<uint, uint>(ResolvedLogHashCapacity);
-        // COLD ALLOC: uint[16] — fixed narrative queue dedupe slots — owner: AudioLogSystem
+        // COLD ALLOC: uint[16] вЂ” fixed narrative queue dedupe slots вЂ” owner: AudioLogSystem
         private readonly uint[] _queuedLogHashDedup = new uint[PlaybackQueueCapacity];
-        // COLD ALLOC: uint[1024] — flat resolved audio-log catalog for deterministic save iteration — owner: AudioLogSystem
+        // COLD ALLOC: uint[1024] вЂ” flat resolved audio-log catalog for deterministic save iteration вЂ” owner: AudioLogSystem
         private readonly uint[] _resolvedLogHashes = new uint[ResolvedLogHashCapacity];
         private const string AudioLogFolder = "Assets/_Project/Data/Lore/AudioLogs";
         private IDataVault _dataVault;
@@ -239,7 +239,8 @@ namespace Hecton8.Narrative
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             GameObject runtimeRoot = new GameObject("[AudioLogSystem]"); // COLD ALLOC
             return runtimeRoot.AddComponent<AudioLogSystem>();
         }
@@ -1885,7 +1886,7 @@ namespace Hecton8.Narrative
             if (guids == null || guids.Length == 0)
                 return;
 
-            List<AudioLogData> loadedLogs = new List<AudioLogData>(guids.Length); // COLD ALLOC: List<AudioLogData>[guids.Length] — editor-time log catalog bootstrap — owner: AudioLogSystem
+            List<AudioLogData> loadedLogs = new List<AudioLogData>(guids.Length); // COLD ALLOC: List<AudioLogData>[guids.Length] вЂ” editor-time log catalog bootstrap вЂ” owner: AudioLogSystem
             if (allLogs != null)
             {
                 for (int i = 0; i < allLogs.Length; i++)
@@ -2284,7 +2285,7 @@ namespace Hecton8.Narrative
             if (data == null) return;
 
             if (data.audioLogDiscoveredIds == null)
-                data.audioLogDiscoveredIds = new List<string>(math.max(0, maxSavedLogs)); // COLD ALLOC: List<string>[maxSavedLogs] — fallback discovered audio-log save list — owner: AudioLogSystem
+                data.audioLogDiscoveredIds = new List<string>(math.max(0, maxSavedLogs)); // COLD ALLOC: List<string>[maxSavedLogs] вЂ” fallback discovered audio-log save list вЂ” owner: AudioLogSystem
             else
                 data.audioLogDiscoveredIds.Clear();
             AudioLogDiscoveryBitMask.EnsureCapacity(ref data.audioLogDiscoveryBitWords);
