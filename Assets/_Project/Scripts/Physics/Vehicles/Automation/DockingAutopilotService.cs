@@ -352,6 +352,9 @@ namespace Hecton8.Vehicles.Automation
                 return existing;
             }
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // VehicleDockingModule caches GlobalRegistry.DockingAutopilot; without this create
+            // path the slot stays null forever when no scene/prefab instance exists.
             GameObject root = GameObject.Find(RuntimeRootName);
             if (root == null)
                 root = new GameObject(RuntimeRootName); // COLD ALLOC: GameObject[1] - docking autopilot runtime root - owner: DockingAutopilotService
@@ -365,6 +368,7 @@ namespace Hecton8.Vehicles.Automation
 
             return service;
         }
+
 
         private void OnEnable()
         {
