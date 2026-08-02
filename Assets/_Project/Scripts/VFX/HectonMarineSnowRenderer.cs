@@ -3485,6 +3485,39 @@ namespace Hecton8.Environment
             EnsureEmptyAbyssalFlowTexture();
             EnsureSonarGlowTexture();
             EnsureFogDensityTexture();
+
+            // L19m: GraphicsBuffer construction can fail under headless/VRAM pressure and still
+            // return a non-null managed wrapper whose native handle is dead (IsValid()==false).
+            // Latched _buffersReady=true then let ApplyStaticBindingsIfNeeded / SetVector
+            // (DynamicWakeParamsId) and SetBuffer touch those dead handles → native C++ crash in
+            // ComputeShader::SetValueParam / ParticleSystem::BeginUpdateAll → AtomicStack::Pop.
+            // Keep the ready latch false and tear down partial allocs so ColdTick cannot arm GPU work.
+            if (!IsGraphicsBufferAlive(_particleBufferA) ||
+                !IsGraphicsBufferAlive(_particleBufferB) ||
+                !IsGraphicsBufferAlive(_particleMetaBufferA) ||
+                !IsGraphicsBufferAlive(_particleMetaBufferB) ||
+                !IsGraphicsBufferAlive(_frameConstantsBufferA) ||
+                !IsGraphicsBufferAlive(_frameConstantsBufferB) ||
+                !IsGraphicsBufferAlive(_emptyFlowFieldBuffer) ||
+                !IsGraphicsBufferAlive(_flowFieldBuffer) ||
+                !IsGraphicsBufferAlive(_visibleParticleIndexBuffer) ||
+                !IsGraphicsBufferAlive(_indirectArgsBuffer) ||
+                !IsGraphicsBufferAlive(_emptyAbyssalFlowBuffer) ||
+                !IsGraphicsBufferAlive(_mockWakeDtoBuffer) ||
+                !IsGraphicsBufferAlive(_mockWakeBuffer) ||
+                !IsGraphicsBufferAlive(_mockWakeVectorBuffer) ||
+                !IsGraphicsBufferAlive(_propwashEventBufferA) ||
+                !IsGraphicsBufferAlive(_propwashEventBufferB) ||
+                !IsGraphicsBufferAlive(_maelstromBufferA) ||
+                !IsGraphicsBufferAlive(_maelstromBufferB) ||
+                !IsGraphicsBufferAlive(_propwashEventBuffer) ||
+                !IsGraphicsBufferAlive(_activeFrameConstantsBuffer))
+            {
+                ReleaseBuffers();
+                DisableAfterUnrecoverableSetupFailure();
+                return;
+            }
+
             _buffersReady = true;
             ResetGpuBindingCaches();
             _staticBindingsDirty = true;
@@ -3875,8 +3908,11 @@ namespace Hecton8.Environment
             // L19d/L19e native Crash!!!: ComputeShader::SetValueParam / SetVector during
             // LateFrameTick world prime. Keep dirty so bindings retry once kernels, GPU buffers,
             // and authored compute/material assets are fully alive and valid.
+            // L19n: also require _buffersReady so we never touch GPU bind path after EnsureBuffers
+            // refused the ready latch (dead GraphicsBuffer wrappers / headless VRAM failure).
             if (marineSnowCompute == null ||
                 marineSnowMaterial == null ||
+                !_buffersReady ||
                 !_coldSupportsComputeShaders ||
                 _setupPermanentlyFailed ||
                 _kernelIndex < 0 ||
@@ -3901,100 +3937,134 @@ namespace Hecton8.Environment
                 !IsGraphicsBufferAlive(_propwashEventBufferA) ||
                 !IsGraphicsBufferAlive(_propwashEventBufferB) ||
                 _emptyAbyssalFlowTexture == null)
+            {
+                // Buffers went dead after ready latch — disarm GPU path permanently rather than
+                // retrying SetBuffer/SetVector into native ComputeShader::SetValueParam crash.
+                _buffersReady = false;
+                ReleaseBuffers();
+                DisableAfterUnrecoverableSetupFailure();
                 return;
+            }
 
             if (!IsGraphicsBufferAlive(_propwashEventBuffer))
                 _propwashEventBuffer = _propwashEventBufferA;
+            if (!IsGraphicsBufferAlive(_propwashEventBuffer))
+            {
+                _buffersReady = false;
+                ReleaseBuffers();
+                DisableAfterUnrecoverableSetupFailure();
+                return;
+            }
 
-            GraphicsBuffer flowFieldBuffer = _flowFieldBuffer != null ? _flowFieldBuffer : _emptyFlowFieldBuffer;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticlesReadId, _particleBufferA);
-            _boundSimulationReadBuffer = _particleBufferA;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticlesWriteId, _particleBufferB);
-            _boundSimulationWriteBuffer = _particleBufferB;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticleMetaReadId, _particleMetaBufferA);
-            _boundSimulationMetaReadBuffer = _particleMetaBufferA;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticleMetaWriteId, _particleMetaBufferB);
-            _boundSimulationMetaWriteBuffer = _particleMetaBufferB;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FlowFieldId, flowFieldBuffer);
-            _boundSimulationFlowFieldBuffer = flowFieldBuffer;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.VisibleParticleIndicesId, _visibleParticleIndexBuffer);
-            _boundSimulationVisibleParticleIndexBuffer = _visibleParticleIndexBuffer;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.IndirectArgsId, _indirectArgsBuffer);
-            _boundSimulationIndirectArgsBuffer = _indirectArgsBuffer;
-            marineSnowCompute.SetBuffer(_initializeKernel, ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
-            marineSnowCompute.SetBuffer(_wakeProximityKernel, ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
-            marineSnowCompute.SetBuffer(_clearVisibleKernel, ShaderIds.IndirectArgsId, _indirectArgsBuffer);
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.AbyssalFlowFieldResultId, _emptyAbyssalFlowBuffer);
-            _boundAbyssalFlowBuffer = _emptyAbyssalFlowBuffer;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.DynamicWakesId, _emptyAbyssalFlowBuffer);
-            _boundDynamicWakeBuffer = _emptyAbyssalFlowBuffer;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.DynamicWakeVectorsId, _emptyAbyssalFlowBuffer);
-            _boundDynamicWakeVectorBuffer = _emptyAbyssalFlowBuffer;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.DynamicWakeDtosId, _mockWakeDtoBuffer);
-            _boundDynamicWakeDtoBuffer = _mockWakeDtoBuffer;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.PropwashEventsId, _propwashEventBuffer);
-            _boundPropwashEventBuffer = _propwashEventBuffer;
-            marineSnowCompute.SetVector(ShaderIds.DynamicWakeParamsId, Vector4.zero);
-            _boundDynamicWakeParams = Vector4.zero;
-            marineSnowCompute.SetVector(ShaderIds.DynamicWakeDtoParamsId, Vector4.zero);
-            _boundDynamicWakeDtoParams = Vector4.zero;
-            marineSnowCompute.SetVector(ShaderIds.PropwashEventParamsId, Vector4.zero);
-            _boundPropwashEventParams = Vector4.zero;
-            marineSnowCompute.SetVector(ShaderIds.PropwashBiomeTintId, Vector4.zero);
-            _boundPropwashBiomeTint = Vector4.zero;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.MaelstromsId, _emptyAbyssalFlowBuffer);
-            _boundSimulationMaelstromBuffer = _emptyAbyssalFlowBuffer;
-            marineSnowCompute.SetVector(ShaderIds.MaelstromParamsId, Vector4.zero);
-            _boundMaelstromParams = Vector4.zero;
-            marineSnowCompute.SetTexture(_kernelIndex, ShaderIds.AbyssalFlowFieldTextureId, _emptyAbyssalFlowTexture);
-            _boundAbyssalFlowTexture = _emptyAbyssalFlowTexture;
-            marineSnowCompute.SetFloat(ShaderIds.AbyssalFlowTextureActiveId, 0f);
-            _boundAbyssalFlowTextureActive = 0f;
-            marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
-            VFXEmissionProfile.FluidSettings emissionSettings = ResolveEmissionSettings();
-            Vector4 driftParams = ResolveDriftParams(emissionSettings);
-            marineSnowCompute.SetVector(ShaderIds.DriftParamsId, driftParams);
-            _boundDriftParams = driftParams;
-            Vector4 flowParams = ResolveFlowParams();
-            marineSnowCompute.SetVector(ShaderIds.FlowParamsId, flowParams);
-            _boundFlowParams = flowParams;
-            marineSnowCompute.SetVector(ShaderIds.MockFlowFieldId, Vector4.zero);
-            _boundMockFlowField = Vector4.zero;
-            marineSnowCompute.SetVector(ShaderIds.MockAcousticPulseId, Vector4.zero);
-            _boundMockAcousticPulse = Vector4.zero;
-            marineSnowCompute.SetVector(ShaderIds.MockAcousticParamsId, Vector4.zero);
-            _boundMockAcousticParams = Vector4.zero;
-            marineSnowCompute.SetVector(ShaderIds.BubbleParamsId, Vector4.zero);
-            _boundBubbleParams = Vector4.zero;
-            marineSnowCompute.SetVector(ShaderIds.DepthCollisionParamsId, DepthCollisionParams);
-            _boundDepthCollisionParams = DepthCollisionParams;
-            marineSnowCompute.SetVector(ShaderIds.ScalabilityParamsId, _resolvedScalabilityParams);
-            _boundScalabilityParams = _resolvedScalabilityParams;
-            marineSnowCompute.SetVector(ShaderIds.AupShiftOffsetId, Vector4.zero);
-            _boundAupShiftOffset = Vector4.zero;
-            marineSnowCompute.SetVector(ShaderIds.VelocityParamsId, new Vector4(math.max(0.1f, maxSiltSpeed), math.max(0f, headlightEmissionMultiplier), 0f, 0f));
-            _boundVelocityParams = new Vector4(math.max(0.1f, maxSiltSpeed), math.max(0f, headlightEmissionMultiplier), 0f, 0f);
-            marineSnowCompute.SetVector(ShaderIds.InitializationParamsId, Vector4.zero);
+            // L19n: null-only ternary bound dead non-null wrappers (IsValid==false) into FlowField
+            // and left ComputeShader native state corrupt → next SetVector(DynamicWakeParams) crashed
+            // inside ComputeShader::SetValueParam (L19m stack at ApplyStaticBindingsIfNeeded).
+            GraphicsBuffer flowFieldBuffer = IsGraphicsBufferAlive(_flowFieldBuffer)
+                ? _flowFieldBuffer
+                : _emptyFlowFieldBuffer;
 
-            marineSnowMaterial.SetBuffer(ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
-            marineSnowMaterial.SetBuffer(ShaderIds.ParticleMetaRenderId, _particleMetaBufferB);
-            _boundMaterialParticleMetaBuffer = _particleMetaBufferB;
-            marineSnowMaterial.SetBuffer(ShaderIds.VisibleParticleIndicesId, _visibleParticleIndexBuffer);
-            _boundMaterialVisibleParticleIndexBuffer = _visibleParticleIndexBuffer;
-            marineSnowMaterial.SetVector(
-                ShaderIds.RenderParamsId,
-                new Vector4(
-                    maxAlpha,
-                    softness,
-                    math.max(0.25f, maxViewDistance),
-                    0f));
-            marineSnowMaterial.SetColor(ShaderIds.TintId, particleTint);
-            marineSnowMaterial.SetVector(ShaderIds.PropwashBiomeTintId, Vector4.zero);
-            _boundMaterialPropwashBiomeTint = Vector4.zero;
-            BindMaterialFlipbookAtlasIfNeeded();
+            try
+            {
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticlesReadId, _particleBufferA);
+                _boundSimulationReadBuffer = _particleBufferA;
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticlesWriteId, _particleBufferB);
+                _boundSimulationWriteBuffer = _particleBufferB;
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticleMetaReadId, _particleMetaBufferA);
+                _boundSimulationMetaReadBuffer = _particleMetaBufferA;
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.ParticleMetaWriteId, _particleMetaBufferB);
+                _boundSimulationMetaWriteBuffer = _particleMetaBufferB;
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FlowFieldId, flowFieldBuffer);
+                _boundSimulationFlowFieldBuffer = flowFieldBuffer;
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.VisibleParticleIndicesId, _visibleParticleIndexBuffer);
+                _boundSimulationVisibleParticleIndexBuffer = _visibleParticleIndexBuffer;
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.IndirectArgsId, _indirectArgsBuffer);
+                _boundSimulationIndirectArgsBuffer = _indirectArgsBuffer;
+                marineSnowCompute.SetBuffer(_initializeKernel, ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
+                marineSnowCompute.SetBuffer(_wakeProximityKernel, ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
+                marineSnowCompute.SetBuffer(_clearVisibleKernel, ShaderIds.IndirectArgsId, _indirectArgsBuffer);
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.AbyssalFlowFieldResultId, _emptyAbyssalFlowBuffer);
+                _boundAbyssalFlowBuffer = _emptyAbyssalFlowBuffer;
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.DynamicWakesId, _emptyAbyssalFlowBuffer);
+                _boundDynamicWakeBuffer = _emptyAbyssalFlowBuffer;
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.DynamicWakeVectorsId, _emptyAbyssalFlowBuffer);
+                _boundDynamicWakeVectorBuffer = _emptyAbyssalFlowBuffer;
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.DynamicWakeDtosId, _mockWakeDtoBuffer);
+                _boundDynamicWakeDtoBuffer = _mockWakeDtoBuffer;
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.PropwashEventsId, _propwashEventBuffer);
+                _boundPropwashEventBuffer = _propwashEventBuffer;
+                marineSnowCompute.SetVector(ShaderIds.DynamicWakeParamsId, Vector4.zero);
+                _boundDynamicWakeParams = Vector4.zero;
+                marineSnowCompute.SetVector(ShaderIds.DynamicWakeDtoParamsId, Vector4.zero);
+                _boundDynamicWakeDtoParams = Vector4.zero;
+                marineSnowCompute.SetVector(ShaderIds.PropwashEventParamsId, Vector4.zero);
+                _boundPropwashEventParams = Vector4.zero;
+                marineSnowCompute.SetVector(ShaderIds.PropwashBiomeTintId, Vector4.zero);
+                _boundPropwashBiomeTint = Vector4.zero;
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.MaelstromsId, _emptyAbyssalFlowBuffer);
+                _boundSimulationMaelstromBuffer = _emptyAbyssalFlowBuffer;
+                marineSnowCompute.SetVector(ShaderIds.MaelstromParamsId, Vector4.zero);
+                _boundMaelstromParams = Vector4.zero;
+                marineSnowCompute.SetTexture(_kernelIndex, ShaderIds.AbyssalFlowFieldTextureId, _emptyAbyssalFlowTexture);
+                _boundAbyssalFlowTexture = _emptyAbyssalFlowTexture;
+                marineSnowCompute.SetFloat(ShaderIds.AbyssalFlowTextureActiveId, 0f);
+                _boundAbyssalFlowTextureActive = 0f;
+                marineSnowCompute.SetBuffer(_kernelIndex, ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
+                VFXEmissionProfile.FluidSettings emissionSettings = ResolveEmissionSettings();
+                Vector4 driftParams = ResolveDriftParams(emissionSettings);
+                marineSnowCompute.SetVector(ShaderIds.DriftParamsId, driftParams);
+                _boundDriftParams = driftParams;
+                Vector4 flowParams = ResolveFlowParams();
+                marineSnowCompute.SetVector(ShaderIds.FlowParamsId, flowParams);
+                _boundFlowParams = flowParams;
+                marineSnowCompute.SetVector(ShaderIds.MockFlowFieldId, Vector4.zero);
+                _boundMockFlowField = Vector4.zero;
+                marineSnowCompute.SetVector(ShaderIds.MockAcousticPulseId, Vector4.zero);
+                _boundMockAcousticPulse = Vector4.zero;
+                marineSnowCompute.SetVector(ShaderIds.MockAcousticParamsId, Vector4.zero);
+                _boundMockAcousticParams = Vector4.zero;
+                marineSnowCompute.SetVector(ShaderIds.BubbleParamsId, Vector4.zero);
+                _boundBubbleParams = Vector4.zero;
+                marineSnowCompute.SetVector(ShaderIds.DepthCollisionParamsId, DepthCollisionParams);
+                _boundDepthCollisionParams = DepthCollisionParams;
+                marineSnowCompute.SetVector(ShaderIds.ScalabilityParamsId, _resolvedScalabilityParams);
+                _boundScalabilityParams = _resolvedScalabilityParams;
+                marineSnowCompute.SetVector(ShaderIds.AupShiftOffsetId, Vector4.zero);
+                _boundAupShiftOffset = Vector4.zero;
+                marineSnowCompute.SetVector(ShaderIds.VelocityParamsId, new Vector4(math.max(0.1f, maxSiltSpeed), math.max(0f, headlightEmissionMultiplier), 0f, 0f));
+                _boundVelocityParams = new Vector4(math.max(0.1f, maxSiltSpeed), math.max(0f, headlightEmissionMultiplier), 0f, 0f);
+                marineSnowCompute.SetVector(ShaderIds.InitializationParamsId, Vector4.zero);
 
-            _staticBindingsDirty = false;
+                marineSnowMaterial.SetBuffer(ShaderIds.FrameConstantsId, _activeFrameConstantsBuffer);
+                marineSnowMaterial.SetBuffer(ShaderIds.ParticleMetaRenderId, _particleMetaBufferB);
+                _boundMaterialParticleMetaBuffer = _particleMetaBufferB;
+                marineSnowMaterial.SetBuffer(ShaderIds.VisibleParticleIndicesId, _visibleParticleIndexBuffer);
+                _boundMaterialVisibleParticleIndexBuffer = _visibleParticleIndexBuffer;
+                marineSnowMaterial.SetVector(
+                    ShaderIds.RenderParamsId,
+                    new Vector4(
+                        maxAlpha,
+                        softness,
+                        math.max(0.25f, maxViewDistance),
+                        0f));
+                marineSnowMaterial.SetColor(ShaderIds.TintId, particleTint);
+                marineSnowMaterial.SetVector(ShaderIds.PropwashBiomeTintId, Vector4.zero);
+                _boundMaterialPropwashBiomeTint = Vector4.zero;
+                BindMaterialFlipbookAtlasIfNeeded();
+
+                _staticBindingsDirty = false;
+            }
+            catch (System.Exception)
+            {
+                // Managed wrappers can still throw / native-fault into catchable paths when the
+                // compute program or buffer handle is half-dead under batchmode GPU bring-up.
+                // Never leave _staticBindingsDirty armed for a retry that re-enters SetValueParam.
+                _staticBindingsDirty = false;
+                _buffersReady = false;
+                ReleaseBuffers();
+                DisableAfterUnrecoverableSetupFailure();
+            }
         }
+
 
         private VFXEmissionProfile.FluidSettings ResolveEmissionSettings()
         {
@@ -4651,7 +4721,10 @@ namespace Hecton8.Environment
             GraphicsBuffer writeBuffer = _frameParity == 0 ? _particleBufferB : _particleBufferA;
             GraphicsBuffer readMetaBuffer = _frameParity == 0 ? _particleMetaBufferA : _particleMetaBufferB;
             GraphicsBuffer writeMetaBuffer = _frameParity == 0 ? _particleMetaBufferB : _particleMetaBufferA;
-            GraphicsBuffer flowFieldBuffer = _flowFieldBuffer != null ? _flowFieldBuffer : _emptyFlowFieldBuffer;
+            // L19n: IsGraphicsBufferAlive — null-only ternary bound dead wrappers after VRAM failure.
+            GraphicsBuffer flowFieldBuffer = IsGraphicsBufferAlive(_flowFieldBuffer)
+                ? _flowFieldBuffer
+                : _emptyFlowFieldBuffer;
             SetKernelBufferIfChanged(_kernelIndex, ShaderIds.ParticlesReadId, readBuffer, ref _boundSimulationReadBuffer);
             SetKernelBufferIfChanged(_kernelIndex, ShaderIds.ParticlesWriteId, writeBuffer, ref _boundSimulationWriteBuffer);
             SetKernelBufferIfChanged(_kernelIndex, ShaderIds.ParticleMetaReadId, readMetaBuffer, ref _boundSimulationMetaReadBuffer);
@@ -5047,7 +5120,8 @@ namespace Hecton8.Environment
 
         private void SetKernelBufferIfChanged(int kernelIndex, int shaderId, GraphicsBuffer buffer, ref GraphicsBuffer cachedBuffer)
         {
-            if (buffer == null || buffer == cachedBuffer)
+            // L19m: require live native handle — null-only checks still bind dead wrappers after VRAM/headless alloc failure.
+            if (!IsGraphicsBufferAlive(buffer) || buffer == cachedBuffer)
                 return;
 
             marineSnowCompute.SetBuffer(kernelIndex, shaderId, buffer);
@@ -5056,7 +5130,8 @@ namespace Hecton8.Environment
 
         private void SetMaterialBufferIfChanged(int shaderId, GraphicsBuffer buffer, ref GraphicsBuffer cachedBuffer)
         {
-            if (buffer == null || buffer == cachedBuffer)
+            // L19m: require live native handle — null-only checks still bind dead wrappers after VRAM/headless alloc failure.
+            if (!IsGraphicsBufferAlive(buffer) || buffer == cachedBuffer)
                 return;
 
             marineSnowMaterial.SetBuffer(shaderId, buffer);
