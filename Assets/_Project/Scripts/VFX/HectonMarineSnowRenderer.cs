@@ -1146,6 +1146,18 @@ namespace Hecton8.Environment
 
         public void LateFrameTick()
         {
+            // L19e: DisableAfterUnrecoverableSetupFailure latches permanently-failed setup but must
+            // not keep GPU binding work on the late-frame lane. Also skip during world prime while
+            // the menu scene is still unloading (native ComputeShader::SetValueParam crash).
+            if (!enabled ||
+                _setupPermanentlyFailed ||
+                !Hecton8.Bootstrap.SceneInstantiationGate.IsWorldPrimed)
+            {
+                _pendingVisualTickDirty = false;
+                _pendingVisualTickDeltaTime = 0f;
+                return;
+            }
+
             AdvanceMarineSnowVisualState(SystemDispatcher.CurrentFrameDeltaTime);
 
             if (!_pendingVisualTickDirty)
@@ -3326,6 +3338,19 @@ namespace Hecton8.Environment
             // Every caller of this method is an unrecoverable authoring or shader-compilation gap, so
             // refusing to ever re-register is correct, not merely quieter.
             _setupPermanentlyFailed = true;
+            _pendingVisualTickDirty = false;
+            _pendingVisualTickDeltaTime = 0f;
+            _staticBindingsDirty = false;
+            _buffersReady = false;
+
+            // L19e: remarks promised "leaves every dispatcher lane", but LateFrame was omitted.
+            // SystemDispatcher does not honor enabled=false on tickables, so SetBuffer/SetVector
+            // kept running on a half-torn GPU state and hard-crashed in ComputeShader::SetValueParam.
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
 
             if (_registeredColdTick)
             {
@@ -3847,30 +3872,38 @@ namespace Hecton8.Environment
             if (!_staticBindingsDirty)
                 return;
 
-            // L19d native Crash!!!: ComputeShader::SetValueParam / SetVector on a null or
-            // destroyed marineSnowCompute during LateFrameTick world prime. Keep dirty so
-            // bindings retry once authored compute/material assets are alive.
-            if (marineSnowCompute == null || marineSnowMaterial == null)
+            // L19d/L19e native Crash!!!: ComputeShader::SetValueParam / SetVector during
+            // LateFrameTick world prime. Keep dirty so bindings retry once kernels, GPU buffers,
+            // and authored compute/material assets are fully alive and valid.
+            if (marineSnowCompute == null ||
+                marineSnowMaterial == null ||
+                !_coldSupportsComputeShaders ||
+                _setupPermanentlyFailed ||
+                _kernelIndex < 0 ||
+                _initializeKernel < 0 ||
+                _clearVisibleKernel < 0 ||
+                _wakeProximityKernel < 0 ||
+                !Hecton8.Bootstrap.SceneInstantiationGate.IsWorldPrimed)
                 return;
 
-            if (_particleBufferA == null ||
-                _particleBufferB == null ||
-                _particleMetaBufferA == null ||
-                _particleMetaBufferB == null ||
-                _activeFrameConstantsBuffer == null ||
-                _emptyFlowFieldBuffer == null ||
-                _visibleParticleIndexBuffer == null ||
-                _indirectArgsBuffer == null ||
-                _emptyAbyssalFlowBuffer == null ||
-                _mockWakeDtoBuffer == null ||
-                _mockWakeBuffer == null ||
-                _mockWakeVectorBuffer == null ||
-                _propwashEventBufferA == null ||
-                _propwashEventBufferB == null ||
+            if (!IsGraphicsBufferAlive(_particleBufferA) ||
+                !IsGraphicsBufferAlive(_particleBufferB) ||
+                !IsGraphicsBufferAlive(_particleMetaBufferA) ||
+                !IsGraphicsBufferAlive(_particleMetaBufferB) ||
+                !IsGraphicsBufferAlive(_activeFrameConstantsBuffer) ||
+                !IsGraphicsBufferAlive(_emptyFlowFieldBuffer) ||
+                !IsGraphicsBufferAlive(_visibleParticleIndexBuffer) ||
+                !IsGraphicsBufferAlive(_indirectArgsBuffer) ||
+                !IsGraphicsBufferAlive(_emptyAbyssalFlowBuffer) ||
+                !IsGraphicsBufferAlive(_mockWakeDtoBuffer) ||
+                !IsGraphicsBufferAlive(_mockWakeBuffer) ||
+                !IsGraphicsBufferAlive(_mockWakeVectorBuffer) ||
+                !IsGraphicsBufferAlive(_propwashEventBufferA) ||
+                !IsGraphicsBufferAlive(_propwashEventBufferB) ||
                 _emptyAbyssalFlowTexture == null)
                 return;
 
-            if (_propwashEventBuffer == null)
+            if (!IsGraphicsBufferAlive(_propwashEventBuffer))
                 _propwashEventBuffer = _propwashEventBufferA;
 
             GraphicsBuffer flowFieldBuffer = _flowFieldBuffer != null ? _flowFieldBuffer : _emptyFlowFieldBuffer;
@@ -5534,6 +5567,19 @@ namespace Hecton8.Environment
 
             buffer.Release();
             buffer = null;
+        }
+
+        /// <summary>
+        /// True when the managed GraphicsBuffer wrapper still owns a live native GPU buffer.
+        /// </summary>
+        /// <remarks>
+        /// L19e: plain null checks are insufficient after ReleaseBuffers / scene unload — the C#
+        /// reference can remain non-null while the native buffer is already disposed. Binding a
+        /// dead buffer then hard-crashes inside ComputeShader::SetValueParam / SetVector.
+        /// </remarks>
+        private static bool IsGraphicsBufferAlive(GraphicsBuffer buffer)
+        {
+            return buffer != null && buffer.IsValid();
         }
 
         private int ResolveActiveParticleCount(float effectiveDensityScale)
