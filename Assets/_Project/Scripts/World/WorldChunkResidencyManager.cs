@@ -682,7 +682,7 @@ namespace Hecton8.World
         private const uint MemoryBreachContextHash = 0x43535452u; // "CSTR"
         private const uint LoadRingOverflowWarningHash = 0x43534F56u; // "CSOV"
         private const uint TeleportContextHash = 0x53545250u; // "STRP"
-        private const uint SignalPushDropWarningHash = 0x53534452u; // "SSDR" — signal-push drops
+        private const uint SignalPushDropWarningHash = 0x53534452u; // "SSDR" вЂ” signal-push drops
         private const uint StreamingDirectorSourceHash = 0x53333544u; // "S35D"
         private const BufferID ChunkResidencyVaultBufferId = BufferID.PDAEncyclopediaStreamer_UnlockMaskBufferId;
         private const BufferID AddressablesRequestVaultBufferId = BufferID.PDAEncyclopediaStreamer_RuntimeStateBufferId;
@@ -1520,7 +1520,8 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Sole StreamingBackpressure owner; WorldRuntimeInstaller deliberately skips construction.
             GameObject runtimeRoot = new GameObject("[WorldChunkResidencyManager]"); // COLD ALLOC
             return runtimeRoot.AddComponent<WorldChunkResidencyManager>();
         }
@@ -1641,8 +1642,8 @@ namespace Hecton8.World
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <c>_signalPushDropCount</c> is passed by ref to seven <c>TryPushTracked</c> calls in this class —
-        /// StorageDebt, StreamingTurbulence, HUDNotification and two lambda-form pushes among them — and until
+        /// <c>_signalPushDropCount</c> is passed by ref to seven <c>TryPushTracked</c> calls in this class вЂ”
+        /// StorageDebt, StreamingTurbulence, HUDNotification and two lambda-form pushes among them вЂ” and until
         /// this method existed it was ONLY ever incremented. Never read, never reset, never surfaced. A bus
         /// lane that silently drops is precisely the silent-degeneracy shape this project's rules single out:
         /// the system keeps producing plausible output while quietly losing work, and nothing fails.
@@ -1650,13 +1651,13 @@ namespace Hecton8.World
         /// <para>
         /// The HUDNotification lane makes it concrete. Its consumer drains at most
         /// <c>MaxHudNotificationSignalsPerLateFrame</c> per frame, so a burst of chunk-residency warnings
-        /// overflows by design — and the overflow was the player simply not being told something the game had
+        /// overflows by design вЂ” and the overflow was the player simply not being told something the game had
         /// decided to tell them, with no trace anywhere.
         /// </para>
         /// <para>
         /// Idiom copied from <c>RadiationHazardGrid.ConsumeSignalDropFlags</c>, which does the same
         /// <see cref="Interlocked.Exchange"/> drain-and-test and is covered by
-        /// <c>RadiationHazardGridSignalDropTelemetryEditTests</c> — so this is the sanctioned shape in this
+        /// <c>RadiationHazardGridSignalDropTelemetryEditTests</c> вЂ” so this is the sanctioned shape in this
         /// codebase rather than an invention. <c>Interlocked</c> rather than a plain read because
         /// <c>TryPushTracked</c> is called from lambda-form pushes that may run off the owner thread, and a
         /// lost increment here would defeat the point of counting at all.
