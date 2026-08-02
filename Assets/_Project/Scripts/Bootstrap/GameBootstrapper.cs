@@ -6571,17 +6571,18 @@ namespace Hecton8.Bootstrap
 
         private static PhysicsApplySystem EnsurePhysicsApplySystemRegistered()
         {
+            // Resolve-or-create is owned by PhysicsApplySystem.EnsureRuntimeInstance
+            // (static slot + GlobalRegistry.Physics + scene scan + player-build AddComponent).
+            // Bootstrap no longer duplicates the construction path.
             PhysicsApplySystem physicsApplySystem = PhysicsApplySystem.EnsureRuntimeInstance();
             if (physicsApplySystem == null)
-            {
-                GameObject runtimeRoot = new GameObject("[PhysicsApplySystem]"); // COLD ALLOC: GameObject[1] - bootstrap-owned deferred physics apply root - owner: GameBootstrapper
-                physicsApplySystem = runtimeRoot.AddComponent<PhysicsApplySystem>();
-            }
+                return null;
 
             PersistRuntimeService(physicsApplySystem);
             physicsApplySystem.InitializeService();
             return physicsApplySystem;
         }
+
 
         private static EcosystemDirector EnsureEcosystemDirectorRegistered()
         {
