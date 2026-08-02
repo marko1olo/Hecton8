@@ -174,9 +174,13 @@ namespace Hecton8.Visor
             if (ActiveRuntimeInstance != null)
                 return ActiveRuntimeInstance;
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Visor flood waterline bridge owns InternalFloodWaterline shader globals; without
+            // create the suit HUD flood presentation stays permanently inactive.
             GameObject root = new GameObject("[InternalFloodWaterlineRuntime]"); // COLD ALLOC: GameObject[1] - bootstrap-owned internal flood visor bridge - owner: InternalFloodWaterlineRuntime
             return root.AddComponent<InternalFloodWaterlineRuntime>();
         }
+
 
         public void InitializeService()
         {

@@ -197,11 +197,15 @@ namespace Hecton8.Core
             if (watchdog != null)
                 return watchdog;
 
-            GameObject runtimeRoot = new GameObject("[RuntimeWatchdog]"); // COLD ALLOC: GameObject[1] — bootstrap-owned watchdog root — owner: RuntimeWatchdog
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Watchdog owns hang/stall detection and safe-halt telemetry; without create
+            // the slot stays null when bootstrap reorders or skips EnsureRuntimeWatchdogRegistered.
+            GameObject runtimeRoot = new GameObject("[RuntimeWatchdog]"); // COLD ALLOC: GameObject[1] - bootstrap-owned watchdog root - owner: RuntimeWatchdog
             watchdog = runtimeRoot.AddComponent<RuntimeWatchdog>();
             watchdog.InitializeService();
             return watchdog;
         }
+
 
         public static void Signal(RuntimeWatchdogLane lane)
         {
