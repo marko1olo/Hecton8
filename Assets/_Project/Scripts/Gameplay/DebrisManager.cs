@@ -123,7 +123,14 @@ namespace Hecton8.Gameplay
         {
             IDebrisService registeredService = GlobalRegistry.Debris;
             if (IsDebrisRuntimeUsable(registeredService))
-                return registeredService as DebrisManager;
+            {
+                DebrisManager existing = registeredService as DebrisManager;
+                // Slot may be registered via Awake without heartbeat ready. Finish init in place.
+                if (existing != null && !existing._isInitialized)
+                    existing.InitializeService();
+                return existing;
+            }
+
 
             DebrisManager staleManager = registeredService as DebrisManager;
             if (!ReferenceEquals(staleManager, null))
@@ -139,11 +146,16 @@ namespace Hecton8.Gameplay
 
             GameObject runtimeRoot = new GameObject("[DebrisManager]");
             DebrisManager manager = runtimeRoot.AddComponent<DebrisManager>();
+            // Awake registers the slot but does not flip IServiceHeartbeat.IsServiceReady.
+            // Bootstrap WaitForBootstrapDependencyHeartbeatAsync gates on IsServiceReady; call
+            // InitializeService here so EnsureRuntimeInstance alone is enough for the node.
+            if (manager != null)
+                manager.InitializeService();
             return manager;
         }
 
         /// <summary>
-        /// Registers the service into <see cref="GlobalRegistry"/>.
+        /// Registers the service into <see cref="GlobalRegistry"/> and marks heartbeat ready.
         /// </summary>
         public void InitializeService()
         {
@@ -154,6 +166,8 @@ namespace Hecton8.Gameplay
                 return;
 
             RefreshColdRegistryReferences();
+            // Vault buffers are best-effort at Environment-phase install time. Failing them must
+            // not leave IsServiceReady false forever (that timed out bootstrap SceneActivate).
             EnsureRuntimeResources();
             _isInitialized = _serviceRegistered;
         }
