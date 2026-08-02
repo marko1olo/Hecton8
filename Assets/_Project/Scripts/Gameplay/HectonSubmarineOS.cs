@@ -1342,16 +1342,16 @@ namespace Hecton8.Gameplay
 
                 if (!submarineRoot.TryGetComponent(out HectonSubmarineOS _))
                 {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    // Player-build construction path: no authored/bootstrap instance reachable.
+                    // Must construct in player builds when bootstrap reorders or skips registration.
                     submarineRoot.gameObject.AddComponent<HectonSubmarineOS>(); // COLD ALLOC: HectonSubmarineOS[1] - submarine-wide diagnostic owner - owner: HectonSubmarineOS
-#endif
                 }
 
                 if (!submarineRoot.TryGetComponent(out SubmarineStationKeepingController _))
                 {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    // Player-build construction path: no authored/bootstrap instance reachable.
+                    // Must construct in player builds when bootstrap reorders or skips registration.
                     submarineRoot.gameObject.AddComponent<SubmarineStationKeepingController>(); // COLD ALLOC: SubmarineStationKeepingController[1] - cinematic station-keeping owner - owner: HectonSubmarineOS
-#endif
                 }
             }
         }

@@ -502,16 +502,16 @@ namespace Hecton.UI.MainMenu
 
             if (_diegeticPanelController == null && !TryGetComponent(out _diegeticPanelController))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 _diegeticPanelController = gameObject.AddComponent<DiegeticPanelController>(); // COLD ALLOC: main-menu diegetic panel projection owner.
-#endif
             }
 
             if (_diegeticRaycastReceiver == null && !TryGetComponent(out _diegeticRaycastReceiver))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 _diegeticRaycastReceiver = gameObject.AddComponent<DiegeticMenuRaycastReceiver>(); // COLD ALLOC: fixed menu button receiver.
-#endif
             }
 
             if (_diegeticRaycastReceiver != null)
@@ -534,9 +534,9 @@ namespace Hecton.UI.MainMenu
 
             if (_menuCameraController == null && !mainMenuCamera.TryGetComponent(out _menuCameraController))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 _menuCameraController = mainMenuCamera.gameObject.AddComponent<MenuCameraController>(); // COLD ALLOC: main-menu spline camera driver.
-#endif
             }
 
             if (_menuCameraController != null)
@@ -544,9 +544,9 @@ namespace Hecton.UI.MainMenu
 
             if (_menuAtmosphereController == null && !mainMenuCamera.TryGetComponent(out _menuAtmosphereController))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 _menuAtmosphereController = mainMenuCamera.gameObject.AddComponent<MainMenuAtmosphereController>(); // COLD ALLOC: authored menu atmosphere binder.
-#endif
             }
 
             if (_menuAtmosphereController != null)
