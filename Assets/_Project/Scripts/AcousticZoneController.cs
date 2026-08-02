@@ -1046,6 +1046,13 @@ namespace Hecton8.Audio
 
         public void LateFrameTick()
         {
+            // L19 hop2: batchmode/headless probes have no audible presentation path.
+            // AudioMixerSnapshot.TransitionTo / TransitionToSnapshots arm FMOD DSP graph
+            // work that AVs on the mixer thread (DSPFilter::read / OutputWASAPI::mixerUpdate)
+            // under -batchmode. Soft-disable all late-frame acoustic presentation here.
+            if (Application.isBatchMode)
+                return;
+
             _isLateFramePresentationPhase = true;
             try
             {
@@ -2455,8 +2462,10 @@ namespace Hecton8.Audio
             float roomHighFrequencyDb,
             float dryLevelDb)
         {
-            if (masterMixer == null)
+            // L19 hop2: mixer parameter writes still touch FMOD graph state under batchmode.
+            if (Application.isBatchMode || masterMixer == null)
                 return false;
+
 
             if (HasAppliedAcousticMixerState(
                     lowPassCutoffHz,
@@ -3455,6 +3464,10 @@ namespace Hecton8.Audio
 
         private bool TransitionToResolvedSnapshot(AcousticZoneState zone, float duration)
         {
+            // L19 hop2: never arm FMOD snapshot DSP under batchmode/headless.
+            if (Application.isBatchMode)
+                return false;
+
             if (!_isLateFramePresentationPhase)
             {
                 QueuePendingSnapshotTransition(zone, duration);
