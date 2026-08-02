@@ -4115,6 +4115,11 @@ namespace Hecton8.Gameplay
             _cachedTransportPlatformWorldToLocalMatrix = _cachedTransportPlatformLocalToWorldMatrix.inverse;
 
             Vector3 up = _cachedTransportPlatformLocalToWorldMatrix.MultiplyVector(Vector3.up);
+            if (up.sqrMagnitude <= 0.0001f)
+                up = Vector3.up;
+            else
+                up = NormalizeVectorRsqrt(up, Vector3.up);
+
             Vector3 forward = ProjectOnPlaneFast(_cachedTransportPlatformLocalToWorldMatrix.MultiplyVector(Vector3.forward), up);
             if (forward.sqrMagnitude <= 0.0001f)
                 forward = ProjectOnPlaneFast(up, Vector3.up);
@@ -4122,6 +4127,13 @@ namespace Hecton8.Gameplay
                 forward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
 
             forward = NormalizeVectorRsqrt(forward, _cachedTransform != null ? _cachedTransform.forward : Vector3.forward);
+            // L19k: LookRotation hard-faults (native) when forward||up after degenerate platform matrices.
+            if (math.abs(Vector3.Dot(forward, up)) > 0.999f)
+            {
+                Vector3 alternateUp = math.abs(up.y) < 0.99f ? Vector3.up : Vector3.forward;
+                up = NormalizeVectorRsqrt(ProjectOnPlaneFast(alternateUp, forward), Vector3.up);
+            }
+
             _cachedTransportPlatformBasisRotation = Quaternion.LookRotation(forward, up);
             _cachedTransportPlatformSpatialFrameValid = true;
         }
@@ -5747,7 +5759,11 @@ namespace Hecton8.Gameplay
             _transportPlatformDeltaRotation = currentPlatformRotation * ConjugateUnitQuaternion(_lastTransportPlatformRotation);
             _transportPlatformAupFrameValid = hasPlatformAup;
 
-            if (_transportPlatformDeltaRotation == Quaternion.identity || _activeTransportPlatform == null || !_activeTransportPlatform.InheritPlatformRotation)
+            // L19k: behaviour fake-null first — interface `== null` does not catch destroyed MonoBehaviour.
+            if (_transportPlatformDeltaRotation == Quaternion.identity ||
+                _activeTransportPlatformBehaviour == null ||
+                _activeTransportPlatform == null ||
+                !_activeTransportPlatform.InheritPlatformRotation)
                 return;
 
             ApplyInheritedTransportPlatformYaw(_transportPlatformDeltaRotation);
@@ -5918,7 +5934,12 @@ namespace Hecton8.Gameplay
 
         private void ApplyTransportPlatformCarrierMotion(float fixedDeltaTime, bool suppressPhysicsMutation)
         {
-            if (_activeTransportPlatform == null || fixedDeltaTime <= 0f || !_transportPlatformRotationInitialized)
+            // L19k: never invoke ITransportPlatform members until Unity fake-null on the backing
+            // MonoBehaviour is confirmed alive. Interface `== null` alone is insufficient.
+            if (_activeTransportPlatformBehaviour == null ||
+                _activeTransportPlatform == null ||
+                fixedDeltaTime <= 0f ||
+                !_transportPlatformRotationInitialized)
                 return;
 
             Vector3 platformTranslation = _currentTransportPlatformPosition - _lastTransportPlatformPosition;
@@ -8594,7 +8615,8 @@ namespace Hecton8.Gameplay
         private Vector3 ResolveFeedbackVelocity(Vector3 actualVelocity)
         {
             Vector3 safeActualVelocity = HectonPlayerMotor.SafeVelocity(actualVelocity);
-            if (_activeTransportPlatform == null || _activeTransportPlatformBehaviour == null)
+            // L19k: behaviour fake-null first — interface `== null` does not catch destroyed MonoBehaviour.
+            if (_activeTransportPlatformBehaviour == null || _activeTransportPlatform == null)
                 return safeActualVelocity;
 
             Vector3 riderPoint = _rb != null ? _rb.worldCenterOfMass : ResolvePlayerAupRuntimePosition();
@@ -9456,12 +9478,22 @@ namespace Hecton8.Gameplay
 
         private void ApplyCameraState()
         {
+            // Unity fake-null: destroyed MonoBehaviour compares equal to null.
+            // ITransportPlatform interface refs do NOT — never touch interface members
+            // until ResolveActiveTransportPlatform has validated the backing behaviour.
             if (_cameraRig == null)
                 return;
 
-            float sargassumPitchOffset = _sargassumMovementInfluence != null ? _sargassumMovementInfluence.CameraPitchOffset : 0f;
-            float sargassumRollOffset = _sargassumMovementInfluence != null ? _sargassumMovementInfluence.CameraRollOffset : 0f;
-            Vector3 sargassumLocalOffset = _sargassumMovementInfluence != null ? _sargassumMovementInfluence.CameraLocalOffset : Vector3.zero;
+            float sargassumPitchOffset = 0f;
+            float sargassumRollOffset = 0f;
+            Vector3 sargassumLocalOffset = Vector3.zero;
+            if (_sargassumMovementInfluence != null)
+            {
+                sargassumPitchOffset = _sargassumMovementInfluence.CameraPitchOffset;
+                sargassumRollOffset = _sargassumMovementInfluence.CameraRollOffset;
+                sargassumLocalOffset = _sargassumMovementInfluence.CameraLocalOffset;
+            }
+
             bool vrComfortActive = _vrComfortActiveCached;
             float somaticPitchOffset = vrComfortActive ? 0f : _underwaterSomaticPitchOffset;
             float somaticYawOffset = vrComfortActive ? 0f : _underwaterSomaticYawOffset;
@@ -9472,7 +9504,13 @@ namespace Hecton8.Gameplay
             bool horizonLockActive = ShouldVrHorizonLockRoll();
             finalRoll = ResolveVrHorizonRoll(finalRoll, horizonLockActive, _currentRenderDeltaTime);
 
-            if (_activeTransportPlatform != null && _activeTransportPlatform.InheritPlatformRotation && TryGetActiveTransportPlatformTransform(out _))
+            // L19k: resolve/clear stale transport FIRST. Evaluating InheritPlatformRotation on a
+            // destroyed MonoBehaviour-via-interface hard-crashes mono under -nographics (Crash!!!).
+            bool inheritPlatformRotation = TryGetActiveTransportPlatformTransform(out _) &&
+                                           _activeTransportPlatformBehaviour != null &&
+                                           _activeTransportPlatform != null &&
+                                           _activeTransportPlatform.InheritPlatformRotation;
+            if (inheritPlatformRotation)
             {
                 Quaternion platformBasisRotation = ResolveTransportPlatformBasisRotation();
                 float platformLocalYaw = ResolveYawRelativeToTransportPlatform(finalYaw);
@@ -9781,7 +9819,15 @@ namespace Hecton8.Gameplay
 
         private Transform ResolveVrAupAnchor()
         {
-            if (!_vrComfortActiveCached || _activeTransportPlatform == null || !_activeTransportPlatform.IsTransportPlatformActive)
+            if (!_vrComfortActiveCached)
+                return null;
+
+            // L19k: destroyed MonoBehaviour-via-ITransportPlatform is NOT caught by interface `== null`.
+            // Validate the backing behaviour first (Unity fake-null), then touch interface members.
+            if (_activeTransportPlatformBehaviour == null || _activeTransportPlatform == null)
+                return null;
+
+            if (!_activeTransportPlatform.IsTransportPlatformActive)
                 return null;
 
             if (_activeTransportPlatform is ISubmarineRuntimeContext)
@@ -10824,13 +10870,26 @@ namespace Hecton8.Gameplay
             {
                 ResolveDegreesSinCosFast(_bodyYaw, out float sinYaw, out float cosYaw);
                 Vector3 bodyForward = new Vector3(sinYaw, 0f, cosYaw);
-                Vector3 desiredForward = ProjectOnPlaneFast(bodyForward, EffectiveWaterSurfaceNormal);
+                Vector3 surfaceUp = EffectiveWaterSurfaceNormal;
+                if (surfaceUp.sqrMagnitude <= 0.0001f)
+                    surfaceUp = Vector3.up;
+                else
+                    surfaceUp = NormalizeVectorRsqrt(surfaceUp, Vector3.up);
+
+                Vector3 desiredForward = ProjectOnPlaneFast(bodyForward, surfaceUp);
                 desiredForward = desiredForward.sqrMagnitude <= 0.0001f
                     ? bodyForward
                     : NormalizeVectorRsqrt(desiredForward, bodyForward);
 
+                // L19k: LookRotation native-faults when forward||up (degenerate crest normals under -nographics).
+                if (math.abs(Vector3.Dot(desiredForward, surfaceUp)) > 0.999f)
+                {
+                    Vector3 alternateUp = math.abs(surfaceUp.y) < 0.99f ? Vector3.up : Vector3.forward;
+                    surfaceUp = NormalizeVectorRsqrt(ProjectOnPlaneFast(alternateUp, desiredForward), Vector3.up);
+                }
+
                 Quaternion yawRotation = ResolveWorldYawRotation(_bodyYaw);
-                Quaternion waveRotation = Quaternion.LookRotation(desiredForward, EffectiveWaterSurfaceNormal);
+                Quaternion waveRotation = Quaternion.LookRotation(desiredForward, surfaceUp);
                 Quaternion localDelta = ConjugateUnitQuaternion(yawRotation) * waveRotation;
                 float pitch = math.clamp(ExtractLocalPitchDegrees(localDelta), -surfaceWaveMaxPitch, surfaceWaveMaxPitch) * _shoreBuoyancyBlend;
                 float roll = math.clamp(ExtractLocalRollDegrees(localDelta), -surfaceWaveMaxRoll, surfaceWaveMaxRoll) * _shoreBuoyancyBlend;
