@@ -222,6 +222,9 @@ namespace Hecton8.AI.Ambient
             if (GlobalRegistry.AmbientBiota is AmbientBiotaDirector registered && registered != null)
                 return registered;
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Live consumers (EcosystemDirector, Creature, WorldChunkResidencyManager) cache
+            // GlobalRegistry.AmbientBiota permanently null without this create path.
             GameObject root = GameObject.Find(RuntimeRootName);
             if (root == null)
                 root = new GameObject(RuntimeRootName); // COLD ALLOC: GameObject[1] - ambient biota runtime root - owner: AmbientBiotaDirector
@@ -235,6 +238,7 @@ namespace Hecton8.AI.Ambient
 
             return director;
         }
+
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstanceOnLoad()
