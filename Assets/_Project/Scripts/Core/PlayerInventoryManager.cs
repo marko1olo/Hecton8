@@ -93,9 +93,13 @@ namespace Hecton8.Core
                 return null;
             }
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Tooling/inventory hot paths resolve through GlobalRegistry.RegisteredPlayerInventory;
+            // without create the slot stays null when bootstrap reorders or skips the node.
             GameObject runtimeRoot = new GameObject("[PlayerInventoryManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player inventory/tooling service root - owner: PlayerInventoryManager
             return runtimeRoot.AddComponent<PlayerInventoryManager>();
         }
+
 
         /// <summary>
         /// Explicitly initializes the service and registers it into <see cref="GlobalRegistry"/>.
