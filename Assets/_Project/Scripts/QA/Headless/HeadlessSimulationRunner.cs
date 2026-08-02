@@ -755,6 +755,13 @@ namespace Hecton8.QA.Headless
                 out int foPendingScenes,
                 out bool foTargetsDirty,
                 out bool foBarrier);
+            int debrisReady = 0;
+            IDebrisService debris = GlobalRegistry.Debris;
+            if (debris is IServiceHeartbeat debrisHb)
+                debrisReady = debrisHb.IsServiceReady ? 1 : 0;
+            else if (debris != null)
+                debrisReady = 1;
+
             LogRunnerLifecycle(
                 "ecology wait progress t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
                 "s ecoNull=" + (ecoNull ? "1" : "0") +
@@ -768,8 +775,11 @@ namespace Hecton8.QA.Headless
                 " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
                 " foBarrier=" + (foBarrier ? "1" : "0") +
                 " dispBootstrapLocked=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
-                " dispFrameLocked=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0"));
+                " dispFrameLocked=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0") +
+                " debrisReady=" + debrisReady.ToString(CultureInfo.InvariantCulture) +
+                " gameReady=" + (BootstrapState.IsGameReady ? "1" : "0"));
         }
+
 
         private void TryMarkEcologyReady()
         {
@@ -915,6 +925,19 @@ namespace Hecton8.QA.Headless
                 out bool foTargetsDirty,
                 out bool foBarrier);
 
+            // Extra clock / registry readiness for BATCH_TIMEOUT triage when dayAcc stays 0.
+            int stepBound = SystemDispatcher.IsStepBoundedTimeActive ? 1 : 0;
+            int stepIdx = SystemDispatcher.CurrentFrameIndex;
+            int simHalted = SignalBusRegistry.IsSimulationHalted ? 1 : 0;
+            int debrisReady = 0;
+            IDebrisService debris = GlobalRegistry.Debris;
+            if (debris is IServiceHeartbeat debrisHb)
+                debrisReady = debrisHb.IsServiceReady ? 1 : 0;
+            else if (debris != null)
+                debrisReady = 1;
+            float unscaledDt = Time.unscaledDeltaTime;
+            float timeScale = Time.timeScale;
+
             LogRunnerLifecycle(
                 "post-ready t=" + waited.ToString("0.0", CultureInfo.InvariantCulture) +
                 "s paused=" + (paused ? "1" : "0") +
@@ -934,8 +957,15 @@ namespace Hecton8.QA.Headless
                 " foTargetsDirty=" + (foTargetsDirty ? "1" : "0") +
                 " foBarrier=" + (foBarrier ? "1" : "0") +
                 " dispBoot=" + (SystemDispatcher.IsOriginShiftBootstrapLocked ? "1" : "0") +
-                " dispFrame=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0"));
+                " dispFrame=" + (SystemDispatcher.IsOriginShiftFrameLockedForCurrentFrame ? "1" : "0") +
+                " stepBound=" + stepBound.ToString(CultureInfo.InvariantCulture) +
+                " stepIdx=" + stepIdx.ToString(CultureInfo.InvariantCulture) +
+                " simHalted=" + simHalted.ToString(CultureInfo.InvariantCulture) +
+                " debrisReady=" + debrisReady.ToString(CultureInfo.InvariantCulture) +
+                " unscaledDt=" + unscaledDt.ToString("0.######", CultureInfo.InvariantCulture) +
+                " timeScale=" + timeScale.ToString("0.###", CultureInfo.InvariantCulture));
         }
+
 
         /// <summary>
         /// Simulated seconds advanced per real second, measured rather than assumed. Zero until simulation
