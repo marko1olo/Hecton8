@@ -145,6 +145,8 @@ namespace Hecton8.Environment
         private static int _lastListenerRejectedTelemetryFrame = -1;
         private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
+        // Latched when Enqueue hits disposed/capacity-0 storage so the next raise rebuilds lanes.
+        private static bool _forceQueueRebuild;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
@@ -302,7 +304,7 @@ namespace Hecton8.Environment
                 Reserved = 0
             };
 
-            return EnqueuePayload(in payload);
+            return TryEnqueuePayload(in payload);
         }
 
         [Obsolete("Use TryRaiseLightning(float) so overflow/drop semantics stay visible at the producer.", true)]
@@ -325,7 +327,7 @@ namespace Hecton8.Environment
                 Reserved = 0
             };
 
-            return EnqueuePayload(in payload);
+            return TryEnqueuePayload(in payload);
         }
 
         private static bool EnqueuePayload(in WeatherEventPayload payload)
