@@ -38,14 +38,23 @@ namespace Hecton8.Equipment.Auxiliary
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct GenerateMockAuxiliaryDeploymentsJob : IJobParallelFor
     {
-        [NoAlias] public NativeArray<DeployedAuxiliaryDTO> Deployments;
-        [NoAlias] public NativeArray<AuxiliaryStateDTO> States;
-        [NoAlias] public NativeArray<AuxiliaryTetherAnchorDTO> TetherAnchors;
-        [NoAlias] public NativeArray<AuxiliaryActiveEquipmentDTO> ActiveEquipment;
-        [NoAlias] public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;
-        [NoAlias] public NativeArray<AuxiliaryVfxMatrixDTO> VfxMatrices;
+        // Distinct vault BufferIDs; shared AtomicSafetyHandle fallback can false-positive aliasing.
+        // Same contract as UpdateDeployedAuxiliaryJob (Apex multi-buffer vault pattern).
+        [NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<DeployedAuxiliaryDTO> Deployments;
+        [NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<AuxiliaryStateDTO> States;
+        [NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<AuxiliaryTetherAnchorDTO> TetherAnchors;
+        [NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<AuxiliaryActiveEquipmentDTO> ActiveEquipment;
+        [NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;
+        [NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<AuxiliaryVfxMatrixDTO> VfxMatrices;
         // ActiveCount is host-owned (written before Schedule) — not a Burst peer of Deployments.
         public AuxiliaryTuningDTO Tuning;
+
         public double3 OriginAup;
         public int RequestedCount;
         public uint FrameIndex;
@@ -129,16 +138,27 @@ namespace Hecton8.Equipment.Auxiliary
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct UpdateDeployedAuxiliaryJob : IJobParallelFor
     {
-        [NoAlias] public NativeArray<DeployedAuxiliaryDTO> Deployments;
-        [NoAlias] public NativeArray<AuxiliaryStateDTO> States;
-        [NoAlias] public NativeArray<AuxiliaryTetherAnchorDTO> TetherAnchors;
-        [NoAlias] public NativeArray<AuxiliaryActiveEquipmentDTO> ActiveEquipment;
-        // Scalar bound only — ActiveCount vault buffer is not a job peer of Deployments.
-        // Passing the vault NativeArray alongside Deployments can surface Burst aliasing
-        // (two containers, same pointer) when the host resolve path reuses a generation view.
-        // Host already computes activeBound via ResolveActiveBound before Schedule.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1: Auxiliary vault buffers are distinct GlobalDataVault
+        // BufferIDs (ShinobuAuxiliaryDeployments/States/TetherAnchors/ActiveEquipment/RouteCounters).
+        // Host AcquireOrRefresh resolves each BufferID to its own generation handle before Schedule.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2: H8Memory CreateNativeArrayView may fall back to a shared
+        // AtomicSafetyHandle under alias-region table pressure; Unity then false-positives distinct
+        // vault pointers as one container. Disable is required for multi-buffer vault jobs (Apex pattern).
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3: Each Execute(index) only touches index-parallel slots; no
+        // cross-buffer write-write of the same memory. Fence finalize in LateFrameTick before unlock.
+        [NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<DeployedAuxiliaryDTO> Deployments;
+        [NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<AuxiliaryStateDTO> States;
+        [NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<AuxiliaryTetherAnchorDTO> TetherAnchors;
+        [NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<AuxiliaryActiveEquipmentDTO> ActiveEquipment;
+        // Scalar bound — host ResolveActiveBound before Schedule (not a vault peer of Deployments).
         public int ActiveCount;
-        [NoAlias] public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;
+        [NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<AuxiliaryRouteCounterDTO> RouteCounters;
+
 
         // SAFETY_JUSTIFICATION_PARAGRAPH_1: AuxiliaryEquipmentRouterRuntime schedules UpdateDeployedAuxiliaryJob with IJobParallelFor.Schedule, chains it into _pendingHandle through StageAuxiliaryVFXJob, and registers the combined handle through H8Memory.RegisterActiveJob(SystemID.GameplayTools, _pendingHandle).
         // SAFETY_JUSTIFICATION_PARAGRAPH_2: These fields are SignalBus ParallelWriter producer lanes only; each Execute index appends independent signal records and never reads or aliases queue storage, deployment buffers, state buffers, tether buffers, or VFX buffers.
@@ -397,14 +417,19 @@ namespace Hecton8.Equipment.Auxiliary
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct StageAuxiliaryVFXJob : IJobParallelFor
     {
-        [ReadOnly, NoAlias] public NativeArray<DeployedAuxiliaryDTO> Deployments;
-        [ReadOnly, NoAlias] public NativeArray<AuxiliaryStateDTO> States;
+        // Distinct vault BufferIDs; shared AtomicSafetyHandle fallback can false-positive aliasing.
+        [ReadOnly, NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<DeployedAuxiliaryDTO> Deployments;
+        [ReadOnly, NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<AuxiliaryStateDTO> States;
         // Scalar bound — same contract as UpdateDeployedAuxiliaryJob.ActiveCount (int).
         public int ActiveCount;
-        [NoAlias] public NativeArray<AuxiliaryVfxMatrixDTO> VfxMatrices;
+        [NoAlias, NativeDisableContainerSafetyRestriction]
+        public NativeArray<AuxiliaryVfxMatrixDTO> VfxMatrices;
         public double3 CameraAup;
         public float GlobalQualityWeight;
         public float VfxScale;
+
 
         public void Execute(int index)
         {
