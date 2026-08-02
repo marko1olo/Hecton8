@@ -382,7 +382,7 @@ namespace Hecton8.Audio.Synthesis
 
             // Broad scene resolve first: prefab hosts synth away from the AudioListener GO.
             DynamicMusicGranularSynthesizer existing =
-                Object.FindFirstObjectByType<DynamicMusicGranularSynthesizer>(FindObjectsInactive.Include);
+                UnityEngine.Object.FindFirstObjectByType<DynamicMusicGranularSynthesizer>(FindObjectsInactive.Include);
             if (existing != null)
             {
                 _activeInstance = existing;
