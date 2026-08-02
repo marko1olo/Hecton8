@@ -1,11 +1,13 @@
 #if UNITY_EDITOR && HECTON8_ENABLE_EDITMODE_TESTS
 using System;
 using System.Reflection;
+using System.Threading;
 using NUnit.Framework;
 using UnityEngine;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Dev;
+
 
 namespace Hecton8.Tests.Editor
 {
@@ -130,6 +132,55 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual("Missing PlayerToolManager or PlayerInventory.", smokeTester.DebugLastIssue);
         }
 
+        [Test]
+        public void TestSingleToolAsync_WhenSetupThrows_ReturnsFalse()
+        {
+            // WaitForHolsterAsync runs before the setup try/catch and requires a live toolManager.
+            // Null ToolData makes ResolvePersistentHashId return 0 → InvalidOperationException inside setup catch.
+            var toolManagerGo = new GameObject("MockPlayerToolManager");
+            var liveToolManager = toolManagerGo.AddComponent<PlayerToolManager>();
+            var toolManagerField = typeof(ToolRuntimeSmokeTester).GetField(
+                "toolManager",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(toolManagerField, "toolManager field not found");
+            toolManagerField.SetValue(smokeTester, liveToolManager);
+
+            var mockToolGo = new GameObject("MockTool");
+            var mockTool = mockToolGo.AddComponent<MockThrowingPlayerTool>();
+            // Intentionally leave PlayerTool._toolData null so setup throws on hash 0.
+
+            var testMethod = typeof(ToolRuntimeSmokeTester).GetMethod(
+                "TestSingleToolAsync",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(testMethod, "TestSingleToolAsync method not found");
+
+            object awaitable = testMethod.Invoke(
+                smokeTester,
+                new object[] { mockToolGo, mockTool, CancellationToken.None });
+            Assert.IsNotNull(awaitable, "TestSingleToolAsync returned null awaitable");
+
+            MethodInfo getAwaiterMethod = awaitable.GetType().GetMethod("GetAwaiter");
+            Assert.IsNotNull(getAwaiterMethod, "GetAwaiter not found on awaitable");
+            object awaiter = getAwaiterMethod.Invoke(awaitable, null);
+            Assert.IsNotNull(awaiter, "GetAwaiter returned null");
+
+            MethodInfo getResultMethod = awaiter.GetType().GetMethod("GetResult");
+            Assert.IsNotNull(getResultMethod, "GetResult not found on awaiter");
+            object resultObj = getResultMethod.Invoke(awaiter, null);
+            Assert.IsNotNull(resultObj, "GetResult returned null");
+            bool result = (bool)resultObj;
+
+            Assert.IsFalse(result, "Setup exception path must return false");
+            Assert.AreEqual("Setup exception for MockTool", smokeTester.DebugLastIssue);
+            Assert.IsFalse(smokeTester.DebugLastPass);
+            Assert.AreEqual(1, smokeTester.DebugFailCount);
+
+            UnityEngine.Object.DestroyImmediate(mockToolGo);
+            UnityEngine.Object.DestroyImmediate(toolManagerGo);
+        }
+
+
     }
 }
 #endif
+
