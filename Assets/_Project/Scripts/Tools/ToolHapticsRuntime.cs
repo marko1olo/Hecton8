@@ -175,10 +175,25 @@ namespace Hecton8.Tools
                 frequencyHz);
         }
 
+        /// <summary>
+        /// Resolve-or-create the sole GlobalRegistry.ToolHaptics owner for player builds.
+        /// Zero live scene/prefab GUID hits; previous EnsureRuntimeInstance only returned
+        /// s_runtime and never constructed, so OnEnable registration never ran.
+        /// </summary>
         public static ToolHapticsRuntime EnsureRuntimeInstance()
         {
-            return s_runtime;
+            ToolHapticsRuntime active = s_runtime;
+            if (active != null && active.isActiveAndEnabled)
+                return active;
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject("[ToolHapticsRuntime]"); // COLD ALLOC
+            return runtimeRoot.AddComponent<ToolHapticsRuntime>();
         }
+
 
         public static bool TryGetRuntime(out ToolHapticsRuntime runtime)
         {

@@ -8542,7 +8542,14 @@ namespace Hecton8.Bootstrap
                 Hecton8.Atmosphere.GasDynamicsSolver.EnsureRuntimeInstance();
                 Hecton8.Gameplay.HectonDiscoveryManager.EnsureRuntimeInstance();
                 Hecton8.Narrative.LoreDatabaseManager.EnsureRuntimeInstance();
+
+                // Tools owners: ModularEquipmentEngine (IModularEquipmentService) and
+                // ToolHapticsRuntime (GlobalRegistry.ToolHaptics). Zero live scene/prefab GUID
+                // hits; factories existed with no construction site.
+                Hecton8.Tools.ModularEquipmentEngine.EnsureRuntimeInstance();
+                Hecton8.Tools.ToolHapticsRuntime.EnsureRuntimeInstance();
             }
+
 
 
 
