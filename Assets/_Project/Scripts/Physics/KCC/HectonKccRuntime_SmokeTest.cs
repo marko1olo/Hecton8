@@ -651,6 +651,7 @@ namespace Hecton8.Physics.KCC
             private double3 ResolveSweptAup(double3 start, ref float3 velocity, float dt, out float minSdf, out uint collisionFlags)
             {
                 collisionFlags = 0u;
+                float skin = math.max(0.001f, math.isfinite(Tuning.SkinWidth) ? Tuning.SkinWidth : 0.02f);
                 float3 displacement = velocity * dt;
                 minSdf = SampleCapsuleSdf(start);
                 if (IsInvalidSdf(minSdf))
@@ -660,27 +661,55 @@ namespace Hecton8.Physics.KCC
                     return start;
                 }
 
+                // Already inside solid at the frame start: depenetrate before sweeping
+                // (matches production collision residual push + SdfSqueeze open-space recovery).
+                double3 resolved = start;
+                if (minSdf < skin)
+                {
+                    resolved = DepenetrateAup(start, skin, out minSdf, out bool depenValid);
+                    collisionFlags = HydrodynamicKccMath.FlagCollision;
+                    if (!depenValid)
+                    {
+                        velocity = float3.zero;
+                        return start;
+                    }
+
+                    float3 startNormal = SampleSdfNormal(resolved);
+                    float intoStart = math.dot(velocity, startNormal);
+                    if (intoStart < 0f)
+                        velocity -= startNormal * intoStart;
+                    displacement = velocity * dt;
+                }
+
                 float length = HydrodynamicKccMath.LengthSafe(displacement);
                 if (length <= 0.000001f)
-                    return start;
+                    return resolved;
 
-                double3 safe = start;
-                double3 hit = start;
+                // Adaptive sweep count: high-speed frames need finer steps so thin shells
+                // (mock geometry ~2-9m features) are not tunneled at 950 m/s.
+                int sweepSteps = KccSmokeMaxSweepIterations;
+                float cell = math.max(0.25f, SdfInfo.CellSizeMeters);
+                float stepBudget = math.max(skin, cell * 0.5f);
+                int adaptive = (int)math.ceil(length / math.max(0.05f, stepBudget));
+                sweepSteps = math.clamp(math.max(sweepSteps, adaptive), KccSmokeMaxSweepIterations, 64);
+
+                double3 safe = resolved;
+                double3 hit = resolved;
                 bool hasHit = false;
-                for (int step = 1; step <= KccSmokeMaxSweepIterations; step++)
+                for (int step = 1; step <= sweepSteps; step++)
                 {
-                    float fraction = (float)step * math.rcp(KccSmokeMaxSweepIterations);
-                    double3 candidate = start + new double3(displacement.x, displacement.y, displacement.z) * fraction;
+                    float fraction = (float)step * math.rcp((float)sweepSteps);
+                    double3 candidate = resolved + new double3(displacement.x, displacement.y, displacement.z) * fraction;
                     float sdf = SampleCapsuleSdf(candidate);
                     minSdf = math.min(minSdf, sdf);
                     if (IsInvalidSdf(sdf))
                     {
                         velocity = float3.zero;
                         collisionFlags = HydrodynamicKccMath.FlagCollision;
-                        return safe;
+                        return DepenetrateAup(safe, skin, out minSdf, out _);
                     }
 
-                    if (sdf >= Tuning.SkinWidth)
+                    if (sdf >= skin)
                     {
                         safe = candidate;
                         continue;
@@ -692,24 +721,81 @@ namespace Hecton8.Physics.KCC
                 }
 
                 if (!hasHit)
-                    return start + new double3(displacement.x, displacement.y, displacement.z);
+                    return resolved + new double3(displacement.x, displacement.y, displacement.z);
 
                 float3 normal = SampleSdfNormal(hit);
                 float intoNormal = math.dot(velocity, normal);
                 if (intoNormal < 0f)
                     velocity -= normal * intoNormal;
-                float hitSdf = SampleCapsuleSdf(hit);
-                if (IsInvalidSdf(hitSdf))
+
+                // Slide residual motion along the contact plane from the last free sample,
+                // then iteratively depenetrate (production-style multi-pass residual push).
+                float hitFraction = HydrodynamicKccMath.LengthSafe(
+                    new float3((float)(hit.x - resolved.x), (float)(hit.y - resolved.y), (float)(hit.z - resolved.z)));
+                float consumed = math.saturate(hitFraction * math.rcp(math.max(length, HydrodynamicKccMath.MinDenominator)));
+                float remainingDt = dt * math.max(0f, 1f - consumed);
+                double3 slid = safe + new double3(velocity.x, velocity.y, velocity.z) * remainingDt;
+                double3 recovered = DepenetrateAup(slid, skin, out float recoveredSdf, out bool recoveredValid);
+                minSdf = math.min(minSdf, recoveredSdf);
+                collisionFlags = HydrodynamicKccMath.FlagCollision;
+                if (!recoveredValid)
                 {
                     velocity = float3.zero;
-                    collisionFlags = HydrodynamicKccMath.FlagCollision;
                     return safe;
                 }
 
-                double push = (double)math.max(Tuning.SkinWidth - hitSdf, 0f);
-                collisionFlags = HydrodynamicKccMath.FlagCollision;
-                return safe + new double3(normal.x, normal.y, normal.z) * push;
+                return recovered;
             }
+
+            private double3 DepenetrateAup(double3 aup, float skin, out float sdfMeters, out bool valid)
+            {
+                const int maxIterations = 8;
+                double3 position = aup;
+                sdfMeters = SampleCapsuleSdf(position);
+                valid = !IsInvalidSdf(sdfMeters);
+                if (!valid)
+                    return aup;
+
+                float radius = math.max(0.05f, SdfInfo.CapsuleRadiusMeters);
+                float maxPush = math.max(radius * 4f, math.max(1f, SdfInfo.CellSizeMeters) * 2f);
+                for (int i = 0; i < maxIterations; i++)
+                {
+                    if (sdfMeters >= skin)
+                        return position;
+
+                    float3 normal = SampleSdfNormal(position);
+                    float push = math.min(maxPush, math.max(skin - sdfMeters, 0f) + skin * 0.25f);
+                    if (push <= 0.000001f)
+                        break;
+
+                    position = position + new double3(normal.x, normal.y, normal.z) * push;
+                    position = HydrodynamicKccMath.QuantizeMillimeter(position);
+                    sdfMeters = SampleCapsuleSdf(position);
+                    if (IsInvalidSdf(sdfMeters))
+                    {
+                        valid = false;
+                        return aup;
+                    }
+                }
+
+                // Final safety: if still deeply buried after iterations, snap along gradient harder.
+                if (sdfMeters < KccSmokeStrongPenetrationMeters)
+                {
+                    float3 normal = SampleSdfNormal(position);
+                    float emergency = math.min(maxPush * 2f, math.max(0f, skin - sdfMeters) + radius);
+                    position = position + new double3(normal.x, normal.y, normal.z) * emergency;
+                    position = HydrodynamicKccMath.QuantizeMillimeter(position);
+                    sdfMeters = SampleCapsuleSdf(position);
+                    if (IsInvalidSdf(sdfMeters))
+                    {
+                        valid = false;
+                        return aup;
+                    }
+                }
+
+                return position;
+            }
+
 
             private float SampleCapsuleSdf(double3 aup)
             {
@@ -1073,20 +1159,26 @@ namespace Hecton8.Physics.KCC
 
             double3 rel = HydrodynamicKccMath.Sanitize(aup - info.OriginAup, double3.zero);
             float3 grid = new float3((float)(rel.x / cell), (float)(rel.y / cell), (float)(rel.z / cell));
-            if (!HydrodynamicKccMath.IsFinite(grid) ||
-                math.any(grid < 0f) ||
-                grid.x >= dim.x - 1 ||
-                grid.y >= dim.y - 1 ||
-                grid.z >= dim.z - 1)
-            {
+            if (!HydrodynamicKccMath.IsFinite(grid))
                 return KccSmokeInvalidSdfMeters;
-            }
 
-            int3 p0 = (int3)math.floor(grid);
-            float3 f = grid - p0;
-            int x1 = math.min(p0.x + 1, dim.x - 1);
-            int y1 = math.min(p0.y + 1, dim.y - 1);
-            int z1 = math.min(p0.z + 1, dim.z - 1);
+            // Finite streaming volumes only store a local brick. Outside the brick is open water, not a
+            // collision failure: extend the edge sample by Euclidean exterior distance (standard SDF
+            // domain extension). SdfInvalid is reserved for NaN/layout faults, not leaving the brick.
+            // Interior trilinear needs a unit cube, so clamp the query base into [0, dim-2].
+            float3 maxBase = new float3(dim.x - 2, dim.y - 2, dim.z - 2);
+            maxBase = math.max(maxBase, float3.zero);
+            float3 clampedGrid = math.clamp(grid, float3.zero, maxBase);
+            float3 gridDelta = grid - clampedGrid;
+            float exteriorCells = HydrodynamicKccMath.LengthSafe(gridDelta);
+            float exteriorMeters = exteriorCells * cell;
+
+            int3 p0 = (int3)math.floor(clampedGrid);
+            p0 = math.clamp(p0, int3.zero, new int3(dim.x - 2, dim.y - 2, dim.z - 2));
+            float3 f = math.saturate(clampedGrid - p0);
+            int x1 = p0.x + 1;
+            int y1 = p0.y + 1;
+            int z1 = p0.z + 1;
             float c000 = sdf[Index(p0.x, p0.y, p0.z, dim)];
             float c100 = sdf[Index(x1, p0.y, p0.z, dim)];
             float c010 = sdf[Index(p0.x, y1, p0.z, dim)];
@@ -1102,8 +1194,14 @@ namespace Hecton8.Physics.KCC
             float c0 = math.lerp(c00, c10, f.y);
             float c1 = math.lerp(c01, c11, f.y);
             float sample = math.lerp(c0, c1, f.z);
-            return math.isfinite(sample) ? sample : KccSmokeInvalidSdfMeters;
+            if (!math.isfinite(sample))
+                return KccSmokeInvalidSdfMeters;
+
+            // Open exterior: edge free-space grows with distance outside the brick.
+            // If the edge is solid (negative), exterior distance still opens toward free water.
+            return sample + exteriorMeters;
         }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool TryResolveSdfLayout(NativeArray<float> sdf, KccSmokeVoxelSdfInfoDTO info, out int3 dim, out float cell, out int requiredCount)

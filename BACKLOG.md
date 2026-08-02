@@ -15,14 +15,26 @@
 - **Fix:** call from runner `Update` wait path (`80b2d9764`) - PROVED ready line.
 - Day-advance after ready tracked above (clock restore).
 
+## CLOSED - P0 KCC headless smoke Escape|SdfInvalid (2026-08-02)
+
+- **Symptom:** H8_V0PlaytestSmokeGate flags `0x42` (Escape|SdfInvalid), failureCount ~743920; after exterior SDF fix residual Escape `0x02` failureCount 210.
+- **Root A (SdfInvalid):** `SampleSdfStatic` treated leaving the 48³ streaming brick as Invalid → mass Escape|SdfInvalid. Finite volumes only store a local brick; exterior is open water.
+- **Fix A:** exterior SDF domain extension — clamp query to edge, return edge sample + Euclidean exterior distance (not Invalid).
+- **Root B (Escape):** high-speed phantoms (≤950 m/s) tunneled thin mock shells; start-in-solid / residual push insufficient vs production multi-pass depenetration.
+- **Fix B:** `ResolveSweptAup` start depenetration + adaptive sweep (8–64) + slide residual + iterative `DepenetrateAup` (production-aligned).
+- **DoD CLOSED 2026-08-02:** `overallPass=true` `kccErrorFlagsHex=0x00000000` `kccFailureCount=0` coneOk precisionDriftClear. Evidence: `Docs/AgentLogs/H8_V0_PLAYTEST_SMOKE_GATE.json` utc 2026-08-02T17:47:23Z.
+- Thresholds NOT widened (`KccSmokeStrongPenetrationMeters` still -0.1f).
+
 ## Completed
 - [x] P0 | ship a6c96w abs-col spall into texture.py | Tools/Blender/h8forge/texture.py | proof@2048 seeds 0,1,2,7,13 p95_max=0.4590 eros_min=0.3417 all_run all_eros PASS | 568a19cca (cement auto-bundled product+scratch; do not amend)
 - [x] P0 | FO lock-drain under physics pause | HectonFloatingOrigin | foLock=0 proved | 411715153
 - [x] P0 | ecology ready-mark on Update wait path | HeadlessSimulationRunner | ready line proved | 80b2d9764
 - [x] P0 | headless ecology day-advance post-ready | EnsureHeadlessSimulationClock + sustain + ready-mark | SUCCESS days=5 ecologySampledDays=5 timeDilationDelivered=11.37 | CLOSED 2026-08-02 evidence `p0_ecology_day_advance_smoke_CLOSED_20260802.md`
+- [x] P0 | KCC headless smoke Escape|SdfInvalid | SampleSdfStatic exterior domain + ResolveSweptAup/DepenetrateAup | flags=0 failureCount=0 overallPass | CLOSED 2026-08-02 evidence `H8_V0_PLAYTEST_SMOKE_GATE.json`
 
 ## Open P0
-- [ ] P0 | DECLINED until real-game: Geology@2048 headless-only; KCC FAIL 0x42; Debris EXEMPT; RuntimeSmokeTester; README art; V0 Swim; Docs/Screenshots/V0_Playtest empty
+- [ ] P0 | DECLINED until real-game: Geology@2048 headless-only; Debris EXEMPT; RuntimeSmokeTester; README art; V0 Swim; Docs/Screenshots/V0_Playtest empty
+
 
 ## Salvaged fix from closed PR #1714
 - **PR Number**: #1714
