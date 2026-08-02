@@ -728,8 +728,24 @@ namespace Hecton8.Environment
 
         private void CacheGraphicsCapabilitySnapshotCold()
         {
+            // L19o: batchmode D3D11 still reports supportsComputeShaders=true, but
+            // ComputeShader::SetValueParam native-crashes during ApplyStaticBindingsIfNeeded
+            // (L19m/L19n stack: SetVector(DynamicWakeParams) after SetBuffer chain). Headless
+            // playmode probes validate bootstrap/save stability, not GPU marine-snow VFX.
+            // Soft-disable the compute path under batchmode so LateFrameTick never touches
+            // native SetBuffer/SetVector. Interactive editor/player runs keep full GPU path.
+            if (Application.isBatchMode)
+            {
+                _coldSupportsComputeShaders = false;
+                _staticBindingsDirty = false;
+                _externalGpuBindingsDirty = false;
+                _buffersReady = false;
+                return;
+            }
+
             _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
         }
+
 
         private void RefreshExternalShaderGlobalsCold()
         {
