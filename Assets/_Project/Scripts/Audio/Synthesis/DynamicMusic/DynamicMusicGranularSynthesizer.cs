@@ -365,23 +365,68 @@ namespace Hecton8.Audio.Synthesis
             return synth != null && Volatile.Read(ref synth._nativeAllocated) != 0;
         }
 
+        /// <summary>
+        /// Resolve-or-create the active granular synth owner for player builds.
+        /// Player.prefab authors the component on a different GO than AudioListener; the old
+        /// resolve-only path only TryGetComponent'd the listener host and silently no-op'd.
+        /// MUST NOT parent onto the AudioListener GO - RejectInvalidAudioFilterHostCold disables
+        /// any instance that shares a host with AudioListener (OnAudioFilterRead conflict).
+        /// </summary>
+        public static DynamicMusicGranularSynthesizer EnsureRuntimeInstance()
+        {
+            if (_activeInstance != null)
+                return _activeInstance;
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Broad scene resolve first: prefab hosts synth away from the AudioListener GO.
+            DynamicMusicGranularSynthesizer existing =
+                Object.FindFirstObjectByType<DynamicMusicGranularSynthesizer>(FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                _activeInstance = existing;
+                return existing;
+            }
+
+            // Walk player camera hierarchy (parent/children) without landing on the listener host.
+            AudioListener listener = ResolvePlayerAudioListenerCold();
+            if (listener != null)
+            {
+                Transform listenerTransform = listener.transform;
+                existing = listenerTransform.GetComponentInParent<DynamicMusicGranularSynthesizer>(true);
+                if (existing != null && !IsInvalidAudioFilterHost(existing))
+                {
+                    _activeInstance = existing;
+                    return existing;
+                }
+
+                existing = listenerTransform.GetComponentInChildren<DynamicMusicGranularSynthesizer>(true);
+                if (existing != null && !IsInvalidAudioFilterHost(existing))
+                {
+                    _activeInstance = existing;
+                    return existing;
+                }
+            }
+
+            // Player-build construction path: dedicated root (AudioSource via RequireComponent).
+            // Never AddComponent on the AudioListener GO - that path self-disables in Awake/OnEnable.
+            GameObject host = new GameObject("[DynamicMusicGranularSynthesizer]"); // COLD ALLOC
+            DynamicMusicGranularSynthesizer created = host.AddComponent<DynamicMusicGranularSynthesizer>();
+            _activeInstance = created;
+            return created;
+        }
+
+        private static bool IsInvalidAudioFilterHost(DynamicMusicGranularSynthesizer synth)
+        {
+            return synth != null && synth.TryGetComponent<AudioListener>(out _);
+        }
+
+
         public static void EnsureRuntimeInstanceForScene(Scene scene)
         {
-            if (!Application.isPlaying)
-                return;
-
-            if (_activeInstance != null)
-                return;
-
-            AudioListener listener = ResolvePlayerAudioListenerCold();
-            if (listener == null)
-                return;
-
-            GameObject host = listener.gameObject;
-            if (!host.TryGetComponent(out DynamicMusicGranularSynthesizer synth))
-                return;
-            _activeInstance = synth;
             _ = scene;
+            EnsureRuntimeInstance();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -411,8 +456,13 @@ namespace Hecton8.Audio.Synthesis
             if (playerCamera == null)
                 return null;
 
-            return playerCamera.TryGetComponent(out AudioListener listener) ? listener : null;
+            if (playerCamera.TryGetComponent(out AudioListener listener))
+                return listener;
+
+            // Listener may live on a child of the player camera root.
+            return playerCamera.GetComponentInChildren<AudioListener>(true);
         }
+
 
         public bool TryGetEditorTuning(out DynamicMusicSynthTuningDTO tuning)
         {

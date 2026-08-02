@@ -8578,7 +8578,14 @@ namespace Hecton8.Bootstrap
             // second resolve is cheap (usable-instance early-out) and covers that race.
             Hecton8.UI.SubtitleManager.EnsureRuntimeInstance();
 
+            // DynamicMusicGranularSynthesizer: Player.prefab authors the component on a GO that is
+            // not the AudioListener host. Old EnsureRuntimeInstanceForScene was resolve-only on
+            // listener.gameObject and silently no-op'd. Post-player-publish covers the race where
+            // AfterSceneLoad ran before player OnEnable published the camera/listener.
+            Hecton8.Audio.Synthesis.DynamicMusicGranularSynthesizer.EnsureRuntimeInstance();
+
         }
+
 
         private void ApplyShippingSceneCleanup(Scene scene)
         {
