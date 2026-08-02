@@ -34,6 +34,16 @@ namespace Hecton8.Bootstrap
         internal bool IsOpen => _gateOpen;
         internal string LastFailureReason { get; private set; } = "UNINITIALIZED";
 
+        /// <summary>
+        /// True once bootstrap has finished Runtime World Prime for the active scene load.
+        /// GPU systems that bind buffers from LateFrame must wait for this before touching
+        /// live GraphicsBuffers / compute kernels — during Step 8 the world scene can be
+        /// loaded while menu unload and buffer teardown still race the dispatcher.
+        /// False when no gate owns the registry slot (pre-boot / torn-down).
+        /// </summary>
+        public static bool IsWorldPrimed =>
+            s_activeRuntime != null && s_activeRuntime._worldPrimed;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
