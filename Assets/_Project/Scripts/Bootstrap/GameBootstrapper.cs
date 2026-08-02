@@ -3743,13 +3743,10 @@ namespace Hecton8.Bootstrap
 
         private static SettingsManager EnsureSettingsRuntimeRegistered()
         {
-            SettingsManager settingsManager = GlobalRegistry.Settings;
-            if (settingsManager == null)
-            {
-                GameObject settingsRoot = new GameObject("[SettingsManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned settings runtime owner - owner: GameBootstrapper
-                settingsManager = settingsRoot.AddComponent<SettingsManager>();
-            }
-
+            // Resolve-or-create is owned by SettingsManager.EnsureRuntimeInstance
+            // (static slot + GlobalRegistry.Settings + scene scan + player-build AddComponent).
+            // Bootstrap no longer duplicates the construction path.
+            SettingsManager settingsManager = SettingsManager.EnsureRuntimeInstance();
             if (settingsManager == null)
                 return null;
 
@@ -3760,6 +3757,7 @@ namespace Hecton8.Bootstrap
             settingsManager.RefreshPersistenceFromRegistry();
             return settingsManager;
         }
+
 
         private async Awaitable<bool> LoadAddressableUIPrefabsAsync(CancellationToken ct)
         {
