@@ -430,9 +430,13 @@ namespace Hecton8.Core
                 return null;
             }
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Player context owns bind/publish of the live player root into GlobalRegistry;
+            // without create, TryBindPlayerRoot and sensory/camera consumers miss the host.
             GameObject runtimeRoot = new GameObject("[PlayerRuntimeContextService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player runtime context root - owner: PlayerRuntimeContextService
             return runtimeRoot.AddComponent<PlayerRuntimeContextService>();
         }
+
 
         /// <summary>
         /// Binds a player root to the central runtime context even before bootstrap publishes it globally.

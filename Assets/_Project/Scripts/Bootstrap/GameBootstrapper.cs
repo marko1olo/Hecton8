@@ -6443,17 +6443,18 @@ namespace Hecton8.Bootstrap
 
         private static Hecton8.Core.GCMonitor EnsureGCMonitorRegistered()
         {
+            // Resolve-or-create is owned by GCMonitor.EnsureRuntimeInstance
+            // (GlobalRegistry.GCMonitorRuntime + player-build AddComponent).
+            // Bootstrap no longer duplicates the construction path.
             Hecton8.Core.GCMonitor monitor = Hecton8.Core.GCMonitor.EnsureRuntimeInstance();
             if (monitor == null)
-            {
-                GameObject runtimeRoot = new GameObject(GCMonitorRuntimeName); // COLD ALLOC: GameObject[1] - bootstrap-owned GC sentinel root - owner: GameBootstrapper
-                monitor = runtimeRoot.AddComponent<Hecton8.Core.GCMonitor>();
-            }
+                return null;
 
             PersistRuntimeService(monitor);
             monitor.InitializeService();
             return monitor;
         }
+
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static RuntimePerformanceProfiler EnsureRuntimePerformanceProfilerRegistered()
