@@ -3450,82 +3450,156 @@ namespace Hecton8.World
             _threatGridUploadSnapshot = new uint[ThreatGridMaxCellCount];
         }
 
+        private static bool IsGraphicsBufferAlive(GraphicsBuffer buffer)
+        {
+            return buffer != null && buffer.IsValid();
+        }
+
         private static bool EnsureBuffer(ref GraphicsBuffer buffer, int count, int stride)
         {
-            if (buffer != null && buffer.count == count && buffer.stride == stride)
+            if (IsGraphicsBufferAlive(buffer) && buffer.count == count && buffer.stride == stride)
                 return false;
 
             if (buffer != null)
             {
-                buffer.Release();
+                if (buffer.IsValid())
+                    buffer.Release();
                 buffer = null;
             }
 
             // COLD ALLOC: GraphicsBuffer[count] - persistent GPU boid simulation/storage buffer - owner: SargassumMicroFaunaBoids
-            buffer = new GraphicsBuffer(
-                GraphicsBuffer.Target.Structured,
-                GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                count,
-                stride);
+            // Under -nographics LockBufferForWrite can throw NullReferenceException inside the native ctor.
+            try
+            {
+                buffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Structured,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    count,
+                    stride);
+            }
+            catch (System.Exception)
+            {
+                buffer = null;
+                return false;
+            }
+
+            if (!IsGraphicsBufferAlive(buffer))
+            {
+                buffer = null;
+                return false;
+            }
+
             return true;
         }
 
         private static bool EnsureGpuWriteBuffer(ref GraphicsBuffer buffer, int count, int stride)
         {
-            if (buffer != null && buffer.count == count && buffer.stride == stride)
+            if (IsGraphicsBufferAlive(buffer) && buffer.count == count && buffer.stride == stride)
                 return false;
 
             if (buffer != null)
             {
-                buffer.Release();
+                if (buffer.IsValid())
+                    buffer.Release();
                 buffer = null;
             }
 
             // COLD ALLOC: GraphicsBuffer[count] - GPU-written structured UAV buffer - owner: SargassumMicroFaunaBoids
-            buffer = new GraphicsBuffer(
-                GraphicsBuffer.Target.Structured,
-                count,
-                stride);
+            try
+            {
+                buffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Structured,
+                    count,
+                    stride);
+            }
+            catch (System.Exception)
+            {
+                buffer = null;
+                return false;
+            }
+
+            if (!IsGraphicsBufferAlive(buffer))
+            {
+                buffer = null;
+                return false;
+            }
+
             return true;
         }
 
         private static bool EnsureRawBuffer(ref GraphicsBuffer buffer, ref bool rawTargetValid, int count, int stride)
         {
-            if (buffer != null && rawTargetValid && buffer.count == count && buffer.stride == stride)
+            if (IsGraphicsBufferAlive(buffer) && rawTargetValid && buffer.count == count && buffer.stride == stride)
                 return false;
 
             if (buffer != null)
             {
-                buffer.Release();
+                if (buffer.IsValid())
+                    buffer.Release();
                 buffer = null;
             }
 
             // COLD ALLOC: Raw GraphicsBuffer[count] - byte-addressed GPU atomics for counters/corrections - owner: SargassumMicroFaunaBoids
-            buffer = new GraphicsBuffer(
-                GraphicsBuffer.Target.Raw,
-                GraphicsBuffer.UsageFlags.LockBufferForWrite,
-                count,
-                stride);
+            try
+            {
+                buffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Raw,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    count,
+                    stride);
+            }
+            catch (System.Exception)
+            {
+                buffer = null;
+                rawTargetValid = false;
+                return false;
+            }
+
+            if (!IsGraphicsBufferAlive(buffer))
+            {
+                buffer = null;
+                rawTargetValid = false;
+                return false;
+            }
+
             rawTargetValid = true;
             return true;
         }
 
         private static bool EnsureGpuWriteRawBuffer(ref GraphicsBuffer buffer, ref bool rawTargetValid, int count, int stride)
         {
-            if (buffer != null && rawTargetValid && buffer.count == count && buffer.stride == stride)
+            if (IsGraphicsBufferAlive(buffer) && rawTargetValid && buffer.count == count && buffer.stride == stride)
                 return false;
 
             if (buffer != null)
             {
-                buffer.Release();
+                if (buffer.IsValid())
+                    buffer.Release();
                 buffer = null;
             }
 
             // COLD ALLOC: Raw GraphicsBuffer[count] - GPU-written byte-addressed UAV buffer - owner: SargassumMicroFaunaBoids
-            buffer = new GraphicsBuffer(
-                GraphicsBuffer.Target.Raw,
-                count,
-                stride);
+            try
+            {
+                buffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Raw,
+                    count,
+                    stride);
+            }
+            catch (System.Exception)
+            {
+                buffer = null;
+                rawTargetValid = false;
+                return false;
+            }
+
+            if (!IsGraphicsBufferAlive(buffer))
+            {
+                buffer = null;
+                rawTargetValid = false;
+                return false;
+            }
+
             rawTargetValid = true;
             return true;
         }
