@@ -330,18 +330,26 @@ namespace Hecton8.World
             _activeRuntimeInstance = null;
         }
 
+        /// <summary>
+        /// Resolve-or-create the sole chemical influence grid owner for player builds.
+        /// Zero live scene/prefab GUID hits (67189d92acf53ae4786558c89ccd2210); construction
+        /// previously sat behind UNITY_EDITOR || DEVELOPMENT_BUILD so player AI frames never
+        /// got a grid and chemical read-model registration never ran.
+        /// </summary>
         public static ChemicalInfluenceGrid EnsureRuntimeInstance()
         {
-            if (_activeRuntimeInstance != null)
-                return _activeRuntimeInstance;
+            ChemicalInfluenceGrid active = _activeRuntimeInstance;
+            if (active != null)
+                return active;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            GameObject runtimeRoot = new GameObject(RuntimeRootName);
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            GameObject runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC
             return runtimeRoot.AddComponent<ChemicalInfluenceGrid>();
-#else
-            return null;
-#endif
         }
+
 
         internal static void BeginAiFrame(int frameId)
         {

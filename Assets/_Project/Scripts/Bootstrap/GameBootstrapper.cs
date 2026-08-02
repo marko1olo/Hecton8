@@ -8513,7 +8513,14 @@ namespace Hecton8.Bootstrap
                 // bootstrap node (TryResolveBootstrapNode). Defense-in-depth here covers player-
                 // publish path if Environment node was skipped/exempted earlier in the same boot.
                 Hecton8.Gameplay.DebrisManager.EnsureRuntimeInstance();
+
+                // ChemicalInfluenceGrid: sole chemical read-model / scent grid owner.
+                // Script GUID 67189d92acf53ae4786558c89ccd2210 — ZERO live scene/prefab hits.
+                // Construction previously sat behind UNITY_EDITOR || DEVELOPMENT_BUILD, so player
+                // AI frames and chemical queue APIs never got a grid.
+                Hecton8.World.ChemicalInfluenceGrid.EnsureRuntimeInstance();
             }
+
 
             finally
             {
