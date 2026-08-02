@@ -431,6 +431,16 @@ namespace Hecton8.Power
             if (_solvePending)
                 return;
 
+            // BuildCsrGraphJob owns _counters/_edgeOffsets/_edgeDestinations while pending.
+            // Must fence before any SlowTick host read of those buffers (InvalidOperation otherwise).
+            if (_csrRebuildPending)
+            {
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _csrRebuildHandle))
+                    return;
+                _csrRebuildPending = false;
+            }
+
+
             if (!TryAcquireRouterMutationGuard(out IDataVault routerGuardVault))
                 return;
 
@@ -445,8 +455,9 @@ namespace Hecton8.Power
                 if (!_hasGraph)
                     BuildEmergencyMockGraph();
 
-                if (_csrRebuildPending && _counters[CounterAdjacencyEntryCount] <= 0)
+                if (_counters[CounterAdjacencyEntryCount] <= 0)
                     return;
+
 
                 ApplyQueuedTuning();
                 ApplyDeterministicMockModuleToggle();
