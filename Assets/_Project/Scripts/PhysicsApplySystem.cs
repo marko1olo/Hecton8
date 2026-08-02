@@ -1637,13 +1637,47 @@ namespace Hecton8.Physics
         public bool IsServiceReady => _isInitialized;
 
         /// <summary>
-        /// Ensures a live runtime instance exists.
+        /// Resolve-or-create the sole GlobalRegistry.Physics / physics-apply owner.
+        /// Hot static routes (TriggerDepressurizationVortex, TriggerImplosionImpulse, packet
+        /// clear, origin-shift helpers) previously called a resolve-only Ensure that returned
+        /// null whenever bootstrap had not yet published s_runtimeInstance. Player builds that
+        /// skip or reorder EnsurePhysicsApplySystemRegistered permanently lose impulse/vortex
+        /// apply and tracked-body origin-shift handling.
         /// </summary>
         /// <returns>Live physics apply instance.</returns>
         public static PhysicsApplySystem EnsureRuntimeInstance()
         {
-            return s_runtimeInstance;
+            if (s_runtimeInstance != null)
+                return s_runtimeInstance;
+
+            if (!Application.isPlaying)
+                return null;
+
+            IPhysicsService registered = GlobalRegistry.Physics;
+            PhysicsApplySystem asSystem = registered as PhysicsApplySystem;
+            if (asSystem != null)
+            {
+                s_runtimeInstance = asSystem;
+                return asSystem;
+            }
+
+            PhysicsApplySystem existing =
+                Object.FindFirstObjectByType<PhysicsApplySystem>(FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                s_runtimeInstance = existing;
+                if (!existing._isInitialized)
+                    existing.InitializeService();
+                return existing;
+            }
+
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            GameObject runtimeRoot = new GameObject("[PhysicsApplySystem]"); // COLD ALLOC
+            PhysicsApplySystem created = runtimeRoot.AddComponent<PhysicsApplySystem>();
+            created.InitializeService();
+            return created;
         }
+
 
         /// <summary>
         /// Explicitly initializes the service and registers it into <see cref="GlobalRegistry"/>.
