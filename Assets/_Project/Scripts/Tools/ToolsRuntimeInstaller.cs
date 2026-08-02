@@ -71,6 +71,8 @@ namespace Hecton8.Tools
             GameObject runtimeRoot = null;
             WorldRuntimeReferenceUtility.TryResolveScenePath(ref runtimeRoot, RuntimeRootName);
             if (runtimeRoot == null)
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: GameObject[1] - one runtime root for tool owners per gameplay scene - owner: ToolsRuntimeInstaller
 
             // A resolved root can come back hidden or deactivated from an earlier scene state.
