@@ -118,11 +118,9 @@ namespace Hecton8.UI
         {
             if (!root.TryGetComponent(out BoxCollider panelCollider))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 panelCollider = root.gameObject.AddComponent<BoxCollider>(); // COLD ALLOC: main-menu diegetic panel collider.
-#else
-                return null;
-#endif
             }
 
             panelCollider.isTrigger = true;

@@ -644,7 +644,8 @@ namespace Hecton8.UI
             if (canvas == null)
                 return;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+// Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             if (!canvas.TryGetComponent(out HectonUIScaler _))
                 // COLD ALLOC: HectonUIScaler[1] - primary HUD canvas bootstrap binding - owner: SuitHUDV4CanvasOverlay
                 canvas.gameObject.AddComponent<HectonUIScaler>();
@@ -652,7 +653,6 @@ namespace Hecton8.UI
             if (!canvas.TryGetComponent(out SuitHUDV4CanvasOverlay _))
                 // COLD ALLOC: SuitHUDV4CanvasOverlay[1] - primary HUD canvas bootstrap binding - owner: SuitHUDV4CanvasOverlay
                 canvas.gameObject.AddComponent<SuitHUDV4CanvasOverlay>();
-#endif
         }
 
         private SuitData _activeSuit;
@@ -7513,12 +7513,10 @@ namespace Hecton8.UI
                 if (!allowCreation)
                     return null;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 // COLD ALLOC: HectonUIScaler[1] - canvas matrix scaler bootstrap - owner: SuitHUDV4CanvasOverlay
                 _cachedUiScaler = canvas.gameObject.AddComponent<HectonUIScaler>();
-#else
-                return null;
-#endif
             }
 
             return _cachedUiScaler;
