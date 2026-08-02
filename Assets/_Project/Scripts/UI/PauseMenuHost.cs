@@ -17,7 +17,8 @@ namespace Hecton8.UI
             RectTransform root = existing as RectTransform;
             if (root == null)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 GameObject go = new GameObject(rootName, typeof(RectTransform));
                 go.layer = gameObject.layer;
                 go.TryGetComponent(out root);
@@ -27,19 +28,13 @@ namespace Hecton8.UI
                 root.anchorMax = Vector2.one;
                 root.offsetMin = Vector2.zero;
                 root.offsetMax = Vector2.zero;
-#else
-                return;
-#endif
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             root.TryGetComponent(out PauseMenuController controller);
             if (controller == null)
                 controller = root.gameObject.AddComponent<PauseMenuController>();
-#else
-            if (!root.TryGetComponent(out PauseMenuController _))
-                return;
-#endif
         }
     }
 }

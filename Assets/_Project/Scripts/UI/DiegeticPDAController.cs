@@ -759,12 +759,10 @@ namespace Hecton8.UI
                 _eventSystem = EventSystem.current;
                 if (_eventSystem == null && allowColdCreateFallback)
                 {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    GameObject eventSystemRoot = new GameObject("DiegeticPDA_EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] — PDA pointer-dispatch fallback event system — owner: DiegeticPDAController
+                    // Player-build construction path: no authored/bootstrap instance reachable.
+                    // Must construct in player builds when bootstrap reorders or skips registration.
+                    GameObject eventSystemRoot = new GameObject("DiegeticPDA_EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] - PDA pointer-dispatch fallback event system - owner: DiegeticPDAController
                     eventSystemRoot.TryGetComponent(out _eventSystem);
-#else
-                    return false;
-#endif
                 }
             }
 

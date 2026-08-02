@@ -2857,7 +2857,8 @@ namespace Hecton8.UI
             eventSystem.TryGetComponent(out StandaloneInputModule legacyInputModule);
             if (!eventSystem.TryGetComponent(out InputSystemUIInputModule inputSystemModule))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 if (legacyInputModule != null)
                 {
                     legacyInputModule.enabled = false;
@@ -2868,9 +2869,6 @@ namespace Hecton8.UI
                 }
 
                 inputSystemModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
-#else
-                return;
-#endif
             }
 
             INativeInputManagerRuntime inputManager = GlobalRegistry.NativeInputRuntime;
