@@ -79,15 +79,40 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Returns the registered settings service. Creation is owned by <see cref="GameBootstrapper"/>.
+        /// Resolve-or-create the sole GlobalRegistry.Settings / options runtime owner.
+        /// Construction previously lived only in GameBootstrapper.EnsureSettingsRuntimeRegistered.
+        /// Hot consumers that call EnsureRuntimeInstance (or re-enter after scene unload clears
+        /// s_runtimeInstance) permanently saw null when bootstrap had not yet re-registered.
         /// </summary>
         public static SettingsManager EnsureRuntimeInstance()
         {
             if (_isShuttingDown || !Application.isPlaying)
                 return null;
 
-            return s_runtimeInstance;
+            if (s_runtimeInstance != null)
+                return s_runtimeInstance;
+
+            SettingsManager registered = GlobalRegistry.Settings;
+            if (registered != null)
+            {
+                s_runtimeInstance = registered;
+                return registered;
+            }
+
+            SettingsManager existing =
+                Object.FindFirstObjectByType<SettingsManager>(FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                s_runtimeInstance = existing;
+                return existing;
+            }
+
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            GameObject settingsRoot = new GameObject("[SettingsManager]"); // COLD ALLOC
+            SettingsManager created = settingsRoot.AddComponent<SettingsManager>();
+            return created;
         }
+
 
         public static bool TryGetInstance(out SettingsManager instance)
         {
