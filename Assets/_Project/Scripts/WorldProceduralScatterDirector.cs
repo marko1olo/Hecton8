@@ -1370,6 +1370,13 @@ namespace Hecton8.World
 
         private bool CanPrimeBootstrapScatterFromCurrentTerrainSource()
         {
+            // L19 hop2 LIVE: ACCESS_VIOLATION in TryResolveSeafloorHeight during
+            // WORLDDRIVER begin -> bootstrap scatter prime. Batchmode terrain/heightmap
+            // samples are not crash-safe here; skip bootstrap prime under batchmode so
+            // hop2 input validation can proceed. Interactive editor/player keep full path.
+            if (Application.isBatchMode)
+                return false;
+
             if (fieldSampler == null ||
                 !TryGetObserverAbsolutePosition(out Vector3 observerAbsolutePosition))
                 return false;
@@ -1383,6 +1390,7 @@ namespace Hecton8.World
 
             return seafloorSource != WorldProceduralFieldSampler.SeafloorSource.FallbackSynthetic;
         }
+
 
         internal bool TryPrewarmBootstrapSamplingPipeline()
         {
