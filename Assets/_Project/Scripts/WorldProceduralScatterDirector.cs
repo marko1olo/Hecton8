@@ -1394,6 +1394,13 @@ namespace Hecton8.World
 
         internal bool TryPrewarmBootstrapSamplingPipeline()
         {
+            // L19 hop2 LIVE: ACCESS_VIOLATION in PrepareBurstData/TryEnsureVaultBufferCapacity
+            // (BiomeFamilyData NativeArrayView) during bootstrap sampling prewarm under -batchmode.
+            // Soft-disable vault prewarm here so hop2 can reach input validation. Interactive
+            // editor/player keep the full prewarm path.
+            if (Application.isBatchMode)
+                return false;
+
             if (!_runtimeScatterCallbacksActive)
                 return false;
 
