@@ -234,9 +234,13 @@ namespace Hecton8.Core
                 return null;
             }
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Scene service owns load/unload activation; without create the next scene load
+            // has no ISceneService after 00_BOOTSTRAP unloads.
             GameObject runtimeRoot = new GameObject("[SceneRuntimeService]"); // COLD ALLOC: GameObject[1] - persistent scene service owner - owner: SceneRuntimeService
 
             // Park under the project persistent root BEFORE AddComponent, so Awake observes the final
+
             // hierarchy. Left unparented this object lands in whatever scene is active at creation time -
             // 00_BOOTSTRAP - and is destroyed when that scene unloads on the way to 02_HECTON_WORLD,
             // taking ISceneService down with it exactly when the next scene load needs it.
