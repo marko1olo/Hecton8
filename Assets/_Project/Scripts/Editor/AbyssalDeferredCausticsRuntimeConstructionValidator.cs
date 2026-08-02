@@ -9,14 +9,14 @@ using UnityEngine;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL pin: WorldChunkResidencyManager must keep Player-build EnsureRuntimeInstance
+    /// Soft-FAIL pin: AbyssalDeferredCausticsRuntime must keep Player-build EnsureRuntimeInstance
     /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    internal sealed class WorldChunkResidencyManagerRuntimeConstructionValidator :
+    internal sealed class AbyssalDeferredCausticsRuntimeConstructionValidator :
         IPreprocessBuildWithReport
     {
         private const string RuntimeRelativePath =
-            "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs";
+            "Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
@@ -48,27 +48,27 @@ namespace Hecton8.Editor
                 if (!File.Exists(runtimePath))
                 {
                     Debug.LogError(
-                        "[WorldChunkResidencyManagerRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        "[AbyssalDeferredCausticsRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
                         RuntimeRelativePath);
                     return;
                 }
 
                 string runtimeSource = File.ReadAllText(runtimePath);
-                Pin(runtimeSource, "static WorldChunkResidencyManager EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "static AbyssalDeferredCausticsRuntime EnsureRuntimeInstance", RuntimeRelativePath);
                 Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
-                Pin(runtimeSource, "AddComponent<WorldChunkResidencyManager>", RuntimeRelativePath);
-                Pin(runtimeSource, "new GameObject(\"[WorldChunkResidencyManager]\")", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<AbyssalDeferredCausticsRuntime>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[AbyssalDeferredCausticsRuntime]\")", RuntimeRelativePath);
 
                 if (File.Exists(bootstrapPath))
                 {
                     string bootstrapSource = File.ReadAllText(bootstrapPath);
-                    Pin(bootstrapSource, "WorldChunkResidencyManager.EnsureRuntimeInstance", BootstrapRelativePath);
+                    Pin(bootstrapSource, "AbyssalDeferredCausticsRuntime", BootstrapRelativePath);
                 }
             }
             catch (Exception exception)
             {
                 Debug.LogError(
-                    "[WorldChunkResidencyManagerRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    "[AbyssalDeferredCausticsRuntimeConstructionValidator] SOFT-FAIL exception: " +
                     exception.Message);
             }
         }
@@ -78,7 +78,7 @@ namespace Hecton8.Editor
             if (source.IndexOf(token, StringComparison.Ordinal) < 0)
             {
                 Debug.LogError(
-                    "[WorldChunkResidencyManagerRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    "[AbyssalDeferredCausticsRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
                     token +
                     "' in " +
                     pathLabel);

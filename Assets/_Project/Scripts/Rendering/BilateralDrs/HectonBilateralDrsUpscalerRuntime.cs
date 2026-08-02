@@ -224,6 +224,8 @@ namespace Hecton8.Rendering
             if (s_runtimeInstance != null)
                 return s_runtimeInstance;
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // 13KRA bilateral DRS upscaler must self-construct when scene load path races.
             GameObject runtimeRoot = new GameObject("[HectonBilateralDrsUpscalerRuntime]"); // COLD ALLOC: GameObject[1] - scene-local 13KRA render-owner bootstrap.
             return runtimeRoot.AddComponent<HectonBilateralDrsUpscalerRuntime>();
         }

@@ -100,6 +100,8 @@ namespace Hecton8.Rendering
             if (runtime != null)
                 return runtime;
 
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Screen-space caustics owner must exist when bootstrap reflection path is skipped.
             GameObject runtimeRoot = new GameObject("[AbyssalDeferredCausticsRuntime]"); // COLD ALLOC: GameObject[1] - bootstrap-owned screen-space caustics owner - owner: AbyssalDeferredCausticsRuntime
             return runtimeRoot.AddComponent<AbyssalDeferredCausticsRuntime>();
         }
