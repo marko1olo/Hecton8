@@ -426,15 +426,17 @@ namespace Hecton8.Inventory
 
         private void PublishSoaQueryVaultSnapshotOwnerPhase()
         {
+            // L19 hop2: resolve vault lanes before bulk read — same stale-_basePtr hazard as
+            // TryCountQuantityByHashSoa after world-load vault rebirth.
             if (!TryResolveSoaQueryVaultBuffers(out InventorySoaVaultBuffers buffers) ||
-                !_itemHashes.IsCreated ||
-                !_stackCounts.IsCreated ||
-                !_itemDurability.IsCreated)
+                !_itemHashes.TryResolve(out NativeArray<uint> itemHashes) ||
+                !_stackCounts.TryResolve(out NativeArray<ushort> stackCounts) ||
+                !_itemDurability.TryResolve(out NativeArray<float> itemDurability))
             {
                 return;
             }
 
-            int sourceCount = math.min(_itemHashes.Length, math.min(_stackCounts.Length, _itemDurability.Length));
+            int sourceCount = math.min(itemHashes.Length, math.min(stackCounts.Length, itemDurability.Length));
             int capacity = math.min(sourceCount, math.min(buffers.ItemHashIDs.Length, math.min(buffers.Quantities.Length, buffers.Durabilities.Length)));
             int active = 0;
             for (int anchorIndex = 0; anchorIndex < sourceCount && active < capacity; anchorIndex++)
@@ -442,17 +444,17 @@ namespace Hecton8.Inventory
                 if (_grid == null || !_grid.HasAnchor(anchorIndex))
                     continue;
 
-                uint itemHash = _itemHashes[anchorIndex];
+                uint itemHash = itemHashes[anchorIndex];
                 if (itemHash == 0u)
                     continue;
 
-                int availableQuantity = math.max(0, math.max(1, (int)_stackCounts[anchorIndex]) - GetReservedCraftCount(anchorIndex));
+                int availableQuantity = math.max(0, math.max(1, (int)stackCounts[anchorIndex]) - GetReservedCraftCount(anchorIndex));
                 if (availableQuantity <= 0)
                     continue;
 
                 buffers.ItemHashIDs[active] = itemHash;
                 buffers.Quantities[active] = availableQuantity;
-                buffers.Durabilities[active] = math.saturate(_itemDurability[anchorIndex]);
+                buffers.Durabilities[active] = math.saturate(itemDurability[anchorIndex]);
                 active++;
             }
 
@@ -460,48 +462,64 @@ namespace Hecton8.Inventory
                 buffers.ActiveSlotCount[0] = active;
         }
 
+
         private bool TryCountQuantityByHashSoa(int itemHashId, bool availableOnly, out int total)
         {
             total = 0;
-            if (!_itemHashes.IsCreated ||
-                !_stackCounts.IsCreated ||
-                _itemHashes.Length == 0 ||
-                _itemHashes.Length != _stackCounts.Length)
+            // L19 hop2 LIVE: ACCESS_VIOLATION in EqualMask4 / NativeArray`1.get_Item during
+            // EnsureToolGranted -> CountQuantityByHash. InventoryVaultLane implicit conversion
+            // and indexer read _basePtr without TryRefreshHandle. After vault rebirth/relocate
+            // (world load) that pointer is dangling → native Crash!!!.
+            // Always resolve via TryResolve so generation is refreshed before SIMD/scalar reads.
+            if (!_itemHashes.TryResolve(out NativeArray<uint> itemHashes) ||
+                !_stackCounts.TryResolve(out NativeArray<ushort> stackCounts) ||
+                itemHashes.Length == 0 ||
+                itemHashes.Length != stackCounts.Length)
             {
                 return false;
             }
 
             uint targetHashId = unchecked((uint)itemHashId);
-            int capacity = _itemHashes.Length;
+            int capacity = itemHashes.Length;
             int vectorEnd = capacity & ~3;
             bool found = false;
             for (int i = 0; i < vectorEnd; i += 4)
             {
-                int mask = SoaInventoryQueryEngine.EqualMask4(_itemHashes, i, targetHashId);
+                int mask = SoaInventoryQueryEngine.EqualMask4(itemHashes, i, targetHashId);
                 while (mask != 0)
                 {
                     int lane = math.tzcnt(mask);
                     int anchorIndex = i + lane;
-                    AccumulateSoaStack(anchorIndex, availableOnly, ref total, ref found);
+                    AccumulateSoaStack(itemHashes, stackCounts, anchorIndex, availableOnly, ref total, ref found);
                     mask &= mask - 1;
                 }
             }
 
             for (int anchorIndex = vectorEnd; anchorIndex < capacity; anchorIndex++)
             {
-                if (_itemHashes[anchorIndex] == targetHashId)
-                    AccumulateSoaStack(anchorIndex, availableOnly, ref total, ref found);
+                if (itemHashes[anchorIndex] == targetHashId)
+                    AccumulateSoaStack(itemHashes, stackCounts, anchorIndex, availableOnly, ref total, ref found);
             }
 
             return found;
         }
 
-        private void AccumulateSoaStack(int anchorIndex, bool availableOnly, ref int total, ref bool found)
+        private void AccumulateSoaStack(
+            NativeArray<uint> itemHashes,
+            NativeArray<ushort> stackCounts,
+            int anchorIndex,
+            bool availableOnly,
+            ref int total,
+            ref bool found)
         {
             if (_grid != null && !_grid.HasAnchor(anchorIndex))
                 return;
 
-            int count = math.max(1, (int)_stackCounts[anchorIndex]);
+            // Use resolved NativeArrays — never re-enter vault lane indexers (stale _basePtr).
+            if ((uint)anchorIndex >= (uint)stackCounts.Length)
+                return;
+
+            int count = math.max(1, (int)stackCounts[anchorIndex]);
             if (availableOnly)
                 count = math.max(0, count - GetReservedCraftCount(anchorIndex));
 
@@ -511,6 +529,7 @@ namespace Hecton8.Inventory
             found = true;
             total = total > int.MaxValue - count ? int.MaxValue : total + count;
         }
+
 
         private void WriteSoaQueryTelemetryOwnerPhase()
         {
