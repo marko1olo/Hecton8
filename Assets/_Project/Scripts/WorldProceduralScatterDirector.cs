@@ -4554,7 +4554,8 @@ namespace Hecton8.World
             if (generativeGeologyService != null || !createIfMissing)
                 return generativeGeologyService;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+// Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             GameObject root = GetOrCreateRoot();
             Transform serviceTransform = FindDirectChildByName(root.transform, "__GENERATIVE_GEOLOGY_SERVICE");
             if (serviceTransform == null)
@@ -4567,9 +4568,6 @@ namespace Hecton8.World
                 generativeGeologyService = serviceTransform.gameObject.AddComponent<WorldGenerativeGeologyService>();
 
             return generativeGeologyService;
-#else
-            return null;
-#endif
         }
 
         private static WorldGenerativeGeologyProfile ResolveEffectiveGenerativeGeologyProfile(WorldPrefabFamilyProfile family)
