@@ -6411,21 +6411,20 @@ namespace Hecton8.Bootstrap
 
         private static CrashTelemetryBuffer EnsureCrashTelemetryBufferRegistered()
         {
+            // Resolve-or-create is owned by CrashTelemetryBuffer.EnsureRuntimeInstance
+            // (GlobalRegistry.CrashTelemetry + scene scan + player-build AddComponent).
+            // Bootstrap no longer duplicates the construction path.
             CrashTelemetryBuffer telemetry = CrashTelemetryBuffer.EnsureRuntimeInstance();
             if (telemetry == null)
-            {
-                GameObject runtimeRoot = new GameObject(CrashTelemetryRuntimeName); // COLD ALLOC: GameObject[1] - bootstrap-owned crash telemetry root - owner: GameBootstrapper
-                telemetry = runtimeRoot.AddComponent<CrashTelemetryBuffer>();
-            }
+                return null;
 
             if (Application.isPlaying)
-            {
                 PersistRuntimeService(telemetry);
-            }
 
             BootstrapStatus.RegisterSafeHaltTelemetryReporter(CrashTelemetryBuffer.ReportBootstrapSafeHalt);
             return telemetry;
         }
+
 
         private static Hecton8.Core.RuntimeWatchdog EnsureRuntimeWatchdogRegistered()
         {
