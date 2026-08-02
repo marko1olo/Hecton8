@@ -46,11 +46,9 @@ namespace Hecton8.Gameplay
 
             if (!environmentService.TryGetComponent(out HectonHazardManager bridge))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 bridge = environmentService.gameObject.AddComponent<HectonHazardManager>(); // COLD ALLOC: HectonHazardManager[1] - compatibility bridge hosted by environment runtime context - owner: EnvironmentRuntimeContextService
-#else
-                return null;
-#endif
             }
 
             return bridge;

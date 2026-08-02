@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.AI.Perception;
@@ -5348,11 +5348,9 @@ namespace Hecton8.AI
 
             if (_faunaKinematicsRuntime == null)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 _faunaKinematicsRuntime = gameObject.AddComponent<FaunaKinematicsRuntime>();
-#else
-                return;
-#endif
             }
 
             _faunaKinematicsRuntime.BindFromFauna(this, _rb);
@@ -5360,12 +5358,10 @@ namespace Hecton8.AI
             CreatureDamageManager creatureDamageManager = _creatureDamageManager;
             if (creatureDamageManager == null)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 creatureDamageManager = gameObject.AddComponent<CreatureDamageManager>();
                 _creatureDamageManager = creatureDamageManager;
-#else
-                return;
-#endif
             }
 
             creatureDamageManager.BindFromFauna(this);

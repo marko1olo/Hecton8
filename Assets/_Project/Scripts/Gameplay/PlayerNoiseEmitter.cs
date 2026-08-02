@@ -44,11 +44,9 @@ namespace Hecton8.Gameplay
 
             if (!playerTransform.TryGetComponent(out PlayerNoiseEmitter emitter))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Player-build construction path: no authored/bootstrap instance reachable.
+                // Must construct in player builds when bootstrap reorders or skips registration.
                 emitter = playerTransform.gameObject.AddComponent<PlayerNoiseEmitter>();
-#else
-                return null;
-#endif
             }
 
             return emitter;
