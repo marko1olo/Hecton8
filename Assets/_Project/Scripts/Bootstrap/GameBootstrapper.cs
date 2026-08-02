@@ -5748,22 +5748,16 @@ namespace Hecton8.Bootstrap
         /// </summary>
         /// <remarks>
         /// This node is enumerated, ordered, phase-mapped to <see cref="BootstrapPhase.Environment"/> and
-        /// heartbeat-probed exactly like a wired dependency, but nothing installs the service. The only
-        /// implementer of <c>IDebrisService</c> is <c>DebrisManager</c>
-        /// (Assets/_Project/Scripts/Gameplay/DebrisManager.cs), and its <c>EnsureRuntimeInstance</c> factory has
-        /// no caller anywhere in the project. This initializer used to be a bare <c>return true;</c>, so the boot
-        /// log and the node graph both reported DebrisManager READY while creating nothing at all.
+        /// heartbeat-probed exactly like a wired dependency. The only implementer of <c>IDebrisService</c>
+        /// is <c>DebrisManager</c> (Assets/_Project/Scripts/Gameplay/DebrisManager.cs). The node initializer
+        /// now calls <c>DebrisManager.EnsureRuntimeInstance</c> before this reporter so a healthy boot
+        /// installs the owner and returns READY via the non-null path below.
         /// <para>
-        /// Returning <c>false</c> is deliberately NOT the refusal used here, because a false return from a
-        /// bootstrap node is fatal to the entire game, not just to the node: the caller logs
-        /// <c>LogBootstrapDependencyFailure</c> and returns false out of
-        /// <see cref="InitializeBootstrapLayerNodesAsync"/>, which fails the Environment phase, which makes
-        /// <see cref="RunBootstrapStateMachineAsync"/> abandon the Player phase, the UI phase, the CoreReady
-        /// marker, <c>GlobalRegistry.LockReady</c> and scene activation. Nothing in the startup graph depends on
-        /// the Debris slot - <c>BootstrapRegistryCycleValidator</c> lists it only as an edge source, never as a
-        /// dependency - so killing boot over an absent cosmetic debris owner would be a far worse defect than the
-        /// missing subsystem. An absent service is therefore a loud, named, recorded exemption. It is never a
-        /// silent success, and it never claims to be ready.
+        /// If the factory still leaves the registry empty, returning <c>false</c> is deliberately NOT the
+        /// refusal used here: a false return from a bootstrap node is fatal to the entire game (Environment
+        /// phase abort → no Player/UI/CoreReady/LockReady). Nothing in the startup graph depends on the
+        /// Debris slot, so an empty slot after construction remains a loud named exemption rather than a
+        /// boot-killer. It is never a silent success, and it never claims to be ready.
         /// </para>
         /// Cold path: runs once per boot from the node initializer, so the message construction here costs
         /// nothing at runtime cadence.
@@ -5785,14 +5779,14 @@ namespace Hecton8.Bootstrap
                 ResolveBootstrapDependencyNodeName(BootstrapDependencyNode.DebrisManager));
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError(
-                "[GameBootstrapper] DebrisManager is declared as a bootstrap dependency but is NOT installed. " +
-                "GlobalRegistry.Debris is empty and nothing calls DebrisManager.EnsureRuntimeInstance, so there " +
-                "is no debris owner this session and every IDebrisService.SpawnBurst call is dropped. " +
+                "[GameBootstrapper] DebrisManager.EnsureRuntimeInstance was called but GlobalRegistry.Debris " +
+                "is still empty (no debris owner this session; every IDebrisService.SpawnBurst call is dropped). " +
                 "This node is EXEMPT, not ready. Boot continues on purpose: nothing in the startup graph " +
                 "depends on the Debris slot, and failing the node would abort the whole boot.");
 #endif
             return true;
         }
+
 
         /// <summary>
         /// Reports the real readiness of the <c>DebrisManager</c> bootstrap node.
@@ -5905,8 +5899,14 @@ namespace Hecton8.Bootstrap
 
                 case BootstrapDependencyNode.DebrisManager:
                 {
+                    // DebrisManager is declared as a bootstrap dependency and GlobalRegistry has a
+                    // real Debris slot. Factory EnsureRuntimeInstance already exists (resolve-or-
+                    // create + InitializeService for heartbeat). Wire the construction site here so
+                    // the Environment-phase node is actually READY instead of permanently EXEMPT.
+                    Hecton8.Gameplay.DebrisManager.EnsureRuntimeInstance();
                     return ReportDebrisManagerBootstrapNodeState();
                 }
+
 
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService:
                 {
@@ -8507,7 +8507,13 @@ namespace Hecton8.Bootstrap
                 // builds never AddComponent'd the owner and vocal/Babel/audio-log cues stayed mute.
                 // Factory parents under suit-HUD canvas (overlay / named canvas fallback).
                 Hecton8.UI.SubtitleManager.EnsureRuntimeInstance();
+
+                // DebrisManager: sole IDebrisService owner. Primary construction is the Environment
+                // bootstrap node (TryResolveBootstrapNode). Defense-in-depth here covers player-
+                // publish path if Environment node was skipped/exempted earlier in the same boot.
+                Hecton8.Gameplay.DebrisManager.EnsureRuntimeInstance();
             }
+
             finally
             {
                 if (installerPublicationGateOpen)
