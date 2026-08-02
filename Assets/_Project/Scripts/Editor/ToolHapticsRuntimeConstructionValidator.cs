@@ -9,14 +9,14 @@ using UnityEngine;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL pin: AudioLogSystem must keep Player-build EnsureRuntimeInstance
+    /// Soft-FAIL pin: ToolHapticsRuntime must keep Player-build EnsureRuntimeInstance
     /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    internal sealed class AudioLogSystemRuntimeConstructionValidator :
+    internal sealed class ToolHapticsRuntimeConstructionValidator :
         IPreprocessBuildWithReport
     {
         private const string RuntimeRelativePath =
-            "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs";
+            "Assets/_Project/Scripts/Tools/ToolHapticsRuntime.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
@@ -48,27 +48,27 @@ namespace Hecton8.Editor
                 if (!File.Exists(runtimePath))
                 {
                     Debug.LogError(
-                        "[AudioLogSystemRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        "[ToolHapticsRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
                         RuntimeRelativePath);
                     return;
                 }
 
                 string runtimeSource = File.ReadAllText(runtimePath);
-                Pin(runtimeSource, "static AudioLogSystem EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "static ToolHapticsRuntime EnsureRuntimeInstance", RuntimeRelativePath);
                 Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
-                Pin(runtimeSource, "AddComponent<AudioLogSystem>", RuntimeRelativePath);
-                Pin(runtimeSource, "new GameObject(\"[AudioLogSystem]\")", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<ToolHapticsRuntime>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[ToolHapticsRuntime]\")", RuntimeRelativePath);
 
                 if (File.Exists(bootstrapPath))
                 {
                     string bootstrapSource = File.ReadAllText(bootstrapPath);
-                    Pin(bootstrapSource, "AudioLogSystem.EnsureRuntimeInstance", BootstrapRelativePath);
+                    Pin(bootstrapSource, "ToolHapticsRuntime.EnsureRuntimeInstance", BootstrapRelativePath);
                 }
             }
             catch (Exception exception)
             {
                 Debug.LogError(
-                    "[AudioLogSystemRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    "[ToolHapticsRuntimeConstructionValidator] SOFT-FAIL exception: " +
                     exception.Message);
             }
         }
@@ -78,7 +78,7 @@ namespace Hecton8.Editor
             if (source.IndexOf(token, StringComparison.Ordinal) < 0)
             {
                 Debug.LogError(
-                    "[AudioLogSystemRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    "[ToolHapticsRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
                     token +
                     "' in " +
                     pathLabel);

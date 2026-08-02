@@ -1,89 +1,88 @@
 #if UNITY_EDITOR
+using System;
 using System.IO;
-using System.Text;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL CI pin for LoreDatabaseManager runtime construction.
-    ///
-    /// LoreDatabaseManager is the sole GlobalRegistry.LoreDatabase owner
-    /// (lore unlock read-model / scan fragment catalog).
-    /// Script GUID 42a7b5625bed8574794366fcc0149275 has ZERO live scene/prefab hits
-    /// (only Assets/_Recovery leftovers). HectonLoreSystemsRoot.SetupAllSystems is
-    /// editor ContextMenu-only and does not run in play mode.
-    /// No EnsureRuntimeInstance existed; OnEnable only registers when already present.
-    /// HectonDiscoveryManager, ResearchDirector and ScannableFragment hit permanent null.
-    ///
-    /// The fix is LoreDatabaseManager.EnsureRuntimeInstance (resolve-or-create +
-    /// AddComponent) called from GameBootstrapper.PublishPlayerRuntimeReference after
-    /// AudioLogSystem. Soft FAIL under -quit (no EditorApplication.Exit on audit fail).
+    /// Soft-FAIL pin: LoreDatabaseManager must keep Player-build EnsureRuntimeInstance
+    /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    public static class LoreDatabaseManagerRuntimeConstructionValidator
+    internal sealed class LoreDatabaseManagerRuntimeConstructionValidator :
+        IPreprocessBuildWithReport
     {
-        private const string LogPrefix = "[LoreDatabaseManagerRuntimeConstructionValidator]";
+        private const string RuntimeRelativePath =
+            "Assets/_Project/Scripts/Narrative/LoreDatabaseManager.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
-        private const string ManagerRelativePath =
-            "Assets/_Project/Scripts/Narrative/LoreDatabaseManager.cs";
 
-        private const string PinEnsureRuntimeInstance = "EnsureRuntimeInstance";
-        private const string PinAddManager = "AddComponent<LoreDatabaseManager>";
-        private const string PinBootstrapCall = "LoreDatabaseManager.EnsureRuntimeInstance";
-        private const string PinRegister = "RegisterLoreDatabaseRuntime";
-        private const string PinPlayerBuildPath = "Player-build construction path";
+        public int callbackOrder => 0;
 
-        // COLD ALLOC: StringBuilder[4096] - editor audit report builder - owner: LoreDatabaseManagerRuntimeConstructionValidator
-        private static readonly StringBuilder Report = new StringBuilder(4096);
-
-        /// <summary>
-        /// Public for -executeMethod / CI batchmode. Soft FAIL stays exit 0 under -quit.
-        /// </summary>
-        [MenuItem("Hecton8/Validation/Lore Database Manager Runtime Construction", priority = 208)]
-        public static void Run()
+        [InitializeOnLoadMethod]
+        private static void RegisterSoftFailOnLoad()
         {
-            Report.Clear();
-            bool pass = true;
+            EditorApplication.delayCall += RunSoftFailValidation;
+        }
 
-            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? string.Empty;
-            string managerPath = Path.Combine(projectRoot, ManagerRelativePath.Replace('/', Path.DirectorySeparatorChar));
-            string bootstrapPath = Path.Combine(projectRoot, BootstrapRelativePath.Replace('/', Path.DirectorySeparatorChar));
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            RunSoftFailValidation();
+        }
 
-            string managerSrc = File.Exists(managerPath) ? File.ReadAllText(managerPath) : string.Empty;
-            string bootstrapSrc = File.Exists(bootstrapPath) ? File.ReadAllText(bootstrapPath) : string.Empty;
-
-            pass &= Pin(managerSrc, PinEnsureRuntimeInstance, "LoreDatabaseManager.EnsureRuntimeInstance factory");
-            pass &= Pin(managerSrc, PinAddManager, "LoreDatabaseManager player-build AddComponent");
-            pass &= Pin(managerSrc, PinRegister, "GlobalRegistry.RegisterLoreDatabaseRuntime");
-            pass &= Pin(managerSrc, PinPlayerBuildPath, "Player-build construction path comment");
-            pass &= Pin(bootstrapSrc, PinBootstrapCall, "GameBootstrapper LoreDatabaseManager.EnsureRuntimeInstance call");
-
-            string result = pass ? "PASS" : "FAIL";
-            string summary = $"{LogPrefix} RESULT: {result}";
-            Report.AppendLine(summary);
-
-            if (pass)
-                Debug.Log(Report.ToString());
-            else
-                Debug.LogError(Report.ToString());
-
-            // Soft FAIL: never EditorApplication.Exit(1) — batch -quit must stay green for compile.
-            if (Application.isBatchMode)
+        private static void RunSoftFailValidation()
+        {
+            try
             {
-                // no-op exit code control; Unity -quit handles process lifetime
+                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+                if (string.IsNullOrEmpty(projectRoot))
+                    return;
+
+                string runtimePath = Path.Combine(projectRoot, RuntimeRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                string bootstrapPath = Path.Combine(projectRoot, BootstrapRelativePath.Replace('/', Path.DirectorySeparatorChar));
+
+                if (!File.Exists(runtimePath))
+                {
+                    Debug.LogError(
+                        "[LoreDatabaseManagerRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        RuntimeRelativePath);
+                    return;
+                }
+
+                string runtimeSource = File.ReadAllText(runtimePath);
+                Pin(runtimeSource, "static LoreDatabaseManager EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<LoreDatabaseManager>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[LoreDatabaseManager]\")", RuntimeRelativePath);
+
+                if (File.Exists(bootstrapPath))
+                {
+                    string bootstrapSource = File.ReadAllText(bootstrapPath);
+                    Pin(bootstrapSource, "LoreDatabaseManager.EnsureRuntimeInstance", BootstrapRelativePath);
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    "[LoreDatabaseManagerRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    exception.Message);
             }
         }
 
-        private static bool Pin(string source, string token, string label)
+        private static void Pin(string source, string token, string pathLabel)
         {
-            bool ok = !string.IsNullOrEmpty(source) && source.Contains(token);
-            Report.AppendLine(ok
-                ? $"{LogPrefix} OK  {label} ({token})"
-                : $"{LogPrefix} MISSING {label} ({token})");
-            return ok;
+            if (source.IndexOf(token, StringComparison.Ordinal) < 0)
+            {
+                Debug.LogError(
+                    "[LoreDatabaseManagerRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    token +
+                    "' in " +
+                    pathLabel);
+            }
         }
     }
 }

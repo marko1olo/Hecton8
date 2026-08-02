@@ -411,6 +411,8 @@ namespace Hecton8.Audio.Synthesis
 
             // Player-build construction path: dedicated root (AudioSource via RequireComponent).
             // Never AddComponent on the AudioListener GO - that path self-disables in Awake/OnEnable.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             GameObject host = new GameObject("[DynamicMusicGranularSynthesizer]"); // COLD ALLOC
             DynamicMusicGranularSynthesizer created = host.AddComponent<DynamicMusicGranularSynthesizer>();
             _activeInstance = created;

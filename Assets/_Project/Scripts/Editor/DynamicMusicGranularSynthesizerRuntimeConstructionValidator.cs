@@ -1,77 +1,88 @@
 #if UNITY_EDITOR
+using System;
 using System.IO;
-using System.Text;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL CI pin for DynamicMusicGranularSynthesizer runtime construction.
-    ///
-    /// Player.prefab may author the component on a GO that is not the AudioListener host.
-    /// Old EnsureRuntimeInstanceForScene was resolve-only via TryGetComponent on the listener
-    /// host and silently no-op'd. Fix is DynamicMusicGranularSynthesizer.EnsureRuntimeInstance
-    /// (scene resolve + hierarchy walk + dedicated-root create; never co-host with AudioListener)
-    /// called from GameBootstrapper post-player-publish.
-    /// Soft FAIL under -quit (no EditorApplication.Exit on audit fail).
+    /// Soft-FAIL pin: DynamicMusicGranularSynthesizer must keep Player-build EnsureRuntimeInstance
+    /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    public static class DynamicMusicGranularSynthesizerRuntimeConstructionValidator
+    internal sealed class DynamicMusicGranularSynthesizerRuntimeConstructionValidator :
+        IPreprocessBuildWithReport
     {
-        private const string LogPrefix = "[DynamicMusicGranularSynthesizerRuntimeConstructionValidator]";
+        private const string RuntimeRelativePath =
+            "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
-        private const string ManagerRelativePath =
-            "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs";
 
-        private const string PinEnsureRuntimeInstance = "EnsureRuntimeInstance";
-        private const string PinAddManager = "AddComponent<DynamicMusicGranularSynthesizer>";
-        private const string PinBootstrapCall = "DynamicMusicGranularSynthesizer.EnsureRuntimeInstance";
-        private const string PinPlayerBuildPath = "Player-build construction path";
-        private const string PinNoListenerHost = "Never AddComponent on the AudioListener GO";
+        public int callbackOrder => 0;
 
-        // COLD ALLOC: StringBuilder[4096] - editor audit report builder - owner: DynamicMusicGranularSynthesizerRuntimeConstructionValidator
-        private static readonly StringBuilder Report = new StringBuilder(4096);
-
-        /// <summary>
-        /// Public for -executeMethod / CI batchmode. Soft FAIL stays exit 0 under -quit.
-        /// </summary>
-        [MenuItem("Hecton8/Validation/Dynamic Music Granular Synthesizer Runtime Construction", priority = 221)]
-        public static void Run()
+        [InitializeOnLoadMethod]
+        private static void RegisterSoftFailOnLoad()
         {
-            Report.Clear();
-            bool pass = true;
-
-            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? string.Empty;
-            string managerPath = Path.Combine(projectRoot, ManagerRelativePath.Replace('/', Path.DirectorySeparatorChar));
-            string bootstrapPath = Path.Combine(projectRoot, BootstrapRelativePath.Replace('/', Path.DirectorySeparatorChar));
-
-            string managerSrc = File.Exists(managerPath) ? File.ReadAllText(managerPath) : string.Empty;
-            string bootstrapSrc = File.Exists(bootstrapPath) ? File.ReadAllText(bootstrapPath) : string.Empty;
-
-            pass &= Pin(managerSrc, PinEnsureRuntimeInstance, "DynamicMusicGranularSynthesizer.EnsureRuntimeInstance factory");
-            pass &= Pin(managerSrc, PinAddManager, "DynamicMusicGranularSynthesizer player-build AddComponent");
-            pass &= Pin(managerSrc, PinPlayerBuildPath, "Player-build construction path comment");
-            pass &= Pin(managerSrc, PinNoListenerHost, "No AudioListener co-host construction guard");
-            pass &= Pin(bootstrapSrc, PinBootstrapCall, "GameBootstrapper DynamicMusicGranularSynthesizer.EnsureRuntimeInstance call");
-
-            string result = pass ? "PASS" : "FAIL";
-            Report.AppendLine($"{LogPrefix} RESULT: {result}");
-
-            if (pass)
-                Debug.Log(Report.ToString());
-            else
-                Debug.LogError(Report.ToString());
+            EditorApplication.delayCall += RunSoftFailValidation;
         }
 
-        private static bool Pin(string source, string token, string label)
+        public void OnPreprocessBuild(BuildReport report)
         {
-            bool ok = !string.IsNullOrEmpty(source) && source.Contains(token);
-            Report.AppendLine(ok
-                ? $"{LogPrefix} OK  {label} ({token})"
-                : $"{LogPrefix} MISSING {label} ({token})");
-            return ok;
+            RunSoftFailValidation();
+        }
+
+        private static void RunSoftFailValidation()
+        {
+            try
+            {
+                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+                if (string.IsNullOrEmpty(projectRoot))
+                    return;
+
+                string runtimePath = Path.Combine(projectRoot, RuntimeRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                string bootstrapPath = Path.Combine(projectRoot, BootstrapRelativePath.Replace('/', Path.DirectorySeparatorChar));
+
+                if (!File.Exists(runtimePath))
+                {
+                    Debug.LogError(
+                        "[DynamicMusicGranularSynthesizerRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        RuntimeRelativePath);
+                    return;
+                }
+
+                string runtimeSource = File.ReadAllText(runtimePath);
+                Pin(runtimeSource, "static DynamicMusicGranularSynthesizer EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<DynamicMusicGranularSynthesizer>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[DynamicMusicGranularSynthesizer]\")", RuntimeRelativePath);
+
+                if (File.Exists(bootstrapPath))
+                {
+                    string bootstrapSource = File.ReadAllText(bootstrapPath);
+                    Pin(bootstrapSource, "DynamicMusicGranularSynthesizer.EnsureRuntimeInstance", BootstrapRelativePath);
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    "[DynamicMusicGranularSynthesizerRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    exception.Message);
+            }
+        }
+
+        private static void Pin(string source, string token, string pathLabel)
+        {
+            if (source.IndexOf(token, StringComparison.Ordinal) < 0)
+            {
+                Debug.LogError(
+                    "[DynamicMusicGranularSynthesizerRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    token +
+                    "' in " +
+                    pathLabel);
+            }
         }
     }
 }

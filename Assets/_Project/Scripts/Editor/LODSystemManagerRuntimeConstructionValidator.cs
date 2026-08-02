@@ -9,14 +9,14 @@ using UnityEngine;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL pin: AudioLogSystem must keep Player-build EnsureRuntimeInstance
+    /// Soft-FAIL pin: LODSystemManager must keep Player-build EnsureRuntimeInstance
     /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    internal sealed class AudioLogSystemRuntimeConstructionValidator :
+    internal sealed class LODSystemManagerRuntimeConstructionValidator :
         IPreprocessBuildWithReport
     {
         private const string RuntimeRelativePath =
-            "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs";
+            "Assets/_Project/Scripts/World/LODSystemManager.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
@@ -48,27 +48,27 @@ namespace Hecton8.Editor
                 if (!File.Exists(runtimePath))
                 {
                     Debug.LogError(
-                        "[AudioLogSystemRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        "[LODSystemManagerRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
                         RuntimeRelativePath);
                     return;
                 }
 
                 string runtimeSource = File.ReadAllText(runtimePath);
-                Pin(runtimeSource, "static AudioLogSystem EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "static LODSystemManager EnsureRuntimeInstance", RuntimeRelativePath);
                 Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
-                Pin(runtimeSource, "AddComponent<AudioLogSystem>", RuntimeRelativePath);
-                Pin(runtimeSource, "new GameObject(\"[AudioLogSystem]\")", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<LODSystemManager>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[LODSystemManager]\")", RuntimeRelativePath);
 
                 if (File.Exists(bootstrapPath))
                 {
                     string bootstrapSource = File.ReadAllText(bootstrapPath);
-                    Pin(bootstrapSource, "AudioLogSystem.EnsureRuntimeInstance", BootstrapRelativePath);
+                    Pin(bootstrapSource, "LODSystemManager.EnsureRuntimeInstance", BootstrapRelativePath);
                 }
             }
             catch (Exception exception)
             {
                 Debug.LogError(
-                    "[AudioLogSystemRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    "[LODSystemManagerRuntimeConstructionValidator] SOFT-FAIL exception: " +
                     exception.Message);
             }
         }
@@ -78,7 +78,7 @@ namespace Hecton8.Editor
             if (source.IndexOf(token, StringComparison.Ordinal) < 0)
             {
                 Debug.LogError(
-                    "[AudioLogSystemRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    "[LODSystemManagerRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
                     token +
                     "' in " +
                     pathLabel);

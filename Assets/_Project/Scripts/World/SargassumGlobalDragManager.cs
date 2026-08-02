@@ -488,12 +488,12 @@ namespace Hecton8.World
             _listenerCount = 0;
         }
 
-        [Header("── Runtime Wiring ──────────────────")]
+        [Header("в”Ђв”Ђ Runtime Wiring в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField]
         [Tooltip("Primary runtime source for active floating sargassum matrices coming from MapMagic residency.")]
         private HectonMapMagicVegetationBridge mapMagicVegetationBridge;
 
-        [Header("── Spatial Hash ──────────────────")]
+        [Header("в”Ђв”Ђ Spatial Hash в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Min(2f)]
         [Tooltip("XZ cell size used by the coarse world-space density field.")]
         private float cellSize = 6f;
@@ -514,7 +514,7 @@ namespace Hecton8.World
         [Tooltip("How aggressively cell contributions decay with planar distance.")]
         private float distancePower = 1.4f;
 
-        [Header("── Canopy Lighting ──────────────────")]
+        [Header("в”Ђв”Ђ Canopy Lighting в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField]
         [Tooltip("Fallback patch threshold used only if the MapMagic bridge is unavailable. Runtime should stay synced from ActiveFloatingLabyrinthConfig.")]
         private float fallbackPatchThreshold = HectonVegetationConstants.FloatingPatchThreshold;
@@ -547,7 +547,7 @@ namespace Hecton8.World
         [Tooltip("Fallback patch noise scale used only if the MapMagic bridge is unavailable.")]
         private float canopyWarpNoiseScale = HectonVegetationConstants.FloatingPatchNoiseScale;
 
-        [Header("── Density Texture ──────────────────")]
+        [Header("в”Ђв”Ђ Density Texture в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Range(64, 256)]
         [Tooltip("Resolution of the baked density texture consumed by ocean damping facades and GPU micro-fauna.")]
         private int densityTextureResolution = DefaultDensityTextureResolution;
@@ -556,12 +556,12 @@ namespace Hecton8.World
         [Tooltip("Extra world-space padding added around the streamed field bounds when baking the density texture.")]
         private float densityTextureBoundsPadding = 24f;
 
-        [Header("── Global Drift ──────────────────")]
+        [Header("в”Ђв”Ђ Global Drift в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField]
         [Tooltip("World-space drift offset applied by ocean systems. Physics samples subtract it to stay aligned with the visual shader drift.")]
         private Vector3 _globalDriftOffset;
 
-        [Header("── Nesting Attachments ──────────────────")]
+        [Header("в”Ђв”Ђ Nesting Attachments в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField]
         [FormerlySerializedAs("nestingPrototypes")]
         [Tooltip("Authored instanced archetypes used for rare debris or crates tangled into dense canopy walls. Runtime fallback geometry is forbidden.")]
@@ -615,7 +615,7 @@ namespace Hecton8.World
         [Tooltip("Additional downward acceleration applied while a severed debris nest is falling out of the canopy.")]
         private float nestingReleaseGravity = 0.72f;
 
-        [Header("── Destruction & Buoyancy Collapse ──────────────────")]
+        [Header("в”Ђв”Ђ Destruction & Buoyancy Collapse в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Range(1, MaxDisruptionZoneCapacity)]
         [Tooltip("Hard cap for persistent collapse or leviathan disruption zones applied over the current canopy field.")]
         private int maxDisruptionZoneCount = 8;
@@ -716,7 +716,7 @@ namespace Hecton8.World
         [Tooltip("Minimum flee radius broadcast to GPU boids when a leviathan or submarine rips through the canopy.")]
         private float massiveDisplacementExtremePanicRadius = HectonVegetationConstants.BoidMassiveDisplacementPanicRadius;
 
-        [Header("── Procedural Scavengers ──────────────────")]
+        [Header("в”Ђв”Ђ Procedural Scavengers в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField]
         [Tooltip("Authored static mesh rendered for bottom scavengers feeding on fallen collapse chunks. Must include vertex colors R sway, G bio, B AO, A wear.")]
         [FormerlySerializedAs("scavengerMesh")]
@@ -771,7 +771,7 @@ namespace Hecton8.World
         [Tooltip("Default lifetime applied to externally registered corpse sites before the scavenger swarm clears them away.")]
         private float externalScavengerSiteDuration = 26f;
 
-        [Header("── Gameplay Response ──────────────────")]
+        [Header("в”Ђв”Ђ Gameplay Response в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField, Range(0.3f, 1f)]
         [Tooltip("Maximum swim-speed multiplier when the sampled density reaches full saturation.")]
         private float minSpeedMultiplier = 0.58f;
@@ -796,7 +796,7 @@ namespace Hecton8.World
         [Tooltip("Maximum normalized entanglement tension resolved by the global field sample.")]
         private float maxEntanglementStrength = 0.92f;
 
-        [Header("── Diagnostics ──────────────────")]
+        [Header("в”Ђв”Ђ Diagnostics в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ")]
         [SerializeField]
         [Tooltip("Number of active sargassum instances seen in the current source payload.")]
         private int _debugTrackedInstances;
@@ -979,7 +979,8 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return null;
 
-            // Player-build construction path: zero authored scene/prefab hits for this owner.
+            // Player-build construction path: no authored/bootstrap instance reachable.
+            // Must construct in player builds when bootstrap reorders or skips registration.
             GameObject runtimeRoot = new GameObject("[SargassumGlobalDragManager]"); // COLD ALLOC
             return runtimeRoot.AddComponent<SargassumGlobalDragManager>();
         }

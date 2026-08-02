@@ -9,14 +9,14 @@ using UnityEngine;
 namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL pin: AudioLogSystem must keep Player-build EnsureRuntimeInstance
+    /// Soft-FAIL pin: HardwareThermalService must keep Player-build EnsureRuntimeInstance
     /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    internal sealed class AudioLogSystemRuntimeConstructionValidator :
+    internal sealed class HardwareThermalServiceRuntimeConstructionValidator :
         IPreprocessBuildWithReport
     {
         private const string RuntimeRelativePath =
-            "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs";
+            "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
@@ -48,27 +48,23 @@ namespace Hecton8.Editor
                 if (!File.Exists(runtimePath))
                 {
                     Debug.LogError(
-                        "[AudioLogSystemRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        "[HardwareThermalServiceRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
                         RuntimeRelativePath);
                     return;
                 }
 
                 string runtimeSource = File.ReadAllText(runtimePath);
-                Pin(runtimeSource, "static AudioLogSystem EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "EnsureRuntimeInstanceCold", RuntimeRelativePath);
                 Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
-                Pin(runtimeSource, "AddComponent<AudioLogSystem>", RuntimeRelativePath);
-                Pin(runtimeSource, "new GameObject(\"[AudioLogSystem]\")", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<HardwareThermalService>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[HardwareThermalService]\")", RuntimeRelativePath);
 
-                if (File.Exists(bootstrapPath))
-                {
-                    string bootstrapSource = File.ReadAllText(bootstrapPath);
-                    Pin(bootstrapSource, "AudioLogSystem.EnsureRuntimeInstance", BootstrapRelativePath);
-                }
+                // No GameBootstrapper EnsureRuntimeInstance wire required for this owner.
             }
             catch (Exception exception)
             {
                 Debug.LogError(
-                    "[AudioLogSystemRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    "[HardwareThermalServiceRuntimeConstructionValidator] SOFT-FAIL exception: " +
                     exception.Message);
             }
         }
@@ -78,7 +74,7 @@ namespace Hecton8.Editor
             if (source.IndexOf(token, StringComparison.Ordinal) < 0)
             {
                 Debug.LogError(
-                    "[AudioLogSystemRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    "[HardwareThermalServiceRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
                     token +
                     "' in " +
                     pathLabel);

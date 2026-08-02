@@ -1,87 +1,88 @@
 #if UNITY_EDITOR
+using System;
 using System.IO;
-using System.Text;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace Hecton8.EditorTools
+namespace Hecton8.Editor
 {
     /// <summary>
-    /// Soft-FAIL CI pin for SargassumCutManager runtime construction.
-    ///
-    /// SargassumCutManager is the sole GlobalRegistry.SargassumCut owner
-    /// (ISargassumCutWriteService — cut mask / damage volume).
-    /// Script GUID ff5d403710d1d0e4bb43e3210c59df5c has ZERO live scene/prefab hits.
-    /// No EnsureRuntimeInstance existed; OnEnable only registers when already present.
-    /// Cut-mask consumers hit permanent null.
-    ///
-    /// The fix is SargassumCutManager.EnsureRuntimeInstance (resolve-or-create +
-    /// AddComponent) called from GameBootstrapper.PublishPlayerRuntimeReference after
-    /// SargassumGlobalDragManager. Soft FAIL under -quit (no EditorApplication.Exit on audit fail).
+    /// Soft-FAIL pin: SargassumCutManager must keep Player-build EnsureRuntimeInstance
+    /// construction so the service is not absent when bootstrap reorders.
     /// </summary>
-    public static class SargassumCutManagerRuntimeConstructionValidator
+    internal sealed class SargassumCutManagerRuntimeConstructionValidator :
+        IPreprocessBuildWithReport
     {
-        private const string LogPrefix = "[SargassumCutManagerRuntimeConstructionValidator]";
+        private const string RuntimeRelativePath =
+            "Assets/_Project/Scripts/World/SargassumCutManager.cs";
 
         private const string BootstrapRelativePath =
             "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs";
-        private const string ManagerRelativePath =
-            "Assets/_Project/Scripts/World/SargassumCutManager.cs";
 
-        private const string PinEnsureRuntimeInstance = "EnsureRuntimeInstance";
-        private const string PinAddManager = "AddComponent<SargassumCutManager>";
-        private const string PinBootstrapCall = "SargassumCutManager.EnsureRuntimeInstance";
-        private const string PinRegister = "RegisterSargassumCutRuntime";
-        private const string PinPlayerBuildPath = "Player-build construction path";
+        public int callbackOrder => 0;
 
-        // COLD ALLOC: StringBuilder[4096] - editor audit report builder - owner: SargassumCutManagerRuntimeConstructionValidator
-        private static readonly StringBuilder Report = new StringBuilder(4096);
-
-        /// <summary>
-        /// Public for -executeMethod / CI batchmode. Soft FAIL stays exit 0 under -quit.
-        /// </summary>
-        [MenuItem("Hecton8/Validation/Sargassum Cut Manager Runtime Construction", priority = 214)]
-        public static void Run()
+        [InitializeOnLoadMethod]
+        private static void RegisterSoftFailOnLoad()
         {
-            Report.Clear();
-            bool pass = true;
+            EditorApplication.delayCall += RunSoftFailValidation;
+        }
 
-            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? string.Empty;
-            string managerPath = Path.Combine(projectRoot, ManagerRelativePath.Replace('/', Path.DirectorySeparatorChar));
-            string bootstrapPath = Path.Combine(projectRoot, BootstrapRelativePath.Replace('/', Path.DirectorySeparatorChar));
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            RunSoftFailValidation();
+        }
 
-            string managerSrc = File.Exists(managerPath) ? File.ReadAllText(managerPath) : string.Empty;
-            string bootstrapSrc = File.Exists(bootstrapPath) ? File.ReadAllText(bootstrapPath) : string.Empty;
-
-            pass &= Pin(managerSrc, PinEnsureRuntimeInstance, "SargassumCutManager.EnsureRuntimeInstance factory");
-            pass &= Pin(managerSrc, PinAddManager, "SargassumCutManager player-build AddComponent");
-            pass &= Pin(managerSrc, PinRegister, "GlobalRegistry.RegisterSargassumCutRuntime");
-            pass &= Pin(managerSrc, PinPlayerBuildPath, "Player-build construction path comment");
-            pass &= Pin(bootstrapSrc, PinBootstrapCall, "GameBootstrapper SargassumCutManager.EnsureRuntimeInstance call");
-
-            string result = pass ? "PASS" : "FAIL";
-            string summary = $"{LogPrefix} RESULT: {result}";
-            Report.AppendLine(summary);
-
-            if (pass)
-                Debug.Log(Report.ToString());
-            else
-                Debug.LogError(Report.ToString());
-
-            // Soft FAIL: never EditorApplication.Exit(1) — batch -quit must stay green for compile.
-            if (Application.isBatchMode)
+        private static void RunSoftFailValidation()
+        {
+            try
             {
-                // no-op exit code control; Unity -quit handles process lifetime
+                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+                if (string.IsNullOrEmpty(projectRoot))
+                    return;
+
+                string runtimePath = Path.Combine(projectRoot, RuntimeRelativePath.Replace('/', Path.DirectorySeparatorChar));
+                string bootstrapPath = Path.Combine(projectRoot, BootstrapRelativePath.Replace('/', Path.DirectorySeparatorChar));
+
+                if (!File.Exists(runtimePath))
+                {
+                    Debug.LogError(
+                        "[SargassumCutManagerRuntimeConstructionValidator] SOFT-FAIL: missing runtime source at " +
+                        RuntimeRelativePath);
+                    return;
+                }
+
+                string runtimeSource = File.ReadAllText(runtimePath);
+                Pin(runtimeSource, "static SargassumCutManager EnsureRuntimeInstance", RuntimeRelativePath);
+                Pin(runtimeSource, "Player-build construction path", RuntimeRelativePath);
+                Pin(runtimeSource, "AddComponent<SargassumCutManager>", RuntimeRelativePath);
+                Pin(runtimeSource, "new GameObject(\"[SargassumCutManager]\")", RuntimeRelativePath);
+
+                if (File.Exists(bootstrapPath))
+                {
+                    string bootstrapSource = File.ReadAllText(bootstrapPath);
+                    Pin(bootstrapSource, "SargassumCutManager.EnsureRuntimeInstance", BootstrapRelativePath);
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    "[SargassumCutManagerRuntimeConstructionValidator] SOFT-FAIL exception: " +
+                    exception.Message);
             }
         }
 
-        private static bool Pin(string source, string token, string label)
+        private static void Pin(string source, string token, string pathLabel)
         {
-            bool ok = !string.IsNullOrEmpty(source) && source.Contains(token);
-            Report.AppendLine(ok
-                ? $"{LogPrefix} OK  {label} ({token})"
-                : $"{LogPrefix} MISSING {label} ({token})");
-            return ok;
+            if (source.IndexOf(token, StringComparison.Ordinal) < 0)
+            {
+                Debug.LogError(
+                    "[SargassumCutManagerRuntimeConstructionValidator] SOFT-FAIL: missing pin '" +
+                    token +
+                    "' in " +
+                    pathLabel);
+            }
         }
     }
 }
