@@ -339,6 +339,11 @@ namespace Hecton8.Gameplay
         /// <summary>Applies the current swim presentation frame to the blockout rig. Safe to call from the presentation owner.</summary>
         public void SyncFromPresentation(float dt, bool forceFrame = false)
         {
+            // L19 hop2 LIVE: ApplyUpperArm → ResolveLookRotationNoTrig ACCESS_VIOLATION
+            // under -batchmode. Presentation-only bone path; hop probes only need locomotion intent.
+            if (Application.isBatchMode)
+                return;
+
             int frame = SystemDispatcher.CurrentFrameIndex;
             if (!forceFrame && _lastDrivenFrame == frame)
                 return;

@@ -923,6 +923,11 @@ namespace Hecton8.Gameplay
         /// <summary>Drives swim presentation from the authoritative locomotion owner. Safe to call from player movement each render tick.</summary>
         public void SyncFromLocomotion(float dt, bool forceFrame = false)
         {
+            // L19 hop2 LIVE: PlayerSwimBlockoutRig.ApplyUpperArm → ResolveLookRotationNoTrig
+            // ACCESS_VIOLATION under -batchmode. Hop probes only need locomotion intent.
+            if (Application.isBatchMode)
+                return;
+
             int frame = HectonArenaAllocator.CurrentFrameSequence;
             if (frame <= 0)
                 frame = unchecked(++_presentationFrameCounter);
