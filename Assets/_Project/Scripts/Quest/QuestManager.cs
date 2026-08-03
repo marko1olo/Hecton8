@@ -603,6 +603,10 @@ namespace Hecton8.Quest
 
         public void CompleteQuest(string questId)
         {
+            // L19 hop2 LIVE: QuestManager.CompleteQuest mono_jit AV under batch
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             if (!TryResolveQuestHash(questId, logUnknownQuest: true, out uint questHash, out _))
                 return;
 
