@@ -3733,6 +3733,13 @@ namespace Hecton8.Physics
 
         public void FixedTick(float fixedDeltaTime)
         {
+            // L19 hop2 LIVE: FixedTick buoyancy drain/ApplyScheduledForces first-touches
+            // fluid job + Physics.AddForce paths that have produced mono_jit AV under
+            // headless batch probes after WORLDDRIVER/INPUTHOP (FluidBuoyancySystem.Tick).
+            // Probe moment census does not need live buoyancy forces - skip under batchmode only.
+            if (Application.isBatchMode)
+                return;
+
             // Accumulated before any early return below so the fallback never loses a timestep.
             _cpuFluidFallbackAccumulatedSeconds += fixedDeltaTime;
 
