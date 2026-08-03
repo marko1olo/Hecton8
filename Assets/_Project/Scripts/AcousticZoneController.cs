@@ -904,6 +904,13 @@ namespace Hecton8.Audio
 #endif
             }
 
+            // L19 hop2 LIVE: Start → ResolvePlayerListenerFiltersCold →
+            // EnsureAcousticMixerParameterBindings → AudioMixer.GetFloat ACCESS_VIOLATION
+            // under -batchmode (FMOD graph not fully armed). Acoustic presentation is not
+            // required for hop input validation — skip mixer/snapshot cold-init here.
+            if (Application.isBatchMode)
+                return;
+
             ResolvePlayerAmbientSourceCold();
             ResolvePlayerListenerFiltersCold();
             ResolveBiomeMatrixDirector(true);
@@ -2410,6 +2417,10 @@ namespace Hecton8.Audio
 
         private bool EnsureAcousticMixerParameterBindings()
         {
+            // L19 hop2 LIVE: AudioMixer.GetFloat ACCESS_VIOLATION under -batchmode.
+            if (Application.isBatchMode)
+                return false;
+
             if (_acousticMixerBindingsResolved)
                 return _acousticMixerBindingsValid;
 
