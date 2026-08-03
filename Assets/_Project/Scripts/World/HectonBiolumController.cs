@@ -134,6 +134,10 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            // L19 hop2 LIVE: batch peel LateFrameTick - biolum GPU/visual sync hang headless after VERBSWEEP.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             if (!_localProxyLightsDirty)
                 return;
 
@@ -201,6 +205,10 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
+            // L19 hop2 LIVE: batch peel SlowTick - biolum slow path hang headless after VERBSWEEP.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             const float dt = 0.5f;
 
             // Vychislyaem tselevuyu intensivnost

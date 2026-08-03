@@ -233,6 +233,10 @@ namespace Hecton8.Biolum
         /// </summary>
         public void LateFrameTick()
         {
+            // L19 hop2 LIVE: batch peel LateFrameTick - biolum diffusion hang headless.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
             if (deltaTime < 0f)
                 return;
@@ -349,6 +353,10 @@ namespace Hecton8.Biolum
 
         public void SlowTick()
         {
+            // L19 hop2 LIVE: batch peel SlowTick - biolum diffusion hang headless.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             if (_dependencyResolveRequested || _playerTransform == null)
             {
                 _dependencyResolveRequested = false;
