@@ -9281,8 +9281,38 @@ namespace Hecton8.Bootstrap
                 manager.TryRegisterProceduralSwayDirectorService();
         }
 
+
+        // L19 hop2 LIVE: FMOD updateChannels AV under dual-listener headless batch.
+        // Soft-mute engine audio so PostLateUpdate audio tick cannot hard-fault the probe.
+        private static void SoftMuteAudioForBatchProbe()
+        {
+            if (!(Application.isBatchMode || _headlessBootMode))
+                return;
+
+            AudioListener.pause = true;
+            AudioListener.volume = 0f;
+
+            AudioListener[] listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < listeners.Length; i++)
+            {
+                AudioListener listener = listeners[i];
+                if (listener != null)
+                    listener.enabled = false;
+            }
+        }
         private static void EnsureBootstrapAudioListener(Scene bootstrapScene)
         {
+            // L19 hop2 LIVE: dual AudioListener (bootstrap + player) drives FMOD
+            // DSPFilter::read / updateChannels AV under headless batch after STARTERGRANT.
+            // Probe moment census does not need a bootstrap listener - skip under batchmode.
+            if (Application.isBatchMode || _headlessBootMode)
+            {
+                SoftMuteAudioForBatchProbe();
+                return;
+            }
+
             if (HasActiveAudioListener(bootstrapScene))
                 return;
 

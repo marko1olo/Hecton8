@@ -994,6 +994,14 @@ namespace Hecton8.Core
 
         private static void RunDispatcherLateFrameFromPlayerLoop()
         {
+            // L19 hop2 LIVE: late-frame SoftMute audio - FMOD updateChannels AV under
+            // headless batch after STARTERGRANT when AudioListener remains active.
+            if (Application.isBatchMode)
+            {
+                AudioListener.pause = true;
+                AudioListener.volume = 0f;
+            }
+
             SystemDispatcher dispatcher = ActiveRuntimeInstance;
             if (dispatcher == null || !dispatcher._serviceRegistered || !dispatcher.isActiveAndEnabled)
                 return;
