@@ -987,6 +987,12 @@ namespace Hecton8.VFX
             if (_runtimeOwnerAborted)
                 return;
 
+            // L19 hop2 LIVE: headless batch probes observed mono_jit_info_table AV while first-JITing
+            // HasProceduralCameraJuiceSignalSnapshot (SignalBus snapshot reads) under LateFrameTick.
+            // Presentation juice is not required for probe MOMENTs — skip the whole late-frame path.
+            if (Application.isBatchMode)
+                return;
+
             AdvanceCameraJuicePresentation(SystemDispatcher.CurrentFrameDeltaTime);
 
             if (_speedLineVisualDirty)
