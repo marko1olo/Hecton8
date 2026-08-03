@@ -8286,7 +8286,10 @@ namespace Hecton8.Gameplay
             float yawDelta = DeltaAngleDegrees(_prevYawForMomentum, renderCameraYaw);
             UpdateVrComfortSignals(deltaTime, _velocity, yawDelta);
 
-            if (_swimPresentationController != null)
+            // L19 hop2 LIVE: PlayerSwimBlockoutRig.ApplyUpperArm → ResolveLookRotationNoTrig
+            // ACCESS_VIOLATION under -batchmode (presentation-only bone/transform path).
+            // Hop probes only need locomotion intent, not swim blockout visuals.
+            if (_swimPresentationController != null && !Application.isBatchMode)
             {
                 _swimPresentationController.SyncFromLocomotion(deltaTime, true);
                 _debugLastSwimPresentationDriveFrame = SystemDispatcher.CurrentFrameIndex;
