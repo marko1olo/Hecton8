@@ -986,6 +986,10 @@ namespace Hecton8.Core
         // -------------------------------------------------------------------------------------------------
         private void DiagReportGuardResidue(IDataVault vault)
         {
+            // L19 hop2 LIVE: skip INPUTRESIDUE diag under batch - mega LogWarning
+            // strings mono-fatal DebugLogHandler during WORLDDRIVER (attempts~5k).
+            if (UnityEngine.Application.isBatchMode)
+                return;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (vault == null)
                 return;

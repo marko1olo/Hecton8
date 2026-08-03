@@ -3788,10 +3788,16 @@ namespace Hecton8.EditorTools.Diagnostics
         /// </summary>
         private static void DrainProbeFloatingOriginBootstrap(string reason)
         {
+            // Always flush FO rebase under batch - correctness path.
             bool flushClean = HectonFloatingOrigin.TryFlushInitialSceneRebaseBeforeTicks();
             _probeFoDrainCalls++;
             if (flushClean)
                 _probeFoDrainCleanCount++;
+
+            // L19 hop2 LIVE: skip FODRAIN Debug.Log under batch - mono-fatal
+            // DebugLogHandler after INPUTRESIDUE mega-warning spam during WORLDDRIVER.
+            if (UnityEngine.Application.isBatchMode)
+                return;
 
             double now = EditorApplication.timeSinceStartup;
             bool forceFirst = _lastProbeFoDrainDiagRealtime <= 0.0;
