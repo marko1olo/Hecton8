@@ -84,6 +84,8 @@ namespace Hecton8.EditorTools.Diagnostics
         /// </summary>
         private const string BootstrapSceneAssetPath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
         private const int DefaultWarmupFrames = 240;
+        private static bool _batchMissingScriptsStripped;
+
         private static double _hardTimeoutSeconds = 240.0;
 
         private enum Phase
@@ -521,6 +523,8 @@ namespace Hecton8.EditorTools.Diagnostics
 
         public static void Run()
         {
+            // L19 hop2 LIVE: reset missing-script strip latch per probe run.
+            _batchMissingScriptsStripped = false;
             ResetRunState();
 
             // Claim the play-mode session before anything enters it.
@@ -682,6 +686,15 @@ namespace Hecton8.EditorTools.Diagnostics
 
         private static void Tick()
         {
+            // L19 hop2 LIVE: strip missing-script shells once game ready (after ActivatePlayer).
+            // Native GetScriptCache/IsStateMachineBehaviour AV on Behaviour Update.
+            if (Application.isBatchMode && !_batchMissingScriptsStripped &&
+                Hecton8.Core.BootstrapState.IsGameReady)
+            {
+                StripMissingScriptsForBatchProbe();
+                _batchMissingScriptsStripped = true;
+            }
+
             _totalTicks++;
 
             if (EditorApplication.timeSinceStartup - _startedAt > _hardTimeoutSeconds)
@@ -3698,6 +3711,37 @@ namespace Hecton8.EditorTools.Diagnostics
         /// early-outs and HPM.FixedTick never runs; EnableStepBoundedTime supplies a real fixed
         /// unscaled dt per update. Does not mock hop2, does not call FixedTick/GetState from the probe.
         /// </summary>
+        // L19 hop2 LIVE: editor-only missing-script strip for batch playprobe.
+        // Native GetScriptCache AV during Behaviour Update after ActivatePlayer
+        // when a loaded GO still carries a null-script MonoBehaviour shell.
+        private static void StripMissingScriptsForBatchProbe()
+        {
+            if (!Application.isBatchMode)
+                return;
+
+            int stripped = 0;
+            int scanned = 0;
+            // Include inactive: player hierarchy may still be toggling during ActivatePlayer.
+            GameObject[] roots = UnityEngine.Object.FindObjectsByType<GameObject>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < roots.Length; i++)
+            {
+                GameObject go = roots[i];
+                if (go == null)
+                    continue;
+                scanned++;
+                int missing = UnityEditor.GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(go);
+                if (missing <= 0)
+                    continue;
+                stripped += UnityEditor.GameObjectUtility.RemoveMonoBehavioursWithMissingScript(go);
+            }
+
+            Debug.Log(
+                "[H8_PLAYPROBE] L19 hop2 LIVE: missing-script strip scanned=" +
+                scanned + " stripped=" + stripped);
+        }
+
         private static void EnsureProbeSimulationClock(string reason)
         {
             ITickDispatcher dispatcher = GlobalRegistry.TickDispatcher;
