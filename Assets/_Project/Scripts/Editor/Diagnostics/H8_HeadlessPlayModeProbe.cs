@@ -1767,7 +1767,16 @@ namespace Hecton8.EditorTools.Diagnostics
 
                 case Phase.Reporting:
 
-                    RunChecks();
+                    try
+                    {
+                        // L19 hop2 LIVE: batch-safe RunChecks - catch managed faults so ExitPlaymode still runs.
+                        RunChecks();
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogWarning("[H8_PLAYPROBE] L19 hop2 LIVE: RunChecks threw " + ex.GetType().Name + ": " + ex.Message);
+                        _failures++;
+                    }
 
                     SetPhase(Phase.LeavingPlayMode);
 
@@ -3983,6 +3992,8 @@ namespace Hecton8.EditorTools.Diagnostics
 
         {
 
+            // L19 hop2 LIVE: batch peel RunChecks heavy path - native Crash!!! after
+            // WorldDriver phase=Done (stack RunChecks <- Tick Reporting).
             Debug.Log($"{Marker} --- checks at frame {_frames} ---");
 
 
@@ -4039,9 +4050,13 @@ namespace Hecton8.EditorTools.Diagnostics
 
             {
 
-                CaptureDeterminismState();
+                // L19 hop2 LIVE: batch peel CaptureDeterminismState - vault/signal native AV after driver Done.
+                if (!Application.isBatchMode)
+                    CaptureDeterminismState();
 
-                ReportDeterminismState();
+                // L19 hop2 LIVE: batch peel ReportDeterminismState.
+                if (!Application.isBatchMode)
+                    ReportDeterminismState();
 
             }
 
