@@ -1429,6 +1429,36 @@ namespace Hecton8.EditorTools.Diagnostics
             if (!_enabled || _stopped)
                 return;
 
+            // L19 hop2 LIVE: batch peel Stop - native Crash!!! at ClearInputOverride / coverage path
+            // (stack: Stop @~1452 <- Probe.Tick). VERBSWEEP already flushed; skip ClearInputOverride,
+            // FinaliseUnlatchedRows, BuildCoverageLine Debug.Log storm so probe can EmitResult.
+            if (UnityEngine.Application.isBatchMode)
+            {
+                _intent = default;
+                _stopCause = cause;
+                _stoppedInPhase = _phase;
+                _stoppedAtElapsed = ElapsedSeconds;
+                _stopped = true;
+                _enabled = false;
+                try { CloseCurrentPhase(PhaseYield.Aborted); } catch (System.Exception) { }
+                try
+                {
+                    if (_verbSweepEntered && !_verbSweepLogged)
+                        FlushVerbSweepLog(truncated: _verbSweepStep < VerbSweepStepCount);
+                }
+                catch (System.Exception) { }
+                try
+                {
+                    Debug.Log("[H8_WORLDDRIVER] END batch-peel stopCause=" + cause.ToString()
+                        + " phase=" + _stoppedInPhase.ToString()
+                        + " elapsed=" + F(_stoppedAtElapsed)
+                        + " ticks=" + _ticks.ToString(CultureInfo.InvariantCulture)
+                        + " - L19 hop2 LIVE Stop peel");
+                }
+                catch (System.Exception) { }
+                return;
+            }
+
             _intent = default;
             CoreDeterminismSignals.ClearInputOverride();
 
