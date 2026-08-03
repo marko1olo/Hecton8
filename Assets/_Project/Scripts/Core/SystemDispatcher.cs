@@ -994,8 +994,9 @@ namespace Hecton8.Core
 
         private static void RunDispatcherLateFrameFromPlayerLoop()
         {
-            // L19 hop2 LIVE: late-frame SoftMute audio - FMOD updateChannels AV under
-            // headless batch after STARTERGRANT when AudioListener remains active.
+            // L19 hop2 LIVE: late-frame SoftMute - FMOD updateChannels AV under batch
+            // with zero listeners (disable-all) after STARTERGRANT. Keep one muted
+            // listener; pause+volume=0. Full SoftMute (sources) runs from bootstrap.
             if (Application.isBatchMode)
             {
                 AudioListener.pause = true;
@@ -1003,10 +1004,20 @@ namespace Hecton8.Core
                 AudioListener[] batchListeners = UnityEngine.Object.FindObjectsByType<AudioListener>(
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None);
+                AudioListener kept = null;
                 for (int li = 0; li < batchListeners.Length; li++)
                 {
-                    if (batchListeners[li] != null)
-                        batchListeners[li].enabled = false;
+                    AudioListener bl = batchListeners[li];
+                    if (bl == null)
+                        continue;
+                    if (kept == null)
+                    {
+                        kept = bl;
+                        bl.enabled = true;
+                        continue;
+                    }
+
+                    bl.enabled = false;
                 }
             }
 
