@@ -6612,6 +6612,15 @@ namespace Hecton8.Core
                                 if (tickable is IBucketedSlowTickable)
                                     continue;
 
+                                // L19 hop2 LIVE: file breadcrumb (NO Debug.Log) - hang names last type.
+                                if (UnityEngine.Application.isBatchMode)
+                                {
+                                    try
+                                    {
+                                        System.IO.File.WriteAllText(@"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_slowtick.txt", tickable.GetType().Name);
+                                    }
+                                    catch (System.Exception) { }
+                                }
                                 tickable.SlowTick();
                                 if (SignalBusRegistry.IsSimulationHalted)
                                     return;
