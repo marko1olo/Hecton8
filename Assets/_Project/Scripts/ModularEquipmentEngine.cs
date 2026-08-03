@@ -3470,15 +3470,38 @@ namespace Hecton8.Tools
             IModularEquipmentService registered = GlobalRegistry.ModularEquipment;
             if (!ReferenceEquals(registered, null) && !ReferenceEquals(registered, this))
             {
-                ModularEquipmentEngine staleRuntime = registered as ModularEquipmentEngine;
-                if (ReferenceEquals(staleRuntime, null))
+                // hop2 LIVE Tool FAIL root cause:
+                // ScannerTool (and other tool) prefabs carry ModularEquipmentEngine. On pool spawn,
+                // OnEnable/InitializeService tried to steal the already-ready registry slot via
+                // Unregister+Register, which throws under Ready-lock and aborts SpawnNewToolImmediate
+                // (CurrentTool stayed null despite toolSlotsWithAvailableTool=4 and swap command).
+                // Never steal once the registry is ready, and never Destroy(gameObject) here — that
+                // would delete the tool instance this component is attached to.
+                if (GlobalRegistry.IsReady || IsAttachedToPlayerToolPrefab())
                 {
-                    _runtimeOwnerAborted = true;
-                    Destroy(gameObject);
+                    AbortServiceOwnershipWithoutDestroyingHost();
                     return false;
                 }
 
-                GlobalRegistry.UnregisterModularEquipmentService(registered);
+                ModularEquipmentEngine staleRuntime = registered as ModularEquipmentEngine;
+                if (ReferenceEquals(staleRuntime, null))
+                {
+                    AbortServiceOwnershipWithoutDestroyingHost();
+                    if (!IsAttachedToPlayerToolPrefab())
+                        Destroy(gameObject);
+                    return false;
+                }
+
+                try
+                {
+                    GlobalRegistry.UnregisterModularEquipmentService(registered);
+                }
+                catch (System.InvalidOperationException)
+                {
+                    AbortServiceOwnershipWithoutDestroyingHost();
+                    return false;
+                }
+
                 staleRuntime._registeredService = false;
                 staleRuntime._isInitialized = false;
             }
@@ -3486,12 +3509,38 @@ namespace Hecton8.Tools
             if (TryAbortForUsableExistingRuntime())
                 return false;
 
-            GlobalRegistry.RegisterModularEquipmentService(this);
+            try
+            {
+                GlobalRegistry.RegisterModularEquipmentService(this);
+            }
+            catch (System.InvalidOperationException)
+            {
+                // Ready-lock / publication guard: leave the existing owner in place.
+                AbortServiceOwnershipWithoutDestroyingHost();
+                return false;
+            }
+
             _registeredService = ReferenceEquals(GlobalRegistry.ModularEquipment, this);
             _runtimeOwnerAborted = !_registeredService;
-            if (_runtimeOwnerAborted)
+            if (_runtimeOwnerAborted && !IsAttachedToPlayerToolPrefab())
                 Destroy(gameObject);
             return _registeredService;
+        }
+
+        private bool IsAttachedToPlayerToolPrefab()
+        {
+            // Tool pool instances host this component for editor wiring only; the live
+            // IModularEquipmentService owner is the DDOL EnsureRuntimeInstance engine.
+            return GetComponentInParent<PlayerTool>() != null || GetComponent<PlayerTool>() != null;
+        }
+
+        private void AbortServiceOwnershipWithoutDestroyingHost()
+        {
+            _runtimeOwnerAborted = true;
+            _registeredService = false;
+            // Stop further enable/disable service churn without destroying the tool GO.
+            if (IsAttachedToPlayerToolPrefab() && enabled)
+                enabled = false;
         }
 
         private bool TryAbortForUsableExistingRuntime()
@@ -3502,15 +3551,33 @@ namespace Hecton8.Tools
 
             if (IsModularEquipmentRuntimeUsable(registered))
             {
-                _runtimeOwnerAborted = true;
-                Destroy(gameObject);
+                AbortServiceOwnershipWithoutDestroyingHost();
+                if (!IsAttachedToPlayerToolPrefab())
+                    Destroy(gameObject);
                 return true;
             }
+
 
             ModularEquipmentEngine staleRuntime = registered as ModularEquipmentEngine;
             if (!ReferenceEquals(staleRuntime, null))
             {
-                GlobalRegistry.UnregisterModularEquipmentService(registered);
+                // Ready-lock can reject Unregister; treat as "existing owner stays" and abort this instance.
+                if (GlobalRegistry.IsReady || IsAttachedToPlayerToolPrefab())
+                {
+                    AbortServiceOwnershipWithoutDestroyingHost();
+                    return true;
+                }
+
+                try
+                {
+                    GlobalRegistry.UnregisterModularEquipmentService(registered);
+                }
+                catch (System.InvalidOperationException)
+                {
+                    AbortServiceOwnershipWithoutDestroyingHost();
+                    return true;
+                }
+
                 staleRuntime._registeredService = false;
                 staleRuntime._isInitialized = false;
             }
@@ -3519,6 +3586,7 @@ namespace Hecton8.Tools
         }
 
         private static bool IsModularEquipmentRuntimeUsable(IModularEquipmentService service)
+
         {
             if (ReferenceEquals(service, null))
                 return false;
