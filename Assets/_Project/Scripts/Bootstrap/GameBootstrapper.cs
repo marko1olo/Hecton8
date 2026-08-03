@@ -9304,15 +9304,6 @@ namespace Hecton8.Bootstrap
                 // ignored - probe peel only
             }
 
-            // L19 hop2 LIVE: StopAudioOutput - halt Unity/FMOD mixer thread under batch (pause insufficient).
-            try
-            {
-                AudioSettings.Mobile.StopAudioOutput();
-            }
-            catch
-            {
-                // ignored - probe peel only
-            }
 
             AudioListener[] listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(
                 FindObjectsInactive.Include,

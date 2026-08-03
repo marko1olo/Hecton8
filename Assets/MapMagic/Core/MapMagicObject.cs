@@ -154,7 +154,11 @@ namespace MapMagic.Core
 		}
 
 		public void Update () 
-		{ 
+		{
+ // L19 hop2 LIVE: MapMagicObject.Update - skip terrain RT heightmap apply under batch
+ // (CopyActiveRenderTextureToHeightmap mono fatal after STARTERGRANT).
+ if (UnityEngine.Application.isBatchMode)
+     return; 
 			tiles.Update((Vector3)tileSize, pinned:tiles.pinned, holder:this, distsOnly:!isPlaying); //distsOnly: only updating distance priority in editor
 			
 			Den.Tools.Tasks.CoroutineManager.Update();
