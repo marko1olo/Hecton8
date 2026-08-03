@@ -3898,6 +3898,10 @@ namespace Hecton8.Physics
             if (bodyState.MeshColliderCount <= 0)
                 return;
 
+            // L19 hop2 LIVE: mesh-collider enable/disable rebuilds PhysX mass/inertia mid-simulate.
+            if (Application.isBatchMode)
+                return;
+
             if (bodyState.MeshColliderStripActive != 0)
             {
                 EnforceMeshColliderStrip(bodyIndex, bodyState.MeshColliderCount);
@@ -3946,6 +3950,10 @@ namespace Hecton8.Physics
         private void RestoreMeshColliderStrip(int bodyIndex, ref RigidbodyState bodyState)
         {
             if (bodyState.MeshColliderStripActive == 0 || bodyState.MeshColliderCount <= 0)
+                return;
+
+            // L19 hop2 LIVE: mesh-collider enable/disable rebuilds PhysX mass/inertia mid-simulate.
+            if (Application.isBatchMode)
                 return;
 
             int baseIndex = bodyIndex * MaxMeshCollidersPerBody;
@@ -4184,6 +4192,11 @@ namespace Hecton8.Physics
 
         private void TickColliderLodHysteresisCadence(float fixedDeltaTime)
         {
+            // L19 hop2 LIVE: collider LOD gate flips rebuild PhysX mass/inertia mid-simulate
+            // and have produced native AV in setMassAndUpdateInertia under headless batch probes.
+            if (Application.isBatchMode)
+                return;
+
             _colliderLodHysteresisAccumulator += math.max(0f, fixedDeltaTime);
             if (_colliderLodHysteresisAccumulator < PhysicsCullingSlowTickIntervalSeconds)
                 return;
@@ -4311,6 +4324,14 @@ namespace Hecton8.Physics
 
         private void DrainAddedMassTensorDirtyQueue()
         {
+            // L19 hop2 LIVE: inertiaTensor writes rebuild PhysX mass mid-simulate and have
+            // produced native AV in setMassAndUpdateInertia under headless batch probes.
+            if (Application.isBatchMode)
+            {
+                _addedMassDirtyCount = 0;
+                return;
+            }
+
             int dirtyCount = _addedMassDirtyCount;
             _addedMassDirtyCount = 0;
             for (int cursor = 0; cursor < dirtyCount; cursor++)
