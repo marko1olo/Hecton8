@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Interaction;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Hecton8.Core
 {
@@ -642,6 +643,12 @@ namespace Hecton8.Core
 
         private static bool Enqueue(in NarrativeEventPayload payload)
         {
+            // Batchmode headless probes: NativeQueue ctor / SetStaticSafetyId can native-crash
+            // under mono JIT during world activation (DepthZoneDirector discovery raise).
+            // Narrative presentation is not required for hop/input validation.
+            if (Application.isBatchMode)
+                return false;
+
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
@@ -663,6 +670,9 @@ namespace Hecton8.Core
 
         private static void EnsureInitialized()
         {
+            if (Application.isBatchMode)
+                return;
+
             try
             {
                 if (!_pendingEvents.IsCreated)
