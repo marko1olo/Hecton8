@@ -9289,20 +9289,10 @@ namespace Hecton8.Bootstrap
             if (!(Application.isBatchMode || _headlessBootMode))
                 return;
 
-            // L19 hop2 LIVE: FMOD hard mute - pause alone does not stop FMOD WASAPI mixer thread AV.
+            // L19 hop2 LIVE: FMOD hard mute - pause/volume/disable listeners only.
+            // Do NOT AudioSettings.Reset under batch (re-inits WASAPI/FMOD and can mono-fatal).
             AudioListener.pause = true;
             AudioListener.volume = 0f;
-            try
-            {
-                var audioCfg = AudioSettings.GetConfiguration();
-                audioCfg.dspBufferSize = 1024;
-                AudioSettings.Reset(audioCfg);
-            }
-            catch
-            {
-                // ignored - probe peel only
-            }
-
 
             AudioListener[] listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(
                 FindObjectsInactive.Include,
