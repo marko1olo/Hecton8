@@ -1772,6 +1772,9 @@ namespace Hecton8.Core
         /// </summary>
         public void RequestCoreTickDilation(float scalar, int frameCount, uint reasonHash = 0u)
         {
+            // L19 hop2 LIVE: ScalabilityDictator 0.9 core-tick burst fights probe SIMCLOCK (dil 0.9<->1 hang).
+            if (UnityEngine.Application.isBatchMode)
+                return;
             if (frameCount <= 0)
                 return;
 
