@@ -1,0 +1,46 @@
+203:        private static readonly ProfilerMarker _dispatcherSurfaceProbeScheduleProfilerMarker = new ProfilerMarker("H8.Dispatcher.SurfaceProbe.Schedule");
+532:        private int _masterLastScheduledSimulationJobCount;
+668:        private static bool _dispatcherSurfaceProbesScheduled;
+685:            [FieldOffset(44)] public ushort ScheduledSurfaceProbes;
+1049:            return TimeSliceScheduler.CurrentFrameId;
+1052:        public static uint CurrentFrameId => TimeSliceScheduler.CurrentFrameId;
+1265:        private static IDispatcherSurfaceProbeReceiver GetScheduledDispatcherSurfaceProbeReceiverAt(int index)
+1933:                JobHandle handle = job.Schedule(dependency);
+2148:            _masterLastScheduledSimulationJobCount = 0;
+2902:            TimeSliceScheduler.BeginFrame(HomeostasisBrain.GlobalQualityWeight, timing.FrameId);
+2960:            _masterLastScheduledSimulationJobCount = 0;
+3004:                        JobHandle handle = system.ScheduleSimulation(in timing, in context, dependencyHandle);
+3029:                _masterLastScheduledSimulationJobCount = _masterPendingSimulationJobCount;
+3167:                combined = system.ScheduleFixedSimulation(in timing, combined);
+3564:            entry.ScheduledJobCount = unchecked((uint)math.max(0, _masterLastScheduledSimulationJobCount));
+4006:            return entry.FrameId != 0u || entry.ScheduledJobCount != 0u;
+4240:            if (!_dispatcherSurfaceProbesScheduled &&
+4274:            IJobAdmissionService previousAdmission = JobAdmissionSchedulerBridge.Service;
+4279:                JobAdmissionSchedulerBridge.SetService(jobAdmission);
+4285:                    JobAdmissionSchedulerBridge.ClearService(previousAdmission);
+4397:                    IJobAdmissionService previousAdmission = JobAdmissionSchedulerBridge.Service;
+4400:                        JobAdmissionSchedulerBridge.SetService(_jobAdmission);
+4402:                        JobAdmissionSchedulerBridge.ClearService(previousAdmission);
+4668:            uint frameId = TimeSliceScheduler.CurrentFrameId;
+4698:            H8Memory.SetTelemetryFrameId(TimeSliceScheduler.CurrentFrameId);
+4764:            entry.ScheduledSurfaceProbes = unchecked((ushort)math.min(ushort.MaxValue, math.max(0, _scheduledDispatcherSurfaceProbeCount)));
+5428:                PredatorCognitionDomain.ScheduleFrameEvaluation(CurrentFrameIndex);
+5439:                _foveatedSimulationManager.ScheduleFrameJobs();
+5507:                ScheduleDispatcherSurfaceProbes();
+7264:        private static bool TryLockDispatcherSurfaceProbeScheduledVaultBuffers()
+7283:        private static void UnlockDispatcherSurfaceProbeScheduledVaultBuffers()
+7286:            UnlockDispatcherSurfaceProbeScheduledVaultBuffers(dataVault);
+7289:        private static void UnlockDispatcherSurfaceProbeScheduledVaultBuffers(IDataVault dataVault)
+7302:        private static void ScheduleDispatcherSurfaceProbes()
+7307:            using (_dispatcherSurfaceProbeScheduleProfilerMarker.Auto())
+7318:                _dispatcherSurfaceProbesScheduled = false;
+7324:            if (!_dispatcherSurfaceProbesScheduled)
+7332:                _dispatcherSurfaceProbesScheduled = false;
+7342:                    UnlockDispatcherSurfaceProbeScheduledVaultBuffers();
+7351:                        IDispatcherSurfaceProbeReceiver receiver = GetScheduledDispatcherSurfaceProbeReceiverAt(i);
+7367:                    UnlockDispatcherSurfaceProbeScheduledVaultBuffers();
+7380:            if (_dispatcherSurfaceProbesScheduled)
+7386:                    _dispatcherSurfaceProbesScheduled = false;
+7391:                    UnlockDispatcherSurfaceProbeScheduledVaultBuffers(dataVault);
+7397:                UnlockDispatcherSurfaceProbeScheduledVaultBuffers(dataVault);
+7812:    public static class TimeSliceScheduler

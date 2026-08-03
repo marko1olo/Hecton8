@@ -2470,9 +2470,13 @@ namespace Hecton8.Physics
         {
             if (!_emptyTerrainHeightSamples.IsCreated)
             {
-                // COLD ALLOC: NativeArray<ushort>[1] - Jobs-safety stand-in so a missing terrain payload
-                // cannot throw out of FixedTick - owner: HectonFluidEngine
-                _emptyTerrainHeightSamples = new NativeArray<ushort>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeArray<ushort>[1] via H8Memory - Jobs-safety stand-in so a missing terrain payload
+                // cannot throw out of FixedTick - owner: HectonFluidEngine / SystemID.Fluid
+                _emptyTerrainHeightSamples = H8Memory.Allocate<ushort>(
+                    1,
+                    SystemID.Fluid,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory);
             }
 
             return _emptyTerrainHeightSamples;
@@ -2481,7 +2485,7 @@ namespace Hecton8.Physics
         private void OnDestroy()
         {
             if (_emptyTerrainHeightSamples.IsCreated)
-                _emptyTerrainHeightSamples.Dispose();
+                H8Memory.Release(ref _emptyTerrainHeightSamples, SystemID.Fluid);
 
             TryUnregisterHotSwapListener();
             ClearOceanSurfaceWaveUniformsIfOwner();

@@ -517,3 +517,9 @@ Availability verified on this host 2026-07-27: on PATH -> `rg`, `fd`, `jq`, `tok
 7. fd / jq / tokei: Fast file discovery, JSON parsing, codebase statistics.
 8. GLOBAL SKILLS: on Gemini/Antigravity hosts, reconnaissance, decomposer, and find-skills live in `C:\Users\Admin\.gemini\config\skills\`; read `reconnaissance\SKILL.md` autonomously for exact usage. On any other harness use its own skill/subagent equivalent — a missing skill tree is not a blocker and not an excuse to skip reconnaissance.
 BE PROACTIVE. EXECUTE.
+
+
+## [ORCHESTRATION HIERARCHY v2]
+1. **Antigravity (Orchestrator L1):** Master console and process launcher. Antigravity sets up daemons and timers. Does not block. Can be closed or idled while daemons run.
+2. **Goose / Grok (Agent L2):** Autonomous worker running inside the UniversalDaemonLoop. Goose L2 MUST spawn 3-4 subagents for its own parallel needs (e.g., mandate verification, docs reading) and MUST NOT stop or wait for user input. Completion signals are blocked by proxy DAEMON MANDATE.
+3. This architecture REPLACES the legacy Cline integrations.

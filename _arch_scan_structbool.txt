@@ -1,0 +1,28 @@
+TOTAL_STRUCTS_WITH_BOOL=27
+Assets\_Project\Scripts\NoiseSystem.cs | PlayerNoiseSignal | isActiveSonarPing
+Assets\_Project\Scripts\OriginShiftEventData.cs | OriginShiftEventData | isSafeTeleport
+Assets\_Project\Scripts\SaveManager.cs | SaveLoadCandidate | IsBackup
+Assets\_Project\Scripts\SubmarineFluidDynamics.cs | BulkheadDefinition | isSealed
+Assets\_Project\Scripts\VoxelDeltaProcessor.cs | ChunkDeltaState | IsPooled
+Assets\_Project\Scripts\Audio\AcousticPortalPropagation.cs | AcousticPathResult | sourceFinite, listenerFinite
+Assets\_Project\Scripts\Core\BurstCallback.cs | BurstCallback | IsCreated
+Assets\_Project\Scripts\Core\BurstCallback.cs | BurstCallbackQueue | IsCreated, budgetRegistered
+Assets\_Project\Scripts\Core\GlobalRegistry.cs | ForceOverrideToken | IsValid
+Assets\_Project\Scripts\Core\GlobalRegistryContracts.cs | VRSomaticCollisionState | HasContact
+Assets\_Project\Scripts\Core\GlobalRegistryContracts.cs | VRSomaticSnapshot | IsActive
+Assets\_Project\Scripts\Core\GlobalRegistryContracts.cs | VRSomaticHandPose | IsTracked, ShouldRenderGhost
+Assets\_Project\Scripts\Core\GlobalRegistryContracts.cs | HabitatRoomWaterlineSnapshot | IsValid
+Assets\_Project\Scripts\Core\GlobalRegistryContracts.cs | GasBaseHibernationSnapshot | Awake, PlayerInside
+Assets\_Project\Scripts\Core\GlobalRegistryContracts.cs | TerrainArtifactIdentityDTO | HasMacroIdentity
+Assets\_Project\Scripts\Core\GlobalRegistryContracts.cs | KinematicSurfaceHit | hasHit, HasHit
+Assets\_Project\Scripts\Core\Contracts\GroundRadarContracts.cs | VoxelSonarSdfReadLease | IsValid
+Assets\_Project\Scripts\Core\Memory\H8Memory.cs | H8RawReallocationGuard | AllowsRelocation
+Assets\_Project\Scripts\Gameplay\HectonPlayerState.cs | HectonPlayerState | hasAupProof
+Assets\_Project\Scripts\Gameplay\HectonSubmarineOS.cs | HectonSubmarineOsSnapshot | IsEngineTelemetryMasked
+Assets\_Project\Scripts\Gameplay\Atlas6Liability\ThermalSheerManager.cs | TelemetryReadout | IsMasked
+Assets\_Project\Scripts\Inventory\ItemTemplateRegistry.cs | ItemTemplate | IsValid
+Assets\_Project\Scripts\Visor\SpectrumSystem.cs | AcousticEchoEvent | hasAup
+Assets\_Project\Scripts\Visor\SpectrumSystem.cs | PingReturnSignal | hasAup
+Assets\_Project\Scripts\World\HectonSpatialHash.cs | QueryStats | IsSaturated
+Assets\_Project\Scripts\World\WorldTerrainDetailContracts.cs | WorldTerrainDetailRuntimeSample | IsValid
+Assets\_Project\Scripts\World\Contracts\WorldChunkPhysicsBakedSignal.cs | WorldChunkPhysicsBakedSignal | IsPhysicsUsable

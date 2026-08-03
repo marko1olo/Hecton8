@@ -15,12 +15,13 @@ namespace Hecton8.Physics
     /// </summary>
     public struct QueryResult
     {
-        public bool hasHit;
+        // ARM64 layout law: no runtime bool on hot result DTO. 0 = miss, 1 = hit.
+        public byte hasHit;
         public InteractionSurfaceHit hit;
 
-        public float distance => hasHit ? hit.distance : float.MaxValue;
-        public Vector3 point => hasHit ? hit.point : Vector3.zero;
-        public Collider collider => hasHit ? hit.collider : null;
+        public float distance => hasHit != 0 ? hit.distance : float.MaxValue;
+        public Vector3 point => hasHit != 0 ? hit.point : Vector3.zero;
+        public Collider collider => hasHit != 0 ? hit.collider : null;
     }
 
     /// <summary>

@@ -3477,6 +3477,10 @@ namespace Hecton8.World
         /// </summary>
         public void Tick(float deltaTime)
         {
+            // L19 hop2 LIVE: batch peel Tick - organic cache refresh hang headless after VERBSWEEP.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             AdvanceOrganicClock(deltaTime);
             if (_dearLieJobScheduled)
                 return;
@@ -3486,6 +3490,10 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            // L19 hop2 LIVE: batch peel LateFrameTick - organic presentation/audio flush hang headless.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             float currentTime = ResolveOrganicClockSeconds();
             UpdateOrganicPresentationState(currentTime);
             FlushPendingDearLieDebrisSignals();
@@ -3495,6 +3503,10 @@ namespace Hecton8.World
 
         private void PostSimulationTick(in DispatcherTimingDTO timing)
         {
+            // L19 hop2 LIVE: batch peel PostSimulationTick - DearLie forceComplete job hang headless.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             float currentTime = ResolveOrganicClockSeconds();
             DispatcherJobSwap.BeginPostSimulationSwapWindow();
             try
@@ -3559,6 +3571,10 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
+            // L19 hop2 LIVE: batch peel SlowTick - flora persistence/overgrowth hang headless.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             if (_dearLieJobScheduled)
                 return;
 
