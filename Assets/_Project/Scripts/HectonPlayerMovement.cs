@@ -8084,7 +8084,12 @@ namespace Hecton8.Gameplay
 
         private void SeedInputStateFromService(IInputService inputService)
         {
-            if (inputService == null || !inputService.IsPlayerInputEnabled)
+            // L19 hop2 LIVE: first GetState() under headless batch probes has produced native
+            // mono_jit_info_table_find_internal AV inside InputDispatcher.GetState via TryReadFrame.
+            // Headless probes do not need live device state - keep zeroed input and skip the read.
+            if (Application.isBatchMode ||
+                inputService == null ||
+                !inputService.IsPlayerInputEnabled)
             {
                 _currentInputState = default;
                 _cachedMoveInput = Vector2.zero;
@@ -8171,6 +8176,21 @@ namespace Hecton8.Gameplay
 
         private void ProcessPlayerInputFrame()
         {
+            // L19 hop2 LIVE: skip InputDispatcher.GetState under headless batch probes
+            // (mono_jit_info_table_find_internal AV observed on first GetState via TryReadFrame).
+            if (Application.isBatchMode)
+            {
+                _currentInputState = default;
+                _cachedMoveInput = Vector2.zero;
+                _cachedVerticalInput = 0f;
+                _inputH = 0f;
+                _inputV = 0f;
+                _inputVertical = 0f;
+                _pendingLookInput = Vector2.zero;
+                SetSprintingState(false);
+                return;
+            }
+
             if (_inputManager != null && _inputManager.IsPlayerInputEnabled)
             {
                 _inputHandler.TryReadFrame(

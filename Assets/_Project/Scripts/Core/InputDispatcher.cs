@@ -1367,6 +1367,11 @@ namespace Hecton8.Core
         /// <returns>Current frame snapshot.</returns>
         public PlayerInputState GetState()
         {
+            // L19 hop2 LIVE: headless batch probes observed mono_jit_info_table_find_internal AV
+            // on the first GetState path; skip diag + return cached/default state under batchmode.
+            if (Application.isBatchMode)
+                return _currentState;
+
             DiagRecordReadObservation(2);
             return _currentState;
         }
