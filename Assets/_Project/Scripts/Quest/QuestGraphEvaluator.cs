@@ -534,6 +534,10 @@ namespace Hecton8.Quest
 
         internal static void FlushPendingSignals()
         {
+            // L19 hop2 LIVE: DrainPendingSignals/LogQuestGateSignal mono_jit AV under batch.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             QuestGraphEvaluator[] rawArray = _activeEvaluators.RawArray;
             int count = _activeEvaluators.Count;
             for (int i = count - 1; i >= 0; i--)
