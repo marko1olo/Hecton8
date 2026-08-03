@@ -2115,6 +2115,11 @@ namespace Hecton8.World
         /// </summary>
         public void LateFrameTick()
         {
+            // L19 hop2 LIVE: batch peel LateFrameTick - double sway Complete + cascade seeds +
+            // headless parasite + many visual flushes hang/assert headless after VERBSWEEP.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             CompleteWakeDecayJobInLateFrameWindow();
             CompleteFloraSwayFieldJobInLateFrameWindow(uploadAfterComplete: true);
             CompleteCascadePhaseSeedJobInLateFrameWindow(underwater: false);
@@ -2123,6 +2128,7 @@ namespace Hecton8.World
             FlushQueuedCascadePhaseSeedVisualSync(underwater: true);
             CompleteHeadlessParasiteSimulationInLateFrameWindow();
             FlushQueuedTickVisualWork();
+
             // FlushQueuedTickVisualWork is where ProcessProceduralWakeTick schedules the sway field chain, so the
             // join has to come after it, not just before. Every flush below reads GlobalDataVault memory that
             // shares the single alias AtomicSafetyHandle with FieldValues, and the next frame's pre-simulation
