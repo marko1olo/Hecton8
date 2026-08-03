@@ -8296,6 +8296,17 @@ namespace Hecton8.Gameplay
 
         private void ProcessLocomotionPresentationAndJuice(float deltaTime, SuitData suit)
         {
+            // L19 hop2 LIVE: batch peel ProcessLocomotionPresentationAndJuice - native Crash!!!
+            // at UpdateUnderwaterSomaticCameraOffsets/ApplyCameraState (@8364) under batch probe.
+            // Presentation/juice/camera somatic path is not required for hop RESULT.
+            if (Application.isBatchMode)
+            {
+                ConsumeKinematicRepairTargetProbe();
+                UpdateRenderInterpolationState();
+                _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
+                _velocity = _feedbackVelocity;
+                return;
+            }
             ConsumeKinematicRepairTargetProbe();
             ScheduleKinematicRepairTargetProbe();
             UpdateRenderInterpolationState();
@@ -8368,6 +8379,9 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            // L19 hop2 LIVE: batch peel LateFrameTick presentation flushes - camera/audio juice.
+            if (Application.isBatchMode)
+                return;
             FlushBrineShaderGlobals();
             FlushVrComfortShaderSignals();
             FlushCameraJuiceImpulses();
