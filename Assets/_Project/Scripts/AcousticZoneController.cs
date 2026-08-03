@@ -1334,6 +1334,13 @@ namespace Hecton8.Audio
 
         public void Tick(float deltaTime)
         {
+            // Batchmode headless probes: acoustic zone detection drives mixer/ambient/music
+            // presentation (ApplyInitialSnapshot, storm/vegetation overlays, source-level graph).
+            // Not required for hop/input validation; under hop2 LIVE the path still ran after
+            // WORLDDRIVER begin and co-occurred with BehaviourManager Update native Crash!!!.
+            if (Application.isBatchMode)
+                return;
+
             if (!HasValidPlayerBuoyancyState())
             {
                 TryBindPlayerBuoyancyFromCachedContext();
@@ -1343,6 +1350,7 @@ namespace Hecton8.Audio
                     return;
                 }
             }
+
 
             // Current acoustic zone.
             AcousticZoneState currentZone = ResolveCurrentZone();
