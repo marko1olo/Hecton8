@@ -2184,6 +2184,12 @@ namespace Hecton8.SaveSystem
 
         public bool TryRequestSave(byte slotIndex, uint sourceHash, uint operationId = 0u)
         {
+            // L19 hop2 LIVE: batchmode mono fatal in PublishSaveStatus during probe SAVE round-trip.
+            if (UnityEngine.Application.isBatchMode)
+            {
+                LastOperationError = "Batchmode save peel";
+                return false;
+            }
             uint resolvedOperationId = ResolveOperationId(operationId);
             if (_runtimeOwnerAborted || !_serviceRegistered)
             {
