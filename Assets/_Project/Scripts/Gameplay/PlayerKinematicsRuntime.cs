@@ -1446,11 +1446,27 @@ namespace Hecton8.Gameplay
         {
             ApplyPendingStateCorrections();
             CommitStateWrite();
+            // Batchmode headless probes: HandFabrik IK is presentation-only and can touch
+            // Animator/GPU paths that native-crash under BehaviourManager Update after WORLDDRIVER.
+            if (Application.isBatchMode)
+                return;
             ScheduleHandFabrikIk(fixedDeltaTime);
         }
 
         public void FastTick(float deltaTime)
         {
+            // Batchmode: skip IK probes / environment-IK presentation. Keep sync fence so
+            // hop/input fixed-step consumers still see a live kinematics owner.
+            if (Application.isBatchMode)
+            {
+                _accumulatorState.FastTickCounter++;
+                if (_accumulatorState.FastTickCounter < SyncFenceFrameInterval)
+                    return;
+                _accumulatorState.FastTickCounter = 0;
+                PublishSyncFence();
+                return;
+            }
+
             float safeDeltaTime = math.max(0.0001f, SanitizeNonNegative(deltaTime));
             _lastIkDeltaTime = safeDeltaTime;
             ConsumeEnvironmentIkSignals();
@@ -1468,6 +1484,10 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            // Batchmode: skip HandFabrik finalize/GPU upload and VAT/roll feedback presentation.
+            if (Application.isBatchMode)
+                return;
+
             TryFinalizeHandFabrikIkJob();
             UploadHandFabrikIkGpuBuffers();
 
@@ -1476,6 +1496,7 @@ namespace Hecton8.Gameplay
             PushRollSignal();
             FlushQueuedFeedbackSignals();
         }
+
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
