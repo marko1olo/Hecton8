@@ -72,6 +72,9 @@ namespace Hecton8.Core
 
         public static void ClearInputOverride()
         {
+            // L19 hop2 LIVE: batch peel ClearInputOverride - Stop native crash path.
+            if (UnityEngine.Application.isBatchMode)
+                return;
             _latestInputOverrideSignal = default;
         }
 
