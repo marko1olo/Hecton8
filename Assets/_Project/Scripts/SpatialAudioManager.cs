@@ -2209,6 +2209,10 @@ namespace Hecton8.Audio
         /// <param name="deltaTime">Dispatcher delta time.</param>
         public void Tick(float deltaTime)
         {
+            // L19 hop2 LIVE: skip SpatialAudio tick under batch - FMOD updateChannels AV
+            // when headless probe drives gameplay without a stable audio device.
+            if (UnityEngine.Application.isBatchMode)
+                return;
             if (_runtimeOwnerAborted || !_isInitialized)
                 return;
 

@@ -9289,19 +9289,52 @@ namespace Hecton8.Bootstrap
             if (!(Application.isBatchMode || _headlessBootMode))
                 return;
 
-            // L19 hop2 LIVE: FMOD hard mute - pause/volume/disable listeners only.
-            // Do NOT AudioSettings.Reset under batch (re-inits WASAPI/FMOD and can mono-fatal).
+            // L19 hop2 LIVE: FMOD updateChannels AV under batch when zero listeners
+            // (disable-all) OR dual active listeners. Keep exactly ONE muted listener
+            // enabled so Unity audio has a valid sink; pause+volume=0; stop sources.
+            // Do NOT AudioSettings.Reset under batch (re-inits WASAPI/FMOD mono-fatal).
             AudioListener.pause = true;
             AudioListener.volume = 0f;
 
             AudioListener[] listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
+            AudioListener kept = null;
             for (int i = 0; i < listeners.Length; i++)
             {
                 AudioListener listener = listeners[i];
-                if (listener != null)
-                    listener.enabled = false;
+                if (listener == null)
+                    continue;
+                if (kept == null)
+                {
+                    kept = listener;
+                    listener.enabled = true;
+                    continue;
+                }
+
+                listener.enabled = false;
+            }
+
+            if (kept == null)
+            {
+                GameObject go = new GameObject("[H8_BatchMuteListener]");
+                UnityEngine.Object.DontDestroyOnLoad(go);
+                kept = go.AddComponent<AudioListener>();
+                kept.enabled = true;
+            }
+
+            AudioSource[] sources = UnityEngine.Object.FindObjectsByType<AudioSource>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < sources.Length; i++)
+            {
+                AudioSource src = sources[i];
+                if (src == null)
+                    continue;
+                src.Stop();
+                src.mute = true;
+                src.volume = 0f;
+                src.enabled = false;
             }
         }
 
