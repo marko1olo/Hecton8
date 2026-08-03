@@ -1459,17 +1459,14 @@ namespace Hecton8.Gameplay
 
         public void FastTick(float deltaTime)
         {
-            // Batchmode: skip IK probes / environment-IK presentation. Keep sync fence so
-            // hop/input fixed-step consumers still see a live kinematics owner.
+            // L19 hop2 LIVE: batch peel PublishSyncFence - CoreDeterminismSignals.TryPublish
+            // SyncFenceSignal -> SignalBus/GlobalDataVault.TryAllocatePublishedBuffer<InputSignal> native AV
+            // under batch (stack FastTick@1471 -> PublishSyncFence@4106). Skip fence entirely under batch;
+            // hop RESULT does not require kinematics sync-fence publish.
             if (Application.isBatchMode)
-            {
-                _accumulatorState.FastTickCounter++;
-                if (_accumulatorState.FastTickCounter < SyncFenceFrameInterval)
-                    return;
-                _accumulatorState.FastTickCounter = 0;
-                PublishSyncFence();
                 return;
-            }
+
+            // non-batch: skip IK probes path handled below; sync fence retained for playmode consumers.
 
             float safeDeltaTime = math.max(0.0001f, SanitizeNonNegative(deltaTime));
             _lastIkDeltaTime = safeDeltaTime;
@@ -4071,6 +4068,10 @@ namespace Hecton8.Gameplay
 
         private void PublishSyncFence()
         {
+            // L19 hop2 LIVE: batch peel PublishSyncFence method - vault InputSignal alloc AV.
+            if (Application.isBatchMode)
+                return;
+
             if (_body == null)
                 return;
 
