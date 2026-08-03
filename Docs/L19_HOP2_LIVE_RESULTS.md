@@ -84,3 +84,30 @@ Prior sessions + this session (non-exhaustive of earlier L19o work):
 1. Commit dispose once-only fix.
 2. Optional confirm hop2 (Crash!!! through shutdown = 0).
 3. Open `VISION_LOCKS.md` / `PROJECT_BIBLES.md` and implement next product feature (bible index — pick first unlocked gameplay gap after L19 peel).
+
+
+---
+
+## Session 2026-08-03 ~18:00-19:00 — IUpdatable hang audit peels
+
+**Hang status:** CLEARED past STARTERGRANT through VERBSWEEP on prior run (pid 21828). Breadcrumbs reached SLOWTICK_DONE + MAINTICK_DONE. WORLDDRIVER began; VERBSWEEP complete. Remaining failure mode was Mono jit-info assertion after VERBSWEEP flush (not sim hang).
+
+### Peels committed this hop
+
+| Commit | Peel |
+|--------|------|
+| 7cbd651499 | SystemDispatcher main-tick ENTER/DONE + POST_* + MAINTICK_DONE breadcrumbs |
+| 500612bb3a | HectonSeismicTideDirector Tick/SlowTick/LateFrameTick batch peel (named by ENTER:HectonSeismicTideDirector) |
+| 78b189144e | FloraInteractionManager.LateFrameTick batch peel (double sway Complete + cascade + parasite) |
+| 0101287d45 / bff9c79c99 | EcosystemDirector.LateFrameTick + HectonMapMagicVegetationBridge.LateFrameTick batch peels |
+| 38692f038f (auto) | SlowTick post-loop CombatDamageRuntime + WorldSpatialHashGrid peels + SlowTick ENTER/DONE breadcrumbs |
+
+### IUpdatable hang audit (read-only) top remaining MEDIUM after peels
+
+- DestructibleOrganicManager Tick paths (already has some isBatchMode)
+- Any remaining forceComplete:true job Completes on gameplay lanes
+- Mono jit-info assertion post-VERBSWEEP (runtime/editor, not peel)
+
+### Next
+
+Re-run hop2 after compile settles; confirm VERBSWEEP + further WORLDDRIVER phases without hang; then full RESULT if mono assert stays quiet.
