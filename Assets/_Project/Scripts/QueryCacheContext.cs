@@ -125,7 +125,7 @@ namespace Hecton8.Physics
             out InteractionSurfaceHit hit)
         {
             if (TryGet(ray, distance, mask, triggerMode, out QueryResult result) &&
-                result.hasHit)
+                result.hasHit != 0)
             {
                 hit = result.hit;
                 return true;
@@ -166,7 +166,7 @@ namespace Hecton8.Physics
                 distance,
                 mask,
                 triggerMode,
-                new QueryResult { hasHit = true, hit = hit });
+                new QueryResult { hasHit = 1, hit = hit });
         }
 
         private bool TryGetFixed(ulong key, out QueryResult result)

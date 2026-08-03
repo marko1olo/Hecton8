@@ -23,15 +23,15 @@ namespace Hecton8.Modding
         [Header("Empty State")]
         [SerializeField] private TMP_Text emptyStateLabel;
 
-        // COLD ALLOC: List<ModRuntimeInfo>[16] — view-model cache for loaded mods UI — owner: ModMenuUIController
+        // COLD ALLOC: List<ModRuntimeInfo>[16] - view-model cache for loaded mods UI - owner: ModMenuUIController
         private readonly List<ModRuntimeInfo> _mods = new List<ModRuntimeInfo>(16);
-        // COLD ALLOC: List<ModSettingView>[32] — view-model cache for mod settings UI — owner: ModMenuUIController
+        // COLD ALLOC: List<ModSettingView>[32] - view-model cache for mod settings UI - owner: ModMenuUIController
         private readonly List<ModSettingView> _settings = new List<ModSettingView>(32);
-        // COLD ALLOC: List<ModMenuModEntryView>[16] — pooled row views for mod list UI — owner: ModMenuUIController
+        // COLD ALLOC: List<ModMenuModEntryView>[16] - pooled row views for mod list UI - owner: ModMenuUIController
         private readonly List<ModMenuModEntryView> _modViews = new List<ModMenuModEntryView>(16);
-        // COLD ALLOC: List<ModMenuSettingToggleView>[16] — pooled toggle row views — owner: ModMenuUIController
+        // COLD ALLOC: List<ModMenuSettingToggleView>[16] - pooled toggle row views - owner: ModMenuUIController
         private readonly List<ModMenuSettingToggleView> _toggleViews = new List<ModMenuSettingToggleView>(16);
-        // COLD ALLOC: List<ModMenuSettingSliderView>[16] — pooled slider row views — owner: ModMenuUIController
+        // COLD ALLOC: List<ModMenuSettingSliderView>[16] - pooled slider row views - owner: ModMenuUIController
         private readonly List<ModMenuSettingSliderView> _sliderViews = new List<ModMenuSettingSliderView>(16);
         private ModRegistryEventAdapter _modRegistryEventAdapter;
         private bool _modRegistryEventRegistered;
@@ -50,35 +50,19 @@ namespace Hecton8.Modding
             _modRegistryEventRegistered = false;
         }
 
-
-        private Coroutine _rebuildRoutine;
-
         /// <summary>
         /// Rebuilds the UI from the current runtime registries.
+        /// Cold settings-panel path only: synchronous rebuild, no coroutine/iterator state machine.
         /// </summary>
         public void RefreshView()
         {
             TryRegisterModRegistryListener();
             ModLoader.CollectRuntimeInfo(_mods);
             ModSettingsRegistry.CollectSettings(_settings);
-
-            if (_rebuildRoutine != null)
-            {
-                StopCoroutine(_rebuildRoutine);
-            }
-
-            if (gameObject.activeInHierarchy)
-            {
-                _rebuildRoutine = StartCoroutine(RebuildUIRoutine());
-            }
-            else
-            {
-                var enumerator = RebuildUIRoutine();
-                while (enumerator.MoveNext()) { }
-            }
+            RebuildUI();
         }
 
-        private System.Collections.IEnumerator RebuildUIRoutine()
+        private void RebuildUI()
         {
             if (emptyStateLabel != null)
             {
@@ -89,28 +73,14 @@ namespace Hecton8.Modding
             }
 
             int visibleCount = _mods.Count;
-            int itemsInstantiatedThisFrame = 0;
-            const int MAX_INSTANTIATIONS_PER_FRAME = 5;
-
             for (int i = 0; i < visibleCount; i++)
             {
-                bool instantiated = false;
-                ModMenuModEntryView view = GetOrCreateModView(i, out instantiated);
+                ModMenuModEntryView view = GetOrCreateModView(i, out _);
                 if (view == null)
                     break;
 
                 view.Bind(_mods[i]);
                 view.gameObject.SetActive(true);
-
-                if (instantiated)
-                {
-                    itemsInstantiatedThisFrame++;
-                    if (itemsInstantiatedThisFrame >= MAX_INSTANTIATIONS_PER_FRAME)
-                    {
-                        itemsInstantiatedThisFrame = 0;
-                        yield return null;
-                    }
-                }
             }
 
             for (int i = visibleCount; i < _modViews.Count; i++)
@@ -122,11 +92,10 @@ namespace Hecton8.Modding
             for (int i = 0; i < _settings.Count; i++)
             {
                 ModSettingView view = _settings[i];
-                bool instantiated = false;
 
                 if (view.Kind == ModSettingKind.Toggle)
                 {
-                    ModMenuSettingToggleView toggleView = GetOrCreateToggleView(toggleCount++, out instantiated);
+                    ModMenuSettingToggleView toggleView = GetOrCreateToggleView(toggleCount++, out _);
                     if (toggleView == null)
                         break;
 
@@ -135,22 +104,12 @@ namespace Hecton8.Modding
                 }
                 else
                 {
-                    ModMenuSettingSliderView sliderView = GetOrCreateSliderView(sliderCount++, out instantiated);
+                    ModMenuSettingSliderView sliderView = GetOrCreateSliderView(sliderCount++, out _);
                     if (sliderView == null)
                         break;
 
                     sliderView.Bind(view);
                     sliderView.gameObject.SetActive(true);
-                }
-
-                if (instantiated)
-                {
-                    itemsInstantiatedThisFrame++;
-                    if (itemsInstantiatedThisFrame >= MAX_INSTANTIATIONS_PER_FRAME)
-                    {
-                        itemsInstantiatedThisFrame = 0;
-                        yield return null;
-                    }
                 }
             }
 
@@ -159,9 +118,8 @@ namespace Hecton8.Modding
 
             for (int i = sliderCount; i < _sliderViews.Count; i++)
                 _sliderViews[i].gameObject.SetActive(false);
-
-            _rebuildRoutine = null;
         }
+
         /// <summary>
         /// Handles deferred mod registry invalidation events.
         /// </summary>
@@ -217,7 +175,7 @@ namespace Hecton8.Modding
                 if (modEntryTemplate == null || modListContainer == null)
                     return null;
 
-                ModMenuModEntryView instance = Instantiate(modEntryTemplate, modListContainer); // COLD ALLOC: UI row clone for mods panel — owner: ModMenuUIController
+                ModMenuModEntryView instance = Instantiate(modEntryTemplate, modListContainer); // COLD ALLOC: UI row clone for mods panel - owner: ModMenuUIController
                 instance.gameObject.SetActive(false);
                 _modViews.Add(instance);
                 instantiated = true;
@@ -234,7 +192,7 @@ namespace Hecton8.Modding
                 if (toggleSettingTemplate == null || modSettingsContainer == null)
                     return null;
 
-                ModMenuSettingToggleView instance = Instantiate(toggleSettingTemplate, modSettingsContainer); // COLD ALLOC: UI row clone for mods panel — owner: ModMenuUIController
+                ModMenuSettingToggleView instance = Instantiate(toggleSettingTemplate, modSettingsContainer); // COLD ALLOC: UI row clone for mods panel - owner: ModMenuUIController
                 instance.gameObject.SetActive(false);
                 _toggleViews.Add(instance);
                 instantiated = true;
@@ -251,7 +209,7 @@ namespace Hecton8.Modding
                 if (sliderSettingTemplate == null || modSettingsContainer == null)
                     return null;
 
-                ModMenuSettingSliderView instance = Instantiate(sliderSettingTemplate, modSettingsContainer); // COLD ALLOC: UI row clone for mods panel — owner: ModMenuUIController
+                ModMenuSettingSliderView instance = Instantiate(sliderSettingTemplate, modSettingsContainer); // COLD ALLOC: UI row clone for mods panel - owner: ModMenuUIController
                 instance.gameObject.SetActive(false);
                 _sliderViews.Add(instance);
                 instantiated = true;
@@ -259,6 +217,5 @@ namespace Hecton8.Modding
 
             return _sliderViews[index];
         }
-
     }
 }

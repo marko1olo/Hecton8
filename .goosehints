@@ -1,0 +1,37 @@
+# HECTON-8 Goose Routing & Intake Protocol
+
+## Shell Rules (CRITICAL — saves 20-30% wasted turns)
+- This is Windows. The default shell is `cmd.exe`, NOT PowerShell.
+- FORBIDDEN commands: `Get-Content`, `Select-Object`, `Get-Location`, `Get-ChildItem`, `Write-Host`, `Test-Path`.
+- USE INSTEAD: `type` (read files), `dir` (list dirs), `cd /d` (change dir), `echo` (print).
+- For searching: ALWAYS use `rg` (ripgrep). It is on PATH. `grep` is FORBIDDEN (orphan processes).
+- For file discovery: ALWAYS use `fd`. It is on PATH.
+- For reading specific line ranges: use `python -c "..."` with `open()` and slicing.
+- PowerShell is available ONLY via explicit `powershell -Command "..."` prefix.
+
+## Context Management
+- You have a 200k token context window with auto-compaction at 80%.
+- DO NOT dump entire large files into context. Use `rg` to find relevant lines first.
+- When reading authority files (AGENTS.md, mandates), read them ONCE and use `todo_write` to note key constraints.
+- Subagents via `delegate(async: true)` are fully context-isolated — use them for broad file reads.
+
+## Project Law
+1. **Canonical Law**: `AGENTS.md` is the supreme law for HECTON-8.
+2. **Mandatory Intake**: Before non-trivial code or architecture tasks, read:
+   - `COMMON_SENSE.md` (18 AI architectural constraints)
+   - `Docs\AGENT_AUTHORITY_ROUTING.md` (Routing protocol)
+   - `.agents-skills\README.md` (Mandate index - read relevant domain mandates)
+3. **Core Guardrails**:
+   - Zero-GC in hot paths (no LINQ, no string concat, no allocations in Update/Tick).
+   - Unmanaged Data-Oriented pipeline (`ScriptableObject` -> `.h8bin` -> unmanaged DTO).
+   - Strict 60 FPS / 16.67 ms performance target.
+
+## Autonomous Work Protocol
+- After reading authority docs, use `todo_write` to create a task list.
+- Work through tasks systematically. Check off completed items.
+- When a task is done, move to the next one. Do NOT wait for user input.
+- If you have no more tasks, audit your recent work for correctness.
+- Spawn subagents for independent parallel work (e.g., reading mandate files while you code).
+
+## Auto-Compaction Survival
+- When you suspect context auto-compaction will occur (long sessions), explicitly use 	odo_write to record critical architectural invariants, task state, and file locations. 	odo_write notes persist strongly across compactions.

@@ -1,0 +1,118 @@
+115:        private const double SlowDispatcherPhaseWarningMilliseconds = 100.0;
+128:        private const uint MasterDispatcherFlagVisualSyncShed = 1u << 0;
+164:        private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;
+198:        private static readonly ProfilerMarker _memoryDefragProfilerMarker = new ProfilerMarker("H8.Dispatcher.MemoryDefrag.PreSimulation");
+205:        private static readonly ProfilerMarker _masterPreSimulationProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.PreSimulation");
+207:        private static readonly ProfilerMarker _masterPostSimulationProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.PostSimulation");
+208:        private static readonly ProfilerMarker _masterVisualSyncProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.VisualSync");
+516:        private long _masterPreSimulationStartTimestamp;
+517:        private long _masterPostSimulationStartTimestamp;
+518:        private long _masterVisualSyncStartTimestamp;
+519:        private float _masterLastPreSimulationMs;
+523:        private float _masterLastPostSimulationMs;
+524:        private float _masterLastVisualSyncMs;
+544:        private bool _masterVisualSyncShedThisFrame;
+650:        private static float _nextDispatcherPhaseWarningLogTime;
+800:            _nextDispatcherPhaseWarningLogTime = 0f;
+2160:            _masterVisualSyncShedThisFrame = false;
+2506:            input.PhaseId = (byte)DispatcherPhase.PreSimulation;
+2516:            physics.PhaseId = (byte)DispatcherPhase.Simulation;
+2526:            ai.PhaseId = (byte)DispatcherPhase.Simulation;
+2537:            visual.PhaseId = (byte)DispatcherPhase.VisualSync;
+2847:        private void SetMasterDispatcherPhase(DispatcherPhase phase, in DispatcherTimingDTO timing)
+2863:            if (_masterVisualSyncShedThisFrame)
+2864:                flags |= MasterDispatcherFlagVisualSyncShed;
+2894:        private void RunMasterPreSimulationPhase(in DispatcherTimingDTO timing)
+2897:            _masterPreSimulationStartTimestamp = _masterFrameStartTimestamp;
+2898:            _masterVisualSyncShedThisFrame = false;
+2907:            SetMasterDispatcherPhase(DispatcherPhase.PreSimulation, in timing);
+2912:            using (_masterPreSimulationProfilerMarker.Auto())
+2920:                    if (system == null || system.GetDispatcherPhase() != DispatcherPhase.PreSimulation)
+2927:                        system.PreSimulationTick(in timing);
+2936:            _masterLastPreSimulationMs = ElapsedMilliseconds(_masterPreSimulationStartTimestamp);
+2937:            _masterPhaseTimingSnapshotMs[0] = _masterLastPreSimulationMs;
+2942:            SetMasterDispatcherPhase(DispatcherPhase.Simulation, in timing);
+2993:                    if (system == null || system.GetDispatcherPhase() != DispatcherPhase.Simulation)
+3034:            SetMasterDispatcherPhase(DispatcherPhase.Simulation, in timing);
+3037:        private void RunMasterPostSimulationPhase(in DispatcherTimingDTO timing)
+3039:            _masterPostSimulationStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+3040:            SetMasterDispatcherPhase(DispatcherPhase.PostSimulation, in timing);
+3042:            using (_masterPostSimulationProfilerMarker.Auto())
+3044:                DispatcherJobFence.BeginPostSimulationSwapWindow();
+3063:                    DispatcherJobFence.EndPostSimulationSwapWindow();
+3072:                    if (system == null || system.GetDispatcherPhase() != DispatcherPhase.PostSimulation)
+3079:                        system.PostSimulationTick(in timing);
+3087:                ProcessDeferredArenaGrowthPostSimulation();
+3088:                SignalCorridorRuntime.FlushPostSimulation();
+3091:            _masterLastPostSimulationMs = ElapsedMilliseconds(_masterPostSimulationStartTimestamp);
+3093:            _masterPhaseTimingSnapshotMs[2] = _masterLastPostSimulationMs;
+3094:            RecordVaultSovereigntyPostSimulationHeartbeat();
+3097:        private void ProcessDeferredArenaGrowthPostSimulation()
+3107:        private void RunMasterVisualSyncPhase()
+3110:            _masterVisualSyncStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+3111:            _masterHealthPressureShedThisFrame = ShouldShedMasterVisualSync();
+3112:            _masterRollbackFenceThisFrame = TryFenceRollbackBeforeVisualSync();
+3113:            _masterVisualSyncShedThisFrame = _masterHealthPressureShedThisFrame || _masterRollbackFenceThisFrame;
+3115:            SetMasterDispatcherPhase(DispatcherPhase.VisualSync, in timing);
+3116:            if (_masterVisualSyncShedThisFrame)
+3118:                _masterLastVisualSyncMs = 0f;
+3123:            using (_masterVisualSyncProfilerMarker.Auto())
+3131:                    if (system == null || system.GetDispatcherPhase() != DispatcherPhase.VisualSync)
+3138:                        system.VisualSyncTick(in timing);
+3147:            _masterLastVisualSyncMs = ElapsedMilliseconds(_masterVisualSyncStartTimestamp);
+3148:            _masterPhaseTimingSnapshotMs[3] = _masterLastVisualSyncMs;
+3221:            DispatcherJobFence.BeginPostSimulationSwapWindow();
+3240:                DispatcherJobFence.EndPostSimulationSwapWindow();
+3380:            dto.PhaseId = (byte)system.GetDispatcherPhase();
+3432:        private static bool ShouldShedMasterVisualSync()
+3448:        private bool TryFenceRollbackBeforeVisualSync()
+3492:            if (_masterVisualSyncShedThisFrame)
+3493:                flags |= DispatcherPresentationSuppressionFlags.VisualSyncSuppressed;
+3526:            entry.PreSimMs = SanitizeNonNegativeMilliseconds(_masterLastPreSimulationMs);
+3528:            entry.PostSimMs = SanitizeNonNegativeMilliseconds(_masterLastPostSimulationMs);
+3529:            entry.VisualSyncMs = SanitizeNonNegativeMilliseconds(_masterLastVisualSyncMs);
+3865:                    phaseIds[i] = (byte)system.GetDispatcherPhase();
+3911:                byte phaseId = (byte)system.GetDispatcherPhase();
+4033:            phaseMilliseconds[3] = entry.VisualSyncMs;
+4299:        /// at the consumer was false forever, PreSimulationInputTick never ran, and every published input
+4558:        private void RunPreSimulationMemoryDefrag(float unscaledDeltaTime)
+4595:                    MemoryDefragPhase.PreSimulation,
+4597:                sovereigntyStats = VaultSovereigntyMaintenance.RunPreSimulationFrost(
+4682:        private void RecordVaultSovereigntyPostSimulationHeartbeat()
+4932:                    GlobalTelemetryBus.ComputeContextHash(nameof(RunPreSimulationMemoryDefrag)),
+5244:                HomeostasisBrain.PreSimulationTick(unscaledDeltaTime);
+5252:                    inputDeterminism.PreSimulationInputTick(unscaledDeltaTime);
+5253:                SignalCorridorRuntime.PreSimulationHeartbeat();
+5259:                RunPreSimulationMemoryDefrag(unscaledDeltaTime);
+5269:                Hecton8.Modding.ModCommandDispatcher.DrainPreSimulation();
+5282:                RunMasterPreSimulationPhase(in masterTiming);
+5297:                    simulationBucketer.ReportPreSimulationCostMs(preSimulationCostMs);
+5338:                long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
+5342:                EndDispatcherPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
+5519:                RunMasterPostSimulationPhase(in masterTiming);
+5533:                    moddingBridge.ProjectPostSimulation();
+5570:        private static void FlushSimulationBucketVisualSync()
+5584:                SimulationBucketPacingFlags.PreSimulationOverBudget |
+5608:            warning.PreSimulationMs = SanitizeNonNegativeMilliseconds(frameState.PreSimulationCostMs);
+5616:            warning.Severity = ResolveFramePacingSeverity(flags, currentFrameMs, warning.PreSimulationMs);
+5663:            if ((flags & SimulationBucketPacingFlags.PreSimulationOverBudget) != 0u ||
+5664:                preSimulationMs > SimulationBucketConstants.PreSimulationBudgetMilliseconds)
+5765:                completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
+5769:                _foveatedSimulationManager.VisualSyncTick();
+5770:                FlushSimulationBucketVisualSync();
+5771:                HectonXRRuntimeState.FlushVisualSyncShaderState();
+5772:                WfcLaserCutRuntime.FlushVisualSync();
+5773:                HectonShaderGlobalDataVaultBridge.FlushFallbackVisualSync();
+5775:                DistanceMath.FlushVisualSyncShaderState();
+5776:                ConnectionSplineBatchRenderer.FlushVisualSyncShaderState();
+5777:                HomeostasisBrain.FlushVisualSyncShaderState();
+5778:                RunMasterVisualSyncPhase();
+5842:                        EndDispatcherPhaseTiming(completeDispatcherTimestamp, "FoveatedSimulationManager.CompleteFrameJobs");
+7382:                DispatcherJobFence.BeginPostSimulationSwapWindow();
+7390:                    DispatcherJobFence.EndPostSimulationSwapWindow();
+7442:        private static long BeginDispatcherPhaseTiming()
+7451:        private static void EndDispatcherPhaseTiming(long startTimestamp, string phaseName)
+7456:            if (elapsedMilliseconds > SlowDispatcherPhaseWarningMilliseconds)
+7459:                if (now >= _nextDispatcherPhaseWarningLogTime)
+7461:                    _nextDispatcherPhaseWarningLogTime = now + DispatcherPhaseWarningLogIntervalSeconds;
+7487:                    _nextFoveatedFrameWarningLogTime = now + DispatcherPhaseWarningLogIntervalSeconds;

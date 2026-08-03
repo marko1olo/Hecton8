@@ -1,6 +1,4 @@
 using System;
-using System.Linq;
-using System.Numerics;
 
 namespace Hecton8.PureLogic.Systems
 {

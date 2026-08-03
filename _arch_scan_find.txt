@@ -1,0 +1,24 @@
+TOTAL=23
+Assets\_Project\Scripts\CrashTelemetryBuffer.cs:482:UnityEngine.Object.FindFirstObjectByType<CrashTelemetryBuffer>(FindObjectsInactive.Include);
+Assets\_Project\Scripts\PhysicsApplySystem.cs:1665:UnityEngine.Object.FindFirstObjectByType<PhysicsApplySystem>(FindObjectsInactive.Include);
+Assets\_Project\Scripts\AI\Ambient\AmbientBiotaDirector.cs:212:AmbientBiotaDirector existing = FindFirstObjectByType<AmbientBiotaDirector>(FindObjectsInactive.Include);
+Assets\_Project\Scripts\AI\Ambient\AmbientBiotaDirector.cs:228:GameObject root = GameObject.Find(RuntimeRootName);
+Assets\_Project\Scripts\Audio\AtmosphericAudioRuntimeInstaller.cs:137:listener = UnityEngine.Object.FindFirstObjectByType<AudioListener>(FindObjectsInactive.Include);
+Assets\_Project\Scripts\Audio\Synthesis\DynamicMusic\DynamicMusicGranularSynthesizer.cs:385:UnityEngine.Object.FindFirstObjectByType<DynamicMusicGranularSynthesizer>(FindObjectsInactive.Include);
+Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:9304:AudioListener[] listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(
+Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs:9331:AudioSource[] sources = UnityEngine.Object.FindObjectsByType<AudioSource>(
+Assets\_Project\Scripts\Core\SystemDispatcher.cs:1004:AudioListener[] batchListeners = UnityEngine.Object.FindObjectsByType<AudioListener>(
+Assets\_Project\Scripts\Graphics\HectonVisualsOrchestrator.cs:126:if (FindAnyObjectByType<HectonVisualsOrchestrator>() == null)
+Assets\_Project\Scripts\Graphics\HectonVisualsOrchestrator.cs:131:orch._celestialEngine = FindAnyObjectByType<HectonCelestialEngine>();
+Assets\_Project\Scripts\Graphics\HectonVisualsOrchestrator.cs:133:var oceanRenderer = FindAnyObjectByType<Renderer>(); // Crest.OceanRenderer might not be available in this namespace easily, fallback to finding by name or tag if needed
+Assets\_Project\Scripts\Items\PickupItem.cs:1109:s_validationPickupCache = UnityEngine.Object.FindObjectsByType<PickupItem>(
+Assets\_Project\Scripts\Physics\Vehicles\Automation\DockingAutopilotService.cs:345:DockingAutopilotService existing = FindFirstObjectByType<DockingAutopilotService>(FindObjectsInactive.Include);
+Assets\_Project\Scripts\Physics\Vehicles\Automation\DockingAutopilotService.cs:358:GameObject root = GameObject.Find(RuntimeRootName);
+Assets\_Project\Scripts\Plugins\Crest\HectonCrestOceanDepthCacheBootstrap.cs:270:var gerstnerBatchedInstances = UnityEngine.Object.FindObjectsByType<ShapeGerstnerBatched>(UnityEngine.FindObjectsInactive.Include, UnityEngine.FindObjectsSortMode.None);
+Assets\_Project\Scripts\Rendering\OceanSinglePass\OceanSinglePassRuntime.cs:142:authoredRuntime = UnityEngine.Object.FindAnyObjectByType<OceanSinglePassRuntime>(FindObjectsInactive.Include);
+Assets\_Project\Scripts\Scavenging\ScavengingLootOracleRuntime.cs:1917:ScavengingLootOracleRuntime[] existingHosts = UnityEngine.Object.FindObjectsByType<ScavengingLootOracleRuntime>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+Assets\_Project\Scripts\Scavenging\ScavengingLootOracleRuntime.cs:1924:GameObject[] objects = UnityEngine.Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None); // COLD ALLOC: reload cleanup scan for HideAndDontSave orphan hosts.
+Assets\_Project\Scripts\Tools\H8_PlayModeScreenshotter.cs:234:var movement = UnityEngine.Object.FindAnyObjectByType<Hecton8.Gameplay.HectonPlayerMovement>();
+Assets\_Project\Scripts\Tools\H8_PlayModeScreenshotter.cs:324:Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>(
+Assets\_Project\Scripts\UI\SettingsManager.cs:103:UnityEngine.Object.FindFirstObjectByType<SettingsManager>(FindObjectsInactive.Include);
+Assets\_Project\Scripts\UI\SubtitleManager.cs:396:Canvas[] canvases = UnityEngine.Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None); // COLD ALLOC: Canvas[] - one-shot host canvas resolve - owner: SubtitleManager

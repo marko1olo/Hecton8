@@ -1,0 +1,30 @@
+                NativeArray<T> array = Open();
+                return array.IsCreated ? NativeArrayUnsafeUtility.GetUnsafePtr(array) : null;
+            }
+
+            public static implicit operator NativeArray<T>(VaultArray<T> array)
+            {
+                return array.Open();
+            }
+
+        }
+
+        private static VaultArray<CognitionCore> _cores;
+        private static VaultArray<CognitionControl> _controls;
+        private static VaultArray<CognitionInput> _inputs;
+        private static VaultArray<PackedCognitionOutput> _outputs;
+        private static VaultArray<CognitionMemoryEntry> _memoryBank;
+        private static VaultArray<AcousticMemoryEntry> _acousticMemoryBank;
+        private static VaultArray<float4> _acousticMemoryFloat4Bank;
+        private static VaultArray<float4> _apexCortexTuning;
+        private static VaultArray<byte> _slotUsed;
+        private static VaultArray<int> _activeSlots;
+        private static VaultArray<float> _ambientThreats;
+        private static VaultArray<float3> _swarmCenters;
+        private static VaultArray<float3> _swarmDirections;
+        private static VaultArray<float3> _swarmAvoidances;
+        private static VaultArray<int> _swarmCounts;
+        private static VaultArray<int> _claimedBoidIndices;
+        private static VaultArray<float3> _claimedBoidPositions;
+        private static VaultArray<byte> _chosenStates;
+        private static VaultArray<byte> _stalkingPhases;
