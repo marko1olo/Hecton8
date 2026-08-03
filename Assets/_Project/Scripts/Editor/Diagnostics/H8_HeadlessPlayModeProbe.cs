@@ -1780,6 +1780,17 @@ namespace Hecton8.EditorTools.Diagnostics
 
                     SetPhase(Phase.LeavingPlayMode);
 
+                    // L19 hop2 LIVE: batch peel ExitPlaymode - native Crash!!! at
+                    // DestroyWorldObjects / RestoreSceneBackups (tlsf_free AV) after WorldDriver
+                    // phase=Done. Finish already writes the route artifact and calls
+                    // EditorApplication.Exit under batch - skip scene teardown entirely.
+                    if (UnityEngine.Application.isBatchMode)
+                    {
+                        Debug.Log("[H8_PLAYPROBE] L19 hop2 LIVE: ExitPlaymode peeled under batch (DestroyWorldObjects AV)");
+                        Finish(_failures == 0 ? 0 : 1);
+                        break;
+                    }
+
                     EditorApplication.ExitPlaymode();
 
                     break;
