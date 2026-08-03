@@ -837,6 +837,12 @@ namespace Hecton8.Ecosystem
 
         private void ScheduleMigrationFieldBuild()
         {
+            // L19 hop2 LIVE: BuildMigrationVectorFieldJob left incomplete under -batchmode,
+            // then aborts FrostTick/GasDynamics on deallocate (InvalidOperationException).
+            // Migration vector field is not required for hop input validation.
+            if (Application.isBatchMode)
+                return;
+
             if (!TryResolveMigrationNativeViews(
                     out _,
                     out NativeArray<MigrationGridCell> backGrid,
