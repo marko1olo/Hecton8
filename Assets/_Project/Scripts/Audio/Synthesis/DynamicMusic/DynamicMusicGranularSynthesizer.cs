@@ -819,6 +819,11 @@ namespace Hecton8.Audio.Synthesis
 
         public void LateFrameTick()
         {
+            // L19 hop2 LIVE: skip DynamicMusic LateFrameTick under batch -
+            // AudioSource.Play on disabled source spams stack traces after SoftMute.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             if (Volatile.Read(ref _nativeAllocated) == 0)
                 return;
 
