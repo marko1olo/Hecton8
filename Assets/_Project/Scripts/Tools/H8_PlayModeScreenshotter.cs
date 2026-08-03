@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System;
 using System.Globalization;
 using System.IO;
@@ -202,6 +202,16 @@ namespace Hecton8.Tools
 
         void Update()
         {
+            // L19 hop2: batchmode/headless must not SubmitRenderRequest. Under hop2 LIVE the capture
+            // path reached URP Cull → TerrainManager::CullAllTerrains → SplatMaterials::Update →
+            // Material::SetFloat → native heap realloc crash (Crash!!!). Interactive editor capture
+            // is unchanged. Headless probes already own session teardown via ExternalSessionOwner.
+            if (Application.isBatchMode)
+            {
+                enabled = false;
+                return;
+            }
+
             // realtimeSinceStartup, not an accumulation of unscaledDeltaTime: unscaledDeltaTime is
             // clamped by Time.maximumDeltaTime, so on a one-frame-per-second boot the accumulator
             // reports roughly a third of the real elapsed time and every budget here silently
@@ -274,6 +284,17 @@ namespace Hecton8.Tools
         private void CaptureAndExit(GameObject player)
         {
             Debug.Log($"[H8PlayModeScreenshotter] Capture started. Player spawned: {player != null}");
+
+            // Defense-in-depth for hop2 batchmode: never force a camera render request that walks
+            // Terrain splat materials under headless/batchmode (native Crash!!! in SplatMaterials).
+            if (Application.isBatchMode)
+            {
+                Debug.Log(
+                    "[H8PlayModeScreenshotter] BATCHMODE skip capture (no SubmitRenderRequest / " +
+                    "terrain cull). Session teardown left to ExternalSessionOwner when set.");
+                EndSessionUnlessExternallyOwned(0, "batchmode capture soft-disabled");
+                return;
+            }
 
             // -nographics has no graphics device, so every render below returns nothing and the PNG
             // would be a plausible-looking blank. Say so and fail instead of writing a file that
