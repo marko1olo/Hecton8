@@ -1,0 +1,365 @@
+==== VISION_LOCKS.md ====
+1|# HECTON-8 Vision Locks
+2|
+3|Date: 2026-06-03
+4|Status: USER VISION AUTHORITY / STATIC DOC / RUNTIME PROOF NOT IMPLIED
+5|Evidence class: STATIC_DOC
+6|
+7|## Purpose
+8|
+9|This file records user-level product decisions that resolve ambiguous points across the route bibles.
+10|
+11|If a root bible sounds stricter, narrower, or more austere than these locks, use the lock here and update the affected bible instead of forcing the project back into the older interpretation.
+12|
+13|This file does not prove runtime behavior, art quality, build health, profiler state, localization quality, or release readiness.
+14|
+15|## Runtime And Hot-Path Vision Locks
+16|
+17|Product ambition does not override runtime law. Any implementation that serves these locks must preserve owner-local truth, zero-GC hot paths, cached dependencies, typed packets/signals where used, pure read accessors, a
+18|
+19|Presentation-only systems may sell beauty, dread, comfort, impact, haptics, UI drama, or cinematic staging. They must not own gameplay truth: oxygen, pressure, damage, input, movement, save state, inventory, construction
+20|
+21|The first-20 route must be spectacular through authored visual quality, readable systems, and real player decisions, not by hiding missing owners behind post effects, UI claims, darkness, haptics, VFX, or loading-screen 
+22|
+23|## Product Direction
+24|
+25|HECTON-8 is a broad AA/AAA underwater survival game, not a narrow technical proof demo.
+26|
+27|The project still requires proof artifacts, but production may proceed broadly across visuals, lore, world, tools, vehicles, platforms, modding, XR, SDK groundwork, and route systems while the first playable route is bei
+28|
+29|The first route must be spectacular enough to sell the product identity. A boring Copper Wire-only proof route is not acceptable as the product-facing V0.
+30|
+31|## First Experience Locks
+32|
+33|- Start: semi-open.
+34|- First exit: bright, beautiful, readable, and alien, with something uneasy or threatening in the composition.
+35|- First 20 minutes: more spectacular than a simple resource proof route.
+36|- The player may die immediately if they ignore oxygen, go too far, or approach an aggressive creature.
+37|- The game may give the player real calm time to look around when oxygen and local safety allow it.
+38|- Scenic rest is allowed. It is not filler if it helps the player love the world before the descent punishes them.
+39|
+40|## Visual Locks
+41|
+42|- Subnautica-level visual and content density is the floor for surface, photic shallows, and medium-depth hero routes.
+43|- The target is more detailed, more beautiful, and more premium than that floor.
+44|- `GlobalQualityWeight = 0.0` is not an ugly mode.
+45|- Surface, coast, exposed rock, ocean skin, sky, Aegir, moons, and photic shallows must remain readable and attractive on every hardware lane.
+46|- Cinematic realism is the main visual mode: believable PBR/material truth plus controlled cinematic color, composition, contrast, and atmosphere.
+47|- Correct references include Subnautica for water/beauty floor plus SOMA, Alien Isolation, The Expanse, Pacific Drive, and similar references for pressure, machinery, hard-sci-fi texture, and vehicle/shelter vulnerabilit
+48|
+49|## GlobalQualityWeight Planning Labels
+50|
+51|Low/Middle/High/Ultra are continuous planning labels on the same `GlobalQualityWeight` curve, not binary switches:
+52|
+53|- Low: minimum-survival hardware still gets premium composition, readable water/sky/route cues, stable gameplay truth, and no ugly mode.
+54|- Middle: expected player lane; must look genuinely good with rich material identity, route density, stable controls, and first-20 spectacle.
+55|- High: saved CPU/GPU budget buys richer shaders, lighting, scatter, VFX, animation, haptics, and UI polish around unchanged authority routes.
+56|- Ultra: visual overkill, dense presentation, deeper diagnostics, and capture-grade staging without changing gameplay truth, save identity, DTO layout, or hot-path ownership.
+57|
+58|## Depth And Light Locks
+59|
+60|- 0-100 m: mostly bright, beautiful, colorful, and readable.
+61|- Deep caves may be dim or dark even inside the shallow band.
+62|- 200-400 m: progressively more subdued and twilight-like.
+63|- 400-500 m and below: true darkness/murk becomes normal, but it must still preserve route structure, silhouettes, evidence, and instruments.
+64|- Darkness is not allowed as a method to hide bad terrain, weak textures, empty water, or unfinished celestial art.
+65|
+66|## Surface And Shallows Content Locks
+67|
+68|- Shallows are colorful and alien.
+69|- Coral and unusual biota are welcome.
+70|- Industrial/technogenic remnants should be present in places: old colony traces, wreck fragments, route hardware, pipes, stations, cables, salvage cuts, or other signs that people and machines were here.
+71|- Aegir's current texture/color direction is acceptable. Its blue/purple/methane-rich look is not automatically wrong if the texture quality is premium and believable.
+72|- Storm behavior remains open for design work. Storms may create danger and temporary darkness, but must not turn normal surface art into permanent mud.
+73|
+74|## Bioluminescence Lock
+75|
+76|Bioluminescence can be both beauty and system information.
+77|
+78|It may:
+79|- help navigation;
+80|- indicate ecology, contamination, danger, route, or evidence;
+81|- attract or repel creatures;
+82|- exist as visual wonder in selected safe views.
+83|
+84|It must not become random glowing noise everywhere.
+85|
+86|## Base And Safe-Room Locks
+87|
+88|Bases and safe rooms may be cozy.
+89|
+90|The core identity remains industrial, pressure-rated, and maintained, but the player is allowed to build or find spaces that feel safe, warm, beautiful, and worth protecting.
+91|
+92|Subnautica-like base decoration and beauty are allowed, especially after survival infrastructure is solved. Industrial logic stays underneath the comfort.
+93|
+94|## Survival And Death Locks
+95|
+96|- Oxygen behaves broadly like Subnautica: the player has a reserve, upgrades it, plans trips around it, and can still die quickly from neglect.
+97|- Longer expeditions may use upgraded tanks, hoses/tethers from a ship or base, and other physical oxygen-extension routes.
+98|- Early survival focuses on oxygen and pressure first; thermal, gas, contamination, radiation, and complex channel pressure can arrive later.
+99|- Death should respawn the player at a base or safe anchor.
+100|- Dropped resources are acceptable, similar to Minecraft/Subnautica-style loss.
+101|- Core tools should remain with the player after death unless a special scripted event says otherwise.
+102|
+103|## Inventory And Resource Locks
+104|
+105|- Inventory should be cell/grid-limited. Existing inventory work should be inspected before redesign.
+106|- Resource balance is a design task, not a fixed number here.
+107|- Resources must remain physically credible and not become abstract colored currency.
+108|
+109|## Combat And Creature Locks
+110|
+111|- Small creatures can be fought and killed with appropriate weapons/tools.
+112|- Larger creatures are not simple combat targets. Escape, distraction, avoidance, baiting, route choice, and system knowledge should often be better than fighting.
+113|- Killing is allowed, but the game should not become a generic hunting/action game.
+114|- Jump scares are allowed when built correctly, with evidence, sound, staging, and systemic follow-through. Random cheap scares remain rejected.
+115|
+116|## Map, Sonar, And Navigation Locks
+117|
+118|Map and sonar usability may be closer to Subnautica than to a pure hostile-instrument simulation.
+119|
+120|They should be useful enough that the player can play, plan, and love exploration. They still should not become an omniscient debug map with perfect hidden truth, creature state, or free objective certainty.
+121|
+122|## Vehicles And Drones Locks
+123|
+124|- Submarines and vehicles may feel safer near the surface and early depths.
+125|- The deeper the submarine goes, the more unsafe, costly, noisy, fragile, and pressure-exposed it becomes.
+126|- Friendly helper drones are not a current design direction.
+127|- Underwater drones from the source/ship/old systems can be neutral or hostile.
+128|- Deeper drone encounters should trend more hostile or more dangerous.
+129|
+130|## Narrative Locks
+131|
+132|- The protagonist may be former Deep Reach and current Marauder.
+133|- The opening motive is Marauder work: contract, salvage, debt, payout, dead claim, professional procedure. No family-revenge or missing-relative hook.
+134|- Personal weight may emerge through professional recognition, recovered workers, procedures, guilt, and Deep Reach language, not through family melodrama.
+135|- Deep Reach stays clean, defensible, legalistic, and lethal through procedure. No cartoon villainy.
+136|- Atlas-6 may feel intimate and frightening through misclassification, but it remains damaged repair/classification logic, not a melodramatic villain.
+137|- Diaries and logs should vary: dry procedure, human fear, practical notes, corporate language, and emotional fragments all have a place when the source supports them.
+138|- False endings remain a design space. They should be real outcomes, not obvious fake fail screens. No single clean moral ending is currently locked.
+139|- Replay may preserve knowledge, endings, rumors, contract context, and suspicion. It must not become power-roguelite inheritance.
+140|
+141|## Localization And Content Locks
+142|
+143|- In-world content should be prepared for all 15 supported languages immediately.
+144|- Translation status must be honest: native-final cannot be claimed without proof.
+145|- Public website/wiki content is required and should be spoiler-safe by default, with spoiler/archive lanes where needed.
+146|
+147|## Production And Scope Locks
+148|
+149|- The project proceeds broadly, not only through the first route.
+150|- Visuals, lore, world, platforms, modding, XR, SDK groundwork, and other foundations may move in parallel when they preserve root standards.
+151|- Co-op is not locked as production, but its architectural foundation may be prepared cautiously.
+152|- Procedural/offline generated assets are accepted only if they look authored and premium.
+153|- Bad placeholders below the visual floor may exist only as clearly isolated dev-only material; they must not contaminate production routes or agent examples.
+154|- The minimum hardware lane remains compact class, but the main expected player hardware is middle-tier. Middle-tier must look genuinely good, not merely acceptable.
+155|
+156|## Non-Negotiable Visual Features
+157|
+158|Never sacrifice these to optimization:
+159|- readable and beautiful ocean color;
+160|- surface and shallow-water clarity;
+161|- Aegir/sky/moon readability and texture quality;
+162|- wet rock material breakup;
+163|- terrain silhouettes and route landmarks;
+164|- waterline/foam/specular response where visible;
+165|- premium material identity on hero assets;
+166|- instrument/HUD legibility;
+167|- route cues and return-path readability;
+168|- creature silhouettes and encounter readability;
+169|- compact-tier composition that still feels intentional and premium.
+170|
+171|## Agent And Batch Locks
+172|
+173|- If an agent is given an explicit ID, it writes concise Status/Rationale/LOG artifacts for controller review.
+174|- Ordinary non-ID work must not invent IDs, hunt old logs, or write bureaucratic reports.
+175|- Large 20-30 task prompts are allowed and preferred for heavy agent waves when the user is distributing serious work.
+176|- Logs must be useful to a controller model, not padded for token consumption.
+177|
+178|## Public Claim Lock
+179|
+180|No public-facing claim may say release-ready, AAA, optimized, platform-ready, VR-ready, modding-ready, or comparable claims without matching proof artifacts.
+181|
+182|## Core Master Vision Cementing (Grill-Me Resolution)
+183|
+184|- Deep Space System & Orbital Relay Lock: Planet Hecton-8 is physically isolated in deep space (light-years from colonies). NO live corporate personnel on site. All corporate debt/salvage interaction is processed through
+185|- Open-Ocean Subnautica Gameplay Lock: Gameplay is centered on open ocean swimming, diving, and deep trench exploration (not corridor FPS horror). Biome depths scale: Photic Shallows (0-100m) -> Twilight Reefs (100-400m)
+186|- Atlas-6 Infrastructure AI & Drone Lock: Atlas-6 is a corrupted, automated habitat management AI, not a melodrama stalker. Drone encounters are episodic and perimeter-based around submerged industrial structures.
+187|- Hydroacoustic Stealth & Creature Baiting: Drones react to acoustic noise and light. The player neutralizes or bypasses them via EMP/sonar jamming, stealth diving, or baiting abyssal predators against noisy drones.
+188|- Hybrid Base System: Players can claim abandoned Deep Reach undersea research/drill stations by repairing pumps/reactors, and build custom pressure-rated modular hulls (Hull Pressure Integrity) attached to or around the
+189|- Visor HUD & Wrist PDA Lock: Visor helmet glass HUD displays ONLY minimalist critical survival metrics (Oxygen, Depth/Pressure, Hazard Warnings). 3D Sonar, inventory, map, and technical diagnostics live on the Wrist PDA
+190|- Tri-Branch Endgame & Relic Mystery Lock: At 1000m+ ("Ultra-Deep-8"), the catastrophe is revealed to be triggered by an ancient geothermal mechanism beneath the crust. Endings: 1) Archive upload to Orbital Relay for eva
+191|- Ion Surface Storms Lock: Surface storms raise 5m waves, block Orbital Relay laser uplinks (disabling Drop-Pod launches), and reduce 0-30m surface visibility through plankton/silt suspension.
+192|- Suit Breach & Thermal Mechanics: Structural suit breaches require Plasma Welder repair; micro-punctures are auto-sealed by gel cartridges; abyssal freezing vs boiling vents require active suit heater/cooler units.
+193|- Subnautica Death & Salvage Crate Lock: Respawn occurs at nearest base/sub. Tools remain with player; raw salvage drops at death point inside a beacon-marked Salvage Recovery Crate.
+194|- Singleplayer Supremacy & Co-Op Duo Protocol: Core game is 100% singleplayer Marauder experience, but Data Vault DTOs and SignalBus contracts are strictly decoupled (no singleton lock) to support future 2-player Co-Op (
+195|
+196|
+---MARK---
+19|Presentation-only systems may sell beauty, dread, comfort, impact, haptics, UI drama, or cinematic staging. They must not own gameplay truth: oxygen, pressure, damage, input, movement, save state, inventory, construction networks, physics f
+127|- Underwater drones from the source/ship/old systems can be neutral or hostile.
+==== PROJECT_BIBLES.md ====
+1|# HECTON-8 Project Bibles Index
+2|
+3|Status: AUTHORING STANDARD - PENDING UNITY/PROFILER VERIFICATION
+4|Evidence class: STATIC_DOC
+5|Scope: root routing index for taste, bootstrap, gameplay, survival physiology, combat/damage contact, input, camera, sonar/navigation, logistics/power networks, world, terrain/biomes, ecosystem simulation, atmosphere, ce
+6|
+7|## Prime Rule
+8|
+9|Before creating a major system, boot route, screen, model, texture, shader, biome, terrain surface, ecosystem rule, sonar/scanner/navigation feature, logistics/power network, drone/automation route, XR feature, cinematic
+10|
+11|Read the selected route bible as a complete document before judging its meaning. Do not replace domain reading with keyword extraction.
+12|
+13|After selecting a route bible, select `2-8` matching technical mandates from `.agents-skills/README.md` buckets for non-trivial code, architecture, rendering, gameplay, asset, data, proof, or technical-report work. A rou
+14|
+15|## Product Bar Rule
+16|
+17|A bible is useful only if it pushes work toward a playable, beautiful, optimized, believable product. It must turn taste into decisions, decisions into implementation boundaries, and implementation into proof.
+18|
+19|Weak bible content is rejected:
+20|
+21|- mood words with no player-visible result;
+22|- optimization language that permits ugly visuals;
+23|- visual ambition with no low-tier path;
+24|- gameplay ambition with no physical operation;
+25|- lore ambition with no surface, source, unlock, or evidence object;
+26|- lore production with no concrete article/packet file, 15-locale row set unless explicitly English-only, import/export/binding proof, or canon-source blocker;
+27|- architecture ambition with no owner, route, or proof artifact;
+28|- acceptance language that says "good enough" without screenshots, profiler data, manifests, tests, or runtime proof where applicable.
+29|
+30|If a route bible does not force an agent to make a better object, scene, system, interaction, text, or proof packet, strengthen the bible before implementation.
+31|
+32|## Authority Scope
+33|
+34|Only this index, `VISION_LOCKS.md`, and files listed in `Routes` below are standing root bible authorities. `AGENTS.md`, `CLAUDE.md`, and `COMMON_SENSE.md` remain root agent-law, tool-shim, and common-engineering authori
+35|
+36|This is the explicit documentation-governance exception for standing root route bibles and root authority anchors. It does not allow root reports, prompts, status files, work logs, generated evidence, task-progress prose
+37|
+38|Procedural asset package pipeline authority is root `PROCEDURAL_ASSET_PIPELINE.md`. `Docs/PROCEDURAL_ASSET_PIPELINE.md` is a non-binding supporting/historical duplicate unless a later source-backed governance patch promo
+39|
+40|Do not bulk-read every root `.md` file as a substitute for judgment. For ordinary work, choose `PROJECT_BIBLES.md`, `TASTE.md` when player-facing taste is involved, `quality.md` when acceptance/proof is involved, and the
+41|
+42|Batch prompts, controller prompts, task files, and old logs assign work; they do not lower project standards. If they conflict with `AGENTS.md`, `TASTE.md`, this index, or the matching route bible, the root authority win
+43|
+44|Planning snapshots such as `BUILD_PLAYTEST_ISSUES.md` and `MASTER_RELEASE_WORK_PLAN.md` are not standing design authority unless the user explicitly points at them for the current task.
+45|
+46|## Rule Hygiene
+47|
+48|Rules must reduce ambiguity, route agents to the right source, preserve product quality, and prevent stale reports or generated snapshots from becoming false authority. They must not make agents serve bureaucracy instead
+49|
+50|Rule and bible updates must:
+51|
+52|- keep the player-facing visual reference folder requirement visible to agents working on water, terrain, sky, flora, UI, lighting, VFX, camera, materials, surface routes, or hero biomes;
+53|- keep the Visual Reference Parity Gate current: player-visible work compares mandatory references plus best-known internal baseline/current rejection matrix against a repeated shot list, and raw diagnostic captures rema
+54|- keep performance subordinate to product-face quality, gameplay clarity, stability, and scalability;
+55|- keep `WORK AS MUCH AS POSSIBLE` as autonomy for finishing the current front, not as permission for bureaucracy or unrelated scope expansion;
+56|- keep source-reality discipline explicit: live source, current assets, and fresh proof beat old reports, generated snapshots, task files, and stale logs;
+57|- keep `C:\Users\Admin\.codex\AGENTS.md` as a thin global router that sends HECTON-8 work to root `AGENTS.md` and does not duplicate divergent project law;
+58|- keep `Docs/AGENTS_RULE_DETAIL_LEDGER.md` as the no-loss detail source for former monolithic root-law clauses until they are promoted into narrower route bibles or mandates;
+59|- keep `HECTON8_ORCHESTRATOR.md` lane contracts current for explicit standalone multi-agent waves, batch, controller, external GUI/process control, and task-file work;
+60|- keep `HECTON8_AUTONOMOUS_CODEX_ORCHESTRATOR.md` routed only for explicit local VS Code Codex GUI/workstation control;
+61|- keep ordinary subagent rules available in root `AGENTS.md` and `Docs/AGENT_AUTHORITY_ROUTING.md` so delegation is a primary evidence/implementation tool without pulling GUI/process orchestration into normal work;
+62|- keep new or materially rewritten serious `taskslocal` batches strict-checked with `python -B Tools/Docs/TestTaskLocalLaneContracts.py taskslocal/<batch_name> --strict`; historical batches are not a standing failure sur
+63|- keep `.agent/rules/*.md` as short historical stubs with previous bodies preserved under `Docs/DEPRECATED/AgentRulesHistorical_20260605/`;
+64|- sync `.codexrules/AGENTS.md`, `.github/agents/AGENTS.md`, and `.agent/rules/AGENTS.md` by delegation or byte-intent copy;
+65|- keep `Docs/AGENT_AUTHORITY_ROUTING.md` current as the no-loss intake map for agents and as the required protocol before shortening or splitting rule monoliths;
+66|- regenerate `Docs/PROJECT_ROOT_BIBLES_COMBINED.md` with `python -B Tools/Docs/BuildProjectRootBiblesCombined.py`;
+67|- run `python -B Tools/Docs/BuildProjectRootBiblesCombined.py --check`, `python -B Tools/Docs/TestAgentRuleRouting.py`, `python -B Tools/Docs/TestMandateRegistry.py` after mandate edits, and `git diff --check` over touch
+68|
+69|## Routes
+70|
+71|- Project taste and rejection language: `TASTE.md`
+72|- User product vision locks and ambiguity resolutions: `VISION_LOCKS.md`
+73|- Procedural asset package pipeline binding route bible: `PROCEDURAL_ASSET_PIPELINE.md`
+74|- Generated meshes, textures, materials, LODs, and collision: `3dmodel.md`
+75|- Hero generated models: `3DMODEL_HERO_REALISM_OVERKILL.md`
+76|- Texture family generation: `3DMODEL_TEXTURE_GENERATION_PLAYBOOK.md`
+77|- Generated hard-surface modules and pressure-rated structures: `3DMODEL_HARD_SURFACE_MODULES.md`
+78|- Generated equipment, tools, props, and salvage objects: `3DMODEL_EQUIPMENT_PROPS.md`
+79|- Generated flora and coral asset families: `3DMODEL_FLORA_CORAL.md`
+80|- Generated fauna asset families: `3DMODEL_FAUNA.md`
+81|- Generated geology, rocks, strata, and terrain-detail assets: `3DMODEL_GEOLOGY_ROCKS.md`
+82|- Texture and material channel rules for generated 3D assets: `3DMODEL_TEXTURES_MATERIALS.md`
+83|- UI, HUD, menus, terminals, cockpit panels: `ui.md`
+84|- Menu/frontend screens: `UI_MENU_SCREEN_STANDARDS.md`
+85|- Diegetic HUD/world-space panels: `UI_DIEGETIC_HUD_STANDARDS.md`
+86|- Settings, options, quality profiles, user configuration: `settings.md`
+87|- Localization, subtitles, font atlases, zero-GC runtime text: `localization.md`
+88|- Core gameplay loop, survival verbs, progression, salvage, failure: `gameplay.md`
+89|- Survival physiology, oxygen, pressure, trauma, gas, temperature, death/recovery: `survival.md`
+90|- Combat, damage routing, hitboxes, penetration, threat contact: `combat.md`
+91|- Input, rebinding, device abstraction, haptics, UI navigation: `input.md`
+92|- Player feel, controls, movement, camera, vehicles, haptics: `player.md`
+93|- Camera, view, cockpit camera, shake, capture rigs: `camera.md`
+94|- Sonar, scanner, navigation, acoustic radar, cartography: `sonar.md`
+95|- Submarines, suits, docking, EVA handoff, vehicle interiors, cockpit truth: `vehicles.md`
+96|- Tools, equipment, repair, welding, cutting, scanning, interaction targets: `tools.md`
+97|- Construction, resources, crafting, logistics, inventory, base systems: `construction.md`
+98|- Logistics, power, oxygen, fluid/coolant/data networks, graph flow: `logistics.md`
+99|- Drones, automation, repair/mining/scanner probes, remote systems, tether relays: `drones.md`
+100|- Inventory, resources, crafting, storage, salvage economy: `inventory.md`
+101|- Narrative, missions, evidence, black-box records, quest state, text taste: `narrative.md`
+102|- In-world articles, encyclopedia entries, survivor diaries, terminal notes, technical lore prose, and multilingual AppliedContent packets: `writing.md`
+103|- Public copy, store text, social posts, creator outreach, marketing captions: `textes.md`
+104|- Accessibility, readability, subtitles, remapping, flashing/motion reduction: `accessibility.md`
+105|- Bootstrap, startup, initialization, GlobalRegistry cold setup, scene transition: `bootstrap.md`
+106|- Runtime architecture, phases, ownership, signal lanes, hot-path access: `systems.md`
+107|- Performance, zero-GC, frame budgets, memory/VRAM, load shedding, arena allocation: `performance.md`
+108|- GPU compute, kernels, dispatch sizing, buffers, barriers, async readback: `compute.md`
+109|- Networking, rollback, co-op readiness, Merkle/delta sync, reconciliation: `networking.md`
+110|- Authoring/editor tools, CSV/SO facades, h8bin baking, data bridges: `authoring.md`
+111|- Data architecture, DTO layout, NativeArray payloads, SignalBus packets, GPU upload records: `data.md`
+112|- Math, determinism, AUP/floating origin, RNG, hot-path math, CI math gates: `math.md`
+113|- Telemetry, black-box rings, crash dumps, profiler markers, post-mortem evidence: `telemetry.md`
+114|- Modding, SDK, public API, envelope-only UGC, starter kits, command envelopes: `modding.md`
+115|- Platform and hardware proof, MX350/i3, Steam Deck/Linux, macOS, XR, consoles: `platform.md`
+116|- XR, VR, headset comfort, foveation, stencil masking, XR input/UI proof: `xr.md`
+117|- Release readiness, build proof, platform proof, content lock, regression triage: `release.md`
+118|- Physics, pressure, damage, flooding, tethers, cables, collision truth: `physics.md`
+119|- Atmosphere, weather, tides, thermodynamics, gases, vents, macro environment: `atmosphere.md`
+120|- Celestial cycles, tides, moon/day-night relay, seismic macro timing: `celestial.md`
+121|- Abyssal water, currents, turbidity, silt, caustics, flooding presentation: `water.md`
+122|- Terrain, biomes, scatter masks, geology placement, traversal surface: `terrain.md`
+123|- Animation, IK, rigs, creature/player/tool motion, VAT strategy: `animation.md`
+124|- Streaming, Addressables, residency, HLOD, asset lifecycle: `streaming.md`
+125|- Persistence, save/load, binary deltas, checksums, black-box records: `persistence.md`
+126|- Voxel terrain, SDF caves, carving, seams, voxel persistence: `voxels.md`
+127|- AI Director, cognition, navigation, flocking, encounter pacing: `ai.md`
+128|- Ecosystem, biome simulation, biomass migration, ecology placement: `ecosystem.md`
+129|- World composition, biomes, routes, habitats, wrecks, geology placement: `world.md`
+130|- Audio, sonar, warnings, soundscape, mix states: `audio.md`
+131|- Rendering, URP, RenderGraph, shaders, fog, lighting, GPU budgets: `rendering.md`
+132|- Shader/material runtime, keywords, variants, SRP Batcher, material proof: `shaders.md`
+133|- Lighting, motivated lights, shadows, probes, biolum, darkness readability: `lighting.md`
+134|- VFX, particles, leaks, sparks, silt, tool effects, pooling: `vfx.md`
+135|- Lighting/VFX/camera composition, screenshots, cinematic presentation: `presentation.md`
+136|- Cinematics, cutscenes, directed moments, capture truth, black-box replay: `cinematics.md`
+137|- Creature behavior, encounters, ecology, telegraphing, AI taste: `creatures.md`
+138|- Testing, CI, verification evidence classes, regression proof: `testing.md`
+139|- Cross-system review and proof gates: `quality.md`
+140|
+141|## Bible Completeness Rule
+142|
+143|A root bible is complete only if it defines:
+144|
+145|- the prime law of the domain;
+146|- what owns gameplay truth;
+147|- what is presentation only;
+148|- what is forbidden in hot paths;
+149|- how `GlobalQualityWeight` scales from weak hardware to visual overkill;
+150|- what concrete proof is required before acceptance;
+151|- which screenshots, profiler captures, manifests, or validation reports prove the work;
+152|- what gets rejected even if it technically runs.
+153|
+154|If a document lacks these sections, improve it before using it as authority.
+155|
+156|Depth rule: a route file may be concise, but it must still contain a production packet or equivalent implementation checklist. A file that only states taste or mood is not a bible; strengthen it before implementation sta
+157|
+158|Index rule: this file is not a substitute for a domain bible. It only tells agents where the binding owner, runtime boundary, `GlobalQualityWeight`, proof, and rejection rules live.
+159|
+160|## Missing Bible Rule
+161|
+162|If a task belongs to a major player-facing system and no route above fits, stop and create or update the relevant bible before implementation. Do not hide a missing design authority inside one task report.
+---MARK---
+25|- lore ambition with no surface, source, unlock, or evidence object;
