@@ -606,6 +606,12 @@ namespace Hecton8.Audio
 
         private static void DisposeActiveRuntimeForEditorReload()
         {
+            // L19 hop2 LIVE: batchmode ExitPlaymode teardown hits UnregisterAudioService
+            // then native mono crash (empty managed stack) after RESULT. Skip full
+            // ShutdownServiceState under batch — process is exiting; registry/FMOD
+            // cleanup is not load-bearing for the headless probe exit path.
+            if (UnityEngine.Application.isBatchMode)
+                return;
             SpatialAudioManager activeRuntime = ActiveRuntimeInstance;
             if (activeRuntime != null)
                 activeRuntime.ShutdownServiceState(releaseRuntimeResources: true);
@@ -1683,6 +1689,17 @@ namespace Hecton8.Audio
         {
             if (_runtimeOwnerAborted)
                 return;
+
+            // L19 hop2 LIVE: batchmode full teardown after RESULT crashes natively
+            // (UnregisterAudioService mismatch → empty managed stack Crash!!!).
+            // Drop ActiveRuntimeInstance and bail; OS tears down the process.
+            if (UnityEngine.Application.isBatchMode)
+            {
+                if (ReferenceEquals(ActiveRuntimeInstance, this))
+                    ActiveRuntimeInstance = null;
+                _isInitialized = false;
+                return;
+            }
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
