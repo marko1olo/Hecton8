@@ -920,6 +920,11 @@ namespace Hecton8.UI
 
         public void SlowTick()
         {
+            // L19 hop2 LIVE: batch peel BaseIntegrityHUD.SlowTick - last_slowtick name before
+            // silent Shut down after WORLDDRIVER begin (module scan / integrity UI under batch).
+            if (Application.isBatchMode)
+                return;
+
             if (_playerTransform == null)
                 return;
 
@@ -948,6 +953,9 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            // L19 hop2 LIVE: batch peel BaseIntegrityHUD.LateFrameTick - UI presentation.
+            if (Application.isBatchMode)
+                return;
             int count = math.min(_pendingNotificationCount, _pendingNotificationHashes.Length);
             _pendingNotificationCount = 0;
             for (int i = 0; i < count; i++)
