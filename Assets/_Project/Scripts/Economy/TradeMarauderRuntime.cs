@@ -2006,6 +2006,10 @@ namespace Hecton8.Economy
 
         public void FrostTick()
         {
+            // L19 hop2 LIVE: TradeMarauderDirector.FrostTick mono AV under batch after STARTERGRANT
+            if (Application.isBatchMode)
+                return;
+
             TryCompleteFinishedJob();
             if (_jobScheduled)
                 return;

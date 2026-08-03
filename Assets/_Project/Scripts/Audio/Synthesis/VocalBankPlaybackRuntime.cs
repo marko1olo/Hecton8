@@ -455,6 +455,10 @@ namespace Hecton8.Audio.Synthesis
 #if !UNITY_EDITOR && !DEVELOPMENT_BUILD
         private void OnAudioFilterRead(float[] data, int channels)
         {
+            // L19 hop2 LIVE: VocalBank OnAudioFilterRead AtomicSafety AV under batch
+            if (Application.isBatchMode)
+                return;
+
             if (data != null && data.Length > 0)
                 ZeroManagedAudioBuffer(data, 0, data.Length);
 
