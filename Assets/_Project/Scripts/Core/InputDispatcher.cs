@@ -1216,6 +1216,10 @@ namespace Hecton8.Core
         /// </param>
         private void DiagRecordReadObservation(int readHop)
         {
+            // L19 hop2 LIVE: skip INPUTHOP/residue diag under batch - mega
+            // LogWarning+stack mono-asserts jit-info during WORLDDRIVER.
+            if (UnityEngine.Application.isBatchMode)
+                return;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _diagReadObservations++;
 
@@ -1260,6 +1264,10 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void DiagEmitHopCensus(int readHop)
         {
+            // L19 hop2 LIVE: skip INPUTHOP/residue diag under batch - mega
+            // LogWarning+stack mono-asserts jit-info during WORLDDRIVER.
+            if (UnityEngine.Application.isBatchMode)
+                return;
             // COLD ALLOC: one census string - emitted at most three times per session from a read accessor -
             // owner: InputDispatcher
             Hecton8.Core.H8Debug.LogWarning(
