@@ -251,6 +251,11 @@ namespace Hecton8.Construction
 
         public void SlowTick()
         {
+            // L19 hop2 LIVE: skip FluidPipe pressure solve under batch -
+            // TryAcquireSolveWriteBuffer native AV during WORLDDRIVER SlowTick.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             if (!_initialized)
                 return;
 
