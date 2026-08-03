@@ -5472,8 +5472,38 @@ namespace Hecton8.Core
                     catch (System.Exception) { }
                 }
                 RunSlowTick(deltaTime, blockGameplayLanes);
+                if (UnityEngine.Application.isBatchMode)
+                {
+                    try
+                    {
+                        System.IO.File.WriteAllText(
+                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                            "ENTER:POST_RunColdTick");
+                    }
+                    catch (System.Exception) { }
+                }
                 RunColdTick(deltaTime, blockGameplayLanes);
+                if (UnityEngine.Application.isBatchMode)
+                {
+                    try
+                    {
+                        System.IO.File.WriteAllText(
+                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                            "ENTER:POST_RunFrostTick");
+                    }
+                    catch (System.Exception) { }
+                }
                 RunFrostTick(deltaTime, blockGameplayLanes);
+                if (UnityEngine.Application.isBatchMode)
+                {
+                    try
+                    {
+                        System.IO.File.WriteAllText(
+                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                            "ENTER:POST_SurfaceProbes");
+                    }
+                    catch (System.Exception) { }
+                }
                 ScheduleDispatcherSurfaceProbes();
                 masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
                 if (UnityEngine.Application.isBatchMode)
