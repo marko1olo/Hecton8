@@ -6385,6 +6385,10 @@ namespace Hecton8.Inventory
 
         private void ApplyInventorySalinityCorrosion()
         {
+            // L19 hop2 LIVE: skip inventory salinity corrosion under batch -
+            // native AV in ApplyInventorySalinityCorrosion during WORLDDRIVER SlowTick.
+            if (UnityEngine.Application.isBatchMode)
+                return;
             _salinityCorrosionTickAccumulator += SlowTickIntervalSeconds;
             bool runFrostTick = _salinityCorrosionTickAccumulator >= SalinityCorrosionFrostTickSeconds;
             if (runFrostTick)
