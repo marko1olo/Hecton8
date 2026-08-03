@@ -1668,6 +1668,10 @@ namespace Hecton8.Gameplay
 
         public void SlowTick()
         {
+            // L19 hop2 LIVE: FirstHourDirector.SlowTick -> CompleteQuest mono_jit AV under batch after STARTERGRANT
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             if (_runtimeOwnerAborted)
                 return;
 
@@ -2193,6 +2197,10 @@ namespace Hecton8.Gameplay
 
         private void CompleteQuest(uint questHash)
         {
+            // L19 hop2 LIVE: FirstHourDirector.CompleteQuest mono_jit AV under batch
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             if (questHash == 0u)
                 return;
 
