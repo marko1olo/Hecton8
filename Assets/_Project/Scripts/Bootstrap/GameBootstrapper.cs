@@ -9305,6 +9305,7 @@ namespace Hecton8.Bootstrap
                     listener.enabled = false;
             }
         }
+
         private static void EnsureBootstrapAudioListener(Scene bootstrapScene)
         {
             // L19 hop2 LIVE: dual AudioListener (bootstrap + player) drives FMOD
