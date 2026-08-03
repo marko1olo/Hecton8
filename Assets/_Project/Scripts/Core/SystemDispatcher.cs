@@ -5369,7 +5369,28 @@ namespace Hecton8.Core
                             if (!_foveatedSimulationManager.TryAdvanceTick(updatable, deltaTime, out float effectiveDeltaTime))
                                 continue;
 
+                            // L19 hop2 LIVE: file breadcrumb (NO Debug.Log) - hang names last main-tick type.
+                            if (UnityEngine.Application.isBatchMode)
+                            {
+                                try
+                                {
+                                    System.IO.File.WriteAllText(
+                                        @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                                        "ENTER:" + updatable.GetType().Name);
+                                }
+                                catch (System.Exception) { }
+                            }
                             updatable.Tick(effectiveDeltaTime);
+                            if (UnityEngine.Application.isBatchMode)
+                            {
+                                try
+                                {
+                                    System.IO.File.WriteAllText(
+                                        @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                                        "DONE:" + updatable.GetType().Name);
+                                }
+                                catch (System.Exception) { }
+                            }
                             _foveatedSimulationManager.NotifyTickCompleted(updatable);
                             if (SignalBusRegistry.IsSimulationHalted)
                                 return;
@@ -5383,19 +5404,100 @@ namespace Hecton8.Core
                 if (SignalBusRegistry.IsSimulationHalted)
                     return;
 
+                if (UnityEngine.Application.isBatchMode)
+                {
+                    try
+                    {
+                        System.IO.File.WriteAllText(
+                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                            "ENTER:POST_CombatFrameTick");
+                    }
+                    catch (System.Exception) { }
+                }
                 CombatDamageRuntime.FrameTick(deltaTime);
+                if (UnityEngine.Application.isBatchMode)
+                {
+                    try
+                    {
+                        System.IO.File.WriteAllText(
+                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                            "ENTER:POST_PredatorCognition");
+                    }
+                    catch (System.Exception) { }
+                }
                 PredatorCognitionDomain.ScheduleFrameEvaluation(CurrentFrameIndex);
+                if (UnityEngine.Application.isBatchMode)
+                {
+                    try
+                    {
+                        System.IO.File.WriteAllText(
+                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                            "ENTER:POST_FoveatedJobs");
+                    }
+                    catch (System.Exception) { }
+                }
                 _foveatedSimulationManager.ScheduleFrameJobs();
+                if (UnityEngine.Application.isBatchMode)
+                {
+                    try
+                    {
+                        System.IO.File.WriteAllText(
+                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                            "ENTER:POST_RunFastTick");
+                    }
+                    catch (System.Exception) { }
+                }
                 RunFastTick(deltaTime, blockGameplayLanes);
                 RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
+                if (UnityEngine.Application.isBatchMode)
+                {
+                    try
+                    {
+                        System.IO.File.WriteAllText(
+                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                            "ENTER:POST_FixedStep");
+                    }
+                    catch (System.Exception) { }
+                }
                 RunFixedStepAccumulator(deltaTime, blockGameplayLanes);
                 RunBucketedSlowTick(blockGameplayLanes);
+                if (UnityEngine.Application.isBatchMode)
+                {
+                    try
+                    {
+                        System.IO.File.WriteAllText(
+                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                            "ENTER:POST_RunSlowTick");
+                    }
+                    catch (System.Exception) { }
+                }
                 RunSlowTick(deltaTime, blockGameplayLanes);
                 RunColdTick(deltaTime, blockGameplayLanes);
                 RunFrostTick(deltaTime, blockGameplayLanes);
                 ScheduleDispatcherSurfaceProbes();
                 masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
+                if (UnityEngine.Application.isBatchMode)
+                {
+                    try
+                    {
+                        System.IO.File.WriteAllText(
+                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                            "ENTER:POST_MasterPostSim");
+                    }
+                    catch (System.Exception) { }
+                }
                 RunMasterPostSimulationPhase(in masterTiming);
+                if (UnityEngine.Application.isBatchMode)
+                {
+                    try
+                    {
+                        System.IO.File.WriteAllText(
+                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_maintick.txt",
+                            "MAINTICK_DONE");
+                    }
+                    catch (System.Exception) { }
+                }
+
                 IModdingBridge moddingBridge = _moddingBridgeProjectionRuntime;
                 if (moddingBridge != null)
                     moddingBridge.ProjectPostSimulation();
