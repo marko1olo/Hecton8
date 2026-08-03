@@ -6613,15 +6613,28 @@ namespace Hecton8.Core
                                     continue;
 
                                 // L19 hop2 LIVE: file breadcrumb (NO Debug.Log) - hang names last type.
+                                // Write ENTER before call and DONE after return so freeze names the stuck system.
                                 if (UnityEngine.Application.isBatchMode)
                                 {
                                     try
                                     {
-                                        System.IO.File.WriteAllText(@"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_slowtick.txt", tickable.GetType().Name);
+                                        System.IO.File.WriteAllText(
+                                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_slowtick.txt",
+                                            "ENTER:" + tickable.GetType().Name);
                                     }
                                     catch (System.Exception) { }
                                 }
                                 tickable.SlowTick();
+                                if (UnityEngine.Application.isBatchMode)
+                                {
+                                    try
+                                    {
+                                        System.IO.File.WriteAllText(
+                                            @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_slowtick.txt",
+                                            "DONE:" + tickable.GetType().Name);
+                                    }
+                                    catch (System.Exception) { }
+                                }
                                 if (SignalBusRegistry.IsSimulationHalted)
                                     return;
                             }
@@ -6629,10 +6642,51 @@ namespace Hecton8.Core
                     }
 
                     float slowTickDeltaSeconds = (float)slowTickIntervalSeconds;
+                    if (UnityEngine.Application.isBatchMode)
+                    {
+                        try
+                        {
+                            System.IO.File.WriteAllText(
+                                @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_slowtick.txt",
+                                "ENTER:POST_WorldSpatialHash");
+                        }
+                        catch (System.Exception) { }
+                    }
                     WorldSpatialHashGrid.SlowTickMaintenance(slowTickDeltaSeconds);
+                    if (UnityEngine.Application.isBatchMode)
+                    {
+                        try
+                        {
+                            System.IO.File.WriteAllText(
+                                @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_slowtick.txt",
+                                "DONE:POST_WorldSpatialHash");
+                        }
+                        catch (System.Exception) { }
+                    }
+                    if (UnityEngine.Application.isBatchMode)
+                    {
+                        try
+                        {
+                            System.IO.File.WriteAllText(
+                                @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_slowtick.txt",
+                                "ENTER:POST_CombatDamage");
+                        }
+                        catch (System.Exception) { }
+                    }
                     CombatDamageRuntime.SlowTick(slowTickDeltaSeconds);
+                    if (UnityEngine.Application.isBatchMode)
+                    {
+                        try
+                        {
+                            System.IO.File.WriteAllText(
+                                @"C:\hades\Hecton8\Docs\AgentLogs\hop2_last_slowtick.txt",
+                                "SLOWTICK_DONE");
+                        }
+                        catch (System.Exception) { }
+                    }
                 }
             }
+
 
             if (substeps == MaxCadenceSubstepsPerFrame && _slowTickAccumulator >= slowTickIntervalSeconds)
             {

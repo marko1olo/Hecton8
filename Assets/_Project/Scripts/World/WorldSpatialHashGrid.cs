@@ -1445,6 +1445,11 @@ namespace Hecton8.World
 
         internal static void SlowTickMaintenance(float deltaTime)
         {
+            // L19 hop2 LIVE: batch peel SlowTickMaintenance - DecayTransientEvents native path
+            // can hang headless after STARTERGRANT (post ISlowTickable loop).
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             if (_nativeHash == null)
                 return;
 
@@ -1455,6 +1460,7 @@ namespace Hecton8.World
                 AcousticTransientDecayScale,
                 AcousticTransientMinimumIntensity);
         }
+
 
         internal static void LateFrameMaintenance(int frameCount)
         {

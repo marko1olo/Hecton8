@@ -1119,6 +1119,11 @@ namespace Hecton8.Gameplay
 
         public static void SlowTick(float deltaTime)
         {
+            // L19 hop2 LIVE: batch peel SlowTick - status-effect job schedule can hang headless
+            // after STARTERGRANT (post ISlowTickable loop).
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             if (_targetCount <= 0 ||
                 _damageJobScheduled ||
                 _statusJobScheduled ||
@@ -1133,6 +1138,7 @@ namespace Hecton8.Gameplay
                 TryScheduleStatusEffectJobs(deltaTime);
             }
         }
+
 
         public static bool ValidateCombatDamageLayout(out string failure)
         {
