@@ -1444,6 +1444,10 @@ namespace Hecton8.Gameplay
 
         public void PostFixedTick(float fixedDeltaTime)
         {
+            // L19 hop2 LIVE: PlayerKinematicsRuntime.PostFixedTick - last managed frame before FMOD WASAPI AV under batch.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             ApplyPendingStateCorrections();
             CommitStateWrite();
             // Batchmode headless probes: HandFabrik IK is presentation-only and can touch

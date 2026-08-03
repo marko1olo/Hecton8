@@ -22,6 +22,19 @@ namespace MapMagic.Nodes.MatrixGenerators
     [UnityEngine.Scripting.Preserve]
     public sealed class HectonSandboxAbyssalShelfMapMagicNode : Generator, IOutlet<MatrixWorld>
     {
+        // L19 hop2 LIVE: MapMagic batch flag - IsHeadlessBatchProbe() is main-thread only;
+        // Generate() runs on MapMagic worker threads so cache via command line.
+        static bool IsHeadlessBatchProbe()
+        {
+            string[] args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (string.Equals(args[i], "-batchmode", System.StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
         private const string NativeMemoryOwner = nameof(HectonSandboxAbyssalShelfMapMagicNode);
         private const double SyncCompletionWarningMilliseconds = 0.2;
         private static readonly uint _invalidMatrixWarningHash =
@@ -262,7 +275,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 // L19 hop2 LIVE: ScheduleParallelFor(PresampleJob) has produced mono_jit_info_table AV
                 // under headless batch probes. Skip Unity job scheduling and emit a flat mid-shelf so
                 // MapMagic can continue without ParallelFor JIT on this path.
-                if (UnityEngine.Application.isBatchMode)
+                if (UnityEngine.IsHeadlessBatchProbe())
                 {
                     for (int i = 0; i < cellCount; i++)
                     {
