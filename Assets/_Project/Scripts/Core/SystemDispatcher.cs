@@ -1000,6 +1000,14 @@ namespace Hecton8.Core
             {
                 AudioListener.pause = true;
                 AudioListener.volume = 0f;
+                AudioListener[] batchListeners = UnityEngine.Object.FindObjectsByType<AudioListener>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+                for (int li = 0; li < batchListeners.Length; li++)
+                {
+                    if (batchListeners[li] != null)
+                        batchListeners[li].enabled = false;
+                }
             }
 
             SystemDispatcher dispatcher = ActiveRuntimeInstance;
@@ -4535,6 +4543,12 @@ namespace Hecton8.Core
 
         private void RunPreSimulationMemoryDefrag(float unscaledDeltaTime)
         {
+            // L19 hop2 LIVE: skip pre-sim memory defrag - PublishDataVaultDefragTelemetry
+            // -> SignalBus.MemoryPressureSignal EnsureInitialized/TryAcquireFrameSnapshotBuffer
+            // mono AV under headless batch after STARTERGRANT.
+            if (Application.isBatchMode)
+                return;
+
             IDataVault dataVault = _dataVault;
             if (dataVault == null || unscaledDeltaTime < 0f)
                 return;
@@ -4861,6 +4875,10 @@ namespace Hecton8.Core
 
         private void PublishDataVaultDefragTelemetry(IDataVault dataVault, double elapsedMilliseconds, uint frameId)
         {
+            // L19 hop2 LIVE: skip PublishDataVaultDefragTelemetry under batch.
+            if (Application.isBatchMode)
+                return;
+
             if (frameId == 0u)
                 frameId = ResolveMemoryTelemetryFrameId();
 
