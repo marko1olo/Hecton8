@@ -3542,6 +3542,11 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            // L19 hop2 LIVE: batch peel LateFrameTick - multi-job Complete + ecosystem visual flush
+            // can hang/assert headless after VERBSWEEP (IUpdatable hang audit HIGH).
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             CompleteScheduledSimulation(forceComplete: false);
             CompleteScheduledMacroSwarmTravel(forceComplete: false);
             if (IsInitialized)
@@ -3556,6 +3561,7 @@ namespace Hecton8.World
             FlushQueuedEcosystemVisuals();
             FaunaSpatialHashRegistry.RunDeferredCleanupFrame();
         }
+
 
         /// <summary>
         /// Resolves predator/prey counts for the 1 km sector containing the supplied world position.
