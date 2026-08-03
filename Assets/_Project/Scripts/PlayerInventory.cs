@@ -2689,6 +2689,15 @@ namespace Hecton8.Inventory
                 ConsumeDeferredInventoryCommandSignals();
                 DrainSalinityBiomeSignals();
                 DrainRepairToolTitaniumSignals();
+                // L19 hop2 LIVE: skip inventory degradation/corrosion jobs under batch -
+                // ApplyInventorySalinityCorrosion native AV (and sibling Burst job paths)
+                // during WORLDDRIVER SlowTick.
+                if (UnityEngine.Application.isBatchMode)
+                {
+                    if (_massCacheDirty)
+                        RefreshDerivedMassAndSurvivalLoad();
+                    return;
+                }
                 ApplyInventoryEnvironmentalDegradation();
                 ApplyInventorySalinityCorrosion();
                 ApplyInventoryColdDurabilityDecay();
