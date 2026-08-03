@@ -3162,6 +3162,19 @@ namespace Hecton8.EditorTools.Diagnostics
         /// </summary>
         private static void TickToolEquip()
         {
+            // L19 hop2 LIVE: batch peel TickToolEquip - native Crash!!! at Latch/ceiling path
+            // (stack: TickToolEquip -> AdvancePhase -> Tick -> Probe.Tick) after STARTERGRANT.
+            // Skip tool slot publish / PlayerToolManager swap under batch so schedule can reach RESULT.
+            if (UnityEngine.Application.isBatchMode)
+            {
+                if (!PhaseCeilingReached())
+                    return;
+                _detail.Clear();
+                _detail.Append("L19 hop2 LIVE: TickToolEquip peeled under batch (native crash path)");
+                Latch(RowTool, RowVerdict.Blocked);
+                EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
+                return;
+            }
             Hecton8.Gameplay.PlayerToolManager manager = _toolManager;
             if (manager == null)
             {
@@ -3360,6 +3373,14 @@ namespace Hecton8.EditorTools.Diagnostics
         /// </summary>
         private static void TickToolUse()
         {
+            // L19 hop2 LIVE: batch peel TickToolUse - depends on equipped tool; skip under batch.
+            if (UnityEngine.Application.isBatchMode)
+            {
+                if (!PhaseCeilingReached())
+                    return;
+                EnterPhase(DrivePhase.ResourceDeplete, CeilingYield());
+                return;
+            }
             _intent.MoveDelta = Vector2.zero;
             _intent.LookDelta = Vector2.zero;
             _intent.VerticalDelta = 0f;
