@@ -275,7 +275,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 // L19 hop2 LIVE: ScheduleParallelFor(PresampleJob) has produced mono_jit_info_table AV
                 // under headless batch probes. Skip Unity job scheduling and emit a flat mid-shelf so
                 // MapMagic can continue without ParallelFor JIT on this path.
-                if (UnityEngine.IsHeadlessBatchProbe())
+                if (IsHeadlessBatchProbe())
                 {
                     for (int i = 0; i < cellCount; i++)
                     {

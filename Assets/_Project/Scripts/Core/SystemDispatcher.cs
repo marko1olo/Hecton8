@@ -1000,6 +1000,8 @@ namespace Hecton8.Core
             {
                 AudioListener.pause = true;
                 AudioListener.volume = 0f;
+                // L19 hop2 LIVE: late-frame StopAudioOutput
+                try { AudioSettings.Mobile.StopAudioOutput(); } catch { }
                 AudioListener[] batchListeners = UnityEngine.Object.FindObjectsByType<AudioListener>(
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None);
