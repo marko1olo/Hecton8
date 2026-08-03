@@ -1,7 +1,6 @@
 // =====================================================================
-// MECHANICAL SPLIT from HectonVoxelEngine.cs — Slice A (no logic change)
-// Date: 2026-08-03 — architecture god-object reduction
-// Original single-file owner retained behavioral authority in HectonVoxelEngine
+// Extracted from HectonVoxelEngine.cs — MC Types only (no logic change)
+// 2026-08-03 architecture Slice A step-2b
 // =====================================================================
 
 // HectonVoxelEngine.cs
