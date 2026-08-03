@@ -23,6 +23,12 @@ namespace Hecton8.Core
 
         public static void FlushPostSimulation()
         {
+            // L19 hop2 LIVE: SignalBus<InputSignal>.FlushPostSimulation → TryAcquireWriteLock
+            // has produced mono_jit_compile_method AV under headless batch probes after WORLDDRIVER/INPUTHOP.
+            // Probe moments already observe input via hop census; skip post-sim snapshot flush under batchmode.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             GlobalSignals.FlushPostSimulation();
         }
 
