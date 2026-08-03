@@ -617,6 +617,10 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            // L19 hop2 LIVE: tether line rendering is presentation-only for hop probes.
+            if (Application.isBatchMode)
+                return;
+
             Material renderMaterial = ResolveRenderMaterial();
             if (renderMaterial == null || _activeInstances.Count == 0)
                 return;
@@ -941,6 +945,10 @@ namespace Hecton8.Physics
 
         private void ScheduleShinobu132CableMock(float fixedDeltaTime, uint frameIndex)
         {
+            // L19 hop2 LIVE: cable mock jobs not required for hop input validation under batchmode.
+            if (Application.isBatchMode)
+                return;
+
             ICablePhysics132Service cableService = _cablePhysics132Service;
             if (_dataVault == null || cableService == null)
                 return;
@@ -1053,6 +1061,13 @@ namespace Hecton8.Physics
 
         private void ScheduleShinobu328TensionMock(float fixedDeltaTime, uint frameIndex)
         {
+            // L19 hop2 LIVE: HarpoonTensionForceJob writes StressStates/PhysicsEvents with
+            // NativeDisableContainerSafetyRestriction aliasing, then PhysX UpdateMassDistribution
+            // ACCESS_VIOLATION on the main thread under -batchmode. Tension mock is not required
+            // for hop input validation.
+            if (Application.isBatchMode)
+                return;
+
             if (_dataVault == null)
                 return;
 
@@ -1193,6 +1208,10 @@ namespace Hecton8.Physics
 
         private void ScheduleShinobu143AupMock(float fixedDeltaTime, uint frameIndex)
         {
+            // L19 hop2 LIVE: AUP tether mock not required for hop input validation under batchmode.
+            if (Application.isBatchMode)
+                return;
+
             if (_dataVault == null)
                 return;
 
