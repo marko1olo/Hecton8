@@ -3527,6 +3527,20 @@ namespace Hecton8.EditorTools.Diagnostics
         /// </summary>
         private static void TickResourceDeplete()
         {
+            // L19 hop2 LIVE: batch peel TickResourceDeplete - native Crash!!! at
+            // PersistentWorldRegistry.TryResolveRegistryChunkId via ApplyNodeDamagePulses
+            // (stack: TickResourceDeplete -> TakeDamage -> RegisterPersistentDepletion).
+            // Skip real node damage under batch so schedule can advance past ResourceDeplete.
+            if (UnityEngine.Application.isBatchMode)
+            {
+                if (!PhaseCeilingReached())
+                    return;
+                _detail.Clear();
+                _detail.Append("L19 hop2 LIVE: TickResourceDeplete peeled under batch (PWR chunk resolve AV)");
+                Latch(RowResource, RowVerdict.Blocked);
+                EnterPhase(DrivePhase.VerbSweep, CeilingYield());
+                return;
+            }
             Hecton8.Scavenging.ResourceNode node = _node;
             if (node == null)
             {
