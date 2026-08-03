@@ -718,7 +718,12 @@ namespace Hecton8.Core
         private static bool _serviceReboundOverflowLogged;
         private static bool _isDispatchingServiceRebounds;
         private static bool _suppressServiceReboundQueueing;
+        // Once-only guard: GameBootstrapper.DisposeSessionNativeStateForShutdown and the
+        // Editor quitting/beforeAssemblyReload handlers can both invoke dispose on the same
+        // static NativeQueue fields during hop2 LIVE teardown (post-RESULT Crash!!!).
+        private static bool _serviceReboundQueuesShutdownDisposed;
         private static GameBootstrapper _bootstrapperRuntime;
+
 
         static GlobalRegistry()
         {
@@ -2903,8 +2908,11 @@ namespace Hecton8.Core
             _inputNullObjectSubstitutionHandedOut = null;
             _vrSomaticNullObjectSubstitutionHandedOut = null;
             DisposeServiceReboundQueuesForShutdown();
+            // Allow a subsequent play session (no domain reload) to dispose freshly created queues.
+            _serviceReboundQueuesShutdownDisposed = false;
             _suppressServiceReboundQueueing = false;
             _resolutionMask = 0u;
+
             _updatables.Clear();
             _fastTickables.Clear();
             _fixedTickables.Clear();
@@ -2928,6 +2936,24 @@ namespace Hecton8.Core
         {
             _suppressServiceReboundQueueing = true;
 
+            // Once-only: playmode exit (GameBootstrapper) and Editor quitting/beforeAssemblyReload
+            // both call this on the same static NativeQueue fields. Second Dispose() free'd already
+            // cleared memory → hop2 LIVE post-RESULT Crash!!! in DisposeServiceReboundQueue.
+            if (_serviceReboundQueuesShutdownDisposed)
+            {
+                // Still clear managed sidecar state so a partial first call cannot leave stale refs.
+                ClearServiceReboundReferenceSlots();
+                _pendingServiceReboundCount = 0;
+                _nextFrameServiceReboundCount = 0;
+                _serviceReboundReferenceWriteIndex = 0;
+                _serviceReboundReferencePendingCount = 0;
+                _serviceReboundOverflowLogged = false;
+                _isDispatchingServiceRebounds = false;
+                return;
+            }
+
+            _serviceReboundQueuesShutdownDisposed = true;
+
             DisposeServiceReboundQueue(ref _pendingServiceRebounds, ref _pendingServiceReboundsSentinelId);
             DisposeServiceReboundQueue(ref _nextFrameServiceRebounds, ref _nextFrameServiceReboundsSentinelId);
 
@@ -2939,6 +2965,7 @@ namespace Hecton8.Core
             _serviceReboundOverflowLogged = false;
             _isDispatchingServiceRebounds = false;
         }
+
 
         private static void DisposeServiceReboundQueue(ref NativeQueue<RegistryEventPayload> queue, ref int sentinelId)
         {
