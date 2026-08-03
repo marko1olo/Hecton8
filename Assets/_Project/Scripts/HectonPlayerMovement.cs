@@ -14626,6 +14626,15 @@ namespace Hecton8.Gameplay
 
         private void ApplyAmbientCurrent(SuitData suit, float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
+            // L19 hop2 LIVE: ApplyMotorAccelerationFromForce → force-packet path has produced
+            // mono jit-info `left < right` AV under headless batch probes after WORLDDRIVER/INPUTHOP.
+            // Ambient current is presentation/feel — skip under batchmode.
+            if (Application.isBatchMode)
+            {
+                _abyssalFlowAdvectionVelocityWS = Vector3.zero;
+                return;
+            }
+
             if (HectonFloatingOrigin.IsShiftInProgress)
             {
                 _abyssalFlowAdvectionVelocityWS = Vector3.zero;
