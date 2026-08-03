@@ -5219,9 +5219,6 @@ namespace Hecton8.Core
 
         private void RunDispatcherUpdate()
         {
-            // L19 hop2 LIVE: batch dispatcher update breadcrumb.
-            if (UnityEngine.Application.isBatchMode)
-                UnityEngine.Debug.Log("[H8_PLAYPROBE] L19 hop2 LIVE: RunDispatcherUpdate enter");
             AdvanceDispatcherFrameId();
             FrameTimeWatchdog.TickMathPrecisionTransition(CurrentFrameIndex);
 #if UNITY_EDITOR
@@ -6574,9 +6571,8 @@ namespace Hecton8.Core
 
         private void RunSlowTick(float deltaTime, bool blockGameplayLanes)
         {
-            // L19 hop2 LIVE: batch RunSlowTick lane breadcrumb.
-            if (UnityEngine.Application.isBatchMode)
-                UnityEngine.Debug.Log("[H8_PLAYPROBE] L19 hop2 LIVE: RunSlowTick enter");
+            // L19 hop2 LIVE: Debug.Log enter breadcrumbs FORBIDDEN under batch -
+            // EditorMonoConsole.FlushLogEntries tlsf_memalign OOM/AV (Crash!!! at 4038 enters).
             if (deltaTime <= 0f || SignalBusRegistry.IsSimulationHalted)
                 return;
 
@@ -6616,10 +6612,6 @@ namespace Hecton8.Core
                                 if (tickable is IBucketedSlowTickable)
                                     continue;
 
-                                // L19 hop2 LIVE: batch SlowTick enter breadcrumb -
-                                // last line before freeze names the hanging ISlowTickable.
-                                if (UnityEngine.Application.isBatchMode)
-                                    UnityEngine.Debug.Log("[H8_PLAYPROBE] L19 hop2 LIVE: SlowTick enter " + tickable.GetType().Name);
                                 tickable.SlowTick();
                                 if (SignalBusRegistry.IsSimulationHalted)
                                     return;
