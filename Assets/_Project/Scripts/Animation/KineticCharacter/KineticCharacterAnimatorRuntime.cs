@@ -433,6 +433,13 @@ namespace Hecton8.Animation.KineticCharacter
             if (_disposed || !_runtimeActive)
                 return;
 
+            // L19 hop2 LIVE: Burst FailOutOfRangeError in EvaluateWallProximityJob /
+            // ProceduralLocomotionPhaseJob / KineticAnimationTelemetryJob under -batchmode
+            // (capacity vs vault buffer length mismatch + incomplete JobHandle). Presentation
+            // animation is not required for hop input validation — soft-disable solver schedule.
+            if (Application.isBatchMode)
+                return;
+
             if (_solverScheduled && !TryFinalizePendingSolverNoWait())
                 return;
 
@@ -585,6 +592,10 @@ namespace Hecton8.Animation.KineticCharacter
         public void LateFrameTick()
         {
             if (_disposed || !_runtimeActive)
+                return;
+
+            // L19 hop2 LIVE: GPU skinning upload is presentation-only; skip under batchmode.
+            if (Application.isBatchMode)
                 return;
 
             TryFinalizePendingSolverNoWait();
