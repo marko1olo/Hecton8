@@ -256,87 +256,116 @@ namespace MapMagic.Nodes.MatrixGenerators
                 NativeArray<PresampledMacroNode> presampledNodes = new NativeArray<PresampledMacroNode>(
                     presampledCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
-                var presampleJob = new HectonSandboxAbyssalShelfPresampleJob
-                {
-                    PresampledNodes = presampledNodes,
-                    Parameters = parameters,
-                    PresampledWidth = presampledWidth,
-                    WorldOriginAup = worldOriginAup,
-                    CellSizeMeters = sampleCellSizeMeters
-                };
-                
-                JobHandle presampleHandle = presampleJob.Schedule(presampledCount, ResolveBatchCount(presampledCount));
+                NativeArray<float> finalHeights;
+                double completeMilliseconds;
 
-                var differentialJob = new HectonSandboxAbyssalShelfDifferentialJob
+                // L19 hop2 LIVE: ScheduleParallelFor(PresampleJob) has produced mono_jit_info_table AV
+                // under headless batch probes. Skip Unity job scheduling and emit a flat mid-shelf so
+                // MapMagic can continue without ParallelFor JIT on this path.
+                if (UnityEngine.Application.isBatchMode)
                 {
-                    PresampledNodes = presampledNodes,
-                    OutputHeights01 = rawHeights,
-                    OutputReef = reefArr,
-                    OutputLake = lakeArr,
-                    OutputSteepRock = steepRockArr,
-                    OutputContinentality = continentalityArr,
-                    OutputLedge = ledgeArr,
-                    OutputCaveEntrance = caveEntranceArr,
-                    OutputBrinePool = brinePoolArr,
-                    Parameters = parameters,
-                    Width = width,
-                    PresampledWidth = presampledWidth,
-                    WorldOriginAup = worldOriginAup,
-                    CellSizeMeters = sampleCellSizeMeters
-                };
-
-                generationHandle = differentialJob.Schedule(cellCount, ResolveBatchCount(cellCount), presampleHandle);
-                
-                // Dispose of the temp array after the generation handle completes
-                generationHandle = presampledNodes.Dispose(generationHandle);
-                generationHandleScheduled = true;
-                NativeArray<float> finalHeights = rawHeights;
-
-                if (enableSlopeQuantization && width > 2 && height > 2)
-                {
-                    float plateauTargetAngle = math.clamp(plateauTargetAngleDegrees, 1f, 60f);
-                    float plateauSourceAngle = math.clamp(plateauSourceAngleDegrees, plateauTargetAngle + 0.001f, 45f);
-                    float cliffSourceAngle = math.clamp(cliffSourceAngleDegrees, plateauSourceAngle + 0.001f, 62f);
-                    double centerAupX = worldOriginAup.GridX * (double)AbsoluteUniversePosition.CellSizeMeters +
-                        worldOriginAup.LocalX +
-                        dst.worldSize.x * 0.5;
-                    double centerAupZ = worldOriginAup.GridZ * (double)AbsoluteUniversePosition.CellSizeMeters +
-                        worldOriginAup.LocalZ +
-                        dst.worldSize.z * 0.5;
-                    float noisyCliffTargetAngle = HectonSandboxAbyssalShelfMath.EvaluateSlopeTargetAngleDegrees(
-                        new double2(centerAupX, centerAupZ),
-                        in parameters);
-                    float cliffTargetLimit = math.min(math.max(22f, cliffTargetAngleDegrees), 62f);
-                    float cliffTargetAngle = math.clamp(math.min(noisyCliffTargetAngle, cliffTargetLimit), 22f, 38f);
-                    float cliffRampEndAngle = math.min(89f, cliffSourceAngle + math.max(1f, 62f - cliffSourceAngle));
-                    var quantizeJob = new HectonSandboxSlopeQuantizationJob
+                    for (int i = 0; i < cellCount; i++)
                     {
-                        InputHeights01 = rawHeights,
-                        OutputHeights01 = quantizedHeights,
+                        rawHeights[i] = 0.5f;
+                        reefArr[i] = 0f;
+                        lakeArr[i] = 0f;
+                        steepRockArr[i] = 0f;
+                        continentalityArr[i] = 0f;
+                        ledgeArr[i] = 0f;
+                        caveEntranceArr[i] = 0f;
+                        brinePoolArr[i] = 0f;
+                    }
+
+                    if (presampledNodes.IsCreated)
+                        presampledNodes.Dispose();
+                    generationHandleScheduled = false;
+                    finalHeights = rawHeights;
+                    completeMilliseconds = 0.0;
+                }
+                else
+                {
+                    var presampleJob = new HectonSandboxAbyssalShelfPresampleJob
+                    {
+                        PresampledNodes = presampledNodes,
+                        Parameters = parameters,
+                        PresampledWidth = presampledWidth,
+                        WorldOriginAup = worldOriginAup,
+                        CellSizeMeters = sampleCellSizeMeters
+                    };
+                
+                    JobHandle presampleHandle = presampleJob.Schedule(presampledCount, ResolveBatchCount(presampledCount));
+
+                    var differentialJob = new HectonSandboxAbyssalShelfDifferentialJob
+                    {
+                        PresampledNodes = presampledNodes,
+                        OutputHeights01 = rawHeights,
+                        OutputReef = reefArr,
+                        OutputLake = lakeArr,
+                        OutputSteepRock = steepRockArr,
+                        OutputContinentality = continentalityArr,
+                        OutputLedge = ledgeArr,
+                        OutputCaveEntrance = caveEntranceArr,
+                        OutputBrinePool = brinePoolArr,
+                        Parameters = parameters,
                         Width = width,
-                        Height = height,
-                        CellSizeMeters = (float)math.max(0.001, sampleCellSizeMeters),
-                        LowWorldY = parameters.LowWorldY,
-                        HighWorldY = parameters.HighWorldY,
-                        PlateauSourceGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(plateauSourceAngle),
-                        PlateauTargetGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(plateauTargetAngle),
-                        CliffSourceGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(cliffSourceAngle),
-                        CliffRampEndGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(cliffRampEndAngle),
-                        CliffTargetGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(cliffTargetAngle),
-                        Strength = slopeQuantizationStrength
+                        PresampledWidth = presampledWidth,
+                        WorldOriginAup = worldOriginAup,
+                        CellSizeMeters = sampleCellSizeMeters
                     };
 
-                    generationHandle = quantizeJob.Schedule(cellCount, ResolveBatchCount(cellCount), generationHandle);
-                    finalHeights = quantizedHeights;
-                }
+                    generationHandle = differentialJob.Schedule(cellCount, ResolveBatchCount(cellCount), presampleHandle);
+                
+                    // Dispose of the temp array after the generation handle completes
+                    generationHandle = presampledNodes.Dispose(generationHandle);
+                    generationHandleScheduled = true;
+                    finalHeights = rawHeights;
 
-                long completeStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-                DispatcherJobSwap.ForceCompleteFromWorkerThread(ref generationHandle);
-                generationHandleScheduled = false;
-                double completeMilliseconds =
-                    (System.Diagnostics.Stopwatch.GetTimestamp() - completeStartTimestamp) *
-                    1000.0 /
-                    System.Diagnostics.Stopwatch.Frequency;
+                    if (enableSlopeQuantization && width > 2 && height > 2)
+                    {
+                        float plateauTargetAngle = math.clamp(plateauTargetAngleDegrees, 1f, 60f);
+                        float plateauSourceAngle = math.clamp(plateauSourceAngleDegrees, plateauTargetAngle + 0.001f, 45f);
+                        float cliffSourceAngle = math.clamp(cliffSourceAngleDegrees, plateauSourceAngle + 0.001f, 62f);
+                        double centerAupX = worldOriginAup.GridX * (double)AbsoluteUniversePosition.CellSizeMeters +
+                            worldOriginAup.LocalX +
+                            dst.worldSize.x * 0.5;
+                        double centerAupZ = worldOriginAup.GridZ * (double)AbsoluteUniversePosition.CellSizeMeters +
+                            worldOriginAup.LocalZ +
+                            dst.worldSize.z * 0.5;
+                        float noisyCliffTargetAngle = HectonSandboxAbyssalShelfMath.EvaluateSlopeTargetAngleDegrees(
+                            new double2(centerAupX, centerAupZ),
+                            in parameters);
+                        float cliffTargetLimit = math.min(math.max(22f, cliffTargetAngleDegrees), 62f);
+                        float cliffTargetAngle = math.clamp(math.min(noisyCliffTargetAngle, cliffTargetLimit), 22f, 38f);
+                        float cliffRampEndAngle = math.min(89f, cliffSourceAngle + math.max(1f, 62f - cliffSourceAngle));
+                        var quantizeJob = new HectonSandboxSlopeQuantizationJob
+                        {
+                            InputHeights01 = rawHeights,
+                            OutputHeights01 = quantizedHeights,
+                            Width = width,
+                            Height = height,
+                            CellSizeMeters = (float)math.max(0.001, sampleCellSizeMeters),
+                            LowWorldY = parameters.LowWorldY,
+                            HighWorldY = parameters.HighWorldY,
+                            PlateauSourceGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(plateauSourceAngle),
+                            PlateauTargetGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(plateauTargetAngle),
+                            CliffSourceGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(cliffSourceAngle),
+                            CliffRampEndGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(cliffRampEndAngle),
+                            CliffTargetGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(cliffTargetAngle),
+                            Strength = slopeQuantizationStrength
+                        };
+
+                        generationHandle = quantizeJob.Schedule(cellCount, ResolveBatchCount(cellCount), generationHandle);
+                        finalHeights = quantizedHeights;
+                    }
+
+                    long completeStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                    DispatcherJobSwap.ForceCompleteFromWorkerThread(ref generationHandle);
+                    generationHandleScheduled = false;
+                    completeMilliseconds =
+                        (System.Diagnostics.Stopwatch.GetTimestamp() - completeStartTimestamp) *
+                        1000.0 /
+                        System.Diagnostics.Stopwatch.Frequency;
+                }
                 if (completeMilliseconds > SyncCompletionWarningMilliseconds)
                 {
                     GlobalTelemetryBus.PublishPerformanceWarning(
