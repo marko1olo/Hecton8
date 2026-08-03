@@ -3477,7 +3477,8 @@ namespace Hecton8.Tools
                 // (CurrentTool stayed null despite toolSlotsWithAvailableTool=4 and swap command).
                 // Never steal once the registry is ready, and never Destroy(gameObject) here — that
                 // would delete the tool instance this component is attached to.
-                if (GlobalRegistry.IsReady || IsAttachedToPlayerToolPrefab())
+                if (GlobalRegistry.Phase == GlobalRegistry.RegistryPhase.Ready ||
+                    IsAttachedToPlayerToolPrefab())
                 {
                     AbortServiceOwnershipWithoutDestroyingHost();
                     return false;
@@ -3562,7 +3563,8 @@ namespace Hecton8.Tools
             if (!ReferenceEquals(staleRuntime, null))
             {
                 // Ready-lock can reject Unregister; treat as "existing owner stays" and abort this instance.
-                if (GlobalRegistry.IsReady || IsAttachedToPlayerToolPrefab())
+                if (GlobalRegistry.Phase == GlobalRegistry.RegistryPhase.Ready ||
+                    IsAttachedToPlayerToolPrefab())
                 {
                     AbortServiceOwnershipWithoutDestroyingHost();
                     return true;
