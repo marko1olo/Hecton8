@@ -4283,6 +4283,13 @@ namespace Hecton8.EditorTools.Diagnostics
 
         private static void WriteVerbSweepLog(bool truncated)
         {
+            // L19 hop2 LIVE: LogVerbRow/WriteVerbSweepLog mono fatal under batch after VERBSWEEP complete.
+            if (UnityEngine.Application.isBatchMode)
+            {
+                Debug.Log("[H8_WORLDDRIVER] VERBSWEEP " + (truncated ? "TRUNCATED" : "complete") +
+                    " batch-peel (skipped per-verb LogVerbRow)");
+                return;
+            }
             int raised = 0;
             int arrived = 0;
             int commanded = 0;
@@ -4377,6 +4384,9 @@ namespace Hecton8.EditorTools.Diagnostics
 
         private static void LogVerbRow(int verb)
         {
+            // L19 hop2 LIVE: skip per-verb row log under batch (mono fatal in StringBuilder/Debug.Log path).
+            if (UnityEngine.Application.isBatchMode)
+                return;
             byte flags = _verbFlags[verb];
             byte expected = VerbExpectedCommand(verb);
             bool raisedVerb = (flags & VerbFlagRaised) != 0;
