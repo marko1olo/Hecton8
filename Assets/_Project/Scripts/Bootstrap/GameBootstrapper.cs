@@ -8383,6 +8383,11 @@ namespace Hecton8.Bootstrap
 
                 if (playerController != null)
                     playerController.enabled = true;
+
+                // L19 hop2 LIVE: SoftMute after ActivatePlayer - player AudioListener
+                // re-enables on SetActive; keep-one muted sink before next audio tick.
+                if (Application.isBatchMode || _headlessBootMode)
+                    SoftMuteAudioForBatchProbe();
             }
             finally
             {
