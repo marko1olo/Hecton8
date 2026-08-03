@@ -2533,28 +2533,6 @@ namespace Hecton8.Core
                 _masterDependencySystemIndices[i] = -1;
             }
 
-            // L19 hop2 LIVE: Kahn sort first-touches IDispatcherSystem.GetDependencyCount /
-            // GetDependencyHash via interface dispatch and has produced mono_jit_compile_method AV
-            // under headless batch probes after WORLDDRIVER/INPUTHOP (cs:2542). Registration order
-            // is enough for probe moment census - skip dependency-edge walk under batchmode only.
-            if (Application.isBatchMode)
-            {
-                int batchSortedCount = 0;
-                for (int i = 0; i < count; i++)
-                {
-                    IDispatcherSystem system = GetMasterRegisteredSystemAt(i);
-                    if (system == null)
-                        continue;
-
-                    _masterSortedSystems[batchSortedCount++] = system;
-                }
-
-                _masterSortedSystemCount = batchSortedCount;
-                _masterTopologyDirty = false;
-                _masterTopologyValid = true;
-                return;
-            }
-
             for (int i = 0; i < count; i++)
             {
                 IDispatcherSystem system = GetMasterRegisteredSystemAt(i);
