@@ -3047,6 +3047,11 @@ namespace Hecton8.World
         /// </summary>
         public void LateFrameTick()
         {
+            // L19 hop2 LIVE: batch peel LateFrameTick - multi-job Completes + buffer rebuild +
+            // tile-cache disposal hang/assert headless after VERBSWEEP (IUpdatable hang audit HIGH).
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             _insideLateFrameJobSwap = true;
             try
             {
@@ -3105,6 +3110,7 @@ namespace Hecton8.World
 
             TryApplyPendingWorldOffset();
         }
+
 
         /// <summary>Active surface instance matrix buffer currently owned by this bridge.</summary>
         public GraphicsBuffer SurfaceInstanceMatrixBuffer => _surfaceInstanceBuffer;
