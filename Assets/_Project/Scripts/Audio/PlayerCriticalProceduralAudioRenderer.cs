@@ -3326,6 +3326,11 @@ namespace Hecton8.Audio
         /// <param name="deltaTime">Render-step delta time from the tick manager.</param>
         public void Tick(float deltaTime)
         {
+            // L19 hop2 LIVE: ACCESS_VIOLATION in Tick after WORLDDRIVER begin under -batchmode
+            // (FMOD/procedural audio presentation path). Hop probes only need locomotion intent.
+            if (Application.isBatchMode)
+                return;
+
             if (deltaTime <= 0f)
                 return;
 
@@ -3486,6 +3491,10 @@ namespace Hecton8.Audio
 
         public void LateFrameTick()
         {
+            // L19 hop2 LIVE: presentation audio flushes not required for hop input validation.
+            if (Application.isBatchMode)
+                return;
+
             FlushQueuedListenerReverbProfile();
             FlushQueuedProceduralPingTriggers();
             FlushQueuedStructuralStressHaptic();
