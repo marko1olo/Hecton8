@@ -383,6 +383,9 @@ namespace Hecton8.Atmosphere
 
         public void FixedTick(float fixedDeltaTime)
         {
+            // L19 hop2 LIVE: GasDynamicsStepJob buffer-alias spam hangs FixedTick under batch.
+            if (UnityEngine.Application.isBatchMode)
+                return;
             if (fixedDeltaTime <= 0f)
                 return;
 
@@ -432,6 +435,9 @@ namespace Hecton8.Atmosphere
 
         public void PostFixedTick(float fixedDeltaTime)
         {
+            // L19 hop2 LIVE: no gas step complete under batch.
+            if (UnityEngine.Application.isBatchMode)
+                return;
             CompleteScheduledStepInPostFixed();
         }
 
@@ -2094,6 +2100,9 @@ namespace Hecton8.Atmosphere
 
         private void ScheduleStep(float deltaTime)
         {
+            // L19 hop2 LIVE: skip GasDynamicsStepJob schedule under batch (RoomO2Back alias hang).
+            if (UnityEngine.Application.isBatchMode)
+                return;
             if (_stepRunning || _stepScheduled || !IsInitialized)
                 return;
 
