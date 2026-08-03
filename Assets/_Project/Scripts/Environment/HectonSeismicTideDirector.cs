@@ -1363,6 +1363,11 @@ namespace Hecton8.Environment
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            // L19 hop2 LIVE: batch peel Tick - EvaluateAndPublish/ScheduleSeismicEvaluation hang headless
+            // after STARTERGRANT (main IUpdatable lane breadcrumb ENTER:HectonSeismicTideDirector).
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             if (!_isInitialized)
                 return;
 
@@ -1375,6 +1380,10 @@ namespace Hecton8.Environment
         /// <inheritdoc />
         public void SlowTick()
         {
+            // L19 hop2 LIVE: batch peel SlowTick - EvaluateAndPublish + telemetry hang headless.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             if (!_isInitialized)
                 return;
 
@@ -1389,6 +1398,10 @@ namespace Hecton8.Environment
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            // L19 hop2 LIVE: batch peel LateFrameTick - seismic job complete + visual sync hang headless.
+            if (UnityEngine.Application.isBatchMode)
+                return;
+
             CompleteSeismicEvaluationJob(force: false);
             if (TryFinalizeCelestialMechanicsJobNoWait(out CelestialStateDTO state, out EnvironmentStateDTO environmentState, out CelestialFlowModifierDTO flowModifier))
             {
@@ -1398,6 +1411,7 @@ namespace Hecton8.Environment
 
             FlushSeismicVisualSync();
         }
+
 
         private void OnEnable()
         {
