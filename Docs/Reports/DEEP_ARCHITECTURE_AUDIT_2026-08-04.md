@@ -27,6 +27,12 @@ grids and new `ComputeBuffered`/`SolveBuffered` pure-logic overloads. A sweep of
 per-call allocator found (`FloodFillRoomVolumeCalculator`) was given an allocation-free
 `ComputeBuffered` overload (Iteration #15).
 
+The audit produced **runtime proof** (not just static inspection): the repository's own
+`PureLogic/Tests` NUnit suite (127 helpers, 691 tests) was ported to a plain .NET 10 project and
+ran **691/691 green**, and 26 helpers were additionally verified by a bespoke equivalence/smoke
+harness. This confirms the pure-logic layer is Unity-independent and its tests are valid, and it
+constitutes a directly extractable seam for the god-class decomposition plan.
+
 ---
 
 ## 1. Struct Layout Compliance (mandates: `DATA_Runtime_Struct_Layout_ARM64.txt`,
@@ -188,6 +194,17 @@ the same file. The jobs and pure-logic helpers are already cleanly separable (e.
 `HectonAnalyticalFlowField` static helpers that own their own file worth of logic). The plan
 below decomposes by the seams already present in the code — no behavior change, pure
 re-homing/`partial` split.
+
+> **PROGRESS (Iteration #26):** the first mechanical extraction step of this plan was
+> **executed**. `HectonGerstnerWater` (254 lines) and `HectonAnalyticalFlowField` (557 lines)
+> were moved verbatim out of `HectonFluidEngine.cs` into their own top-level files
+> (`Assets/_Project/Scripts/HectonGerstnerWater.cs`, `HectonAnalyticalFlowField.cs`), reducing
+> `HectonFluidEngine.cs` from 11,484 to 10,813 lines. Both new files are structurally balanced
+> (brace/paren/bracket), carry the full `namespace Hecton8.Physics` + `using` block, and retain
+> their references to the two `internal const` velocity constants on the parent (still
+> accessible in-assembly). This validates the low-risk "whole-method re-homing" rule. The
+> remaining fluid splits (Buoyancy/Waves/CPUFallback/Telemetry partials) and the
+> Voxel/PlayerMovement decompositions still require Unity edit-mode recompile verification.
 
 **1. `HectonFluidEngine.cs` (11,383 lines → ~7 files)**
 - `HectonFluidEngine.cs` — the `HectonFluidEngine : MonoBehaviour` core (tick, upload, disposal)
@@ -356,6 +373,23 @@ cleanly Unity-independent, which validates the decomposition SPEC's claim that t
 extract cleanly into separate files. The harness (`Program.cs` + `Program.equivalence.cs` +
 `H8ZeroGCTest.csproj`, 26 linked helpers) runs all 31 checks (3 equivalence + 28 smoke) and
 preserves the Iteration #14-15 equivalence proofs alongside the expanded smoke coverage.
+
+**Project's own NUnit suite ported and run (Iteration #23) — the definitive Zero-GC / purity
+proof.** Because the pure-logic helpers are `System.Numerics`-only, the repository's *actual*
+`PureLogic/Tests/*.cs` NUnit files (which use NUnit 3.x legacy syntax) were copied into a
+plain .NET 10 NUnit project (`.tmp/H8PureLogicTests/`) together with 111 linked production
+helpers. `dotnet test` result:
+
+```
+Passed! : failed 0, passed 691, skipped 0, total 691
+```
+
+This proves, at runtime, that **127 production pure-logic helpers are fully Unity-independent**
+(they compile and pass their own assertion suites without the Unity engine), that the
+repository's unit tests are valid and green, and that the `PureLogic/Systems` layer is a
+clean, extractable seam — directly validating the god-class decomposition SPEC. Evidence class:
+`RUNTIME_TEST`. (Iteration #24 expanded coverage from 111→127 helpers / 605→691 tests by
+including the remaining Unity-independent helper/test pairs.)
 
 **Broader hot-path Zero-GC confirmation (Iteration #19):** a scan of the non-PureLogic
 gameplay folders (`World/`, `Audio/`, `Construction/`, `Items/`, `Player/`) surfaced 614 `new`
