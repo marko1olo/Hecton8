@@ -353,7 +353,9 @@ harness and passed finite-value / deterministic smoke tests with correct value s
 `LunarPhaseCalculator` returns 0→180° across a lunar day). Combined with the 3 equivalence tests,
 **26 pure-logic helpers now run in plain .NET** — confirming the `PureLogic/Systems` layer is
 cleanly Unity-independent, which validates the decomposition SPEC's claim that these helpers
-extract cleanly into separate files.
+extract cleanly into separate files. The harness (`Program.cs` + `Program.equivalence.cs` +
+`H8ZeroGCTest.csproj`, 26 linked helpers) runs all 31 checks (3 equivalence + 28 smoke) and
+preserves the Iteration #14-15 equivalence proofs alongside the expanded smoke coverage.
 
 **Broader hot-path Zero-GC confirmation (Iteration #19):** a scan of the non-PureLogic
 gameplay folders (`World/`, `Audio/`, `Construction/`, `Items/`, `Player/`) surfaced 614 `new`
