@@ -262,9 +262,6 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
             _debugTotalPoints = _pointCount;
 #endif
-
-            Hecton8.Core.H8Debug.Log($"[ProximityColliderSystem] Initialized with {_pointCount} points. " +
-                      $"Activate: {activateRadius}m, Deactivate: {deactivateRadius}m");
         }
 
         /// <summary>
