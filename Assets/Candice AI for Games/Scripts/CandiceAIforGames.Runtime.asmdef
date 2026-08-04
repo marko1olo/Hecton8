@@ -1,16 +1,17 @@
 {
-    "name": "CandiceAIforGames.Runtime",
-    "rootNamespace": "CandiceAIforGames",
-    "references": [
-        "Unity.TextMeshPro"
-    ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": false,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
+  "name": "CandiceAIforGames.Runtime",
+  "rootNamespace": "CandiceAIforGames",
+  "references": [
+    "Unity.TextMeshPro",
+    "Hecton8.Core"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
 }
