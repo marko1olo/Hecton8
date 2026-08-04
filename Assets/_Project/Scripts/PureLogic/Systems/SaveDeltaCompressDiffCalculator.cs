@@ -5,7 +5,8 @@ namespace Hecton8.PureLogic.Systems
 {
     /// <summary>
     /// Pure C# mathematical implementation for SaveDeltaCompressDiffCalculator.
-    /// Extracted from SaveBinaryPayloadCodec.cs. Fully stateless and allocation-free.
+    /// Extracted from SaveBinaryPayloadCodec.cs. Stateless; allocates patch
+    /// buffers on the cold save path (not a per-frame route).
     /// </summary>
     public static class SaveDeltaCompressDiffCalculator
     {

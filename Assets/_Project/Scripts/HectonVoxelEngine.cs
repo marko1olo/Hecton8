@@ -7262,6 +7262,10 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             }
         }
 
+        // Release the persistent native collider-bake scratch buffers on teardown so they do not
+        // leak across OnDisable/OnDestroy and across editor hot-reload of the component.
+        _colliderBakeScratch.Dispose();
+
     }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -13271,8 +13275,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     // between, so a second chunk iteration can never observe a half-filled buffer - continuations on
     // the main thread only interleave at await points. Do not introduce an await between the fill
     // loops and the SetVertices/SetTriangles calls without giving each in-flight bake its own buffer.
-    private Vector3[] _colliderBakePositionScratch = System.Array.Empty<Vector3>();
-    private int[] _colliderBakeIndexScratch = System.Array.Empty<int>();
+    // The scratch source fill now runs in Burst jobs over persistent native buffers (DOD) instead of
+    // managed per-chunk loops; the managed bridge is only the final Mesh hand-off.
+    private Hecton8.Physics.ColliderBakePositionScratch _colliderBakeScratch;
 
     async Awaitable<bool> ApplySurfaceNetsColliderMeshesAsync(
         HectonVoxelVolume volume,
@@ -13417,29 +13422,16 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             {
                 // Reused scratch, not per-chunk allocation. See the field declarations for the
                 // no-await-between-fill-and-consume invariant this relies on.
-                if (_colliderBakePositionScratch.Length < vertCount)
-                    _colliderBakePositionScratch = new Vector3[math.ceilpow2(vertCount)];
-                if (_colliderBakeIndexScratch.Length < indexCount)
-                    _colliderBakeIndexScratch = new int[math.ceilpow2(indexCount)];
-
-                Vector3[] positions = _colliderBakePositionScratch;
-                for (int i = 0; i < vertCount; i++)
-                {
-                    positions[i] = colliderVertices[i].Position;
-                }
-
-                int[] indices = _colliderBakeIndexScratch;
-                for (int i = 0; i < indexCount; i++)
-                {
-                    indices[i] = (int)colliderIndices[i];
-                }
-
-                // Length-bounded overloads are mandatory here: the scratch arrays are sized to the
-                // high-water mark, so the array-only overloads would upload stale trailing elements
-                // from a previous, larger chunk.
-                chunkBakeMesh.Clear(false);
-                chunkBakeMesh.SetVertices(positions, 0, vertCount);
-                chunkBakeMesh.SetTriangles(indices, 0, indexCount, 0);
+                // The scratch source fill now runs in Burst jobs over persistent native buffers (DOD)
+                // instead of managed per-chunk loops; EnsureCapacity grows monotonically to the
+                // high-water mark and ApplyToMesh keeps the length-bounded SetVertices/SetTriangles
+                // overloads so stale trailing elements from a previous, larger chunk are never uploaded.
+                _colliderBakeScratch.FillAndApplyToMesh(
+                    chunkBakeMesh,
+                    colliderVertices,
+                    colliderIndices,
+                    vertCount,
+                    indexCount);
 
                 UnityEngine.EntityId bakeMeshEntityId = chunkBakeMesh.GetEntityId();
                 await Awaitable.BackgroundThreadAsync();

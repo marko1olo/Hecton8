@@ -7,7 +7,7 @@ namespace Hecton8.Graphics
     /// Runtime Data Transfer Object for Data-Driven Visual Tuning.
     /// Strictly ARM64 aligned (size must be multiple of 8, float4 first).
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 4)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct VisualTuningState
     {
         // 16 bytes each

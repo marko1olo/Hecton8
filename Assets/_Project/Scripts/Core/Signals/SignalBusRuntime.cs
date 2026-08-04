@@ -400,7 +400,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const int ParallelWriterBudgetLength = 2;
 
         private static global::Hecton8.Core.MpscSignalRingBuffer<T> _ring;
-        private static NativeArray<int> _parallelWriterBudget;
+        private static VaultGenerationHandle<int> _parallelWriterBudgetHandle;
         private static VaultGenerationHandle<T> _frameSnapshotHandle;
         private static IDataVault _frameSnapshotVault;
         private static VaultGenerationHandle<T> _frameSnapshotActiveWriteHandle;
@@ -489,7 +489,9 @@ namespace Hecton8.Core.Contracts.Signals
             get
             {
                 EnsureInitialized();
-                return _parallelWriterBudget;
+                if (_frameSnapshotVault != null && _frameSnapshotVault.TryResolveHandle(in _parallelWriterBudgetHandle, out NativeArray<int> budget))
+                    return budget;
+                return default;
             }
         }
 
@@ -630,12 +632,18 @@ namespace Hecton8.Core.Contracts.Signals
                 return;
             }
 
-            _parallelWriterBudget = H8Memory.Allocate<int>(
-                ParallelWriterBudgetLength,
-                Hecton8.Core.Memory.SystemID.CoreDataVault,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD NATIVE: NativeArray<int>[2] via H8Memory - per-lane writer budget/drop counter - owner: SignalBus<T>
-            if (!_parallelWriterBudget.IsCreated)
+            if (_frameSnapshotVault != null)
+            {
+                uint hash = _laneHash != 0u ? _laneHash : ComputeTypeHash();
+                uint id = 0x80000000u | (hash & SnapshotBufferIdMask);
+                _parallelWriterBudgetHandle = _frameSnapshotVault.EnsureGenerationHandle<int>(
+                    (BufferID)unchecked((int)id),
+                    ParallelWriterBudgetLength,
+                    Hecton8.Core.Memory.SystemID.CoreDataVault,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            if (_parallelWriterBudgetHandle.BufferID == 0u)
             {
                 _ring.Dispose();
                 _ring = default;
@@ -1319,11 +1327,10 @@ namespace Hecton8.Core.Contracts.Signals
                 _ring = default;
             }
 
-            if (_parallelWriterBudget.IsCreated)
+            if (_frameSnapshotVault != null && _parallelWriterBudgetHandle.BufferID != 0u)
             {
-                H8Memory.Release(
-                    ref _parallelWriterBudget,
-                    Hecton8.Core.Memory.SystemID.CoreDataVault);
+                _frameSnapshotVault.ReleaseBuffer(in _parallelWriterBudgetHandle);
+                _parallelWriterBudgetHandle = default;
             }
 
             ReleaseFrameSnapshotBuffer();
@@ -1375,10 +1382,10 @@ namespace Hecton8.Core.Contracts.Signals
 
         private static unsafe int ConsumeParallelWriterDropsAndResetBudget()
         {
-            if (!_parallelWriterBudget.IsCreated)
+            if (_frameSnapshotVault == null || !_frameSnapshotVault.TryResolveHandle(in _parallelWriterBudgetHandle, out NativeArray<int> budgetArray))
                 return 0;
 
-            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_parallelWriterBudget);
+            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(budgetArray);
             int dropped = Interlocked.Exchange(ref budget[ParallelWriterBudgetDroppedIndex], 0);
             Volatile.Write(ref budget[ParallelWriterBudgetRemainingIndex], ResolveParallelWriterBudget());
             return dropped < 0 ? int.MaxValue : dropped;
@@ -1386,10 +1393,10 @@ namespace Hecton8.Core.Contracts.Signals
 
         private static unsafe void ResetParallelWriterBudget()
         {
-            if (!_parallelWriterBudget.IsCreated)
+            if (_frameSnapshotVault == null || !_frameSnapshotVault.TryResolveHandle(in _parallelWriterBudgetHandle, out NativeArray<int> budgetArray))
                 return;
 
-            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_parallelWriterBudget);
+            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(budgetArray);
             Volatile.Write(ref budget[ParallelWriterBudgetRemainingIndex], ResolveParallelWriterBudget());
             Volatile.Write(ref budget[ParallelWriterBudgetDroppedIndex], 0);
         }

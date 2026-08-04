@@ -663,6 +663,9 @@ namespace Hecton8.Physics
         private Rigidbody[] _trackedBodies = new Rigidbody[MaxTrackedBodies];
         // COLD ALLOC: RigidbodyState[512 initial] â€” per-body runtime state and compensation flags â€” owner: GlobalPhysicsStateManager
         private RigidbodyState[] _bodyStates = new RigidbodyState[MaxTrackedBodies];
+        // COLD ALLOC: AupSyncFenceEntry[300] — 300-frame origin shift sync fence — owner: GlobalPhysicsStateManager
+        private readonly AupSyncFenceEntry[] _syncFenceRing = new AupSyncFenceEntry[300];
+        private int _syncFenceRingCursor;
         // COLD ALLOC: PhysicsConnection[128] â€” tracked tether/dock connection registry â€” owner: GlobalPhysicsStateManager
         private readonly PhysicsConnection[] _connections = new PhysicsConnection[MaxTrackedConnections];
         // COLD ALLOC: int[384] - previous-frame connection lock body indices for O(k) ref clearing - owner: GlobalPhysicsStateManager
@@ -1881,8 +1884,21 @@ namespace Hecton8.Physics
             }
         }
 
+        private struct AupSyncFenceEntry
+        {
+            public uint ShiftFrameId;
+            public uint FenceResolutionFrame;
+        }
+
         private void CommitTrackedBodiesForOriginShiftInternal(Vector3 shiftOffset)
         {
+            _syncFenceRingCursor = (_syncFenceRingCursor + 1) % 300;
+            _syncFenceRing[_syncFenceRingCursor] = new AupSyncFenceEntry
+            {
+                ShiftFrameId = (uint)SystemDispatcher.CurrentFrameIndex,
+                FenceResolutionFrame = (uint)SystemDispatcher.CurrentFrameIndex + 300
+            };
+
             CompletePhysicsCullingJobForStateMutationBarrier(discardResults: true);
             if (!_lastValidPositions.IsCreated || _trackedBodyCount <= 0 || shiftOffset.sqrMagnitude <= 0.000001f)
                 return;
@@ -1943,6 +1959,9 @@ namespace Hecton8.Physics
                     bodyState.HasLastValidPosition = 1;
                     if (TryResolveAupFromRuntimeOrigin(targetPosition, out AbsoluteUniversePosition targetAup))
                     {
+                        targetAup.LocalX = math.round(targetAup.LocalX * 1000f) / 1000f;
+                        targetAup.LocalY = math.round(targetAup.LocalY * 1000f) / 1000f;
+                        targetAup.LocalZ = math.round(targetAup.LocalZ * 1000f) / 1000f;
                         bodyState.LastValidAup = targetAup;
                         bodyState.HasLastValidAup = 1;
                         if (rigidbodyAupsLocked && (uint)i < (uint)rigidbodyAups.Length)

@@ -2407,6 +2407,7 @@ namespace Hecton8.Physics
             DisposePrebakedVectorNoiseField();
             DisposeNativeArrays();
             DisposeFluidAdvectionState();
+            _cpuFluidSimulationFallback.Dispose();
             _fluidSovereigntyTelemetry.Release();
             _fluidSovereigntyTelemetryCursor.Release();
             ResetOceanAdapterVaultRoute();
@@ -3642,46 +3643,13 @@ namespace Hecton8.Physics
             }
         }
 
-        /// <summary>Reusable 3D velocity/force/pressure grids for the GPU-less CPU fluid simulation
-        /// fallback. Allocated once at grid resolution and reused across frames so the low tier
-        /// stays within the Zero-GC hot-path budget.</summary>
-        private float[,,] _cpuFallbackGridVelX;
-        private float[,,] _cpuFallbackGridVelY;
-        private float[,,] _cpuFallbackGridVelZ;
-        private float[,,] _cpuFallbackGridFx;
-        private float[,,] _cpuFallbackGridFy;
-        private float[,,] _cpuFallbackGridFz;
-        private Vector3[,,] _cpuFallbackGridVorticity;
-        private float[,,] _cpuFallbackGridVorticityMag;
-        private float[,,] _cpuFallbackGridDivergence;
-        private float[,,] _cpuFallbackGridPressureA;
-        private float[,,] _cpuFallbackGridPressureB;
-
         /// <summary>
-        /// Ensures the reusable 3D CPU-fallback grids are allocated to the given grid dimension n,
-        /// allocating only when they are missing or too small (once at first use / resolution
-        /// change). Mirrors EnsureCpuFallbackAdvectionVelocityArrays: cold allocation, never
-        /// per-frame once sized.
+        /// DOD (Burst) CPU fluid fallback. Owns all persistent native buffers (velocity, force,
+        /// vorticity, divergence, pressure, particle advection) for the GPU-less low tier, so the
+        /// whole pipeline runs in jobs over native memory with no managed float[,,] grid allocations
+        /// at all (the legacy pooled float[,,] grids were removed when this was extracted).
         /// </summary>
-        private void EnsureCpuFallbackSimulationGrids(int n)
-        {
-            if (_cpuFallbackGridVelX != null && _cpuFallbackGridVelX.GetLength(0) >= n)
-            {
-                return;
-            }
-            // COLD ALLOC: float[n,n,n] x3 velocity grids + force/vorticity/pressure scratch reused across frames - owner: HectonFluidEngine
-            _cpuFallbackGridVelX = new float[n, n, n];
-            _cpuFallbackGridVelY = new float[n, n, n];
-            _cpuFallbackGridVelZ = new float[n, n, n];
-            _cpuFallbackGridFx = new float[n, n, n];
-            _cpuFallbackGridFy = new float[n, n, n];
-            _cpuFallbackGridFz = new float[n, n, n];
-            _cpuFallbackGridVorticity = new Vector3[n, n, n];
-            _cpuFallbackGridVorticityMag = new float[n, n, n];
-            _cpuFallbackGridDivergence = new float[n, n, n];
-            _cpuFallbackGridPressureA = new float[n, n, n];
-            _cpuFallbackGridPressureB = new float[n, n, n];
-        }
+        private Hecton8.Physics.CpuFluidSimulationFallbackData _cpuFluidSimulationFallback;
 
         public void FixedTick(float fixedDeltaTime)
         {
@@ -5391,122 +5359,29 @@ namespace Hecton8.Physics
             if (n * n * n != length)
                 return;
 
-            // Reuse pooled 3D grids across frames so the GPU-less CPU fallback stays within the
-            // Zero-GC hot-path budget (was: fresh float[,,] per call for every stage below).
-            EnsureCpuFallbackSimulationGrids(n);
-            float[,,] velX = _cpuFallbackGridVelX;
-            float[,,] velY = _cpuFallbackGridVelY;
-            float[,,] velZ = _cpuFallbackGridVelZ;
-
-            for (int x = 0; x < n; x++)
-            {
-                for (int y = 0; y < n; y++)
-                {
-                    for (int z = 0; z < n; z++)
-                    {
-                        int idx = x | (y << HectonAnalyticalFlowField.VectorNoiseSliceShift) | (z << HectonAnalyticalFlowField.VectorNoisePlaneShift);
-                        float3 v = noiseField[idx];
-                        velX[x, y, z] = v.x;
-                        velY[x, y, z] = v.y;
-                        velZ[x, y, z] = v.z;
-                    }
-                }
-            }
-
+            // DOD fallback: run the whole CPU fluid pipeline in Burst jobs over persistent native
+            // buffers instead of managed float[,,] grids. Seed velocity from the noise field, run
+            // vorticity confinement -> divergence -> Jacobi pressure solve -> projection, then write
+            // the result back. Each stage chains on the previous job handle (Zero-GC, no per-stage
+            // array allocations).
             float gridSpacing = prebakedVectorNoiseCellSizeMeters / n;
 
-            // Allocation-free vorticity confinement into pooled force grids.
-            float[,,] fx = _cpuFallbackGridFx;
-            float[,,] fy = _cpuFallbackGridFy;
-            float[,,] fz = _cpuFallbackGridFz;
-            Hecton8.PureLogic.Systems.VorticityConfinementForceCalculator.ComputeBuffered(
-                velX, velY, velZ, 0.1f, gridSpacing,
-                fx, fy, fz,
-                _cpuFallbackGridVorticity, _cpuFallbackGridVorticityMag);
+            _cpuFluidSimulationFallback.EnsureCapacity(n);
+            JobHandle handle = _cpuFluidSimulationFallback.CopyNoiseFieldToVelocity(noiseField);
+            handle = _cpuFluidSimulationFallback.ScheduleSimulationStep(
+                default(NativeArray<FluidParticle>),
+                handle,
+                deltaTime,
+                gridSpacing,
+                0.1f,            // confinementEpsilon (matches the monolith's ComputeBuffered(..., 0.1f, ...))
+                0u,              // activeFlag (no particle advection on this path)
+                double3.zero,    // totalOffset (no particle advection on this path)
+                10);             // jacobiIterations
 
-            for (int x = 0; x < n; x++)
-            {
-                for (int y = 0; y < n; y++)
-                {
-                    for (int z = 0; z < n; z++)
-                    {
-                        velX[x, y, z] += fx[x, y, z] * deltaTime;
-                        velY[x, y, z] += fy[x, y, z] * deltaTime;
-                        velZ[x, y, z] += fz[x, y, z] * deltaTime;
-                    }
-                }
-            }
-
-            float[,,] divergence = _cpuFallbackGridDivergence;
-            float[,,] pressureA = _cpuFallbackGridPressureA;
-            float[,,] pressureB = _cpuFallbackGridPressureB;
-            float invSpacing2 = 1.0f / (2.0f * gridSpacing);
-
-            for (int x = 1; x < n - 1; x++)
-            {
-                for (int y = 1; y < n - 1; y++)
-                {
-                    for (int z = 1; z < n - 1; z++)
-                    {
-                        float div = ((velX[x + 1, y, z] - velX[x - 1, y, z]) +
-                                     (velY[x, y + 1, z] - velY[x, y - 1, z]) +
-                                     (velZ[x, y, z + 1] - velZ[x, y, z - 1])) * invSpacing2;
-                        divergence[x, y, z] = div;
-                    }
-                }
-            }
-
-            // Zero the full boundary of the pooled divergence grid so boundary cells behave like
-            // the original fresh (zero-initialized) array; only interior cells were populated above.
-            for (int i = 0; i < n; i++)
-            {
-                for (int j = 0; j < n; j++)
-                {
-                    divergence[i, j, 0] = 0f;
-                    divergence[i, j, n - 1] = 0f;
-                    divergence[0, i, j] = 0f;
-                    divergence[n - 1, i, j] = 0f;
-                    divergence[i, 0, j] = 0f;
-                    divergence[i, n - 1, j] = 0f;
-                }
-            }
-
-            // Allocation-free Jacobi pressure solve: ping-pong between two pooled grids, so no
-            // array is allocated per iteration (was: Solve(...) allocating a new float[,,] 10x).
-            float[,,] pressure = pressureA;
-            for (int iter = 0; iter < 10; iter++)
-            {
-                float[,,] src = pressure;
-                float[,,] dst = (src == pressureA) ? pressureB : pressureA;
-                Hecton8.PureLogic.Systems.FluidPressureJacobiSolver.SolveBuffered(
-                    src, divergence, gridSpacing, dst);
-                pressure = dst;
-            }
-
-            for (int x = 1; x < n - 1; x++)
-            {
-                for (int y = 1; y < n - 1; y++)
-                {
-                    for (int z = 1; z < n - 1; z++)
-                    {
-                        velX[x, y, z] -= (pressure[x + 1, y, z] - pressure[x - 1, y, z]) * invSpacing2;
-                        velY[x, y, z] -= (pressure[x, y + 1, z] - pressure[x, y - 1, z]) * invSpacing2;
-                        velZ[x, y, z] -= (pressure[x, y, z + 1] - pressure[x, y, z - 1]) * invSpacing2;
-                    }
-                }
-            }
-
-            for (int x = 0; x < n; x++)
-            {
-                for (int y = 0; y < n; y++)
-                {
-                    for (int z = 0; z < n; z++)
-                    {
-                        int idx = x | (y << HectonAnalyticalFlowField.VectorNoiseSliceShift) | (z << HectonAnalyticalFlowField.VectorNoisePlaneShift);
-                        noiseField[idx] = new float3(velX[x, y, z], velY[x, y, z], velZ[x, y, z]);
-                    }
-                }
-            }
+            // Complete the job graph, then write the solved velocity back into the noise field.
+            handle.Complete();
+            handle = _cpuFluidSimulationFallback.CopyVelocityToNoiseField(noiseField);
+            handle.Complete();
         }
 
         private bool IsFluidAdvectionStorageReady()

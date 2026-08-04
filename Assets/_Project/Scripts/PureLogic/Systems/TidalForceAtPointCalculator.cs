@@ -45,20 +45,12 @@ namespace Hecton8.PureLogic.Systems
             float latRad = latitude * (float)Math.PI / 180f;
             float latMultiplier = (float)Math.Cos(latRad);
 
-            // Calculate using double to prevent overflow with float.MaxValue
-            double rawForce = (double)tidalAmplitudeBase * (double)moonGravitationalParam * (double)phaseMultiplier * (double)latMultiplier;
-            double maxForce = (double)tidalAmplitudeBase * (double)moonGravitationalParam;
-
             float normalized = 0f;
-            if (maxForce > 0d && !double.IsInfinity(maxForce))
+            if (tidalAmplitudeBase > 0f && moonGravitationalParam > 0f)
             {
-                normalized = (float)(rawForce / maxForce);
-            }
-            else if (double.IsInfinity(maxForce))
-            {
-                // if it's infinite, the ratio is simply phaseMultiplier * latMultiplier
                 normalized = phaseMultiplier * latMultiplier;
             }
+
 
             if (float.IsNaN(normalized) || float.IsInfinity(normalized))
             {

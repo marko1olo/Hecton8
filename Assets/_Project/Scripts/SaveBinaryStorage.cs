@@ -1208,33 +1208,45 @@ namespace Hecton8.SaveSystem
             if (IsSuppressedDiagnosticDumpPath(absolutePath))
                 return true;
 
+            string tempPath = absolutePath + ".tmp";
+
             try
             {
-                InvalidateCachedReadWindows(absolutePath);
-                if (!TryWriteAllNative(absolutePath, buffer, byteCount, null, 0, byteCount, createAlways: false, paceWrites: false, out error))
+                InvalidateCachedReadWindows(tempPath);
+                if (!TryWriteAllNative(tempPath, buffer, byteCount, null, 0, byteCount, createAlways: true, paceWrites: false, out error))
                     return false;
 
-                InvalidateCachedReadWindows(absolutePath);
+                InvalidateCachedReadWindows(tempPath);
 
                 if (criticalFlush)
                 {
-                    if (!FlushCriticalSavePath(absolutePath, byteCount, out error))
+                    if (!FlushCriticalSavePath(tempPath, byteCount, out error))
                         return false;
                 }
                 else
                 {
-                    if (!QueueThrottledFlush(absolutePath, byteCount, out error))
+                    if (!QueueThrottledFlush(tempPath, byteCount, out error))
                         return false;
                 }
 
+                InvalidateCachedReadWindows(absolutePath);
+
+                if (System.IO.File.Exists(absolutePath))
+                    System.IO.File.Replace(tempPath, absolutePath, null, true);
+                else
+                    System.IO.File.Move(tempPath, absolutePath);
+
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                error = criticalFlush
-                    ? "Critical native overwrite failed."
-                    : "Sequential native overwrite failed.";
+                error = $"Atomic overwrite failed: {ex.Message}";
                 return false;
+            }
+            finally
+            {
+                InvalidateCachedReadWindows(tempPath);
+                InvalidateCachedReadWindows(absolutePath);
             }
         }
 

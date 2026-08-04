@@ -20,6 +20,7 @@
         "Hecton8.Thermodynamics",
         "Hecton8.Editor",
         "Hecton8.World.OfflineGeology.Editor",
+        "Hecton8.World.VoxelSurfaceNets",
         "Hecton8.Project.Editor",
         "Hecton8.Physics.KCC.Editor",
         "Hecton8.QA.Headless",

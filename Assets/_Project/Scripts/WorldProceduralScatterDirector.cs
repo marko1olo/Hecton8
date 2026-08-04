@@ -11841,8 +11841,13 @@ namespace Hecton8.World
             return root;
         }
 
+        private GameObject _cachedScatterRoot;
+
         private GameObject FindExistingScatterRoot()
         {
+            if (_cachedScatterRoot != null)
+                return _cachedScatterRoot;
+
             int sceneCount = SceneManager.sceneCount;
             for (int i = 0; i < sceneCount; i++)
             {
@@ -11858,7 +11863,10 @@ namespace Hecton8.World
                 {
                     GameObject root = _sceneRootScratch[rootIndex];
                     if (root != null && string.Equals(root.name, ScatterRootName, StringComparison.Ordinal))
+                    {
+                        _cachedScatterRoot = root;
                         return root;
+                    }
                 }
             }
 

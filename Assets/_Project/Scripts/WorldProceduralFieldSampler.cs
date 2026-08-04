@@ -38,7 +38,7 @@ namespace Hecton8.World
         private const string SeafloorSourceSceneProbeLegacyLabel = "SceneProbeLegacy";
         private const string SeafloorSourceMacroGeologyLabel = "MacroGeologyFallback";
         private const string SeafloorSourceFallbackLabel = "FallbackSynthetic";
-        private const int MaxSeafloorHeightCacheEntries = 4096;
+        private const int MaxSeafloorHeightCacheEntries = 1048576;
         private const int MaxSeafloorHeightCacheMask = MaxSeafloorHeightCacheEntries - 1;
         private const int NoiseLookupResolution = 512;
         private const int NoiseLookupMask = NoiseLookupResolution - 1;
