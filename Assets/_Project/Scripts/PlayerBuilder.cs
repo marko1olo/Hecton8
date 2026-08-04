@@ -113,10 +113,6 @@ namespace Hecton8.Building
         [Tooltip("Ugol povorota prizraka pri nazhatii PKM (gradusy)")]
         [SerializeField] private float rotationStep = 90f;
 
-        [Header("── Diagnostics ───────────────────────────────")]
-        [Tooltip("Vklyuchit podrobnye BuilderDebug-logi dlya diagnostiki construction loop.")]
-        [SerializeField] private bool builderDebugLogging = false;
-
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SOCKET SNAP (v3.0)
         // ══════════════════════════════════════════════════════════
@@ -335,16 +331,7 @@ namespace Hecton8.Building
 
         public bool DebugDeployActiveBuildable(Vector3 position, Quaternion rotation, bool consumeCost = true)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (builderDebugLogging)
-                LogBuilderDebug($"DebugDeploy enter consumeCost={consumeCost} pos={position}");
-#endif
-            LogBuilderDebug("DebugDeploy -> EnsureCatalogSelection");
             EnsureCatalogSelection();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (builderDebugLogging)
-                LogBuilderDebug($"DebugDeploy -> active={(activeBuildable != null ? activeBuildable.moduleName : "null")}");
-#endif
             if (activeBuildable == null || activeBuildable.finalPrefab == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -390,10 +377,6 @@ namespace Hecton8.Building
 
             if (consumeCost)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (builderDebugLogging)
-                    LogBuilderDebug($"DebugDeploy consuming cost for {activeBuildable.moduleName}.");
-#endif
                 if (!ConsumeResources(activeBuildable))
                 {
                     ConstructionManager constructionManager = GetCachedConstructionManager();
@@ -411,10 +394,6 @@ namespace Hecton8.Building
 
             PublishConstructionCommitSignals(spawned, activeBuildable, position, rotation);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (builderDebugLogging)
-                LogBuilderDebug($"DebugDeploy spawnResult={(spawned != null ? spawned.name : "null")}");
-#endif
             return spawned != null;
         }
 
@@ -1455,12 +1434,7 @@ namespace Hecton8.Building
 
         private void BindRuntimeReferences()
         {
-            LogBuilderDebug("BindRuntimeReferences begin");
             HabitatConstructionManager habitatConstructionManager = _habitatConstructionManager;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (habitatConstructionManager == null && builderDebugLogging)
-                LogBuilderDebug("BindRuntimeReferences missing cold HabitatConstructionManager");
-#endif
 
             IDataVault dataVault = GlobalRegistry.DataVault;
             ModularBaseConstructionValidator.InitializeVault(dataVault);
@@ -1475,31 +1449,15 @@ namespace Hecton8.Building
             IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
             if (inventory == null && playerContext != null)
                 inventory = playerContext.Inventory;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (builderDebugLogging)
-                LogBuilderDebug($"BindRuntimeReferences inventory={(inventory != null ? "Y" : "N")}");
-#endif
 
             if (playerCamera == null && playerContext != null)
                 playerCamera = playerContext.PlayerCamera;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (builderDebugLogging)
-                LogBuilderDebug($"BindRuntimeReferences camera={(playerCamera != null ? playerCamera.name : "null")}");
-#endif
 
             if (buildAnchor == null && playerContext != null)
                 buildAnchor = playerContext.HandAnchor;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (builderDebugLogging)
-                LogBuilderDebug($"BindRuntimeReferences buildAnchor={(buildAnchor != null ? buildAnchor.name : "null")}");
-#endif
 
             if (hudNotification == null && playerContext != null)
                 hudNotification = playerContext.HudNotification;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (builderDebugLogging)
-                LogBuilderDebug($"BindRuntimeReferences hud={(hudNotification != null ? "Y" : "N")}");
-#endif
 
             if (_buildCatalog == null)
                 _buildCatalog = ResolveModuleCatalog();
@@ -1517,19 +1475,11 @@ namespace Hecton8.Building
                 _cachedOceanKinematicsService = GlobalRegistry.OceanKinematics;
             if (!IsAudioServiceUsable(_cachedAudioService))
                 CacheAudioService(GlobalRegistry.Audio);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (builderDebugLogging)
-                LogBuilderDebug($"BindRuntimeReferences catalogCount={(_buildCatalog != null ? _buildCatalog.Count : -1)}");
-#endif
 
             if (activeBuildable == null)
                 EnsureCatalogSelection();
 
             SyncActiveBuildableIndex();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (builderDebugLogging)
-                LogBuilderDebug($"BindRuntimeReferences end activeIndex={_activeBuildableIndex}");
-#endif
         }
 
         private void EnsureHabitatConstructionManagerCold()
@@ -1571,7 +1521,6 @@ namespace Hecton8.Building
 
         private void EnsureCatalogSelection()
         {
-            LogBuilderDebug("EnsureCatalogSelection begin");
             if (!autoResolveCatalogSelection) return;
             if (activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable)) return;
             int viewableCount = _buildCatalog != null ? _buildCatalog.GetViewableCount(_cachedQuestSystem) : 0;
@@ -1587,14 +1536,9 @@ namespace Hecton8.Building
 
                 AssignActiveBuildable(candidate);
                 _activeBuildableIndex = _buildCatalog.IndexOf(candidate);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (builderDebugLogging)
-                    LogBuilderDebug($"EnsureCatalogSelection picked={candidate.moduleName} index={i}");
-#endif
                 return;
             }
 
-            LogBuilderDebug("EnsureCatalogSelection end without candidate");
         }
 
         private void SyncActiveBuildableIndex()
@@ -1786,21 +1730,12 @@ namespace Hecton8.Building
                 if (!ConstructionRuntimeProxyFactory.TryCreatePlacedProxy(data, placePos, placeRot, out placedModule))
                     return null;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (builderDebugLogging)
-                    LogBuilderDebug($"SpawnPlacedModule begin module={data.moduleName} prefab=RUNTIME_PROXY");
-#endif
             }
             else
             {
                 if (pool == null)
                     return null;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (builderDebugLogging)
-                    LogBuilderDebug($"SpawnPlacedModule begin module={data.moduleName} prefab={data.finalPrefab.name}");
-#endif
-                LogBuilderDebug("SpawnPlacedModule using pool.");
                 placedModule = pool.Spawn(data.finalPrefab, placePos, placeRot);
             }
 
@@ -1810,17 +1745,9 @@ namespace Hecton8.Building
                 if (manager != null)
                 {
                     manager.RegisterModule(placedModule, data);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    if (builderDebugLogging)
-                        LogBuilderDebug($"SpawnPlacedModule registered moduleCount={manager.ModuleCount}");
-#endif
                 }
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (builderDebugLogging)
-                LogBuilderDebug($"SpawnPlacedModule end result={(placedModule != null ? placedModule.name : "null")}");
-#endif
             return placedModule;
         }
 
@@ -2011,16 +1938,6 @@ namespace Hecton8.Building
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Hecton8.Core.H8Debug.LogWarning(_builderHudBuffer.ToString());
 #endif
-        }
-
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-        private void LogBuilderDebug(string message)
-        {
-            if (!builderDebugLogging)
-                return;
-
-            Hecton8.Core.H8Debug.Log("[BuilderDebug] " + message);
         }
 
         private void NotifyModuleDeconstructionQueued(BaseModule module)
