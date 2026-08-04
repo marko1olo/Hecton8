@@ -661,6 +661,7 @@ namespace Den.Tools.Splines
 
 			public void FillLinearLengthLut ()
 			{
+				length = (start.pos-end.pos).magnitude;
 				for (int i=0; i<8; i++)
 				{
 					float percent = (i+1) / 9f;
