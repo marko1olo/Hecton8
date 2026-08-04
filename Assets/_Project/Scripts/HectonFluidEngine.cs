@@ -3735,6 +3735,74 @@ namespace Hecton8.Physics
         /// </summary>
         private float _cpuFluidFallbackAccumulatedSeconds;
 
+        /// <summary>
+        /// Reusable CPU-fallback velocity-component scratch for RunCpuFluidAdvectionFallback.
+        /// Allocated once at max resolution and reused across frames so the GPU-less tier stays
+        /// within the Zero-GC hot-path budget instead of allocating managed float[] per call.
+        /// Sized to the resolved noise-field length (VectorNoiseResolution cubed).
+        /// </summary>
+        private float[] _cpuFallbackAdvectionVelX;
+        private float[] _cpuFallbackAdvectionVelY;
+        private float[] _cpuFallbackAdvectionVelZ;
+
+        /// <summary>
+        /// Ensures the three reusable 1D velocity scratch buffers are large enough for the given
+        /// element count, allocating only when they are too small (once at first use / resolution
+        /// change). Mirrors the EnsureFluidAdvectionDirtyPageUploadSnapshot pattern used elsewhere
+        /// in this type: cold allocation, never per-frame once sized.
+        /// </summary>
+        private void EnsureCpuFallbackAdvectionVelocityArrays(int length)
+        {
+            if (_cpuFallbackAdvectionVelX == null || _cpuFallbackAdvectionVelX.Length < length)
+            {
+                // COLD ALLOC: float[length] - CPU-fallback fluid advection velocity-component scratch reused across frames - owner: HectonFluidEngine
+                _cpuFallbackAdvectionVelX = new float[length];
+                _cpuFallbackAdvectionVelY = new float[length];
+                _cpuFallbackAdvectionVelZ = new float[length];
+            }
+        }
+
+        /// <summary>Reusable 3D velocity/force/pressure grids for the GPU-less CPU fluid simulation
+        /// fallback. Allocated once at grid resolution and reused across frames so the low tier
+        /// stays within the Zero-GC hot-path budget.</summary>
+        private float[,,] _cpuFallbackGridVelX;
+        private float[,,] _cpuFallbackGridVelY;
+        private float[,,] _cpuFallbackGridVelZ;
+        private float[,,] _cpuFallbackGridFx;
+        private float[,,] _cpuFallbackGridFy;
+        private float[,,] _cpuFallbackGridFz;
+        private Vector3[,,] _cpuFallbackGridVorticity;
+        private float[,,] _cpuFallbackGridVorticityMag;
+        private float[,,] _cpuFallbackGridDivergence;
+        private float[,,] _cpuFallbackGridPressureA;
+        private float[,,] _cpuFallbackGridPressureB;
+
+        /// <summary>
+        /// Ensures the reusable 3D CPU-fallback grids are allocated to the given grid dimension n,
+        /// allocating only when they are missing or too small (once at first use / resolution
+        /// change). Mirrors EnsureCpuFallbackAdvectionVelocityArrays: cold allocation, never
+        /// per-frame once sized.
+        /// </summary>
+        private void EnsureCpuFallbackSimulationGrids(int n)
+        {
+            if (_cpuFallbackGridVelX != null && _cpuFallbackGridVelX.GetLength(0) >= n)
+            {
+                return;
+            }
+            // COLD ALLOC: float[n,n,n] x3 velocity grids + force/vorticity/pressure scratch reused across frames - owner: HectonFluidEngine
+            _cpuFallbackGridVelX = new float[n, n, n];
+            _cpuFallbackGridVelY = new float[n, n, n];
+            _cpuFallbackGridVelZ = new float[n, n, n];
+            _cpuFallbackGridFx = new float[n, n, n];
+            _cpuFallbackGridFy = new float[n, n, n];
+            _cpuFallbackGridFz = new float[n, n, n];
+            _cpuFallbackGridVorticity = new Vector3[n, n, n];
+            _cpuFallbackGridVorticityMag = new float[n, n, n];
+            _cpuFallbackGridDivergence = new float[n, n, n];
+            _cpuFallbackGridPressureA = new float[n, n, n];
+            _cpuFallbackGridPressureB = new float[n, n, n];
+        }
+
         public void FixedTick(float fixedDeltaTime)
         {
             // L19 hop2 LIVE: FixedTick buoyancy drain/ApplyScheduledForces first-touches
@@ -5318,9 +5386,10 @@ namespace Hecton8.Physics
             if (length <= 0)
                 return;
 
-            float[] velX = new float[length];
-            float[] velY = new float[length];
-            float[] velZ = new float[length];
+            EnsureCpuFallbackAdvectionVelocityArrays(length);
+            float[] velX = _cpuFallbackAdvectionVelX;
+            float[] velY = _cpuFallbackAdvectionVelY;
+            float[] velZ = _cpuFallbackAdvectionVelZ;
             for (int i = 0; i < length; i++)
             {
                 float3 v = noiseField[i];
@@ -5442,9 +5511,12 @@ namespace Hecton8.Physics
             if (n * n * n != length)
                 return;
 
-            float[,,] velX = new float[n, n, n];
-            float[,,] velY = new float[n, n, n];
-            float[,,] velZ = new float[n, n, n];
+            // Reuse pooled 3D grids across frames so the GPU-less CPU fallback stays within the
+            // Zero-GC hot-path budget (was: fresh float[,,] per call for every stage below).
+            EnsureCpuFallbackSimulationGrids(n);
+            float[,,] velX = _cpuFallbackGridVelX;
+            float[,,] velY = _cpuFallbackGridVelY;
+            float[,,] velZ = _cpuFallbackGridVelZ;
 
             for (int x = 0; x < n; x++)
             {
@@ -5463,12 +5535,14 @@ namespace Hecton8.Physics
 
             float gridSpacing = prebakedVectorNoiseCellSizeMeters / n;
 
-            var confinementForces = Hecton8.PureLogic.Systems.VorticityConfinementForceCalculator.Compute(
-                velX, velY, velZ, 0.1f, gridSpacing);
-
-            float[,,] fx = confinementForces.Item1;
-            float[,,] fy = confinementForces.Item2;
-            float[,,] fz = confinementForces.Item3;
+            // Allocation-free vorticity confinement into pooled force grids.
+            float[,,] fx = _cpuFallbackGridFx;
+            float[,,] fy = _cpuFallbackGridFy;
+            float[,,] fz = _cpuFallbackGridFz;
+            Hecton8.PureLogic.Systems.VorticityConfinementForceCalculator.ComputeBuffered(
+                velX, velY, velZ, 0.1f, gridSpacing,
+                fx, fy, fz,
+                _cpuFallbackGridVorticity, _cpuFallbackGridVorticityMag);
 
             for (int x = 0; x < n; x++)
             {
@@ -5483,8 +5557,9 @@ namespace Hecton8.Physics
                 }
             }
 
-            float[,,] divergence = new float[n, n, n];
-            float[,,] pressure = new float[n, n, n];
+            float[,,] divergence = _cpuFallbackGridDivergence;
+            float[,,] pressureA = _cpuFallbackGridPressureA;
+            float[,,] pressureB = _cpuFallbackGridPressureB;
             float invSpacing2 = 1.0f / (2.0f * gridSpacing);
 
             for (int x = 1; x < n - 1; x++)
@@ -5501,9 +5576,31 @@ namespace Hecton8.Physics
                 }
             }
 
+            // Zero the full boundary of the pooled divergence grid so boundary cells behave like
+            // the original fresh (zero-initialized) array; only interior cells were populated above.
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = 0; j < n; j++)
+                {
+                    divergence[i, j, 0] = 0f;
+                    divergence[i, j, n - 1] = 0f;
+                    divergence[0, i, j] = 0f;
+                    divergence[n - 1, i, j] = 0f;
+                    divergence[i, 0, j] = 0f;
+                    divergence[i, n - 1, j] = 0f;
+                }
+            }
+
+            // Allocation-free Jacobi pressure solve: ping-pong between two pooled grids, so no
+            // array is allocated per iteration (was: Solve(...) allocating a new float[,,] 10x).
+            float[,,] pressure = pressureA;
             for (int iter = 0; iter < 10; iter++)
             {
-                pressure = Hecton8.PureLogic.Systems.FluidPressureJacobiSolver.Solve(pressure, divergence, gridSpacing);
+                float[,,] src = pressure;
+                float[,,] dst = (src == pressureA) ? pressureB : pressureA;
+                Hecton8.PureLogic.Systems.FluidPressureJacobiSolver.SolveBuffered(
+                    src, divergence, gridSpacing, dst);
+                pressure = dst;
             }
 
             for (int x = 1; x < n - 1; x++)
