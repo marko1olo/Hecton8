@@ -63,6 +63,7 @@ namespace Hecton8.UI
         // ----------------------------------------------------------
 
         [Header("=== GRAPHICS ===")]
+        [SerializeField] private Transform sectionGraphics;
         [SerializeField] private Button btnPresetLow;
         [SerializeField] private Button btnPresetMedium;
         [SerializeField] private Button btnPresetHigh;
@@ -90,6 +91,8 @@ namespace Hecton8.UI
         [SerializeField] private TMP_Text txtTextureQuality;
 
         [Header("=== MENU STYLE ===")]
+        [SerializeField] private Transform rowMenuVisualStyle;
+        [SerializeField] private Transform rowMenuVisualConcept;
         [SerializeField] private Button btnMenuStyleDecrease;
         [SerializeField] private Button btnMenuStyleIncrease;
         [SerializeField] private TMP_Text txtMenuVisualStyle;
@@ -100,6 +103,8 @@ namespace Hecton8.UI
         private bool autoCreateMenuVisualStyleRow = true;
 
         [Header("=== ACCESSIBILITY ===")]
+        [SerializeField] private Transform rowTextScale;
+        [SerializeField] private Transform rowUiMotionScale;
         [SerializeField] private Slider sliderTextScale;
         [SerializeField] private TMP_Text txtTextScale;
         [SerializeField] private Slider sliderUiMotionScale;
@@ -585,11 +590,11 @@ namespace Hecton8.UI
             if (btnMenuStyleDecrease != null && btnMenuStyleIncrease != null && txtMenuVisualStyle != null)
                 return;
 
-            Transform graphicsSection = transform.Find("Container/Section_Graphics");
+            Transform graphicsSection = sectionGraphics != null ? sectionGraphics : transform.Find("Container/Section_Graphics");
             if (graphicsSection == null)
                 return;
 
-            Transform existingRow = graphicsSection.Find("Row_MenuVisualStyle");
+            Transform existingRow = rowMenuVisualStyle != null ? rowMenuVisualStyle : graphicsSection.Find("Row_MenuVisualStyle");
             if (existingRow == null)
                 existingRow = CreateMenuStyleRowCold(graphicsSection);
 
@@ -652,11 +657,11 @@ namespace Hecton8.UI
             if (btnMenuConceptDecrease != null && btnMenuConceptIncrease != null && txtMenuVisualConcept != null)
                 return;
 
-            Transform graphicsSection = transform.Find("Container/Section_Graphics");
+            Transform graphicsSection = sectionGraphics != null ? sectionGraphics : transform.Find("Container/Section_Graphics");
             if (graphicsSection == null)
                 return;
 
-            Transform existingRow = graphicsSection.Find("Row_MenuVisualConcept");
+            Transform existingRow = rowMenuVisualConcept != null ? rowMenuVisualConcept : graphicsSection.Find("Row_MenuVisualConcept");
             if (existingRow == null)
                 existingRow = CreateMenuConceptRowCold(graphicsSection);
 
@@ -719,11 +724,11 @@ namespace Hecton8.UI
             if (sliderTextScale != null && txtTextScale != null)
                 return;
 
-            Transform graphicsSection = transform.Find("Container/Section_Graphics");
+            Transform graphicsSection = sectionGraphics != null ? sectionGraphics : transform.Find("Container/Section_Graphics");
             if (graphicsSection == null)
                 return;
 
-            Transform existingRow = graphicsSection.Find("Row_TextScale");
+            Transform existingRow = rowTextScale != null ? rowTextScale : graphicsSection.Find("Row_TextScale");
             if (existingRow == null)
                 existingRow = CreateAccessibilityTextScaleRowCold(graphicsSection);
 
@@ -781,11 +786,11 @@ namespace Hecton8.UI
             if (sliderUiMotionScale != null && txtUiMotionScale != null)
                 return;
 
-            Transform graphicsSection = transform.Find("Container/Section_Graphics");
+            Transform graphicsSection = sectionGraphics != null ? sectionGraphics : transform.Find("Container/Section_Graphics");
             if (graphicsSection == null)
                 return;
 
-            Transform existingRow = graphicsSection.Find("Row_UiMotionScale");
+            Transform existingRow = rowUiMotionScale != null ? rowUiMotionScale : graphicsSection.Find("Row_UiMotionScale");
             if (existingRow == null)
                 existingRow = CreateAccessibilityMotionScaleRowCold(graphicsSection);
 
