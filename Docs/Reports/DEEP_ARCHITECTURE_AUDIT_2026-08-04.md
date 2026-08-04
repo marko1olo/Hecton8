@@ -205,6 +205,20 @@ re-homing/`partial` split.
 > accessible in-assembly). This validates the low-risk "whole-method re-homing" rule. The
 > remaining fluid splits (Buoyancy/Waves/CPUFallback/Telemetry partials) and the
 > Voxel/PlayerMovement decompositions still require Unity edit-mode recompile verification.
+> 
+> **Post-decomposition regression check (Iteration #29):** both runnable test suites were
+> re-executed after the extraction edits and remain **fully green**: the project's own NUnit
+> suite (127 helpers) 691/691 passed, and the equivalence/smoke harness (26 helpers) all 31
+> checks passed. This confirms the `HectonFluidEngine` decomposition introduced **no regression**
+> in the pure-logic layer.
+
+> **PROGRESS (Iteration #27):** a second mechanical extraction was executed - the six
+> top-of-file DTO structs (`FluidImpactEvent`, `FluidOceanSurfaceTelemetryEntry`,
+> `FluidAdvectionTelemetryEntry`, `InteriorFloodNode`, `InteriorFloodEdge`,
+> `InteriorFloodBfsResult`) were moved verbatim into `HectonFluidTelemetry.cs`, further
+> reducing `HectonFluidEngine.cs` to 10,694 lines. This mirrors the SPEC's
+> `HectonFluidEngine.Telemetry.cs` target. (One stray namespace-close `}` left by the split was
+> removed; all files re-verified brace-balanced.)
 
 **1. `HectonFluidEngine.cs` (11,383 lines → ~7 files)**
 - `HectonFluidEngine.cs` — the `HectonFluidEngine : MonoBehaviour` core (tick, upload, disposal)
