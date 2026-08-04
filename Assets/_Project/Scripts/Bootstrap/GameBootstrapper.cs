@@ -8781,7 +8781,7 @@ namespace Hecton8.Bootstrap
 
         private void FailSceneActivation(string error)
         {
-            Debug.LogError("[GameBootstrapper] " + error);
+            Hecton8.Core.H8Debug.LogError("[GameBootstrapper] " + error);
             RaiseBootstrapFailedEvent(error);
         }
 

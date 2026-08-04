@@ -1,0 +1,11 @@
+## 🎯 What
+Upgraded the standard Unity `Debug.LogError` call to `Hecton8.Core.H8Debug.LogError` in `GameBootstrapper.FailSceneActivation`.
+
+## 💡 Why
+To align with the project's custom logging standards and improve code health by using the centralized `H8Debug` logger instead of the default Unity logger.
+
+## ✅ Verification
+Verified the change locally by ensuring the correct method is used and no syntax errors were introduced. Checked for regressions using the test suite.
+
+## ✨ Result
+Code now uses the correct logger (`Hecton8.Core.H8Debug.LogError`), improving maintainability and consistency without altering functional behavior.
