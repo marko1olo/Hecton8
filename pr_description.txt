@@ -1,0 +1,4 @@
+🎯 What: Removed stray debug log in GameBootstrapper.cs that was printing: `[GameBootstrapper-DEBUG] Bypassing Main Menu and forcing 020_RENDER_SANDBOX`.
+💡 Why: To improve code health by removing unnecessary debug logs from production code.
+✅ Verification: Verified using git diff and ran full verification sweep to ensure no regressions.
+✨ Result: Cleaned up code and improved readability.

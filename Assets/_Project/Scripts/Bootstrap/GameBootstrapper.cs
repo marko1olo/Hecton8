@@ -3271,7 +3271,6 @@ namespace Hecton8.Bootstrap
         {
             try
             {
-                Debug.Log("[GameBootstrapper-DEBUG] Bypassing Main Menu and forcing 020_RENDER_SANDBOX");
                 string sandboxPath = "Assets/_Project/Scenes/020_RENDER_SANDBOX.unity";
                 AsyncOperation loadOperation = UnityEditor.SceneManagement.EditorSceneManager.LoadSceneAsyncInPlayMode(
                     sandboxPath,
