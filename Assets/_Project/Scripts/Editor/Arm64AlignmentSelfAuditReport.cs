@@ -26,7 +26,20 @@ namespace Hecton8.Editor
         {
             typeof(AlignmentTelemetryEntry).FullName,
             "Hecton8.Core.Contracts.Physics.KinematicStateDTO",
-            typeof(CombatDamageSignal).FullName
+            typeof(CombatDamageSignal).FullName,
+            // Audit-added (2026-08-04): primary unmanaged DTOs verified against mandate
+            // struct layouts. EQUIPMENT_SOA_LAYOUT.md (ActiveEquipmentDTO, 32B), the
+            // ZERO_GC_FABRICATION.md fabrication DTOs (FabricationJobDTO, 32B), and the
+            // production inventory ItemTemplate (64B, extended past the 24B SOA baseline).
+            "Hecton8.Tools.ActiveEquipmentDTO",
+            "Hecton8.Crafting.FabricationJobDTO",
+            "Hecton8.Inventory.ItemTemplate",
+            // Iteration #4: additional verified-compliant DTOs (valid SHINOBU_204 stride
+            // 16|32|>=64 mult-of-64). FabricationJobSnapshotDTO (32B), equipment counters
+            // (64B), and the kinematic surface hit record (64B).
+            "Hecton8.Crafting.FabricationJobSnapshotDTO",
+            "Hecton8.Tools.EquipmentIntegrationCounters",
+            "Hecton8.Core.KinematicSurfaceHit"
         };
 
         [MenuItem("Hecton8/Diagnostics/Write SHINOBU_204 Self Audit")]

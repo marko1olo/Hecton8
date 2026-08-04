@@ -90,6 +90,39 @@ struct ItemTemplate {
     ushort  hlodSilhouetteIdx;
 }
 
+// ----------------------------------------------------------------
+// REVISION 2026-08-04 (Architecture Audit): PRODUCTION ItemTemplate is 64 B, not
+// the 24 B baseline above. The layout was reorganized and extended with gameplay
+// data required by carry-mass and audio/physics propagation. The PRODUCTION layout
+// (ItemTemplateRegistry.cs, LayoutKind.Explicit, verified) is:
+//   uint   hashID               @0
+//   uint   categoryMask         @4
+//   float  baseDurability       @8
+//   float  wearMultiplier       @12
+//   uint   vulnerabilityMask    @16
+//   uint   blueprintQuestFlagId @20
+//   float  massKg               @24
+//   float  volumeM3             @28
+//   ushort maxStackSize         @32
+//   ushort proxyMeshIndex       @34
+//   ushort iconAtlasIndex       @36
+//   ushort hlodSilhouetteIndex  @38
+//   byte   audioMaterialId      @40
+//   byte   physicsMaterialTag   @41
+//   ushort _reserved0           @42
+//   byte   _pad00 .. _pad19     @44..63
+//   ---- total = 64 B (multiple of 8, explicit-layout, largest->smallest) ----
+// Notes:
+//   - Fields moved vs 24 B baseline: maxStackSize @16->@32, proxyMeshIndex
+//     @18->@34, iconAtlasIndex @20->@36, hlodSilhouetteIdx @22->@38.
+//   - Additive fields: vulnerabilityMask@16, blueprintQuestFlagId@20, massKg@24,
+//     volumeM3@28, audioMaterialId@40 (byte), physicsMaterialTag@41 (byte),
+//     _reserved0@42 (ushort). The mandate's "baseStrength" baseline field does NOT
+//     exist in production (superseded by the vulnerabilityMask/blueprint fields).
+// Registered in the SHINOBU_204 ARM64 self-audit CriticalTypeNames so the 64 B
+// size and alignment are enforced at editor self-audit time.
+// ----------------------------------------------------------------
+
 Lookup: O(1) - `templates[hashToIndex[hashID]]`
 Population: Bake at AssetPostprocessor stage. No runtime SO reads.
 
