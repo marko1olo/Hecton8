@@ -4482,27 +4482,6 @@ namespace Hecton8.Gameplay
             TriggerHypoxiaVisorDistortion(Mathf.Max(intensity, hypoxiaVisorBlur.X), holdDuration, recoverySpeed);
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private void OnDestroy()
-        {
-            if (this != null && gameObject != null)
-            {
-                // Scene identity plus frame at destruction time is what separates the remaining suspects,
-                // because a deferred Destroy() leaves no managed caller above OnDestroy in the stack.
-                //   scene=01_MAIN_MENU, or a frame equal to the menu-unload frame -> UnloadSceneAsync is
-                //     the destroyer despite HectonPlayerSpawner.cs:1092 MoveGameObjectToScene, meaning the
-                //     move did not take or something moved the player back into the outgoing scene.
-                //   scene=DontDestroyOnLoad -> a PersistRuntimeService reparent
-                //     (GameBootstrapper.cs:5961-5978) pulled the player root out of the world scene first.
-                //   scene=02_HECTON_WORLD on an unrelated frame -> a third party called Destroy on the
-                //     player root and needs its own hunt.
-                // sceneIsLoaded separates an in-flight unload from a live scene; sceneHandle disambiguates
-                // two scenes that share a name across an additive transition.
-                Hecton8.Core.H8Debug.Log($"[HectonPlayerMovement-DEBUG] OnDestroy called on player! InstanceID={gameObject.GetEntityId()} scene={gameObject.scene.name} sceneHandle={gameObject.scene.handle.GetRawData()} sceneIsLoaded={gameObject.scene.isLoaded} frame={Time.frameCount}\n" + UnityEngine.StackTraceUtility.ExtractStackTrace());
-            }
-        }
-#endif
-
         private void Awake()
         {
             EnsureDegreeSinCosLutInitialized();
