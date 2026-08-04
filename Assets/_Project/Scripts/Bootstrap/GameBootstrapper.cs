@@ -3206,7 +3206,6 @@ namespace Hecton8.Bootstrap
         {
             try
             {
-                Debug.Log("[GameBootstrapper-DEBUG] RunSceneActivationAsync calling ExecuteSceneActivationAsync");
                 bool activated = await ExecuteSceneActivationAsync(ownerToken);
                 if (activated)
                     GlobalRegistry.LockReady();
