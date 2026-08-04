@@ -593,6 +593,22 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
+    public void SetDebugCelestialTimeScale_ClampsValueToMinimumOne()
+    {
+        _engine.SetDebugCelestialTimeScale(0.5f);
+        Assert.That(_engine.DebugCelestialTimeScale, Is.EqualTo(1f));
+
+        _engine.SetDebugCelestialTimeScale(-10f);
+        Assert.That(_engine.DebugCelestialTimeScale, Is.EqualTo(1f));
+
+        _engine.SetDebugCelestialTimeScale(1f);
+        Assert.That(_engine.DebugCelestialTimeScale, Is.EqualTo(1f));
+
+        _engine.SetDebugCelestialTimeScale(2.5f);
+        Assert.That(_engine.DebugCelestialTimeScale, Is.EqualTo(2.5f));
+    }
+
+    [Test]
     public void FirmamentMemoryBudgetResolvesContinuouslyBetweenSurvivalAndOverkill()
     {
         float survival = (float)InvokePrivateStaticMethod(
