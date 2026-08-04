@@ -9584,7 +9584,6 @@ namespace Hecton8.Bootstrap
             bool isBootstrap = IsBootstrapScene(scene);
             bool isMainMenu = IsMainMenuScene(scene);
             bool isOrbit = IsOrbitScene(scene);
-            Debug.Log($"[GameBootstrapper-DEBUG] RequiresGameplaySceneActivation: {scene.name} -> isValid={isValid}, isLoaded={isLoaded}, isBootstrap={isBootstrap}, isMainMenu={isMainMenu}, isOrbit={isOrbit}");
             return isValid && isLoaded && !isBootstrap && !isMainMenu && !isOrbit;
         }
 
