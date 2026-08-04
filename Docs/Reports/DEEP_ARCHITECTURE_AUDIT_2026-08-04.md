@@ -205,7 +205,7 @@ re-homing/`partial` split.
 
 **2. `HectonVoxelEngine.cs` (14,808 lines → ~6 files)**
 - `HectonVoxelEngine.cs` — `HectonVoxelEngine : MonoBehaviour` orchestration (~4,000 lines).
-- `HectonVoxelEngine.Jobs.cs` — the **19 Burst jobs** currently in the file (isolated, one
+- `HectonVoxelEngine.Jobs.cs` — the **20 Burst jobs** currently in the file (isolated, one
   namespace-region; these are already `IJobParallelFor` and self-contained).
 - `HectonVoxelEngine.DeferredPhysics.cs` — the deferred physics-bake driver types.
 - `HectonVoxelEngine.Streaming.cs` — `VoxelStreamingScratchSlot/Lease/State` + pipeline state
@@ -337,6 +337,34 @@ a `Queue<(int,int,int)>` per call, despite its "fully allocation-free" docstring
 `ComputeBuffered` overload reuses caller-provided scratch (pooled `bool[,,]` + flat `int[]`
 queue, static 6-neighbour table) and is behavior-identical to `Compute` (verified above). The
 original allocating `Compute` is retained for the existing NUnit tests.
+
+**Extended pure-logic runtime verification (Iterations #18 & #20):** 23 additional
+`System.Numerics`-only helpers (`SignalPrioritySortCalculator`, `LodChunkSelector`,
+`LunarPhaseCalculator`, `SolarHourAngleCalculator`, `GyroDriftFilterCalculator`,
+`SplashEntryAngleCalculator`, `BallastTankController`, `VerletCableSimulator`,
+`BatteryChargeCurveCalculator`, `ActiveSonarAttenuationCurveCalculator`,
+`ArmorPenetrationCalculator`, `AudioDistanceAttenuationCurveCalculator`, `BleedStackDecayModel`,
+`CaloricDeficitPenaltyCalculator`, `CausticIntensityDepthCalculator`, `EcholocationRangeCalculator`,
+`ExplosionRadialDamageCalculator`, `HudCrushDepthWarningUrgencyCalculator`,
+`RadiationLeadShieldingCalculator`, `RepairRateMaterialCalculator`, `ToxinBioaccumulationCalculator`,
+`VisibilityTurbidityCalculator`, `LaserCutDepthPowerCalculator`) were compiled into the same
+harness and passed finite-value / deterministic smoke tests with correct value semantics
+(e.g. `SolarHourAngleCalculator` returns the expected ~68.5° sun elevation at noon;
+`LunarPhaseCalculator` returns 0→180° across a lunar day). Combined with the 3 equivalence tests,
+**26 pure-logic helpers now run in plain .NET** — confirming the `PureLogic/Systems` layer is
+cleanly Unity-independent, which validates the decomposition SPEC's claim that these helpers
+extract cleanly into separate files.
+
+**Broader hot-path Zero-GC confirmation (Iteration #19):** a scan of the non-PureLogic
+gameplay folders (`World/`, `Audio/`, `Construction/`, `Items/`, `Player/`) surfaced 614 `new`
+expressions across 18 files. Every one was classified as **non-violation**: (1) value-type
+struct constructions (`Color`, `Bounds`, `AcousticOcclusionResult`, `SpatialQueryHit`, etc.)
+which are stack/struct, not heap; (2) Unity UI Toolkit/IMGUI **editor tooling** controls
+(`Label`, `Slider`, `Button`, `IntegerField` in `CreateGUI`/EditorWindow paths); or (3)
+**cold one-time init** (`// COLD ALLOC` runtime roots, double-buffered `GraphicsBuffer`s,
+`HectonSpatialHash` native registries). The only LINQ hits were the known cold
+`PersistentWorldRegistry.cs:7486` save/load path plus two `thread.Join(...)` false positives.
+**No new hot-path Zero-GC violation was found in the broader gameplay layer.**
 
 **PureLogic layer sweep (Iteration #16):** all ~150 `PureLogic/*` helpers were scanned for
 allocations/LINQ/string/Unity references. Results: 0 Unity references, 0 Malloc, and 0 genuine
