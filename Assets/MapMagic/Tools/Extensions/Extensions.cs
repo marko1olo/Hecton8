@@ -623,10 +623,14 @@ namespace Den.Tools
 
 			//saving
 			path = path.Replace(Application.dataPath, "Assets");
-			if (undoObj != null) UnityEditor.Undo.RecordObject(undoObj, undoName); //TODO: undo is actually not recordered because the new data is not assigned
-			//undoObj.setDirty = !undoObj.setDirty;
 			UnityEditor.AssetDatabase.CreateAsset(newData, path);
-			if (undoObj != null) UnityEditor.EditorUtility.SetDirty(undoObj);
+
+			if (undoObj != null)
+			{
+				UnityEditor.Undo.RecordObject(undoObj, undoName);
+				UnityEditor.EditorUtility.SetDirty(undoObj);
+			}
+			UnityEditor.Undo.RegisterCreatedObjectUndo(newData, undoName);
 
 			return newData;
 			#else
