@@ -751,11 +751,11 @@ namespace Hecton8.World
 
         private struct PendingParticleEmit
         {
+            public Color Color;
             public Vector3 PositionWS;
             public Vector3 VelocityWS;
             public float Lifetime;
             public float Size;
-            public Color Color;
             public uint RandomSeed;
             public int Count;
         }

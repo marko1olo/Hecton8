@@ -16,9 +16,9 @@ namespace Hecton8.World
     {
         private struct LegacyInputState
         {
+            public Vector3 OriginalLocalScale;
             public Renderer Renderer;
             public Transform Transform;
-            public Vector3 OriginalLocalScale;
             public bool OriginalRendererEnabled;
             public bool IsCaptured;
         }

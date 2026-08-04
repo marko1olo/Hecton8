@@ -849,9 +849,9 @@ namespace Hecton8.World
         {
             [FieldOffset(0)] public int2 MacroCellCoord;
             [FieldOffset(8)] public float Amount;
-            [FieldOffset(12)] public byte Kind;
-            [FieldOffset(13)] public byte Padding0;
-            [FieldOffset(14)] public ushort Padding1;
+            [FieldOffset(12)] public ushort Padding1;
+            [FieldOffset(14)] public byte Kind;
+            [FieldOffset(15)] public byte Padding0;
         }
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]

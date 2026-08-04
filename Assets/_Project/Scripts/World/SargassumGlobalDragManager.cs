@@ -362,15 +362,15 @@ namespace Hecton8.World
         [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct DisruptionSample
         {
-            [FieldOffset(0)] public float Suppression01;
-            [FieldOffset(4)] public float SinkDepthWS;
-            [FieldOffset(8)] private ulong _pad0;
+            [FieldOffset(0)] private ulong _pad0;
+            [FieldOffset(8)] public float Suppression01;
+            [FieldOffset(12)] public float SinkDepthWS;
         }
 
         private struct ScavengerHostState
         {
-            public SargassumCollapseChunk Chunk;
             public Vector3 AnchorWS;
+            public SargassumCollapseChunk Chunk;
             public float SettledTime;
             public float Consumed01;
             public uint Seed;
@@ -380,18 +380,18 @@ namespace Hecton8.World
         private struct ExternalScavengerSiteState
         {
             [FieldOffset(0)] public Vector3 AnchorWS;
-            [FieldOffset(12)] public float RadiusWS;
-            [FieldOffset(16)] public float RemainingTime;
-            [FieldOffset(20)] public uint Seed;
-            [FieldOffset(24)] private ulong _pad0;
+            [FieldOffset(12)] private ulong _pad0;
+            [FieldOffset(20)] public float RadiusWS;
+            [FieldOffset(24)] public float RemainingTime;
+            [FieldOffset(28)] public uint Seed;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 16)]
         private struct DebrisTimer
         {
-            [FieldOffset(0)] public int Slot;
-            [FieldOffset(4)] public float RemainingSeconds;
-            [FieldOffset(8)] private ulong _pad0;
+            [FieldOffset(0)] private ulong _pad0;
+            [FieldOffset(8)] public int Slot;
+            [FieldOffset(12)] public float RemainingSeconds;
         }
 
         [Serializable]
