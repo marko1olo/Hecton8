@@ -513,6 +513,7 @@ namespace MoreMountains.Tools
         
 		//public static MMConsole _console;
 		public static MMDebugOnScreenConsole _console;
+		private static bool _searchedForConsole = false;
 		private const string _debugConsolePrefabPath = "MMDebugOnScreenConsole";
                 
 		/// <summary>
@@ -557,10 +558,11 @@ namespace MoreMountains.Tools
 				return;
 			}
 
-			if (_console == null)
+			if (_console == null && !_searchedForConsole)
 			{
 				// we try to find one in the scene
 				_console = (MMDebugOnScreenConsole) GameObject.FindObjectOfType(typeof(MMDebugOnScreenConsole));
+				_searchedForConsole = true;
 			}
 
 			if (_console == null)
