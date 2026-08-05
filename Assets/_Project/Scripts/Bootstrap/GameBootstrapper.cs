@@ -2377,9 +2377,6 @@ namespace Hecton8.Bootstrap
             if (!TryResolveBootstrapGameplayHandoffScene(out string gameplaySceneName))
                 return false;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[GameBootstrapper] Completed bootstrap handoff loading pending target scene '" + gameplaySceneName + "'.");
-#endif
             _sceneActivationRunInProgress = true;
             _ = RunCompletedBootstrapHandoffAsync(gameplaySceneName);
             return true;
