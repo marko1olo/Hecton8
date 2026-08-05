@@ -140,8 +140,13 @@ namespace Den.Tools.GUI
 			}
 
 			#if UNITY_EDITOR
-			if (texture == null && !UnityEditor.BuildPipeline.isBuildingPlayer) //hack since there are no resources during build
-				throw new Exception("Could not find texture " + textureName); 
+			if (texture == null)
+			{
+				if (UnityEditor.BuildPipeline.isBuildingPlayer)
+					texture = Texture2D.whiteTexture; // Fallback during build since there are no resources
+				else
+					throw new Exception("Could not find texture " + textureName);
+			}
 			#else
 			if (texture == null)
 				throw new Exception("Could not find texture " + textureName); 
