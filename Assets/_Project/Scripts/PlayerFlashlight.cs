@@ -300,6 +300,7 @@ namespace Hecton8.Gameplay
         [Header("── References ──────────────────────────────")]
         [Tooltip("SpotLight na kamere (docherniy obekt).")]
         [SerializeField] private Light flashlightLight;
+        [SerializeField] private Light diveLampLightReference;
 
         private IBatteryTool _externalBatteryTool;
 
@@ -1012,10 +1013,9 @@ namespace Hecton8.Gameplay
             if (mainCameraTransform == null || _cachedMainCamera == null)
                 return;
 
-            Transform namedChild = mainCameraTransform.Find("DiveLamp_Light");
-            if (namedChild != null && namedChild.TryGetComponent(out Light namedLight))
+            if (diveLampLightReference != null)
             {
-                flashlightLight = namedLight;
+                flashlightLight = diveLampLightReference;
                 return;
             }
 
