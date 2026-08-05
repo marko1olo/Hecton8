@@ -50,6 +50,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -1403,16 +1404,15 @@ namespace Hecton8.Editor.Authoring
             }
 
             gate.BadReadsFound = bad.ToArray();
-            gate.TokenFound = source.IndexOf(OrganicContractOptInToken, StringComparison.Ordinal) >= 0;
+            gate.TokenFound = Regex.IsMatch(source, @"^[ 	]*//[ 	]*" + Regex.Escape(OrganicContractOptInToken) + @"\s*$", RegexOptions.Multiline);
 
             // TWO-PART GATE, and the second half is what makes it evidence instead of assertion.
-            // The token search is a plain substring match, so a COMMENT containing the token would
-            // satisfy it on its own - somebody could write "// TODO H8_ORGANIC_VCOL_CONTRACT_OK"
-            // and unlock six materials by accident. ANDing on "and none of the known-bad reads is
-            // still in the file" costs one comparison and means the claim and the evidence have to
-            // agree. It is still not a parse: a THIRD wrong read nobody has catalogued would pass
-            // both halves. This gate proves the two failures that were measured are gone, not that
-            // the shader is correct.
+            // The token search requires the marker to be on its own line as a comment, so a stray
+            // comment like "// TODO H8_ORGANIC_VCOL_CONTRACT_OK" would not satisfy it on its own.
+            // ANDing on "and none of the known-bad reads is still in the file" costs one comparison
+            // and means the claim and the evidence have to agree. It is still not a parse: a THIRD
+            // wrong read nobody has catalogued would pass both halves. This gate proves the two
+            // failures that were measured are gone, not that the shader is correct.
             gate.Allowed = gate.TokenFound && bad.Count == 0;
             return gate;
         }
@@ -1437,8 +1437,8 @@ namespace Hecton8.Editor.Authoring
                 report.Append("      Organic binding stays refused. 3dmodel.md:132-137 fixes ")
                       .Append("R=sway G=biolum B=AO A=family. Both halves must hold: the literal ")
                       .Append("token ").Append(OrganicContractOptInToken)
-                      .Append(" present AND zero known-bad reads. Token alone is not enough - a ")
-                      .Append("comment would satisfy a substring search.").AppendLine();
+                      .Append(" present AND zero known-bad reads. Token alone is not enough.")
+                      .AppendLine();
             }
         }
 
