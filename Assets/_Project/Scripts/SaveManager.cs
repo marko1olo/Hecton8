@@ -123,6 +123,7 @@ namespace Hecton8.SaveSystem
         private const int SaveSlotScratchCapacity = 8;
         private const int MaxSaveLoadCandidateCount = 9;
         private const string InvalidSlotNameReason = "Invalid save slot name.";
+        private const string SaveBuffersReleasedForShutdownReason = "Save aborted: persistence buffers were released for shutdown.";
         private const string SaveServiceUnavailableReason = "Save service unavailable.";
         private const string RespawnReconciliationInProgressReason = "Save blocked during respawn reconciliation.";
         private const string InvalidSlotFileStem = "slot_invalid";
@@ -334,6 +335,7 @@ namespace Hecton8.SaveSystem
 
             public void EnsureInitial()
             {
+                ClearDeferredDisposeRequest();
                 EnsureSaveTelemetryRing();
                 EnsureWfcOutpostBlackBoxRing();
                 EnsureWfcOutpostNativeBuffers();
@@ -343,6 +345,7 @@ namespace Hecton8.SaveSystem
 
             public void EnsureSaveWorkingBuffers()
             {
+                ClearDeferredDisposeRequest();
                 EnsureSavePayloadBuffer();
                 EnsureCompressedSaveBuffer();
                 EnsureSaveStagingBuffer();

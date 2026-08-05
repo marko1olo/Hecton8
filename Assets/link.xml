@@ -14,6 +14,18 @@
     <type fullname="Hecton8.Core.Contracts.Signals.MacroCollisionSignal" preserve="all" />
     <type fullname="Hecton8.Core.Contracts.Signals.WakeRequestSignal" preserve="all" />
   </assembly>
+  <!-- Reflection-only reachability. Hecton8.Physiology and Hecton8.AI.Ambient set
+       autoReferenced:false, no assembly references either one, and no scene or prefab holds a
+       script GUID from either. Without a link.xml entry neither assembly is a Unity linker root,
+       so both are excluded from the Player build and the GameBootstrapper Type.GetType calls at
+       GameBootstrapper.cs:8564 and :8575 return null. [Preserve] on the type does not cover this:
+       it is a marking rule applied only to assemblies the linker already processes. -->
+  <assembly fullname="Hecton8.Physiology" preserve="nothing">
+    <type fullname="Hecton8.Physiology.ShinobuSuitIntegrityRuntime" preserve="all" />
+  </assembly>
+  <assembly fullname="Hecton8.AI.Ambient" preserve="nothing">
+    <type fullname="Hecton8.AI.Ambient.AmbientBiotaDirector" preserve="all" />
+  </assembly>
   <assembly fullname="Unity.Collections" preserve="nothing">
     <type fullname="Unity.Collections.NativeArray`1" preserve="all" />
     <type fullname="Unity.Collections.NativeList`1" preserve="all" />
