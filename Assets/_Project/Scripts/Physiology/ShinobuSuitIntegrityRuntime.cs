@@ -13,14 +13,21 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Scripting;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Hecton8.Physiology
 {
+    // [Preserve] because the only construction site is GameBootstrapper's reflection ensure:
+    // Hecton8.Physiology references Hecton8.Core, so a direct bootstrap call would form an assembly
+    // cycle. No assembly references Hecton8.Physiology and its asmdef sets autoReferenced=false, so
+    // without this attribute the managed stripper can drop the type that Type.GetType must resolve.
+    [Preserve]
     [DisallowMultipleComponent]
     public sealed unsafe class ShinobuSuitIntegrityRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
+        private const string RuntimeRootName = "[ShinobuSuitIntegrityRuntime]";
         private const string CsvRelativePath = "suit_pressure_profiles.csv";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_323.bin";
         private const ulong DumpMagic = 0x5333323350524553UL; // S323PRES
@@ -105,6 +112,67 @@ namespace Hecton8.Physiology
         private bool _autopsyDumped;
         private bool _playerAupValid;
         private IDataVault _jobGuardVault;
+
+        /// <summary>
+        /// Resolve-or-create the sole suit pressure-damage authority.
+        /// Script GUID eb0be93afdca59f4389d297e159727d2 has ZERO live scene/prefab hits: a byte-level
+        /// scan of all 5174 project scene/prefab/asset files (33 of them binary-serialized) finds the
+        /// GUID only in its own .meta, and the binary 02_HECTON_WORLD type tree carries no
+        /// ShinobuSuitIntegrityRuntime entry. No authored instance exists anywhere. The old pressure
+        /// lane in HectonSurvivalSystem is a documented no-op stub that hands off to this type, and
+        /// this type registers its SlowTick/LateFrameTick lanes in OnEnable, which only runs on an
+        /// instance that already exists. Without this construction site nothing ever schedules
+        /// EvaluateHydrostaticPressureJob or CalculateStructuralYieldJob, so depth costs the suit no
+        /// integrity and barotrauma implosion damage can never reach the player.
+        /// Idempotent: an authored or already-constructed instance wins and no duplicate is built.
+        /// </summary>
+        public static ShinobuSuitIntegrityRuntime EnsureRuntimeInstance()
+        {
+            ShinobuSuitIntegrityRuntime existing = FindFirstObjectByType<ShinobuSuitIntegrityRuntime>(FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                // Re-activate a buried instance rather than stacking a second one. This is not cosmetic:
+                // TryRegisterHotSwapListener and TryRegisterTicks run from OnEnable, and OnEnable never
+                // fires while the GameObject is inactive in hierarchy, so a found-but-disabled owner
+                // leaves the pressure lane unscheduled exactly as an absent one would. Start() re-runs
+                // the same rebind, but it is equally gated on the object being active.
+                if (!existing.gameObject.activeSelf)
+                    existing.gameObject.SetActive(true);
+                if (!existing.enabled)
+                    existing.enabled = true;
+                return existing;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: no authored instance is reachable in any scene. Every
+            // dependency this type needs is resolved cold in OnEnable/Start through GlobalRegistry
+            // (DataVault, Player, OceanKinematics, TickDispatcher) and re-resolved on hot swap through
+            // OnGlobalRegistryServiceReplaced, so a runtime-created owner drives the full pressure lane.
+            GameObject runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: GameObject[1] - bootstrap-owned suit pressure authority root - owner: ShinobuSuitIntegrityRuntime
+            ShinobuSuitIntegrityRuntime runtime = runtimeRoot.AddComponent<ShinobuSuitIntegrityRuntime>();
+
+            // Disarm the emergency mock ramp on the bootstrap-built owner, because the bootstrap
+            // construction site runs from GameBootstrapper.PublishPlayerRuntimeReference, which
+            // DisablePlayer calls before Step 3 world generation and Step 7 player spawn. This owner is
+            // therefore alive for the whole loading screen with no player AUP bound, and the class has
+            // no player-existence guard: SlowTick would set useMock, EvaluateHydrostaticPressureJob
+            // would replace the player position with the synthetic 0..MockMaxDepthMeters ramp (8000 m
+            // by SanitizeTuning default), and at 8000 m the 61 ATM standard profile sees ~12x
+            // overpressure - integrity reaches CatastrophicIntegrity01 and EnqueueImplosionDamage fires
+            // a 9999-magnitude CombatDamageSignal at the canonical player hash while the player is
+            // still suspended behind the Kinematic Arrest Gate. With the ramp disarmed the no-player
+            // branch is provably inert instead: player and sea level collapse onto the same AUP Y,
+            // ResolveDepthMetersFromAup returns 0, pressure is SurfacePressureAtm, overpressure is 0,
+            // and no damage, groan or implosion is emitted until a real player AUP binds through
+            // PlayerRuntimeContextService. The serialized default stays true so an authored instance a
+            // designer places for pressure-profile tuning keeps the diagnostic ramp.
+            // Assigning after AddComponent is safe: neither Awake nor OnEnable reads this field, and
+            // the first read is in SlowTick, which cannot run before the dispatcher's next slow phase.
+            runtime.enableEmergencyMockPressureProfile = false;
+            return runtime;
+        }
 
         private void Awake()
         {

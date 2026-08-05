@@ -8554,6 +8554,16 @@ namespace Hecton8.Bootstrap
                 Hecton8.Narrative.AudioLogSystem.EnsureRuntimeInstance();
                 Hecton8.UI.HectonFabricatorUI.EnsureRuntimeInstance();
 
+                // ShinobuSuitIntegrityRuntime is the sole pressure-damage authority for the player;
+                // HectonSurvivalSystem's old pressure lane is a no-op stub that hands off to it.
+                // Script GUID eb0be93afdca59f4389d297e159727d2 - ZERO live scene/prefab hits, and no
+                // ShinobuSuitIntegrityRuntime entry in the binary 02_HECTON_WORLD type tree, so
+                // OnEnable tick registration never ran and depth cost the suit nothing. It lives in
+                // Hecton8.Physiology, which references Core; a direct call would form a
+                // Core<->Physiology cycle, so reflect the factory exactly like AmbientBiotaDirector.
+                TryEnsureRuntimeServiceByReflection(
+                    "Hecton8.Physiology.ShinobuSuitIntegrityRuntime, Hecton8.Physiology");
+
                 // Second wave: factories + soft-FAIL validators already present; bootstrap wire
                 // was the missing construction site (scene/prefab hits absent or self-only).
                 Hecton8.Gameplay.HazardZoneManager.EnsureRuntimeInstance();
