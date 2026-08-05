@@ -159,7 +159,7 @@ public static class DebugTerrainAlphamaps
 
         if (terrains.Length == 0)
         {
-            // WAS THE HEADLINE BUG: the whole body was inside `if (terrains.Length > 0)` and Exit(0) sat
+            // WAS THE HEADLINE ISSUE: the whole body was inside `if (terrains.Length > 0)` and Exit(0) sat
             // outside it, so this path logged nothing and reported success. FindObjectsByType skips
             // inactive objects, so this cannot claim the scene has no terrain - only that no ACTIVE one was
             // returned.
