@@ -156,7 +156,9 @@ def classify_native_allocation_hits(hits):
     return buckets
 
 
-def _safe_eval(expr_str):
+def _safe_eval(expr_str, constants=None):
+    if constants is None:
+        constants = {}
     operators = {
         ast.Add: operator.add,
         ast.Sub: operator.sub,
@@ -181,6 +183,10 @@ def _safe_eval(expr_str):
             if not isinstance(node.value, (int, float)):
                 raise ValueError(f"Unsupported constant type {type(node.value)}")
             return node.value
+        elif isinstance(node, ast.Name):
+            if node.id in constants:
+                return constants[node.id]
+            raise ValueError(f"Unknown variable {node.id}")
         elif isinstance(node, ast.BinOp):
             left = _eval(node.left, depth + 1)
             right = _eval(node.right, depth + 1)
@@ -209,12 +215,8 @@ def eval_int_expr(expr, constants):
     normalized = normalized.replace("<<", " << ")
     normalized = re.sub(r"(?<=\d)[lLfF]\b", "", normalized)
     normalized = re.sub(r"\b(?:[A-Za-z_]\w*\.)+([A-Za-z_]\w*)\b", r"\1", normalized)
-    for name in sorted(constants.keys(), key=len, reverse=True):
-        normalized = re.sub(rf"\b{name}\b", str(constants[name]), normalized)
-    if not re.fullmatch(r"[0-9+\-*/()<> \t]+", normalized):
-        return None
     try:
-        return int(_safe_eval(normalized))
+        return int(_safe_eval(normalized, constants))
     except Exception:
         return None
 
