@@ -1,0 +1,3 @@
+What: Added unit test `ApplyTuningState_ClampsPlanetCenterRadiusAndAppliesSunProperties` to `HectonCelestialEngineEditTests.cs`.
+Coverage: Validates `HectonCelestialEngine.ApplyTuningState` parameter clamping logic (`fallbackAngularRadius`) and properties assignment (`sunLight.intensity`, `sunLight.color`).
+Result: The testing gap specified has been successfully covered.

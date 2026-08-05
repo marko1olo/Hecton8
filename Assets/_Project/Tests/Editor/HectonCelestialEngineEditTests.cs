@@ -1648,6 +1648,38 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
+    public void ApplyTuningState_ClampsPlanetCenterRadiusAndAppliesSunProperties()
+    {
+        GameObject engineObj = new GameObject("TestEngine");
+        HectonCelestialEngine engine = engineObj.AddComponent<HectonCelestialEngine>();
+
+        GameObject sunObj = new GameObject("SunLight");
+        Light sunLight = sunObj.AddComponent<Light>();
+
+        System.Type nestedProfileType = engine.GetType().GetNestedType("AegirSkyProjectionProfile", BindingFlags.NonPublic);
+        object defaultProfile = nestedProfileType.GetProperty("Default", BindingFlags.Public | BindingFlags.Static).GetValue(null);
+
+        SetPrivateField(engine, "aegirSkyProjection", defaultProfile);
+        SetPrivateField(engine, "sunLight", sunLight);
+
+        engine.ApplyTuningState(150f, 2.5f, Color.red);
+
+        object profileObj = GetPrivateField(engine, "aegirSkyProjection");
+        System.Type profileType = profileObj.GetType();
+        FieldInfo radiusField = profileType.GetField("fallbackAngularRadius");
+        float radius = (float)radiusField.GetValue(profileObj);
+
+        // 150 / 100 = 1.5, clamped to 0.05 - 0.65 -> 0.65
+        Assert.That(radius, Is.EqualTo(0.65f).Within(0.0001f));
+
+        Assert.That(sunLight.intensity, Is.EqualTo(2.5f));
+        Assert.That(sunLight.color, Is.EqualTo(Color.red));
+
+        Object.DestroyImmediate(engineObj);
+        Object.DestroyImmediate(sunObj);
+    }
+
+    [Test]
     public void SeismicWaveMathRejectsFarFiniteAupBeforeFloatCast()
     {
         SeismicSignal signal = CreateRadialSeismicSignal();
