@@ -613,7 +613,7 @@ namespace Den.Tools.Splines
 				else
 					FillApproxLengthLut(iterations, tmp);
 
-				if (length < linearLength) //hack: FillLinearLengthLut returns 0 sometimes. Anyways beizer segment can't be shorter than linear
+				if (length < linearLength) // Anyways beizer segment can't be shorter than linear
 					length = linearLength;
 			}
 
@@ -661,6 +661,7 @@ namespace Den.Tools.Splines
 
 			public void FillLinearLengthLut ()
 			{
+				length = (start.pos-end.pos).magnitude;
 				for (int i=0; i<8; i++)
 				{
 					float percent = (i+1) / 9f;
