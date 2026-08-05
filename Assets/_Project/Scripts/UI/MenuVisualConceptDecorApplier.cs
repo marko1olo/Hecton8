@@ -77,7 +77,7 @@ namespace Hecton8.UI
             if (_root == null)
             {
                 GameObject rootObject = new GameObject("MenuConceptDecorRoot", typeof(RectTransform), typeof(CanvasGroup)); // COLD ALLOC: menu concept decor layer.
-                _root = rootObject.GetComponent<RectTransform>();
+                _root = (RectTransform)rootObject.transform;
                 _group = rootObject.GetComponent<CanvasGroup>();
             }
 
@@ -87,7 +87,7 @@ namespace Hecton8.UI
             _root.gameObject.layer = parent.gameObject.layer;
 
             if (_group == null)
-                _group = _root.gameObject.GetComponent<CanvasGroup>();
+                _root.gameObject.TryGetComponent(out _group);
 
             _group.alpha = 1f;
             _group.interactable = false;
@@ -98,13 +98,20 @@ namespace Hecton8.UI
                 EnsureSlot(i);
         }
 
+        private static readonly string[] SlotNames = new string[12]
+        {
+            "Decor_TopRail", "Decor_BottomRail", "Decor_LeftRail", "Decor_RightRail",
+            "Decor_AngleA", "Decor_AngleB", "Decor_MarkerA", "Decor_MarkerB",
+            "Decor_MarkerC", "Decor_MarkerD", "Decor_Scanline", "Decor_Horizon"
+        };
+
         private void EnsureSlot(int index)
         {
             DecorSlot slot = _slots[index];
             if (slot.Rect != null && slot.Image != null)
                 return;
 
-            GameObject slotObject = new GameObject(ResolveSlotName(index), typeof(RectTransform), typeof(Image)); // COLD ALLOC: fixed menu concept decor primitive.
+            GameObject slotObject = new GameObject(SlotNames[index], typeof(RectTransform), typeof(Image)); // COLD ALLOC: fixed menu concept decor primitive.
             slotObject.transform.SetParent(_root, false);
             slotObject.layer = _root.gameObject.layer;
 
@@ -114,25 +121,6 @@ namespace Hecton8.UI
             image.color = Color.clear;
 
             _slots[index] = new DecorSlot(rect, image);
-        }
-
-        private static string ResolveSlotName(int index)
-        {
-            switch (index)
-            {
-                case 0: return "Decor_TopRail";
-                case 1: return "Decor_BottomRail";
-                case 2: return "Decor_LeftRail";
-                case 3: return "Decor_RightRail";
-                case 4: return "Decor_AngleA";
-                case 5: return "Decor_AngleB";
-                case 6: return "Decor_MarkerA";
-                case 7: return "Decor_MarkerB";
-                case 8: return "Decor_MarkerC";
-                case 9: return "Decor_MarkerD";
-                case 10: return "Decor_Scanline";
-                default: return "Decor_Horizon";
-            }
         }
 
         private void ConfigureConcept(
