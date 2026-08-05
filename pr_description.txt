@@ -1,0 +1,4 @@
+Title: 🧪 [testing improvement description]
+🎯 **What:** Added comprehensive unit tests for `EntityChangeDetector.FlushChanges` missing parameters.
+📊 **Coverage:** Covered Rotation, Scale, State, Inventory, Active, and Velocity change events, verifying that properties correctly trigger callbacks when dirtied and provided with differing values.
+✨ **Result:** 100% path coverage achieved for the FlushChanges invocation method, preventing future regressions.

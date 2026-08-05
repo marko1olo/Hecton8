@@ -233,6 +233,166 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void EntityChangeDetector_FlushChanges_InvokesCallbacksForRotation_WhenRotationChanges()
+        {
+            var detector = new EntityChangeDetector("TestEntity");
+
+            bool rotationChangedCalled = false;
+            Quaternion oldRot = Quaternion.identity;
+            Quaternion newRot = Quaternion.identity;
+
+            detector.OnRotationChanged += (oldV, newV) =>
+            {
+                rotationChangedCalled = true;
+                oldRot = oldV;
+                newRot = newV;
+            };
+
+            detector.MarkDirty(EntityChangeFlag.Rotation);
+
+            var expectedNewRot = Quaternion.Euler(0, 90, 0);
+            detector.FlushChanges(currentRot: expectedNewRot);
+
+            Assert.IsTrue(rotationChangedCalled);
+            Assert.AreEqual(Quaternion.identity, oldRot);
+            Assert.AreEqual(expectedNewRot, newRot);
+            Assert.IsFalse(detector.IsDirty(EntityChangeFlag.Rotation));
+        }
+
+        [Test]
+        public void EntityChangeDetector_FlushChanges_InvokesCallbacksForScale_WhenScaleChanges()
+        {
+            var detector = new EntityChangeDetector("TestEntity");
+
+            bool scaleChangedCalled = false;
+            Vector3 oldScale = Vector3.one;
+            Vector3 newScale = Vector3.one;
+
+            detector.OnScaleChanged += (oldV, newV) =>
+            {
+                scaleChangedCalled = true;
+                oldScale = oldV;
+                newScale = newV;
+            };
+
+            detector.MarkDirty(EntityChangeFlag.Scale);
+
+            var expectedNewScale = new Vector3(2, 2, 2);
+            detector.FlushChanges(currentScale: expectedNewScale);
+
+            Assert.IsTrue(scaleChangedCalled);
+            Assert.AreEqual(Vector3.one, oldScale);
+            Assert.AreEqual(expectedNewScale, newScale);
+            Assert.IsFalse(detector.IsDirty(EntityChangeFlag.Scale));
+        }
+
+        [Test]
+        public void EntityChangeDetector_FlushChanges_InvokesCallbacksForState_WhenStateChanges()
+        {
+            var detector = new EntityChangeDetector("TestEntity");
+
+            bool stateChangedCalled = false;
+            int oldState = 0;
+            int newState = 0;
+
+            detector.OnStateChanged += (oldV, newV) =>
+            {
+                stateChangedCalled = true;
+                oldState = oldV;
+                newState = newV;
+            };
+
+            detector.MarkDirty(EntityChangeFlag.State);
+
+            int expectedNewState = 1;
+            detector.FlushChanges(currentState: expectedNewState);
+
+            Assert.IsTrue(stateChangedCalled);
+            Assert.AreEqual(0, oldState);
+            Assert.AreEqual(expectedNewState, newState);
+            Assert.IsFalse(detector.IsDirty(EntityChangeFlag.State));
+        }
+
+        [Test]
+        public void EntityChangeDetector_FlushChanges_InvokesCallbacksForInventory_WhenInventoryChanges()
+        {
+            var detector = new EntityChangeDetector("TestEntity");
+
+            bool inventoryChangedCalled = false;
+            int newHash = 0;
+
+            // Inventory only provides newHash
+            detector.OnInventoryChanged += (newV) =>
+            {
+                inventoryChangedCalled = true;
+                newHash = newV;
+            };
+
+            detector.MarkDirty(EntityChangeFlag.Inventory);
+
+            int expectedNewHash = 12345;
+            detector.FlushChanges(inventoryHash: expectedNewHash);
+
+            Assert.IsTrue(inventoryChangedCalled);
+            Assert.AreEqual(expectedNewHash, newHash);
+            Assert.IsFalse(detector.IsDirty(EntityChangeFlag.Inventory));
+        }
+
+        [Test]
+        public void EntityChangeDetector_FlushChanges_InvokesCallbacksForActive_WhenActiveChanges()
+        {
+            var detector = new EntityChangeDetector("TestEntity");
+
+            bool activeChangedCalled = false;
+            bool oldActive = true;
+            bool newActive = true;
+
+            detector.OnActiveChanged += (oldV, newV) =>
+            {
+                activeChangedCalled = true;
+                oldActive = oldV;
+                newActive = newV;
+            };
+
+            detector.MarkDirty(EntityChangeFlag.Active);
+
+            bool expectedNewActive = false;
+            detector.FlushChanges(isActive: expectedNewActive);
+
+            Assert.IsTrue(activeChangedCalled);
+            Assert.AreEqual(true, oldActive);
+            Assert.AreEqual(expectedNewActive, newActive);
+            Assert.IsFalse(detector.IsDirty(EntityChangeFlag.Active));
+        }
+
+        [Test]
+        public void EntityChangeDetector_FlushChanges_InvokesCallbacksForVelocity_WhenVelocityChanges()
+        {
+            var detector = new EntityChangeDetector("TestEntity");
+
+            bool velocityChangedCalled = false;
+            Vector3 oldVel = Vector3.zero;
+            Vector3 newVel = Vector3.zero;
+
+            detector.OnVelocityChanged += (oldV, newV) =>
+            {
+                velocityChangedCalled = true;
+                oldVel = oldV;
+                newVel = newV;
+            };
+
+            detector.MarkDirty(EntityChangeFlag.Velocity);
+
+            var expectedNewVel = new Vector3(10, 0, 0);
+            detector.FlushChanges(currentVelocity: expectedNewVel);
+
+            Assert.IsTrue(velocityChangedCalled);
+            Assert.AreEqual(Vector3.zero, oldVel);
+            Assert.AreEqual(expectedNewVel, newVel);
+            Assert.IsFalse(detector.IsDirty(EntityChangeFlag.Velocity));
+        }
+
+        [Test]
         public void EntityChangeDetector_GetOrCreateDetector_ReturnsSameInstanceForSameId()
         {
             var detector1 = EntityChangeManager.GetOrCreateDetector("TestEntity1");
