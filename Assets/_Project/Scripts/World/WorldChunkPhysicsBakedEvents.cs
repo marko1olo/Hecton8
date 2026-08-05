@@ -178,6 +178,75 @@ namespace Hecton8.World
             return found;
         }
 
+        /// <summary>
+        /// Reads one latched chunk state by index, for a caller that must inspect what this lane has actually
+        /// proven instead of asking about a point it already committed to. Valid indices are
+        /// 0 .. <see cref="LatchedChunkCount"/>-1. Order is insertion order, not spatial order, and the ring
+        /// overwrite in <see cref="Latch"/> means an index does not identify the same chunk across calls.
+        ///
+        /// Allocation-free: a 64-byte struct copied out of the fixed latch array.
+        /// </summary>
+        public static bool TryGetLatchedChunk(int index, out WorldChunkPhysicsBakedSignal signal)
+        {
+            if ((uint)index >= (uint)_latchCount)
+            {
+                signal = default;
+                return false;
+            }
+
+            signal = _latch[index];
+            return true;
+        }
+
+        /// <summary>
+        /// Names the PROVEN-BAKED chunk whose footprint centre lies closest to the given point, so a degraded
+        /// spawn can land on ground with collider proof instead of at an arbitrary coordinate.
+        ///
+        /// Written because `HectonPlayerSpawner.cs`:1885 `ForceFallbackSpawn` teleports to the world-centre
+        /// water level with no bake proof of any kind — the one release path in that class not behind the
+        /// gate — and its own comment at :1917 names the missing accessor as the reason it cannot do better:
+        /// this lane exposed point queries only, so a caller could ask "is THIS point baked" but never
+        /// "which point IS baked".
+        ///
+        /// Acceptance matches <see cref="IsWorldPointPhysicsBaked"/> exactly — collider active, no terminal
+        /// failure — so the returned centre satisfies that predicate rather than merely resembling it.
+        /// `center.y` is the chunk's terrain BASE height
+        /// (<see cref="WorldChunkPhysicsBakedSignal.TerrainPosition"/>), NOT a ground height at the centre:
+        /// vertical placement stays with the caller, which owns the character's height offset.
+        ///
+        /// Allocation-free: one pass over the fixed latch, squared distances, no sqrt, no sort, no collection.
+        /// </summary>
+        public static bool TryGetNearestPhysicsBakedChunkCenter(float originX, float originZ, out Vector3 center)
+        {
+            center = default;
+            float bestSqrDistance = 0f;
+            bool found = false;
+            int count = _latchCount;
+            for (int i = 0; i < count; i++)
+            {
+                uint flags = _latch[i].Flags;
+                if ((flags & WorldChunkPhysicsBakedSignal.FlagColliderActive) == 0u ||
+                    (flags & WorldChunkPhysicsBakedSignal.FlagBakeFailed) != 0u)
+                {
+                    continue;
+                }
+
+                float centerX = _latch[i].TerrainPosition.x + _latch[i].TerrainSize.x * 0.5f;
+                float centerZ = _latch[i].TerrainPosition.z + _latch[i].TerrainSize.z * 0.5f;
+                float deltaX = centerX - originX;
+                float deltaZ = centerZ - originZ;
+                float sqrDistance = deltaX * deltaX + deltaZ * deltaZ;
+                if (found && sqrDistance >= bestSqrDistance)
+                    continue;
+
+                bestSqrDistance = sqrDistance;
+                center.Set(centerX, _latch[i].TerrainPosition.y, centerZ);
+                found = true;
+            }
+
+            return found;
+        }
+
         private static void Latch(in WorldChunkPhysicsBakedSignal signal)
         {
             for (int i = 0; i < _latchCount; i++)

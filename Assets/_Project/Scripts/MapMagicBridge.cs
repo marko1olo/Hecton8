@@ -516,6 +516,13 @@ namespace Hecton8.Core
             if (!snapshot.IsValid)
                 return false;
 
+            // R99 RESIDENCY EVICTION. A move ABANDONS the tile's previous world footprint, and until now
+            // nothing retired the bake proof that footprint had already earned. Published before the
+            // listener-count early-return below for the same reason the applied path publishes before its
+            // own (:497): the physics lane is a gate, not a notification, and it must stay truthful in a
+            // scene where no listener happens to be attached.
+            TryPublishWorldChunkPhysicsBakedEvicted(in snapshot);
+
             if (_listenerCount <= 0)
                 return false;
 
@@ -653,6 +660,59 @@ namespace Hecton8.Core
                 TerrainPosition = (float3)terrain.transform.position,
                 TerrainSize = (float3)terrainSize,
                 Flags = flags
+            };
+
+            return WorldChunkPhysicsBakedEvents.TryPublish(in signal);
+        }
+
+        /// <summary>
+        /// R99: retires the latched bake proof of a tile that has MOVED to a new coordinate.
+        ///
+        /// MapMagic builds infinite terrain by RECYCLING tile objects rather than creating them:
+        /// `TerrainTile.cs`:404-407 rewrites terrainData.size, :410 writes the new localPosition, and :416
+        /// fires `OnTileMoved` — all before the new coordinate has been generated. The Terrain therefore
+        /// sits at its NEW footprint still carrying the PREVIOUS coordinate's heights, and
+        /// <see cref="WorldChunkPhysicsBakedEvents"/> keys its latch on TerrainEntityHash, which the move
+        /// does not change. So the entry written by the last apply SURVIVES the move and goes on claiming
+        /// the OLD footprint is collider-active: `IsWorldPointPhysicsBaked` answers true for ground the
+        /// terrain has physically left, and the Kinematic Arrest Gate opens on proof that expired. Nothing
+        /// else retired it, because tile-APPLIED was the only event that published on this lane.
+        ///
+        /// Publishing the NEW footprint with <see cref="WorldChunkPhysicsBakedSignal.FlagBakeFailed"/>
+        /// replaces the stale entry — same hash, so <see cref="WorldChunkPhysicsBakedEvents"/> overwrites in
+        /// place rather than growing the latch — and states the truth: this chunk has no valid bake right
+        /// now. FlagBakeFailed is the lane's RESOLVING state by contract
+        /// (`WorldChunkPhysicsBakedSignal.cs`:35), not a wait state, so a consumer degrades and moves on
+        /// instead of blocking; the real apply then overwrites it through
+        /// <see cref="TryPublishWorldChunkPhysicsBaked"/> when generation completes.
+        ///
+        /// This does NOT cover the other two abandonment routes — generator-queue drain and tile-request
+        /// rejection. Neither is observable from this file: it only ever hears about tiles that reached a
+        /// terminal MapMagic event.
+        /// </summary>
+        private static bool TryPublishWorldChunkPhysicsBakedEvicted(in MapMagicTerrainTileSnapshot snapshot)
+        {
+            Terrain terrain = snapshot.Terrain;
+            if (terrain == null)
+                return false;
+
+            TerrainData terrainData = terrain.terrainData;
+            if (terrainData == null)
+                return false;
+
+            Vector3 terrainSize = terrainData.size;
+            if (!(terrainSize.x > 0f) || !(terrainSize.z > 0f))
+                return false;
+
+            WorldChunkPhysicsBakedSignal signal = new WorldChunkPhysicsBakedSignal
+            {
+                ChunkX = snapshot.TileX,
+                ChunkZ = snapshot.TileZ,
+                TerrainEntityHash = unchecked((uint)EntityId.ToULong(terrain.GetEntityId())),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                TerrainPosition = (float3)terrain.transform.position,
+                TerrainSize = (float3)terrainSize,
+                Flags = WorldChunkPhysicsBakedSignal.FlagColliderMissing | WorldChunkPhysicsBakedSignal.FlagBakeFailed
             };
 
             return WorldChunkPhysicsBakedEvents.TryPublish(in signal);
