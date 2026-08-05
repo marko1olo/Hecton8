@@ -1503,7 +1503,7 @@ namespace Hecton8.EditorTools.Diagnostics
                 if (!EvaluateScheduleCeilings())
                     return;
 
-                // L12 product fix: AdvancePhase authors _intent for the current hold, THEN publish.
+                // L12 product prevent: AdvancePhase authors _intent for the current hold, THEN publish.
                 // Previous order published the prior tick's intent (often default/zero on the first
                 // hold tick and one frame stale thereafter), so Swim holds could ship MoveDelta=0
                 // while phase code had already written (0,1). Consume is destructive (maxFrameAge=2);
