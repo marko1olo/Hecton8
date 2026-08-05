@@ -34,7 +34,6 @@ namespace Hecton8.Core
         private VisorHUDController _visorController;
         private HUDNotification _hudNotification;
         private IPlayerRuntimeContext _playerRuntimeContext;
-        private readonly List<VisorHUDController> _visorResolveBuffer = new List<VisorHUDController>(2); // COLD ALLOC: List<VisorHUDController>[2] - focused sensory hierarchy resolution buffer - owner: PlayerSensoryManager
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
@@ -259,7 +258,6 @@ namespace Hecton8.Core
             _visorController = null;
             _hudNotification = null;
             _playerRuntimeContext = null;
-            _visorResolveBuffer.Clear();
 
             GlobalRegistry.ClearPlayerSensoryRuntime(this);
             if (ReferenceEquals(s_activeRuntime, this))
@@ -398,10 +396,7 @@ namespace Hecton8.Core
 
                     if (_playerTransform != null && _visorController == null)
                     {
-                        _visorResolveBuffer.Clear();
-                        _playerTransform.GetComponentsInChildren(true, _visorResolveBuffer);
-                        if (_visorResolveBuffer.Count > 0)
-                            _visorController = _visorResolveBuffer[0];
+                        _visorController = _playerTransform.GetComponentInChildren<VisorHUDController>(true);
                     }
                 }
 

@@ -67,7 +67,6 @@ namespace Hecton8.Core
         private static PlayerRuntimeContextService s_activeRuntimeInstance;
 
         public static IPlayerRuntimeContext ActiveRuntimeContext => s_activeRuntimeInstance;
-        private readonly List<VisorHUDController> _visorResolveBuffer = new List<VisorHUDController>(2); // COLD ALLOC: List<VisorHUDController>[2] â€” one-shot player visor child resolution buffer used during root rebinds â€” owner: PlayerRuntimeContextService
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
@@ -1502,10 +1501,7 @@ namespace Hecton8.Core
 
             if (_playerTransform != null && _visorController == null)
             {
-                _visorResolveBuffer.Clear();
-                _playerTransform.GetComponentsInChildren(true, _visorResolveBuffer);
-                if (_visorResolveBuffer.Count > 0)
-                    _visorController = _visorResolveBuffer[0];
+                _visorController = _playerTransform.GetComponentInChildren<VisorHUDController>(true);
             }
         }
 
