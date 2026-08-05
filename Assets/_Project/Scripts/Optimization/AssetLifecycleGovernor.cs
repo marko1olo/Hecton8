@@ -550,19 +550,6 @@ namespace Hecton8.Optimization
             if (assetHash == 0u || string.IsNullOrEmpty(address))
                 return false;
 
-            if (!TryPrepareTrackerMutation())
-            {
-                return TryAcquireTrackedHandleFromManagedRecord(
-                    assetHash,
-                    owner,
-                    priority,
-                    residencyKind,
-                    sizeBytes,
-                    isChunkAsset,
-                    out handle,
-                    out cacheHit);
-            }
-
             EnsureNativeHandleStorage();
             if (TryAcquireTrackedHandle(assetHash, address, owner, priority, residencyKind, sizeBytes, isChunkAsset, out handle, out cacheHit))
                 return true;
@@ -651,19 +638,6 @@ namespace Hecton8.Optimization
             cacheHit = false;
             if (assetHash == 0u || reference == null || !reference.RuntimeKeyIsValid())
                 return false;
-
-            if (!TryPrepareTrackerMutation())
-            {
-                return TryAcquireTrackedHandleFromManagedRecord(
-                    assetHash,
-                    owner,
-                    priority,
-                    residencyKind,
-                    sizeBytes,
-                    isChunkAsset,
-                    out handle,
-                    out cacheHit);
-            }
 
             EnsureNativeHandleStorage();
             string address = reference.AssetGUID;
@@ -754,7 +728,7 @@ namespace Hecton8.Optimization
 
         internal bool MarkAddressableAssetAup(uint assetHash, double3 assetAup)
         {
-            if (assetHash == 0u || !math.all(math.isfinite(assetAup)) || !TryPrepareTrackerMutation())
+            if (assetHash == 0u || !math.all(math.isfinite(assetAup)))
                 return false;
 
             if (!TryResolveTrackerViews(
@@ -1434,10 +1408,6 @@ namespace Hecton8.Optimization
             _ttlEvaluationFlagsMirrored = false;
         }
 
-        private bool TryPrepareTrackerMutation()
-        {
-            return true;
-        }
 
         private bool IsTrackerMutationBlockedByScheduledJob()
         {
@@ -1445,43 +1415,7 @@ namespace Hecton8.Optimization
         }
 
 #if UNITY_ADDRESSABLES_EXIST
-        private bool TryAcquireTrackedHandleFromManagedRecord(
-            uint assetHash,
-            Component owner,
-            AssetPriorityTier priority,
-            AssetResidencyKind residencyKind,
-            long sizeBytes,
-            bool isChunkAsset,
-            out AsyncOperationHandle<GameObject> handle,
-            out bool cacheHit)
-        {
-            handle = default;
-            cacheHit = false;
-            if (!_assetRecords.TryGetValue(assetHash, out AssetRecord record) ||
-                !record.HasAddressableHandle ||
-                !record.AddressableHandle.IsValid())
-            {
-                return false;
-            }
 
-            record.RefCount = math.max(0, record.RefCount) + 1;
-            record.Owner = owner != null ? owner : record.Owner;
-            record.Priority = priority;
-            record.ResidencyKind = residencyKind;
-            record.PendingRelease = false;
-            record.LastAccessFrame = _frameSequence;
-            record.IsChunkAsset = isChunkAsset;
-
-            if (sizeBytes > 0L)
-                ReplaceTrackedSize(ref record, sizeBytes);
-
-            _assetRecords.Set(assetHash, record);
-            _nativeRefSyncRequired = true;
-            handle = record.AddressableHandle.Convert<GameObject>();
-            cacheHit = true;
-            _cacheHitCount++;
-            return true;
-        }
 
         private bool TryAcquireTrackedHandle(
             uint assetHash,
@@ -2164,8 +2098,6 @@ namespace Hecton8.Optimization
         private int TryDecrementNativeRefCount(uint assetHash, out int slot)
         {
             slot = -1;
-            if (!TryPrepareTrackerMutation())
-                return int.MinValue;
 
             if (!TryResolveTrackerViews(
                     out NativeArray<AssetTrackerDTO> trackers,
@@ -2793,8 +2725,6 @@ namespace Hecton8.Optimization
 
         private bool ClearNativeHandleSlot(uint assetHash)
         {
-            if (!TryPrepareTrackerMutation())
-                return false;
 
             if (!TryResolveTrackerViews(
                     out NativeArray<AssetTrackerDTO> trackers,
@@ -3127,8 +3057,6 @@ namespace Hecton8.Optimization
             tracker = default;
             ttlSeconds = 0f;
             flags = 0;
-            if (!TryPrepareTrackerMutation())
-                return false;
 
             if (ordinal < 0 ||
                 !TryResolveTrackerViews(
@@ -3203,8 +3131,6 @@ namespace Hecton8.Optimization
             assetHash = 0u;
             bundlePrefixHash = 0UL;
             refCount = 0;
-            if (!TryPrepareTrackerMutation())
-                return false;
 
             if (ordinal < 0 ||
                 !TryResolveTrackerViews(
@@ -3251,8 +3177,6 @@ namespace Hecton8.Optimization
 
         public bool SetHeapSanitizerPin(uint assetHash, bool pinned)
         {
-            if (!TryPrepareTrackerMutation())
-                return false;
 
             if (assetHash == 0u ||
                 !TryResolveTrackerViews(
@@ -3582,8 +3506,6 @@ namespace Hecton8.Optimization
 
         private void WriteHeapTelemetrySample()
         {
-            if (!TryPrepareTrackerMutation())
-                return;
 
             if (!TryResolveTelemetryView(out NativeArray<AssetHeapTelemetryEntry> telemetry) ||
                 !TryResolveTrackerViews(
@@ -4017,9 +3939,6 @@ namespace Hecton8.Optimization
         {
             int drained = 0;
             if (maxCount <= 0 || _pendingReleaseQueue.Count <= 0)
-                return 0;
-
-            if (!TryPrepareTrackerMutation())
                 return 0;
 
             bool hasTrackerViews = TryResolveTrackerViews(
