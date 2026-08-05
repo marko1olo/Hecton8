@@ -101,8 +101,15 @@ namespace Hecton8.Caves
 
         [Header("═══ Identity ═══")]
 
+
         [Tooltip("Human-readable preset name for debugging.")]
         public string presetName = "Generic Cave Fauna";
+
+        [Range(0f, 1f)]
+        public float predatorDensity = 0f;
+
+        public System.Collections.Generic.List<string> allowedSpecies;
+
 
         /// <summary>
         /// Creates a shallow cave fauna preset (peaceful, sparse).
@@ -112,6 +119,8 @@ namespace Hecton8.Caves
             return new CaveFaunaPreset
             {
                 presetName = "Shallow Cave Fauna",
+                predatorDensity = 0.05f,
+                allowedSpecies = new System.Collections.Generic.List<string> { "small_fish", "biolum_jelly" },
                 faunaDensity = 0.3f,
                 passivityLevel = 0.8f,
                 territoriality = 0.1f,
@@ -132,6 +141,8 @@ namespace Hecton8.Caves
             return new CaveFaunaPreset
             {
                 presetName = "Mid-Depth Cave Fauna",
+                predatorDensity = 0.3f,
+                allowedSpecies = new System.Collections.Generic.List<string> { "crab", "cave_eel", "small_fish" },
                 faunaDensity = 0.5f,
                 passivityLevel = 0.5f,
                 territoriality = 0.4f,
@@ -152,6 +163,8 @@ namespace Hecton8.Caves
             return new CaveFaunaPreset
             {
                 presetName = "Deep Cave Fauna",
+                predatorDensity = 0.8f,
+                allowedSpecies = new System.Collections.Generic.List<string> { "leviathan", "angler_fish" },
                 faunaDensity = 0.7f,
                 passivityLevel = 0.2f,
                 territoriality = 0.7f,
@@ -175,6 +188,8 @@ namespace Hecton8.Caves
             var adjusted = new CaveFaunaPreset
             {
                 presetName = this.presetName,
+                predatorDensity = math.lerp(this.predatorDensity, this.predatorDensity * 1.5f, hazardT),
+                allowedSpecies = this.allowedSpecies != null ? new System.Collections.Generic.List<string>(this.allowedSpecies) : null,
                 faunaDensity = math.lerp(this.faunaDensity, this.faunaDensity * 1.3f, moodT),
                 passivityLevel = math.lerp(this.passivityLevel, this.passivityLevel * 0.7f, hazardT),
                 territoriality = math.lerp(this.territoriality, this.territoriality * 1.5f, hazardT),
