@@ -1,0 +1,1 @@
+Intentional No-op: The reported vulnerability regarding shell=True in subprocess is not present in the codebase. Line 93 of Tools/TelemetryDashboard/server.py contains struct definitions, and no subprocess module is used in the file.
