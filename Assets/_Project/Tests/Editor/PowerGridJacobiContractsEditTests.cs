@@ -10,8 +10,8 @@ public sealed class PowerGridJacobiContractsEditTests
     [Test]
     public void PowerNodeDto_IsExactArm64Layout()
     {
-        Assert.IsTrue(PowerGridLayoutAudit.ValidatePowerNodeDtoLayout());
-        Assert.AreEqual(32, UnsafeUtility.SizeOf<PowerNodeDTO>());
+        Assert.IsTrue(PowerGridJacobiContracts.ValidatePowerNodeDtoLayout());
+        Assert.AreEqual(PowerGridJacobiConstants.PowerNodeDtoSizeBytes, UnsafeUtility.SizeOf<PowerNodeDTO>());
         Assert.AreEqual(0, OffsetOf<PowerNodeDTO>(nameof(PowerNodeDTO.NodeHash)));
         Assert.AreEqual(4, OffsetOf<PowerNodeDTO>(nameof(PowerNodeDTO.Potential)));
         Assert.AreEqual(8, OffsetOf<PowerNodeDTO>(nameof(PowerNodeDTO.MaxCapacity)));
@@ -22,10 +22,26 @@ public sealed class PowerGridJacobiContractsEditTests
         Assert.AreEqual(31, OffsetOf<PowerNodeDTO>("_pad7"));
     }
 
+
+    [Test]
+    public void PowerGridEdgeDto_IsExactArm64Layout()
+    {
+        Assert.IsTrue(PowerGridJacobiContracts.ValidatePowerGridEdgeDtoLayout());
+        Assert.AreEqual(PowerGridJacobiConstants.PowerGridEdgeDtoSizeBytes, UnsafeUtility.SizeOf<PowerGridEdgeDTO>());
+        Assert.AreEqual(0, OffsetOf<PowerGridEdgeDTO>(nameof(PowerGridEdgeDTO.SourceNodeHash)));
+        Assert.AreEqual(4, OffsetOf<PowerGridEdgeDTO>(nameof(PowerGridEdgeDTO.DestinationNodeHash)));
+        Assert.AreEqual(8, OffsetOf<PowerGridEdgeDTO>(nameof(PowerGridEdgeDTO.Conductance)));
+        Assert.AreEqual(12, OffsetOf<PowerGridEdgeDTO>(nameof(PowerGridEdgeDTO.CurrentFlow)));
+        Assert.AreEqual(16, OffsetOf<PowerGridEdgeDTO>(nameof(PowerGridEdgeDTO.Flags)));
+        Assert.AreEqual(20, OffsetOf<PowerGridEdgeDTO>(nameof(PowerGridEdgeDTO.Capacity)));
+        Assert.AreEqual(24, OffsetOf<PowerGridEdgeDTO>(nameof(PowerGridEdgeDTO.SourceNodeIndex)));
+        Assert.AreEqual(28, OffsetOf<PowerGridEdgeDTO>(nameof(PowerGridEdgeDTO.DestinationNodeIndex)));
+    }
+
     [Test]
     public void AllPowerDtos_HaveExactAuditedOffsets()
     {
-        Assert.IsTrue(PowerGridLayoutAudit.ValidateAllPowerLayouts());
+        Assert.IsTrue(PowerGridJacobiContracts.ValidateAllPowerLayouts());
         Assert.AreEqual(0, OffsetOf<PowerGridEdgeDTO>(nameof(PowerGridEdgeDTO.SourceNodeHash)));
         Assert.AreEqual(28, OffsetOf<PowerGridEdgeDTO>(nameof(PowerGridEdgeDTO.DestinationNodeIndex)));
         Assert.AreEqual(0, OffsetOf<PowerProfileDTO>(nameof(PowerProfileDTO.ProfileHash)));
