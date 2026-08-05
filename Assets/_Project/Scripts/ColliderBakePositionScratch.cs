@@ -159,7 +159,7 @@ namespace Hecton8.Physics
 
             // Allocate and push index buffer (Zero-copy native to native)
             mesh.SetIndexBufferParams(indexCount, UnityEngine.Rendering.IndexFormat.UInt32);
-            mesh.SetIndexBufferData(_indices, 0, 0, indexCount, 0, UnityEngine.Rendering.MeshUpdateFlags.DontRecalculateBounds | UnityEngine.Rendering.MeshUpdateFlags.DontValidateIndices);
+            mesh.SetIndexBufferData(_indices, 0, 0, indexCount, UnityEngine.Rendering.MeshUpdateFlags.DontRecalculateBounds | UnityEngine.Rendering.MeshUpdateFlags.DontValidateIndices);
 
             // Rebuild submesh descriptor
             mesh.SetSubMesh(0, new UnityEngine.Rendering.SubMeshDescriptor(0, indexCount, MeshTopology.Triangles), UnityEngine.Rendering.MeshUpdateFlags.DontRecalculateBounds | UnityEngine.Rendering.MeshUpdateFlags.DontValidateIndices);
