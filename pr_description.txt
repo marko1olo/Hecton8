@@ -1,0 +1,6 @@
+🧹 Remove stray debug logs in GameBootstrapper
+
+🎯 **What:** Removed two stray `Debug.Log` statements (`[GameBootstrapper-DEBUG]`) in `InitializeSceneActivatePhaseAsync` within `GameBootstrapper.cs`.
+💡 **Why:** To improve code maintainability by keeping the codebase clean of temporary debug logs. Removing them is completely safe and won't affect functionality.
+✅ **Verification:** Verified by removing the lines via python search/replace, reviewing the `git diff`, and running `python Tools/RunFullVerifySweep.py` to ensure the project continues to build and pass its tests.
+✨ **Result:** A cleaner `GameBootstrapper.cs` file with no stray debug logs.

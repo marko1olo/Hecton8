@@ -3187,11 +3187,9 @@ namespace Hecton8.Bootstrap
 
                 if (!_sceneActivationRequested && BootstrapState.IsGameReady)
                 {
-                    Debug.Log("[GameBootstrapper-DEBUG] Scene not bootstrap, IsGameReady=true");
                     return true;
                 }
 
-                Debug.Log("[GameBootstrapper-DEBUG] Calling ExecuteSceneActivationAsync from InitializeSceneActivatePhaseAsync");
                 _sceneActivationRequested = true;
                 BootstrapState.PublishBootstrapPresence(true);
                 return await ExecuteSceneActivationAsync(ct);
