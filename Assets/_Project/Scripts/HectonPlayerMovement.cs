@@ -2683,6 +2683,15 @@ namespace Hecton8.Gameplay
 
         internal void QueueSubsystemExternalAcceleration(Vector3 acceleration)
         {
+            // Kinematic Arrest Gate. This is the accumulator that PhysicsApplySystem's cached player
+            // force sink feeds, and that sink is deliberately consulted BEFORE the isKinematic
+            // rejection because this controller integrates outside PhysX and must keep receiving
+            // environmental force while the body is transiently kinematic (teleports, airlock
+            // snaps, safe-teleport). Dropping the force here instead of reordering that check
+            // suppresses it ONLY while suspended, and covers every other direct caller too.
+            if (_kinematicArrestRefcount > 0)
+                return;
+
             Vector3 safeAcceleration = HectonPlayerMotor.SafeVelocity(acceleration);
             if (safeAcceleration.sqrMagnitude <= 0.000001f)
                 return;
@@ -2692,6 +2701,9 @@ namespace Hecton8.Gameplay
 
         internal void QueueSubsystemExternalVelocityChange(Vector3 velocityChange)
         {
+            if (_kinematicArrestRefcount > 0)
+                return;
+
             Vector3 safeVelocityChange = HectonPlayerMotor.SafeVelocity(velocityChange);
             if (safeVelocityChange.sqrMagnitude <= 0.000001f)
                 return;
@@ -8666,6 +8678,84 @@ namespace Hecton8.Gameplay
             return HectonPlayerMotor.SafeVelocity(safeActualVelocity + platformVelocity, safeActualVelocity);
         }
 
+        /// <summary>
+        /// Kinematic Arrest Gate refcount. Never negative - see <see cref="ReleaseKinematicArrest"/>.
+        /// </summary>
+        private int _kinematicArrestRefcount;
+
+        /// <summary>
+        /// True while the Kinematic Arrest Gate holds this controller suspended for async world
+        /// streaming. This is the state `AGENTS.md:199` names "IsSuspended".
+        ///
+        /// This controller does NOT integrate through PhysX gravity (`_rb.useGravity = false` is
+        /// reasserted every fixed step), so `Rigidbody.isKinematic = true` alone does not suspend
+        /// it: gravity is queued by this class into the environment handler and pushed through
+        /// <see cref="HectonPlayerMotor"/>. While arrested, FixedTick queues no gravity, drains and
+        /// DISCARDS every buffered external force, runs no locomotion drive, and pins authoritative
+        /// linear velocity at exact zero at the end of every fixed step.
+        /// </summary>
+        public bool IsSuspended => _kinematicArrestRefcount > 0;
+
+        /// <summary>
+        /// True while the Kinematic Arrest Gate holds this controller.
+        /// </summary>
+        public bool IsKinematicArrestActive => _kinematicArrestRefcount > 0;
+
+        /// <summary>
+        /// Takes one reference on the Kinematic Arrest Gate and returns true if this call is the one
+        /// that closed it. Public, idempotent in effect, and safe to call when already arrested.
+        ///
+        /// REFCOUNTED, not a bare bool, because arrest holders overlap by construction: the spawn
+        /// gate and individual chunk bakes complete independently, and with a plain flag whichever
+        /// holder finished FIRST would release the player while a later one still needed it
+        /// suspended.
+        ///
+        /// On the closing edge this discards velocity accumulated BEFORE the gate closed via
+        /// <see cref="ResetKinematicTransientStateForTeleport"/>. Preserving it would let a
+        /// pre-arrest fall resume the instant the gate opens, which is the failure the gate exists
+        /// to prevent.
+        ///
+        /// Callers MUST pair this with <see cref="ReleaseKinematicArrest"/> on every exit path,
+        /// including failure and early return. A leaked reference leaves the player frozen forever.
+        /// </summary>
+        public bool AcquireKinematicArrest()
+        {
+            _kinematicArrestRefcount++;
+            if (_kinematicArrestRefcount != 1)
+                return false;
+
+            ResetKinematicTransientStateForTeleport();
+            return true;
+        }
+
+        /// <summary>
+        /// Drops one reference on the Kinematic Arrest Gate and returns true if this call released
+        /// the last one. Safe to call when not arrested.
+        ///
+        /// Clamps at zero rather than going negative: an unbalanced release is a caller defect, and
+        /// letting the count go negative would mean the NEXT legitimate acquire fails to arrest at
+        /// all - turning a double-release into a silent fall-through-the-world.
+        ///
+        /// Zeroes transient kinematic state on the opening edge as well, so the player starts from
+        /// rest on the now-baked terrain instead of inheriting anything a subsystem queued while it
+        /// was suspended.
+        /// </summary>
+        public bool ReleaseKinematicArrest()
+        {
+            if (_kinematicArrestRefcount <= 0)
+            {
+                _kinematicArrestRefcount = 0;
+                return false;
+            }
+
+            _kinematicArrestRefcount--;
+            if (_kinematicArrestRefcount != 0)
+                return false;
+
+            ResetKinematicTransientStateForTeleport();
+            return true;
+        }
+
         internal void ResetKinematicTransientStateForTeleport()
         {
             _playerMotor?.ResetRuntimeState();
@@ -10118,6 +10208,15 @@ namespace Hecton8.Gameplay
                 bool exosuitActive = IsExosuitTransportActive();
                 bool exosuitKinematicAuthority = TrySubmitExosuitKinematicAuthority(exosuitActive);
 
+                // Kinematic Arrest Gate (AGENTS.md:199). The exosuit already owns a proven
+                // "someone else drives the body, do not touch the motor" lattice: every force and
+                // locomotion site below is already gated on it, and the drain-without-apply paths
+                // it selects keep immersion, grounding, suit and snapshot state coherent instead of
+                // freezing them. The arrest reuses exactly that lattice rather than early-returning
+                // out of FixedTick, because an early return would leave _waterImmersionRatio,
+                // _isGrounded and the kinematics snapshot stale for the whole terrain wait.
+                bool motorAuthoritySuspended = exosuitKinematicAuthority || _kinematicArrestRefcount > 0;
+
                 ToggleBuoyancy(!exosuitActive);
                 RefreshSurfaceBreachLock(physicsImmersion);
                 UpdateSurfaceDiveCommitTimer(fixedDeltaTime, activeTransportPreset);
@@ -10127,7 +10226,7 @@ namespace Hecton8.Gameplay
                     : groundedOnShore ? 1f : 1f - math.saturate(physicsImmersion * gravityFadeRate);
                 _gravityScale = ResolveVrComfortGravityScale(targetGravityScale, fixedDeltaTime);
 
-                if (!exosuitKinematicAuthority && _gravityScale > 0.001f)
+                if (!motorAuthoritySuspended && _gravityScale > 0.001f)
                 {
                     float mass = ResolveAuthoritativeBodyMassKg();
                     _forceVector.x = _cachedGravity.x * mass * _gravityScale;
@@ -10175,9 +10274,9 @@ namespace Hecton8.Gameplay
                 _isSurfaceSwimming = !exosuitActive && !_isWalking && ResolveSurfaceSwimState(physicsImmersion, activeTransportPreset);
                 _currentLocomotionMode = ResolveLocomotionMode(physicsImmersion);
                 SyncStateMachineContext(exosuitActive, physicsImmersion, groundedOnDryLand, groundedOnShore);
-                _environmentHandler?.ExecuteStep(fixedDeltaTime, !exosuitKinematicAuthority);
-                ApplyQueuedExternalKinematicForces(fixedDeltaTime, !exosuitKinematicAuthority);
-                ApplyHighSpeedWipeoutSweep(fixedDeltaTime, !exosuitKinematicAuthority);
+                _environmentHandler?.ExecuteStep(fixedDeltaTime, !motorAuthoritySuspended);
+                ApplyQueuedExternalKinematicForces(fixedDeltaTime, !motorAuthoritySuspended);
+                ApplyHighSpeedWipeoutSweep(fixedDeltaTime, !motorAuthoritySuspended);
                 UpdateSurfaceLockState(fixedDeltaTime);
                 UpdateWaterPresentationPose(fixedDeltaTime);
                 UpdateDynamicCollisionProfile(fixedDeltaTime, exosuitKinematicAuthority);
@@ -10192,13 +10291,16 @@ namespace Hecton8.Gameplay
                 ApplyHydrostaticExitWeighting(previousWaterImmersionRatio);
 
                 SmoothDampingTransition(fixedDeltaTime, suit);
-                TryApplyKinematicWallKick(exosuitKinematicAuthority);
+                TryApplyKinematicWallKick(motorAuthoritySuspended);
 
-                ProcessJumpInput(fixedDeltaTime, exosuitActive, groundedOnDryLand, groundedOnShore);
+                // Arrest-only guard: passing motorAuthoritySuspended here would also suppress the
+                // exosuit jump-jet path, which legitimately runs under exosuit kinematic authority.
+                if (_kinematicArrestRefcount <= 0)
+                    ProcessJumpInput(fixedDeltaTime, exosuitActive, groundedOnDryLand, groundedOnShore);
 
-                ApplyLocomotionPhysics(fixedDeltaTime, suit, activeTransportPreset, exosuitActive, exosuitKinematicAuthority, groundedOnDryLand, groundedOnShore);
+                ApplyLocomotionPhysics(fixedDeltaTime, suit, activeTransportPreset, exosuitActive, motorAuthoritySuspended, groundedOnDryLand, groundedOnShore);
 
-                FinalizeFixedTick(fixedDeltaTime, suit, exosuitKinematicAuthority);
+                FinalizeFixedTick(fixedDeltaTime, suit, motorAuthoritySuspended);
             }
         }
 
@@ -10286,11 +10388,11 @@ namespace Hecton8.Gameplay
             SuitData suit,
             PlayerTransportPreset activeTransportPreset,
             bool exosuitActive,
-            bool exosuitKinematicAuthority,
+            bool motorAuthoritySuspended,
             bool groundedOnDryLand,
             bool groundedOnShore)
         {
-            if (exosuitKinematicAuthority)
+            if (motorAuthoritySuspended)
             {
                 CoolExosuitJumpJets(fixedDeltaTime);
                 AdvanceExosuitGrappleRequest(fixedDeltaTime);
@@ -10337,9 +10439,9 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void FinalizeFixedTick(float fixedDeltaTime, SuitData suit, bool exosuitKinematicAuthority)
+        private void FinalizeFixedTick(float fixedDeltaTime, SuitData suit, bool motorAuthoritySuspended)
         {
-            if (!exosuitKinematicAuthority)
+            if (!motorAuthoritySuspended)
             {
                 TryProcessKccWallScrapeFeedback();
                 ApplyWipeoutRecoveryForces(fixedDeltaTime);
@@ -10347,6 +10449,15 @@ namespace Hecton8.Gameplay
                 ClampVelocity(suit);
             }
             SanitizeKccFiniteState();
+
+            // Terminal arrest clamp. This is a BACKSTOP, not the primary guard: the sites above
+            // already refuse to drive the motor while arrested. It exists so that any force path
+            // that is added later - or any one this change did not enumerate in a 15k-line file -
+            // cannot move a suspended player. Runs before the snapshot read below so telemetry,
+            // UI speed and PhysicsApplySystem all observe the arrested velocity as exact zero.
+            if (_kinematicArrestRefcount > 0)
+                ApplyMotorLinearVelocity(Vector3.zero);
+
             Vector3 safeVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
             Vector3 bodyRuntimePosition = ResolveBodyRuntimePosition();
             WritePlayerKinematicsSnapshot(bodyRuntimePosition, safeVelocity, _lastPlayerKinematicsIntendedMovement);
@@ -10358,7 +10469,7 @@ namespace Hecton8.Gameplay
             PublishMovementAcousticSignal(safeVelocity);
             SyncSwimVatSpeedScalar(safeVelocity, suit);
             PushMovementStaminaBurnInput();
-            ApplyVoxelNoClipFailsafe(exosuitKinematicAuthority);
+            ApplyVoxelNoClipFailsafe(motorAuthoritySuspended);
             CaptureFixedInterpolationState();
             UIStateStore.WriteValue(UIValueSlotId.MovementSpeed, ApproximateVectorMagnitude(safeVelocity), (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds);
             UpdateGroundDiagnostics();

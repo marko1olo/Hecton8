@@ -46,11 +46,42 @@ namespace Hecton8.World
         public static int LatchedChunkCount => _latchCount;
 
         /// <summary>
-        /// True once this lane has published at least one signal in this session. Consumers use it to tell
-        /// "the physics-bake route is live, so honour the gate" from "no terrain provider in this scene, so
-        /// do not block on a signal that will never come".
+        /// True once this lane has published at least one signal in this session.
+        ///
+        /// This is a PUBLISH COUNTER, not a provider census, and it must not be used to decide whether to
+        /// honour the readiness gate. An inactive lane is the INITIAL state of every run, not a "no terrain
+        /// provider" state, so a consumer that reads `!IsLaneActive` as "nothing will ever publish, skip the
+        /// gate" holds the gate wide open across the entire window between scene load and the first tile
+        /// apply — precisely the window the Kinematic Arrest Gate exists to cover. Ask
+        /// <see cref="IsProviderRegistered"/> instead.
+        ///
+        /// The property stays because it is still correct for the question it can answer: telemetry that must
+        /// separate "the streaming route never ran at all this session" from "it ran and the point failed".
         /// </summary>
         public static bool IsLaneActive => _publishedCount > 0;
+
+        /// <summary>
+        /// True when a world provider that publishes on this lane EXISTS in the active scene, whether or not
+        /// it has produced anything yet. This is the fact a readiness gate must branch on: it is established
+        /// at provider `OnEnable` — `MapMagicRuntimeBridge.cs`:385 registers the terrain provider,
+        /// `HectonVoxelEngine.cs`:1234 registers the voxel engine — so it answers correctly from the first
+        /// frame, long before either has a baked chunk to broadcast.
+        ///
+        /// Deliberately `ReferenceEquals` rather than `!= null`. `GlobalRegistry.VoxelEngine` is a
+        /// MonoBehaviour, so `!= null` would invoke Unity's overloaded operator and report a DESTROYED but
+        /// still-registered provider as ABSENT — opening the gate on a scene that demonstrably has a
+        /// provider. Reference identity fails CLOSED instead: a provider that died without unregistering
+        /// keeps the gate shut and the consumer's own degradation path resolves it. Normal teardown is clean
+        /// either way, because both providers unregister in `OnDisable` (`MapMagicRuntimeBridge.cs`:403,
+        /// `HectonVoxelEngine.cs`:3261).
+        ///
+        /// Pure read per `AGENTS.md`:222 — two static field reads and two reference compares. No allocation,
+        /// no scene search, no publish, no registry mutation. This is cold identity, not hot polling: the
+        /// spawn gate asks it on a bounded retry cadence, never from a tick or physics path.
+        /// </summary>
+        public static bool IsProviderRegistered =>
+            !ReferenceEquals(GlobalRegistry.Terrain, null) ||
+            !ReferenceEquals(GlobalRegistry.VoxelEngine, null);
 
         public static bool TryPublish(in WorldChunkPhysicsBakedSignal signal)
         {

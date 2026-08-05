@@ -486,12 +486,90 @@ namespace Hecton8.SaveSystem
             internal System.Action TestHook_DisposeThrow;
 #endif
 
+            // Save-write lease fence.
+            //
+            // TryExecuteVerifiedSavePipeline runs on a background thread (SaveGameAsyncInternal switches
+            // with Awaitable.BackgroundThreadAsync) and hands SavePayloadBuffer/CompressedSaveBuffer to
+            // SaveBinaryStorage, which takes raw pointers through
+            // NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks and MemClears the full length.
+            // That call deliberately bypasses the atomic safety handle, so neither the editor collections
+            // checks nor a player build would trap a concurrent free. Meanwhile OnApplicationQuit/OnDestroy
+            // run ShutdownServiceState on the main thread and free those Persistent allocations.
+            //
+            // Dispose therefore marks and defers instead of freeing under an active writer: the thread that
+            // releases the last lease performs the free. The main thread never waits for the writer, so
+            // shutdown stays off the "main-thread blocking save spikes" path forbidden by persistence.md.
+            // The lock is held only for the short acquire/release/free critical sections, never for the
+            // duration of the file write. This mirrors the s_writeBuffersInUse fence StaticNativeBuffers
+            // already applies to the static write buffers.
+            private readonly object _leaseSync = new object();
+            private int _saveWriteLeaseCount;
+            private bool _disposeRequested;
+
+            public bool TryAcquireSaveWriteLease(
+                out NativeArray<byte> leasedPayloadBuffer,
+                out NativeArray<byte> leasedCompressedBuffer)
+            {
+                lock (_leaseSync)
+                {
+                    if (_disposeRequested || !SavePayloadBuffer.IsCreated || !CompressedSaveBuffer.IsCreated)
+                    {
+                        leasedPayloadBuffer = default;
+                        leasedCompressedBuffer = default;
+                        return false;
+                    }
+
+                    _saveWriteLeaseCount++;
+                    leasedPayloadBuffer = SavePayloadBuffer;
+                    leasedCompressedBuffer = CompressedSaveBuffer;
+                    return true;
+                }
+            }
+
+            public void ReleaseSaveWriteLease(ref Exception firstException)
+            {
+                lock (_leaseSync)
+                {
+                    if (_saveWriteLeaseCount > 0)
+                        _saveWriteLeaseCount--;
+
+                    if (_disposeRequested && _saveWriteLeaseCount == 0)
+                        DisposeBuffers(ref firstException);
+                }
+            }
+
+            private void ClearDeferredDisposeRequest()
+            {
+                lock (_leaseSync)
+                {
+                    // A lease still open means a writer owns the live buffers and a teardown already asked
+                    // for them. Leave the request standing so the releasing thread still frees them; the
+                    // next EnsureSaveWorkingBuffers reallocates and clears the request once the writer is gone.
+                    if (_saveWriteLeaseCount == 0)
+                        _disposeRequested = false;
+                }
+            }
+
             public void Dispose()
             {
 #if UNITY_EDITOR || UNITY_INCLUDE_TESTS
                 TestHook_DisposeThrow?.Invoke();
 #endif
                 Exception firstException = null;
+                lock (_leaseSync)
+                {
+                    _disposeRequested = true;
+                    if (_saveWriteLeaseCount > 0)
+                        return;
+
+                    DisposeBuffers(ref firstException);
+                }
+
+                ThrowFirstDisposeException(firstException);
+            }
+
+            private void DisposeBuffers(ref Exception firstException)
+            {
                 DisposeNativeArrayBestEffort(ref SavePayloadBuffer, ref firstException, sentinelLabel: nameof(SavePayloadBuffer));
                 DisposeNativeArrayBestEffort(ref CompressedSaveBuffer, ref firstException, sentinelLabel: nameof(CompressedSaveBuffer));
                 DisposeNativeArrayBestEffort(ref SaveStagingBuffer, ref firstException, sentinelLabel: nameof(SaveStagingBuffer));
@@ -505,7 +583,6 @@ namespace Hecton8.SaveSystem
                 DisposeNativeArrayBestEffort(ref WfcOutpostTelemetryRing, ref firstException, sentinelLabel: nameof(WfcOutpostTelemetryRing));
                 DisposeNativeArrayBestEffort(ref WfcOutpostEventTelemetryRing, ref firstException, sentinelLabel: nameof(WfcOutpostEventTelemetryRing));
                 DisposeNativeArrayBestEffort(ref LoadCandidateScratch, ref firstException, sentinelLabel: nameof(LoadCandidateScratch));
-                ThrowFirstDisposeException(firstException);
             }
         }
 
@@ -5755,38 +5832,72 @@ namespace Hecton8.SaveSystem
                 int rawPayloadLength;
                 long compressionPipelineStartTicks = Stopwatch.GetTimestamp();
 
-                if (!TryExecuteVerifiedSavePipeline(
-                    slotName,
-                    tempPath,
-                    GetPrimarySaveFilePath(slotName),
-                    metadata,
-                    data,
-                    persistentWorldDeltaSnapshot,
-                    ecosystemSectorSnapshot,
-                    packedQuestSaveHeader,
-                    packedQuestStateSnapshot,
-                    playerDialogueChoiceFlagsSnapshot,
-                    voxelDeltaSnapshot,
-                    _savePayloadBuffer,
-                    _compressedSaveBuffer,
-                    backupRetention,
-                    out payloadHash64,
-                    out rawPayloadLength,
-                    out long compressedSizeBytes,
-                    out string savePipelineError))
+                // Shutdown fence. This runs on the background thread, so OnApplicationQuit/OnDestroy can
+                // reach ShutdownServiceState -> _nativeBuffers.Dispose() on the main thread while the
+                // pipeline below is still MemClearing and writing through raw pointers into
+                // SavePayloadBuffer/CompressedSaveBuffer. Leasing them makes that Dispose defer the free
+                // until the release below instead of pulling 64 MiB/68 MiB out from under the writer.
+                // Acquire and release stay strictly synchronous with no await between them: the outer
+                // finally of this method never runs on a real quit, because the Awaitable continuation
+                // needs a main-thread frame that never arrives, whereas this finally is executed by the
+                // background thread itself and therefore always runs.
+                bool savePipelineSucceeded;
+                long compressedSizeBytes = 0L;
+                string savePipelineError;
+                Exception saveWriteLeaseCleanupException = null;
+                if (_nativeBuffers.TryAcquireSaveWriteLease(
+                        out NativeArray<byte> leasedSavePayloadBuffer,
+                        out NativeArray<byte> leasedCompressedSaveBuffer))
+                {
+                    try
+                    {
+                        savePipelineSucceeded = TryExecuteVerifiedSavePipeline(
+                            slotName,
+                            tempPath,
+                            GetPrimarySaveFilePath(slotName),
+                            metadata,
+                            data,
+                            persistentWorldDeltaSnapshot,
+                            ecosystemSectorSnapshot,
+                            packedQuestSaveHeader,
+                            packedQuestStateSnapshot,
+                            playerDialogueChoiceFlagsSnapshot,
+                            voxelDeltaSnapshot,
+                            leasedSavePayloadBuffer,
+                            leasedCompressedSaveBuffer,
+                            backupRetention,
+                            out payloadHash64,
+                            out rawPayloadLength,
+                            out compressedSizeBytes,
+                            out savePipelineError);
+                    }
+                    finally
+                    {
+                        _nativeBuffers.ReleaseSaveWriteLease(ref saveWriteLeaseCleanupException);
+                    }
+                }
+                else
+                {
+                    payloadHash64 = 0UL;
+                    rawPayloadLength = 0;
+                    savePipelineSucceeded = false;
+                    savePipelineError = SaveBuffersReleasedForShutdownReason;
+                }
+
+                if (!savePipelineSucceeded)
                 {
                     await Awaitable.MainThreadAsync();
                     const uint failureCode = 3u;
                     string failureMessage = string.IsNullOrEmpty(savePipelineError)
                         ? "Verified save pipeline failed."
                         : savePipelineError;
-                    Exception pipelineException = null;
-                    HandleSaveFailure(slotName, slotIndex, operationId, failureMessage, "[SaveManager] Save failed: " + failureMessage, failureCode, totalTimer.ElapsedMilliseconds, ref pipelineException, ref snapshotPauseActive);
+                    HandleSaveFailure(slotName, slotIndex, operationId, failureMessage, "[SaveManager] Save failed: " + failureMessage, failureCode, totalTimer.ElapsedMilliseconds, ref saveWriteLeaseCleanupException, ref snapshotPauseActive);
                     return;
                 }
 
                 long compressionPipelineElapsedTicks = Stopwatch.GetTimestamp() - compressionPipelineStartTicks;
                 await Awaitable.MainThreadAsync();
+                ReportPersistenceCleanupFailure("save", saveWriteLeaseCleanupException);
                 RegisterCompressionPipelineElapsed(compressionPipelineElapsedTicks, in frameData);
                 SaveThumbnailSystem.CaptureCompletion thumbnailCompletion =
                     await SaveThumbnailSystem.WaitForCompletionAsync(thumbnailTicket, destroyCancellationToken);

@@ -8603,13 +8603,19 @@ namespace Hecton8.Bootstrap
             // second resolve is cheap (usable-instance early-out) and covers that race.
             Hecton8.UI.SubtitleManager.EnsureRuntimeInstance();
 
-            // DynamicMusicGranularSynthesizer lives in Hecton8.Audio.Synthesis.DynamicMusic
-            // (references Core). Direct call would form a Core↔Synthesis cycle; reflect instead.
+            // DynamicMusicGranularSynthesizer: namespace Hecton8.Audio.Synthesis (declared at
+            // DynamicMusicGranularSynthesizer.cs:20), assembly Hecton8.Audio.Synthesis. "DynamicMusic"
+            // is a folder name only, not a namespace segment and not an assembly. The string after the
+            // comma previously read "Hecton8.Audio.Synthesis.DynamicMusic"; no asmdef by that name
+            // exists, and Type.GetType resolves the part after the comma as an assembly identity, so
+            // this returned null in the Editor and in players alike and the ensure silently did nothing.
+            // Hecton8.Audio.Synthesis references Core, so a direct call would form a Core↔Synthesis
+            // cycle; reflect instead.
             // Player.prefab authors the component on a GO that is not the AudioListener host.
             // Post-player-publish covers the race where AfterSceneLoad ran before player OnEnable
             // published the camera/listener.
             TryEnsureRuntimeServiceByReflection(
-                "Hecton8.Audio.Synthesis.DynamicMusicGranularSynthesizer, Hecton8.Audio.Synthesis.DynamicMusic");
+                "Hecton8.Audio.Synthesis.DynamicMusicGranularSynthesizer, Hecton8.Audio.Synthesis");
 
         }
 

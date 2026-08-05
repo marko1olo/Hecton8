@@ -85,9 +85,15 @@ namespace Hecton8.Meta
             System.Type serviceType = System.Type.GetType(MetaCampaignServiceTypeName);
             if (serviceType == null)
             {
-                // Neither Assets/link.xml nor Assets/_Project/Scripts/Global/Generated/link.xml
-                // preserves this assembly, so IL2CPP managed stripping can remove a type reached only
-                // by name. Losing it silently is what Section8 rejects; say so in every configuration
+                // Assets/link.xml now roots this assembly (preserve="nothing" on the assembly plus an
+                // explicit MetaCampaignService type child), which is what makes it survive IL2CPP
+                // managed stripping: nothing references Hecton8.Narrative.Campaign, no scene or prefab
+                // holds one of its script GUIDs, and autoReferenced is false, so without that entry it
+                // is not a linker root at all and a type reached only by name cannot come back.
+                // Assets/_Project/Scripts/Global/Generated/link.xml still does not preserve it and must
+                // not be hand-edited - CompileWallXRayWindow.cs regenerates it. If the Assets/link.xml
+                // entry is ever removed, this branch is the only thing that will report the loss.
+                // Losing it silently is what Section8 rejects; say so in every configuration
                 // that can still print.
                 Hecton8.Core.H8Debug.LogWarning(MetaCampaignServiceMissingWarning, runtimeRoot);
                 return;

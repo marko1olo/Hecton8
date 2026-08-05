@@ -95,6 +95,12 @@ public class HectonPlayerSpawner : MonoBehaviour
     private const uint DuplicateSpawnerWarningHash = 0x50534455u;
 
     /// <summary>
+    /// Stable telemetry hash for "the Kinematic Arrest Gate was opened by the emergency fallback". Literal
+    /// 'PSFB'.
+    /// </summary>
+    private const uint FallbackSpawnWarningHash = 0x50534642u;
+
+    /// <summary>
     /// How many spawners have run Awake this session. Not an ownership latch - nothing is aborted or
     /// destroyed on the strength of it - only a count, so that a second spawner cannot arrive unnoticed.
     /// </summary>
@@ -1883,6 +1889,47 @@ public class HectonPlayerSpawner : MonoBehaviour
             waterLevel + spawnHeightOffset,
             searchOrigin.y);
 
+        // THE ONE RELEASE PATH IN THIS CLASS THAT IS NOT BEHIND IsSpawnPointPhysicsReady, and until now the
+        // only one that was SILENT IN A SHIPPED BUILD. Every other exit reaches TeleportPlayer through a
+        // physics-ready check (:646, :761, :808, :914); this one teleports to an arbitrary world-centre point
+        // and opens the Kinematic Arrest Gate with no bake proof of any kind. `AGENTS.md`:199 requires the
+        // player to stay suspended until WorldChunkPhysicsBakedSignal covers the spawn coordinate, so every
+        // arrival here is a KNOWN, DELIBERATE breach of that clause - and the only report it produced lived
+        // inside `#if UNITY_EDITOR || DEVELOPMENT_BUILD`, so in the game people actually play the player was
+        // dropped into possibly-uncollidable terrain and nothing anywhere recorded it.
+        //
+        // GlobalTelemetryBus.PublishPerformanceWarning carries no [Conditional] attribute, so it is the one
+        // surface on this class that still speaks in a release player. It is the same route this file already
+        // uses for the duplicate-spawner and spawn-refused cases; no new global surface is introduced. The
+        // scalar carries the case, because a telemetry consumer cannot read a string:
+        //   0 = the destination IS bake-proven. Degraded route, safe ground - the search simply never found a
+        //       point it liked before its budget ran out.
+        //   1 = the bake lane never published anything this session, so no chunk anywhere is proven and
+        //       IsSpawnPointPhysicsReady has been answering `true` by default (:1634) for the whole search.
+        //       The gate was open, not held.
+        //   2 = the lane IS live and the destination is explicitly NOT baked. The worst case: the gate knew
+        //       this point was unproven and the player was released onto it regardless.
+        // Cases 1 and 2 are different defects - a streaming route that never ran versus a gate overridden -
+        // and they were previously indistinguishable, because neither was reported at all.
+        //
+        // This does NOT make the fallback correct, and it is not a fix for the `AGENTS.md`:199 breach. It
+        // makes the breach observable instead of silent. Spawning at a KNOWN-BAKED point instead of world
+        // centre would be the real repair, and it is not possible from inside this file:
+        // WorldChunkPhysicsBakedEvents exposes point queries (IsWorldPointPhysicsBaked,
+        // IsWorldPointBakeFailed, TryGetWorldPointBakeFlags) but no way to ENUMERATE its 64-entry latch, so
+        // this class cannot ask "name me any chunk that did bake". That accessor has to be added by the lane
+        // owner.
+        float fallbackCaseScalar =
+            !WorldChunkPhysicsBakedEvents.IsLaneActive
+                ? 1f
+                : (WorldChunkPhysicsBakedEvents.IsWorldPointPhysicsBaked(_spawnPosition.x, _spawnPosition.z)
+                    ? 0f
+                    : 2f);
+        Hecton8.Core.GlobalTelemetryBus.PublishPerformanceWarning(
+            FallbackSpawnWarningHash,
+            0u,
+            fallbackCaseScalar);
+
         TeleportPlayer(_spawnPosition);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1890,7 +1937,9 @@ public class HectonPlayerSpawner : MonoBehaviour
         LogSpawnerWarning(
             $"[HectonPlayerSpawner] Fallback spawn at " +
             $"({_spawnPosition.x:F1}, {_spawnPosition.y:F1}, {_spawnPosition.z:F1})\n" +
-            $"   Time before fallback: {elapsed:F1}s");
+            $"   Time before fallback: {elapsed:F1}s\n" +
+            $"   Kinematic Arrest Gate was opened WITHOUT bake proof. case={fallbackCaseScalar:F0} " +
+            $"(0=destination baked, 1=bake lane never published, 2=destination explicitly not baked)");
 #endif
     }
 

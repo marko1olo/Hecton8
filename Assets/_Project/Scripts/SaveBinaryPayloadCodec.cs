@@ -6331,6 +6331,35 @@ namespace Hecton8.SaveSystem
                 : 0;
         }
 
+        // Canonical-key claim scratch for the string-keyed dictionary count and write passes.
+        // SaveData.SanitizePersistenceString is Trim(), a many-to-one map, so two distinct raw
+        // dictionary keys ("axe " and " axe") collapse to one canonical key ("axe"). The claim set is
+        // what stops the second one reaching the payload as a duplicate; it is not dead defensive code.
+        // The count pass and the write pass must never share an instance: the writer has to start empty
+        // or it would claim nothing and emit zero entries. Hence two independent slots.
+        // [ThreadStatic] rather than a plain static because SaveBinaryPayloadCodec is a static class
+        // entered from the background save pipeline (SaveManager.SaveGameAsyncInternal), from
+        // SaveManager.TryRepairSaveSlotArtifacts/CollectRepairResults which never touch _isBusy, and
+        // from Editor tests. SaveManager._isBusy does not serialize entry into this codec.
+        [ThreadStatic] private static HashSet<string> _canonicalKeyCountScratch;
+        [ThreadStatic] private static HashSet<string> _canonicalKeyWriteScratch;
+
+        private static HashSet<string> RentCanonicalKeyScratch(HashSet<string> existing)
+        {
+            if (existing == null)
+            {
+                // COLD ALLOC: HashSet<string>[SaveData.MaxCustomModDataEntries] - grows to the largest
+                // claim pass this thread runs (32 tool records, 64 mod entries) and is then reused by
+                // every later save on that thread - owner: SaveBinaryPayloadCodec
+                return new HashSet<string>(StringComparer.Ordinal);
+            }
+
+            // Clear() empties the set but keeps its bucket and entry arrays, so reuse costs no heap
+            // after the first save on this thread and the next pass still starts from Count == 0.
+            existing.Clear();
+            return existing;
+        }
+
         private static int CountNonBlankStringKeyDictionaryEntries<TValue>(
             Dictionary<string, TValue> values,
             int maxCount)
@@ -6343,7 +6372,8 @@ namespace Hecton8.SaveSystem
                 return 0;
 
             int count = 0;
-            HashSet<string> claimedKeys = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> claimedKeys = RentCanonicalKeyScratch(_canonicalKeyCountScratch);
+            _canonicalKeyCountScratch = claimedKeys;
             Dictionary<string, TValue>.Enumerator enumerator = values.GetEnumerator();
             while (count < safeMax && enumerator.MoveNext())
             {
@@ -6588,7 +6618,8 @@ namespace Hecton8.SaveSystem
                 return true;
 
             int written = 0;
-            HashSet<string> writtenKeys = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> writtenKeys = RentCanonicalKeyScratch(_canonicalKeyWriteScratch);
+            _canonicalKeyWriteScratch = writtenKeys;
             Dictionary<string, float>.Enumerator enumerator = values.GetEnumerator();
             while (written < count && enumerator.MoveNext())
             {
@@ -6655,7 +6686,8 @@ namespace Hecton8.SaveSystem
                 return true;
 
             int written = 0;
-            HashSet<string> writtenKeys = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> writtenKeys = RentCanonicalKeyScratch(_canonicalKeyWriteScratch);
+            _canonicalKeyWriteScratch = writtenKeys;
             Dictionary<string, bool>.Enumerator enumerator = values.GetEnumerator();
             while (written < count && enumerator.MoveNext())
             {
@@ -6722,7 +6754,8 @@ namespace Hecton8.SaveSystem
                 return true;
 
             int written = 0;
-            HashSet<string> writtenKeys = new HashSet<string>(StringComparer.Ordinal);
+            HashSet<string> writtenKeys = RentCanonicalKeyScratch(_canonicalKeyWriteScratch);
+            _canonicalKeyWriteScratch = writtenKeys;
             Dictionary<string, string>.Enumerator enumerator = values.GetEnumerator();
             while (written < count && enumerator.MoveNext())
             {

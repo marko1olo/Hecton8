@@ -26,6 +26,24 @@
   <assembly fullname="Hecton8.AI.Ambient" preserve="nothing">
     <type fullname="Hecton8.AI.Ambient.AmbientBiotaDirector" preserve="all" />
   </assembly>
+  <!-- Same reflection-only reachability class, verified separately. Hecton8.Narrative.Campaign sets
+       autoReferenced:false; no asmdef references it by name or by GUID; none of its runtime scripts'
+       GUIDs appear in any scene or prefab (all 970 prefabs are text YAML, and the four binary scenes
+       were searched by nibble-swapped GUID bytes with confirmed positive controls). It carries no
+       [AlwaysLinkAssembly]. So it is not a linker root and MetaRuntimeInstaller.cs:85 Type.GetType
+       returns null in a stripped player. Hecton8.Lighting is the same case: its only incoming asmdef
+       references are Hecton8.Lighting.Editor and Hecton8.EditModeTests, both includePlatforms:["Editor"]
+       and therefore absent from players, leaving zero incoming references in a player build, and none
+       of its eight runtime scripts appear in a scene or prefab either. That strands
+       PlayerFlashlight.cs:486 and also the [RuntimeInitializeOnLoadMethod] entry points in
+       HectonGIRelaySystem and InteriorGIProbeVolumeRuntime. preserve="nothing" on the assembly forces
+       it to be processed for roots, which is what makes those attributed methods reachable again. -->
+  <assembly fullname="Hecton8.Narrative.Campaign" preserve="nothing">
+    <type fullname="Hecton8.Narrative.Campaign.MetaCampaignService" preserve="all" />
+  </assembly>
+  <assembly fullname="Hecton8.Lighting" preserve="nothing">
+    <type fullname="Hecton8.Lighting.Shafts.ScreenSpaceLightShaftSource" preserve="all" />
+  </assembly>
   <assembly fullname="Unity.Collections" preserve="nothing">
     <type fullname="Unity.Collections.NativeArray`1" preserve="all" />
     <type fullname="Unity.Collections.NativeList`1" preserve="all" />

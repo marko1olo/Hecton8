@@ -482,6 +482,13 @@ namespace Hecton8.Gameplay
         private uint _lastPlayerInputSignalSequence;
 
         private const float CameraResolveCooldown = 1f;
+        // Namespace Hecton8.Lighting.Shafts (ScreenSpaceLightShaftSource.cs:7), assembly
+        // Hecton8.Lighting - both verified against source, the string is correct as written.
+        // Hecton8.Lighting sets autoReferenced:false and its only incoming asmdef references are
+        // Hecton8.Lighting.Editor and Hecton8.EditModeTests, both includePlatforms:["Editor"], so a
+        // player build has zero incoming references to it and no scene or prefab carries one of its
+        // script GUIDs. Assets/link.xml roots the assembly and this type; without that entry the
+        // lookup below resolves to null in a stripped player and the beam silently loses its shafts.
         private const string ScreenSpaceLightShaftSourceTypeName =
             "Hecton8.Lighting.Shafts.ScreenSpaceLightShaftSource, Hecton8.Lighting";
         private static System.Type s_screenSpaceLightShaftSourceType;
