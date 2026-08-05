@@ -239,8 +239,10 @@ class GooglePhotosBackup:
         existing_uploads = {}
         for i in range(0, len(found_files), chunk_size):
             chunk = found_files[i:i+chunk_size]
-            placeholders = ','.join('?' * len(chunk))
-            cursor.execute(f"SELECT filepath, file_size, mtime, status FROM uploads WHERE filepath IN ({placeholders})", chunk)
+            placeholders = ','.join(['?'] * len(chunk))
+            query = "SELECT filepath, file_size, mtime, status FROM uploads WHERE filepath IN ({IN_PLACEHOLDERS})"
+            query = query.replace("{IN_PLACEHOLDERS}", placeholders)
+            cursor.execute(query, chunk)
             for row in cursor.fetchall():
                 existing_uploads[row[0]] = (row[1], row[2], row[3])
 
