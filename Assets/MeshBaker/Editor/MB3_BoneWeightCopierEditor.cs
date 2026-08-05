@@ -234,10 +234,12 @@ namespace DigitalOpus.MB.MBEditor
             EditorUtility.SetDirty(copyOfInput);
 
 
-            // TODO tried using 2018 replace prefab but there were errors.
-            //MBVersionEditor.ReplacePrefab(copyOfInput, assetPath, MB_ReplacePrefabOption.connectToPrefab | MB_ReplacePrefabOption.nameBased);
             string prefabPth = AssetDatabase.GetAssetPath(bwc.outputPrefab);
+#if UNITY_2018_3_OR_NEWER
+            PrefabUtility.SaveAsPrefabAsset(copyOfInput, prefabPth);
+#else
             MBVersionEditor.PrefabUtility_ReplacePrefab(copyOfInput, prefabPth, MB_ReplacePrefabOption.connectToPrefab | MB_ReplacePrefabOption.nameBased);
+#endif
 
             AssetDatabase.SaveAssets();
             DestroyImmediate(copyOfInput);
