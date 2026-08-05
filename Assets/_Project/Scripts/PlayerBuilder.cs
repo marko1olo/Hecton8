@@ -1992,12 +1992,7 @@ namespace Hecton8.Building
             if (hudNotification != null)
             {
                 hudNotification.ShowInfo(in _builderHudBuffer);
-                return;
             }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.Log(_builderHudBuffer.ToString());
-#endif
         }
 
         private void PublishBuilderWarning()
