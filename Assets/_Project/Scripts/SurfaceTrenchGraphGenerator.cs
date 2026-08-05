@@ -166,7 +166,7 @@ namespace Hecton8.World
                     if (rng.NextFloat() > 0.4f && counts.Structures < MAX_STRUCTURES)
                     {
                         float3 midPoint = math.lerp(seg.pointA, seg.pointB, 0.5f);
-                        // R95 FIX: XZ clamping can collapse a walk step at the volume border into a
+                        // R95 Note: XZ clamping can collapse a walk step at the volume border into a
                         // zero-length segment; math.normalize(0) is NaN and poisoned the arch
                         // structure (voxels.md: preserve finite values). normalizesafe falls back
                         // to +X and the density job renders a valid (if arbitrary-facing) arch.
