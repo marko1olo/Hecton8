@@ -3446,7 +3446,6 @@ namespace Hecton8.Atmosphere
                 return;
 
             RefreshRuntimeContextFromCache();
-            TryFinalizeDeferredNativeDisposal();
             if (fluidDynamics == null)
             {
                 _atmosphereStepAccumulator = 0f;
@@ -4958,9 +4957,6 @@ namespace Hecton8.Atmosphere
 
         private void PrepareNativeStateCold()
         {
-            if (!TryFinalizeDeferredNativeDisposal())
-                return;
-
             if (IsAtmosphereVaultStateReady())
                 return;
 
@@ -5015,11 +5011,6 @@ namespace Hecton8.Atmosphere
                     ExitAtmosphereWritePhase(ownsWriteLock);
                 }
             }
-        }
-
-        private bool TryFinalizeDeferredNativeDisposal()
-        {
-            return true;
         }
 
         private IDataVault ResolveDataVaultCold()

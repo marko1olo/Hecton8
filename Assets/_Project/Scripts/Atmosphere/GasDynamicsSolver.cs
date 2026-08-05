@@ -354,12 +354,6 @@ namespace Hecton8.Atmosphere
             TryRegisterHotSwapListener();
             TryRegisterRegistry();
             ConfigureColdSignalLanes();
-            if (!TryFinalizeDeferredNativeDisposal())
-            {
-                TryRegisterTicks();
-                return;
-            }
-
             EnsureNativeState();
             SeedStandardAtmosphereIfNeeded();
             TryRegisterTicks();
@@ -387,9 +381,6 @@ namespace Hecton8.Atmosphere
             if (UnityEngine.Application.isBatchMode)
                 return;
             if (fixedDeltaTime <= 0f)
-                return;
-
-            if (!TryFinalizeDeferredNativeDisposal())
                 return;
 
             if (!IsInitialized)
@@ -451,7 +442,7 @@ namespace Hecton8.Atmosphere
             if (!Application.isPlaying)
                 return;
 
-            if (!TryFinalizeDeferredNativeDisposal() || !TryCompleteStep())
+            if (!TryCompleteStep())
                 return;
 
             if (!IsInitialized)
@@ -3214,11 +3205,6 @@ namespace Hecton8.Atmosphere
         {
             WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
             WriteUInt32LittleEndian(target, offset + 4, unchecked((uint)(value >> 32)));
-        }
-
-        private bool TryFinalizeDeferredNativeDisposal()
-        {
-            return true;
         }
 
         private void DisposeNativeStateDeferred()
