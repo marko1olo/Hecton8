@@ -166,11 +166,15 @@ def route_present(text: str, route_root: str) -> bool:
 def find_pattern_lines(text: str, pattern: str) -> Iterable[int]:
     haystack = normalize_text(text)
     start = 0
+    current_line = 1
+    last_idx = 0
     while True:
         idx = haystack.find(pattern, start)
         if idx < 0:
             break
-        yield line_number(haystack, idx)
+        current_line += haystack.count("\n", last_idx, idx)
+        last_idx = idx
+        yield current_line
         start = idx + max(1, len(pattern))
 
 
