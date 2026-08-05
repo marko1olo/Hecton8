@@ -15,6 +15,13 @@ using UnityEngine;
     order    = 0)]
 public class SurvivalStats : ScriptableObject
 {
+    // ─── Legacy / Requested Fields ───────────────────────────
+
+    [Header("Legacy")]
+    public float maxHealth = 100f;
+    public float oxygenCapacity = 60f;
+    public float temperatureTolerance = 15f;
+
     // ─── Oxygen ──────────────────────────────────────────────
 
     [Header("Oxygen")]
