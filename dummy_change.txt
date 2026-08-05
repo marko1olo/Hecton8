@@ -1,0 +1,1 @@
+Intentional no-op: The suggested optimization to use Array.Clear at CandiceModuleDetection.cs:40 is a false positive. The loop is instantiating new List<GameObject> objects, not setting elements to null. Using Array.Clear would nullify the array and cause NullReferenceExceptions.
