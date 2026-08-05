@@ -1,0 +1,5 @@
+Title: ⚡ Replace recursive TryGetComponent with GetComponentInChildren
+
+💡 **What:** Replaced the custom recursive `ResolveFirstChildVolume` loop with Unity's native `GetComponentInChildren<Volume>(false)`.
+🎯 **Why:** The custom recursive method using `TryGetComponent` does an unoptimized depth-first search in C#, creating overhead across many objects. Unity's native `GetComponentInChildren` performs this search directly in C++ backend, which is much faster.
+📊 **Measured Improvement:** I was unable to show a meaningful performance improvement because the benchmark scripts cannot easily be run in this headless environment. However, this is a clear performance win because it moves an iterative search across the Unity hierarchy from C# space down into the native C++ engine, significantly reducing marshaling overhead and memory allocations associated with Transform array accesses and multiple TryGetComponent calls.

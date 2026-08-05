@@ -333,22 +333,7 @@ namespace Hecton8.UI
 
         private static Volume ResolveFirstChildVolume(Transform root)
         {
-            int childCount = root.childCount;
-            for (int i = 0; i < childCount; i++)
-            {
-                Transform child = root.GetChild(i);
-                if (!child.gameObject.activeInHierarchy)
-                    continue;
-
-                if (child.TryGetComponent(out Volume volume))
-                    return volume;
-
-                volume = ResolveFirstChildVolume(child);
-                if (volume != null)
-                    return volume;
-            }
-
-            return null;
+            return root.GetComponentInChildren<Volume>(false);
         }
     }
 }
