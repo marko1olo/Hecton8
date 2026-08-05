@@ -152,7 +152,7 @@ namespace Hecton8.EditorTools
             }
 
             s_gitRunning = true;
-            RunGitAsync(root, "add -A", addExit =>
+            RunGitAsync(root, new[] { "add", "-A" }, addExit =>
             {
                 if (addExit.ExitCode != 0)
                 {
@@ -163,7 +163,7 @@ namespace Hecton8.EditorTools
                 // `git commit` exits 1 when there is nothing staged. That is the common, healthy
                 // case (Unity reimported without any real change) and must not count as a failure.
                 string message = BuildCommitMessage();
-                RunGitAsync(root, $"commit -m \"{message}\"", commitExit =>
+                RunGitAsync(root, new[] { "commit", "-m", message }, commitExit =>
                 {
                     s_gitRunning = false;
 
@@ -249,7 +249,7 @@ namespace Hecton8.EditorTools
         /// Runs git off the main thread and marshals the completion callback back onto the Editor
         /// update loop. Nothing here touches the Unity API from the worker thread (COMMON_SENSE #10).
         /// </summary>
-        private static void RunGitAsync(string workingDirectory, string arguments, Action<GitResult> onCompleted)
+        private static void RunGitAsync(string workingDirectory, string[] arguments, Action<GitResult> onCompleted)
         {
             GitResult captured = default;
             bool completed = false;
@@ -282,12 +282,11 @@ namespace Hecton8.EditorTools
             EditorApplication.update += Pump;
         }
 
-        private static GitResult RunGitBlocking(string workingDirectory, string arguments)
+        private static GitResult RunGitBlocking(string workingDirectory, string[] arguments)
         {
             ProcessStartInfo startInfo = new ProcessStartInfo
             {
                 FileName = "git",
-                Arguments = arguments,
                 WorkingDirectory = workingDirectory,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -296,6 +295,11 @@ namespace Hecton8.EditorTools
                 StandardOutputEncoding = Encoding.UTF8,
                 StandardErrorEncoding = Encoding.UTF8
             };
+
+            foreach (var arg in arguments)
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
 
             using (Process process = Process.Start(startInfo))
             {
