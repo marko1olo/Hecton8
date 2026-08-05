@@ -436,9 +436,9 @@ namespace Hecton8.World.SeedShipAnomaly
         /// </remarks>
         public void InjectCoreHack(uint codeHash, float validity01)
         {
+            AssertValidCoreHackCodeHash(codeHash);
             if (codeHash == 0u)
             {
-                LogRejectedCoreHackCodeHash();
                 return;
             }
 
@@ -460,9 +460,12 @@ namespace Hecton8.World.SeedShipAnomaly
         /// Reports a rejected zero <c>codeHash</c>. Literal message, so no allocation on any cadence.
         /// </summary>
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-        private static void LogRejectedCoreHackCodeHash()
+        private static void AssertValidCoreHackCodeHash(uint codeHash)
         {
-            Hecton8.Core.H8Debug.LogError("SeedShipAnomalyRuntime.InjectCoreHack: codeHash was 0, which is the 'no code' sentinel across the hash lanes. The CoreHackedSignal was REJECTED rather than published, because a zero code hash can never be matched by any consumer and would leave the endgame hack state permanently ambiguous. Pass the real authored code hash of the hacked core.");
+            if (codeHash == 0u)
+            {
+                throw new System.ArgumentException("SeedShipAnomalyRuntime.InjectCoreHack: codeHash was 0, which is the 'no code' sentinel across the hash lanes. The CoreHackedSignal was REJECTED rather than published, because a zero code hash can never be matched by any consumer and would leave the endgame hack state permanently ambiguous. Pass the real authored code hash of the hacked core.");
+            }
         }
 
         /// <summary>
