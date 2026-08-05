@@ -10,7 +10,7 @@ Evidence class: STATIC_DOC / STATIC_SOURCE / H8BIN_HEADER_PARSE
 | Item | Value |
 |---|---|
 | runtime payload | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
-| current workspace payload status | present; `1,804,864` bytes |
+| current workspace payload status | present; `7,457,664` bytes, mtime 2026-06-07, measured 2026-08-05 (supersedes 2026-06-01 check: `1,804,864` bytes) |
 | H8DM header size | `64` bytes |
 | H8DM directory size | `64` bytes |
 | H8DM format version | `2` |

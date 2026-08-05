@@ -17,7 +17,7 @@ This ledger is the concise documentation-change register and proof-snapshot hold
 | H8DM header size | `64` bytes | `Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs` |
 | H8DM directory size | `64` bytes | `H8DataLayoutConstants.DirectorySizeBytes` |
 | H8DM schema hash | `0x33313332` | `H8DataLayoutConstants.SchemaHash` |
-| Data Monolith payload | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` | present; `1,804,864` bytes in 2026-06-01 static filesystem check |
+| Data Monolith payload | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` | present; `7,457,664` bytes, mtime 2026-06-07, measured 2026-08-05 (supersedes 2026-06-01 check: `1,804,864` bytes) |
 | Signal lane capacity | `512` | `Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs` |
 | Scalability DTO | `16` bytes | `ScalabilityStateDTO` static source |
 | AUP/blit struct | `48` bytes | AUP static source |
@@ -62,7 +62,7 @@ No runtime code was edited by `1619`. This section records current static facts 
 |---|---|---|
 | Root text anchors | `AGENTS.md`, `TASTE.md`, `textes.md`, `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md` | `../DOC_GOVERNANCE.md`, `../ROOT_DOCS_REFERENCE.md`; `AGENTS.md` public-copy route requires root `textes.md` |
 | First-party asmdefs | `171` under `Assets/_Project` | `rg --files Assets/_Project -g '*.asmdef'` |
-| Data Monolith payload | present, `1,804,864` bytes | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
+| Data Monolith payload | present, `1,804,864` bytes in this 2026-06-01 check; superseded by 2026-08-05 measurement `7,457,664` bytes, mtime 2026-06-07 | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
 | H8DM header parse | magic `0x4D443848`; format `2`; header `64`; section count `28`; checksum64 `0xA85210353432862A`; schema hash `0x33313332` | Python static byte parse; `H8DataMonolithTypes.cs` |
 | Save constants | writer `0x000B`; current header `56`; legacy header `44`; aligned section header `0x000B` | `Assets/_Project/Scripts/SaveBinaryStorage.cs` |
 | SignalBus constants | lane capacity `512`; default expected capacity `64`; default max frame signals `64` | `Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs` |
@@ -103,7 +103,7 @@ No runtime code was edited by `DOCS_AUDIT`. User rejected folder/glossary-style 
 | Loose root scripts | Root-level `Assets/_Project/Scripts/*.cs` carries real mixed-domain systems: save, crafting, fabricator, survival, tether, voxel/fluid/world, localization, tools, HUD/PDA bridges, smoke/profiler helpers. Folder anchors are routing hints, not full ownership proof. | `cmd.exe /d /c for %f in (Assets/_Project/Scripts/*.cs) do @echo %~nxf` static listing |
 | Boot phases | Current `GameBootstrapper.BootstrapPhase` is seven source phases: `HardwareCheck`, `MemoryPreWarm`, `CoreServices`, `Environment`, `Player`, `UI`, `SceneActivate`. Older six-stage boot language is a contract grouping, not the current enum. | `GameBootstrapper.cs` static source scan |
 | Dispatch hybrid | `SystemDispatcher` has master phases and legacy/priority tick lanes at the same time. Fast/slow/cold/frost cadence constants and 300-frame blackbox rings exist. | `SystemDispatcher.cs`, `GlobalRegistry.cs` static source scan |
-| Data Monolith file identity | Current `static_data.h8bin` static file size remains `1,804,864` bytes; SHA-256 is `4f40185a758263405bf6d4d95f04ea742fae501625db41eaaafd4d5b15f6c000`. | `certutil -hashfile ... SHA256`, file size check |
+| Data Monolith file identity | Current `static_data.h8bin` static file size `7,457,664` bytes, mtime 2026-06-07, measured 2026-08-05; SHA-256 `77785d6c25602141c71033cf96a42787e1415f06abe9cde3831675edb0045c53` (supersedes 2026-06-02 check: `1,804,864` bytes, SHA `4f40185a...`). | `sha256sum`, file size/mtime check |
 | Real script systems map | `SOURCE_SYSTEMS_REALITY_MAP.md` now records concrete source owners across core, save/data, world/voxel/scatter, player/interaction/VR, inventory/crafting/survival, habitat/flooding/power, AI/fauna/ecosystem, atmosphere/thermal, UI/visor/audio/VFX, networking/modding/tooling. | static `rg`/filesystem scan of `Assets/_Project/Scripts` |
 
 Correction boundary: this is still `STATIC_SOURCE`. It does not prove compile, Unity import, Play Mode, route completion, profiler/GC, shader correctness, Data Monolith boot, save/load roundtrip, networking, or device/platform readiness.
@@ -122,7 +122,7 @@ No runtime code was edited by `DOC_ROOT_ARCH_AUDIT`. This section records static
 | First 20 route docs | Current first-20 proof uses `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`; `01_ORBIT` remains standalone/YELLOW prologue route, not mandatory first-20 acceptance | `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`, `FIRST_20_MINUTES_ROUTE_BRIEF.md`, `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md` |
 | Scene authority status | Root `AGENTS.md` states normative production handoff is `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`; `01_ORBIT` can only become main handoff after explicit route-bible/GREEN proof and root authority update | `AGENTS.md`, `ProjectSettings/EditorBuildSettings.asset`, `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md` |
 | First-party asmdefs | superseded by 2026-06-01 count: `171` under `Assets/_Project` | 2026-06-01 static filesystem count |
-| Data Monolith payload | superseded by 2026-06-01 payload: `1,804,864` bytes | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
+| Data Monolith payload | superseded by 2026-08-05 measurement: `7,457,664` bytes, mtime 2026-06-07 (historical 2026-06-01 check: `1,804,864` bytes) | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
 | Data Monolith scoped validator | `PASS`; `files=2`; `structs=32`; `mb=1.0495`; `seconds=0.491846`; Python schema/payload proof only | `../Reports/DOC_ROOT_ARCH_AUDIT_h8bin_validator_narrow_20260528.json` |
 | Source topology doc | Added current project topology, source owner spine, route map, and verification gaps | `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` |
 | Source topology source-spine recheck | Corrected player/environment runtime-context source anchors to `Assets/_Project/Scripts/Core/...` | PowerShell path scan |

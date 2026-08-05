@@ -388,6 +388,19 @@ namespace Hecton8.Physics.KCC
         public const uint FlagMediumDensityBuoyancy = 1u << 21;
 
         /// <summary>
+        /// KINEMATIC ARREST GATE (`AGENTS.md`: player suspended until the spawn chunk's terrain physics is
+        /// proven baked). While this flag is set on the integration job the controller does not integrate at
+        /// all: gravity, buoyancy, drag, flow advection, slope slide and move input are all skipped and the
+        /// velocity state is held at exactly zero.
+        ///
+        /// Distinct from <see cref="FlagRespawnCollisionBypass"/>, which only skips the COLLISION job. A
+        /// collision bypass still runs this integration job, so velocity.y keeps accumulating `-g*dt` for the
+        /// whole wait and lands as one large downward impulse the moment the bypass ends - which punches the
+        /// player straight through freshly baked terrain. Arrest is the suspend; bypass is not.
+        /// </summary>
+        public const uint FlagKinematicArrest = 1u << 22;
+
+        /// <summary>
         /// Converts the 0-1 resistance scalar from ThermoclineResistanceCalculator into a first-order
         /// drag rate (1/s). The scalar saturates at 1.0 for any non-trivial speed, so it is fed through
         /// the same implicit 1/(1 + k*dt) denominator the base drag uses: at resistance 1.0 that decays
@@ -1055,6 +1068,12 @@ namespace Hecton8.Physics.KCC
         public uint ExternalControlFlags;
         public float SimulationTickDelta;
 
+        /// <summary>
+        /// Non-zero while the Kinematic Arrest Gate holds the controller. Carried as `uint` rather than `bool`
+        /// to match the runtime-layout rule this file already follows for every other blittable flag field.
+        /// </summary>
+        public uint KinematicArrestActive;
+
         // WATER-AS-MEDIUM inputs, resolved on the main thread in HydrodynamicKccRuntime.UpdateWaterMediumForces
         // and injected here as plain blittable values. The four PureLogic models that produce them
         // (OceanCurrentDragCalculator / ThermoclineResistanceCalculator / BuoyancyDensityRatioMath /
@@ -1106,6 +1125,62 @@ namespace Hecton8.Physics.KCC
 
             if ((controlFlags & HydrodynamicKccMath.FlagExternalRotationTarget) != 0u)
                 externalFlags |= HydrodynamicKccMath.FlagExternalRotationTarget;
+
+            // KINEMATIC ARREST GATE. Deliberately placed AFTER the external position/rotation target above and
+            // BEFORE every force term below.
+            //
+            // After, because the spawner's teleport travels as FlagExternalPositionTarget: arresting ahead of it
+            // would pin the player at the pre-spawn pose and the spawn point would never be applied.
+            // Before, because the whole point is that NO force integrates while suspended - gravity, buoyancy,
+            // move input, flow advection, drag and slope slide are all downstream of this line. An arrest that
+            // merely zeroed velocity at the END of Execute would still have accumulated `-g*dt` first and would
+            // still clamp against terrain; this returns before any of it runs.
+            //
+            // Velocity is written as exact zero rather than left untouched, so the arrest also DISCARDS whatever
+            // downward velocity had already accumulated before the gate closed. That is the accumulated-velocity
+            // trap: without this write, releasing the gate applies the pre-arrest fall velocity at the spawn
+            // point.
+            if (KinematicArrestActive != 0u)
+            {
+                state.Velocity = float3.zero;
+                state.AngularVelocity = float3.zero;
+                if (ProposedVelocities.IsCreated && index < ProposedVelocities.Length)
+                    ProposedVelocities[index] = float3.zero;
+
+                if (WakePackets.IsCreated && index < WakePackets.Length)
+                {
+                    // Written, not skipped: the wake lane is consumed downstream every tick, and leaving the
+                    // previous frame's packet in place would keep emitting a wake for a player that is not moving.
+                    WakePackets[index] = new HydrodynamicWakePacketDTO
+                    {
+                        AupPosition = state.AUP_Position,
+                        Velocity = float3.zero,
+                        TurbulenceScalar = 0f,
+                        WakeRadius = 0f,
+                        WakeMagnitude = 0f,
+                        Frame = SimulationFrame,
+                        SourceHash = HydrodynamicKccMath.SourceHash,
+                        Flags = externalFlags | HydrodynamicKccMath.FlagKinematicArrest
+                    };
+                }
+
+                if (EnvironmentDebugOutputs.IsCreated && index < EnvironmentDebugOutputs.Length)
+                {
+                    EnvironmentDebugOutputs[index] = new KccEnvironmentDebugOutputDTO
+                    {
+                        AppliedFlow = float3.zero,
+                        SlopeSlideVector = float3.zero,
+                        ExhaustionPenalty = 0f,
+                        SdfFriction = 0f,
+                        SlopeAngleDegrees = 0f,
+                        ComputeMicroseconds = 0f,
+                        Frame = SimulationFrame,
+                        Flags = externalFlags | HydrodynamicKccMath.FlagKinematicArrest
+                    };
+                }
+
+                return;
+            }
 
             float3 velocity = HydrodynamicKccMath.Sanitize(state.Velocity, float3.zero);
             float3 lateExternalVelocityChange = float3.zero;
@@ -3207,6 +3282,7 @@ namespace Hecton8.Physics.KCC
         private int _rollbackVisualBypassFrames;
         private int _respawnCollisionBypassFrames;
         private int _lastRespawnCollisionSnapshotGeneration;
+        private int _kinematicArrestRefcount;
         private int _resolvedBufferCapacity;
         private int _scheduledEntityCount;
         private int _scheduledMaxHitsPerCommand;
@@ -3562,6 +3638,7 @@ namespace Hecton8.Physics.KCC
                 SimulationFrame = _simulationFrame,
                 ExternalControlFlags = externalControlFlags,
                 SimulationTickDelta = fixedDeltaTime,
+                KinematicArrestActive = _kinematicArrestRefcount > 0 ? 1u : 0u,
                 MediumCurrentDragForce = _mediumCurrentDragForce,
                 MediumThermoclineResistance01 = _mediumThermoclineResistance01,
                 MediumDensityBuoyancyNewtons = _mediumDensityBuoyancyNewtons,
@@ -3812,6 +3889,48 @@ namespace Hecton8.Physics.KCC
                 : writerHandle;
             _externalInputArmed = true;
             return true;
+        }
+
+        /// <summary>
+        /// True while the Kinematic Arrest Gate holds this controller. While true the integration job zeroes
+        /// velocity and integrates NO force - see <see cref="HydrodynamicKccMath.FlagKinematicArrest"/>.
+        /// </summary>
+        public bool IsKinematicArrestActive => _kinematicArrestRefcount > 0;
+
+        /// <summary>
+        /// Takes one reference on the Kinematic Arrest Gate and returns true if this call is the one that
+        /// closed it.
+        ///
+        /// REFCOUNTED, not a bare bool, because arrest holders overlap by construction: chunk loads complete
+        /// independently, and with a plain flag whichever holder finishes FIRST would release the player while
+        /// a later one still needs it suspended. The controller stays arrested until every holder has released.
+        ///
+        /// Callers MUST pair this with <see cref="ReleaseKinematicArrest"/> on every exit path, including
+        /// failure and early return. A leaked reference leaves the player permanently frozen.
+        /// </summary>
+        public bool AcquireKinematicArrest()
+        {
+            _kinematicArrestRefcount++;
+            return _kinematicArrestRefcount == 1;
+        }
+
+        /// <summary>
+        /// Drops one reference on the Kinematic Arrest Gate and returns true if this call released the last one.
+        ///
+        /// Clamps at zero rather than going negative: an unbalanced release is a caller defect, and letting the
+        /// count go negative would mean the NEXT legitimate acquire fails to arrest at all - turning a
+        /// double-release into a silent fall-through-the-world.
+        /// </summary>
+        public bool ReleaseKinematicArrest()
+        {
+            if (_kinematicArrestRefcount <= 0)
+            {
+                _kinematicArrestRefcount = 0;
+                return false;
+            }
+
+            _kinematicArrestRefcount--;
+            return _kinematicArrestRefcount == 0;
         }
 
         public bool TryQueueExternalAcceleration(Vector3 acceleration)

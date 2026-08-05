@@ -35,6 +35,7 @@ namespace Hecton8.UI
         private const float SelectedHologramScaleMultiplier = 2.8f;
         private const string FabricatorStaticCanvasRootName = "Fabricator_StaticCanvasRoot";
         private const string FabricatorDynamicCanvasRootName = "Fabricator_DynamicCanvasRoot";
+        private const string RuntimeRootName = "[HectonFabricatorUI]";
         private const int FabricatorStaticCanvasSortingOrder = 10;
         private const int FabricatorDynamicCanvasSortingOrder = 30;
         private const float InverseTwoPi = 0.15915494f;
@@ -227,6 +228,46 @@ namespace Hecton8.UI
         private int _recipeLabelTextVersion;
 
         public static bool IsMenuOpen { get; private set; }
+
+        /// <summary>
+        /// Resolve-or-create the sole fabricator crafting UI owner.
+        /// Script GUID 4bc926527a4a0ca4f82df88084310ef1 has ZERO live scene/prefab hits, so no authored
+        /// instance exists in any scene. HectonLoreSystemsRoot.SetupAllSystems is editor ContextMenu-only
+        /// and does not run in play mode. This type registers itself with CraftingEvents in OnEnable, which
+        /// only runs on an instance that already exists, so without this construction site
+        /// Fabricator.cs:687 raises CraftingEvents.FabricatorOpened into an empty listener list and the
+        /// player can never open the crafting menu.
+        /// Idempotent: an authored or already-constructed instance wins and no duplicate is built.
+        /// </summary>
+        public static HectonFabricatorUI EnsureRuntimeInstance()
+        {
+            HectonFabricatorUI existing = FindFirstObjectByType<HectonFabricatorUI>(FindObjectsInactive.Include);
+            if (existing != null)
+            {
+                // Re-activate a buried instance rather than stacking a second one. This is not cosmetic:
+                // CraftingEvents.Register runs in OnEnable, and OnEnable never fires while the GameObject
+                // is inactive in hierarchy, so a found-but-disabled owner leaves the FabricatorOpened
+                // payload unheard exactly as an absent one would.
+                if (!existing.gameObject.activeSelf)
+                    existing.gameObject.SetActive(true);
+                if (!existing.enabled)
+                    existing.enabled = true;
+                return existing;
+            }
+
+            if (!Application.isPlaying)
+                return null;
+
+            // Player-build construction path: no authored instance is reachable in any scene.
+            // Every serialized reference this type needs is resolved cold in Awake - playerInventory and
+            // hudCamera from GlobalRegistry (RebindPlayerInventoryService / RebindPlayerRuntimeContext),
+            // the canvas split from EnsureCanvasSplit - so a runtime-created owner drives the full craft
+            // flow. The authored hologramMesh/hologramMaterial pair stays unassigned on this path and the
+            // existing one-shot diagnostics report it; the preview hologram is the only degraded surface.
+            GameObject runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: GameObject[1] - bootstrap-owned fabricator UI root - owner: HectonFabricatorUI
+            return runtimeRoot.AddComponent<HectonFabricatorUI>();
+        }
+
         public int CraftBatchMultiplier
         {
             get => Mathf.Max(1, craftBatchMultiplier);

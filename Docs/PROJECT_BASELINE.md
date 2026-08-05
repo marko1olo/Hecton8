@@ -61,7 +61,7 @@ Source-backed snapshot for agent onboarding:
 - First-party asmdef count under `Assets/_Project`: `171` in the 2026-06-01 static filesystem check.
 - First-party script directory count under `Assets/_Project/Scripts`: `56` in the 2026-06-01 static filesystem check.
 - URP package: `com.unity.render-pipelines.universal` `17.4.0`.
-- Data Monolith payload is present at the target path and is `1,804,864` bytes in the 2026-06-01 static filesystem check.
+- Data Monolith payload is present at the target path and is `7,457,664` bytes, mtime 2026-06-07, in the 2026-08-05 static filesystem check; the 2026-06-01 check recorded `1,804,864` bytes.
 
 Detailed source-backed runtime topology lives in `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md`. Real-script system ownership lives in `Docs/ARCHITECTURE/SOURCE_SYSTEMS_REALITY_MAP.md`. Domain-to-architecture coverage lives in `Docs/ARCHITECTURE/DOMAIN_ARCHITECTURE_COVERAGE_MATRIX.md`. These facts are static topology only; they do not prove import, compile, route playthrough, profiler, GC, player build, platform, or visual readiness.
 

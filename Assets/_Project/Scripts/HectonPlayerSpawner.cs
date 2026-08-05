@@ -32,6 +32,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
+using Hecton8.Physics.KCC;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -321,6 +322,8 @@ public class HectonPlayerSpawner : MonoBehaviour
     private Vector3 _teleportPreservedLocalVelocity;
     private Vector3 _teleportPreservedAngularVelocity;
     private Vector3 _teleportPreservedPlatformVelocity;
+    private int _kinematicArrestInputLockRefcount;
+    private bool _kinematicArrestMotionSuspended;
 
     // ══════════════════════════════════════════════════════════════
     //  ENUMS
@@ -532,7 +535,38 @@ public class HectonPlayerSpawner : MonoBehaviour
 #endif
     }
 
+    /// <summary>
+    /// Public spawn entry point. Exists as a thin wrapper solely to make the Kinematic Arrest Gate
+    /// EXCEPTION-SAFE.
+    ///
+    /// The search body below reaches its normal exits through <see cref="TeleportPlayer"/>, which opens the
+    /// gate. It also has exits that do NOT: three <c>ct.ThrowIfCancellationRequested()</c> loop tops and the
+    /// rethrow inside the phase-1 retry catch. That last one is not hypothetical - it is the MEASURED
+    /// production exit, because the caller's 30s no-progress budget (GameBootstrapper `bootstrapTimeout`) is
+    /// shorter than this class's own 60s/120s timeouts, so cancellation beats every ForceFallbackSpawn path.
+    ///
+    /// On those paths a suspension taken in PrepareRigidbodyForTeleport would survive the method that took it:
+    /// the player would stay frozen with input locked and nothing left running to release either. A leaked
+    /// input lock is strictly worse than the fall-through this gate prevents - the player cannot move at all,
+    /// forever - so the release is placed in a `finally` rather than duplicated at each exit, where the next
+    /// added `throw` would silently miss it.
+    ///
+    /// <see cref="EndKinematicArrest"/> is idempotent, so the success path (already released inside
+    /// TeleportPlayer) passes through this `finally` as a no-op.
+    /// </summary>
     public async Awaitable SpawnPlayerAsync(System.Threading.CancellationToken ct)
+    {
+        try
+        {
+            await SpawnPlayerSearchAsync(ct);
+        }
+        finally
+        {
+            EndKinematicArrest();
+        }
+    }
+
+    private async Awaitable SpawnPlayerSearchAsync(System.Threading.CancellationToken ct)
     {
         if (!TryAcceptProductionPlayerRigidbody(playerRigidbody, out _playerMovement))
         {
@@ -1342,6 +1376,132 @@ public class HectonPlayerSpawner : MonoBehaviour
     }
 
     // ══════════════════════════════════════════════════════════════
+    //  PRIVATE — KINEMATIC ARREST GATE (suspension half)
+    // ══════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Closes the Kinematic Arrest Gate: motion suspended, gravity and velocity genuinely zero, player input
+    /// locked.
+    ///
+    /// `AGENTS.md` requires the player to remain suspended until <c>WorldStreamingDirector</c> broadcasts
+    /// <see cref="WorldChunkPhysicsBakedSignal"/> for the spawn coordinate's AUP chunk. Before this method the
+    /// WAIT existed (<see cref="IsSpawnPointPhysicsReady"/>) but the SUSPENSION did not, so the player
+    /// instantiated in <c>Awake</c> fell under gravity for the entire wait and the fall velocity was then
+    /// RESTORED by the teleport - the player punched through the terrain the gate had just waited for.
+    ///
+    /// Called from <see cref="PrepareRigidbodyForTeleport"/>, which runs before phase 1 opens. The player is
+    /// instantiated earlier still, in <c>Awake</c>; the residual velocity accumulated in that window is
+    /// discarded by the arrest itself, which writes velocity to exact zero rather than merely holding it.
+    ///
+    /// Idempotent. Re-entry cannot double-lock input, and a second call cannot leak a second reference.
+    /// </summary>
+    private void BeginKinematicArrest()
+    {
+        if (_kinematicArrestMotionSuspended)
+            return;
+
+        _kinematicArrestMotionSuspended = true;
+
+        if (TryResolveHydroPlayerMotor(out HectonPlayerMotor playerMotor) &&
+            playerMotor != null &&
+            playerMotor.TryGetComponent(out HydrodynamicKccRuntime kccRuntime) &&
+            kccRuntime != null)
+        {
+            kccRuntime.AcquireKinematicArrest();
+        }
+
+        AcquireSpawnInputLock();
+    }
+
+    /// <summary>
+    /// Opens the Kinematic Arrest Gate. Released ONLY after the spawn chunk reported physics baked AND the
+    /// player has been positioned - so this is called from the end of <see cref="TeleportPlayer"/>, never from
+    /// the readiness check itself.
+    ///
+    /// Idempotent, and safe to call on a path that never arrested: both halves are guarded by state this class
+    /// owns, so a redundant release is a no-op rather than a negative refcount or a double input unlock.
+    /// </summary>
+    private void EndKinematicArrest()
+    {
+        if (!_kinematicArrestMotionSuspended)
+        {
+            // Input may still be locked even when motion was never suspended - AcquireSpawnInputLock is
+            // reachable on its own. Release it unconditionally; the refcount guard inside makes that safe.
+            ReleaseSpawnInputLock();
+            return;
+        }
+
+        _kinematicArrestMotionSuspended = false;
+
+        if (TryResolveHydroPlayerMotor(out HectonPlayerMotor playerMotor) &&
+            playerMotor != null &&
+            playerMotor.TryGetComponent(out HydrodynamicKccRuntime kccRuntime) &&
+            kccRuntime != null)
+        {
+            kccRuntime.ReleaseKinematicArrest();
+        }
+
+        ReleaseSpawnInputLock();
+    }
+
+    /// <summary>
+    /// Locks player input through the EXISTING registry service. No new input surface is introduced: this is
+    /// the same route <c>BaseAirlock</c> uses for its cycle lock (BaseAirlock.cs:1941).
+    ///
+    /// The prior-state capture matters. Input is ALREADY disabled during bootstrap on the normal route, so
+    /// unconditionally calling EnablePlayerInput on release would ENABLE input the bootstrap deliberately had
+    /// off - handing the player control of a world that has not finished coming up. Only a lock this class
+    /// actually took is released.
+    /// </summary>
+    private void AcquireSpawnInputLock()
+    {
+        if (_kinematicArrestInputLockRefcount > 0)
+        {
+            _kinematicArrestInputLockRefcount++;
+            return;
+        }
+
+        INativeInputManagerRuntime inputRuntime = GlobalRegistry.NativeInputRuntime;
+        if (inputRuntime == null || !inputRuntime.IsPlayerInputEnabled)
+            return;
+
+        inputRuntime.DisablePlayerInput();
+        _kinematicArrestInputLockRefcount = 1;
+    }
+
+    /// <summary>
+    /// Releases the input lock EXACTLY ONCE, and only if this class took it.
+    ///
+    /// A leaked lock leaves the player permanently unable to move, which is worse than the fall-through this
+    /// gate exists to prevent, so the refcount is the authority: it is only non-zero when
+    /// <see cref="AcquireSpawnInputLock"/> observed input enabled and disabled it itself.
+    /// </summary>
+    private void ReleaseSpawnInputLock()
+    {
+        if (_kinematicArrestInputLockRefcount <= 0)
+        {
+            _kinematicArrestInputLockRefcount = 0;
+            return;
+        }
+
+        _kinematicArrestInputLockRefcount--;
+        if (_kinematicArrestInputLockRefcount > 0)
+            return;
+
+        GlobalRegistry.NativeInputRuntime?.EnablePlayerInput();
+    }
+
+    /// <summary>
+    /// LAST-RESORT RELEASE. If this spawner is torn down while still holding the gate - scene unload mid-spawn,
+    /// a cancelled bootstrap, the component being disabled - the input lock would otherwise survive the object
+    /// that took it and no code would ever be able to release it.
+    /// </summary>
+    private void OnDisable()
+    {
+        EndKinematicArrest();
+    }
+
+    // ══════════════════════════════════════════════════════════════
     //  PRIVATE — RIGIDBODY TELEPORT
     // ══════════════════════════════════════════════════════════════
 
@@ -1360,9 +1520,24 @@ public class HectonPlayerSpawner : MonoBehaviour
         }
 
         if (TryResolveHydroPlayerMotor(out _))
+        {
+            // THE HOLE THIS CLOSES. The legacy branch below arrests its body by going kinematic for the whole
+            // wait, so a legacy player does not accumulate gravity. The hydrodynamic branch returned HERE with
+            // no arrest of any kind: the KCC kept integrating `-g*dt` for every fixed step of the terrain wait,
+            // and TeleportPlayer then restored that accumulated velocity at the spawn point.
+            BeginKinematicArrest();
+            // Zero the preserved velocity: the captured value above includes whatever gravity accumulated
+            // between Awake (where the player instantiated) and here (where arrest begins), and a suspended
+            // player by definition has no velocity to preserve. Without this write, TeleportPlayer restores
+            // that pre-arrest velocity at the spawn point - exactly the trap the arrest exists to prevent.
+            _teleportPreservedLocalVelocity = Vector3.zero;
+            _teleportPreservedPlatformVelocity = Vector3.zero;
             return;
+        }
 
         PrepareLegacyRigidbodyForTeleport(playerRigidbody);
+        AcquireSpawnInputLock();
+        _kinematicArrestMotionSuspended = true;
     }
 
     private static Vector3 ResolveKccVelocityForTeleport()
@@ -1588,6 +1763,16 @@ public class HectonPlayerSpawner : MonoBehaviour
             Transform playerTransform = ResolvePlayerTransformForTeleport();
             if (playerTransform != null)
                 playerTransform.SetPositionAndRotation(position, ResolvePlayerRuntimeRotationForTeleport());
+
+            // ARREST RELEASE, hydrodynamic branch. Ordered LAST deliberately: the gate opens only after the
+            // spawn chunk reported physics baked (every caller of this method is already behind
+            // IsSpawnPointPhysicsReady or is the terminal fallback) AND after the player has been positioned.
+            //
+            // Releasing here rather than one frame later is correct because the KCC applies the external
+            // position target at the TOP of its integration job, before any force term - so the next fixed step
+            // lands the player at the spawn point first and only then resumes gravity, starting from the exact
+            // zero the arrest held.
+            EndKinematicArrest();
             return;
         }
 
@@ -1601,6 +1786,7 @@ public class HectonPlayerSpawner : MonoBehaviour
         if (playerMotor != null)
             playerMotor.SetAngularVelocity(targetAngularVelocity);
         RestoreLegacyRigidbodyAfterTeleport(playerRigidbody);
+        EndKinematicArrest();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         float elapsed = Time.realtimeSinceStartup - _operationStartTime;

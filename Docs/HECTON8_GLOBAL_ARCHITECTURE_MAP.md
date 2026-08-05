@@ -21,7 +21,7 @@ Static source/filesystem check on 2026-06-01:
 - Enabled scene spine: `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`.
 - Load-game resume may enter `02_HECTON_WORLD` directly from `01_MAIN_MENU`.
 - First-party asmdefs under `Assets/_Project`: `171`.
-- Data Monolith payload exists at `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`, `1,804,864` bytes.
+- Data Monolith payload exists at `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`, `7,457,664` bytes, mtime 2026-06-07, measured 2026-08-05 (supersedes 2026-06-01 check: `1,804,864` bytes).
 
 Do not treat these facts as route proof. They only state what current project files expose.
 

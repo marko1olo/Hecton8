@@ -8552,6 +8552,7 @@ namespace Hecton8.Bootstrap
                 Hecton8.Gameplay.MissionManager.EnsureRuntimeInstance();
                 Hecton8.VFX.CameraJuiceSystem.EnsureRuntimeInstance();
                 Hecton8.Narrative.AudioLogSystem.EnsureRuntimeInstance();
+                Hecton8.UI.HectonFabricatorUI.EnsureRuntimeInstance();
 
                 // Second wave: factories + soft-FAIL validators already present; bootstrap wire
                 // was the missing construction site (scene/prefab hits absent or self-only).

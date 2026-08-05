@@ -93,7 +93,7 @@ Parser uses FNV-1a hashes and manual float parsing. No `float.Parse`, LINQ, or r
 Data Monolith state:
 
 - `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` is present in this workspace.
-- Current size: `1,804,864` bytes.
+- Current size: `7,457,664` bytes, mtime 2026-06-07, measured 2026-08-05 (supersedes earlier recorded `1,804,864` bytes).
 - Route card remains yellow until H8DM boot validation is linked.
 - CSV bridge remains a cold fallback/source ingest path.
 

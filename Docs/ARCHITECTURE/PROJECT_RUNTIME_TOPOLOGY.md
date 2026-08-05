@@ -30,7 +30,7 @@ Detailed per-system source ownership is in `SOURCE_SYSTEMS_REALITY_MAP.md`. This
 | XR packages | OpenXR `1.17.0`, Meta OpenXR `2.5.0`, XR Management `4.6.0` | `Packages/manifest.json` |
 | First-party asmdefs | `171` under `Assets/_Project` | 2026-06-01 static filesystem count |
 | First-party script directories | `56` under `Assets/_Project/Scripts` | 2026-06-01 static filesystem count |
-| Data Monolith payload | `1,804,864` bytes | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
+| Data Monolith payload | `7,457,664` bytes, mtime 2026-06-07 | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`; 2026-08-05 static filesystem measurement |
 
 Package presence is not platform readiness. XR/package fields do not prove provider setup, device launch, comfort, thermal, or frame pacing.
 
@@ -203,7 +203,7 @@ Route rules:
 ## Data And Persistence
 
 - Data Monolith target: `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
-- Current static payload exists and is `1,804,864` bytes.
+- Current static payload exists and is `7,457,664` bytes, mtime 2026-06-07, in the 2026-08-05 static filesystem measurement; the 2026-06-01 check recorded `1,804,864` bytes.
 - Scoped Python validator recheck on 2026-05-28 passed for current StreamingAssets `.h8bin` payloads with narrowed Data Monolith source/runtime roots: `Docs/Reports/DOC_ROOT_ARCH_AUDIT_h8bin_validator_narrow_20260528.json`.
 - Readiness is still `PENDING VERIFICATION` without import, bake, boot, checksum, player, save/load, and memory proof.
 - Save writer version: `0x000B`.

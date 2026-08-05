@@ -193,7 +193,7 @@ Historical HFI R21 static map:
 Current 2026-05-28 static filesystem check:
 
 - Data Monolith payload exists at `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`;
-- payload size is `1,804,864` bytes;
+- payload size was `1,804,864` bytes in that check; the 2026-08-05 measurement is `7,457,664` bytes, mtime 2026-06-07;
 - Agent 1504 static-source proof adds an Android NDK `AAssetManager` bridge with an FD-backed/uncompressed APK entry guard and h8bin validator pass;
 - this changes static code/payload facts only, not Android device readiness.
 

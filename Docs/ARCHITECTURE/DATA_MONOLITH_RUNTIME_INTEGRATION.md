@@ -18,7 +18,7 @@ Owner domain: data monolith / runtime integration
 - Runtime loader source exists: `H8StaticDataArena`.
 - Editor compiler source exists: `H8DataMonolithCompiler`.
 - Current payload exists at `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`.
-- Current static file identity: `1,804,864` bytes, SHA-256 `4f40185a758263405bf6d4d95f04ea742fae501625db41eaaafd4d5b15f6c000`.
+- Current static file identity: `7,457,664` bytes, mtime 2026-06-07, measured 2026-08-05; SHA-256 `77785d6c25602141c71033cf96a42787e1415f06abe9cde3831675edb0045c53` (supersedes 2026-06-02 check: `1,804,864` bytes, SHA-256 `4f40185a758263405bf6d4d95f04ea742fae501625db41eaaafd4d5b15f6c000`).
 - Historical CLI stress/fail-closed reports are retained below as evidence snapshots.
 - Unity import, player boot, profiler, GCMonitor, device, and save/load route proof remain pending unless a newer artifact is cited.
 
@@ -40,8 +40,11 @@ Binary contract after X_002 pass:
 Current artifact:
 
 - `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`
-- bytes: `1804864`
-- SHA-256 on 2026-06-02 static file check: `4f40185a758263405bf6d4d95f04ea742fae501625db41eaaafd4d5b15f6c000`
+- bytes: `7457664`
+- mtime: 2026-06-07
+- SHA-256 on 2026-08-05 static file check: `77785d6c25602141c71033cf96a42787e1415f06abe9cde3831675edb0045c53`
+- superseded 2026-06-02 static file check: bytes `1804864`, SHA-256 `4f40185a758263405bf6d4d95f04ea742fae501625db41eaaafd4d5b15f6c000`
+- header/section fields below are from the 2026-06-02 parse and were not re-parsed on 2026-08-05
 - magic: `0x4D443848`
 - version: `2`
 - header bytes: `64`
@@ -68,7 +71,7 @@ Resident load stress evidence:
 - `Docs/Reports/DATA_MONOLITH_LOAD_STRESS_X_002.json`
 - Release CLI status: `PASS_NATIVE_READ_ZERO_GC_TARGET_TIME`
 - Scope: native file read plus resident pointer validation in CLI; not a real Unity player profiler trace.
-- Historical report blob bytes: `1064384`; current 2026-06-01 blob is `1804864`, so load timing must be rerun before citing it as current.
+- Historical report blob bytes: `1064384`; current 2026-08-05 blob is `7457664`, so load timing must be rerun before citing it as current.
 - Native file read: `276.300 us`, heap `0 bytes`
 - Full resident validation mean across `1024` iterations: `601.928 us`, heap `0 bytes`
 - Native read+validate estimate: `878.228 us`, heap `0 bytes`

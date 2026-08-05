@@ -71,7 +71,7 @@ Historical roots absent in the current checkout: `Assets/_SourceData/UI/Terminal
 - Current non-text sidecar: `Assets/StreamingAssets/Hecton8/Audio/vocal_banks.h8bin`.
 - Type: `H8VB` Audio/VocalBank payload, not Data Monolith `H8DM`.
 - SHINOBU_258 validates header/index/hash/ADPCM shape before H8DM parsing.
-- `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists; size `1,804,864` bytes.
+- `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` exists; size `7,457,664` bytes, mtime 2026-06-07, measured 2026-08-05 (supersedes earlier recorded `1,804,864` bytes).
 - Remaining gate: real payload owners must replace editor-source fallbacks with binary boot hydration.
 
 ## Migration Contract
