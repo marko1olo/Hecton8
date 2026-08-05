@@ -1,0 +1,7 @@
+This is an intentional no-op.
+
+The initial issue report states:
+File: Assets/_Project/Scripts/ObserverRelativeCelestialBody.cs:55
+Issue: Untested public method: ObserverRelativeCelestialBody.Initialize
+
+However, after searching the current codebase, the ObserverRelativeCelestialBody.cs file does not contain these fields (_azimuth, _elevation, _observer, _distance, _lastObserverPosition) or the method Initialize. This appears to be a hallucinated task for a non-existent method, or the method was already removed/refactored out of the codebase. As such, no tests can be written for it.
