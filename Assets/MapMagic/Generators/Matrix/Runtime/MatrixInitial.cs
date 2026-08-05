@@ -118,6 +118,8 @@ namespace MapMagic.Nodes.MatrixGenerators
 		public enum BlendType { flat, closest, secondClosest, cellular, organic }
 		[Val("Blend Type")]	public BlendType blendType = BlendType.cellular;
 
+			// Legacy aesthetic tuning factor from MapMagic 1 (originally scaled by tile resolution)
+			private const float LegacyBlendScale = 16f;
 
 		public override void Generate (TileData data, StopToken stop) 
 		{
@@ -148,6 +150,8 @@ namespace MapMagic.Nodes.MatrixGenerators
 			float relativeIntensity = intensity * (matrix.worldSize.x / cellSize) * 0.05f;
 
 			Coord min = matrix.rect.Min; Coord max = matrix.rect.Max; 
+				float blendDivisor = matrix.worldSize.x * LegacyBlendScale;
+
 			for (int x=min.x; x<max.x; x++)
 			{
 				if (stop!=null && stop.stop) return; //checking stop every x line
@@ -172,10 +176,10 @@ namespace MapMagic.Nodes.MatrixGenerators
 					switch (blendType)
 					{
 						case BlendType.flat: val = closest.y; break;
-						case BlendType.closest: val = minDist / (matrix.worldSize.x*16); break;  //(MapMagic.instance.resolution*16); //TODO: why 16?
-						case BlendType.secondClosest: val = secondMinDist / (matrix.worldSize.x*16); break;
-						case BlendType.cellular: val = (secondMinDist-minDist) / (matrix.worldSize.x*16); break;
-						case BlendType.organic: val = (secondMinDist+minDist)/2 / (matrix.worldSize.x*16); break;
+							case BlendType.closest: val = minDist / blendDivisor; break;
+							case BlendType.secondClosest: val = secondMinDist / blendDivisor; break;
+							case BlendType.cellular: val = (secondMinDist-minDist) / blendDivisor; break;
+							case BlendType.organic: val = (secondMinDist+minDist)/2 / blendDivisor; break;
 					}
 
 					matrix[x,z] += val*relativeIntensity;
