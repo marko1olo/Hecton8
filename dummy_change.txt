@@ -1,0 +1,2 @@
+Intentional no-op: The requested method ObserverRelativeCelestialBody.OnHotSwapRebind and UpdateTransform do not exist in the codebase.
+The issue description is a hallucination. There is no OnHotSwapRebind method in ObserverRelativeCelestialBody, and no UpdateTransform method either. Thus, no test can be written for a non-existent method.
