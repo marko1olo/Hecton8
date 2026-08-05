@@ -178,13 +178,19 @@ namespace Hecton8.Tests.Editor
             Assert.GreaterOrEqual(PowerHysteresisLatch.MinimumDwellSeconds, 2f);
         }
 
-        [Test]
-        public void ResolveReleaseLevel_DerivesALowerRail()
+                [TestCase(0.1f, 0.3f, 0.07f)]
+        [TestCase(0.1f, 0f, 0.1f)]
+        [TestCase(0.1f, 1f, 0f)]
+        [TestCase(float.NaN, 0.3f, 0f)]
+        [TestCase(-0.5f, 0.3f, 0f)]
+        [TestCase(0.1f, -0.5f, 0.1f)]
+        [TestCase(1.5f, 0.3f, 0.7f)]
+        [TestCase(0.1f, 1.5f, 0f)]
+        [TestCase(float.PositiveInfinity, 0.3f, 0f)]
+        [TestCase(0.1f, float.PositiveInfinity, 0.1f)]
+        public void ResolveReleaseLevel_DerivesALowerRail(float engageLevel, float bandFraction, float expectedReleaseLevel)
         {
-            Assert.AreEqual(0.07f, PowerHysteresisLatch.ResolveReleaseLevel01(0.1f, 0.3f), 1e-6f);
-            Assert.AreEqual(0.1f, PowerHysteresisLatch.ResolveReleaseLevel01(0.1f, 0f), 1e-6f);
-            Assert.AreEqual(0f, PowerHysteresisLatch.ResolveReleaseLevel01(0.1f, 1f), 1e-6f);
-            Assert.AreEqual(0f, PowerHysteresisLatch.ResolveReleaseLevel01(float.NaN, 0.3f), 1e-6f);
+            Assert.AreEqual(expectedReleaseLevel, PowerHysteresisLatch.ResolveReleaseLevel01(engageLevel, bandFraction), 1e-6f);
         }
     }
 }
