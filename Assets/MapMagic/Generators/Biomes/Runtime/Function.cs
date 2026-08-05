@@ -75,8 +75,9 @@ namespace MapMagic.Nodes.Biomes
 				object product = data.ReadInletProduct(inlet);
 
 				IFnEnter<object> fnEnter = (IFnEnter<object>)inlet.GetInternalPortal(subGraph); 
+				if (fnEnter == null) continue;
 				subData.StoreProduct(fnEnter, product);
-				subData.MarkReady(fnEnter.Id, fnEnter.Gen.version); //TODO:check
+				subData.MarkReady(fnEnter.Gen.id, fnEnter.Gen.version);
 			}
 
 			//generating
@@ -89,6 +90,7 @@ namespace MapMagic.Nodes.Biomes
 			{
 				IFnOutlet<object> outlet = outlets[o];
 				IFnExit<object> fnExit = (IFnExit<object>)outlet.GetInternalPortal(subGraph);
+				if (fnExit == null) continue;
 				object product = subData.ReadInletProduct(fnExit);
 
 				data.StoreProduct(outlet, product);

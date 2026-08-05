@@ -82,8 +82,9 @@ namespace MapMagic.Nodes.Biomes
 					object product = parentData.ReadInletProduct(inlet);
 
 					IFnEnter<object> fnEnter = (IFnEnter<object>)inlet.GetInternalPortal(subGraph); 
+					if (fnEnter == null) continue;
 					subData.StoreProduct(fnEnter, product);
-					subData.MarkReady(fnEnter.Id, fnEnter.Gen.version);
+					subData.MarkReady(fnEnter.Gen.id, fnEnter.Gen.version);
 				}
 
 				//overriding loop iteration
@@ -100,6 +101,7 @@ namespace MapMagic.Nodes.Biomes
 				{
 					IFnOutlet<object> outlet = outlets[o];
 					IFnExit<object> fnExit = (IFnExit<object>)outlet.GetInternalPortal(subGraph);
+					if (fnExit == null) continue;
 					object product = subData.ReadInletProduct(fnExit);
 
 					parentData.StoreProduct(outlet, product);
