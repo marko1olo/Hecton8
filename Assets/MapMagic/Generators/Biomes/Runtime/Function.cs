@@ -75,8 +75,11 @@ namespace MapMagic.Nodes.Biomes
 				object product = data.ReadInletProduct(inlet);
 
 				IFnEnter<object> fnEnter = (IFnEnter<object>)inlet.GetInternalPortal(subGraph); 
-				subData.StoreProduct(fnEnter, product);
-				subData.MarkReady(fnEnter.Id, fnEnter.Gen.version); //TODO:check
+				if (fnEnter != null)
+				{
+					subData.StoreProduct(fnEnter, product);
+					subData.MarkReady(fnEnter.Gen.id, fnEnter.Gen.version);
+				}
 			}
 
 			//generating
