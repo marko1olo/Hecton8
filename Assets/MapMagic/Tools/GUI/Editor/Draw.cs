@@ -2973,9 +2973,13 @@ namespace Den.Tools.GUI
 				}
 				catch {};
 
-				if (Event.current.type!=EventType.MouseDown || Event.current.button!=1 || EditorWindow.focusedWindow.GetType()==curveWindowType )
-				//hack to allow right clicking on curve to expose it
-					EditorGUI.CurveField(displayRect, src, color, ranges); 
+				EventType cachedEventType = Event.current.type;
+				if (Event.current.type == EventType.MouseDown && Event.current.button == 1 && (EditorWindow.focusedWindow == null || EditorWindow.focusedWindow.GetType() != curveWindowType))
+					Event.current.type = EventType.Ignore;
+
+				EditorGUI.CurveField(displayRect, src, color, ranges);
+
+				Event.current.type = cachedEventType;
 			}
 
 		#endregion
