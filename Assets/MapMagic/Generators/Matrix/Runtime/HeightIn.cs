@@ -87,7 +87,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 					for (int i=0; i<matrix.arr.Length; i++)
 					{
 						float delta = lastAppliedHeight.matrix.arr[i] - matrix.arr[i];
-						//TODO: what to do with delta?
+						matrix.arr[i] = -delta;
 					}
 				}
 			}
