@@ -146,6 +146,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 			posMatrix = posMatrix.Relaxed();
 
 			float relativeIntensity = intensity * (matrix.worldSize.x / cellSize) * 0.05f;
+				float distanceIntensity = intensity / (cellSize * 320f); // Pre-calculated from relativeIntensity / (matrix.worldSize.x * 16) to remove magic numbers and optimize
 
 			Coord min = matrix.rect.Min; Coord max = matrix.rect.Max; 
 			for (int x=min.x; x<max.x; x++)
@@ -171,14 +172,14 @@ namespace MapMagic.Nodes.MatrixGenerators
 					float val = 0;
 					switch (blendType)
 					{
-						case BlendType.flat: val = closest.y; break;
-						case BlendType.closest: val = minDist / (matrix.worldSize.x*16); break;  //(MapMagic.instance.resolution*16); //TODO: why 16?
-						case BlendType.secondClosest: val = secondMinDist / (matrix.worldSize.x*16); break;
-						case BlendType.cellular: val = (secondMinDist-minDist) / (matrix.worldSize.x*16); break;
-						case BlendType.organic: val = (secondMinDist+minDist)/2 / (matrix.worldSize.x*16); break;
+							case BlendType.flat: val = closest.y * relativeIntensity; break;
+							case BlendType.closest: val = minDist * distanceIntensity; break;
+							case BlendType.secondClosest: val = secondMinDist * distanceIntensity; break;
+							case BlendType.cellular: val = (secondMinDist-minDist) * distanceIntensity; break;
+							case BlendType.organic: val = (secondMinDist+minDist)/2 * distanceIntensity; break;
 					}
 
-					matrix[x,z] += val*relativeIntensity;
+						matrix[x,z] += val;
 				}
 			}
 		}
