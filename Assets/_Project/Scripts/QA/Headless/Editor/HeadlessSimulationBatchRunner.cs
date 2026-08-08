@@ -19,6 +19,15 @@ namespace Hecton8.QA.Headless.Editor
         private const string FlagRelativePath = "Temp/H8_HEADLESS_SIMULATION.flag";
         private const string CsvRelativePath = "Docs/AgentLogs/HeadlessSimulationDaily_HEADLESS_SIMULATION_RUNNER.csv";
         private const string ResultRelativePath = "Docs/AgentLogs/HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json";
+        // Archive name for fallback verdicts only. Must stay byte-identical in shape to
+        // HeadlessSimulationRunner's ResultArchiveRelativePathPrefix/Suffix and ArchiveTimestampFormat so
+        // both halves of the harness land in one sortable series. Duplicated rather than shared for the same
+        // reason ReadSimulatedSpanSecondsFromArgs duplicates the runner's day defaults: this is the editor
+        // assembly (Hecton8.QA.Headless.Editor) and the constants live in the runtime one, and a shared
+        // constants asset for three strings costs more than it saves.
+        private const string ResultArchiveRelativePathPrefix = "Docs/AgentLogs/HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER_";
+        private const string ResultArchiveRelativePathSuffix = ".json";
+        private const string ArchiveTimestampFormat = "yyyyMMdd_HHmmss_fff";
         private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_SIMULATION_RUNNER.bin";
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/HeadlessSimulationBatchRunner_HEADLESS_SIMULATION_RUNNER.txt";
         // Two hours was long enough that a hung run looked like a working one. This poll loop is the ONLY
@@ -588,6 +597,7 @@ namespace Hecton8.QA.Headless.Editor
                 try
                 {
                     File.Move(tempPath, resultPath);
+                    TryArchiveFallbackResult(resultPath);
                 }
                 catch (IOException)
                 {
@@ -597,6 +607,45 @@ namespace Hecton8.QA.Headless.Editor
             catch (Exception)
             {
                 WriteRunnerStatus("fallback_result_write_failed");
+            }
+        }
+
+        /// <summary>
+        /// Copies a fallback verdict to a run-scoped archive name so it survives the next run.
+        /// </summary>
+        /// <remarks>
+        /// The fixed result path is single-slot and every run overwrites it, so a BATCH_TIMEOUT verdict used
+        /// to live only until the next launch - and this is the ONE verdict class the runtime runner cannot
+        /// record for itself, because every path that reaches here is a path where it produced no file at
+        /// all. HeadlessSimulationRunner archives its own two evidence files at the same moment it promotes
+        /// them; this is the editor-side half of that, for the runs the runtime half never got to report.
+        ///
+        /// Stamped at write time rather than at Run(), unlike the runtime side which stamps once per run so
+        /// its JSON and CSV pair by name. There is nothing to pair here - one file, written at most once per
+        /// run behind the File.Exists guard above - and Run() may be minutes or 36 hours earlier.
+        ///
+        /// Same format and same UTC source as the runtime side (yyyyMMdd_HHmmss_fff, DateTime.UtcNow) so
+        /// both halves sort together in one directory listing. UTC is taken in code: TZ does not reach child
+        /// processes in this project's MSYS environment, so a local stamp could not be ordered against the
+        /// runtime half's.
+        ///
+        /// Best-effort and last: the caller's contract is the fixed path, which is already on disk by the
+        /// time this runs. Its own catch keeps a failed copy from being reported as
+        /// fallback_result_write_failed, which would name the wrong file.
+        /// </remarks>
+        private static void TryArchiveFallbackResult(string resultPath)
+        {
+            try
+            {
+                string archivePath = ResolveProjectPath(
+                    ResultArchiveRelativePathPrefix +
+                    DateTime.UtcNow.ToString(ArchiveTimestampFormat, CultureInfo.InvariantCulture) +
+                    ResultArchiveRelativePathSuffix);
+                File.Copy(resultPath, archivePath, false);
+            }
+            catch (Exception)
+            {
+                WriteRunnerStatus("fallback_result_archive_failed");
             }
         }
 

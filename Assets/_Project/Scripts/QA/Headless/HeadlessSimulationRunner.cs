@@ -29,6 +29,33 @@ namespace Hecton8.QA.Headless
         private const string FlagRelativePath = "Temp/H8_HEADLESS_SIMULATION.flag";
         private const string CsvRelativePath = "Docs/AgentLogs/HeadlessSimulationDaily_HEADLESS_SIMULATION_RUNNER.csv";
         private const string ResultRelativePath = "Docs/AgentLogs/HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER.json";
+        // Run-scoped ARCHIVE copies of the two evidence files above. The fixed paths are single-slot and
+        // every headless run overwrites them, so proof could not accumulate: BUILD_PLAYTEST_ISSUES.md:212-221
+        // quotes this JSON as {"status":"[ECOLOGY_UNAVAILABLE]","exitCode":1,"timeDilationDelivered":3.500491}
+        // while the same path on disk now reads {"status":"SUCCESS","exitCode":0,...:11.37246}. Both were
+        // true when written; the document's citation became uncheckable the instant the next run started,
+        // and every [x] backed by that path is therefore unbacked rather than wrong.
+        //
+        // THE FIXED PATHS ARE NOT REPLACED AND MUST NOT BE. HeadlessSimulationBatchRunner.PollRunState
+        // (:266-268) resolves the run's exit code by reading ResultRelativePath, WriteFallbackResult (:564)
+        // tests it for existence before writing BATCH_TIMEOUT, Run (:168-170) deletes both files to arm a
+        // run, and Tools/TelemetryDashboard/server.py:13330 ingests the CSV by exact filename. Renaming
+        // either one silently removes the batch runner's only verdict channel. So the archive is ADDITIVE:
+        // the fixed path keeps working as "latest", and the stamped copy is the immutable record a document
+        // can cite. Archive names deliberately do not match server.py's `Dump_*` / `*.h8dump` globs
+        // (:13238-13239), so they are inert to every consumer that exists today.
+        //
+        // UTC in code, never a shell TZ: this project's boxes have an MSYS environment where TZ does not
+        // reach child processes, so a locally-stamped artifact cannot be ordered against a UTC-stamped one.
+        // Millisecond precision (yyyyMMdd_HHmmss_fff) is the collision guard - the wider convention in this
+        // repo is second precision, which two runs started in the same second would collide on. Same
+        // DateTime.UtcNow format already used by HazardZoneManager.cs:2266 and
+        // InquisitionStabilityPlayModeTests.cs:555.
+        private const string ResultArchiveRelativePathPrefix = "Docs/AgentLogs/HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER_";
+        private const string ResultArchiveRelativePathSuffix = ".json";
+        private const string CsvArchiveRelativePathPrefix = "Docs/AgentLogs/HeadlessSimulationDaily_HEADLESS_SIMULATION_RUNNER_";
+        private const string CsvArchiveRelativePathSuffix = ".csv";
+        private const string ArchiveTimestampFormat = "yyyyMMdd_HHmmss_fff";
         private const string H8MemoryDumpRelativePath = "Docs/AgentLogs/H8Memory_HEADLESS_SIMULATION_RUNNER.txt";
         private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_SIMULATION_RUNNER.bin";
         private const int BlackboxFrameCapacity = 300;
@@ -129,6 +156,9 @@ namespace Hecton8.QA.Headless
         private HeadlessCsvWriter _csvWriter;
         private string _resultPath;
         private string _blackboxPath;
+        private string _csvPath;
+        private string _resultArchivePath;
+        private string _csvArchivePath;
         private double _ghostSeconds;
         private double _simulatedSeconds;
         private double _dayAccumulatorSeconds;
@@ -623,13 +653,21 @@ namespace Hecton8.QA.Headless
             _startupTimeoutSeconds = math.max(1f, TryReadFloat(args, StartupTimeoutArg, DefaultStartupTimeoutSeconds));
             _resultPath = ResolveProjectPath(ResultRelativePath);
             _blackboxPath = ResolveProjectPath(BlackboxRelativePath);
-            string csvPath = ResolveProjectPath(CsvRelativePath);
+            _csvPath = ResolveProjectPath(CsvRelativePath);
+            // Stamped ONCE per run, here, so the JSON and the CSV of one run carry the identical stamp and
+            // can be paired by name alone. Stamping at write time instead would put the result and the CSV
+            // milliseconds apart and, on a 100-day run, hours apart.
+            string archiveStamp = DateTime.UtcNow.ToString(ArchiveTimestampFormat, CultureInfo.InvariantCulture);
+            _resultArchivePath = ResolveProjectPath(
+                ResultArchiveRelativePathPrefix + archiveStamp + ResultArchiveRelativePathSuffix);
+            _csvArchivePath = ResolveProjectPath(
+                CsvArchiveRelativePathPrefix + archiveStamp + CsvArchiveRelativePathSuffix);
             EnsureParentDirectory(_resultPath);
             EnsureParentDirectory(_blackboxPath);
-            EnsureParentDirectory(csvPath);
+            EnsureParentDirectory(_csvPath);
             EnsureVaultBuffersCold();
             TryInitializeGhostState();
-            _csvWriter = new HeadlessCsvWriter(csvPath);
+            _csvWriter = new HeadlessCsvWriter(_csvPath);
             _csvWriter.WriteHeader();
             Application.logMessageReceived += HandleLogMessage;
         }
@@ -1691,6 +1729,67 @@ namespace Hecton8.QA.Headless
             }
 
             PromoteResultFileCold(tempPath);
+            TryArchiveEvidenceCold();
+        }
+
+        /// <summary>
+        /// Copies the two single-slot evidence files to their run-scoped archive names. Best-effort, and
+        /// deliberately LAST.
+        /// </summary>
+        /// <remarks>
+        /// Runs after PromoteResultFileCold, never before it, for the same reason WriteResult itself is the
+        /// first side effect of CompleteAndQuit: the fixed result path is the batch runner's only verdict
+        /// channel (HeadlessSimulationBatchRunner.PollRunState:266-268), so nothing added here may sit
+        /// between the run and that file. An archive that fails costs a citable copy; a fixed path that
+        /// fails costs the run.
+        ///
+        /// Swallows its own exceptions rather than letting them reach TryWriteResult's catches. Those set
+        /// EvidenceResultWriteFailed, which is serialized INTO the JSON that has already been written and
+        /// closed by the time this runs - so an archive fault reported through that flag would both be
+        /// mislabelled as a result-write fault and be invisible in the file it is a field of. A LogWarning
+        /// through LogRunnerLifecycle is the honest channel: it survives the LogType.Warning filter that
+        /// TryMarkEcologyReady installs, which is the whole reason that method exists.
+        ///
+        /// overwrite:false is intentional. An archive slot is immutable by definition; if the name is
+        /// somehow already taken, the correct outcome is to say so and keep the existing file, not to
+        /// reproduce the single-slot overwrite defect this method exists to end.
+        ///
+        /// The CSV is copied while HeadlessCsvWriter still holds its FileStream open. That is safe rather
+        /// than lucky: the stream is opened FileShare.Read (:2209), and every row reached the disk through
+        /// Flush(true) (:2321), so a reader sees all completed days. Both quit paths reach here after the
+        /// last day was written.
+        /// </remarks>
+        private void TryArchiveEvidenceCold()
+        {
+            TryArchiveFileCold(_resultPath, _resultArchivePath);
+            TryArchiveFileCold(_csvPath, _csvArchivePath);
+        }
+
+        private void TryArchiveFileCold(string sourcePath, string archivePath)
+        {
+            if (string.IsNullOrEmpty(sourcePath) || string.IsNullOrEmpty(archivePath) || !File.Exists(sourcePath))
+                return;
+
+            try
+            {
+                File.Copy(sourcePath, archivePath, false);
+            }
+            catch (IOException exception)
+            {
+                LogRunnerLifecycle("evidence archive failed path=" + archivePath + " reason=" + exception.GetType().Name);
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                LogRunnerLifecycle("evidence archive failed path=" + archivePath + " reason=" + exception.GetType().Name);
+            }
+            catch (ArgumentException exception)
+            {
+                LogRunnerLifecycle("evidence archive failed path=" + archivePath + " reason=" + exception.GetType().Name);
+            }
+            catch (NotSupportedException exception)
+            {
+                LogRunnerLifecycle("evidence archive failed path=" + archivePath + " reason=" + exception.GetType().Name);
+            }
         }
 
         private void PromoteResultFileCold(string tempPath)

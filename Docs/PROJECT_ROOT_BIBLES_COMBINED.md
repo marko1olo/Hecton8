@@ -6596,6 +6596,8 @@ Do not invent new prefixes, folders, manager APIs, tick overloads, service names
 
 ## Absolute Standards (The "Zero Mocks" Rule)
 
+[RULE] THE NATIVE-FIRST LAW (ZERO CRUTCH SCRIPTS): You are ABSOLUTELY FORBIDDEN from creating Python, Bash, Node, or PowerShell wrapper scripts (`_patch_*.py`, `_wire_*.py`, etc.) to edit, append, test, or generate code. You MUST edit source files natively using `replace_file_content`. Any attempt to bypass direct file editing with a script is a CRITICAL COMPLIANCE FAILURE.
+
 [RULE] NO boilerplate. NO placeholders. NO `// TODO`. NO mock interfaces.
 Every line produced by ANY agent MUST be production-ready, mathematically pure, Burst-compiled C# or URP HLSL.
 Zero tolerance for algorithmic laziness (e.g., unnormalized splat weights, heavy noise calculations inside hot loops, ignored Data-Oriented Design rules).
@@ -6614,7 +6616,7 @@ Dispatcher registration is source-owned. Current code uses `GlobalRegistry.TryRe
 
 Save/persistence is source-owned by `SaveManager.cs`, `SaveEvents.cs`, `persistence.md`, and matching mandates. First-party save is binary/checksummed/delta-oriented, uses manual slots `slot_0`, `slot_1`, `slot_2`, primary `.sav`, backup `.sav.bak`, temp `.sav.tmp`, `ISaveable` registration, save/load priority ordering, checksum verification, backup fallback, and `SaveDataMigration`. Do not add Easy Save 3, JSON save, BinaryFormatter, direct `.sav` writes, or save during scene transitions. Save failures must raise the current `SaveEvents` route and reach UI/telemetry where applicable. Managed-collections with dynamic allocations (e.g., `Dictionary<string, T>` or `HashSet<string>`) in the root structures of `SaveData.cs` are banned; serialization must rely on `ISerializationCallbackReceiver` and parallel flat lists.
 
-Streaming/import and Player Spawning: To prevent falling through async-generated voxel terrain, spawner/KCC logic must execute a Kinematic Arrest Gate. The player must remain suspended (`IsSuspended = true`, gravity/velocity zero, input locked, screen blacked out) until `WorldStreamingDirector` broadcasts `WorldChunkPhysicsBakedSignal` for the spawning coordinate's AUP chunk. Time-based coroutine timeouts for loading are banned.
+Streaming/import and Player Spawning: To prevent falling through async-generated voxel terrain, spawner/KCC logic must execute a Kinematic Arrest Gate. The player must remain suspended (`IsSuspended = true`, gravity/velocity zero, input locked, screen blacked out) until `HectonVoxelVolume` or `MapMagicBridge` broadcasts `WorldChunkPhysicsBakedSignal` through `WorldChunkPhysicsBakedEvents.TryPublish` for the spawning coordinate's AUP chunk. Time-based coroutine timeouts for loading are banned.
 
 Event/signal contracts are not string-RPC contracts. Current first-party hot broadcasts use typed unmanaged `SignalBus<T>` lanes. Legacy static event lanes such as `InteractionEvents`, `CraftingEvents`, `SaveEvents`, `ScanEvents`, `ModuleStatusEvents`, `FlashlightEvents`, and `PDAEvents` are fixed-capacity/NativeQueue-style bridge lanes only where current source proves them. `HectonEventBus` is for mod/API/cold managed isolation. Do not create string event names or single-use EventIDs.
 
@@ -6935,6 +6937,12 @@ Availability verified on this host 2026-07-27: on PATH -> `rg`, `fd`, `jq`, `tok
 7. fd / jq / tokei: Fast file discovery, JSON parsing, codebase statistics.
 8. GLOBAL SKILLS: on Gemini/Antigravity hosts, reconnaissance, decomposer, and find-skills live in `C:\Users\Admin\.gemini\config\skills\`; read `reconnaissance\SKILL.md` autonomously for exact usage. On any other harness use its own skill/subagent equivalent — a missing skill tree is not a blocker and not an excuse to skip reconnaissance.
 BE PROACTIVE. EXECUTE.
+
+
+## [ORCHESTRATION HIERARCHY v2]
+1. **Antigravity (Orchestrator L1):** Master console and process launcher. Antigravity sets up daemons and timers. Does not block. Can be closed or idled while daemons run.
+2. **Goose / Grok (Agent L2):** Autonomous worker running inside the UniversalDaemonLoop. Goose L2 MUST spawn 3-4 subagents for its own parallel needs (e.g., mandate verification, docs reading) and MUST NOT stop or wait for user input. Completion signals are blocked by proxy DAEMON MANDATE.
+3. This architecture REPLACES the legacy Cline integrations.
 
 ## 35 - TASTE.md
 

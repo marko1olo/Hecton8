@@ -198,7 +198,14 @@ local.properties
 # ============================================================================
 # HECTON-8 disposable/generated cleanup
 # ============================================================================
-Docs/AgentLogs/
+# Directory form (`Docs/AgentLogs/`) is deliberately NOT used here. Git cannot re-include a file whose
+# parent directory is excluded, so a directory rule makes every `!` negation below silently inert. The
+# `/*` form keeps the 776 disposable run artifacts ignored while letting named proof archives through.
+# Without this, HeadlessSimulationRunner's run-scoped archives are written into an ignored directory and
+# never survive a clone — a doc citing one would be citing a path no other machine can resolve.
+Docs/AgentLogs/*
+!Docs/AgentLogs/HeadlessSimulationResult_HEADLESS_SIMULATION_RUNNER_*.json
+!Docs/AgentLogs/HeadlessSimulationDaily_HEADLESS_SIMULATION_RUNNER_*.csv
 Docs/Reports/MetricCharts_Backups/
 Docs/GeneratedAssets/**/Rejected/
 mega_rs109*.py
