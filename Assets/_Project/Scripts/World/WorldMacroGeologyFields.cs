@@ -787,20 +787,43 @@ namespace Hecton8.World
             // STEEPER, which is the correct direction - the point is a consistent authored flank, not
             // a uniformly gentler world. Shelf PLACEMENT is unchanged: the 0.45 isoline of
             // continentField is the same curve the old 0.30-0.60 smoothstep was centred on.
+            // GRADIENT FLOOR, and it is not optional. A first version of this divided by the raw
+            // 5-octave gradient with only a 1e-9 guard against division by zero. That guard is
+            // sufficient for finiteness and useless for geometry: `(f - t) / |grad f|` is continuous
+            // but its DERIVATIVE is unbounded wherever |grad f| approaches zero ON the isoline, which
+            // is exactly what happens at a saddle point of the noise. The distance flips sign across
+            // the saddle over a few metres and the shelf lerp follows it.
+            // MEASURED consequence of that version, 2026-08-09: maximum slope rose from 62-78 deg to
+            // 88-89 deg at four of five probe sites, and P1_origin's 1 km mean went 33.5 -> 53.4 deg
+            // with relief over that window rising from 741 m to 1915 m. Trading a variable-width flank
+            // for occasional vertical walls is a worse world, not a better-parameterised one.
+            //
+            // Two changes make it safe. The gradient is estimated from a 2-OCTAVE field rather than
+            // the 5-octave one, so the estimate is dominated by the base harmonic and varies smoothly
+            // instead of tracking every fine ripple. And it is floored at a fraction of the analytic
+            // base-octave gradient, so where the field really is flat the normalisation quietly
+            // becomes a constant scale instead of a division by almost nothing.
             const float shelfIsoline = 0.45f;
-            const float shelfGradientProbeMeters = 40f;
-            float2 shelfProbeStep = new float2(shelfGradientProbeMeters, shelfGradientProbeMeters) / (float)extentD;
-            float continentFieldDx = FractalSimplexNoise01(
-                warpedNorm + new float2(shelfProbeStep.x, 0f) * 1.35f + new float2(19.2f, -7.3f), seed ^ 0x1C0A7E5Fu, 5);
-            float continentFieldDz = FractalSimplexNoise01(
-                warpedNorm + new float2(0f, shelfProbeStep.y) * 1.35f + new float2(19.2f, -7.3f), seed ^ 0x1C0A7E5Fu, 5);
-            float shelfGradientPerMeter = math.length(new float2(
-                continentFieldDx - continentField,
-                continentFieldDz - continentField)) / shelfGradientProbeMeters;
-            // A vanishing gradient means a plateau of the noise, where the isoline is far away in
-            // every direction; the max() keeps the division finite and pushes such samples fully to
-            // whichever side of the threshold they already sit on, which is the correct answer there.
-            float shelfDistanceMeters = (continentField - shelfIsoline) / math.max(1e-9f, shelfGradientPerMeter);
+            const float shelfGradientProbeMeters = 120f;
+            const int shelfGradientOctaves = 2;
+            float shelfProbeStep = shelfGradientProbeMeters / (float)extentD;
+            float2 shelfNoiseOrigin = warpedNorm * 1.35f + new float2(19.2f, -7.3f);
+            float shelfBase = FractalSimplexNoise01(shelfNoiseOrigin, seed ^ 0x1C0A7E5Fu, shelfGradientOctaves);
+            float shelfBaseDx = FractalSimplexNoise01(
+                shelfNoiseOrigin + new float2(shelfProbeStep * 1.35f, 0f), seed ^ 0x1C0A7E5Fu, shelfGradientOctaves);
+            float shelfBaseDz = FractalSimplexNoise01(
+                shelfNoiseOrigin + new float2(0f, shelfProbeStep * 1.35f), seed ^ 0x1C0A7E5Fu, shelfGradientOctaves);
+            float shelfGradientPerMeter = math.length(
+                new float2(shelfBaseDx - shelfBase, shelfBaseDz - shelfBase)) / shelfGradientProbeMeters;
+
+            // Analytic scale of the base octave: the field is sampled at 1.35 noise units per world
+            // extent, so one noise lattice cell is extent/1.35 metres and a unit-amplitude harmonic
+            // crosses its full range over half of that. Flooring at 35% of it bounds the worst-case
+            // normalisation factor to under 3x while leaving the common case untouched.
+            float shelfNominalGradient = 1.35f / (float)extentD;
+            float shelfGradientFloor = shelfNominalGradient * 0.35f;
+            float shelfDistanceMeters =
+                (continentField - shelfIsoline) / math.max(shelfGradientFloor, shelfGradientPerMeter);
             float shelfHalfWidth = math.max(250f, parameters.ShelfBreakWidthMeters) * 0.5f;
             float shelfMask = math.smoothstep(-shelfHalfWidth, shelfHalfWidth, shelfDistanceMeters);
 
