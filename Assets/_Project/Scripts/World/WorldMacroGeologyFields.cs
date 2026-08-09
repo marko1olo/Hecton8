@@ -750,7 +750,59 @@ namespace Hecton8.World
 
             // FIX: Evaluate shelfMask directly from the raw field, NOT from continentality.
             // This prevents nested-smoothstep flat terracing (the "overlapping transparent PNGs" look).
-            float shelfMask = math.smoothstep(0.30f, 0.60f, continentField);
+            //
+            // ShelfBreakWidthMeters, not a bare smoothstep on the noise value. This is the third and
+            // last member of the "parameter accepted then ignored" family in this evaluator, after
+            // ShelfDepthMeters (fixed, see :765-775) and RidgeWidthMeters (fixed, see :867-899):
+            // ShelfBreakWidthMeters is declared at :32, defaulted to 5200 at :52 and clamped at :260,
+            // and nothing ever read it.
+            //
+            // WHY IT MATTERS MORE THAN THE OTHER TWO. This mask drives the largest single vertical
+            // move in the whole generator - the lerp at :779 spans AbyssDepthMeters minus
+            // ShelfDepthMeters, which is 2860 m by default. `smoothstep(0.30, 0.60, continentField)`
+            // fixes the transition in NOISE UNITS, so its width IN METRES is set by whatever the local
+            // gradient of a 5-octave fBm happens to be, and that varies by roughly 5x across the
+            // world. Measured 2026-08-09 (WorldMacroGeologyFeatureWidthTests, 0.1->0.9 transects):
+            // shelf transitions of 2875 m, 4200 m and 13900 m. For a 2860 m drop that is a flank of
+            // 45 deg, 34 deg and 12 deg respectively - the same authored seafloor rendered anywhere
+            // between a gentle ramp and a wall depending on where you cross it.
+            //
+            // Corroboration that this term dominates: WorldMacroGeologyStageSlopeSweepTests measures
+            // mean slope after each pipeline stage over a 1 km window. Stage 1 - THIS mask and nothing
+            // else - already reads 28.0 deg at P1_origin and 31.5 deg at P5_deepfar, against 1.2 deg
+            // at P3_west which sits away from any shelf transition. Ridges then add 5.0-7.0 deg and
+            // trench/fault 2.5-4.6 deg on top. The base field is the budget; the features are trim.
+            //
+            // HOW. Divide the noise value's distance from its threshold by the local gradient
+            // magnitude, which converts it to an approximate distance in METRES from the 0.45
+            // isoline, then smoothstep on that distance against the authored half-width. This is the
+            // standard gradient-normalised threshold, and the finite-difference gradient it needs is
+            // the same pattern this file already uses at :798-801 for trueMountainSlope.
+            //
+            // Cost: two extra taps of an fBm that was already being evaluated once. Not free, but the
+            // method around it evaluates dozens.
+            //
+            // WARNING: Regression risk in terrain geometry. Every shelf break in the world changes
+            // width. Breaks that were narrower than 5200 m get gentler; breaks that were wider get
+            // STEEPER, which is the correct direction - the point is a consistent authored flank, not
+            // a uniformly gentler world. Shelf PLACEMENT is unchanged: the 0.45 isoline of
+            // continentField is the same curve the old 0.30-0.60 smoothstep was centred on.
+            const float shelfIsoline = 0.45f;
+            const float shelfGradientProbeMeters = 40f;
+            float2 shelfProbeStep = new float2(shelfGradientProbeMeters, shelfGradientProbeMeters) / (float)extentD;
+            float continentFieldDx = FractalSimplexNoise01(
+                warpedNorm + new float2(shelfProbeStep.x, 0f) * 1.35f + new float2(19.2f, -7.3f), seed ^ 0x1C0A7E5Fu, 5);
+            float continentFieldDz = FractalSimplexNoise01(
+                warpedNorm + new float2(0f, shelfProbeStep.y) * 1.35f + new float2(19.2f, -7.3f), seed ^ 0x1C0A7E5Fu, 5);
+            float shelfGradientPerMeter = math.length(new float2(
+                continentFieldDx - continentField,
+                continentFieldDz - continentField)) / shelfGradientProbeMeters;
+            // A vanishing gradient means a plateau of the noise, where the isoline is far away in
+            // every direction; the max() keeps the division finite and pushes such samples fully to
+            // whichever side of the threshold they already sit on, which is the correct answer there.
+            float shelfDistanceMeters = (continentField - shelfIsoline) / math.max(1e-9f, shelfGradientPerMeter);
+            float shelfHalfWidth = math.max(250f, parameters.ShelfBreakWidthMeters) * 0.5f;
+            float shelfMask = math.smoothstep(-shelfHalfWidth, shelfHalfWidth, shelfDistanceMeters);
 
             // R42: Warp continentality input for shelfBreakMask so the shelf edge is an organic, ragged coastline,
             // NOT a smooth geometric ellipse (which created the 2 smooth oval shapes in top-left P1 200m).
