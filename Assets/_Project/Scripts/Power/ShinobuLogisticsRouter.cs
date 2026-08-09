@@ -468,6 +468,20 @@ namespace Hecton8.Power
                 ApplyDeterministicMockModuleToggle();
 
                 _frameIndex++;
+
+                // ApplyDeterministicMockModuleToggle above reaches RebuildAdjacencyFromEdges, which
+                // schedules BuildCsrGraphJob and takes ownership of _counters. The guard at the top of
+                // this try only covers BuildEmergencyMockGraph's schedule, so without this second check
+                // the LogisticsFlowPrepareJob initializer below reads _counters[CounterAdjacencyEntryCount]
+                // while the rebuild job still writes it - InvalidOperationException, which is unguarded at
+                // SystemDispatcher.cs:6799 and therefore drops the whole remaining slow-tick lane.
+                // Measured on 2026-08-09 in Logs/h8_driven_route_proof.log:3443.
+                // The check sits AFTER _frameIndex++ on purpose: the toggle fires on (_frameIndex % 240),
+                // so returning before the increment would re-arm the same toggle on the next tick and
+                // stall the solver permanently instead of deferring it by one tick.
+                if (_csrRebuildPending)
+                    return;
+
                 bool runOxygen = ShouldRunOxygenSolver();
                 _solveStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 int deltaPassCount = _deltaPassCount;
