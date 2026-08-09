@@ -864,7 +864,46 @@ namespace Hecton8.World
             float ridgeBelt = ErodedRidge01(warpedNorm * 2.88f + new float2(4.1f, -3.7f), seed ^ 0x91E83B37u, 5);
             float ridgeMask = math.saturate(math.smoothstep(0.38f, 0.86f, ridgeBelt) * (1f - shelfMask * 0.42f) + plateRidgeMask * 0.95f);
             float oceanicRidgeGate = 1f - continentality;
-            float billowMountains = ErodedRidge01(warpedPos * 0.00088f + new float2(-1.2f, 8.4f), seed ^ 0x3F2A1C9Bu, 5);
+            // RidgeWidthMeters, not a hardcoded 0.00088. This is the same "parameter accepted then
+            // ignored" defect the shelf-depth note at :765-775 describes, in the other half of the
+            // pair: RidgeWidthMeters is declared at :34, defaulted to 2350 at :54 and clamped at :262,
+            // and NOTHING in this evaluator ever read it. So the ridge's HEIGHT was authored and its
+            // WIDTH was whatever frequency was typed here - and slope is height divided by width, so
+            // the authored aspect ratio never reached the terrain.
+            //
+            // MEASURED 2026-08-09 (WorldMacroGeologyRidgeOctaveSlopeTests). At 0.00088 the base
+            // lattice cell is 1136 m against this term's 1008 m amplitude (RidgeHeightMeters * 0.65),
+            // an amplitude:wavelength ratio of 0.89. Every other macro term in this method sits
+            // between 0.017 and 0.149:
+            //     :867 this term          1008 m / 1136 m  = 0.89   <- 6x the next highest
+            //     :869 ridge mask term    1550 m / 10416 m = 0.149
+            //     :796 mountainUplift      950 m / 7692 m  = 0.124
+            //     :878 trench              900 m / 12300 m = 0.073
+            //     :918 fault                95 m / 2500 m  = 0.038
+            //     :771 shelfRoughness       28 m / 1667 m  = 0.017
+            // Isolated mean slope of this term inside a ridge zone: 50.8 deg, max 70.5 deg. Octave
+            // count is NOT the lever - 1 octave measures 53.7 deg and 5 octaves 50.8 deg, because the
+            // multifractal norm grows with octaves. Amplitude and wavelength are the levers, linearly:
+            // halving the amplitude took the mean to 33.0 deg and quartering it to 18.6 deg.
+            //
+            // WHY THIS MATTERS BEYOND LOOKS. :1415 normalises with `Slope01 = saturate(slope / 1.25f)`
+            // and a gradient of 1.25 is 51.3 deg, so every surface steeper than that is the SAME
+            // number downstream. Measured mean slope was 47.2 deg at P5_deepfar and 43.3 deg at
+            // P1_origin over their 200 m windows, with 95.1% of the P5 window above 35 deg. At that
+            // point the material resolver, the scatter eligibility flags and the KCC are all reading a
+            // saturated constant instead of a field: WorldTerrainDetailContracts.cs:209 computes
+            // `sedimentRoom = 1 - finalRock`, finalRock saturates, and SEVEN of the eight material
+            // classes are multiplied by zero. That is the two-colour splatmap, and it cannot be fixed
+            // by reweighting the palette because the palette is being handed a constant.
+            //
+            // WARNING: Regression risk in terrain geometry. This widens ridge relief by 2.07x
+            // (1136 m -> 2350 m base cell) and therefore changes every ridge in the world. It does not
+            // change ridge HEIGHT, ridge placement, or any mask - ridgeMask comes from :864 on a
+            // separate 10.4 km lattice and is untouched. Sanitize clamps RidgeWidthMeters to a 250 m
+            // floor, so a caller who authors a narrow ridge still gets a steep one; that is the
+            // parameter doing its job rather than a hazard.
+            float ridgeReliefFrequency = 1f / math.max(250f, parameters.RidgeWidthMeters);
+            float billowMountains = ErodedRidge01(warpedPos * ridgeReliefFrequency + new float2(-1.2f, 8.4f), seed ^ 0x3F2A1C9Bu, 5);
             depth -= billowMountains * parameters.RidgeHeightMeters * 0.65f * ridgeMask * oceanicRidgeGate;
             depth -= ridgeMask * parameters.RidgeHeightMeters * (0.58f + plateEdgeMask * 0.42f) * oceanicRidgeGate;
             if (stageDump == 3) { masks = default; return parameters.WaterSurfaceY - depth; } // STAGE 3: +ridges (ErodedRidge crest)
