@@ -200,27 +200,55 @@ namespace Hecton8.PureLogic.Tests
         ///
         /// The ratio limit is 1.0 (as much vertical as horizontal) rather than something defensible
         /// like 0.3, so this fires only for unambiguous over-amplitude.
+        ///
+        /// SAMPLING NOTE, and it is the reason this test measures nine windows instead of one. The
+        /// first version of this test sampled a SINGLE 200 m window per site. That is a sample size
+        /// of roughly one landform: the ridge lattice has a base cell of 1136-2350 m, so one 200 m
+        /// window sees a fraction of one feature and whether it lands on a crest, a flank or a floor
+        /// is arbitrary. Measured consequence on 2026-08-09: a change that improved the mean slope at
+        /// every site at 1 km and 10 km appeared to make P4_far WORSE by 8.5 degrees at 200 m, purely
+        /// because widening the lattice moved a crest under the fixed window. A single small window
+        /// cannot distinguish "the terrain got steeper" from "the terrain moved", and reading it as
+        /// the former would have reverted a good change. Nine windows spread over 3 km is still a
+        /// small sample, but it is large enough that the median does not track one feature.
         /// </summary>
         [Test]
         public void MicroScaleRelief_IsProportionateToTheWindow()
         {
             const double window = 200.0;
+            const double spread = 1500.0;
 
             for (int i = 0; i < Sites.Length; i++)
             {
-                SlopeHistogram h = MeasureSlope(Sites[i].X, Sites[i].Z, window);
-                double relief = h.MaxHeight - h.MinHeight;
-                double ratio = relief / window;
+                var ratios = new System.Collections.Generic.List<double>();
+                var means = new System.Collections.Generic.List<double>();
+
+                for (int oz = -1; oz <= 1; oz++)
+                {
+                    for (int ox = -1; ox <= 1; ox++)
+                    {
+                        SlopeHistogram h = MeasureSlope(
+                            Sites[i].X + ox * spread, Sites[i].Z + oz * spread, window);
+                        ratios.Add((h.MaxHeight - h.MinHeight) / window);
+                        means.Add(h.MeanDegrees);
+                    }
+                }
+
+                ratios.Sort();
+                means.Sort();
+                double medianRatio = ratios[ratios.Count / 2];
+                double medianMean = means[means.Count / 2];
 
                 Assert.That(
-                    ratio,
+                    medianRatio,
                     Is.LessThan(1.0),
-                    $"{Sites[i].Label} spans {relief:0.0}m of relief across a {window:0}m window " +
-                    $"(ratio {ratio:0.00}, mean slope {h.MeanDegrees:0.0}deg). The micro-scale " +
+                    $"{Sites[i].Label} has a median relief:window ratio of {medianRatio:0.00} across " +
+                    $"nine 200 m windows (median mean slope {medianMean:0.0}deg, " +
+                    $"worst {ratios[ratios.Count - 1]:0.00}, best {ratios[0]:0.00}). The micro-scale " +
                     "amplitude terms are scaled for a larger footprint than they are applied to. " +
                     "terrain.md's 100m acceptance row asks for scree grit, which cannot read on a " +
                     "surface already at the limit of the slope ramp " +
-                    "(WorldMacroGeologyFields.cs:1402 saturates Slope01 at 51.3 degrees).");
+                    "(WorldMacroGeologyFields.cs:1415 saturates Slope01 at 51.3 degrees).");
             }
         }
     }
