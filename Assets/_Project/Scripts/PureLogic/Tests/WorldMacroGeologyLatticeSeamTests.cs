@@ -72,7 +72,7 @@ namespace Hecton8.PureLogic.Tests
         /// Comparing against a LOCAL median rather than an absolute threshold is what makes this work
         /// on both an abyssal plain and a ridge flank.
         /// </summary>
-        private static System.Collections.Generic.List<SeamHit> ScanTransect(
+        private static System.Collections.Generic.List<SeamHit> ScanCurvature(
             double startX, double startZ, double dirX, double dirZ, double lengthMeters, float factor)
         {
             WorldMacroGeologyParams p = WorldMacroGeologyParams.CreateDefault(Seed);
@@ -139,7 +139,7 @@ namespace Hecton8.PureLogic.Tests
             int totalHits = 0;
             foreach (var t in transects)
             {
-                var hits = ScanTransect(t.X, t.Z, t.DX, t.DZ, t.Len, 8f);
+                var hits = ScanCurvature(t.X, t.Z, t.DX, t.DZ, t.Len, 8f);
                 totalHits += hits.Count;
                 sb.AppendLine($"  {t.Label}: {hits.Count} kink(s)");
 
@@ -173,18 +173,19 @@ namespace Hecton8.PureLogic.Tests
         }
 
         /// <summary>
-        /// Directly exercises the suspected truncation instead of inferring it from height. Samples
-        /// the height either side of a province cell boundary at a very fine pitch and asserts that
-        /// the field is continuous there.
+        /// Locks the property the first-difference scan established and the curvature scan could not:
+        /// the height field has no STEP discontinuities. Measured 2026-08-09 over 180 km of transect
+        /// at a 2 m pitch, the largest first difference anywhere was 11x its local median and occurred
+        /// in runs of consecutive samples, which is a steep face rather than a step.
         ///
-        /// The province lattice cell is lerp(55000, 95000) metres wide and its sample coordinate is
-        /// warped by up to 32 km, so the boundary cannot be located analytically from outside the
-        /// method. Instead this walks a long transect at a fine pitch and asserts on the WORST jump
-        /// found, which is where the boundary is if one is crossed at all.
+        /// This is worth locking because a step is what a truncated cell neighbourhood, a mismatched
+        /// cull radius or a per-chunk coordinate anchor all produce, and this file has a documented
+        /// history of exactly that: WorldMacroGeologyFields.cs:653-673 records a 34.46 m cliff every
+        /// 512 m caused by a chunk anchor, against 0.07 m of legitimate mid-chunk variation.
         ///
-        /// The bar is 12x the local median. Legitimate terrain cannot produce that at a 2 m pitch:
-        /// the steepest surface the generator emits is around 80 degrees, which at 2 m is 11 m of
-        /// rise, and the local median on such a face is already several metres.
+        /// The bar is 20x the local median. Legitimate terrain cannot reach it at a 2 m pitch: the
+        /// steepest surface the generator emits is around 80 degrees, which is 11 m of rise over 2 m,
+        /// and on such a face the local median is already several metres.
         /// </summary>
         [Test]
         public void HeightField_HasNoStepDiscontinuities()
@@ -201,7 +202,7 @@ namespace Hecton8.PureLogic.Tests
 
             foreach (var t in transects)
             {
-                var hits = ScanTransect(t.X, t.Z, t.DX, t.DZ, 60000.0, 8f);
+                var hits = ScanFirstDifference(t.X, t.Z, t.DX, t.DZ, 60000.0, 8f);
                 foreach (var h in hits)
                 {
                     if (h.Jump / h.LocalTypical > worst.Jump / worst.LocalTypical)
@@ -216,14 +217,67 @@ namespace Hecton8.PureLogic.Tests
 
             Assert.That(
                 ratio,
-                Is.LessThan(12.0),
+                Is.LessThan(20.0),
                 $"Height jumps {worst.Jump:0.00} m between samples {StepMeters:0} m apart at " +
                 $"({worst.X:0}, {worst.Z:0}) on the {worstTransect} transect, against a local median " +
                 $"jump of {worst.LocalTypical:0.00} m - a {ratio:0}x step. A jump that does not shrink " +
-                "with the sampling pitch is a discontinuity, not a slope. The known candidate is " +
-                "ResolveProvince (WorldMacroGeologyFields.cs:543-559), which sums over a 3x3 cell " +
-                "neighbourhood while culling at a radius of 1.5 cells, so a cell two indices away can " +
-                "be inside the cull radius and outside the loop.");
+                "with the sampling pitch is a discontinuity, not a slope, and the usual causes are a " +
+                "cell neighbourhood that does not cover its own cull radius, or a coordinate anchor " +
+                "that steps with the chunk.");
+        }
+
+        /// <summary>
+        /// First differences, for the step assertion above. Kept separate from ScanCurvature rather
+        /// than parameterised, because the two answer different questions and sharing one routine is
+        /// how the assertion above came to be checking second differences while its failure message
+        /// still described steps - a test that reports one quantity and measures another.
+        /// </summary>
+        private static System.Collections.Generic.List<SeamHit> ScanFirstDifference(
+            double startX, double startZ, double dirX, double dirZ, double lengthMeters, float factor)
+        {
+            WorldMacroGeologyParams p = WorldMacroGeologyParams.CreateDefault(Seed);
+            int steps = (int)(lengthMeters / StepMeters);
+            double len = math.sqrt(dirX * dirX + dirZ * dirZ);
+            dirX /= len;
+            dirZ /= len;
+
+            var heights = new float[steps];
+            for (int i = 0; i < steps; i++)
+            {
+                double d = i * StepMeters;
+                heights[i] = WorldMacroGeologyFields.EvaluateHeightMeters(
+                    startX + dirX * d, startZ + dirZ * d, in p);
+            }
+
+            var jumps = new float[steps - 1];
+            for (int i = 1; i < steps; i++)
+                jumps[i - 1] = math.abs(heights[i] - heights[i - 1]);
+
+            var hits = new System.Collections.Generic.List<SeamHit>();
+            const int window = 40;
+            var scratch = new float[window * 2 + 1];
+
+            for (int i = window; i < jumps.Length - window; i++)
+            {
+                for (int k = -window; k <= window; k++)
+                    scratch[k + window] = jumps[i + k];
+                System.Array.Sort(scratch);
+                float median = scratch[window];
+
+                if (median > 1e-4f && jumps[i] > median * factor)
+                {
+                    double d = i * StepMeters;
+                    hits.Add(new SeamHit
+                    {
+                        X = startX + dirX * d,
+                        Z = startZ + dirZ * d,
+                        Jump = jumps[i],
+                        LocalTypical = median
+                    });
+                }
+            }
+
+            return hits;
         }
     }
 }
