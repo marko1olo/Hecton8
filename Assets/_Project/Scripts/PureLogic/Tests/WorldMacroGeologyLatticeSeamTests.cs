@@ -55,9 +55,22 @@ namespace Hecton8.PureLogic.Tests
         }
 
         /// <summary>
-        /// Walks a transect and flags every sample whose height jump from its neighbour is more than
-        /// `factor` times the local typical jump. Comparing against a LOCAL median rather than an
-        /// absolute threshold is what makes this work on both an abyssal plain and a ridge flank.
+        /// Walks a transect and flags every sample whose SECOND difference is more than `factor`
+        /// times the local typical second difference.
+        ///
+        /// Second difference, not first. A first-difference scan over 180 km of transect found no
+        /// step discontinuities at all (2026-08-09: 7 mild hits at 8-11x, all in consecutive runs,
+        /// which is a steep face and not a step). But the artefact being chased is visible in a
+        /// CURVATURE X-Ray, and curvature is a second derivative - it reveals a kink in the gradient,
+        /// which by definition leaves the height itself continuous and produces no first-difference
+        /// jump. Scanning the wrong derivative order returns a clean bill of health for a field that
+        /// is visibly creased.
+        ///
+        /// Every clamp, saturate, min, max and abs in the pipeline is a candidate: each is continuous
+        /// and each has a corner, and the locus of that corner in a smooth field is a curve.
+        ///
+        /// Comparing against a LOCAL median rather than an absolute threshold is what makes this work
+        /// on both an abyssal plain and a ridge flank.
         /// </summary>
         private static System.Collections.Generic.List<SeamHit> ScanTransect(
             double startX, double startZ, double dirX, double dirZ, double lengthMeters, float factor)
@@ -76,29 +89,29 @@ namespace Hecton8.PureLogic.Tests
                     startX + dirX * d, startZ + dirZ * d, in p);
             }
 
-            var jumps = new float[steps - 1];
-            for (int i = 1; i < steps; i++)
-                jumps[i - 1] = math.abs(heights[i] - heights[i - 1]);
+            var curvature = new float[steps - 2];
+            for (int i = 1; i < steps - 1; i++)
+                curvature[i - 1] = math.abs(heights[i + 1] - 2f * heights[i] + heights[i - 1]);
 
             var hits = new System.Collections.Generic.List<SeamHit>();
             const int window = 40;
             var scratch = new float[window * 2 + 1];
 
-            for (int i = window; i < jumps.Length - window; i++)
+            for (int i = window; i < curvature.Length - window; i++)
             {
                 for (int k = -window; k <= window; k++)
-                    scratch[k + window] = jumps[i + k];
+                    scratch[k + window] = curvature[i + k];
                 System.Array.Sort(scratch);
                 float median = scratch[window];
 
-                if (median > 1e-4f && jumps[i] > median * factor)
+                if (median > 1e-5f && curvature[i] > median * factor)
                 {
-                    double d = i * StepMeters;
+                    double d = (i + 1) * StepMeters;
                     hits.Add(new SeamHit
                     {
                         X = startX + dirX * d,
                         Z = startZ + dirZ * d,
-                        Jump = jumps[i],
+                        Jump = curvature[i],
                         LocalTypical = median
                     });
                 }
@@ -108,12 +121,12 @@ namespace Hecton8.PureLogic.Tests
         }
 
         [Test]
-        public void HeightSeams_AreReportedWithTheirLatticeCoordinates()
+        public void GradientKinks_AreReportedWithTheirLatticeCoordinates()
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine(
-                $"Scanning for C0 height steps at a {StepMeters:0} m pitch. A hit is a jump more than " +
-                "8x the local median jump over a +/-80 m window.");
+                $"Scanning for C1 gradient kinks at a {StepMeters:0} m pitch. A hit is a second difference " +
+                "more than 8x the local median second difference over a +/-80 m window.");
             sb.AppendLine();
 
             (double X, double Z, double DX, double DZ, double Len, string Label)[] transects =
@@ -128,7 +141,7 @@ namespace Hecton8.PureLogic.Tests
             {
                 var hits = ScanTransect(t.X, t.Z, t.DX, t.DZ, t.Len, 8f);
                 totalHits += hits.Count;
-                sb.AppendLine($"  {t.Label}: {hits.Count} step(s)");
+                sb.AppendLine($"  {t.Label}: {hits.Count} kink(s)");
 
                 int shown = 0;
                 foreach (var h in hits)
@@ -146,14 +159,14 @@ namespace Hecton8.PureLogic.Tests
                     plateFrac -= math.floor(plateFrac);
 
                     sb.AppendLine(
-                        $"    ({h.X,9:0}, {h.Z,8:0})  jump={h.Jump,7:0.00}m vs typical " +
-                        $"{h.LocalTypical,6:0.00}m  ratio={h.Jump / h.LocalTypical,5:0}x  " +
+                        $"    ({h.X,9:0}, {h.Z,8:0})  curv={h.Jump,7:0.000}m vs typical " +
+                        $"{h.LocalTypical,6:0.000}m  ratio={h.Jump / h.LocalTypical,5:0}x  " +
                         $"fracOf[crater2500={craterFrac:0.00} volc5555={volcFrac:0.00} plate12000={plateFrac:0.00}]");
                 }
             }
 
             sb.AppendLine();
-            sb.AppendLine($"  total steps found: {totalHits}");
+            sb.AppendLine($"  total kinks found: {totalHits}");
 
             TestContext.WriteLine(sb.ToString());
             Assert.Pass(sb.ToString());
