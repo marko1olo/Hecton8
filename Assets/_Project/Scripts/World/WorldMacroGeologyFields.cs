@@ -612,7 +612,19 @@ namespace Hecton8.World
         // renders the depth field after each pipeline stage and we SEE which stage introduces the zebra /
         // rings / hairline. 0 = full pipeline (normal). Non-zero early-returns raw (WaterSurfaceY - depth).
         //   1=base(shelf/abyss)  2=+continentRelief(mtn/foothill/plateau)  3=+ridges  4=+trench/fault/basin
-        //   5=+fold  6=+volcano/crater/river/lake/mesa/dune  7=+strata  8=+mesoFracture/talus (=full)
+        //   5=+fold  6=+volcano/crater/river/lake/mesa/dune/reef  7=+strata  8=+mesoFracture/gravel/talus
+        //
+        // 2026-08-09: stages 1, 5, 6, 7 and 8 were DOCUMENTED ABOVE BUT NEVER IMPLEMENTED - only 2, 3
+        // and 4 had early-returns. An instrument that answers three of the eight questions it
+        // advertises is worse than one that advertises three, because the caller reads the comment,
+        // asks for stage 7, and silently receives the full pipeline: two different stages return
+        // byte-identical results and the reader concludes the stage between them is inert. The
+        // missing five are added here so a stage sweep can actually localise a defect.
+        //
+        // Every dump returns depth BEFORE the soft ceiling and clamp at the end of this method, stage
+        // 8 included. So stage 8 is NOT the shipped height - it is the shipped height without the
+        // ceiling, the coastal-erosion lerp and the karst spires. Compare stage 8 against stage 0 to
+        // see what those three do; do not read stage 8 as "final".
         public static float EvaluateHeightMeters(double absoluteX, double absoluteZ, in WorldMacroGeologyParams parameters, out MacroMasks masks, int stageDump)
         {
             // Use double arithmetic for macro scale and bounds
@@ -767,6 +779,7 @@ namespace Hecton8.World
             // R41: Add subtle organic micro-terrain noise to Stage 1 shelf so base shelf is not a smooth plastic lens
             float shelfRoughness = (FractalSimplexNoise01(warpedPos * 0.0006f + new float2(14.2f, -7.8f), seed ^ 0x51A2B3C4u, 4) * 2f - 1f) * 28f;
             depth += shelfRoughness * shelfMask;
+            if (stageDump == 1) { masks = default; return parameters.WaterSurfaceY - depth; } // STAGE 1: base shelf/abyss/basin only
 
             // =========================================================================
             // SYSTEM A: PROVINCE RESOLVE (Organic, non-grid, blended recipes)
@@ -964,6 +977,7 @@ namespace Hecton8.World
                 }
 #pragma warning restore CS0162
             }
+            if (stageDump == 5) { masks = default; return parameters.WaterSurfaceY - depth; } // STAGE 5: +fold belts
 
             // --- B6: VOLCANIC FIELDS (Cones, calderas, guyots) ---
             float volcanoMask = 0f;
@@ -1235,6 +1249,7 @@ namespace Hecton8.World
                 reefMask = reefPatch * depthGate * recipe.Reefs * reefFade;
                 depth -= (coralHeads - 0.33f) * 35f * reefMask;
             }
+            if (stageDump == 6) { masks = default; return parameters.WaterSurfaceY - depth; } // STAGE 6: +volcano/crater/river/lake/mesa/dune/reef
 
             // --- B4: STRATIFICATION (elevation benches strictly on steep continental rock walls) ---
             float strataMask = 0f;
@@ -1277,6 +1292,7 @@ namespace Hecton8.World
                     }
                 }
             }
+            if (stageDump == 7) { masks = default; return parameters.WaterSurfaceY - depth; } // STAGE 7: +strata benches
 
             // --- B9: FRACTURED WALLS (Steep slope blocky detail) ---
             float mesoFractureMask = math.saturate(hardRockMask * 0.8f + slopeProxy * 0.4f) * steepRockMask;
@@ -1308,6 +1324,7 @@ namespace Hecton8.World
             float talusF = DoubleBillowNoise01(warpedPosD * 0.071 + new double2(-5.0, 1.7), seed ^ 0xC3F19802u, 2);
             if (!DiagTalusOff)
                 depth += ((talusC * 0.70f + talusF * 0.30f) * 2f - 1f) * math.lerp(5f, 15f, talusMask) * talusMask;
+            if (stageDump == 8) { masks = default; return parameters.WaterSurfaceY - depth; } // STAGE 8: +mesoFracture/gravel/talus (before coastal erosion, spires, ceiling)
 
             // --- B11: COASTAL EROSION & KARST SPIRES ---
             float waveExposure = DoubleFractalSimplexNoise01((double2)warpedNorm * 4.5 + new double2(44.0, -12.0), seed ^ 0x99AABBCCu, 3);
