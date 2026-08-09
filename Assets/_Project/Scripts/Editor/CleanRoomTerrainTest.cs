@@ -100,7 +100,12 @@ namespace Hecton8.Editor
                 }
 
                 StitchTerrainGrid(terrains);
-                Camera camera = BuildCamera();
+
+                // Aim the camera at the surface that was actually generated, not at a constant.
+                // centerWorldHeights is absolute world Y in metres for the centre chunk, filled
+                // above at the same time the terrains were built.
+                MeasureExtent(centerWorldHeights, out float beautyMinY, out float beautyMaxY);
+                Camera camera = BuildCamera((beautyMinY + beautyMaxY) * 0.5f);
                 ExportSplatmapComposite(terrains, Path.Combine(artifactDir, "Debug_Splatmap_3x3.png"));
                 RenderBeauty(camera, Path.Combine(artifactDir, "CleanRoom_Beauty.png"));
                 BiomeTransitionShot transitionShot = FindBiomeTransitionShot(terrains, in macroParams);
@@ -494,17 +499,71 @@ namespace Hecton8.Editor
             }
         }
 
-        private static Camera BuildCamera()
+        /// <summary>
+        /// Bird's-eye camera framing the whole generated grid, aimed at the terrain's MEASURED
+        /// surface height.
+        ///
+        /// It used to be hardcoded: position (260, 850, -920) looking at
+        /// <c>(0, TerrainBaseY + 2700, 0)</c> = y -2300. The clean-room surface actually sits near
+        /// y -3750 (measured: min -3831.48, max -3681.89), so the aim point was about 1450 m ABOVE
+        /// the ground and the view axis passed over the terrain entirely. The terrain then entered
+        /// frame only as a receding sheet at the bottom against empty background - which is exactly
+        /// how the beauty render read, and it was mistaken for the geology being flat and waxy
+        /// rather than for the camera being pointed at nothing.
+        ///
+        /// Aim comes from the height buffer rather than from a constant so it cannot drift again
+        /// when the vertical extent changes: <paramref name="surfaceY"/> is the mean of the
+        /// measured min/max, and the standoff is derived from the grid's own footprint and the
+        /// camera's field of view so the whole grid is framed at any chunk size.
+        ///
+        /// Elevation is 38 degrees, not straight down. A nadir view flattens relief to a texture
+        /// because every face is lit and foreshortened equally; an oblique bird's-eye keeps
+        /// silhouettes, shadowed faces and scarp edges readable, which is what terrain.md:247-250
+        /// asks a scale card to show. Ground-level framing is deliberately NOT used here: with
+        /// 40-70 degree slopes over most of the surface, a 2 m eye height looks into a wall.
+        /// </summary>
+        private static Camera BuildCamera(float surfaceY)
         {
             GameObject cameraGo = new GameObject("CleanRoom_Camera");
             Camera camera = cameraGo.AddComponent<Camera>();
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.005f, 0.010f, 0.016f, 1f);
-            camera.transform.position = new Vector3(260f, 850f, -920f);
-            camera.transform.LookAt(new Vector3(0f, TerrainBaseY + 2700f, 0f));
+
+            const float FieldOfViewDegrees = 42f;
+            const float ElevationDegrees = 38f;
+
+            // Full span of the generated grid, plus margin so the edges are not flush with frame.
+            float gridSpanMeters = ChunkSizeMeters * TerrainGridSize;
+            float framedSpanMeters = gridSpanMeters * 1.15f;
+
+            // Distance at which framedSpan subtends the vertical FOV.
+            float standoffMeters = (framedSpanMeters * 0.5f) /
+                                   math.tan(math.radians(FieldOfViewDegrees * 0.5f));
+
+            float elevationRad = math.radians(ElevationDegrees);
+            Vector3 aim = new Vector3(0f, surfaceY, 0f);
+            Vector3 offset = new Vector3(
+                0f,
+                standoffMeters * math.sin(elevationRad),
+                -standoffMeters * math.cos(elevationRad));
+
+            camera.transform.position = aim + offset;
+            camera.transform.LookAt(aim);
             camera.nearClipPlane = 0.5f;
-            camera.farClipPlane = 12000f;
-            camera.fieldOfView = 42f;
+
+            // Far plane follows the standoff instead of a fixed 12000: a larger grid would
+            // otherwise be clipped away, and the clip distance is not where vertical extent is
+            // decided.
+            camera.farClipPlane = math.max(2000f, standoffMeters * 3f);
+            camera.fieldOfView = FieldOfViewDegrees;
+
+            Debug.Log(
+                $"[CleanRoom] Bird's-eye camera: aim=(0, {surfaceY:F1}, 0) " +
+                $"pos=({camera.transform.position.x:F1}, {camera.transform.position.y:F1}, " +
+                $"{camera.transform.position.z:F1}) standoff={standoffMeters:F1}m " +
+                $"elevation={ElevationDegrees:F0}deg framing {framedSpanMeters:F0}m of a " +
+                $"{gridSpanMeters:F0}m grid.");
+
             UniversalAdditionalCameraData urp = cameraGo.AddComponent<UniversalAdditionalCameraData>();
             urp.renderPostProcessing = true;
             urp.renderShadows = true;
@@ -748,10 +807,77 @@ namespace Hecton8.Editor
             if (heights == null || slope == null || curvature == null || material == null)
                 throw new InvalidOperationException("Center diagnostic buffers were not generated.");
 
-            WriteScalarMap(Path.Combine(artifactDir, "CleanRoom_XRay_Height.png"), heights, MinTerrainHeightMeters, MaxTerrainHeightMeters);
+            // Height is normalised against the MEASURED extent of this tile, not against the
+            // world's full vertical window.
+            //
+            // It used to pass MinTerrainHeightMeters..MaxTerrainHeightMeters, a fixed 5200 m range.
+            // The clean-room tile sits near -3700 m with a few hundred metres of local relief, so
+            // real geology occupied about 4% of the greyscale and the map rendered as a uniform
+            // grey field. terrain.md:244 makes X-Ray maps "the only accepted terrain truth", and an
+            // instrument that reports flat for terrain that is not flat inverts that rule: it is
+            // the map most likely to be read as proof of a defect that is not there.
+            //
+            // The measured span is printed alongside, because a self-normalised map cannot be
+            // compared between runs without it - full black to full white says nothing until you
+            // know whether it spans 8 m or 800 m. terrain.md:248-250 asks for a per-scale verdict,
+            // and that verdict needs the number, not only the picture.
+            MeasureExtent(heights, out float heightMin, out float heightMax);
+            float heightSpan = heightMax - heightMin;
+            Debug.Log(
+                $"[CleanRoom] Height X-Ray extent: min={heightMin:F2}m max={heightMax:F2}m " +
+                $"span={heightSpan:F2}m (self-normalised). Authored window for reference: " +
+                $"{MinTerrainHeightMeters:F0}..{MaxTerrainHeightMeters:F0}m " +
+                $"({MaxTerrainHeightMeters - MinTerrainHeightMeters:F0}m), so this tile occupies " +
+                $"{(heightSpan / math.max(0.0001f, MaxTerrainHeightMeters - MinTerrainHeightMeters)) * 100f:F1}% " +
+                "of it.");
+
+            // A degenerate span would make the self-normalised map pure black and hide the very
+            // failure it exists to expose, so it is reported as a number rather than drawn.
+            if (heightSpan < 0.01f)
+            {
+                Debug.LogError(
+                    $"[CleanRoom] Height X-Ray is degenerate: span={heightSpan:F6}m over the whole " +
+                    "tile. The terrain really is flat here - this is not a normalisation artifact.");
+            }
+
+            WriteScalarMap(Path.Combine(artifactDir, "CleanRoom_XRay_Height.png"), heights, heightMin, heightMax);
             WriteScalarMap(Path.Combine(artifactDir, "CleanRoom_XRay_Slope.png"), slope, 0f, 1f);
             WriteScalarMap(Path.Combine(artifactDir, "CleanRoom_XRay_Curvature.png"), curvature, 0f, 1f);
             WriteMaterialMap(Path.Combine(artifactDir, "CleanRoom_XRay_MaterialDominant.png"), material);
+        }
+
+        /// <summary>
+        /// Measured extent of a scalar field, ignoring non-finite samples so one NaN cannot swallow
+        /// the whole range and render every other sample as a single flat value.
+        /// </summary>
+        private static void MeasureExtent(float[,] values, out float min, out float max)
+        {
+            min = float.PositiveInfinity;
+            max = float.NegativeInfinity;
+
+            int height = values.GetLength(0);
+            int width = values.GetLength(1);
+            for (int z = 0; z < height; z++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    float v = values[z, x];
+                    if (!math.isfinite(v))
+                        continue;
+
+                    if (v < min) min = v;
+                    if (v > max) max = v;
+                }
+            }
+
+            if (!math.isfinite(min) || !math.isfinite(max))
+            {
+                min = MinTerrainHeightMeters;
+                max = MaxTerrainHeightMeters;
+                Debug.LogError(
+                    "[CleanRoom] Height buffer held no finite sample; fell back to the authored " +
+                    "window for normalisation. The map below is not evidence.");
+            }
         }
 
         private static void WriteScalarMap(string path, float[,] values, float min, float max)
