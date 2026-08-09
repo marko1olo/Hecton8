@@ -157,22 +157,22 @@ Material:
     - _EnvironmentReflections: 1
     - _FlowCycleSpeed: 0.05
     - _FlowStrength: 0
-    - _GameTime: 0.29399976
+    - _GameTime: 0.25500026
     - _GlobalRotation: 0.38207167
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
-    - _HazeFalloff: 2.9083729
-    - _HazeIntensity: 0.4428137
-    - _HazeSunTintStrength: 0.31380457
+    - _HazeFalloff: 2.9068139
+    - _HazeIntensity: 0.44318202
+    - _HazeSunTintStrength: 0.31407815
     - _HighCloudOpacity: 0.82
     - _HighCloudParallaxStrength: 0
     - _HighCloudSpeedMult: 0.08
-    - _HorizonMistShelfHeight: 0.17866611
-    - _HorizonMistShelfIntensity: 0.56810695
-    - _HorizonMistShelfSoftness: 0.106640734
+    - _HorizonMistShelfHeight: 0.17869152
+    - _HorizonMistShelfIntensity: 0.5684989
+    - _HorizonMistShelfSoftness: 0.10665417
     - _Metallic: 0
-    - _NightBlend: 0.28982142
+    - _NightBlend: 0.31618154
     - _OcclusionStrength: 1
     - _OverlayAlpha: 1
     - _OverlayDiscInnerDot: 0.9214169
@@ -186,14 +186,14 @@ Material:
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
-    - _StarIntensity: 0.28982142
+    - _StarIntensity: 0.31618154
     - _StarIntensityMax: 2
     - _StarSeed: 99173
     - _StarSkyExposure: 1.5
     - _StarTiling: 8
     - _StarTwinkleSpeed: 1.5
     - _SunEdgeSoftness: 0.0035
-    - _SunElevation: 0.016012164
+    - _SunElevation: 0.013906645
     - _SunScatterIntensity: 1.1
     - _SunScatterPower: 10.4
     - _SunSize: 0.0065
@@ -213,14 +213,14 @@ Material:
     - _CloudTiling: {r: 0.1, g: 0.15, b: 0, a: 0}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _HazeColor: {r: 0.7938573, g: 0.47193548, b: 0.45082164, a: 1}
+    - _HazeColor: {r: 0.7944843, g: 0.47186932, b: 0.45073104, a: 1}
     - _HighCloudColor: {r: 0.76, g: 0.78, b: 0.9, a: 1}
     - _HighCloudTiling: {r: 6, g: 3, b: 0, a: 0}
     - _NightCloudColor: {r: 0.0256, g: 0.018000001, b: 0.0528, a: 1}
     - _RotationAxis: {r: 1, g: 0.3, b: 0, a: 0}
-    - _SkyColorHorizon: {r: 0.97112614, g: 0.48486468, b: 0.5, a: 1}
+    - _SkyColorHorizon: {r: 0.97194666, g: 0.48467442, b: 0.5, a: 1}
     - _SkyColorNadir: {r: 0.11, g: 0.165, b: 0.19, a: 1}
-    - _SkyColorZenith: {r: 0.23934323, g: 0.27, b: 0.38056293, a: 1}
+    - _SkyColorZenith: {r: 0.23961282, g: 0.27, b: 0.38033187, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _StarColor: {r: 1, g: 1, b: 1, a: 1}
     - _StarTiling: {r: 1, g: 1, b: 0, a: 0}
