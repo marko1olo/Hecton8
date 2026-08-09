@@ -64,6 +64,25 @@ public class HectonPlayerSpawner : MonoBehaviour
     private const float DefaultMaxSpawnDepthMeters = 100f;
     private const string ProductionPlayerPrefabGuid = "1c4db7a430141e5408e01b6ce4ed19d7";
 
+    /// <summary>
+    /// The CALLER's per-step no-progress budget, in seconds - `GameBootstrapper.cs:642`
+    /// `bootstrapTimeout = 30f`, armed at :7702 and re-armed at :8828.
+    ///
+    /// Mirrored as a constant rather than read from the owner because the field is `private` on
+    /// GameBootstrapper and exposes no accessor. Verified live rather than assumed: the GameBootstrapper
+    /// script GUID appears in NO scene or prefab - only in its own `.meta` - so the component is created at
+    /// runtime by AddComponent and the serialized default IS the value in play. If that default ever moves,
+    /// this constant must move with it; the clamp below fails safe either way, because shrinking our own
+    /// budget can only make the fallback fire EARLIER than the caller's deadline, never later.
+    /// </summary>
+    private const float CallerNoProgressBudgetSeconds = 30f;
+
+    /// <summary>
+    /// Margin held back from <see cref="CallerNoProgressBudgetSeconds"/> so the degraded spawn has time to
+    /// actually complete - teleport, arrest release, telemetry - before the caller's token fires.
+    /// </summary>
+    private const float FallbackCompletionMarginSeconds = 10f;
+
     // COLD ALLOC: float[1024] — spawn spiral trigonometry lookup — owner: HectonPlayerSpawner
     private static readonly float[] s_spawnSinLut = new float[SpawnAngleLutSize];
     // COLD ALLOC: float[1024] — spawn spiral trigonometry lookup — owner: HectonPlayerSpawner
@@ -607,6 +626,8 @@ public class HectonPlayerSpawner : MonoBehaviour
         // ── Zasekaem globalnyy taymer (v3.1) ──
         _operationStartTime = Time.realtimeSinceStartup;
 
+        ClampOwnBudgetsInsideCallerDeadline();
+
         // ── Podgotovka Rigidbody k teleportu ──
         PrepareRigidbodyForTeleport();
 
@@ -686,7 +707,7 @@ public class HectonPlayerSpawner : MonoBehaviour
                 // wall clock went by, because each pass costs retryDelay PLUS a headless frame. So
                 // maxWaitTime was silently a ~1.6x longer budget than its own log claimed, and a 60s value
                 // needed ~97 real seconds to trigger - long after the caller's 30s per-step no-progress
-                // deadline (GameBootstrapper.cs:614 bootstrapTimeout = 30f, armed at :7266/:8243, and
+                // deadline (GameBootstrapper.cs:642 bootstrapTimeout = 30f, armed at :7702/:8828, and
                 // GameBootstrapper is in no scene so that serialized default is the live value) had already
                 // cancelled this method. That is why ForceFallbackSpawn below never ran even once: the
                 // degradation path this class was built around is unreachable whenever the caller's budget
@@ -727,8 +748,8 @@ public class HectonPlayerSpawner : MonoBehaviour
                 catch (OperationCanceledException)
                 {
                     // THE RUN DIES HERE, and until now it died mutely. The caller's per-step no-progress
-                    // budget - GameBootstrapper.cs:614 `bootstrapTimeout = 30f`, re-armed by every
-                    // SetSceneActivationStep through GameBootstrapper.cs:7266 - is SMALLER than both budgets
+                    // budget - GameBootstrapper.cs:642 `bootstrapTimeout = 30f`, re-armed by every
+                    // SetSceneActivationStep through GameBootstrapper.cs:7702 - is SMALLER than both budgets
                     // this class owns (maxWaitTime 60s, globalTimeoutSec 120s), so on the production route
                     // the outer token always wins and neither ForceFallbackSpawn above can ever run. The
                     // cancellation surfaces from inside THIS await rather than from the loop-top
@@ -1730,7 +1751,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     /// The cancellation surfaces from inside the retry await rather than from the loop-top
     /// ThrowIfCancellationRequested, so nothing in phase 1 used to observe it and the log's last word on the
     /// subject was one more "Terrain not ready" line. The caller's per-step no-progress budget
-    /// (GameBootstrapper.cs:614 bootstrapTimeout = 30f, re-armed through :7266) is smaller than both budgets
+    /// (GameBootstrapper.cs:642 bootstrapTimeout = 30f, re-armed through :7702) is smaller than both budgets
     /// this class owns, so on the production route the outer token always wins and neither ForceFallbackSpawn
     /// can run - which is exactly the fact this line exists to make visible in the log rather than in a
     /// report nobody reads.
@@ -1747,7 +1768,55 @@ public class HectonPlayerSpawner : MonoBehaviour
     }
 #endif
 
+    /// <summary>
+    /// Places the player at the resolved spawn point under the Safe Teleport Protocol.
+    ///
+    /// THE RACE THIS CLOSES. Every other instantaneous placement in this project runs inside
+    /// <see cref="HectonFloatingOrigin.BeginSafeTeleportProtocol"/> / <c>End...</c> - SaveManager.cs:6580 on
+    /// load, BaseAirlock.cs:953 on airlock transit. This spawner did not, and it is the only teleport that
+    /// runs while the world is still streaming in, which is precisely when the origin is most likely to
+    /// rebase. `rg 'OriginShift|FloatingOrigin|AUP'` over this file returns nothing but a doc comment: the
+    /// class is blind to origin shift by construction. It resolves _spawnPosition in one frame and applies it
+    /// in another, so a rebase landing between those two points leaves the player aimed at pre-shift
+    /// coordinates - metres or kilometres from the ground the search actually validated.
+    ///
+    /// What the protocol buys here, all of it in existing code, none of it re-implemented:
+    ///   * GlobalPhysicsStateManager.cs:2146 ArmSafeTeleportSpeculativeCcd saves the body's current
+    ///     collisionDetectionMode and forces ContinuousSpeculative for SafeTeleportSpeculativeFixedTickHold
+    ///     fixed steps. HectonPlayerMovement.cs:4563 sets Discrete exactly once, cold, in its init block and
+    ///     never re-asserts it per-frame, so this override HOLDS for the teleport window instead of being
+    ///     stomped back. That is the tunnelling guard for the one frame that needs it.
+    ///   * ClearQueuedPackets drops force packets staged against the pre-teleport pose.
+    ///   * ResetTrackedBodiesForSafeTeleportState clears stale last-valid positions used by shift bookkeeping.
+    ///
+    /// GUARDED BY Application.isPlaying, matching BaseAirlock.cs:948. Edit-mode and EditMode-test callers get
+    /// the bare placement: the protocol writes UnityEngine.Physics.simulationMode and arms a
+    /// dispatcher-frame-indexed resume, neither of which has meaning outside play mode.
+    ///
+    /// The pause is one frame by construction - PausePhysicsForShift sets _physicsResumeFrame to
+    /// CurrentFrameIndex + 1 (HectonFloatingOrigin.cs:1165) - and this method is fully synchronous, so the
+    /// window opened here cannot span an await. `finally` mirrors the two sibling call sites: an exception
+    /// between Begin and End would otherwise leave Physics.simulationMode parked on Script and stop the
+    /// world simulating entirely.
+    /// </summary>
     private void TeleportPlayer(Vector3 position)
+    {
+        bool useSafeTeleport = Application.isPlaying;
+        if (useSafeTeleport)
+            HectonFloatingOrigin.BeginSafeTeleportProtocol();
+
+        try
+        {
+            TeleportPlayerUnderSafeTeleportProtocol(position);
+        }
+        finally
+        {
+            if (useSafeTeleport)
+                HectonFloatingOrigin.EndSafeTeleportProtocol();
+        }
+    }
+
+    private void TeleportPlayerUnderSafeTeleportProtocol(Vector3 position)
     {
         Vector3 platformVelocityAtTarget = _teleportPreservedPlatformVelocity;
         if (_playerMovement != null &&
@@ -1882,43 +1951,123 @@ public class HectonPlayerSpawner : MonoBehaviour
                float.IsFinite(value.z);
     }
 
+    /// <summary>
+    /// Makes this class's own degradation path REACHABLE, by forcing both of its budgets to expire inside the
+    /// caller's no-progress deadline.
+    ///
+    /// THE DEFECT THIS REMOVES. A nested timeout longer than its parent cannot fire: the parent cancels first,
+    /// every time, and the nested branch is dead by construction. That was the state here - `maxWaitTime` 60s
+    /// and `globalTimeoutSec` 120s against a caller budget of
+    /// <see cref="CallerNoProgressBudgetSeconds"/> 30s, so both ForceFallbackSpawn calls in phase 1 and the
+    /// phase 2/3 ones were unreachable on the production route. The measured exit was always the
+    /// OperationCanceledException at the phase-1 retry await, which this file already documents at :729. The
+    /// class was built around a degradation path that never ran once, and every improvement to that path -
+    /// including aiming the fallback at a physics-baked chunk - is inert until this is fixed.
+    ///
+    /// WHY CLAMP HERE INSTEAD OF EDITING THE VALUES. Both are `[SerializeField]`, and this spawner IS authored
+    /// in 02_HECTON_WORLD, which is serialized ForceBinary. The authored values therefore override any C#
+    /// field initializer, and the scene cannot be hand-edited - raw `.unity` mutation is banned by `AGENTS.md`
+    /// `Evidence Law` and denied at the tool layer. A runtime clamp is the only route that binds whatever the
+    /// scene actually carries, including values no one can currently read.
+    ///
+    /// WHY NOT RAISE THE CALLER'S BUDGET INSTEAD. `bootstrapTimeout` is the no-progress watchdog for EVERY
+    /// activation step, not just this one. Raising it past our 120s to "let the fallback win" would make every
+    /// genuinely hung step burn two extra minutes before failing, trading a spawn defect for a boot-diagnosis
+    /// defect. Shrinking the nested budget fixes the inversion at the level that owns it.
+    ///
+    /// This adds no new timing mechanism and introduces no new wait - `AGENTS.md`:199 bans time-based loading
+    /// waits, and these two already exist as a documented breach. It only bounds them so the safe degraded
+    /// spawn can occur instead of the run dying with no player at all.
+    ///
+    /// Phase 1's budget stays strictly below the global one so the cheaper, better-diagnosed exit is reached
+    /// first; both stay above the OnValidate floors (`maxWaitTime` 5s, `globalTimeoutSec` 10s) so a clamp can
+    /// never invert them or drive either to zero.
+    /// </summary>
+    private void ClampOwnBudgetsInsideCallerDeadline()
+    {
+        float budgetCeiling = CallerNoProgressBudgetSeconds - FallbackCompletionMarginSeconds;
+
+        float clampedGlobalTimeout = Mathf.Min(globalTimeoutSec, budgetCeiling);
+        float clampedMaxWait = Mathf.Min(maxWaitTime, clampedGlobalTimeout * 0.75f);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (clampedGlobalTimeout < globalTimeoutSec || clampedMaxWait < maxWaitTime)
+        {
+            LogSpawnerWarning(
+                "[HectonPlayerSpawner] Own budgets exceeded the caller's " +
+                CallerNoProgressBudgetSeconds.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) +
+                "s no-progress deadline and were unreachable. Clamped globalTimeoutSec " +
+                globalTimeoutSec.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + "s -> " +
+                clampedGlobalTimeout.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
+                "s, maxWaitTime " +
+                maxWaitTime.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + "s -> " +
+                clampedMaxWait.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) +
+                "s, so the degraded spawn can run before cancellation.");
+        }
+#endif
+
+        globalTimeoutSec = clampedGlobalTimeout;
+        maxWaitTime = clampedMaxWait;
+    }
+
     private void ForceFallbackSpawn()
     {
-        _spawnPosition.Set(
+        // AIM AT PROVEN GROUND FIRST. This used to hard-code searchOrigin, and the comment below it named
+        // the exact reason it could not do better: "WorldChunkPhysicsBakedEvents exposes point queries but no
+        // way to ENUMERATE its 64-entry latch, so this class cannot ask 'name me any chunk that did bake'.
+        // That accessor has to be added by the lane owner." The lane owner then added it
+        // (WorldChunkPhysicsBakedEvents.cs:219 TryGetNearestPhysicsBakedChunkCenter), naming THIS method as
+        // the reason it exists, so the degraded path now aims at a chunk whose collider is published and
+        // whose bake has not terminally failed - the same acceptance predicate IsSpawnPointPhysicsReady uses.
+        //
+        // XZ ONLY. The accessor's `center.y` is the chunk's terrain BASE height, not a ground height at the
+        // centre, and its own doc keeps vertical placement with the caller because the caller owns the
+        // character's height offset. So the Y below stays exactly what it was - water level plus the spawn
+        // offset - and only the horizontal aim changes. Taking center.y here would drop the player at the
+        // terrain base, which is under the sea floor.
+        //
+        // Returning false leaves the old behaviour untouched: no chunk in the latch qualifies, so there is no
+        // proven point to prefer and world centre remains the only thing this method knows. `center` is
+        // `default` on that path and is deliberately not read.
+        float fallbackX = searchOrigin.x;
+        float fallbackZ = searchOrigin.y;
+        bool aimedAtBakedChunk = WorldChunkPhysicsBakedEvents.TryGetNearestPhysicsBakedChunkCenter(
             searchOrigin.x,
+            searchOrigin.y,
+            out Vector3 nearestBakedChunkCenter);
+        if (aimedAtBakedChunk)
+        {
+            fallbackX = nearestBakedChunkCenter.x;
+            fallbackZ = nearestBakedChunkCenter.z;
+        }
+
+        _spawnPosition.Set(
+            fallbackX,
             waterLevel + spawnHeightOffset,
-            searchOrigin.y);
+            fallbackZ);
 
         // THE ONE RELEASE PATH IN THIS CLASS THAT IS NOT BEHIND IsSpawnPointPhysicsReady, and until now the
         // only one that was SILENT IN A SHIPPED BUILD. Every other exit reaches TeleportPlayer through a
-        // physics-ready check (:646, :761, :808, :914); this one teleports to an arbitrary world-centre point
-        // and opens the Kinematic Arrest Gate with no bake proof of any kind. `AGENTS.md`:199 requires the
-        // player to stay suspended until WorldChunkPhysicsBakedSignal covers the spawn coordinate, so every
-        // arrival here is a KNOWN, DELIBERATE breach of that clause - and the only report it produced lived
-        // inside `#if UNITY_EDITOR || DEVELOPMENT_BUILD`, so in the game people actually play the player was
-        // dropped into possibly-uncollidable terrain and nothing anywhere recorded it.
+        // physics-ready check (:646, :761, :808, :914); this one is the terminal degradation path.
+        // `AGENTS.md`:199 requires the player to stay suspended until WorldChunkPhysicsBakedSignal covers the
+        // spawn coordinate, so every arrival here is still a DELIBERATE breach of that clause - the aim is
+        // now proven ground where the latch holds any, but the wait itself was cut short by a budget.
         //
         // GlobalTelemetryBus.PublishPerformanceWarning carries no [Conditional] attribute, so it is the one
         // surface on this class that still speaks in a release player. It is the same route this file already
         // uses for the duplicate-spawner and spawn-refused cases; no new global surface is introduced. The
-        // scalar carries the case, because a telemetry consumer cannot read a string:
+        // scalar contract is UNCHANGED - a telemetry consumer cannot read a string, and these three values
+        // are already deployed:
         //   0 = the destination IS bake-proven. Degraded route, safe ground - the search simply never found a
-        //       point it liked before its budget ran out.
+        //       point it liked before its budget ran out. The accessor above makes this the ordinary outcome
+        //       whenever any chunk has baked, rather than the coincidence it used to be.
         //   1 = the bake lane never published anything this session, so no chunk anywhere is proven and
         //       IsSpawnPointPhysicsReady has been answering `true` by default (:1634) for the whole search.
-        //       The gate was open, not held.
+        //       The gate was open, not held. The accessor cannot help on this path - the latch is empty.
         //   2 = the lane IS live and the destination is explicitly NOT baked. The worst case: the gate knew
-        //       this point was unproven and the player was released onto it regardless.
-        // Cases 1 and 2 are different defects - a streaming route that never ran versus a gate overridden -
-        // and they were previously indistinguishable, because neither was reported at all.
-        //
-        // This does NOT make the fallback correct, and it is not a fix for the `AGENTS.md`:199 breach. It
-        // makes the breach observable instead of silent. Spawning at a KNOWN-BAKED point instead of world
-        // centre would be the real repair, and it is not possible from inside this file:
-        // WorldChunkPhysicsBakedEvents exposes point queries (IsWorldPointPhysicsBaked,
-        // IsWorldPointBakeFailed, TryGetWorldPointBakeFlags) but no way to ENUMERATE its 64-entry latch, so
-        // this class cannot ask "name me any chunk that did bake". That accessor has to be added by the lane
-        // owner.
+        //       this point was unproven and the player was released onto it regardless. Now reachable only
+        //       when the latch holds nothing acceptable, since a successful aim satisfies the same predicate
+        //       this scalar tests.
         float fallbackCaseScalar =
             !WorldChunkPhysicsBakedEvents.IsLaneActive
                 ? 1f
@@ -1937,8 +2086,9 @@ public class HectonPlayerSpawner : MonoBehaviour
         LogSpawnerWarning(
             $"[HectonPlayerSpawner] Fallback spawn at " +
             $"({_spawnPosition.x:F1}, {_spawnPosition.y:F1}, {_spawnPosition.z:F1})\n" +
+            $"   Aim: {(aimedAtBakedChunk ? "nearest physics-baked chunk centre" : "world centre (no baked chunk in latch)")}\n" +
             $"   Time before fallback: {elapsed:F1}s\n" +
-            $"   Kinematic Arrest Gate was opened WITHOUT bake proof. case={fallbackCaseScalar:F0} " +
+            $"   Kinematic Arrest Gate was opened WITHOUT a completed bake wait. case={fallbackCaseScalar:F0} " +
             $"(0=destination baked, 1=bake lane never published, 2=destination explicitly not baked)");
 #endif
     }
