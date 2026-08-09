@@ -803,18 +803,32 @@ namespace Hecton8.World
             // instead of tracking every fine ripple. And it is floored at a fraction of the analytic
             // base-octave gradient, so where the field really is flat the normalisation quietly
             // becomes a constant scale instead of a division by almost nothing.
+            // THE NUMERATOR AND THE GRADIENT MUST COME FROM THE SAME FIELD. A second attempt divided
+            // the 5-octave continentField by a 2-octave gradient estimate, reasoning only that a
+            // low-octave gradient is smoother. It is - and that is precisely why the pairing fails:
+            // the fine harmonics surviving in the numerator get divided by a denominator that does not
+            // contain them, so every small ripple is amplified by 1/g and becomes a step.
+            // MEASURED, 2026-08-09: that mismatch took P5_deepfar's 1 km mean from 27.9 deg (raw
+            // 5-octave normalisation, walls but a good mean) to 58.8 deg, and its 200 m mean from
+            // 31.0 to 60.2 deg. A self-consistent ratio is not a stylistic preference here.
+            //
+            // So the mask is driven by a dedicated 3-octave field used for BOTH the threshold test and
+            // its own gradient. Three octaves rather than two because R42 (:755-760) records that an
+            // over-smooth shelf outline reads as a "smooth geometric ellipse", and rather than five
+            // because the gradient of the finest octaves is what makes the width unpredictable in the
+            // first place. continentField keeps all five octaves and keeps driving continentality.
             const float shelfIsoline = 0.45f;
             const float shelfGradientProbeMeters = 120f;
-            const int shelfGradientOctaves = 2;
-            float shelfProbeStep = shelfGradientProbeMeters / (float)extentD;
+            const int shelfFieldOctaves = 3;
+            float shelfProbeStep = (shelfGradientProbeMeters / (float)extentD) * 1.35f;
             float2 shelfNoiseOrigin = warpedNorm * 1.35f + new float2(19.2f, -7.3f);
-            float shelfBase = FractalSimplexNoise01(shelfNoiseOrigin, seed ^ 0x1C0A7E5Fu, shelfGradientOctaves);
-            float shelfBaseDx = FractalSimplexNoise01(
-                shelfNoiseOrigin + new float2(shelfProbeStep * 1.35f, 0f), seed ^ 0x1C0A7E5Fu, shelfGradientOctaves);
-            float shelfBaseDz = FractalSimplexNoise01(
-                shelfNoiseOrigin + new float2(0f, shelfProbeStep * 1.35f), seed ^ 0x1C0A7E5Fu, shelfGradientOctaves);
+            float shelfField = FractalSimplexNoise01(shelfNoiseOrigin, seed ^ 0x1C0A7E5Fu, shelfFieldOctaves);
+            float shelfFieldDx = FractalSimplexNoise01(
+                shelfNoiseOrigin + new float2(shelfProbeStep, 0f), seed ^ 0x1C0A7E5Fu, shelfFieldOctaves);
+            float shelfFieldDz = FractalSimplexNoise01(
+                shelfNoiseOrigin + new float2(0f, shelfProbeStep), seed ^ 0x1C0A7E5Fu, shelfFieldOctaves);
             float shelfGradientPerMeter = math.length(
-                new float2(shelfBaseDx - shelfBase, shelfBaseDz - shelfBase)) / shelfGradientProbeMeters;
+                new float2(shelfFieldDx - shelfField, shelfFieldDz - shelfField)) / shelfGradientProbeMeters;
 
             // Analytic scale of the base octave: the field is sampled at 1.35 noise units per world
             // extent, so one noise lattice cell is extent/1.35 metres and a unit-amplitude harmonic
@@ -823,7 +837,7 @@ namespace Hecton8.World
             float shelfNominalGradient = 1.35f / (float)extentD;
             float shelfGradientFloor = shelfNominalGradient * 0.35f;
             float shelfDistanceMeters =
-                (continentField - shelfIsoline) / math.max(shelfGradientFloor, shelfGradientPerMeter);
+                (shelfField - shelfIsoline) / math.max(shelfGradientFloor, shelfGradientPerMeter);
             float shelfHalfWidth = math.max(250f, parameters.ShelfBreakWidthMeters) * 0.5f;
             float shelfMask = math.smoothstep(-shelfHalfWidth, shelfHalfWidth, shelfDistanceMeters);
 
