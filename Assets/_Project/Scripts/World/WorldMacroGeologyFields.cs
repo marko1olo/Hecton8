@@ -834,10 +834,24 @@ namespace Hecton8.World
             // extent, so one noise lattice cell is extent/1.35 metres and a unit-amplitude harmonic
             // crosses its full range over half of that. Flooring at 35% of it bounds the worst-case
             // normalisation factor to under 3x while leaving the common case untouched.
+            //
+            // THE FLOOR MUST BE SMOOTH, and `math.max` is not. max(g, floor) is continuous but its
+            // derivative jumps wherever g crosses floor, and for a smooth field the set where
+            // g == floor is a family of closed curves. The shelf lerp inherits that kink, so the
+            // terrain grows creases along those curves.
+            // SEEN, 2026-08-09, in Docs/Reports/CleanRoom/CleanRoom_XRay_Slope.png produced by the
+            // max() form: sharp scalloped lobe outlines across the tile, exactly the shape a level set
+            // of a smooth field takes, present in the slope and material X-Rays and absent before the
+            // change. No slope STATISTIC caught it - the mean and the maximum were both fine, because
+            // a crease is a derivative discontinuity of bounded magnitude, not a steep face.
+            //
+            // sqrt(g^2 + floor^2) is C-infinity, is never below either input, tends to g when
+            // g >> floor and to floor when g << floor. Same intent, no kink.
             float shelfNominalGradient = 1.35f / (float)extentD;
             float shelfGradientFloor = shelfNominalGradient * 0.35f;
-            float shelfDistanceMeters =
-                (shelfField - shelfIsoline) / math.max(shelfGradientFloor, shelfGradientPerMeter);
+            float shelfGradientSafe = math.sqrt(
+                shelfGradientPerMeter * shelfGradientPerMeter + shelfGradientFloor * shelfGradientFloor);
+            float shelfDistanceMeters = (shelfField - shelfIsoline) / shelfGradientSafe;
             float shelfHalfWidth = math.max(250f, parameters.ShelfBreakWidthMeters) * 0.5f;
             float shelfMask = math.smoothstep(-shelfHalfWidth, shelfHalfWidth, shelfDistanceMeters);
 
