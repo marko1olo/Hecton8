@@ -1739,6 +1739,51 @@ namespace Hecton8.World
             return total / math.max(0.0001f, norm);
         }
 
+        /// <summary>
+        /// Pre-scaled-position overload, matching the convention this file already uses for
+        /// <see cref="DoubleBillowNoise01"/> (<c>double2 sampleD, uint seed, int octaves</c>): the
+        /// caller multiplies the spatial frequency into the position and passes the seed second.
+        ///
+        /// WHY THIS EXISTS. 43 of the 44 call sites of <c>DoubleFractalSimplexNoise01</c> in the
+        /// tree are written in exactly that shape - <c>(warpedPosD * 0.002, seed ^ 0xFEA78E12u, 2)</c>
+        /// - because the sibling Billow entry point takes it. Without this overload C# still bound
+        /// them to the four-parameter method: <c>seed ^ constant</c> converted uint -> float into
+        /// <c>frequency</c>, the octave literal converted int -> uint into <c>seed</c>, and
+        /// <c>octaves</c> silently fell back to its default of 5. It compiled and it ran.
+        ///
+        /// WHAT THAT DID, measured rather than reasoned - Hecton8.PureLogic.Tests
+        /// MacroGeologyNoiseCallShapeTests.ThreeArgumentCallShape_StillVariesWithPosition:
+        /// three points up to 70 km apart all returned exactly 0.5, while the same noise called in
+        /// the declared four-argument shape at the same coordinates varied normally. Mechanism:
+        /// frequency became (float)(880031 ^ 0x51A7E531) = 1.37e9, so
+        /// <c>double2 p = posD * frequency</c> in <see cref="DoubleSimplex2D"/> pushed the skewed
+        /// lattice coordinate past int range before <c>int cellX = (int)skewedFloor.x</c>, and the
+        /// lattice cell stopped depending on position. A degenerate cell yields simplex 0, and
+        /// <c>0 * 0.5f + 0.5f</c> is the 0.5 that was measured.
+        ///
+        /// Consequence in the product: every macro-geology and surface-material noise field driven
+        /// through this shape was a constant, not a field. That is why a clean-room splatmap
+        /// resolved only 2 of the 8 authored material classes and why the beauty render read as a
+        /// single waxy surface.
+        ///
+        /// Fixed here rather than at the 47 call sites (43 here plus 4 on
+        /// <see cref="DoubleRidgedMultifractal01"/>) deliberately: the call sites are consistent
+        /// with the file's own Billow convention and are not individually wrong, the signature is.
+        /// Overload resolution prefers this method for a <c>(double2, uint, int)</c> argument list
+        /// because it needs no conversions, so the existing calls rebind with no edit; the one
+        /// genuine four-argument call at :1108 differs in arity and is unaffected.
+        ///
+        /// WARNING: Regression risk in terrain geometry. This turns 47 constants back into live
+        /// noise fields, so generated heights, masks and splat weights all change. That is the
+        /// intent - the previous output was degenerate - but any baked terrain artifact, saved
+        /// chunk or stored checksum produced before this change describes a different world.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DoubleFractalSimplexNoise01(double2 scaledPosD, uint seed, int octaves = 5)
+        {
+            return DoubleFractalSimplexNoise01(scaledPosD, 1f, seed, octaves);
+        }
+
         public static float DoubleRidgedMultifractal01(double2 posD, float frequency, uint seed, int octaves = 5)
         {
             float amplitude = 1f;
@@ -1773,6 +1818,22 @@ namespace Hecton8.World
             }
 
             return total / math.max(0.0001f, norm);
+        }
+
+        /// <summary>
+        /// Pre-scaled-position overload for the ridged multifractal, same reason and same binding
+        /// trap as the <see cref="DoubleFractalSimplexNoise01(double2, uint, int)"/> overload above:
+        /// all 4 call sites of this method pass <c>(scaledPos, seed ^ constant, octaves)</c>, which
+        /// previously bound the seed into <c>frequency</c> and degenerated the lattice.
+        ///
+        /// Ridged noise folds through <c>1 - abs(n)</c>, so its degenerate value was 1.0 rather than
+        /// the 0.5 measured for the fractal form - a mask pinned fully ON instead of half ON. Both
+        /// are constants; neither is a field.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float DoubleRidgedMultifractal01(double2 scaledPosD, uint seed, int octaves = 5)
+        {
+            return DoubleRidgedMultifractal01(scaledPosD, 1f, seed, octaves);
         }
 
         private static float SimplexNoise01(float2 sample, uint seed)
