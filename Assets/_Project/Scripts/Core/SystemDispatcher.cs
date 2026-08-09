@@ -249,6 +249,8 @@ namespace Hecton8.Core
         private const ushort DispatcherBlackBoxFlagNonFinite = 1 << 3;
         private const ushort DispatcherBlackBoxFlagCoreDilation = 1 << 4;
         private const ushort DispatcherBlackBoxFlagTemporalCompression = 1 << 5;
+        /// <summary>An origin shift armed mid-lane-walk and updatables lost their tick this frame.</summary>
+        private const ushort DispatcherBlackBoxFlagOriginShiftTickLoss = 1 << 6;
         private const ushort DispatcherBlackBoxFlagAdrenalineDilation = 1 << 7;
         private const int DispatcherBlackBoxQualityWeightQ8Shift = 8;
         private const byte AdrenalineDilationPhaseNone = 0;
@@ -561,6 +563,15 @@ namespace Hecton8.Core
         private static bool _criticalPerformanceSpikeReported;
         private static bool _pauseFreezeFrameDitherActive;
         private static int _droppedEventsCounter;
+        /// <summary>
+        /// Updatable ticks abandoned because an origin shift armed the frame lock DURING the lane walk.
+        /// Counts lost ticks, not shifts. Nonzero means multi-frame state machines missed a step with
+        /// nothing in the console: the abort at the tail of the item loop is a hard `return`, so the
+        /// remainder of the current lane and every lower-priority lane are skipped for that frame.
+        /// </summary>
+        private static int _originShiftDroppedUpdatableCounter;
+        /// <summary>Frames on which the mid-walk origin-shift abort fired at least once.</summary>
+        private static int _originShiftDroppedUpdatableFrames;
         private static bool _visualStaticGlitchActive;
         private static float _visualStaticGlitchUntilTime;
         private static int _baseStressCascadeBreakerFrame = -1;
@@ -809,6 +820,8 @@ namespace Hecton8.Core
             _pauseDepthOfFieldTargetActive = false;
             _pauseFreezeFrameDitherActive = false;
             _droppedEventsCounter = 0;
+            _originShiftDroppedUpdatableCounter = 0;
+            _originShiftDroppedUpdatableFrames = 0;
             _visualStaticGlitchActive = false;
             _visualStaticGlitchUntilTime = 0f;
             Volatile.Write(ref _streamingStorageDebtMilli, 0);
@@ -1242,6 +1255,14 @@ namespace Hecton8.Core
         }
 
         internal static int DroppedEventsCounter => _droppedEventsCounter;
+
+        /// <summary>
+        /// Total updatable ticks lost to the mid-walk origin-shift abort since the last static reset.
+        /// </summary>
+        internal static int OriginShiftDroppedUpdatableCounter => _originShiftDroppedUpdatableCounter;
+
+        /// <summary>Frames on which at least one updatable lost its tick to a mid-walk origin shift.</summary>
+        internal static int OriginShiftDroppedUpdatableFrames => _originShiftDroppedUpdatableFrames;
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
         private static IDispatcherSystem GetMasterRegisteredSystemAt(int index)
@@ -4747,6 +4768,8 @@ namespace Hecton8.Core
                 flags |= DispatcherBlackBoxFlagTemporalCompression;
             if (_adrenalineDilationPhase != AdrenalineDilationPhaseNone)
                 flags |= DispatcherBlackBoxFlagAdrenalineDilation;
+            if (_originShiftDroppedUpdatableFrames > 0)
+                flags |= DispatcherBlackBoxFlagOriginShiftTickLoss;
 
             DispatcherBlackBoxEntry entry = default;
             entry.Frame = dispatcherFrameId;
@@ -5396,7 +5419,24 @@ namespace Hecton8.Core
                                 return;
 
                             if (IsOriginShiftFrameLockedForCurrentFrame)
+                            {
+                                // An origin shift armed the frame lock in the middle of this walk. The
+                                // abandonment below is DELIBERATE: HectonFloatingOrigin has already rebased
+                                // cached root transforms, so ticking the remainder against stale positions
+                                // is worse than skipping them. What was missing is that the skip was
+                                // silent. Count the loss so the 300-frame black-box heartbeat carries it.
+                                int abandonedTicks = itemIndex;
+                                for (int pendingLane = laneIndex + 1; pendingLane < LaneCount; pendingLane++)
+                                    abandonedTicks += _priorityLanes[pendingLane].Count;
+                                if (abandonedTicks > 0 &&
+                                    _originShiftDroppedUpdatableCounter < int.MaxValue - abandonedTicks)
+                                {
+                                    _originShiftDroppedUpdatableCounter += abandonedTicks;
+                                }
+                                if (_originShiftDroppedUpdatableFrames < int.MaxValue)
+                                    _originShiftDroppedUpdatableFrames++;
                                 return;
+                            }
                         }
                     }
                 }

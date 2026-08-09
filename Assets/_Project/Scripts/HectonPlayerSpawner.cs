@@ -350,6 +350,19 @@ public class HectonPlayerSpawner : MonoBehaviour
     private int _kinematicArrestInputLockRefcount;
     private bool _kinematicArrestMotionSuspended;
 
+    /// <summary>
+    /// The controller this class actually arrested, captured at <see cref="BeginKinematicArrest"/> and
+    /// cleared at <see cref="EndKinematicArrest"/>.
+    ///
+    /// Held as a FIELD rather than re-resolved at release time on purpose. Release must drop the reference
+    /// it took, on the object it took it from: re-resolving invites releasing a DIFFERENT controller (or
+    /// none, if resolution now fails), and this gate is refcounted on the controller side, so an unbalanced
+    /// release either leaves the player frozen forever or - via the clamp-at-zero in
+    /// <c>HectonPlayerMovement.ReleaseKinematicArrest</c> - makes the NEXT legitimate arrest fail to suspend
+    /// at all, which is a silent fall-through-the-world.
+    /// </summary>
+    private HectonPlayerMovement _arrestedPlayerMovement;
+
     // ══════════════════════════════════════════════════════════════
     //  ENUMS
     // ══════════════════════════════════════════════════════════════
@@ -1437,6 +1450,17 @@ public class HectonPlayerSpawner : MonoBehaviour
             kccRuntime.AcquireKinematicArrest();
         }
 
+        // The branch above reaches HydrodynamicKccRuntime ONLY, and that host is not on the player in this
+        // build (HydrodynamicKccRuntime.cs:1-14 declares NOT DEPLOYED, and TryResolveHydroPlayerMotor gates
+        // on HydrodynamicKccKccOwnsCollisionAuthority, which is false while that host is absent). So on the
+        // shipped route it took no reference at all, and the suspension reduced to Rigidbody.isKinematic -
+        // which HectonPlayerMovement.cs:8690-8695 states does NOT suspend that controller, because gravity
+        // is queued by the controller into the environment handler every fixed step rather than integrated
+        // by PhysX. Arrest the controller that IS deployed, through its own refcounted gate (:8721).
+        _arrestedPlayerMovement = _playerMovement;
+        if (_arrestedPlayerMovement != null)
+            _arrestedPlayerMovement.AcquireKinematicArrest();
+
         AcquireSpawnInputLock();
     }
 
@@ -1467,6 +1491,13 @@ public class HectonPlayerSpawner : MonoBehaviour
         {
             kccRuntime.ReleaseKinematicArrest();
         }
+
+        // Release the reference this class took, on the object it took it from. Null the field FIRST so a
+        // re-entrant or duplicated release cannot drop a second reference on the same controller.
+        HectonPlayerMovement arrestedPlayerMovement = _arrestedPlayerMovement;
+        _arrestedPlayerMovement = null;
+        if (arrestedPlayerMovement != null)
+            arrestedPlayerMovement.ReleaseKinematicArrest();
 
         ReleaseSpawnInputLock();
     }
@@ -1563,8 +1594,14 @@ public class HectonPlayerSpawner : MonoBehaviour
         }
 
         PrepareLegacyRigidbodyForTeleport(playerRigidbody);
-        AcquireSpawnInputLock();
-        _kinematicArrestMotionSuspended = true;
+
+        // Route through BeginKinematicArrest instead of hand-rolling the two lines it owns. Setting
+        // _kinematicArrestMotionSuspended directly here ALSO suppressed the arrest: with the flag already
+        // true, the guard at the top of BeginKinematicArrest returns early, so no later call could arrest
+        // either - and EndKinematicArrest then released a reference this path never took. This is the
+        // shipped branch (the hydro branch above returns before reaching here only when that host exists),
+        // so it is the branch that most needs the controller genuinely suspended.
+        BeginKinematicArrest();
     }
 
     private static Vector3 ResolveKccVelocityForTeleport()
