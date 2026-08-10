@@ -1101,7 +1101,23 @@ namespace Hecton8.World
             float trenchBeltGate = WidthNormalisedGate(
                 trenchBelt, trenchBeltDx, trenchBeltDz, trenchGradientProbeMeters,
                 trenchIsoline, parameters.TrenchWidthMeters, trenchNominalGradient);
-            float trenchMask = math.saturate(trenchBeltGate * (1f - shelfMask * 0.80f) + plateTrenchMask * 1.15f);
+            // plateTrenchMask enters at unit gain, not at 1.15. The over-drive was a clip: the mask
+            // reached 1.0 after only 87% of the plate-edge ramp and stayed pinned for the remaining
+            // 13%, contributing no gradient there - WHILE the depth multiplier on the next line,
+            // (0.78 + plateEdgeMask * 0.58), kept climbing across that same stretch. A mask that stops
+            // moving under a multiplier that does not is a kink in the flank, not extra depth.
+            //
+            // Removing the gain does not make trenches shallower: the mask still reaches 1.0, just at
+            // the core of the boundary rather than 13% early, so the full-depth zone narrows slightly
+            // and the flank widens by the same amount.
+            //
+            // It also restores the width parameter's authority. MEASURED with the over-drive in place:
+            // wiring TrenchWidthMeters changed P5_deepfar's 1 km mean slope by EXACTLY zero
+            // (46.9 -> 46.9) and its measured trench transition by 1050 -> 1050 m, because saturate()
+            // was already pinned by the plate term and the belt gate could not be seen at all. Two
+            // extra 4-octave noise taps per sample for no effect is a bad trade; this is what makes
+            // them buy something.
+            float trenchMask = math.saturate(trenchBeltGate * (1f - shelfMask * 0.80f) + plateTrenchMask);
             trenchMask = DiagTrenchOff ? 0f : trenchMask; // folded const switch; see DiagPlateSeamOff note
             // R29 FIX: Oceanic trench depth offset (1800m) MUST be gated by (1 - continentality)
             // so oceanic trenches cannot carve 1.8km cliffs across continental landmasses!
