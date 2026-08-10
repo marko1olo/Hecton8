@@ -41,13 +41,29 @@ namespace Hecton8.PureLogic.Tests
         /// <summary>32x32 = 1024 samples per site. Each sample costs 5 height evaluations.</summary>
         private const int SamplesPerAxis = 32;
 
+        /// <summary>
+        /// Sites INSIDE the world, chosen by percentile of the in-world 1 km slope distribution by
+        /// WorldMacroGeologyInWorldAtlasTests rather than by hand.
+        ///
+        /// REPLACED 2026-08-10. The previous list was P1_origin (5000, 5000), P2_near (50000, 50000),
+        /// P3_west (-40000, 15000), P4_far (300000, 90000) and P5_deepfar (777000, -333000).
+        /// WorldExtentMeters is 30000 and is overridden by no scene, prefab or asset in the project,
+        /// and ResolveMinimumChunkRange bounds the chunk grid to +/-15000 m, so four of those five were
+        /// outside the world - P5_deepfar by a factor of 51.8. Every assertion this fixture made about
+        /// P4 and P5 was an assertion about terrain the game will never emit.
+        ///
+        /// The old list was accidentally representative in SPREAD (12.8 to 46.7 deg against the real
+        /// world's 7.6 to 63.0), which is why its conclusions about the shape of the problem held up.
+        /// It was wrong about location, not about steepness. The in-world p75 measures 43.4 deg, so the
+        /// defect P5_deepfar was reporting is reachable - it just needed a real address.
+        /// </summary>
         private static readonly (double X, double Z, string Label)[] Sites =
         {
-            (5000.0, 5000.0, "P1_origin"),
-            (50000.0, 50000.0, "P2_near"),
-            (-40000.0, 15000.0, "P3_west"),
-            (300000.0, 90000.0, "P4_far"),
-            (777000.0, -333000.0, "P5_deepfar")
+            (11896.0, -13148.0, "W1_flat"),
+            (5635.0, -3130.0, "W2_gentle"),
+            (9391.0, -10643.0, "W3_typical"),
+            (6887.0, -6887.0, "W4_steep"),
+            (-11896.0, 4383.0, "W5_wall")
         };
 
         private struct SlopeHistogram

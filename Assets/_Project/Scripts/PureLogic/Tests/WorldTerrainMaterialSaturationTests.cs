@@ -35,13 +35,23 @@ namespace Hecton8.PureLogic.Tests
         private const uint Seed = 880031u;
         private const int SamplesPerAxis = 48;
 
+        /// <summary>
+        /// Sites INSIDE the world, chosen by percentile of the in-world 1 km slope distribution by
+        /// WorldMacroGeologyInWorldAtlasTests.
+        ///
+        /// REPLACED 2026-08-10, for the reason recorded in WorldMacroGeologySlopeBudgetTests: the
+        /// previous coordinates put four of five sites outside the 30 km world that
+        /// ResolveMinimumChunkRange actually emits, P5_deepfar by 51.8x. The palette collapse this
+        /// fixture measures is real and reachable - the in-world p75 site is 43.4 deg against
+        /// P5_deepfar's 46.7 - but it has to be asserted somewhere a player can stand.
+        /// </summary>
         private static readonly (double X, double Z, string Label)[] Sites =
         {
-            (5000.0, 5000.0, "P1_origin"),
-            (50000.0, 50000.0, "P2_near"),
-            (-40000.0, 15000.0, "P3_west"),
-            (300000.0, 90000.0, "P4_far"),
-            (777000.0, -333000.0, "P5_deepfar")
+            (11896.0, -13148.0, "W1_flat"),
+            (5635.0, -3130.0, "W2_gentle"),
+            (9391.0, -10643.0, "W3_typical"),
+            (6887.0, -6887.0, "W4_steep"),
+            (-11896.0, 4383.0, "W5_wall")
         };
 
         private struct ClipStats
