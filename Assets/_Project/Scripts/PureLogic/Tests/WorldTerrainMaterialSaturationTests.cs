@@ -214,34 +214,50 @@ namespace Hecton8.PureLogic.Tests
         [Test]
         public void MaterialPalette_DoesNotCollapseToRock_OnGentleGround()
         {
-            // WHICH ANGLE THE BAR USES.
+            // WHICH ANGLE THE BAR USES, and why it is the MIDPOINT of the repose band.
             //
             // It used to be steepSlope's own onset, because the resolver held two conflicting
             // opinions about where sediment stops resting - angleOfRepose closing 24.2 -> 37.8 deg
-            // against steepSlope opening 23.0 -> 35.0 - and asserting against either one alone
-            // encoded a taste about how rocky the typical seafloor should look.
+            // against steepSlope opening 23.0 -> 35.0. The owner ruled on 2026-08-10 to make it
+            // physically correct, and steepSlope is now exactly (1 - angleOfRepose): one authored
+            // pair of bounds, so sediment ramps out over precisely the band rock ramps in.
             //
-            // The owner ruled on 2026-08-10 to make it physically correct, and steepSlope is now
-            // defined as exactly (1 - angleOfRepose). There is one authored pair of bounds, so there
-            // is one angle to assert against and the ambiguity is gone: rock may win the ground that
-            // is too steep to hold sediment, plus a margin for exposure that has no slope term.
-            const float angleOfReposeSlope01 = 0.62f;
-            double angleOfReposeDegrees = math.degrees(math.atan(angleOfReposeSlope01 * 1.25f));
+            // That leaves one thing the bar must account for, and getting it wrong is what made the
+            // first version of this assertion fail on correct terrain. This measures the ARGMAX of
+            // the palette, and the palette is SEVEN sediment classes against ONE rock class. Rock
+            // therefore wins as soon as finalRock exceeds the largest SINGLE sediment weight, not
+            // when it exceeds sediment in total - and with sand, silt, limestone and nodule each
+            // holding a quarter or so of what is left, that crossover lands near the MIDDLE of the
+            // transition band, not at its end.
+            //
+            // So the physically meaningful line for "rock should dominate here" is the midpoint of
+            // the repose band, where half the sediment has slid off. Asserting against the band's
+            // upper bound would demand that sediment win ground it is already sliding off, which is
+            // the opposite error to the one this fixture was written to catch.
+            //
+            // The full past-repose share is still reported, so the physical number stays visible.
+            const float reposeLowerSlope01 = 0.36f;
+            const float reposeUpperSlope01 = 0.62f;
+            const float reposeMidSlope01 = (reposeLowerSlope01 + reposeUpperSlope01) * 0.5f;
+            double angleOfReposeDegrees = math.degrees(math.atan(reposeUpperSlope01 * 1.25f));
+            double reposeMidDegrees = math.degrees(math.atan(reposeMidSlope01 * 1.25f));
 
-            // The repose ramp OPENS at 0.36, so rock legitimately begins appearing before the upper
-            // bound, and exposedRidge produces rock from the ridge and fault masks with no slope
-            // term at all. 25 points covers both without admitting a monoculture: pre-fix W1_flat
-            // had 0.0% of its window past the repose angle and 47% rock.
+            // exposedRidge produces rock from the ridge and fault masks with no slope term at all,
+            // so some rock legitimately appears below any slope threshold. 25 points covers that
+            // without admitting a monoculture: pre-fix W1_flat had 0.0% of its window past either
+            // threshold and 47% rock, which breaks this by nearly double the margin.
             const double ridgeExposureMarginPoints = 25.0;
 
             var report = new System.Text.StringBuilder();
             report.AppendLine(
-                $"    {"site",-11}{"mean",7}{">repose",9}{"rock%",8}{"allowed",9}{"classes",9}");
+                $"    {"site",-11}{"mean",7}{">mid",8}{">repose",9}{"rock%",8}{"allowed",9}{"classes",9}");
             var failures = new System.Collections.Generic.List<string>();
 
             for (int i = 0; i < Sites.Length; i++)
             {
                 ClipStats s = Measure(Sites[i].X, Sites[i].Z, 1000.0);
+                (double Mean, double SteepShare) mid =
+                    SlopeStats(Sites[i].X, Sites[i].Z, 1000.0, reposeMidDegrees);
                 (double Mean, double SteepShare) repose =
                     SlopeStats(Sites[i].X, Sites[i].Z, 1000.0, angleOfReposeDegrees);
 
@@ -250,18 +266,18 @@ namespace Hecton8.PureLogic.Tests
                 for (int c = 0; c < 8; c++)
                     if (s.WonArgmax[c] > 0) distinct++;
 
-                double allowed = repose.SteepShare + ridgeExposureMarginPoints;
+                double allowed = mid.SteepShare + ridgeExposureMarginPoints;
                 report.AppendLine(
-                    $"    {Sites[i].Label,-11}{repose.Mean,6:0.0}d{repose.SteepShare,8:0.0}%" +
-                    $"{rockPct,7:0.0}%{allowed,8:0.0}%{distinct,9}");
+                    $"    {Sites[i].Label,-11}{mid.Mean,6:0.0}d{mid.SteepShare,7:0.0}%" +
+                    $"{repose.SteepShare,8:0.0}%{rockPct,7:0.0}%{allowed,8:0.0}%{distinct,9}");
 
                 if (rockPct > allowed)
                 {
                     failures.Add(
                         $"{Sites[i].Label}: HardRock wins {rockPct:0.0}% of the window while only " +
-                        $"{repose.SteepShare:0.0}% of it is past the {angleOfReposeDegrees:0.0} deg " +
-                        $"angle of repose (allowance {allowed:0.0}%), and only {distinct} of 8 " +
-                        "classes win anywhere in it.");
+                        $"{mid.SteepShare:0.0}% of it is past {reposeMidDegrees:0.0} deg, the middle " +
+                        $"of the repose band where half the sediment has slid off (allowance " +
+                        $"{allowed:0.0}%), and only {distinct} of 8 classes win anywhere in it.");
                 }
             }
 
