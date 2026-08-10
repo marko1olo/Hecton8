@@ -215,40 +215,45 @@ namespace Hecton8.PureLogic.Tests
         public void MaterialPalette_DoesNotCollapseToRock_OnGentleGround()
         {
             // The resolver's angleOfRepose closes fully at Slope01 0.62, i.e. gradient 0.775, i.e.
-            // 37.8 degrees. Below that, sediment is physically expected to rest, so a site whose
-            // window is mostly below it must not resolve as rock. Read from the same normalisation
-            // the resolver uses rather than restated as a bare angle.
+            // 37.8 degrees. Read from the same normalisation the resolver uses rather than restated
+            // as a bare angle, so the bar tracks the resolver if it is retuned.
             const float angleOfReposeSlope01 = 0.62f;
             double angleOfReposeDegrees = math.degrees(math.atan(angleOfReposeSlope01 * 1.25f));
 
+            // Rock is also legitimately produced below the repose angle by exposedRidge and by the
+            // steepSlope ramp, which starts at 23 degrees. 20 points allows for that without
+            // allowing a monoculture: at W1_flat, where 0% of the window is past repose, the
+            // pre-fix 47% still breaks this by more than double the margin.
+            const double ridgeExposureMarginPoints = 20.0;
+
             var report = new System.Text.StringBuilder();
+            report.AppendLine(
+                $"    {"site",-11}{"mean",7}{"steep%",9}{"rock%",8}{"allowed",9}{"classes",9}");
             var failures = new System.Collections.Generic.List<string>();
 
             for (int i = 0; i < Sites.Length; i++)
             {
                 ClipStats s = Measure(Sites[i].X, Sites[i].Z, 1000.0);
-                double meanSlopeDegrees = MeanSlopeDegrees(Sites[i].X, Sites[i].Z, 1000.0);
+                (double Mean, double SteepShare) slope =
+                    SlopeStats(Sites[i].X, Sites[i].Z, 1000.0, angleOfReposeDegrees);
 
                 double rockPct = 100.0 * s.WonArgmax[3] / s.Samples;
                 int distinct = 0;
                 for (int c = 0; c < 8; c++)
                     if (s.WonArgmax[c] > 0) distinct++;
 
-                bool gentle = meanSlopeDegrees < angleOfReposeDegrees;
+                double allowed = slope.SteepShare + ridgeExposureMarginPoints;
                 report.AppendLine(
-                    $"    {Sites[i].Label,-11} mean {meanSlopeDegrees,5:0.0}deg  rock {rockPct,5:0.0}%  " +
-                    $"classes {distinct}  {(gentle ? "ASSERTED (gentle)" : "reported only (steep)")}");
+                    $"    {Sites[i].Label,-11}{slope.Mean,6:0.0}d{slope.SteepShare,8:0.0}%" +
+                    $"{rockPct,7:0.0}%{allowed,8:0.0}%{distinct,9}");
 
-                if (!gentle)
-                    continue;
-
-                if (rockPct >= 60.0)
+                if (rockPct > allowed)
                 {
                     failures.Add(
-                        $"{Sites[i].Label}: mean slope {meanSlopeDegrees:0.0} deg is below the " +
-                        $"angle of repose ({angleOfReposeDegrees:0.0} deg), yet HardRock wins " +
-                        $"{rockPct:0.0}% of the window and only {distinct} of 8 classes win " +
-                        "anywhere in it.");
+                        $"{Sites[i].Label}: HardRock wins {rockPct:0.0}% of the window while only " +
+                        $"{slope.SteepShare:0.0}% of it is past the {angleOfReposeDegrees:0.0} deg " +
+                        $"angle of repose (allowance {allowed:0.0}%), and only {distinct} of 8 " +
+                        "classes win anywhere in it.");
                 }
             }
 
@@ -257,20 +262,33 @@ namespace Hecton8.PureLogic.Tests
             Assert.That(
                 failures,
                 Is.Empty,
-                "Rock is dominating ground that is gentler than the angle at which sediment stops " +
-                "resting:\n  " + string.Join("\n  ", failures) +
-                "\n\nMeasured cause (WorldTerrainRockAttributionTests): ridgeRockDominance adds a " +
-                "smoothstep on positive curvature that is NOT gated by slope, and about half the " +
-                "cells of a fractal surface are convex, so about half of every flat plain is " +
-                "painted rock. This is not the world being steep - halving Slope01 at W1_flat moved " +
-                "the rock share by zero, while zeroing curvature moved it from 47% to 0%.\n\n" +
-                "Steep sites are intentionally NOT asserted about here: bare rock on a 42 degree " +
-                "face is correct, and the owner has ruled that cliffs are the intended design.\n\n" +
+                "Rock is winning substantially more ground than is actually too steep to hold " +
+                "sediment:\n  " + string.Join("\n  ", failures) +
+                "\n\nThe bar scales with the terrain deliberately. A cliff site is ALLOWED to be " +
+                "almost entirely rock, because bare rock on a 42 degree submarine face is correct " +
+                "and the owner has ruled that cliffs are the intended design. What is not allowed " +
+                "is rock winning ground that sediment would rest on.\n\n" +
+                "Measured cause of the original failure (WorldTerrainRockAttributionTests): " +
+                "ridgeRockDominance added a smoothstep on positive curvature that was NOT gated by " +
+                "slope, and about half the cells of a fractal surface are convex, so about half of " +
+                "every flat plain was painted rock. At W1_flat, zeroing curvature moved rock from " +
+                "47% to 0% while halving Slope01 moved it by nothing at all.\n\n" +
                 report.ToString());
         }
 
-        /// <summary>Mean slope over a window, measured the way the runtime measures it.</summary>
-        private static double MeanSlopeDegrees(double centerX, double centerZ, double windowMeters)
+        /// <summary>
+        /// Mean slope over a window and the share of it past a given angle, measured the way the
+        /// runtime measures slope.
+        ///
+        /// The SHARE is the part that matters and the reason the first version of this assertion was
+        /// wrong. It gated on the window's MEAN being below the angle of repose, which reads a
+        /// distribution through a single number: W3_typical has a mean of 31.3 degrees and is still
+        /// mostly steeper than the repose angle by area, so demanding sediment there demanded it on
+        /// ground that is genuinely too steep to hold any. Comparing rock's share against the
+        /// measured steep share compares like with like.
+        /// </summary>
+        private static (double Mean, double SteepShare) SlopeStats(
+            double centerX, double centerZ, double windowMeters, double steepAngleDegrees)
         {
             WorldMacroGeologyParams p = WorldMacroGeologyParams.CreateDefault(Seed);
             const double probe = 12.0;
@@ -278,6 +296,7 @@ namespace Hecton8.PureLogic.Tests
             double step = windowMeters / (SamplesPerAxis - 1);
             double sum = 0.0;
             int count = 0;
+            int steep = 0;
 
             for (int iz = 0; iz < SamplesPerAxis; iz++)
             {
@@ -291,12 +310,14 @@ namespace Hecton8.PureLogic.Tests
                     float n = WorldMacroGeologyFields.EvaluateHeightMeters(x, z + probe, in p);
                     float dx = (e - w) / (float)(probe * 2.0);
                     float dz = (n - s) / (float)(probe * 2.0);
-                    sum += math.degrees(math.atan(math.sqrt(dx * dx + dz * dz)));
+                    double degrees = math.degrees(math.atan(math.sqrt(dx * dx + dz * dz)));
+                    sum += degrees;
+                    if (degrees > steepAngleDegrees) steep++;
                     count++;
                 }
             }
 
-            return sum / count;
+            return (sum / count, 100.0 * steep / count);
         }
     }
 }
