@@ -24,10 +24,10 @@ namespace Hecton8.PureLogic.Tests
     /// it. Relief climbs properly:
     ///
     ///     window     origin   p2_near   p3_west   p4_far   p5_deepfar
-    ///       1 km       0.26      0.07      0.04     0.19        0.19
-    ///       3 km       0.49      0.18      0.12     0.70        0.51
-    ///      10 km       0.82      0.75      0.52     0.80        0.83
-    ///      30 km       0.92      1.00      0.99     1.00        0.99
+    ///       1 km       0.26      0.07      0.07     0.19        0.19
+    ///       3 km       0.49      0.18      0.45     0.70        0.51
+    ///      10 km       0.82      0.75      0.83     0.80        0.83
+    ///      30 km       0.92      1.00      0.95     1.00        0.99
     ///     100 km       1.00      1.00      0.99     1.02        1.01
     ///
     /// So the macro fields are not degenerate. What the table does say is that the full range arrives
