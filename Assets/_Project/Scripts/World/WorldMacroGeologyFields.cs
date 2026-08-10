@@ -1062,8 +1062,46 @@ namespace Hecton8.World
             depth -= ridgeMask * parameters.RidgeHeightMeters * (0.58f + plateEdgeMask * 0.42f) * oceanicRidgeGate;
             if (stageDump == 3) { masks = default; return parameters.WaterSurfaceY - depth; } // STAGE 3: +ridges (ErodedRidge crest)
 
-            float trenchBelt = RidgedMultifractal01(warpedNorm * 2.44f + new float2(0.4f, -0.6f), seed ^ 0x4B3A2C1Du, 4);
-            float trenchMask = math.saturate(math.smoothstep(0.56f, 0.95f, trenchBelt) * (1f - shelfMask * 0.80f) + plateTrenchMask * 1.15f);
+            // TrenchWidthMeters, not a bare smoothstep on the belt value. Last of the four width
+            // parameters that were declared, defaulted, clamped in Sanitize and never read; see
+            // WidthNormalisedGate for why an unread width makes slope an accident, and :765-775 and
+            // :880-900 for the shelf and ridge members of the same family.
+            //
+            // WHY THIS ONE MATTERS NOW. After the shelf and ridge fixes landed, a per-stage slope
+            // sweep over 1 km windows left exactly one site failing: P5_deepfar at 46.7 deg mean with
+            // 82.8% of its area above 35 deg, against P1 at 26.0, P4 at 33.6 and the P3 control at
+            // 12.8. Its largest single stage contribution was this one, +5.4 deg, the biggest
+            // stage-4 delta of any site - and the atlas measures Trench at 31.2% there against
+            // 0-5.1% at the three sites that pass.
+            //
+            // The old form fixed the transition in BELT units: smoothstep(0.56, 0.95, trenchBelt) is a
+            // narrow 0.39-wide band high in the range of a ridged multifractal, and a ridged field
+            // crosses such a band fast because its crests are cusps. Measured 2026-08-09 on three
+            // transects: trench transitions of 1050 m, 1100 m and 1425 m against an authored 2200 m.
+            // This term applies up to TrenchDepthMeters * 1.36 = 1224 m plus the 250 m crease below,
+            // so 1474 m over 1100 m of ground is a 53 deg flank where the authored pair asks for 39.
+            //
+            // The isoline is 0.755, the midpoint of the old 0.56-0.95 band, so trench PLACEMENT is
+            // unchanged - the same crests are selected, they are simply given the authored width.
+            //
+            // WARNING: Regression risk in terrain geometry. Every trench flank in the world widens.
+            // Trenches that were narrower than 2200 m get gentler; any wider than that get steeper,
+            // which is the point - a consistent authored flank, not a uniformly gentler world.
+            const float trenchIsoline = 0.755f;
+            const float trenchGradientProbeMeters = 120f;
+            const int trenchFieldOctaves = 4;
+            float trenchProbeStep = (trenchGradientProbeMeters / (float)extentD) * 2.44f;
+            float2 trenchNoiseOrigin = warpedNorm * 2.44f + new float2(0.4f, -0.6f);
+            float trenchBelt = RidgedMultifractal01(trenchNoiseOrigin, seed ^ 0x4B3A2C1Du, trenchFieldOctaves);
+            float trenchBeltDx = RidgedMultifractal01(
+                trenchNoiseOrigin + new float2(trenchProbeStep, 0f), seed ^ 0x4B3A2C1Du, trenchFieldOctaves);
+            float trenchBeltDz = RidgedMultifractal01(
+                trenchNoiseOrigin + new float2(0f, trenchProbeStep), seed ^ 0x4B3A2C1Du, trenchFieldOctaves);
+            float trenchNominalGradient = 2.44f / (float)extentD;
+            float trenchBeltGate = WidthNormalisedGate(
+                trenchBelt, trenchBeltDx, trenchBeltDz, trenchGradientProbeMeters,
+                trenchIsoline, parameters.TrenchWidthMeters, trenchNominalGradient);
+            float trenchMask = math.saturate(trenchBeltGate * (1f - shelfMask * 0.80f) + plateTrenchMask * 1.15f);
             trenchMask = DiagTrenchOff ? 0f : trenchMask; // folded const switch; see DiagPlateSeamOff note
             // R29 FIX: Oceanic trench depth offset (1800m) MUST be gated by (1 - continentality)
             // so oceanic trenches cannot carve 1.8km cliffs across continental landmasses!
