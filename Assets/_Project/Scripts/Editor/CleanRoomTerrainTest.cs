@@ -1346,18 +1346,31 @@ namespace Hecton8.Editor
                 Pixels[index] = ResolveColor(math.clamp(Materials[index], 0, 7));
             }
 
+            /// <summary>
+            /// One distinguishable colour per material class.
+            ///
+            /// HardRock and ManganeseNodulePlain used to be (20,23,28) and (5,5,8) - two near-blacks
+            /// separated by 15 levels, indistinguishable on screen and identical after any JPEG or
+            /// scaling step. terrain.md:244 makes these X-Rays "the only accepted terrain truth", so
+            /// a legend that cannot separate a bare rock face from an abyssal nodule plain is an
+            /// instrument reporting the wrong answer, not merely an ugly one. A reader would see
+            /// black on the left of this frame and black on the right and conclude one province.
+            ///
+            /// The nodule plain is now a warm grey-violet: still dark, because it is a deep quiet
+            /// floor and should not shout next to the sediments, but unmistakably not rock.
+            /// </summary>
             private static Color32 ResolveColor(int material)
             {
                 switch (material)
                 {
-                    case 0: return new Color32(199, 194, 158, 255);
-                    case 1: return new Color32(148, 173, 148, 255);
-                    case 2: return new Color32(56, 97, 148, 255);
-                    case 3: return new Color32(20, 23, 28, 255);
-                    case 4: return new Color32(217, 184, 122, 255);
-                    case 5: return new Color32(5, 5, 8, 255);
-                    case 6: return new Color32(140, 158, 128, 255);
-                    default: return new Color32(122, 56, 31, 255);
+                    case 0: return new Color32(199, 194, 158, 255);  // ShellSand
+                    case 1: return new Color32(148, 173, 148, 255);  // LimestoneShelf
+                    case 2: return new Color32(56, 97, 148, 255);    // ClaySilt
+                    case 3: return new Color32(20, 23, 28, 255);     // HardRock
+                    case 4: return new Color32(217, 184, 122, 255);  // BrineSaltCrust
+                    case 5: return new Color32(96, 84, 112, 255);    // ManganeseNodulePlain
+                    case 6: return new Color32(140, 158, 128, 255);  // ReefRubble
+                    default: return new Color32(122, 56, 31, 255);   // SeepCrust
                 }
             }
         }
