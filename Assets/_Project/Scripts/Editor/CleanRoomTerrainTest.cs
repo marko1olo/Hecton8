@@ -155,8 +155,9 @@ namespace Hecton8.Editor
                     $"[CleanRoom] Starting clean-room terrain proof. Site '{s_SiteLabel}' at world " +
                     $"({s_SampleOriginXZ.x:F0}, {s_SampleOriginXZ.y:F0})m, sampling " +
                     $"{TerrainGridSize * ChunkSizeMeters:F0}m of ground with the X-Rays cut from the " +
-                    $"centre 1000m chunk, i.e. world ({s_SampleOriginXZ.x:F0}, {s_SampleOriginXZ.y:F0}) " +
-                    $"to ({s_SampleOriginXZ.x + ChunkSizeMeters:F0}, {s_SampleOriginXZ.y + ChunkSizeMeters:F0}). " +
+                    $"WHOLE {TerrainGridSize}x{TerrainGridSize} grid, i.e. world " +
+                    $"({s_SampleOriginXZ.x - ChunkSizeMeters:F0}, {s_SampleOriginXZ.y - ChunkSizeMeters:F0}) " +
+                    $"to ({s_SampleOriginXZ.x + 2 * ChunkSizeMeters:F0}, {s_SampleOriginXZ.y + 2 * ChunkSizeMeters:F0}). " +
                     $"Artifacts: {artifactDir}");
 
                 EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
@@ -171,10 +172,36 @@ namespace Hecton8.Editor
                 macroParams.DetailProbeMeters = 16f;
 
                 UnityEngine.Terrain[,] terrains = new UnityEngine.Terrain[TerrainGridSize, TerrainGridSize];
-                float[,] centerWorldHeights = null;
-                float[,] centerSlope = null;
-                float[,] centerCurvature = null;
-                int[,] centerMaterial = null;
+
+                // X-Rays are cut from the WHOLE 3x3 grid, not the centre chunk.
+                //
+                // WHY THE FRAME HAD TO GROW, measured 2026-08-10. The centre chunk is 1000 m across
+                // and the shelf break's delivered 0.1-to-0.9 band measures 3150 m
+                // (WorldMacroGeologyShelfWidthDeliveryTests). A 1000 m window therefore CANNOT
+                // contain a shelf transition - not at the origin, and not at any of the five
+                // in-world atlas sites either: the shelf mask was measured over a 1 km tile at all
+                // six and not one of them crosses from below 0.25 to above 0.75. The picture was
+                // structurally incapable of showing the single largest vertical move in the
+                // generator, whatever it was aimed at.
+                //
+                // That is why CleanRoomTile_ContainsTheShelfBreak failed and why the fix is a wider
+                // frame rather than a looser threshold. Its own history records what loosening
+                // costs: an earlier version asked only for a 0.05 peak-to-trough swing and PASSED
+                // on 0.057 while the mask's mean over the tile was 0.001 - the shelf grazing one
+                // corner, reported as coverage.
+                //
+                // 3000 m is the smallest frame the existing grid can give and it clears the 3150 m
+                // band's half-crossing with room to spare. The grid was already being built; only
+                // the centre chunk's diagnostics were being kept, so eight ninths of the terrain
+                // this tool generates was being discarded before anyone looked at it.
+                const int StitchedHeightResolution =
+                    HeightResolution + (TerrainGridSize - 1) * (HeightResolution - 1);
+                const int StitchedAlphaResolution = AlphaResolution * TerrainGridSize;
+
+                float[,] gridWorldHeights = new float[StitchedHeightResolution, StitchedHeightResolution];
+                float[,] gridSlope = new float[StitchedAlphaResolution, StitchedAlphaResolution];
+                float[,] gridCurvature = new float[StitchedAlphaResolution, StitchedAlphaResolution];
+                int[,] gridMaterial = new int[StitchedAlphaResolution, StitchedAlphaResolution];
 
                 // Vertical extent of the WHOLE grid, not the centre chunk. On a continental slope the
                 // neighbouring chunks continue the ramp for another kilometre each way, so framing the
@@ -196,7 +223,7 @@ namespace Hecton8.Editor
                             in macroParams,
                             terrainLayers,
                             baseMaterial,
-                            row == 0 && col == 0,
+                            true,
                             out float[,] worldHeights,
                             out float[,] slope01,
                             out float[,] curvature01,
@@ -208,12 +235,31 @@ namespace Hecton8.Editor
                         gridMaxY = math.max(gridMaxY, chunkMaxY);
 
                         terrains[row + GridRadius, col + GridRadius] = terrain;
-                        if (row == 0 && col == 0)
+
+                        // Terrain buffers are indexed [z, x], so the grid row is the first index.
+                        // Heights carry a shared edge sample between neighbours: each chunk
+                        // contributes HeightResolution-1 rows and the last chunk adds the closing
+                        // edge, which is why the stitched size is 1025 + 2*1024 rather than 3*1025.
+                        int heightOffsetZ = (row + GridRadius) * (HeightResolution - 1);
+                        int heightOffsetX = (col + GridRadius) * (HeightResolution - 1);
+                        bool lastRow = row == GridRadius;
+                        bool lastCol = col == GridRadius;
+                        int heightRows = lastRow ? HeightResolution : HeightResolution - 1;
+                        int heightCols = lastCol ? HeightResolution : HeightResolution - 1;
+                        for (int z = 0; z < heightRows; z++)
+                            for (int x = 0; x < heightCols; x++)
+                                gridWorldHeights[heightOffsetZ + z, heightOffsetX + x] = worldHeights[z, x];
+
+                        int alphaOffsetZ = (row + GridRadius) * AlphaResolution;
+                        int alphaOffsetX = (col + GridRadius) * AlphaResolution;
+                        for (int z = 0; z < AlphaResolution; z++)
                         {
-                            centerWorldHeights = worldHeights;
-                            centerSlope = slope01;
-                            centerCurvature = curvature01;
-                            centerMaterial = dominantMaterial;
+                            for (int x = 0; x < AlphaResolution; x++)
+                            {
+                                gridSlope[alphaOffsetZ + z, alphaOffsetX + x] = slope01[z, x];
+                                gridCurvature[alphaOffsetZ + z, alphaOffsetX + x] = curvature01[z, x];
+                                gridMaterial[alphaOffsetZ + z, alphaOffsetX + x] = dominantMaterial[z, x];
+                            }
                         }
                     }
                 }
@@ -236,7 +282,7 @@ namespace Hecton8.Editor
                 RenderBeauty(camera, Path.Combine(artifactDir, $"CleanRoom_Beauty{suffix}.png"));
                 BiomeTransitionShot transitionShot = FindBiomeTransitionShot(terrains, in macroParams);
                 RenderTransitionBeauty(camera, transitionShot, Path.Combine(artifactDir, $"Naked_Biome_Transition{suffix}.png"));
-                ExportXRayMaps(artifactDir, suffix, centerWorldHeights, centerSlope, centerCurvature, centerMaterial);
+                ExportXRayMaps(artifactDir, suffix, gridWorldHeights, gridSlope, gridCurvature, gridMaterial);
 
                 Debug.Log("[CleanRoom] Clean-room terrain proof complete.");
             }

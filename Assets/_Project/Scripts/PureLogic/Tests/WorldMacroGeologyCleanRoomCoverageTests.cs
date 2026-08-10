@@ -35,9 +35,22 @@ namespace Hecton8.PureLogic.Tests
     {
         private const uint Seed = (uint)WorldMacroGeologyFields.DefaultAuthoringSeed;
 
-        private const double TileMinX = 0.0;
-        private const double TileMinZ = 0.0;
-        private const double TileSpanMeters = 1000.0;
+        // The frame the X-Rays are actually cut from. CleanRoomTerrainTest builds a 3x3 grid of
+        // 1000 m chunks and, as of 2026-08-10, exports the diagnostics from ALL NINE rather than
+        // from the centre chunk alone, so the tile these assertions measure is 3000 m and anchored
+        // one chunk before the sample origin.
+        //
+        // WHY IT MOVED. The delivered shelf band measures 3150 m
+        // (WorldMacroGeologyShelfWidthDeliveryTests), so a 1000 m frame cannot contain a shelf
+        // transition anywhere in the world - measured at the origin and at all five in-world atlas
+        // sites, not one crosses from below 0.25 to above 0.75 inside a kilometre. The assertion
+        // below was therefore unsatisfiable as written, at every possible aim point. Widening the
+        // instrument is the fix; loosening the criterion is not, and this fixture's own history
+        // says why - an earlier version asked for a 0.05 swing and passed on 0.057 while the mask
+        // mean over the tile was 0.001.
+        private const double TileMinX = -1000.0;
+        private const double TileMinZ = -1000.0;
+        private const double TileSpanMeters = 3000.0;
         private const int SamplesPerAxis = 64;
 
         private static readonly string[] MaskNames =
