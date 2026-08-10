@@ -35,6 +35,25 @@ namespace Hecton8.World
         public float TrenchDepthMeters;
         public float TrenchWidthMeters;
         public float BasinDepthMeters;
+
+        /// <summary>
+        /// How many shelf/abyss province cycles the world contains, as a domain multiplier on the
+        /// normalised position fed to the shelf field. The field's base wavelength is
+        /// WorldExtentMeters / this, so 1.35 puts one cycle every 22 km in a 30 km world.
+        ///
+        /// This is the number that decides whether the world is one continental margin or several.
+        /// Measured 2026-08-10 at the authored 1.35: a 30 km transect across the world accumulates
+        /// 14463 m of vertical travel against 3695 m of relief, a ratio of 3.9, and 56.4% of the
+        /// world sits inside the shelf mask's transition at a mean of 36.6 degrees while the 43.6%
+        /// that is saturated averages 4.2. The world crosses its own depth range about four times
+        /// instead of once, which is why its median slope is 28.4 degrees when 4510 m of range spread
+        /// monotonically over 30 km would be 8.5.
+        ///
+        /// Lower values stretch the province structure: at 0.4 the base wavelength is 75 km and the
+        /// 30 km world sits inside less than half a cycle - shelf on one side, abyss on the other.
+        /// </summary>
+        public float ShelfProvinceCyclesPerWorld;
+
         public float DetailProbeMeters;
         public int BenchmarkStage;
 
@@ -55,6 +74,7 @@ namespace Hecton8.World
                 TrenchDepthMeters = 900f,
                 TrenchWidthMeters = 2200f,
                 BasinDepthMeters = 620f,
+                ShelfProvinceCyclesPerWorld = 1.35f,
                 DetailProbeMeters = 120f
             };
         }
@@ -263,6 +283,7 @@ namespace Hecton8.World
             sanitized.TrenchDepthMeters = math.max(0f, source.TrenchDepthMeters);
             sanitized.TrenchWidthMeters = math.max(250f, source.TrenchWidthMeters);
             sanitized.BasinDepthMeters = math.max(0f, source.BasinDepthMeters);
+            sanitized.ShelfProvinceCyclesPerWorld = math.clamp(source.ShelfProvinceCyclesPerWorld, 0.05f, 8f);
             sanitized.DetailProbeMeters = math.max(1f, source.DetailProbeMeters);
             return math.isfinite(sanitized.WorldExtentMeters) &&
                    math.isfinite(sanitized.ChunkSizeMeters) &&
@@ -875,8 +896,9 @@ namespace Hecton8.World
             const float shelfIsoline = 0.45f;
             const float shelfGradientProbeMeters = 120f;
             const int shelfFieldOctaves = 3;
-            float shelfProbeStep = (shelfGradientProbeMeters / (float)extentD) * 1.35f;
-            float2 shelfNoiseOrigin = warpedNorm * 1.35f + new float2(19.2f, -7.3f);
+            float shelfCycles = parameters.ShelfProvinceCyclesPerWorld;
+            float shelfProbeStep = (shelfGradientProbeMeters / (float)extentD) * shelfCycles;
+            float2 shelfNoiseOrigin = warpedNorm * shelfCycles + new float2(19.2f, -7.3f);
             float shelfField = FractalSimplexNoise01(shelfNoiseOrigin, seed ^ 0x1C0A7E5Fu, shelfFieldOctaves);
             float shelfFieldDx = FractalSimplexNoise01(
                 shelfNoiseOrigin + new float2(shelfProbeStep, 0f), seed ^ 0x1C0A7E5Fu, shelfFieldOctaves);
@@ -901,7 +923,7 @@ namespace Hecton8.World
             // that gets differentiated, not because it fixed the artefact. The artefact is still
             // unexplained; see WorldMacroGeologyClampCornerAttributionTests for the five candidate
             // causes ruled out so far.
-            float shelfNominalGradient = 1.35f / (float)extentD;
+            float shelfNominalGradient = shelfCycles / (float)extentD;
             float shelfMask = WidthNormalisedGate(
                 shelfField, shelfFieldDx, shelfFieldDz, shelfGradientProbeMeters,
                 shelfIsoline, parameters.ShelfBreakWidthMeters, shelfNominalGradient);
