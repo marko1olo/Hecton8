@@ -55,19 +55,29 @@ namespace Hecton8.Editor
         private static string s_SiteLabel = "origin";
 
         /// <summary>
-        /// The atlas sites, so a render can be aimed at the same coordinates the slope fixtures
-        /// measure and the two bodies of evidence can be compared instead of merely coexisting.
-        /// Mean slope over a 1 km window at each, measured 2026-08-10 at seed 880031: origin 12.2,
-        /// P1 25.9, P2 19.1, P3 12.7, P4 33.7, P5 46.9 deg.
+        /// Probe sites INSIDE the world, chosen by percentile of the in-world 1 km slope distribution
+        /// by WorldMacroGeologyInWorldAtlasTests rather than by hand.
+        ///
+        /// WorldExtentMeters is 30000 and no scene, prefab or asset in the project overrides it;
+        /// ResolveMinimumChunkRange bounds the chunk grid to +/-15000 m. The world is a 30 km square.
+        /// The previous site list here (p1..p5, up to 777 km out) put four of five renders outside it,
+        /// so a picture taken at 'p5' showed a place the game will never emit.
+        ///
+        /// Mean slope over a 1 km window at each, measured 2026-08-10 at seed 880031, with the
+        /// in-world percentile each represents:
+        ///   w1 p2   9.3 deg,   65 m relief      w4 p75 43.4 deg, 1136 m
+        ///   w2 p25 18.2 deg,  372 m             w5 p98 57.0 deg, 1910 m
+        ///   w3 p50 31.1 deg,  701 m
+        /// The world spans 7.6 deg at (11896, -14400) to 63.0 deg at (-11896, 5635).
         /// </summary>
         private static readonly (string Name, double X, double Z)[] KnownSites =
         {
             ("origin", 0.0, 0.0),
-            ("p1", 5000.0, 5000.0),
-            ("p2", 50000.0, 50000.0),
-            ("p3", -40000.0, 15000.0),
-            ("p4", 300000.0, 90000.0),
-            ("p5", 777000.0, -333000.0)
+            ("w1", 11896.0, -13148.0),
+            ("w2", 5635.0, -3130.0),
+            ("w3", 9391.0, -10643.0),
+            ("w4", 6887.0, -6887.0),
+            ("w5", -11896.0, 4383.0)
         };
 
         [MenuItem("Hecton8/Tests/Clean Room Terrain")]
@@ -128,7 +138,7 @@ namespace Hecton8.Editor
                     $"[CleanRoom] {SiteArgument} '{requested}' is neither a known site nor an " +
                     "'x,z' metre pair, so the render stays at the world origin - which is a quiet " +
                     "basin tile with no shelf break and no trench in it. Known sites: " +
-                    "origin, p1, p2, p3, p4, p5.");
+                    "origin, w1 (flattest), w2, w3 (typical), w4, w5 (steepest).");
                 return;
             }
         }
