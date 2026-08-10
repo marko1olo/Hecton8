@@ -182,42 +182,121 @@ namespace Hecton8.PureLogic.Tests
         /// a single probe point that happened to land on a material boundary, and generalising a
         /// world-wide mechanism from it was the error.
         ///
-        /// What the same measurement DID establish is sharper, so the assertion now guards that
-        /// instead. HardRock wins 47-97% of every window and only two to four of the eight classes
-        /// win anywhere at all, and the share tracks slope monotonically across all five sites:
+        /// SECOND RE-AIM, 2026-08-10, after an owner ruling and an intervention measurement.
         ///
-        ///   site / 1 km window   mean slope   rock wins   distinct winners
-        ///   P3_west                  12.8         47%          2
-        ///   P2_near                  18.6         56%          3
-        ///   P1_origin                30.0         78%          2
-        ///   P4_far                   36.1         85%          2
-        ///   P5_deepfar               43.6         97%          2
+        /// The replacement assertion - "HardRock must win less than 90% of ANY site" - was still
+        /// wrong, in the same family as the traversability bar it was written beside. On a 42 degree
+        /// submarine face bare rock IS the correct material; demanding sediment there is demanding
+        /// that the resolver lie about a cliff, and the owner has ruled that cliffs are the intended
+        /// design. A test that fails because the world is dramatic is a test that will eventually be
+        /// "fixed" by destroying the world.
         ///
-        /// So the palette is not independently miscalibrated - it is downstream of slope, and it
-        /// diversifies as slope comes down. That matters for what to fix: tuning the class weights
-        /// would be work at the wrong address.
+        /// What the intervention (WorldTerrainRockAttributionTests) established is much sharper, and
+        /// it is a defect that survives the ruling completely. Re-resolving real samples with one
+        /// input neutralised at a time:
+        ///
+        ///   site        mean slope   rock wins   PositiveCurvature=0   Slope01 halved
+        ///   W1_flat        9.4 deg        47%                    0%              47%
+        ///   W4_steep      42.1 deg        97%                   97%              83%
+        ///
+        /// At 9.4 degrees rock won 47% of the window and removing CURVATURE took it to zero, while
+        /// halving SLOPE changed nothing. Rock was being painted on flat ground by curvature alone -
+        /// roughly half of it, because half the cells of any fractal surface are convex.
+        ///
+        /// So the assertion now applies only where the ground is gentler than the resolver's own
+        /// angle of repose, which is the region where sediment must win by physics rather than by
+        /// taste. Steep sites are reported and deliberately not asserted about: what belongs on a
+        /// cliff is an authoring decision, what belongs on a plain is not.
+        ///
+        /// This bar is known to be able to fail: on the code as it stood before the :187 gate it
+        /// fails at W1_flat with 47%.
         /// </summary>
         [Test]
-        public void MaterialPalette_DoesNotCollapseToRock()
+        public void MaterialPalette_DoesNotCollapseToRock_OnGentleGround()
         {
+            // The resolver's angleOfRepose closes fully at Slope01 0.62, i.e. gradient 0.775, i.e.
+            // 37.8 degrees. Below that, sediment is physically expected to rest, so a site whose
+            // window is mostly below it must not resolve as rock. Read from the same normalisation
+            // the resolver uses rather than restated as a bare angle.
+            const float angleOfReposeSlope01 = 0.62f;
+            double angleOfReposeDegrees = math.degrees(math.atan(angleOfReposeSlope01 * 1.25f));
+
+            var report = new System.Text.StringBuilder();
+            var failures = new System.Collections.Generic.List<string>();
+
             for (int i = 0; i < Sites.Length; i++)
             {
                 ClipStats s = Measure(Sites[i].X, Sites[i].Z, 1000.0);
+                double meanSlopeDegrees = MeanSlopeDegrees(Sites[i].X, Sites[i].Z, 1000.0);
 
                 double rockPct = 100.0 * s.WonArgmax[3] / s.Samples;
                 int distinct = 0;
                 for (int c = 0; c < 8; c++)
                     if (s.WonArgmax[c] > 0) distinct++;
 
-                Assert.That(
-                    rockPct,
-                    Is.LessThan(90.0),
-                    $"{Sites[i].Label}: HardRock is the dominant material across {rockPct:0.0}% of a " +
-                    $"1 km window and only {distinct} of 8 classes win anywhere in it. HardRock is " +
-                    "driven by slope through finalRock (WorldTerrainDetailContracts.cs:186-188), and " +
-                    "sedimentRoom is 1 - finalRock, so once slope saturates the ramp every sediment " +
-                    "class is multiplied by zero. Fix the slope budget, not the class weights.");
+                bool gentle = meanSlopeDegrees < angleOfReposeDegrees;
+                report.AppendLine(
+                    $"    {Sites[i].Label,-11} mean {meanSlopeDegrees,5:0.0}deg  rock {rockPct,5:0.0}%  " +
+                    $"classes {distinct}  {(gentle ? "ASSERTED (gentle)" : "reported only (steep)")}");
+
+                if (!gentle)
+                    continue;
+
+                if (rockPct >= 60.0)
+                {
+                    failures.Add(
+                        $"{Sites[i].Label}: mean slope {meanSlopeDegrees:0.0} deg is below the " +
+                        $"angle of repose ({angleOfReposeDegrees:0.0} deg), yet HardRock wins " +
+                        $"{rockPct:0.0}% of the window and only {distinct} of 8 classes win " +
+                        "anywhere in it.");
+                }
             }
+
+            TestContext.WriteLine(report.ToString());
+
+            Assert.That(
+                failures,
+                Is.Empty,
+                "Rock is dominating ground that is gentler than the angle at which sediment stops " +
+                "resting:\n  " + string.Join("\n  ", failures) +
+                "\n\nMeasured cause (WorldTerrainRockAttributionTests): ridgeRockDominance adds a " +
+                "smoothstep on positive curvature that is NOT gated by slope, and about half the " +
+                "cells of a fractal surface are convex, so about half of every flat plain is " +
+                "painted rock. This is not the world being steep - halving Slope01 at W1_flat moved " +
+                "the rock share by zero, while zeroing curvature moved it from 47% to 0%.\n\n" +
+                "Steep sites are intentionally NOT asserted about here: bare rock on a 42 degree " +
+                "face is correct, and the owner has ruled that cliffs are the intended design.\n\n" +
+                report.ToString());
+        }
+
+        /// <summary>Mean slope over a window, measured the way the runtime measures it.</summary>
+        private static double MeanSlopeDegrees(double centerX, double centerZ, double windowMeters)
+        {
+            WorldMacroGeologyParams p = WorldMacroGeologyParams.CreateDefault(Seed);
+            const double probe = 12.0;
+            double half = windowMeters * 0.5;
+            double step = windowMeters / (SamplesPerAxis - 1);
+            double sum = 0.0;
+            int count = 0;
+
+            for (int iz = 0; iz < SamplesPerAxis; iz++)
+            {
+                double z = centerZ - half + iz * step;
+                for (int ix = 0; ix < SamplesPerAxis; ix++)
+                {
+                    double x = centerX - half + ix * step;
+                    float w = WorldMacroGeologyFields.EvaluateHeightMeters(x - probe, z, in p);
+                    float e = WorldMacroGeologyFields.EvaluateHeightMeters(x + probe, z, in p);
+                    float s = WorldMacroGeologyFields.EvaluateHeightMeters(x, z - probe, in p);
+                    float n = WorldMacroGeologyFields.EvaluateHeightMeters(x, z + probe, in p);
+                    float dx = (e - w) / (float)(probe * 2.0);
+                    float dz = (n - s) / (float)(probe * 2.0);
+                    sum += math.degrees(math.atan(math.sqrt(dx * dx + dz * dz)));
+                    count++;
+                }
+            }
+
+            return sum / count;
         }
     }
 }

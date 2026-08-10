@@ -143,7 +143,12 @@ namespace Hecton8.World
 
     public static class WorldTerrainSurfaceMaterialResolver
     {
-        public const uint ContractVersion = 3u;
+        // 3 -> 4: ridgeRockDominance's curvature term is now gated by slope (:187). Material output
+        // changes on all ground gentler than the angle of repose - measured, HardRock stops winning
+        // 47% of a 9.4 degree window - so any baked splatmap or control map from version 3 no longer
+        // matches what this resolver produces and must be regenerated. Terrain GEOMETRY is
+        // unaffected; WorldMacroGeologyFields.ArtifactVersion deliberately does not move.
+        public const uint ContractVersion = 4u;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static WorldTerrainSurfaceMaterialWeights Resolve(
@@ -184,7 +189,39 @@ namespace Hecton8.World
             float curvatureNeutral = 1f - math.saturate(positiveCurvature + negativeCurvature);
             float shellShelfPool = math.smoothstep(0.74f, 0.96f, flat) * math.smoothstep(0.58f, 0.92f, curvatureNeutral) * shallow * math.saturate(shelf * 0.76f + terrace * 0.20f + upperWater * 0.12f) * (1f - math.smoothstep(0.18f, 0.50f, negativeCurvature));
             float concaveSiltDominance = math.smoothstep(0.36f, 0.72f, negativeCurvature) * (1f - math.smoothstep(0.16f, 0.28f, slope));
-            float ridgeRockDominance = math.saturate(math.smoothstep(0.24f, 0.48f, positiveCurvature) + math.smoothstep(0.54f, 0.72f, slope));
+            // The curvature half of this term is gated by slope. It was not, and that one missing
+            // gate painted half the FLAT seafloor as rock.
+            //
+            // MEASURED 2026-08-10 by intervention on real in-world samples
+            // (WorldTerrainRockAttributionTests.RockDominance_AttributedByIntervention): each sample
+            // re-resolved through this resolver with exactly one input neutralised.
+            //
+            //   site        mean slope   rock wins   PositiveCurvature=0   Slope01 halved
+            //   W1_flat        9.4 deg        47%                    0%              47%
+            //   W2_gentle     18.0 deg        53%                   13%              48%
+            //   W3_typical    31.3 deg        82%                   77%              52%
+            //   W4_steep      42.1 deg        97%                   97%              83%
+            //
+            // At 9.4 degrees - gentle abyssal plain - rock won 47% of the window; removing curvature
+            // took it to ZERO while halving slope changed nothing. That is curvature alone deciding
+            // the material on ground that is flat. It inverts with steepness: by W4 curvature is
+            // irrelevant and slope does the work, which is correct and is left untouched.
+            //
+            // WHY ~HALF THE WORLD. On a fractal surface about half the cells are convex, so an
+            // ungated smoothstep on positive curvature saturates on about half of everything. The
+            // 47% is that half - a property of the ruler, not of the terrain.
+            //
+            // THE GATE. Convex curvature on a plain is a gentle swell and holds sediment; on a steep
+            // face it is an exposed edge that sheds it. Where sediment stops resting is already
+            // stated in this method as angleOfRepose (closing between 24 and 38 degrees), so
+            // (1 - angleOfRepose) is exactly the ramp wanted and reuses the resolver's own
+            // definition rather than inventing a second threshold. convexScrape at :182 already
+            // gates its curvature by slope; this term was the outlier.
+            //
+            // NOT A GEOMETRY CHANGE. This is the material resolver; EvaluateHeightMeters is
+            // untouched, so every landform, cliff and shelf break is bit-identical. Only which
+            // material is painted on gentle ground moves.
+            float ridgeRockDominance = math.saturate(math.smoothstep(0.24f, 0.48f, positiveCurvature) * (1f - angleOfRepose) + math.smoothstep(0.54f, 0.72f, slope));
             finalRock = math.saturate(finalRock + ridgeRockDominance * (0.78f - finalRock * 0.42f) - concaveSiltDominance * flatFloor * 0.20f);
 
             // C1-Smooth Early-Exit Gate: skip 9 octaves of material noise on pure rock faces (finalRock >= 0.98)
