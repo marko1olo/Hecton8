@@ -143,12 +143,12 @@ namespace Hecton8.World
 
     public static class WorldTerrainSurfaceMaterialResolver
     {
-        // 3 -> 4: ridgeRockDominance's curvature term is now gated by slope (:187). Material output
-        // changes on all ground gentler than the angle of repose - measured, HardRock stops winning
-        // 47% of a 9.4 degree window - so any baked splatmap or control map from version 3 no longer
-        // matches what this resolver produces and must be regenerated. Terrain GEOMETRY is
-        // unaffected; WorldMacroGeologyFields.ArtifactVersion deliberately does not move.
-        public const uint ContractVersion = 4u;
+        // 4 -> 5: steepSlope is synchronised to be the exact complement of angleOfRepose (:185), so
+        // rock no longer reaches full strength three degrees before sediment has finished sliding
+        // off, and a talus apron feeds ReefRubble on the 24-38 degree band at any depth (:191). Both
+        // change material output on mid slopes; splatmaps baked at version 4 are stale. Terrain
+        // GEOMETRY is still untouched - WorldMacroGeologyFields.ArtifactVersion does not move.
+        public const uint ContractVersion = 5u;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static WorldTerrainSurfaceMaterialWeights Resolve(
@@ -181,14 +181,49 @@ namespace Hecton8.World
             float tributary = math.saturate(sample.TributaryCanyonMask);
             float exposedRidge = math.saturate(ridge * 0.36f + sample.FaultMask * 0.30f + hardRock * 0.56f + math.smoothstep(0.56f, 0.84f, slope) * 0.42f);
             float flatFloor = math.smoothstep(0.54f, 0.90f, flat);
-            float angleOfRepose = 1f - math.smoothstep(0.36f, 0.62f, slope);
-            float steepSlope = math.smoothstep(0.34f, 0.56f, slope);
+            // The angle of repose is the single physical statement about where sediment stops
+            // resting, and it is now the ONLY one. steepSlope used to open at 0.34 and saturate at
+            // 0.56 - 23.0 to 35.0 degrees - while angleOfRepose closes over 0.36..0.62, i.e. 24.2 to
+            // 37.8. Two ramps in one method describing the same physics, disagreeing by 15 degrees,
+            // with rock reaching full strength almost three degrees BEFORE sediment had finished
+            // sliding off. Measured consequence at W3_typical, the world's median site: only 22.6%
+            // of a 1 km window is past the repose angle and HardRock won 80.5% of it.
+            //
+            // Synchronised on the owner's ruling 2026-08-10: sediment lies where it can hold, rock
+            // is exposed where it cannot. steepSlope is now exactly the complement of angleOfRepose,
+            // so the two can no longer drift apart - there is one authored pair of bounds, used
+            // twice, rather than two pairs that happen to be near each other.
+            //
+            // This does NOT flatten anything: geometry is untouched and slopes past 37.8 degrees are
+            // still fully rock. It moves sand and gravel onto the 23-35 degree band that was being
+            // called bare rock, which is the mid-slope apron a real submarine scarp carries.
+            const float ReposeLowerSlope01 = 0.36f;
+            const float ReposeUpperSlope01 = 0.62f;
+            float angleOfRepose = 1f - math.smoothstep(ReposeLowerSlope01, ReposeUpperSlope01, slope);
+            float steepSlope = 1f - angleOfRepose;
             float verySteep = math.smoothstep(0.56f, 0.84f, slope);
             float convexScrape = math.smoothstep(0.18f, 0.72f, positiveCurvature) * math.smoothstep(0.28f, 0.68f, slope);
             float finalRock = math.saturate(math.max(convexScrape * 1.35f, steepSlope * (0.56f + positiveCurvature * 0.48f + verySteep * 0.36f)) + exposedRidge - negativeCurvature * flatFloor * 0.32f - sediment * angleOfRepose * 0.18f);
             float curvatureNeutral = 1f - math.saturate(positiveCurvature + negativeCurvature);
             float shellShelfPool = math.smoothstep(0.74f, 0.96f, flat) * math.smoothstep(0.58f, 0.92f, curvatureNeutral) * shallow * math.saturate(shelf * 0.76f + terrace * 0.20f + upperWater * 0.12f) * (1f - math.smoothstep(0.18f, 0.50f, negativeCurvature));
             float concaveSiltDominance = math.smoothstep(0.36f, 0.72f, negativeCurvature) * (1f - math.smoothstep(0.16f, 0.28f, slope));
+            // TALUS APRON. The band between "sediment lies flat" and "bare rock face" is where a real
+            // submarine scarp carries its scree: loose cobble shed from above and caught on the slope
+            // below. steepSlope * angleOfRepose is exactly that band - both factors are non-zero only
+            // between 24.2 and 37.8 degrees - and it peaks at 0.25 in the middle, so x4 normalises it.
+            //
+            // The class it feeds already exists and was effectively dead. ReefRubble is mapped to
+            // 2Rock.terrainlayer (Editor/Terrain/AutoBuildTextureArrays.cs:21), a plain cobble
+            // texture, but the only route to it was reef * shallow * upperWater - shallow closes by
+            // 460 m and upperWater by 1750 m, so the gravel texture could not appear anywhere in the
+            // abyss whatever the ground looked like. A rubble material that cannot reach the places
+            // rubble forms is an unused texture, not a design.
+            //
+            // Talus is rock debris, so unlike the sediments it is only lightly suppressed by
+            // finalRock (0.25 rather than 0.65); being on rocky ground is a reason for scree to
+            // exist, not a reason to erase it.
+            float talusBand = math.saturate(steepSlope * angleOfRepose * 4f);
+            float talusApron = talusBand * (0.55f + negativeCurvature * 0.45f) * (1f - trench * 0.40f);
             // The curvature half of this term is gated by slope. It was not, and that one missing
             // gate painted half the FLAT seafloor as rock.
             //
@@ -222,7 +257,7 @@ namespace Hecton8.World
             // untouched, so every landform, cliff and shelf break is bit-identical. Only which
             // material is painted on gentle ground moves.
             float ridgeRockDominance = math.saturate(math.smoothstep(0.24f, 0.48f, positiveCurvature) * (1f - angleOfRepose) + math.smoothstep(0.54f, 0.72f, slope));
-            finalRock = math.saturate(finalRock + ridgeRockDominance * (0.78f - finalRock * 0.42f) - concaveSiltDominance * flatFloor * 0.20f);
+            finalRock = math.saturate(finalRock + ridgeRockDominance * (0.78f - finalRock * 0.42f) - concaveSiltDominance * flatFloor * 0.20f - talusApron * 0.30f);
 
             // C1-Smooth Early-Exit Gate: skip 9 octaves of material noise on pure rock faces (finalRock >= 0.98)
             float jitterGate = math.smoothstep(0.98f, 0.85f, finalRock);
@@ -255,7 +290,7 @@ namespace Hecton8.World
                 HardRock = finalRock,
                 BrineSaltCrust = math.saturate(((trench * (0.50f + abyss * 0.38f)) + (math.smoothstep(2200f, 2800f, sample.DepthMeters) * basin * 0.12f)) * (1f - finalRock * 0.78f) * (1f - concavityDeposit * 0.18f)),
                 ManganeseNodulePlain = math.saturate(nodule * abyss * flatFloor * (0.70f + provinceJitter * 0.26f) * (1f - trench * 0.58f) * sedimentRoom * (1f - convexScrape * 0.48f)),
-                ReefRubble = math.saturate(reef * shallow * upperWater * (0.74f + localPatch * 0.36f) * (1f - trench * 0.72f) * (1f - finalRock * 0.65f) * (1f - concavityDeposit * 0.24f)),
+                ReefRubble = math.saturate(reef * shallow * upperWater * (0.74f + localPatch * 0.36f) * (1f - trench * 0.72f) * (1f - finalRock * 0.65f) * (1f - concavityDeposit * 0.24f) + talusApron * (0.62f + finePatch * 0.30f) * (1f - finalRock * 0.25f)),
                 SeepCrust = math.saturate(seep * (0.64f + tributary * 0.30f + erosion * 0.24f) * (1f - shelf * 0.24f) * (0.28f + sedimentRoom * 0.72f))
             };
 

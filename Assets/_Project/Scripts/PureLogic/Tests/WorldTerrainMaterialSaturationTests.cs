@@ -214,52 +214,34 @@ namespace Hecton8.PureLogic.Tests
         [Test]
         public void MaterialPalette_DoesNotCollapseToRock_OnGentleGround()
         {
-            // The resolver's angleOfRepose closes fully at Slope01 0.62, i.e. gradient 0.775, i.e.
-            // 37.8 degrees. Read from the same normalisation the resolver uses rather than restated
-            // as a bare angle, so the bar tracks the resolver if it is retuned.
+            // WHICH ANGLE THE BAR USES.
+            //
+            // It used to be steepSlope's own onset, because the resolver held two conflicting
+            // opinions about where sediment stops resting - angleOfRepose closing 24.2 -> 37.8 deg
+            // against steepSlope opening 23.0 -> 35.0 - and asserting against either one alone
+            // encoded a taste about how rocky the typical seafloor should look.
+            //
+            // The owner ruled on 2026-08-10 to make it physically correct, and steepSlope is now
+            // defined as exactly (1 - angleOfRepose). There is one authored pair of bounds, so there
+            // is one angle to assert against and the ambiguity is gone: rock may win the ground that
+            // is too steep to hold sediment, plus a margin for exposure that has no slope term.
             const float angleOfReposeSlope01 = 0.62f;
             double angleOfReposeDegrees = math.degrees(math.atan(angleOfReposeSlope01 * 1.25f));
 
-            // WHICH ANGLE THE BAR USES, and why it is not the angle of repose.
-            //
-            // The resolver holds two different opinions about where sediment stops resting, 15
-            // degrees apart, both in this one method:
-            //   angleOfRepose (:179)  closes 24.2 -> 37.8 deg   "sediment rests up to here"
-            //   steepSlope    (:180)  opens  23.0 -> 35.0 deg   "this is rock"
-            // steepSlope is fully saturated BEFORE angleOfRepose has finished closing, so rock wins
-            // the argmax well below the angle at which the resolver itself says sediment is excluded.
-            // Measured at W3_typical, the p50 site: only 22.6% of the window is past 37.8 deg, and
-            // rock wins 80.5% of it.
-            //
-            // That 58-point gap is real and worth the owner's attention, but it is a CALIBRATION
-            // question, not a defect: it decides how rocky the typical seafloor looks, and the owner
-            // has ruled for a rocky, dramatic world. Asserting against the repose angle would encode
-            // the opposite taste and would fail on terrain that is behaving exactly as authored.
-            //
-            // So the bar is anchored to steepSlope's onset - where this resolver actually begins
-            // calling ground rock - and the repose-angle share is reported alongside it as the
-            // calibration measurement. That keeps the assertion about a provable property (rock must
-            // not win ground the rock ramp does not even reach) while leaving the look of the world
-            // to the person who owns it.
-            const float steepSlopeOnsetSlope01 = 0.34f;
-            double steepSlopeOnsetDegrees = math.degrees(math.atan(steepSlopeOnsetSlope01 * 1.25f));
-
-            // exposedRidge produces rock from the ridge and fault masks with no slope term at all,
-            // so some rock legitimately appears below any slope threshold. 20 points covers that
-            // without admitting a monoculture: pre-fix W1_flat had 0.0% of its window past the onset
-            // and 47% rock, which breaks this by more than double the margin.
-            const double ridgeExposureMarginPoints = 20.0;
+            // The repose ramp OPENS at 0.36, so rock legitimately begins appearing before the upper
+            // bound, and exposedRidge produces rock from the ridge and fault masks with no slope
+            // term at all. 25 points covers both without admitting a monoculture: pre-fix W1_flat
+            // had 0.0% of its window past the repose angle and 47% rock.
+            const double ridgeExposureMarginPoints = 25.0;
 
             var report = new System.Text.StringBuilder();
             report.AppendLine(
-                $"    {"site",-11}{"mean",7}{">onset",9}{">repose",9}{"rock%",8}{"allowed",9}{"classes",9}");
+                $"    {"site",-11}{"mean",7}{">repose",9}{"rock%",8}{"allowed",9}{"classes",9}");
             var failures = new System.Collections.Generic.List<string>();
 
             for (int i = 0; i < Sites.Length; i++)
             {
                 ClipStats s = Measure(Sites[i].X, Sites[i].Z, 1000.0);
-                (double Mean, double SteepShare) onset =
-                    SlopeStats(Sites[i].X, Sites[i].Z, 1000.0, steepSlopeOnsetDegrees);
                 (double Mean, double SteepShare) repose =
                     SlopeStats(Sites[i].X, Sites[i].Z, 1000.0, angleOfReposeDegrees);
 
@@ -268,18 +250,18 @@ namespace Hecton8.PureLogic.Tests
                 for (int c = 0; c < 8; c++)
                     if (s.WonArgmax[c] > 0) distinct++;
 
-                double allowed = onset.SteepShare + ridgeExposureMarginPoints;
+                double allowed = repose.SteepShare + ridgeExposureMarginPoints;
                 report.AppendLine(
-                    $"    {Sites[i].Label,-11}{onset.Mean,6:0.0}d{onset.SteepShare,8:0.0}%" +
-                    $"{repose.SteepShare,8:0.0}%{rockPct,7:0.0}%{allowed,8:0.0}%{distinct,9}");
+                    $"    {Sites[i].Label,-11}{repose.Mean,6:0.0}d{repose.SteepShare,8:0.0}%" +
+                    $"{rockPct,7:0.0}%{allowed,8:0.0}%{distinct,9}");
 
                 if (rockPct > allowed)
                 {
                     failures.Add(
                         $"{Sites[i].Label}: HardRock wins {rockPct:0.0}% of the window while only " +
-                        $"{onset.SteepShare:0.0}% of it is past {steepSlopeOnsetDegrees:0.0} deg, " +
-                        $"where this resolver's own steepSlope ramp begins (allowance " +
-                        $"{allowed:0.0}%), and only {distinct} of 8 classes win anywhere in it.");
+                        $"{repose.SteepShare:0.0}% of it is past the {angleOfReposeDegrees:0.0} deg " +
+                        $"angle of repose (allowance {allowed:0.0}%), and only {distinct} of 8 " +
+                        "classes win anywhere in it.");
                 }
             }
 
@@ -288,7 +270,7 @@ namespace Hecton8.PureLogic.Tests
             Assert.That(
                 failures,
                 Is.Empty,
-                "Rock is winning ground that the rock ramp does not reach:\n  " +
+                "Rock is winning substantially more ground than is too steep to hold sediment:\n  " +
                 string.Join("\n  ", failures) +
                 "\n\nThe bar scales with the terrain deliberately. A cliff site is ALLOWED to be " +
                 "almost entirely rock, because bare rock on a 42 degree submarine face is correct " +
@@ -298,11 +280,6 @@ namespace Hecton8.PureLogic.Tests
                 "slope, and about half the cells of a fractal surface are convex, so about half of " +
                 "every flat plain was painted rock. At W1_flat, zeroing curvature moved rock from " +
                 "47% to 0% while halving Slope01 moved it by nothing at all.\n\n" +
-                "The '>repose' column is NOT asserted on. It is the calibration measurement: the " +
-                "share of each window past the angle at which this resolver claims sediment stops " +
-                "resting. Rock winning far more than that column is the 15-degree disagreement " +
-                "between angleOfRepose and steepSlope, and how rocky the typical seafloor should " +
-                "look is the owner's call, not a property a test may decide.\n\n" +
                 report.ToString());
         }
 
