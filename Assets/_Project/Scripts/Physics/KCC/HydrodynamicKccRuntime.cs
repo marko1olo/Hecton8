@@ -199,6 +199,25 @@ namespace Hecton8.Physics.KCC
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct KccEnvironmentProfileDTO
     {
+        /// <summary>
+        /// The steepest ground the controller will let a character stand on, in degrees. Above this
+        /// angle <see cref="MaxSlopeAngle"/> drives the slide branch and the character is carried
+        /// downhill, so this single number is the game's own definition of "traversable".
+        ///
+        /// It exists as a const because it was previously a bare 48f repeated in seven places across
+        /// three INDEPENDENT private DefaultEnvironmentProfile() copies (:1667, :2093, :5841) and
+        /// their three separate sanitize clamps. Nothing tied those copies together, so the limit
+        /// could have been raised in one and left in the others, and the disagreement would have
+        /// surfaced only as a character sliding in one code path and walking in another.
+        ///
+        /// It is also the anchor terrain tests must measure against. A slope budget asserted from a
+        /// real-world analogy (Earth's continental slopes are 3-6 degrees) is asserting about a
+        /// different game: HECTON-8 is deliberately a steep, dramatic seafloor, and the only
+        /// defensible question is whether ground exists that THIS controller can stand on. Tests
+        /// read this const rather than mirroring the number, so the bar tracks the controller.
+        /// </summary>
+        public const float DefaultMaxSlopeAngleDegrees = 48f;
+
         [FieldOffset(0)] public float MaxSlopeAngle;
         [FieldOffset(4)] public float CurrentAdvectionScalar;
         [FieldOffset(8)] public float FrictionCoefficient;
@@ -1668,7 +1687,7 @@ namespace Hecton8.Physics.KCC
         {
             return new KccEnvironmentProfileDTO
             {
-                MaxSlopeAngle = 48f,
+                MaxSlopeAngle = KccEnvironmentProfileDTO.DefaultMaxSlopeAngleDegrees,
                 CurrentAdvectionScalar = 1f,
                 FrictionCoefficient = 0.85f,
                 ExhaustionPenaltyMax = 0.35f
@@ -1677,7 +1696,7 @@ namespace Hecton8.Physics.KCC
 
         private static KccEnvironmentProfileDTO SanitizeEnvironmentProfile(KccEnvironmentProfileDTO profile)
         {
-            profile.MaxSlopeAngle = math.clamp(math.isfinite(profile.MaxSlopeAngle) ? profile.MaxSlopeAngle : 48f, 1f, 89f);
+            profile.MaxSlopeAngle = math.clamp(math.isfinite(profile.MaxSlopeAngle) ? profile.MaxSlopeAngle : KccEnvironmentProfileDTO.DefaultMaxSlopeAngleDegrees, 1f, 89f);
             profile.CurrentAdvectionScalar = math.clamp(math.isfinite(profile.CurrentAdvectionScalar) ? profile.CurrentAdvectionScalar : 1f, 0f, 8f);
             profile.FrictionCoefficient = math.clamp(math.isfinite(profile.FrictionCoefficient) ? profile.FrictionCoefficient : 0.85f, 0f, 8f);
             profile.ExhaustionPenaltyMax = math.saturate(math.isfinite(profile.ExhaustionPenaltyMax) ? profile.ExhaustionPenaltyMax : 0.35f);
@@ -2094,7 +2113,7 @@ namespace Hecton8.Physics.KCC
         {
             return new KccEnvironmentProfileDTO
             {
-                MaxSlopeAngle = 48f,
+                MaxSlopeAngle = KccEnvironmentProfileDTO.DefaultMaxSlopeAngleDegrees,
                 CurrentAdvectionScalar = 1f,
                 FrictionCoefficient = 0.85f,
                 ExhaustionPenaltyMax = 0.35f
@@ -2103,7 +2122,7 @@ namespace Hecton8.Physics.KCC
 
         private static KccEnvironmentProfileDTO SanitizeEnvironmentProfile(KccEnvironmentProfileDTO profile)
         {
-            profile.MaxSlopeAngle = math.clamp(math.isfinite(profile.MaxSlopeAngle) ? profile.MaxSlopeAngle : 48f, 1f, 89f);
+            profile.MaxSlopeAngle = math.clamp(math.isfinite(profile.MaxSlopeAngle) ? profile.MaxSlopeAngle : KccEnvironmentProfileDTO.DefaultMaxSlopeAngleDegrees, 1f, 89f);
             profile.CurrentAdvectionScalar = math.clamp(math.isfinite(profile.CurrentAdvectionScalar) ? profile.CurrentAdvectionScalar : 1f, 0f, 8f);
             profile.FrictionCoefficient = math.clamp(math.isfinite(profile.FrictionCoefficient) ? profile.FrictionCoefficient : 0.85f, 0f, 8f);
             profile.ExhaustionPenaltyMax = math.saturate(math.isfinite(profile.ExhaustionPenaltyMax) ? profile.ExhaustionPenaltyMax : 0.35f);
@@ -2968,11 +2987,11 @@ namespace Hecton8.Physics.KCC
                 return false;
 
             profileHash = Fnv1A(name);
-            profile.MaxSlopeAngle = ReadFloatField(line, ref cursor, 48f);
+            profile.MaxSlopeAngle = ReadFloatField(line, ref cursor, KccEnvironmentProfileDTO.DefaultMaxSlopeAngleDegrees);
             profile.CurrentAdvectionScalar = ReadFloatField(line, ref cursor, 1f);
             profile.FrictionCoefficient = ReadFloatField(line, ref cursor, 0.85f);
             profile.ExhaustionPenaltyMax = ReadFloatField(line, ref cursor, 0.35f);
-            profile.MaxSlopeAngle = math.clamp(math.isfinite(profile.MaxSlopeAngle) ? profile.MaxSlopeAngle : 48f, 1f, 89f);
+            profile.MaxSlopeAngle = math.clamp(math.isfinite(profile.MaxSlopeAngle) ? profile.MaxSlopeAngle : KccEnvironmentProfileDTO.DefaultMaxSlopeAngleDegrees, 1f, 89f);
             profile.CurrentAdvectionScalar = math.clamp(math.isfinite(profile.CurrentAdvectionScalar) ? profile.CurrentAdvectionScalar : 1f, 0f, 8f);
             profile.FrictionCoefficient = math.clamp(math.isfinite(profile.FrictionCoefficient) ? profile.FrictionCoefficient : 0.85f, 0f, 8f);
             profile.ExhaustionPenaltyMax = math.saturate(math.isfinite(profile.ExhaustionPenaltyMax) ? profile.ExhaustionPenaltyMax : 0.35f);
@@ -5842,7 +5861,7 @@ namespace Hecton8.Physics.KCC
         {
             return new KccEnvironmentProfileDTO
             {
-                MaxSlopeAngle = 48f,
+                MaxSlopeAngle = KccEnvironmentProfileDTO.DefaultMaxSlopeAngleDegrees,
                 CurrentAdvectionScalar = 1f,
                 FrictionCoefficient = 0.85f,
                 ExhaustionPenaltyMax = 0.35f
@@ -5895,7 +5914,7 @@ namespace Hecton8.Physics.KCC
 
         private static KccEnvironmentProfileDTO SanitizeEnvironmentProfile(KccEnvironmentProfileDTO profile)
         {
-            profile.MaxSlopeAngle = math.clamp(math.isfinite(profile.MaxSlopeAngle) ? profile.MaxSlopeAngle : 48f, 1f, 89f);
+            profile.MaxSlopeAngle = math.clamp(math.isfinite(profile.MaxSlopeAngle) ? profile.MaxSlopeAngle : KccEnvironmentProfileDTO.DefaultMaxSlopeAngleDegrees, 1f, 89f);
             profile.CurrentAdvectionScalar = math.clamp(math.isfinite(profile.CurrentAdvectionScalar) ? profile.CurrentAdvectionScalar : 1f, 0f, 8f);
             profile.FrictionCoefficient = math.clamp(math.isfinite(profile.FrictionCoefficient) ? profile.FrictionCoefficient : 0.85f, 0f, 8f);
             profile.ExhaustionPenaltyMax = math.saturate(math.isfinite(profile.ExhaustionPenaltyMax) ? profile.ExhaustionPenaltyMax : 0.35f);

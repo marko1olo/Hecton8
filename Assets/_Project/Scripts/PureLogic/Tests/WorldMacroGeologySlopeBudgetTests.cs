@@ -1,3 +1,4 @@
+using Hecton8.Physics.KCC;
 using Hecton8.World;
 using NUnit.Framework;
 using Unity.Mathematics;
@@ -79,6 +80,16 @@ namespace Hecton8.PureLogic.Tests
             public float MinHeight;
             public float MaxHeight;
 
+            /// <summary>
+            /// Every measured slope in degrees, sorted. Kept alongside the fixed buckets because a
+            /// bucket boundary is a decision about what matters, and the one that matters here -
+            /// the controller's MaxSlopeAngle - is 48 degrees, which falls inside the 35..50 bucket
+            /// and therefore cannot be read off the counters at all. Asking the raw samples gives
+            /// the exact percentage under any threshold, so the bar can track the controller rather
+            /// than being rounded to whichever bucket edge happens to sit nearby.
+            /// </summary>
+            public double[] SortedDegrees;
+
             public double PctUnder(int band)
             {
                 int count = band switch
@@ -89,6 +100,19 @@ namespace Hecton8.PureLogic.Tests
                     _ => Under10 + Under25 + Under35 + Under50
                 };
                 return 100.0 * count / Samples;
+            }
+
+            /// <summary>Exact share of samples strictly below an arbitrary angle, in percent.</summary>
+            public double PctUnderDegrees(double degrees)
+            {
+                if (SortedDegrees == null || SortedDegrees.Length == 0) return 0.0;
+                int count = 0;
+                for (int i = 0; i < SortedDegrees.Length; i++)
+                {
+                    if (SortedDegrees[i] >= degrees) break;
+                    count++;
+                }
+                return 100.0 * count / SortedDegrees.Length;
             }
         }
 
@@ -108,6 +132,7 @@ namespace Hecton8.PureLogic.Tests
             double half = windowMeters * 0.5;
             double step = windowMeters / (SamplesPerAxis - 1);
             double sumDegrees = 0.0;
+            var all = new double[SamplesPerAxis * SamplesPerAxis];
 
             for (int iz = 0; iz < SamplesPerAxis; iz++)
             {
@@ -134,6 +159,7 @@ namespace Hecton8.PureLogic.Tests
                     else h.Over50++;
 
                     sumDegrees += degrees;
+                    all[h.Samples] = degrees;
                     if (degrees > h.MaxDegrees) h.MaxDegrees = degrees;
                     if (center < h.MinHeight) h.MinHeight = center;
                     if (center > h.MaxHeight) h.MaxHeight = center;
@@ -141,6 +167,8 @@ namespace Hecton8.PureLogic.Tests
                 }
             }
 
+            System.Array.Sort(all);
+            h.SortedDegrees = all;
             h.MeanDegrees = sumDegrees / h.Samples;
             return h;
         }
@@ -180,92 +208,123 @@ namespace Hecton8.PureLogic.Tests
         }
 
         /// <summary>
-        /// Some part of the seafloor must be gentle enough to be a floor. 15% under 25 degrees is a
-        /// very low bar - it permits a world that is 85% mountainside - and it exists to catch the
-        /// case where the surface has no traversable ground anywhere.
+        /// Some part of the seafloor must be gentle enough that the character controller can stand
+        /// on it. The bar is the CONTROLLER'S OWN LIMIT, not a real-world analogy.
         ///
-        /// Asserted per site, because a world where the flat ground all lives in one province is a
-        /// different (and worse) failure than a world with no flat ground at all, and only a per-site
-        /// assertion can tell them apart.
+        /// RE-AIMED 2026-08-10 after an owner ruling, and the correction is about whose standard a
+        /// test is allowed to encode. This assertion used to demand 15% of every site under 25
+        /// degrees, a figure taken from Earth (abyssal plains under 1 degree, continental slopes
+        /// 3-6). HECTON-8 is deliberately not that world: the owner's ruling is that a dramatic,
+        /// cliffed seafloor with four shelf-to-abyss descents across 30 km is the intended design,
+        /// and steepness is a feature. A test built on the Earth analogy was therefore failing the
+        /// terrain for being what it was authored to be - and worse, the obvious way to make it pass
+        /// is to flatten the world, so a green run would have meant the design was destroyed.
+        ///
+        /// What survives re-aiming is the property that does not depend on taste: ground the player
+        /// can actually stand on has to exist. KccEnvironmentProfileDTO.DefaultMaxSlopeAngleDegrees
+        /// is the angle above which HydrodynamicKccRuntime drives the slide branch instead of
+        /// letting the character walk (:2033, :1321), so it is the game's own definition of a floor.
+        /// The bar is read from that const rather than mirrored, so if the controller is retuned the
+        /// terrain bar follows it instead of silently disagreeing.
+        ///
+        /// 15% is kept: a site that is 85% unwalkable is still permitted, which is a very steep
+        /// world by any standard and exactly what was asked for. This fires only when a site has
+        /// essentially nowhere to stand.
         /// </summary>
         [Test]
         public void EverySite_HasSomeTraversableGround()
         {
+            const double minimumWalkablePercent = 15.0;
+            double walkableLimitDegrees = KccEnvironmentProfileDTO.DefaultMaxSlopeAngleDegrees;
+
             for (int i = 0; i < Sites.Length; i++)
             {
                 SlopeHistogram h = MeasureSlope(Sites[i].X, Sites[i].Z, 1000.0);
-                double gentle = h.PctUnder(25);
+                double gentle = h.PctUnderDegrees(walkableLimitDegrees);
 
                 Assert.That(
                     gentle,
-                    Is.GreaterThan(15.0),
-                    $"{Sites[i].Label} has only {gentle:0.0}% of its 1 km window under 25 degrees " +
+                    Is.GreaterThan(minimumWalkablePercent),
+                    $"{Sites[i].Label} has only {gentle:0.0}% of its 1 km window under " +
+                    $"{walkableLimitDegrees:0} degrees, the controller's own MaxSlopeAngle " +
                     $"(mean {h.MeanDegrees:0.0}deg, max {h.MaxDegrees:0.0}deg, " +
-                    $"relief {h.MaxHeight - h.MinHeight:0.0}m). A seafloor that steep is not " +
-                    "traversable, and it also collapses the material palette: " +
-                    "WorldTerrainDetailContracts.cs:209 multiplies every sediment class by " +
-                    "(1 - finalRock), and finalRock saturates on slopes this steep.");
+                    $"relief {h.MaxHeight - h.MinHeight:0.0}m). Above that angle " +
+                    "HydrodynamicKccRuntime slides the character instead of walking them, so this " +
+                    "site has almost nowhere to stand. This is NOT a request to flatten the world - " +
+                    "a steep dramatic seafloor is the intended design - it is a request that some " +
+                    "standable ground exist at every site.");
             }
         }
 
         /// <summary>
-        /// Relief must be proportionate to the window. A 200 m window that spans more than 200 m
-        /// vertically is, on average, steeper than 45 degrees across its whole width - that is a
-        /// wall, not terrain, and it means the meso/micro amplitude terms are scaled for a much
-        /// larger footprint than they are being applied to.
+        /// Relief must be proportionate to the window SOMEWHERE IN THE WORLD - not everywhere.
         ///
-        /// The ratio limit is 1.0 (as much vertical as horizontal) rather than something defensible
-        /// like 0.3, so this fires only for unambiguous over-amplitude.
+        /// RE-AIMED 2026-08-10, same owner ruling as EverySite_HasSomeTraversableGround, and the
+        /// distinction is worth stating precisely because the first version of this test was not
+        /// merely mis-tuned, it was asking the wrong question.
         ///
-        /// SAMPLING NOTE, and it is the reason this test measures nine windows instead of one. The
-        /// first version of this test sampled a SINGLE 200 m window per site. That is a sample size
-        /// of roughly one landform: the ridge lattice has a base cell of 1136-2350 m, so one 200 m
-        /// window sees a fraction of one feature and whether it lands on a crest, a flank or a floor
-        /// is arbitrary. Measured consequence on 2026-08-09: a change that improved the mean slope at
-        /// every site at 1 km and 10 km appeared to make P4_far WORSE by 8.5 degrees at 200 m, purely
-        /// because widening the lattice moved a crest under the fixed window. A single small window
-        /// cannot distinguish "the terrain got steeper" from "the terrain moved", and reading it as
-        /// the former would have reverted a good change. Nine windows spread over 3 km is still a
-        /// small sample, but it is large enough that the median does not track one feature.
+        /// It used to demand that the MEDIAN of nine 200 m windows at EVERY site have less vertical
+        /// relief than horizontal extent. Applied at W4_steep and W5_wall - sites selected BY
+        /// CONSTRUCTION as the p75 and p98 of the world's own slope distribution - that demands the
+        /// steepest quarter of a deliberately cliffed world contain no cliffs. It is a bar that the
+        /// design cannot satisfy and should not have to: a 200 m window on a wall is a wall, and the
+        /// owner has ruled that walls are the point.
+        ///
+        /// The real property, the one that separates "this world has dramatic cliffs" from "the
+        /// micro amplitude terms are scaled for a larger footprint than they are applied to", is a
+        /// statement about the WORLD, not about its steepest sites: if the median 200 m window taken
+        /// anywhere in the world is a cliff, then nowhere is calm and the amplitude is genuinely
+        /// misscaled. So the sample is now a grid spanning the emitted world rather than nine
+        /// windows around hand-picked steep probes, and the assertion is on that world-wide median.
+        ///
+        /// This can still fail, which is the point of keeping it: raise the meso amplitude enough
+        /// that the typical square of seafloor becomes a wall and it fires. It just no longer fires
+        /// for the world being dramatic where it was authored to be dramatic.
         /// </summary>
         [Test]
         public void MicroScaleRelief_IsProportionateToTheWindow()
         {
             const double window = 200.0;
-            const double spread = 1500.0;
+            const int gridPerAxis = 7;
+            float halfExtent = WorldMacroGeologyFields.MinimumWorldExtentMeters * 0.5f;
 
-            for (int i = 0; i < Sites.Length; i++)
+            // Inset by one window so every sample sits fully inside the terrain the chunk grid emits.
+            double span = (halfExtent - window) * 2.0;
+            double stride = span / (gridPerAxis - 1);
+
+            var ratios = new System.Collections.Generic.List<double>();
+            var means = new System.Collections.Generic.List<double>();
+
+            for (int iz = 0; iz < gridPerAxis; iz++)
             {
-                var ratios = new System.Collections.Generic.List<double>();
-                var means = new System.Collections.Generic.List<double>();
-
-                for (int oz = -1; oz <= 1; oz++)
+                double z = -halfExtent + window + iz * stride;
+                for (int ix = 0; ix < gridPerAxis; ix++)
                 {
-                    for (int ox = -1; ox <= 1; ox++)
-                    {
-                        SlopeHistogram h = MeasureSlope(
-                            Sites[i].X + ox * spread, Sites[i].Z + oz * spread, window);
-                        ratios.Add((h.MaxHeight - h.MinHeight) / window);
-                        means.Add(h.MeanDegrees);
-                    }
+                    double x = -halfExtent + window + ix * stride;
+                    SlopeHistogram h = MeasureSlope(x, z, window);
+                    ratios.Add((h.MaxHeight - h.MinHeight) / window);
+                    means.Add(h.MeanDegrees);
                 }
-
-                ratios.Sort();
-                means.Sort();
-                double medianRatio = ratios[ratios.Count / 2];
-                double medianMean = means[means.Count / 2];
-
-                Assert.That(
-                    medianRatio,
-                    Is.LessThan(1.0),
-                    $"{Sites[i].Label} has a median relief:window ratio of {medianRatio:0.00} across " +
-                    $"nine 200 m windows (median mean slope {medianMean:0.0}deg, " +
-                    $"worst {ratios[ratios.Count - 1]:0.00}, best {ratios[0]:0.00}). The micro-scale " +
-                    "amplitude terms are scaled for a larger footprint than they are applied to. " +
-                    "terrain.md's 100m acceptance row asks for scree grit, which cannot read on a " +
-                    "surface already at the limit of the slope ramp " +
-                    "(WorldMacroGeologyFields.cs:1415 saturates Slope01 at 51.3 degrees).");
             }
+
+            ratios.Sort();
+            means.Sort();
+            double medianRatio = ratios[ratios.Count / 2];
+            double medianMean = means[means.Count / 2];
+            int cliffCount = 0;
+            foreach (double r in ratios) if (r >= 1.0) cliffCount++;
+
+            Assert.That(
+                medianRatio,
+                Is.LessThan(1.0),
+                $"The MEDIAN 200 m window across the whole 30 km world has a relief:window ratio of " +
+                $"{medianRatio:0.00} (median mean slope {medianMean:0.0}deg, worst " +
+                $"{ratios[ratios.Count - 1]:0.00}, best {ratios[0]:0.00}, and {cliffCount} of " +
+                $"{ratios.Count} sampled windows are at or past 1.00). Individual cliffs are the " +
+                "intended design and are not what this measures - this fires only when the TYPICAL " +
+                "square of seafloor drops more than its own width, which means the meso/micro " +
+                "amplitude terms are scaled for a larger footprint than they are applied to and " +
+                "there is nowhere calm left in the world.");
         }
     }
 }
