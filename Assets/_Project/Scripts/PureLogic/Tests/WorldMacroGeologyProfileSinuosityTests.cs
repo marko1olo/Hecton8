@@ -93,15 +93,16 @@ namespace Hecton8.PureLogic.Tests
             sb.AppendLine();
             sb.AppendLine($"  {"transect",-28}{"length",9}{"travel",11}{"relief",10}{"ratio",8}{"reversals",11}{"per 10km",10}");
 
+            // In-world transects first, then two that deliberately leave the world, so the difference
+            // between the two regimes is visible in one table instead of being asserted about.
             (double X, double Z, double DX, double DZ, double Len, string Label)[] transects =
             {
-                (0.0, 0.0, 1.0, 0.0, 30000.0, "origin east 30 km"),
-                (0.0, 0.0, 1.0, 0.0, 200000.0, "origin east 200 km"),
-                (0.0, 0.0, 0.0, 1.0, 200000.0, "origin north 200 km"),
-                (0.0, 0.0, 1.0, 1.0, 200000.0, "origin NE 200 km"),
-                (300000.0, 90000.0, 1.0, 0.0, 200000.0, "p4_far east 200 km"),
-                (777000.0, -333000.0, 1.0, 0.0, 200000.0, "p5_deepfar east 200 km"),
-                (-200000.0, -200000.0, 1.0, 1.0, 400000.0, "SW to NE 400 km")
+                (-15000.0, 0.0, 1.0, 0.0, 30000.0, "IN: west-east, whole world"),
+                (0.0, -15000.0, 0.0, 1.0, 30000.0, "IN: south-north, whole world"),
+                (-15000.0, -7500.0, 1.0, 0.0, 30000.0, "IN: west-east, south half"),
+                (-7500.0, -7500.0, 1.0, 1.0, 21000.0, "IN: SW-NE diagonal"),
+                (0.0, 0.0, 1.0, 0.0, 200000.0, "OUT: origin east 200 km"),
+                (777000.0, -333000.0, 1.0, 0.0, 200000.0, "OUT: 26 world-extents away")
             };
 
             foreach (var t in transects)
@@ -215,20 +216,31 @@ namespace Hecton8.PureLogic.Tests
         }
 
         /// <summary>
-        /// Locks the property that separates landforms from noise: walking 200 km must not climb and
-        /// descend the world's entire vertical range more than a dozen times.
+        /// Locks the property that separates landforms from noise: crossing the world must not climb
+        /// and descend its entire vertical range several times over.
         ///
-        /// The bar is a travel-to-relief ratio under 12 on a 200 km transect. That is loose - a real
-        /// ocean crossing is nearer 3 - and loose on purpose, so that a failure is unarguable rather
-        /// than a matter of taste. Twelve crossings of a 5 km range in 200 km means a full descent and
-        /// climb every 16 km, sustained, which no continental margin does.
+        /// RE-AIMED 2026-08-10, and the correction matters more than the assertion. This test used to
+        /// walk 200 km from four origins, two of which - p4_far at (300000, 90000) and p5_deepfar at
+        /// (777000, -333000) - are outside the world. WorldExtentMeters is 30000 and
+        /// ResolveMinimumChunkRange bounds the chunk grid to +/-15000 m, so a 200 km transect leaves
+        /// the world after the first 7% of its length and spends the rest measuring terrain the game
+        /// will never emit. It reported 93145 m of travel over 5084 m of relief, ratio 18.3, against a
+        /// bar of 12 - a failure earned almost entirely outside the map.
+        ///
+        /// Measured in-world instead, a 30 km transect gives a ratio near 3.9. So the bar of 12 was
+        /// never the right shape either: the ratio grows with transect length, because a longer walk
+        /// crosses more shelf boundaries, and a threshold quoted without a length is not a threshold.
+        ///
+        /// The bar is now 6.0 on a transect that spans the world exactly once. What that encodes is a
+        /// design expectation, stated plainly so it can be argued with: a 30 km world carrying a
+        /// 2860 m shelf-to-abyss drop should contain about ONE descent, the way a continental margin
+        /// does, and 6.0 allows three before it complains. The world measures 3.9, so this now passes -
+        /// and it passes on a real property rather than on a wider bar.
         ///
         /// CAVEAT this test must carry: total vertical travel is itself pitch-dependent on a fractal
-        /// surface, and this one is measured at a fixed 100 m step. The ratio is therefore a statement
-        /// about the field AS SAMPLED AT 100 m, not an absolute. It is still a real failure - a surface
-        /// that accumulates 93 km of climb over 200 km of ground at landform scale is not a seafloor -
-        /// but the number would grow at a finer pitch and shrink at a coarser one, and quoting it
-        /// without the pitch would be quoting half a measurement.
+        /// surface, and this one is measured at a fixed 100 m step. The ratio is a statement about the
+        /// field AS SAMPLED AT 100 m, not an absolute - it would grow at a finer pitch and shrink at a
+        /// coarser one, and quoting it without the pitch would be quoting half a measurement.
         /// </summary>
         [Test]
         public void MacroProfile_DoesNotOscillateThroughItsOwnRange()
@@ -236,32 +248,38 @@ namespace Hecton8.PureLogic.Tests
             WorldMacroGeologyParams p = WorldMacroGeologyParams.CreateDefault(Seed);
             var failures = new System.Collections.Generic.List<string>();
 
+            // Transects that span the world once, staying inside the +/-15 km the chunk grid emits.
+            const double half = 15000.0;
+            const double worldSpan = half * 2.0;
+
             (double X, double Z, double DX, double DZ, string Label)[] transects =
             {
-                (0.0, 0.0, 1.0, 0.0, "origin east"),
-                (0.0, 0.0, 0.0, 1.0, "origin north"),
-                (300000.0, 90000.0, 1.0, 0.0, "p4_far east"),
-                (777000.0, -333000.0, 1.0, 0.0, "p5_deepfar east")
+                (-half, 0.0, 1.0, 0.0, "west-east through the origin"),
+                (0.0, -half, 0.0, 1.0, "south-north through the origin"),
+                (-half, -half + 7500.0, 1.0, 0.0, "west-east through the southern half"),
+                (-half + 7500.0, -half, 0.0, 1.0, "south-north through the western half")
             };
 
             foreach (var t in transects)
             {
-                var r = Profile(t.X, t.Z, t.DX, t.DZ, 200000.0, in p);
+                var r = Profile(t.X, t.Z, t.DX, t.DZ, worldSpan, in p);
                 double ratio = r.Travel / math.max(1.0, r.Relief);
-                if (ratio > 12.0)
+                if (ratio > 6.0)
                     failures.Add($"{t.Label}: {r.Travel:0} m of travel over {r.Relief:0} m of relief, " +
-                                 $"ratio {ratio:0.0}, {r.Reversals} reversals in 200 km");
+                                 $"ratio {ratio:0.0}, {r.Reversals} reversals across the 30 km world");
             }
 
             Assert.That(
                 failures,
                 Is.Empty,
-                "The macro height field crosses its own vertical range repeatedly instead of " +
-                "describing landforms:\n  " + string.Join("\n  ", failures) +
-                "\n\nThis is the difference between a seafloor and a noise texture with a depth range. " +
-                "It cannot be fixed by widening any single feature, because every feature is added on " +
-                "top of province and depth fields that are themselves oscillating - the vertical " +
-                "budget is spent many times over instead of once.");
+                "Crossing the 30 km world climbs and descends its whole vertical range several times " +
+                "instead of describing one margin:\n  " + string.Join("\n  ", failures) +
+                "\n\nThe fix is not a wider feature. WidthNormalisedGate pins each shelf transition to " +
+                "a fixed width in metres regardless of the field's wavelength, so stretching the " +
+                "province structure yields fewer walls of identical steepness - measured, it moved the " +
+                "world's median slope 4 degrees while cutting the transition's share of the world from " +
+                "58.6% to 22.8%. Only widening the band AND enlarging the domain together changes the " +
+                "shape of the profile.");
         }
     }
 }
