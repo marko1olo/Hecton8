@@ -31,20 +31,25 @@ namespace Hecton8.PureLogic.Tests
         private const uint Seed = (uint)WorldMacroGeologyFields.DefaultAuthoringSeed;
 
         /// <summary>
-        /// A 400 km square centred on the origin, sampled on a 60x60 lattice of cells - so cells sit
-        /// about 6.8 km apart and each is measured independently. The sweep is wide rather than dense
+        /// A 400 km square centred on the origin, sampled on a 48x48 lattice of cells - so cells sit
+        /// about 8.5 km apart and each is measured independently. The sweep is wide rather than dense
         /// on purpose: the previous work already knows what one square kilometre looks like in fine
         /// detail, and what it does not know is how that kilometre compares to the rest of the world.
+        ///
+        /// Sized against the test runner's 180 s timeout, which the first version of this fixture
+        /// exceeded. At 60x60 cells and 81 probes each it issued 1.17 million evaluator calls per
+        /// sweep and both tests here swept independently. 48x48 cells at 25 probes is 230 400 calls,
+        /// which is five times cheaper and still far more than a median needs.
         /// </summary>
         private const double SweepSpanMeters = 400000.0;
-        private const int CellsPerAxis = 60;
+        private const int CellsPerAxis = 48;
 
         /// <summary>
-        /// Each cell's slope is the mean over a 9x9 probe grid spanning 320 m, i.e. a 40 m pitch.
-        /// Coarse enough to stay affordable across 3600 cells, fine enough that the macro relief and
+        /// Each cell's slope is the mean over a 5x5 probe grid spanning 320 m, i.e. an 80 m pitch.
+        /// Coarse enough to stay affordable across 2304 cells, fine enough that the macro relief and
         /// the large mesoscale both register.
         /// </summary>
-        private const int ProbesPerAxis = 9;
+        private const int ProbesPerAxis = 5;
         private const double CellProbeSpanMeters = 320.0;
         private const double ProbeOffsetMeters = 20.0;
 
@@ -107,7 +112,7 @@ namespace Hecton8.PureLogic.Tests
             sb.AppendLine(
                 $"Mean slope per cell over a {SweepSpanMeters / 1000.0:0} km square, " +
                 $"{CellsPerAxis}x{CellsPerAxis} = {slopes.Length} cells, each a {CellProbeSpanMeters:0} m " +
-                $"window at a {ProbeOffsetMeters * 2:0} m probe pitch.");
+                $"window sampled {ProbesPerAxis}x{ProbesPerAxis} at a {ProbeOffsetMeters * 2:0} m probe offset.");
             sb.AppendLine();
 
             double[] edges = { 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 90 };
@@ -157,7 +162,7 @@ namespace Hecton8.PureLogic.Tests
                 $"over 40: {100.0 * over40 / slopes.Length:0.0}%");
             sb.AppendLine();
             sb.AppendLine(
-                "  Measured at a 40 m probe pitch, so this is the shape of the seafloor and not the " +
+                "  Measured at a 40 m probe offset over an 80 m grid, so this is the shape of the seafloor and not the " +
                 "roughness a diver collider meets. A cell reported at 20 deg can still be locally " +
                 "impassable at metre scale.");
 
