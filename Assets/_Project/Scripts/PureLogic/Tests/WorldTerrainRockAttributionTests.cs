@@ -282,9 +282,10 @@ namespace Hecton8.PureLogic.Tests
             sb.AppendLine($"    past verySteep         (46.4 deg): {100.0 * past46 / cells,5:0.0}%  -> rock term maxed");
             sb.AppendLine($"    past Slope01 saturation(51.3 deg): {100.0 * past51 / cells,5:0.0}%  -> slope unreadable");
             sb.AppendLine();
-            sb.AppendLine("Shelf mask over a 1 km tile at each candidate clean-room site.");
-            sb.AppendLine("A tile can only PICTURE the shelf break if the mask crosses inside it:");
-            sb.AppendLine($"    {"site",-12}{"min",8}{"max",8}{"crosses?",11}");
+            sb.AppendLine("Shelf mask over the 3 km frame the clean room now exports at each candidate site.");
+            sb.AppendLine("A frame can only PICTURE the shelf break if the mask crosses inside it.");
+            sb.AppendLine("The delivered band is 3150 m, which is why a 1 km frame crossed at NO site:");
+            sb.AppendLine($"    {"site",-12}{"min",8}{"max",8}{"swing",8}{"crosses?",11}");
 
             var candidates = new System.Collections.Generic.List<(double X, double Z, string Label)>
             {
@@ -295,15 +296,18 @@ namespace Hecton8.PureLogic.Tests
             foreach (var c in candidates)
             {
                 float lo = float.MaxValue, hi = float.MinValue;
-                double step = 1000.0 / 63.0;
-                // The clean room exports its centre chunk spanning 0..1000 from its sample origin,
-                // so the tile is measured the same way: origin-anchored, not centred.
-                double baseX = c.Label == "cleanroom" ? 0.0 : c.X - 500.0;
-                double baseZ = c.Label == "cleanroom" ? 0.0 : c.Z - 500.0;
-                for (int iz = 0; iz < 64; iz++)
+                // The clean room stands a 3x3 grid of 1 km chunks with the sample origin at the
+                // centre chunk's corner, so the exported frame runs from one chunk before the site
+                // to two chunks after it. Measured the same way here, so the number in this table is
+                // the number the picture will show.
+                const double frame = 3000.0;
+                double step = frame / 95.0;
+                double baseX = c.X - 1000.0;
+                double baseZ = c.Z - 1000.0;
+                for (int iz = 0; iz <= 95; iz++)
                 {
                     double z = baseZ + iz * step;
-                    for (int ix = 0; ix < 64; ix++)
+                    for (int ix = 0; ix <= 95; ix++)
                     {
                         WorldMacroGeologyFields.EvaluateHeightMeters(
                             baseX + ix * step, z, in p, out WorldMacroGeologyFields.MacroMasks m);
@@ -312,7 +316,8 @@ namespace Hecton8.PureLogic.Tests
                     }
                 }
                 bool crosses = lo < 0.25f && hi > 0.75f;
-                sb.AppendLine($"    {c.Label,-12}{lo,8:0.000}{hi,8:0.000}{(crosses ? "YES" : "no"),11}");
+                sb.AppendLine(
+                    $"    {c.Label,-12}{lo,8:0.000}{hi,8:0.000}{hi - lo,8:0.000}{(crosses ? "YES" : "no"),11}");
             }
 
             TestContext.WriteLine(sb.ToString());
