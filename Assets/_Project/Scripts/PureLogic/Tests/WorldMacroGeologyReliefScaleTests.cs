@@ -18,12 +18,27 @@ namespace Hecton8.PureLogic.Tests
     /// almost nothing, because there is no larger structure left to find. Every site is then a few
     /// kilometres of wall, and the wall is the same wall everywhere.
     ///
-    /// The reason to measure this now, 2026-08-10: the clean room's 3 km grid drops 2036 m at the world
-    /// origin, 3319 m at P4_far and 3482 m at P5_deepfar, against an authored range of roughly 4600 m.
-    /// P5 spends three quarters of the world's entire vertical budget inside 3 km of ground. If relief
-    /// then saturates, the slope problem is not the shelf width and not any single feature - it is that
-    /// the macro transitions have kilometre wavelengths where they need tens of kilometres, and every
-    /// per-feature fix is rearranging deck chairs.
+    /// WHAT THIS ACTUALLY MEASURED, 2026-08-10. The fixture was written expecting saturation, because
+    /// the clean room's 3 km grid drops 2036 m at the world origin, 3319 m at P4_far and 3482 m at
+    /// P5_deepfar against an authored span of 4510 m. That expectation was WRONG and this test refuted
+    /// it. Relief climbs properly:
+    ///
+    ///     window     origin   p2_near   p3_west   p4_far   p5_deepfar
+    ///       1 km       0.26      0.07      0.04     0.19        0.19
+    ///       3 km       0.49      0.18      0.12     0.70        0.51
+    ///      10 km       0.82      0.75      0.52     0.80        0.83
+    ///      30 km       0.92      1.00      0.99     1.00        0.99
+    ///     100 km       1.00      1.00      0.99     1.02        1.01
+    ///
+    /// So the macro fields are not degenerate. What the table does say is that the full range arrives
+    /// by 30 km, where Earth takes roughly 150-200 km to get from shelf to abyssal plain - the world is
+    /// about five times horizontally compressed, which is a tuning judgement about scale and not a
+    /// broken evaluator. P4_far and P5_deepfar reading 0.70 and 0.51 at 3 km is those two sites
+    /// sitting on the steep part of that transition, which is where they were chosen from.
+    ///
+    /// The comment is left standing rather than deleted because the refuted hypothesis is the useful
+    /// part: 'every site is a 3 km wall' is what the clean-room grid measurements look like if the
+    /// distribution is never checked, and it is wrong.
     ///
     /// The ratio printed as 'frac' is the payload: relief at this window divided by relief at the
     /// widest window. A healthy world's fractions climb steadily. A saturated world's are already near
@@ -38,7 +53,7 @@ namespace Hecton8.PureLogic.Tests
         {
             (0.0, 0.0, "origin"),
             (50000.0, 50000.0, "p2_near"),
-            (-420000.0, 210000.0, "p3_west"),
+            (-40000.0, 15000.0, "p3_west"),
             (300000.0, 90000.0, "p4_far"),
             (777000.0, -333000.0, "p5_deepfar")
         };
