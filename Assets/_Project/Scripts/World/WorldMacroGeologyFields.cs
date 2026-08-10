@@ -583,6 +583,61 @@ namespace Hecton8.World
             };
         }
 
+        /// <summary>
+        /// Turns a threshold test on a smooth scalar field into one whose transition is WIDE BY A
+        /// STATED NUMBER OF METRES instead of by whatever the field's local gradient happens to be.
+        ///
+        /// Why this exists at all: slope is amplitude over wavelength. Every amplitude in
+        /// WorldMacroGeologyParams was authored (`AbyssDepthMeters`, `RidgeHeightMeters`,
+        /// `TrenchDepthMeters`); every WIDTH was declared, defaulted, clamped in Sanitize, and then
+        /// never read by the evaluator, so wavelength was set by whichever multiplier was typed at each
+        /// noise call. The result was the same authored seafloor presenting a 12 degree flank in one
+        /// place and a 45 degree flank in another - measured 2026-08-09 at 2875 m, 4200 m and 13900 m
+        /// of transition for a single 2860 m drop.
+        ///
+        /// `smoothstep(a, b, f)` on a raw field gives a transition whose width in metres is
+        /// (b - a) / |grad f|, which nobody chose. Dividing the field's signed distance from its
+        /// isoline by |grad f| converts it to metres first, so the smoothstep bounds ARE the authored
+        /// width.
+        ///
+        /// Two constraints, both learned by making terrain measurably worse:
+        ///
+        /// 1. The numerator and the gradient MUST come from the same field, same octave count. A
+        ///    version that divided a 5-octave field by a 2-octave gradient estimate amplified every
+        ///    harmonic missing from the denominator by 1/g; P5_deepfar's 1 km mean slope went from
+        ///    27.9 to 58.8 degrees.
+        /// 2. The gradient floor must be smooth. `max(g, floor)` kinks wherever g crosses floor, and
+        ///    in a smooth field that locus is a closed curve, so the mask would inherit a crease along
+        ///    it. `sqrt(g^2 + floor^2)` has the same intent and no corner.
+        ///
+        /// Callers pass the field sampled at the point and at two probe offsets, which keeps the noise
+        /// taps (and their octave count) at the call site where they can be matched to the field being
+        /// gated.
+        /// </summary>
+        /// <param name="value">Field value at the sample.</param>
+        /// <param name="valueDx">Same field, same octaves, one probe step along +x.</param>
+        /// <param name="valueDz">Same field, same octaves, one probe step along +z.</param>
+        /// <param name="probeMeters">World-space length of that probe step.</param>
+        /// <param name="isoline">Field value that marks the centre of the transition.</param>
+        /// <param name="widthMeters">Authored full width of the transition, in metres.</param>
+        /// <param name="nominalGradient">
+        /// Analytic per-metre gradient of the field's BASE octave, used to floor the measured gradient
+        /// so a flat region degrades to a constant scale rather than a division by almost nothing.
+        /// </param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float WidthNormalisedGate(
+            float value, float valueDx, float valueDz, float probeMeters,
+            float isoline, float widthMeters, float nominalGradient)
+        {
+            float gradientPerMeter = math.length(new float2(valueDx - value, valueDz - value)) / probeMeters;
+            float gradientFloor = nominalGradient * 0.35f;
+            float gradientSafe = math.sqrt(
+                gradientPerMeter * gradientPerMeter + gradientFloor * gradientFloor);
+            float distanceMeters = (value - isoline) / gradientSafe;
+            float halfWidth = math.max(250f, widthMeters) * 0.5f;
+            return math.smoothstep(-halfWidth, halfWidth, distanceMeters);
+        }
+
         private static int SelectGeologicalType(int2 cell, float continentality, float plateEdgeMask, uint seed)
         {
             uint h = Hash(cell.x, cell.y, (int)(seed ^ 0x6E2D9A15u));
@@ -827,33 +882,29 @@ namespace Hecton8.World
                 shelfNoiseOrigin + new float2(shelfProbeStep, 0f), seed ^ 0x1C0A7E5Fu, shelfFieldOctaves);
             float shelfFieldDz = FractalSimplexNoise01(
                 shelfNoiseOrigin + new float2(0f, shelfProbeStep), seed ^ 0x1C0A7E5Fu, shelfFieldOctaves);
-            float shelfGradientPerMeter = math.length(
-                new float2(shelfFieldDx - shelfField, shelfFieldDz - shelfField)) / shelfGradientProbeMeters;
 
             // Analytic scale of the base octave: the field is sampled at 1.35 noise units per world
             // extent, so one noise lattice cell is extent/1.35 metres and a unit-amplitude harmonic
             // crosses its full range over half of that. Flooring at 35% of it bounds the worst-case
             // normalisation factor to under 3x while leaving the common case untouched.
             //
-            // THE FLOOR MUST BE SMOOTH, and `math.max` is not. max(g, floor) is continuous but its
-            // derivative jumps wherever g crosses floor, and for a smooth field the set where
-            // g == floor is a family of closed curves. The shelf lerp inherits that kink, so the
-            // terrain grows creases along those curves.
-            // SEEN, 2026-08-09, in Docs/Reports/CleanRoom/CleanRoom_XRay_Slope.png produced by the
-            // max() form: sharp scalloped lobe outlines across the tile, exactly the shape a level set
-            // of a smooth field takes, present in the slope and material X-Rays and absent before the
-            // change. No slope STATISTIC caught it - the mean and the maximum were both fine, because
-            // a crease is a derivative discontinuity of bounded magnitude, not a steep face.
+            // The floor is applied as sqrt(g^2 + floor^2) rather than max(g, floor). Both are
+            // continuous; the max form has a derivative jump wherever g crosses floor, and for a
+            // smooth field that locus is a family of closed curves, so the shelf lerp would inherit a
+            // kink along them. The sqrt form is C-infinity, is never below either input, tends to g
+            // when g >> floor and to floor when g << floor. Same intent, no kink.
             //
-            // sqrt(g^2 + floor^2) is C-infinity, is never below either input, tends to g when
-            // g >> floor and to floor when g << floor. Same intent, no kink.
+            // Honesty note: the max form was replaced on suspicion, not on evidence. It was blamed for
+            // the scalloped lobe outlines in Docs/Reports/CleanRoom/CleanRoom_XRay_Slope.png, and a
+            // re-render after this change produced a byte-identical slope map, so it was NOT their
+            // cause. The sqrt form is kept because it is the correct way to floor a divisor in a field
+            // that gets differentiated, not because it fixed the artefact. The artefact is still
+            // unexplained; see WorldMacroGeologyClampCornerAttributionTests for the five candidate
+            // causes ruled out so far.
             float shelfNominalGradient = 1.35f / (float)extentD;
-            float shelfGradientFloor = shelfNominalGradient * 0.35f;
-            float shelfGradientSafe = math.sqrt(
-                shelfGradientPerMeter * shelfGradientPerMeter + shelfGradientFloor * shelfGradientFloor);
-            float shelfDistanceMeters = (shelfField - shelfIsoline) / shelfGradientSafe;
-            float shelfHalfWidth = math.max(250f, parameters.ShelfBreakWidthMeters) * 0.5f;
-            float shelfMask = math.smoothstep(-shelfHalfWidth, shelfHalfWidth, shelfDistanceMeters);
+            float shelfMask = WidthNormalisedGate(
+                shelfField, shelfFieldDx, shelfFieldDz, shelfGradientProbeMeters,
+                shelfIsoline, parameters.ShelfBreakWidthMeters, shelfNominalGradient);
 
             // R42: Warp continentality input for shelfBreakMask so the shelf edge is an organic, ragged coastline,
             // NOT a smooth geometric ellipse (which created the 2 smooth oval shapes in top-left P1 200m).
