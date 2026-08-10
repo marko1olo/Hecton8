@@ -38,21 +38,32 @@ namespace Hecton8.Editor
         /// tidiness, it is required: a Terrain transform at x = 777 000 leaves a float32 mantissa step
         /// of about 0.06 m, so the render would quantise before the geology was ever in question.
         ///
-        /// Why this exists at all. Until 2026-08-10 the clean room could only ever look at
-        /// (0,0)..(1000,1000), and WorldMacroGeologyCleanRoomCoverageTests measured what is there:
-        /// mean slope 12.2 deg, Shelf mask mean 0.001, and Trench, PlateEdge, Canyon, Terrace, River,
-        /// Lake, Strata, Fold, Mesa, Continentality, Reef, Ledge and BrinePool all identically zero -
-        /// 15 of 24 masks dead. It is a quiet patch of abyssal basin in the corner of the world, calmer
-        /// than the P3_west control site. Every X-Ray anyone has looked at came from there.
+        /// DEFAULT MOVED to w4 on 2026-08-10, from the world origin. The origin is a quiet abyssal
+        /// basin: 15 of 24 masks are identically zero there, mean slope 12.2 deg, and the shelf mask
+        /// never rises above 0.392 even across the full 3 km frame - it sits on the abyss side of
+        /// the break with the shelf plateau further away than the picture reaches.
         ///
-        /// That is how a re-render taken after 126 lines of change to EvaluateHeightMeters came back
-        /// BIT-IDENTICAL on all four deterministic X-Rays: the work was on the shelf break and the
-        /// trench, and neither is inside the frame. The pictures were not wrong, they were of somewhere
-        /// else.
+        /// Measured across the 3 km frame at every candidate site, w4 is the ONLY one where the
+        /// shelf mask completes a crossing:
+        ///
+        ///   site         min     max   swing   crosses
+        ///   origin     0.000   0.392   0.392        no
+        ///   w1         0.996   1.000   0.004        no   (entirely shelf)
+        ///   w2         0.000   0.165   0.165        no   (entirely abyss)
+        ///   w3         0.600   1.000   0.400        no
+        ///   w4         0.190   0.944   0.754       YES
+        ///   w5         0.340   1.000   0.660        no
+        ///
+        /// So w4 is the only aim point from which any visual claim about the shelf break can be
+        /// evidence at all. It is also the p75 site of the world's own slope distribution, which
+        /// makes it the honest frame for a world whose steepness is the intended design rather than
+        /// a defect - the picture shows a real margin with a real wall in it.
+        ///
+        /// Pass -cleanRoomSite origin to get the historical quiet-basin frame back.
         /// </summary>
-        private static double2 s_SampleOriginXZ = new double2(0.0, 0.0);
+        private static double2 s_SampleOriginXZ = new double2(6887.0, -6887.0);
 
-        private static string s_SiteLabel = "origin";
+        private static string s_SiteLabel = "w4";
 
         /// <summary>
         /// Probe sites INSIDE the world, chosen by percentile of the in-world 1 km slope distribution

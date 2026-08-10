@@ -35,21 +35,27 @@ namespace Hecton8.PureLogic.Tests
     {
         private const uint Seed = (uint)WorldMacroGeologyFields.DefaultAuthoringSeed;
 
-        // The frame the X-Rays are actually cut from. CleanRoomTerrainTest builds a 3x3 grid of
-        // 1000 m chunks and, as of 2026-08-10, exports the diagnostics from ALL NINE rather than
-        // from the centre chunk alone, so the tile these assertions measure is 3000 m and anchored
-        // one chunk before the sample origin.
+        // The frame the X-Rays are actually cut from, mirroring CleanRoomTerrainTest's default aim.
+        // It builds a 3x3 grid of 1000 m chunks and, as of 2026-08-10, exports the diagnostics from
+        // ALL NINE rather than from the centre chunk alone, with the sample origin at the centre
+        // chunk's corner - so the frame runs from one chunk before the site to two chunks after it.
         //
-        // WHY IT MOVED. The delivered shelf band measures 3150 m
+        // WHY IT MOVED, and it took two corrections. The delivered shelf band measures 3150 m
         // (WorldMacroGeologyShelfWidthDeliveryTests), so a 1000 m frame cannot contain a shelf
-        // transition anywhere in the world - measured at the origin and at all five in-world atlas
-        // sites, not one crosses from below 0.25 to above 0.75 inside a kilometre. The assertion
-        // below was therefore unsatisfiable as written, at every possible aim point. Widening the
-        // instrument is the fix; loosening the criterion is not, and this fixture's own history
-        // says why - an earlier version asked for a 0.05 swing and passed on 0.057 while the mask
-        // mean over the tile was 0.001.
-        private const double TileMinX = -1000.0;
-        private const double TileMinZ = -1000.0;
+        // transition anywhere in the world: measured at the origin and at all five in-world atlas
+        // sites, not one crossed inside a kilometre. Widening to 3 km was necessary but not
+        // sufficient - the origin sits on the abyss side of the break and only reaches 0.392 even
+        // across the full frame. Measured over 3 km at every site, w4 (6887, -6887) is the ONLY aim
+        // point where the mask completes a crossing, at 0.190..0.944.
+        //
+        // Loosening the criterion was the alternative and is rejected: this fixture's own history
+        // records an earlier version that asked for a 0.05 swing and PASSED on 0.057 while the
+        // mask's mean over the tile was 0.001. A peak is not coverage. If these constants and
+        // CleanRoomTerrainTest's default ever drift apart, this test failing is the intended alarm.
+        private const double SiteX = 6887.0;
+        private const double SiteZ = -6887.0;
+        private const double TileMinX = SiteX - 1000.0;
+        private const double TileMinZ = SiteZ - 1000.0;
         private const double TileSpanMeters = 3000.0;
         private const int SamplesPerAxis = 64;
 
