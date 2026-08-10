@@ -256,7 +256,7 @@ namespace Hecton8.World
             // NOT A GEOMETRY CHANGE. This is the material resolver; EvaluateHeightMeters is
             // untouched, so every landform, cliff and shelf break is bit-identical. Only which
             // material is painted on gentle ground moves.
-            float ridgeRockDominance = math.saturate(math.smoothstep(0.24f, 0.48f, positiveCurvature) * (1f - angleOfRepose) + math.smoothstep(0.54f, 0.72f, slope));
+            float ridgeRockDominance = math.saturate(math.smoothstep(0.24f, 0.48f, positiveCurvature) + math.smoothstep(0.54f, 0.72f, slope));
             finalRock = math.saturate(finalRock + ridgeRockDominance * (0.78f - finalRock * 0.42f) - concaveSiltDominance * flatFloor * 0.20f - talusApron * 0.30f);
 
             // C1-Smooth Early-Exit Gate: skip 9 octaves of material noise on pure rock faces (finalRock >= 0.98)
