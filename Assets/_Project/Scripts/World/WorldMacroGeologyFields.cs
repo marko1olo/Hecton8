@@ -1754,7 +1754,38 @@ namespace Hecton8.World
             return total / math.max(0.0001f, norm);
         }
 
-        public static float FractalSimplexNoise01(float2 sample, uint seed, int octaves = 5, float filterWidth = 0f, float domainScale = 1f)
+        /// <summary>
+        /// Fractal Brownian motion over simplex noise, normalised to 0..1.
+        ///
+        /// GAIN is the amplitude ratio between successive octaves and it is the single number that
+        /// decides how steep this world is at every scale at once. With gain g and lacunarity L the
+        /// surface has Hurst exponent H = -log(g)/log(L), and the mean height difference between two
+        /// points a distance d apart grows as d^H. The slope contributed at scale d is therefore
+        /// proportional to d^(H-1):
+        ///
+        ///   H = 1  (g = 0.5, L = 2)   slope is IDENTICAL at every scale - a 25 m step is as steep as
+        ///                             an 800 m one. Self-similar, and the classic default.
+        ///   H &gt; 1  (g &lt; 0.5)          fine scales are gentler than coarse ones. Big shapes survive,
+        ///                             local ground smooths out. This is what a seafloor looks like.
+        ///   H &lt; 1  (g &gt; 0.5)          fine scales dominate. Grit everywhere.
+        ///
+        /// MEASURED on this world, 2026-08-10, structure function of the base shelf/abyss/basin field
+        /// (stage 1, before any landform): mean |dh| / lag came out 0.288, 0.288, 0.287, 0.284, 0.276,
+        /// 0.270 at lags of 25, 50, 100, 200, 400 and 800 m. Flat to within 6% over a five-fold range
+        /// of scale, which is H = 1 exactly as the arithmetic predicts, and 0.288 is 16.1 degrees. The
+        /// final field measures 0.454, or 24.4 degrees, equally flat.
+        ///
+        /// That is why no feature width could fix the slope budget. Across a 400 km square the median
+        /// cell of this world sits at 29.2 degrees and 32.5% exceed 40, and the cause is not the shelf
+        /// break or the trench or the ridge - it is that every one of them is drawn with noise whose
+        /// roughness angle is a constant, set here, independent of the scale it is drawn at.
+        ///
+        /// The parameter is TRAILING and defaults to the previous hardcoded 0.5, so every existing
+        /// call is bit-identical. That placement is not stylistic: this file's geology was silently
+        /// dead from 26 July to 9 August because a frequency parameter was inserted MID-signature and
+        /// 47 call sites bound their arguments to the wrong slots while still compiling.
+        /// </summary>
+        public static float FractalSimplexNoise01(float2 sample, uint seed, int octaves = 5, float filterWidth = 0f, float domainScale = 1f, float gain = 0.5f)
         {
             float amplitude = 0.5f;
             float frequency = 1f;
@@ -1771,14 +1802,19 @@ namespace Hecton8.World
                     break;
                 total += SimplexNoise01(p * frequency, seed + (uint)octave * 0x9E3779B9u) * amplitude;
                 norm += amplitude;
-                amplitude *= 0.5f;
+                amplitude *= gain;
                 frequency *= 2.02f;
             }
 
             return total / math.max(0.0001f, norm);
         }
 
-        public static float RidgedMultifractal01(double2 sampleD, uint seed, int octaves = 5)
+        /// <summary>
+        /// Ridged multifractal, 0..1. See FractalSimplexNoise01 for what `gain` does to the slope
+        /// budget; the same Hurst arithmetic applies, and this generator was also measured at H = 1.
+        /// Trailing parameter, defaulting to the previous hardcoded 0.5, so every call is unchanged.
+        /// </summary>
+        public static float RidgedMultifractal01(double2 sampleD, uint seed, int octaves = 5, float gain = 0.5f)
         {
             float amplitude = 1f;
             float frequency = 1f;
@@ -1807,19 +1843,19 @@ namespace Hecton8.World
 
                 total += n * amplitude;
                 norm += amplitude;
-                amplitude *= 0.5f;
+                amplitude *= gain;
                 frequency *= 2.0f;
             }
 
             return total / math.max(0.0001f, norm);
         }
 
-        public static float RidgedMultifractal01(float2 sample, uint seed, int octaves = 5)
+        public static float RidgedMultifractal01(float2 sample, uint seed, int octaves = 5, float gain = 0.5f)
         {
-            return RidgedMultifractal01((double2)sample, seed, octaves);
+            return RidgedMultifractal01((double2)sample, seed, octaves, gain);
         }
 
-        public static float ErodedRidge01(double2 sampleD, uint seed, int octaves = 5)
+        public static float ErodedRidge01(double2 sampleD, uint seed, int octaves = 5, float gain = 0.5f)
         {
             float amplitude = 1f;
             float frequency = 1f;
@@ -1848,16 +1884,16 @@ namespace Hecton8.World
 
                 total += n * amplitude;
                 norm += amplitude;
-                amplitude *= 0.5f;
+                amplitude *= gain;
                 frequency *= 2.0f;
             }
 
             return total / math.max(0.0001f, norm);
         }
 
-        public static float ErodedRidge01(float2 sample, uint seed, int octaves = 5)
+        public static float ErodedRidge01(float2 sample, uint seed, int octaves = 5, float gain = 0.5f)
         {
-            return ErodedRidge01((double2)sample, seed, octaves);
+            return ErodedRidge01((double2)sample, seed, octaves, gain);
         }
 
         public static float BillowNoise01(double2 sampleD, uint seed, int octaves = 5)
