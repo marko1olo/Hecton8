@@ -30,6 +30,46 @@ namespace Hecton8.Editor
         private const float MinTerrainHeightMeters = -5000f;
         private const float MaxTerrainHeightMeters = 200f;
 
+        private const string SiteArgument = "-cleanRoomSite";
+
+        /// <summary>
+        /// Where in the world the terrain is SAMPLED from. The meshes always stand at the local origin;
+        /// only the coordinates fed to WorldMacroGeologyFields move. Keeping the two apart is not
+        /// tidiness, it is required: a Terrain transform at x = 777 000 leaves a float32 mantissa step
+        /// of about 0.06 m, so the render would quantise before the geology was ever in question.
+        ///
+        /// Why this exists at all. Until 2026-08-10 the clean room could only ever look at
+        /// (0,0)..(1000,1000), and WorldMacroGeologyCleanRoomCoverageTests measured what is there:
+        /// mean slope 12.2 deg, Shelf mask mean 0.001, and Trench, PlateEdge, Canyon, Terrace, River,
+        /// Lake, Strata, Fold, Mesa, Continentality, Reef, Ledge and BrinePool all identically zero -
+        /// 15 of 24 masks dead. It is a quiet patch of abyssal basin in the corner of the world, calmer
+        /// than the P3_west control site. Every X-Ray anyone has looked at came from there.
+        ///
+        /// That is how a re-render taken after 126 lines of change to EvaluateHeightMeters came back
+        /// BIT-IDENTICAL on all four deterministic X-Rays: the work was on the shelf break and the
+        /// trench, and neither is inside the frame. The pictures were not wrong, they were of somewhere
+        /// else.
+        /// </summary>
+        private static double2 s_SampleOriginXZ = new double2(0.0, 0.0);
+
+        private static string s_SiteLabel = "origin";
+
+        /// <summary>
+        /// The atlas sites, so a render can be aimed at the same coordinates the slope fixtures
+        /// measure and the two bodies of evidence can be compared instead of merely coexisting.
+        /// Mean slope over a 1 km window at each, measured 2026-08-10 at seed 880031: origin 12.2,
+        /// P1 25.9, P2 19.1, P3 12.7, P4 33.7, P5 46.9 deg.
+        /// </summary>
+        private static readonly (string Name, double X, double Z)[] KnownSites =
+        {
+            ("origin", 0.0, 0.0),
+            ("p1", 5000.0, 5000.0),
+            ("p2", 50000.0, 50000.0),
+            ("p3", -40000.0, 15000.0),
+            ("p4", 300000.0, 90000.0),
+            ("p5", 777000.0, -333000.0)
+        };
+
         [MenuItem("Hecton8/Tests/Clean Room Terrain")]
         public static void RunTest()
         {
@@ -38,7 +78,59 @@ namespace Hecton8.Editor
 
         public static void Execute()
         {
+            ResolveRequestedSite();
             ExecuteInternal(exitOnFinish: true);
+        }
+
+        /// <summary>
+        /// Reads -cleanRoomSite from the command line: either a name from KnownSites, or a raw
+        /// "x,z" pair in metres. Absent or unparseable, the site stays at the origin and says so.
+        ///
+        /// System.Environment is spelled out in full deliberately. This file sits in namespace
+        /// Hecton8.Editor, the project declares its own Hecton8.Environment namespace
+        /// (HectonBiomeProfile.cs and others), and that one wins over System inside any Hecton8.*
+        /// namespace - resolving to a type with no GetCommandLineArgs. The same trap is recorded at
+        /// H8_ShaderCompileGate.cs:317-321 and it caught H8_HeadlessPlayModeProbe before that.
+        /// </summary>
+        private static void ResolveRequestedSite()
+        {
+            string[] arguments = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < arguments.Length - 1; i++)
+            {
+                if (!string.Equals(arguments[i], SiteArgument, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string requested = arguments[i + 1].Trim();
+
+                foreach ((string Name, double X, double Z) site in KnownSites)
+                {
+                    if (!string.Equals(site.Name, requested, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    s_SampleOriginXZ = new double2(site.X, site.Z);
+                    s_SiteLabel = site.Name;
+                    return;
+                }
+
+                string[] pair = requested.Split(',');
+                if (pair.Length == 2
+                    && double.TryParse(pair[0], System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out double x)
+                    && double.TryParse(pair[1], System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out double z))
+                {
+                    s_SampleOriginXZ = new double2(x, z);
+                    s_SiteLabel = $"{x:0}_{z:0}";
+                    return;
+                }
+
+                Debug.LogWarning(
+                    $"[CleanRoom] {SiteArgument} '{requested}' is neither a known site nor an " +
+                    "'x,z' metre pair, so the render stays at the world origin - which is a quiet " +
+                    "basin tile with no shelf break and no trench in it. Known sites: " +
+                    "origin, p1, p2, p3, p4, p5.");
+                return;
+            }
         }
 
         private static void ExecuteInternal(bool exitOnFinish)
@@ -49,7 +141,13 @@ namespace Hecton8.Editor
             {
                 string artifactDir = ResolveArtifactDirectory();
                 Directory.CreateDirectory(artifactDir);
-                Debug.Log($"[CleanRoom] Starting clean-room terrain proof. Artifacts: {artifactDir}");
+                Debug.Log(
+                    $"[CleanRoom] Starting clean-room terrain proof. Site '{s_SiteLabel}' at world " +
+                    $"({s_SampleOriginXZ.x:F0}, {s_SampleOriginXZ.y:F0})m, sampling " +
+                    $"{TerrainGridSize * ChunkSizeMeters:F0}m of ground with the X-Rays cut from the " +
+                    $"centre 1000m chunk, i.e. world ({s_SampleOriginXZ.x:F0}, {s_SampleOriginXZ.y:F0}) " +
+                    $"to ({s_SampleOriginXZ.x + ChunkSizeMeters:F0}, {s_SampleOriginXZ.y + ChunkSizeMeters:F0}). " +
+                    $"Artifacts: {artifactDir}");
 
                 EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
                 Selection.activeGameObject = null;
@@ -67,6 +165,12 @@ namespace Hecton8.Editor
                 float[,] centerSlope = null;
                 float[,] centerCurvature = null;
                 int[,] centerMaterial = null;
+
+                // Vertical extent of the WHOLE grid, not the centre chunk. On a continental slope the
+                // neighbouring chunks continue the ramp for another kilometre each way, so framing the
+                // camera on the centre chunk's mid-height puts it inside the hillside. See BuildCamera.
+                float gridMinY = float.MaxValue;
+                float gridMaxY = float.MinValue;
 
                 for (int row = -GridRadius; row <= GridRadius; row++)
                 {
@@ -86,7 +190,12 @@ namespace Hecton8.Editor
                             out float[,] worldHeights,
                             out float[,] slope01,
                             out float[,] curvature01,
-                            out int[,] dominantMaterial);
+                            out int[,] dominantMaterial,
+                            out float chunkMinY,
+                            out float chunkMaxY);
+
+                        gridMinY = math.min(gridMinY, chunkMinY);
+                        gridMaxY = math.max(gridMaxY, chunkMaxY);
 
                         terrains[row + GridRadius, col + GridRadius] = terrain;
                         if (row == 0 && col == 0)
@@ -101,16 +210,23 @@ namespace Hecton8.Editor
 
                 StitchTerrainGrid(terrains);
 
-                // Aim the camera at the surface that was actually generated, not at a constant.
-                // centerWorldHeights is absolute world Y in metres for the centre chunk, filled
-                // above at the same time the terrains were built.
-                MeasureExtent(centerWorldHeights, out float beautyMinY, out float beautyMaxY);
-                Camera camera = BuildCamera((beautyMinY + beautyMaxY) * 0.5f);
-                ExportSplatmapComposite(terrains, Path.Combine(artifactDir, "Debug_Splatmap_3x3.png"));
-                RenderBeauty(camera, Path.Combine(artifactDir, "CleanRoom_Beauty.png"));
+                // Aim the camera at the surface that was actually generated, not at a constant, and
+                // measure that surface across the whole grid rather than the centre chunk alone.
+                Camera camera = BuildCamera(gridMinY, gridMaxY);
+
+                // Per-site filenames. Without them each render silently overwrites the last and the
+                // only way to compare two sites is to remember what the previous picture looked like.
+                // The origin keeps its historical unsuffixed names so nothing that references them
+                // breaks.
+                string suffix = string.Equals(s_SiteLabel, "origin", StringComparison.Ordinal)
+                    ? string.Empty
+                    : "_" + s_SiteLabel;
+
+                ExportSplatmapComposite(terrains, Path.Combine(artifactDir, $"Debug_Splatmap_3x3{suffix}.png"));
+                RenderBeauty(camera, Path.Combine(artifactDir, $"CleanRoom_Beauty{suffix}.png"));
                 BiomeTransitionShot transitionShot = FindBiomeTransitionShot(terrains, in macroParams);
-                RenderTransitionBeauty(camera, transitionShot, Path.Combine(artifactDir, "Naked_Biome_Transition.png"));
-                ExportXRayMaps(artifactDir, centerWorldHeights, centerSlope, centerCurvature, centerMaterial);
+                RenderTransitionBeauty(camera, transitionShot, Path.Combine(artifactDir, $"Naked_Biome_Transition{suffix}.png"));
+                ExportXRayMaps(artifactDir, suffix, centerWorldHeights, centerSlope, centerCurvature, centerMaterial);
 
                 Debug.Log("[CleanRoom] Clean-room terrain proof complete.");
             }
@@ -286,7 +402,9 @@ namespace Hecton8.Editor
             out float[,] worldHeights,
             out float[,] slope01,
             out float[,] curvature01,
-            out int[,] dominantMaterial)
+            out int[,] dominantMaterial,
+            out float chunkMinY,
+            out float chunkMaxY)
         {
             GameObject terrainGo = new GameObject($"CleanRoom_Terrain_{row}_{col}");
             terrainGo.transform.position = new Vector3(originX, TerrainBaseY, originZ);
@@ -303,6 +421,12 @@ namespace Hecton8.Editor
             terrain.terrainData = terrainData;
             collider.terrainData = terrainData;
             terrain.basemapDistance = 100000f;
+
+            // Default heightmapPixelError is 5 screen pixels of allowed geometric error. At this
+            // render's standoff that is roughly 10 m of licensed deviation, which is enough to erase
+            // exactly the metre-scale detail these pictures exist to judge. A proof render should show
+            // the mesh, not the LOD system's opinion of it.
+            terrain.heightmapPixelError = 1f;
 
             WorldMacroGeologyParams localMacroParams = macroParams;
             float[,] heights01 = new float[HeightResolution, HeightResolution];
@@ -322,6 +446,8 @@ namespace Hecton8.Editor
             NativeArray<float> slopeBuffer = default;
             NativeArray<float> curvatureBuffer = default;
             NativeArray<int> dominantBuffer = default;
+            float localMinY = 0f;
+            float localMaxY = 0f;
             try
             {
                 heightBuffer = new NativeArray<float>(heightSampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -333,12 +459,16 @@ namespace Hecton8.Editor
                 curvatureBuffer = new NativeArray<float>(diagnosticSampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 dominantBuffer = new NativeArray<int>(diagnosticSampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
+                // Sample where the site is; stand the mesh at the local origin. See s_SampleOriginXZ
+                // for why the two must not be the same number.
+                double2 sampleOrigin = s_SampleOriginXZ + new double2(originX, originZ);
+
                 var heightJob = new CleanRoomMacroHeightBufferJob
                 {
                     HeightBufferMeters = heightBuffer,
                     Resolution = HeightResolution,
                     ChunkSizeMeters = ChunkSizeMeters,
-                    WorldOriginXZ = new double2(originX, originZ),
+                    WorldOriginXZ = sampleOrigin,
                     MacroGeologyParams = localMacroParams
                 };
                 heightJob.Schedule(heightSampleCount, ResolveJobBatchCount(heightSampleCount)).Complete();
@@ -358,13 +488,29 @@ namespace Hecton8.Editor
                     HeightBufferResolution = HeightResolution,
                     CellSizeMeters = ChunkSizeMeters / (HeightResolution - 1),
                     HeightCellSizeMeters = ChunkSizeMeters / (HeightResolution - 1),
-                    WorldOriginXZ = new double2(originX, originZ),
+                    WorldOriginXZ = sampleOrigin,
                     MacroGeologyParams = localMacroParams,
                     MaskContrast = 1f
                 };
                 splatJob.Schedule(alphaSampleCount, ResolveJobBatchCount(alphaSampleCount)).Complete();
 
-                CopyHeightBufferToManaged(heightBuffer, heights01, localWorldHeights);
+                CopyHeightBufferToManaged(
+                    heightBuffer, heights01, localWorldHeights,
+                    out float rawMinMeters, out float rawMaxMeters, out int clippedSamples);
+                localMinY = rawMinMeters;
+                localMaxY = rawMaxMeters;
+
+                if (clippedSamples > 0)
+                {
+                    Debug.LogWarning(
+                        $"[CleanRoom] Chunk ({row},{col}) has {clippedSamples} of {heightSampleCount} " +
+                        $"samples ({100.0 * clippedSamples / heightSampleCount:F2}%) outside the " +
+                        $"{MinTerrainHeightMeters:F0}..{MaxTerrainHeightMeters:F0}m terrain window " +
+                        $"(raw range {rawMinMeters:F0}..{rawMaxMeters:F0}m). Those samples are clipped " +
+                        "flat onto the boundary, and a clipped plateau looks exactly like authored " +
+                        "flat ground in every render and X-Ray downstream.");
+                }
+
                 CopyControlBuffersToManaged(control1, control2, alphamaps, slopeBuffer, curvatureBuffer, dominantBuffer, localSlope01, localCurvature01, localDominantMaterial);
             }
             finally
@@ -383,7 +529,21 @@ namespace Hecton8.Editor
             slope01 = localSlope01;
             curvature01 = localCurvature01;
             dominantMaterial = localDominantMaterial;
+            chunkMinY = localMinY;
+            chunkMaxY = localMaxY;
             terrainData.SetHeightsDelayLOD(0, 0, heights01);
+
+            // SetHeightsDelayLOD defers the LOD and collider rebuild and Unity requires SyncHeightmap
+            // to finish it. Without this call the terrain renders from mesh data that was never built
+            // for these heights.
+            //
+            // What that looked like, 2026-08-10, the first time the clean room was aimed at a site
+            // with real relief: two enormous triangular sheets meeting at a point with the background
+            // visible between them. A heightmap is a function of x and z and cannot have a hole, so
+            // the picture could not have been the terrain - it was the unbuilt mesh. At the world
+            // origin the same missing call produced a perfectly plausible picture, because a 12.2
+            // degree plain survives almost any tessellation.
+            terrainData.SyncHeightmap();
             terrainData.SetAlphamaps(0, 0, alphamaps);
 
             Material material = new Material(baseMaterial);
@@ -407,9 +567,28 @@ namespace Hecton8.Editor
             return math.max(32, math.min(256, math.max(1, cellCount / 1024)));
         }
 
-        private static void CopyHeightBufferToManaged(NativeArray<float> heightBuffer, float[,] heights01, float[,] worldHeights)
+        /// <summary>
+        /// Copies the raw metre heights into the 0..1 heightmap Unity wants, and reports the raw
+        /// extent alongside it.
+        ///
+        /// The extent is reported RAW, before the saturate, because the saturate is a silent clip: any
+        /// geology outside MinTerrainHeightMeters..MaxTerrainHeightMeters is flattened onto the
+        /// boundary and the resulting plateau is indistinguishable in the picture from terrain that
+        /// was authored flat. clippedSamples exists to tell those two apart.
+        /// </summary>
+        private static void CopyHeightBufferToManaged(
+            NativeArray<float> heightBuffer,
+            float[,] heights01,
+            float[,] worldHeights,
+            out float rawMinMeters,
+            out float rawMaxMeters,
+            out int clippedSamples)
         {
             float invRange = 1f / math.max(0.0001f, MaxTerrainHeightMeters - MinTerrainHeightMeters);
+            rawMinMeters = float.MaxValue;
+            rawMaxMeters = float.MinValue;
+            clippedSamples = 0;
+
             for (int z = 0; z < HeightResolution; z++)
             {
                 int rowBase = z * HeightResolution;
@@ -418,6 +597,12 @@ namespace Hecton8.Editor
                     float heightMeters = heightBuffer[rowBase + x];
                     if (worldHeights != null)
                         worldHeights[z, x] = heightMeters;
+
+                    if (heightMeters < rawMinMeters) rawMinMeters = heightMeters;
+                    if (heightMeters > rawMaxMeters) rawMaxMeters = heightMeters;
+                    if (heightMeters < MinTerrainHeightMeters || heightMeters > MaxTerrainHeightMeters)
+                        clippedSamples++;
+
                     heights01[z, x] = math.saturate((heightMeters - MinTerrainHeightMeters) * invRange);
                 }
             }
@@ -522,7 +707,29 @@ namespace Hecton8.Editor
         /// asks a scale card to show. Ground-level framing is deliberately NOT used here: with
         /// 40-70 degree slopes over most of the surface, a 2 m eye height looks into a wall.
         /// </summary>
-        private static Camera BuildCamera(float surfaceY)
+        /// <summary>
+        /// A bird's-eye camera that frames the whole generated grid.
+        ///
+        /// Both of the corrections below were made on 2026-08-10, when the clean room was first aimed
+        /// at a site with real relief. Neither could be seen before that: at the world origin the tile
+        /// is a 12.2 degree basin with 304 m of relief, and a camera that is badly aimed and badly
+        /// sized still produces a plausible picture of a flat plain.
+        ///
+        /// 1. AIM AT THE GRID CENTRE. The chunks are laid out at col * 1000 for col in -1..1 and each
+        ///    spans [origin, origin + 1000], so the grid covers -1000..2000 on both axes and its centre
+        ///    is (500, 500) - not (0, 0). The old aim was 707 m off-centre diagonally, a quarter of the
+        ///    frame.
+        ///
+        /// 2. SIZE THE STANDOFF TO THE VERTICAL EXTENT AS WELL. The old standoff came from the
+        ///    horizontal span alone and the old aim height came from the CENTRE chunk's mid-height. At
+        ///    P5_deepfar the centre chunk spans -3183..-1925 m while the full grid spans far more,
+        ///    because the neighbouring chunks continue the same continental slope for another kilometre
+        ///    each way. Framing a 3 km grid on the middle chunk's mid-height put the camera below the
+        ///    upslope terrain: the render came back as two enormous triangular sheets meeting at a
+        ///    point, with the background visible through the gap between them. That was the camera
+        ///    inside the hillside, not a hole in the terrain - a heightmap cannot have one.
+        /// </summary>
+        private static Camera BuildCamera(float gridMinY, float gridMaxY)
         {
             GameObject cameraGo = new GameObject("CleanRoom_Camera");
             Camera camera = cameraGo.AddComponent<Camera>();
@@ -534,14 +741,25 @@ namespace Hecton8.Editor
 
             // Full span of the generated grid, plus margin so the edges are not flush with frame.
             float gridSpanMeters = ChunkSizeMeters * TerrainGridSize;
-            float framedSpanMeters = gridSpanMeters * 1.15f;
+            float verticalSpanMeters = math.max(0f, gridMaxY - gridMinY);
+
+            // The larger of the two extents is what has to fit. On a continental slope the vertical
+            // one wins: at P5_deepfar the grid drops further than it is wide.
+            float framedSpanMeters = math.max(gridSpanMeters, verticalSpanMeters) * 1.15f;
 
             // Distance at which framedSpan subtends the vertical FOV.
             float standoffMeters = (framedSpanMeters * 0.5f) /
                                    math.tan(math.radians(FieldOfViewDegrees * 0.5f));
 
             float elevationRad = math.radians(ElevationDegrees);
-            Vector3 aim = new Vector3(0f, surfaceY, 0f);
+
+            // Centre of the grid in XZ, centre of the measured surface in Y. Chunks sit at
+            // col * ChunkSizeMeters for col in -GridRadius..GridRadius and each spans one chunk
+            // further positive, so the grid covers [-R*C, R*C + C] and its centre is at C/2 - the
+            // GridRadius terms cancel and it is half a chunk, whatever the radius.
+            float gridCenterXZ = ChunkSizeMeters * 0.5f;
+            float surfaceY = (gridMinY + gridMaxY) * 0.5f;
+            Vector3 aim = new Vector3(gridCenterXZ, surfaceY, gridCenterXZ);
             Vector3 offset = new Vector3(
                 0f,
                 standoffMeters * math.sin(elevationRad),
@@ -558,11 +776,12 @@ namespace Hecton8.Editor
             camera.fieldOfView = FieldOfViewDegrees;
 
             Debug.Log(
-                $"[CleanRoom] Bird's-eye camera: aim=(0, {surfaceY:F1}, 0) " +
+                $"[CleanRoom] Bird's-eye camera: aim=({aim.x:F1}, {surfaceY:F1}, {aim.z:F1}) " +
                 $"pos=({camera.transform.position.x:F1}, {camera.transform.position.y:F1}, " +
                 $"{camera.transform.position.z:F1}) standoff={standoffMeters:F1}m " +
                 $"elevation={ElevationDegrees:F0}deg framing {framedSpanMeters:F0}m of a " +
-                $"{gridSpanMeters:F0}m grid.");
+                $"{gridSpanMeters:F0}m grid that drops {verticalSpanMeters:F0}m " +
+                $"({gridMinY:F0}..{gridMaxY:F0}m).");
 
             UniversalAdditionalCameraData urp = cameraGo.AddComponent<UniversalAdditionalCameraData>();
             urp.renderPostProcessing = true;
@@ -666,12 +885,20 @@ namespace Hecton8.Editor
                     {
                         float nx = x / (float)(steps - 1);
                         float worldX = terrain.transform.position.x + nx * td.size.x;
-                        WorldMacroGeologySample sample = WorldMacroGeologyFields.Evaluate(worldX, worldZ, in macroParams);
-                        WorldTerrainSurfaceMaterialWeights weights = WorldTerrainSurfaceMaterialResolver.Resolve(in sample, worldX, worldZ, macroParams.Seed);
+
+                        // The mesh stands at the local origin but the geology lives at the site, so
+                        // the sample coordinate and the camera coordinate are different numbers.
+                        // Sampling at the transform alone would score the origin basin and then aim
+                        // the camera at a shelf it had never looked at.
+                        double sampleX = s_SampleOriginXZ.x + worldX;
+                        double sampleZ = s_SampleOriginXZ.y + worldZ;
+
+                        WorldMacroGeologySample sample = WorldMacroGeologyFields.Evaluate(sampleX, sampleZ, in macroParams);
+                        WorldTerrainSurfaceMaterialWeights weights = WorldTerrainSurfaceMaterialResolver.Resolve(in sample, (float)sampleX, (float)sampleZ, macroParams.Seed);
                         WorldTerrainMesoDetailParams mesoParams = WorldTerrainMesoDetailFields.CreateDefaultParams(macroParams.Seed);
                         mesoParams.PreviewExtentMeters = ChunkSizeMeters;
                         mesoParams.MaxMesoDeltaMeters = 24f;
-                        WorldTerrainMesoDetailSample meso = WorldTerrainMesoDetailFields.Evaluate(in sample, worldX, worldZ, in mesoParams);
+                        WorldTerrainMesoDetailSample meso = WorldTerrainMesoDetailFields.Evaluate(in sample, (float)sampleX, (float)sampleZ, in mesoParams);
                         weights = WorldTerrainSurfaceMaterialResolver.ApplyMesoDetailBias(weights, in meso);
 
                         float sediment = math.max(weights.ShellSand, weights.ClaySilt);
@@ -799,6 +1026,7 @@ namespace Hecton8.Editor
 
         private static void ExportXRayMaps(
             string artifactDir,
+            string suffix,
             float[,] heights,
             float[,] slope,
             float[,] curvature,
@@ -840,10 +1068,10 @@ namespace Hecton8.Editor
                     "tile. The terrain really is flat here - this is not a normalisation artifact.");
             }
 
-            WriteScalarMap(Path.Combine(artifactDir, "CleanRoom_XRay_Height.png"), heights, heightMin, heightMax);
-            WriteScalarMap(Path.Combine(artifactDir, "CleanRoom_XRay_Slope.png"), slope, 0f, 1f);
-            WriteScalarMap(Path.Combine(artifactDir, "CleanRoom_XRay_Curvature.png"), curvature, 0f, 1f);
-            WriteMaterialMap(Path.Combine(artifactDir, "CleanRoom_XRay_MaterialDominant.png"), material);
+            WriteScalarMap(Path.Combine(artifactDir, $"CleanRoom_XRay_Height{suffix}.png"), heights, heightMin, heightMax);
+            WriteScalarMap(Path.Combine(artifactDir, $"CleanRoom_XRay_Slope{suffix}.png"), slope, 0f, 1f);
+            WriteScalarMap(Path.Combine(artifactDir, $"CleanRoom_XRay_Curvature{suffix}.png"), curvature, 0f, 1f);
+            WriteMaterialMap(Path.Combine(artifactDir, $"CleanRoom_XRay_MaterialDominant{suffix}.png"), material);
         }
 
         /// <summary>
