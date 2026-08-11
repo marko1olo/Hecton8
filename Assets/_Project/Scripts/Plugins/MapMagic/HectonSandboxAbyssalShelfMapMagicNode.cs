@@ -24,15 +24,35 @@ namespace MapMagic.Nodes.MatrixGenerators
     {
         // L19 hop2 LIVE: MapMagic batch flag - IsHeadlessBatchProbe() is main-thread only;
         // Generate() runs on MapMagic worker threads so cache via command line.
+        //
+        // WHAT THIS ACTUALLY GATES, spelled out because it was not: when it returns true, Generate does
+        // NOT compute geology at all - it fills the whole height matrix with the constant 0.5 (see the
+        // IsHeadlessBatchProbe branch in Generate) and MapMagic renders a perfectly flat mid-shelf. The
+        // condition is nothing but "is -batchmode on the command line", so EVERY automated run on this
+        // machine has been measuring that constant instead of the world. Measured 2026-08-11 via
+        // DumpRawHeightsTask on HECTON_PROCEDURAL_GEOLOGY_GRAPH: 524288 samples, normalised 0.500000
+        // throughout, standard deviation 0.
+        //
+        // The escape hatch below exists so the claim in that comment - that ScheduleParallelFor produces a
+        // mono_jit_info_table access violation under headless batch - can be TESTED rather than trusted.
+        // It was written for an older editor and may no longer be true; the stub is not removed until a run
+        // with -hectonRealGeologyUnderBatch either survives or reproduces the crash. Opt-IN, not opt-out:
+        // a flag that disables safety by default would turn every existing batch caller into a crash test.
+        private const string RealGeologyUnderBatchArg = "-hectonRealGeologyUnderBatch";
+
         static bool IsHeadlessBatchProbe()
         {
             string[] args = System.Environment.GetCommandLineArgs();
+            bool batch = false;
             for (int i = 0; i < args.Length; i++)
             {
+                if (string.Equals(args[i], RealGeologyUnderBatchArg, System.StringComparison.OrdinalIgnoreCase))
+                    return false; // caller explicitly asked for the real computation, crash risk accepted
+
                 if (string.Equals(args[i], "-batchmode", System.StringComparison.OrdinalIgnoreCase))
-                    return true;
+                    batch = true;
             }
-            return false;
+            return batch;
         }
 
         private const string NativeMemoryOwner = nameof(HectonSandboxAbyssalShelfMapMagicNode);
@@ -51,6 +71,12 @@ namespace MapMagic.Nodes.MatrixGenerators
         /// keyed on values rather than being a one-shot bool.
         /// </summary>
         private static int _heightMismatchReportKey;
+
+        /// <summary>
+        /// Set once when the flat-0.5 batch stub has announced itself. Interlocked because Generate runs on
+        /// MapMagic worker threads and several tiles enter the stub branch concurrently.
+        /// </summary>
+        private static int _flatStubReported;
 
         // Vertical extent lives in ONE place: WorldVerticalExtentMath
         // (Scripts/World/WorldVerticalExtentContracts.cs). These initialisers were the de facto source of
@@ -275,8 +301,39 @@ namespace MapMagic.Nodes.MatrixGenerators
                 // L19 hop2 LIVE: ScheduleParallelFor(PresampleJob) has produced mono_jit_info_table AV
                 // under headless batch probes. Skip Unity job scheduling and emit a flat mid-shelf so
                 // MapMagic can continue without ParallelFor JIT on this path.
+                //
+                // THAT CLAIM DID NOT REPRODUCE. Measured 2026-08-11 on Unity 6000.5.0f1 by running this node
+                // under -batchmode with RealGeologyUnderBatchArg, which takes the else-branch below: both
+                // jobs scheduled and completed, the matrix came out with 3571.6 m of relief (normalised
+                // 0.212..0.807, std dev 975.5 m), the dump was written, and the log carried no Burst, no
+                // AtomicSafety and no mono_jit diagnostic anywhere before that point. Unity did crash - but
+                // AFTER "Input System module state changed to: Shutdown" and "force killed 1 workers", i.e.
+                // in teardown with job threads still alive, which is a different defect with a different fix
+                // (stop the work before Exit; the same crash was already fixed that way in
+                // GraphOutputRenderer.StopGenerationBeforeExit).
+                //
+                // The stub therefore costs the entire macro-geology field and buys protection against
+                // something that no longer happens on this editor. It stays default-on only until a caller
+                // audit confirms nothing else depends on the flat shelf, and it now announces itself so no
+                // further run can mistake 0.5 for terrain.
                 if (IsHeadlessBatchProbe())
                 {
+                    // SAY SO. This branch fabricates a flat seabed, and until now it did it in complete
+                    // silence: five separate diagnostic runs captured the constant, wrote healthy-looking
+                    // PNGs and reported success, and the defect was only found by dumping the matrix by
+                    // hand. A stub that cannot be seen in the log is indistinguishable from real output.
+                    // Reported once per process, not per tile - Generate runs per tile per LOD, which is
+                    // how an earlier warning here reached 52 lines a run and buried the log.
+                    if (System.Threading.Interlocked.Exchange(ref _flatStubReported, 1) == 0)
+                    {
+                        UnityEngine.Debug.LogWarning(
+                            "[HectonMacroGeology] STUB ACTIVE: -batchmode detected, so geology is NOT being " +
+                            "computed. The height matrix is filled with the constant 0.5 (a flat mid-shelf) " +
+                            "and any terrain, image or measurement produced by this run describes that " +
+                            "constant, not the world. Pass " + RealGeologyUnderBatchArg + " to compute the " +
+                            "real field. Reported once per process.");
+                    }
+
                     for (int i = 0; i < cellCount; i++)
                     {
                         rawHeights[i] = 0.5f;
