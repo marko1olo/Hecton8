@@ -89,20 +89,27 @@ public static class GraphOutputRenderer
     /// <summary>
     /// Wall-clock budget for MapMagic to finish generating.
     ///
-    /// RAISED from 300 s on 2026-08-11 after a run timed out with MapMagicObject present,
-    /// activeTerrains=9 and IsGenerating STILL true - i.e. the generator was alive and working, not
-    /// stuck, and 300 s was simply short. The graph runs the macro-geology node plus a surface
-    /// material node over nine 513-resolution tiles on editor worker threads, and the first run in a
-    /// cold editor also pays Burst compilation.
+    /// THE FIRST DIAGNOSIS HERE WAS WRONG AND IS KEPT SO IT IS NOT REPEATED. On 2026-08-11 a run
+    /// timed out at 300 s with MapMagicObject present, activeTerrains=9 and IsGenerating() still
+    /// true. That was read as "healthy work, budget too small" and the budget was raised to 1500 s.
+    /// The second run failed identically at 1500 s. The generator was never slow: the tool had set
+    /// tiles.generateInfinite = true, which is the streaming mode for a player walking through the
+    /// world, and it HAS NO FINISHED STATE. No budget can be large enough for a condition that never
+    /// becomes true, and the same failure repeating at 5x the budget was the evidence that the
+    /// quantity being waited on was the wrong one.
     ///
-    /// A timeout that fires on healthy work is worse than no timeout: it reports exit 4 next to a
-    /// half-written artifact set, and the natural reading is "generation is broken" when the true
-    /// statement is "the budget was too small". The budget stays finite so a genuinely wedged
-    /// generator still terminates the run rather than hanging batchmode forever.
+    /// Generation is bounded now (see the Refresh call site), so this budget guards a genuinely
+    /// wedged generator instead of defining the run's length. A timeout that fires on healthy work
+    /// still reports exit 4 next to a half-written artifact set, which reads as "generation is
+    /// broken" - so it stays generous.
     /// </summary>
     private const double TimeoutSeconds = 1500.0;
 
-    /// <summary>MapMagic needs a settling window before <c>IsGenerating()</c> is trustworthy.</summary>
+    /// <summary>
+    /// Floor on elapsed time before quiet frames are counted at all, so a cold editor cannot report
+    /// "settled" during the gap before MapMagic has queued its first tile. Silence before the work
+    /// starts looks exactly like silence after it ends.
+    /// </summary>
     private const double SettleSeconds = 15.0;
 
     private const float WorldCenterX = 4000f;
@@ -205,6 +212,63 @@ public static class GraphOutputRenderer
 
     private static double startTime = 0;
 
+    /// <summary>
+    /// Consecutive editor frames on which MapMagic has looked finished AND the terrain has looked
+    /// complete. Reset to zero the moment either check fails.
+    ///
+    /// A SINGLE sample of !IsGenerating() is not a completion signal. MapMagic hands work to its own
+    /// ThreadManager pool and re-queues between tiles and between draft and main LODs, so there are
+    /// windows - sometimes several frames wide - where nothing is in flight and generation is very
+    /// much not over. Sampling once inside such a window renders half-built terrain and reports
+    /// success. AGENTS.md:130 states the protocol this implements: poll via EditorApplication.update
+    /// and require 200+ frames of complete silence before capturing.
+    /// </summary>
+    private static int stableFrames = 0;
+
+    /// <summary>AGENTS.md:130 - "at least 200+ frames of complete silence".</summary>
+    private const int RequiredStableFrames = 220;
+
+    /// <summary>
+    /// Brings MapMagic to a halt before the editor is allowed to exit.
+    ///
+    /// WHY THIS EXISTS. Exiting with worker threads alive is how the previous revision died: the run
+    /// finished its own work, called EditorApplication.Exit, and Unity tore down the scripting
+    /// runtime underneath MapMagic's pool. Measured 2026-08-11 - fifteen consecutive
+    /// "Thread shouldn't be running anymore" assertions, then "m_TaskStackToDelete.empty()", then
+    /// "Setting up scripting invocation from unattached thread", then Crash. A crash during teardown
+    /// is especially bad here because it happens AFTER the artifacts are written, so the images look
+    /// complete while the exit code says the run died.
+    ///
+    /// tile.Stop() is what MapMagicObject.StopGenerate does internally; that method is private, but
+    /// tiles.All() and TerrainTile.Stop() are both public, so the same shutdown is reproduced here
+    /// rather than reflected into.
+    /// </summary>
+    private static void StopGenerationBeforeExit(MapMagicObject mmObject)
+    {
+        if (mmObject == null)
+            return;
+
+        try
+        {
+            foreach (MapMagic.Terrains.TerrainTile tile in mmObject.tiles.All())
+                tile.Stop();
+
+            // Give the pool a moment to observe the stop tokens. Purely a courtesy window: the exit
+            // proceeds regardless, because hanging batchmode forever is worse than a teardown warning.
+            double until = EditorApplication.timeSinceStartup + 5.0;
+            while (mmObject.IsGenerating() && EditorApplication.timeSinceStartup < until)
+                System.Threading.Thread.Sleep(50);
+
+            Debug.Log(
+                $"[{ToolName}] generation stopped before exit. IsGenerating={mmObject.IsGenerating()}.");
+        }
+        catch (Exception ex)
+        {
+            // Never let shutdown bookkeeping mask the run's real outcome.
+            Debug.LogWarning($"[{ToolName}] could not cleanly stop MapMagic before exit: {ex.Message}");
+        }
+    }
+
     private static void CheckGeneration()
     {
         if (startTime == 0) startTime = EditorApplication.timeSinceStartup;
@@ -221,7 +285,9 @@ public static class GraphOutputRenderer
                 $"slope images were never rendered to {OutputDir}. " +
                 $"MapMagicObject={(mmTimeout == null ? "MISSING" : "present")}, " +
                 $"IsGenerating={(mmTimeout == null ? "n/a" : mmTimeout.IsGenerating().ToString())}, " +
-                $"activeTerrains={UnityEngine.Terrain.activeTerrains.Length}.");
+                $"activeTerrains={UnityEngine.Terrain.activeTerrains.Length}, " +
+                $"stableFrames={stableFrames}/{RequiredStableFrames}.");
+            StopGenerationBeforeExit(mmTimeout);
             EditorApplication.Exit(4);
             return;
         }
@@ -229,14 +295,29 @@ public static class GraphOutputRenderer
         var mmObject = UnityEngine.Object.FindAnyObjectByType<MapMagicObject>();
         if (mmObject == null) return;
 
-        bool isGenerating = mmObject.IsGenerating();
-        bool hasTerrain = UnityEngine.Terrain.activeTerrains.Length > 0;
+        // Terrain must be present AND carry real data. A Terrain whose terrainData is null, or whose
+        // heightmap has not been applied, is an object in the scene and nothing more - counting it
+        // is how a run captures an empty world and calls it a measurement.
+        bool terrainReady = UnityEngine.Terrain.activeTerrains.Length > 0;
+        foreach (UnityEngine.Terrain t in UnityEngine.Terrain.activeTerrains)
+        {
+            if (t.terrainData == null || t.terrainData.heightmapResolution <= 0)
+            {
+                terrainReady = false;
+                break;
+            }
+        }
 
-        if (!isGenerating && hasTerrain && elapsed > SettleSeconds)
+        bool quiet = !mmObject.IsGenerating() && terrainReady && elapsed > SettleSeconds;
+        stableFrames = quiet ? stableFrames + 1 : 0;
+
+        if (stableFrames < RequiredStableFrames)
+            return;
+
         {
             Debug.Log(
-                $"[{ToolName}] generation settled after {elapsed:F1}s with " +
-                $"{UnityEngine.Terrain.activeTerrains.Length} active Terrains. Rendering graph output...");
+                $"[{ToolName}] generation settled after {elapsed:F1}s and {stableFrames} consecutive quiet " +
+                $"frames with {UnityEngine.Terrain.activeTerrains.Length} active Terrains. Rendering graph output...");
             EditorApplication.update -= CheckGeneration;
 
             bool ok;
@@ -253,6 +334,7 @@ public static class GraphOutputRenderer
                 Debug.LogError(
                     $"[{ToolName}] FAILED: the B_graph_* images were not produced in {OutputDir}. " +
                     $"{VerifiedArtifacts.Count} of {ExpectedArtifactCount} images had been verified when this threw. {ex}");
+                StopGenerationBeforeExit(mmObject);
                 EditorApplication.Exit(2);
                 return;
             }
@@ -262,6 +344,7 @@ public static class GraphOutputRenderer
                 Debug.LogError(
                     $"[{ToolName}] FAILED: graph-output rendering refused to produce an artifact (reason logged " +
                     $"above). {VerifiedArtifacts.Count} of {ExpectedArtifactCount} images verified in {OutputDir}.");
+                StopGenerationBeforeExit(mmObject);
                 EditorApplication.Exit(2);
                 return;
             }
@@ -272,6 +355,7 @@ public static class GraphOutputRenderer
                     $"[{ToolName}] FAILED: only {VerifiedArtifacts.Count} of {ExpectedArtifactCount} images were " +
                     $"written and verified in {OutputDir}, so the raw-vs-graph comparison is incomplete. " +
                     $"Have: {string.Join(" | ", VerifiedArtifacts)}");
+                StopGenerationBeforeExit(mmObject);
                 EditorApplication.Exit(2);
                 return;
             }
@@ -290,6 +374,7 @@ public static class GraphOutputRenderer
                     $"[{ToolName}] FAILED: all {ExpectedArtifactCount} images were verified in {OutputDir} but the " +
                     $"provenance record at {ProvenancePath} could not be written, so nothing records what those " +
                     $"images measure or that a real GPU produced them. Treat the PNGs as unattributed. {ex}");
+                StopGenerationBeforeExit(mmObject);
                 EditorApplication.Exit(2);
                 return;
             }
@@ -297,6 +382,7 @@ public static class GraphOutputRenderer
             Debug.Log(
                 $"[{ToolName}] wrote and verified all {ExpectedArtifactCount} images in {OutputDir}. " +
                 $"Provenance: {ProvenancePath}");
+            StopGenerationBeforeExit(mmObject);
             EditorApplication.Exit(0);
         }
     }
