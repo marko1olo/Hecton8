@@ -86,7 +86,21 @@ public static class GraphOutputRenderer
     /// </summary>
     private const float FlatEpsilonMeters = 1e-6f;
 
-    private const double TimeoutSeconds = 300.0;
+    /// <summary>
+    /// Wall-clock budget for MapMagic to finish generating.
+    ///
+    /// RAISED from 300 s on 2026-08-11 after a run timed out with MapMagicObject present,
+    /// activeTerrains=9 and IsGenerating STILL true - i.e. the generator was alive and working, not
+    /// stuck, and 300 s was simply short. The graph runs the macro-geology node plus a surface
+    /// material node over nine 513-resolution tiles on editor worker threads, and the first run in a
+    /// cold editor also pays Burst compilation.
+    ///
+    /// A timeout that fires on healthy work is worse than no timeout: it reports exit 4 next to a
+    /// half-written artifact set, and the natural reading is "generation is broken" when the true
+    /// statement is "the budget was too small". The budget stays finite so a genuinely wedged
+    /// generator still terminates the run rather than hanging batchmode forever.
+    /// </summary>
+    private const double TimeoutSeconds = 1500.0;
 
     /// <summary>MapMagic needs a settling window before <c>IsGenerating()</c> is trustworthy.</summary>
     private const double SettleSeconds = 15.0;
