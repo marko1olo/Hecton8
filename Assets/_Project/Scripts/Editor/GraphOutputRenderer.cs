@@ -145,6 +145,8 @@ public static class GraphOutputRenderer
         // Static state survives an -executeMethod invocation inside a warm editor; reset it so a second
         // run cannot inherit the first run's clock or artifact list.
         startTime = 0;
+        stableFrames = 0;
+        lastHeartbeat = 0;
         VerifiedArtifacts.Clear();
         RenderNotes.Clear();
 
@@ -196,6 +198,12 @@ public static class GraphOutputRenderer
             mmObject.tiles.generateInfinite = false;
             mmObject.Refresh(true);
 
+            Debug.Log(
+                $"[{ToolName}] phase A complete ({VerifiedArtifacts.Count} raw-field images). Scene opened, " +
+                $"bounded generation requested at ({WorldCenterX}, {WorldCenterZ}). Now waiting for " +
+                $"{RequiredStableFrames} consecutive quiet frames, budget {TimeoutSeconds:F0}s. " +
+                "Progress is reported every " + HeartbeatSeconds.ToString("F0") + "s below.");
+
             // -= first: a second -executeMethod invocation inside a warm editor would otherwise register the
             // same delegate twice and run the render (and Exit) twice.
             EditorApplication.update -= CheckGeneration;
@@ -227,6 +235,19 @@ public static class GraphOutputRenderer
 
     /// <summary>AGENTS.md:130 - "at least 200+ frames of complete silence".</summary>
     private const int RequiredStableFrames = 220;
+
+    /// <summary>
+    /// How often the wait reports what it is looking at.
+    ///
+    /// The previous revision logged NOTHING between the phase A images and either settling or the
+    /// timeout, so a run that was killed externally, a run still generating healthily, and a run
+    /// waiting on a condition that can never become true all produced the identical log: phase A
+    /// artifacts, then silence. That is how the infinite-generation defect survived two 25-minute
+    /// runs before being identified. An unobservable wait is not a measurement.
+    /// </summary>
+    private const double HeartbeatSeconds = 30.0;
+
+    private static double lastHeartbeat = 0;
 
     /// <summary>
     /// Brings MapMagic to a halt before the editor is allowed to exit.
@@ -308,8 +329,18 @@ public static class GraphOutputRenderer
             }
         }
 
-        bool quiet = !mmObject.IsGenerating() && terrainReady && elapsed > SettleSeconds;
+        bool isGenerating = mmObject.IsGenerating();
+        bool quiet = !isGenerating && terrainReady && elapsed > SettleSeconds;
         stableFrames = quiet ? stableFrames + 1 : 0;
+
+        if (elapsed - lastHeartbeat >= HeartbeatSeconds)
+        {
+            lastHeartbeat = elapsed;
+            Debug.Log(
+                $"[{ToolName}] waiting: {elapsed:F0}s elapsed, IsGenerating={isGenerating}, " +
+                $"activeTerrains={UnityEngine.Terrain.activeTerrains.Length}, terrainReady={terrainReady}, " +
+                $"quietFrames={stableFrames}/{RequiredStableFrames}.");
+        }
 
         if (stableFrames < RequiredStableFrames)
             return;
