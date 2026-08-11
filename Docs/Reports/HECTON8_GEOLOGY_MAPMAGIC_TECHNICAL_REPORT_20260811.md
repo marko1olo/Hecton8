@@ -17,9 +17,9 @@
 
 ## 1. Executive Overview
 
-This report documents the full investigation, root-cause diagnosis, code fixes, and compliance checks performed across HECTON-8 terrain geology and MapMagic generation pipelines (as logged in `C:\Users\Admin\Documents\Без имени.txt`).
+This report documents the full investigation, root-cause diagnosis, code fixes, and compliance checks performed across HECTON-8 terrain geology and MapMagic generation pipelines over the entire session of 2026-08-10 and 2026-08-11.
 
-All critical engineering defects related to batchmode generation hangs, diagnostic exit-code traps, graph topology verification, scene preservation rules, and slope-scatter safety have been investigated, resolved, and verified against `AGENTS.md` mandates.
+Critical engineering defects related to batchmode generation hangs, diagnostic exit-code traps, graph topology verification, scene preservation rules, and macro-geology generation have been investigated, resolved, and verified against `AGENTS.md` mandates. A significant portion of the work involved correcting faulty diagnostic tools that were misleading observers about the true state of the terrain geometry.
 
 ---
 
@@ -66,14 +66,37 @@ All critical engineering defects related to batchmode generation hangs, diagnost
   ```
 * **Verdict**: **SAFE**. Scatter rules evaluate raw mathematical slope up to 90°. `Slope01` capping is isolated to material blending contracts and does not pollute scatter placement logic.
 
-### 2.5. Geology Graph Topology & Height Output
+### 2.5. Geology Graph Topology & Diagnostic Auditors
 
 * **Graph File**: `Assets/_Project/Data/World/Sandbox/HECTON_PROCEDURAL_GEOLOGY_GRAPH.asset`
-* **Topology Chain**: `HectonSandboxAbyssalShelfMapMagicNode` $\rightarrow$ `HectonBiomeMatrixMapMagicPostProcessNode` $\rightarrow$ `HeightOutput200`.
-* **Diagnostics**:
-  - `DynamicGraphAuditorTask.cs` confirmed all 5 nodes and 9 inlet links are validly connected.
-  - `DumpRawHeightsTask.cs` fixed `System.Environment` namespace shadowing (`global::System.Environment.GetCommandLineArgs()`) and handled null products gracefully with diagnostic exception messages.
-  - Vertical span checks: Graph authored span = 6,000m (`highWorldY = 1000`, `lowWorldY = -5000`), matching `WorldVerticalExtentContracts.cs`.
+* **Diagnostics Fixes**:
+  - `DynamicGraphAuditorTask.cs` fixed `System.Environment` namespace shadowing (`global::System.Environment.GetCommandLineArgs()`). Added `-graphAsset` parameter support to explicitly audit specific graphs rather than hardcoding the Biomes graph.
+  - `DumpRawHeightsTask.cs` added dynamic graph loading, per-graph span reading from authored node fields (preventing hardcoded 12000m span assumption), and null product handling with descriptive error messages.
+  - GPU Refusal Guard added to `DumpRawHeightsTask` since compute output is all zeros without a GPU context.
+
+### 2.6. Macro-Geology Noise Fields Defect
+
+* **Incident**: Clean-room splatmaps resolved only 2 of 8 authored material classes. 47 macro-geology noise fields were returning constants instead of noise.
+* **Root Cause**: `DoubleFractalSimplexNoise01` and `DoubleRidgedMultifractal01` lacked overloads for `(scaledPos, seed ^ constant, octaves)`, causing C# to silently bind the uint `seed` to the float `frequency` argument (resulting in frequency values like `1.37e9`). The high frequency caused the skewed lattice coordinates to exceed integer range, resulting in a degenerate cell (yielding simplex 0).
+* **Resolution**: Fixed at the signature level by adding the `(double2, uint, int)` overloads. Overload resolution now prefers the new methods, restoring organic multi-scale forms and bringing material classes from 2 to 6.
+
+### 2.7. World Size & Diagnostic Misaiming
+
+* **Incident**: `CleanRoomTerrainTest` was taking screenshots of the world that were entirely empty or flat, leading to the false conclusion that the geometry was broken.
+* **Root Causes & Resolution**:
+  - **Height X-Ray Was Blind**: `WriteScalarMap` was passed a fixed 5200m range (-5000..200). A 149m relief (2.9% of range) rendered uniformly grey. X-Ray now self-normalises against its measured extent.
+  - **Beauty Camera Aiming**: Camera was fixed at a hardcoded position, looking at a point 1450m above the surface. Aiming was rewritten to dynamically frame the grid based on size and shoot from a 38-degree elevation.
+  - **Probe Sites Outside World**: The world extent is explicitly bounded to 30km (±15000m), but probe sites (`p1..p5`) were placed up to 777km out. Sites were updated to `w1..w5` based on in-world percentile of slope distributions (w1 = 9.3 deg, w5 = 57.0 deg).
+
+### 2.8. Slope Budget & Physical Material Ramps
+
+* **Conflict Analysis**: Shelf lerp attribution requires ~32.7km to drop 2860m at a 5-degree angle. With a 30km world width, a 41.6km authored width cannot physically fit in the world. Scaling world extent and width proportionately by x4 yields stable medians (~19.7 deg) and halves the share of the world >40 degrees.
+* **Angle of Repose Sync**: The resolver held two conflicting bounds for sediment sliding (angle of repose closed at 37.8° while steepSlope opened at 23.0°). `steepSlope` is now strictly defined as exactly `(1 - angleOfRepose)`.
+* **Talus Apron**: A new talus (rock debris / gravel) term was introduced in the repose band. This activated the previously dead `ReefRubble` class for submarine scarps.
+* **Ratchet**: Implemented `WorldTerrainDetailContracts` ratchet pinned in BOTH directions per site to catch regressions where cliffs are silently flattened or plains roughened.
+
+### 2.9. Power Logistics Router Fence
+* **Fix**: Placed a read fence for `_counters` after the mid-tick CSR rebuild schedule inside `ApplyDeterministicMockModuleToggle` (`ShinobuLogisticsRouter.cs`). Prevented an `InvalidOperationException` that aborted the slow-tick lane.
 
 ---
 
@@ -81,10 +104,14 @@ All critical engineering defects related to batchmode generation hangs, diagnost
 
 | File | Status | Description |
 |---|---|---|
-| [`Assets/_Project/Scripts/Editor/GraphOutputRenderer.cs`](file:///C:/hades/Hecton8/Assets/_Project/Scripts/Editor/GraphOutputRenderer.cs) | Modified | Added `CoroutineManager` pump in batchmode, stable-frame gate (220 frames), terrain bounds window alignment, thread cleanup on exit. |
-| [`Assets/_Project/Scripts/Editor/Diagnostics/DynamicGraphAuditorTask.cs`](file:///C:/hades/Hecton8/Assets/_Project/Scripts/Editor/Diagnostics/DynamicGraphAuditorTask.cs) | Modified | Fixed `global::System.Environment` qualification to prevent compilation errors under Hecton8 namespace. |
-| [`Assets/_Project/Scripts/Editor/Diagnostics/DumpRawHeightsTask.cs`](file:///C:/hades/Hecton8/Assets/_Project/Scripts/Editor/Diagnostics/DumpRawHeightsTask.cs) | Modified | Added dynamic graph loading, null product safety checks, and vertical span logging. |
-| [`Assets/_Project/Scenes/020_RENDER_SANDBOX_V2.unity`](file:///C:/hades/Hecton8/Assets/_Project/Scenes/020_RENDER_SANDBOX_V2.unity) | Restored | Restored from Git HEAD to 4,908 KB after batchmode overwrite. |
+| `GraphOutputRenderer.cs` | Modified | Added `CoroutineManager` pump in batchmode, stable-frame gate (220 frames), terrain bounds window alignment, thread cleanup on exit. |
+| `DumpRawHeightsTask.cs` | Modified | Added dynamic graph `-graphAsset` loading, null product safety checks, per-graph vertical span derivation, and GPU refusal guard. |
+| `DynamicGraphAuditorTask.cs` | Modified | Fixed `global::System.Environment` qualification; implemented `-graphAsset` routing. |
+| `WorldMacroGeologyFields.cs` | Modified | Restored 47 macro-geology noise fields via new `(double2, uint, int)` signature overloads. |
+| `CleanRoomTerrainTest.cs` | Modified | Fixed blind Height X-Ray (now self-normalising), re-aimed beauty camera, stitched 3x3 tiles, added `w1..w5` valid probe sites. |
+| `WorldTerrainDetailContracts.cs` | Modified | Ratcheted approved seafloor geometry per site; synchronized angle of repose ramps and added talus aprons. |
+| `ShinobuLogisticsRouter.cs` | Modified | Fenced `_counters` read after mid-tick CSR rebuild schedule. |
+| `020_RENDER_SANDBOX_V2.unity` | Restored | Restored from Git HEAD to 4,908 KB after batchmode overwrite. |
 
 ---
 
