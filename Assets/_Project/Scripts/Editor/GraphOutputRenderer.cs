@@ -448,6 +448,22 @@ public static class GraphOutputRenderer
                 $"frames with {UnityEngine.Terrain.activeTerrains.Length} active Terrains. Rendering graph output...");
             EditorApplication.update -= CheckGeneration;
 
+            // Where the tiles actually are, logged BEFORE any sampling. "Settled with 9 active Terrains"
+            // says work finished, not that it finished anywhere near the window this tool captures - the
+            // first successful settle immediately missed all 1048576 samples, and the log up to that point
+            // read like a clean success. One line here turns the next such run into a known coordinate
+            // problem instead of a mystery.
+            foreach (UnityEngine.Terrain t in UnityEngine.Terrain.activeTerrains)
+            {
+                if (t.terrainData == null) continue;
+                Vector3 origin = t.transform.position;
+                Vector3 tSize = t.terrainData.size;
+                Debug.Log(
+                    $"[{ToolName}] terrain '{t.name}': x[{origin.x:F1}..{origin.x + tSize.x:F1}] " +
+                    $"z[{origin.z:F1}..{origin.z + tSize.z:F1}] height {tSize.y:F1} m, " +
+                    $"heightmapRes={t.terrainData.heightmapResolution}.");
+            }
+
             bool ok;
             try
             {
@@ -612,13 +628,30 @@ public static class GraphOutputRenderer
             // both of which render as entirely plausible terrain. Refuse rather than fabricate.
             if (missCount > 0)
             {
+                // Name WHERE the terrain actually is. The first revision of this message said "move the
+                // window inside the generated area" without saying where that area was, which is an
+                // instruction to go and guess - and the guess is a 25-minute run per attempt. The union of
+                // the active Terrain bounds is the answer, so it gets measured and printed.
+                float minX = float.PositiveInfinity, maxX = float.NegativeInfinity;
+                float minZ = float.PositiveInfinity, maxZ = float.NegativeInfinity;
+                foreach (UnityEngine.Terrain t in UnityEngine.Terrain.activeTerrains)
+                {
+                    if (t.terrainData == null) continue;
+                    Vector3 origin = t.transform.position;
+                    Vector3 tSize = t.terrainData.size;
+                    minX = Mathf.Min(minX, origin.x); maxX = Mathf.Max(maxX, origin.x + tSize.x);
+                    minZ = Mathf.Min(minZ, origin.z); maxZ = Mathf.Max(maxZ, origin.z + tSize.z);
+                }
+
                 Debug.LogError(
                     $"[{ToolName}] FAILED: {missCount} of {(long)res * res} samples of the {size} m window at " +
                     $"({cx}, {cz}) fell outside every active Terrain (first miss at " +
                     $"({firstMissX:F2}, {firstMissZ:F2})). The old code substituted -4000 m there, which draws a " +
                     $"fabricated abyssal plain or cliff into an image a human reads as a measurement, so nothing " +
-                    $"was written for {prefix}. {UnityEngine.Terrain.activeTerrains.Length} Terrains are active - " +
-                    $"raise MapMagicObject.tiles.generateRange or move the window inside the generated area.");
+                    $"was written for {prefix}. {UnityEngine.Terrain.activeTerrains.Length} Terrains are active, " +
+                    $"covering x[{minX:F1}..{maxX:F1}] z[{minZ:F1}..{maxZ:F1}], centred on " +
+                    $"({(minX + maxX) * 0.5f:F1}, {(minZ + maxZ) * 0.5f:F1}) - point the window there, or raise " +
+                    "MapMagicObject.tiles.generateRange to cover the window that was asked for.");
                 return false;
             }
 
