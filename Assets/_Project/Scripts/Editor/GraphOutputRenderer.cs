@@ -173,8 +173,20 @@ public static class GraphOutputRenderer
             viewer.tag = "MainCamera";
             viewer.AddComponent<Camera>();
 
-            mmObject.tiles.generateInfinite = true;
-            mmObject.tiles.generateRange = 2; // Enough to cover a few tiles
+            // BOUNDED generation, not infinite.
+            //
+            // This used to set tiles.generateInfinite = true with generateRange = 2, which is the
+            // mode for a player walking around a streaming world: MapMagic keeps pinning and
+            // generating new tiles around the viewer and there is no state in which it is finished.
+            // Measured 2026-08-11, twice: IsGenerating() stayed true for the whole budget - 300 s on
+            // the first run and 1500 s on the second - with MapMagicObject present and 9 active
+            // Terrains the entire time. Nothing was wedged and nothing was slow; the run was simply
+            // waiting for a completion condition that infinite generation never reaches.
+            //
+            // Raising the timeout was the wrong response to the first failure and it is recorded
+            // here so it is not tried a third time. A capture needs a FIXED set of tiles: the scene
+            // already carries them, so generation is bounded and IsGenerating() can actually fall.
+            mmObject.tiles.generateInfinite = false;
             mmObject.Refresh(true);
 
             // -= first: a second -executeMethod invocation inside a warm editor would otherwise register the
