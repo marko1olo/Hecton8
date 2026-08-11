@@ -115,8 +115,27 @@ public static class GraphOutputRenderer
     /// </summary>
     private const double SettleSeconds = 15.0;
 
-    private const float WorldCenterX = 4000f;
-    private const float WorldCenterZ = 4000f;
+    /// <summary>
+    /// The point both phases capture, in world metres.
+    ///
+    /// ONE constant deliberately drives phase A (raw macro field) and phase B (MapMagic output): the
+    /// entire deliverable is a pixel-for-pixel comparison, and two windows aimed at different places
+    /// would produce two plausible images of two different pieces of seabed with nothing to say about
+    /// the graph.
+    ///
+    /// WAS (4000, 4000), WHICH MEASURED NOTHING IN PHASE B. Measured 2026-08-11 once the settle bug was
+    /// fixed: the sandbox scene carries 9 tiles of 500 m arranged around the ORIGIN, covering
+    /// x[-500..1000] z[-500..1000], centred on (250, 250). All 1048576 samples of a 1024 m window at
+    /// (4000, 4000) therefore fell outside every Terrain - it sits ~3.5 km past the far edge. Moving the
+    /// Viewer object there does not drag the tiles along, because generation is bounded (see the Refresh
+    /// call site): the tile set comes from the scene, not from the camera.
+    ///
+    /// Phase A does not care - it samples the procedural field analytically and is valid anywhere - which
+    /// is exactly why this was invisible for five runs: phase A produced four healthy images of real
+    /// relief every single time while phase B was pointed at empty space.
+    /// </summary>
+    private const float WorldCenterX = 250f;
+    private const float WorldCenterZ = 250f;
     private const int Resolution = 1024;
 
     /// <summary>Every artifact this run verified on disk, with its byte size. Feeds the provenance file.</summary>
