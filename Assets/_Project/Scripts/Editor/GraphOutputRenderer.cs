@@ -89,19 +89,22 @@ public static class GraphOutputRenderer
     /// <summary>
     /// Wall-clock budget for MapMagic to finish generating.
     ///
-    /// THE FIRST DIAGNOSIS HERE WAS WRONG AND IS KEPT SO IT IS NOT REPEATED. On 2026-08-11 a run
-    /// timed out at 300 s with MapMagicObject present, activeTerrains=9 and IsGenerating() still
-    /// true. That was read as "healthy work, budget too small" and the budget was raised to 1500 s.
-    /// The second run failed identically at 1500 s. The generator was never slow: the tool had set
-    /// tiles.generateInfinite = true, which is the streaming mode for a player walking through the
-    /// world, and it HAS NO FINISHED STATE. No budget can be large enough for a condition that never
-    /// becomes true, and the same failure repeating at 5x the budget was the evidence that the
-    /// quantity being waited on was the wrong one.
+    /// TWO WRONG DIAGNOSES ARE KEPT HERE SO THEY ARE NOT REPEATED, because both of them looked
+    /// exactly like "the generator is slow" and neither of them was.
     ///
-    /// Generation is bounded now (see the Refresh call site), so this budget guards a genuinely
-    /// wedged generator instead of defining the run's length. A timeout that fires on healthy work
-    /// still reports exit 4 next to a half-written artifact set, which reads as "generation is
-    /// broken" - so it stays generous.
+    /// (1) "The budget is too small." A run timed out at 300 s with MapMagicObject present,
+    /// activeTerrains=9 and IsGenerating() still true, so the budget was raised to 1500 s. The
+    /// second run failed identically at 1500 s. The same failure repeating at 5x the budget is
+    /// evidence about the CONDITION, not the clock.
+    ///
+    /// (2) "tiles.generateInfinite = true has no finished state." True in itself - that is the
+    /// streaming mode for a player walking through the world - but it was not what held this run.
+    /// Measured with generateInfinite = false: IsGenerating() was still true continuously at 518 s.
+    /// The fix refuted itself, which is what pointed at the real cause.
+    ///
+    /// The actual cause is recorded at the PumpApplyQueue call site: apply never ran, so applyReady
+    /// never became true, so IsGenerating() could never fall - in any generation mode, at any budget.
+    /// This constant guards a genuinely wedged generator; it has never once been the fix.
     /// </summary>
     private const double TimeoutSeconds = 1500.0;
 
@@ -195,7 +198,30 @@ public static class GraphOutputRenderer
             // Raising the timeout was the wrong response to the first failure and it is recorded
             // here so it is not tried a third time. A capture needs a FIXED set of tiles: the scene
             // already carries them, so generation is bounded and IsGenerating() can actually fall.
+            //
+            // NOT SUFFICIENT ON ITS OWN, and that matters: with generateInfinite = false the very
+            // next run still showed IsGenerating=True continuously to 518 s. See PumpApplyQueue for
+            // what was actually holding it. Bounding stays because a capture of a moving tile set is
+            // not a measurement, not because it fixed the hang.
             mmObject.tiles.generateInfinite = false;
+
+            // CPU apply path, chosen because a GPU one is unavailable here BY CONSTRUCTION.
+            //
+            // globals.heightMainApply defaults to TextureToHeightmap, which applies height via
+            // Graphics.Blit into a RenderTexture and CopyActiveRenderTextureToHeightmap. That path is
+            // exactly what someone was working around when they added the batchmode early-return in
+            // MapMagicObject.Update (commit 3a525ee449: "CopyActiveRenderTextureToHeightmap mono
+            // fatal after STARTERGRANT"). Re-enabling the apply pump without moving off that path
+            // would walk this run straight back into the crash that guard was hiding.
+            //
+            // SetHeights is pure CPU - matrix.ExportHeights into a float[,] and TerrainData.SetHeights
+            // (HeightOut.cs:148-153). Slower, and it does not stream in splits, but this tool captures
+            // a fixed tile set once and then exits; there is no frame budget to protect. Draft already
+            // defaults to SetHeights, so only main moves. In-memory on the component, like everything
+            // else this tool touches - the asset on disk keeps TextureToHeightmap for real play.
+            mmObject.globals.heightMainApply =
+                MapMagic.Nodes.MatrixGenerators.HeightOutput200.ApplyType.SetHeights;
+
             mmObject.Refresh(true);
 
             Debug.Log(
@@ -214,6 +240,11 @@ public static class GraphOutputRenderer
             Debug.LogError(
                 $"[{ToolName}] FAILED: the raw-vs-graph comparison was not produced in {OutputDir}. " +
                 $"{VerifiedArtifacts.Count} of {ExpectedArtifactCount} images had been verified when this threw. {ex}");
+
+            // Exiting from here can also strand live threads: Refresh(true) may already have started
+            // generation before whatever threw. FindAnyObjectByType again rather than reusing the local,
+            // because the throw may have come from the lines that produce it.
+            StopGenerationBeforeExit(UnityEngine.Object.FindAnyObjectByType<MapMagicObject>(FindObjectsInactive.Include));
             EditorApplication.Exit(2);
         }
     }
@@ -250,6 +281,50 @@ public static class GraphOutputRenderer
     private static double lastHeartbeat = 0;
 
     /// <summary>
+    /// Drives MapMagic's apply queue, which nothing else drives in this process.
+    ///
+    /// THIS IS THE FIX FOR THE HANG, and the reason four runs measured nothing. The chain:
+    ///
+    ///   TerrainTile.cs:765,770 - when a tile finishes generating it does NOT apply inline. It
+    ///     enqueues ApplyNow / ApplyRoutine onto Den.Tools.Tasks.CoroutineManager.
+    ///   TerrainTile.cs:791,848 - det.applyReady = true is set ONLY inside those two coroutines.
+    ///   TerrainTile.cs:899 - IsGenerating is `generateStarted && !applyReady`. It reports on the
+    ///     APPLY phase, not on the compute phase.
+    ///   MapMagicObject.cs:160 - a local patch in the vendored asset returns from Update() early
+    ///     `if (Application.isBatchMode)`, BEFORE its CoroutineManager.Update() call on the next line.
+    ///
+    /// So in batchmode the queue is never pumped, apply never runs, applyReady stays false forever,
+    /// and IsGenerating() cannot fall no matter how the generator is configured or how long the run
+    /// waits. That is a precise match for all four measured runs: generateInfinite=true at 300 s and
+    /// at 1500 s, and generateInfinite=false at 518 s, every one of them with IsGenerating=True,
+    /// activeTerrains=9 and terrainReady=True. The compute side was healthy the whole time.
+    ///
+    /// The patch is not removed. It was added deliberately (commit 3a525ee449) to dodge a fatal in
+    /// CopyActiveRenderTextureToHeightmap, and editing a vendored asset to fix our own tool is how
+    /// the next MapMagic update silently reverts this. Instead the queue is pumped from here and the
+    /// apply path is moved off the GPU at the Refresh call site, so the crash that guard hides is
+    /// never reached.
+    ///
+    /// Precedent for calling the pump by hand: Diagnostics/HeadlessRunAll.cs:76 already does it, but
+    /// once, to flush a teardown - not per frame.
+    /// </summary>
+    private static void PumpApplyQueue()
+    {
+        try
+        {
+            Den.Tools.Tasks.CoroutineManager.Update();
+        }
+        catch (Exception ex)
+        {
+            // A throwing pump must not be swallowed into a timeout 1500 s later. CoroutineManager
+            // catches per-task exceptions itself, so reaching here means the pump loop broke.
+            Debug.LogError(
+                $"[{ToolName}] the MapMagic apply queue pump threw, so applyReady can no longer be " +
+                $"reached and this run will time out rather than settle. {ex}");
+        }
+    }
+
+    /// <summary>
     /// Brings MapMagic to a halt before the editor is allowed to exit.
     ///
     /// WHY THIS EXISTS. Exiting with worker threads alive is how the previous revision died: the run
@@ -276,9 +351,17 @@ public static class GraphOutputRenderer
 
             // Give the pool a moment to observe the stop tokens. Purely a courtesy window: the exit
             // proceeds regardless, because hanging batchmode forever is worse than a teardown warning.
+            //
+            // The pump belongs INSIDE this loop. Stop tokens are observed by the apply coroutines, and
+            // in batchmode nothing else advances them (see PumpApplyQueue), so without this the loop is
+            // a plain five-second sleep that reports "IsGenerating=True" at the end of it and leaves
+            // exactly the live threads this method exists to prevent.
             double until = EditorApplication.timeSinceStartup + 5.0;
             while (mmObject.IsGenerating() && EditorApplication.timeSinceStartup < until)
+            {
+                PumpApplyQueue();
                 System.Threading.Thread.Sleep(50);
+            }
 
             Debug.Log(
                 $"[{ToolName}] generation stopped before exit. IsGenerating={mmObject.IsGenerating()}.");
@@ -295,6 +378,12 @@ public static class GraphOutputRenderer
         if (startTime == 0) startTime = EditorApplication.timeSinceStartup;
 
         double elapsed = EditorApplication.timeSinceStartup - startTime;
+
+        // BEFORE the timeout check, and before anything reads IsGenerating(). Nothing else in this
+        // process advances MapMagic's apply queue - see PumpApplyQueue. Pumping after the timeout
+        // check would still work, but pumping before it means a run that is one apply step from
+        // finishing takes that step instead of being declared wedged.
+        PumpApplyQueue();
 
         if (elapsed > TimeoutSeconds)
         {
@@ -336,9 +425,17 @@ public static class GraphOutputRenderer
         if (elapsed - lastHeartbeat >= HeartbeatSeconds)
         {
             lastHeartbeat = elapsed;
+
+            // The queue counters are the whole diagnosis, not decoration. IsGenerating=True with an
+            // EMPTY coroutine queue and no threads working means apply was never enqueued or the pump
+            // is not reaching it - the defect that cost four runs. IsGenerating=True with a NON-empty
+            // queue means apply is genuinely in flight and the run should be left alone. Those two
+            // states produced identical log lines before, which is why the first was read as the second.
             Debug.Log(
                 $"[{ToolName}] waiting: {elapsed:F0}s elapsed, IsGenerating={isGenerating}, " +
                 $"activeTerrains={UnityEngine.Terrain.activeTerrains.Length}, terrainReady={terrainReady}, " +
+                $"coroutinesWorking={Den.Tools.Tasks.CoroutineManager.IsWorking}, " +
+                $"threadsWorking={Den.Tools.Tasks.ThreadManager.IsWorking}, " +
                 $"quietFrames={stableFrames}/{RequiredStableFrames}.");
         }
 
