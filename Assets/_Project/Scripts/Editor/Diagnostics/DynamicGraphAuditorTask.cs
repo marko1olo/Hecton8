@@ -32,6 +32,49 @@ namespace Hecton8.Editor.Diagnostics
         private const string GraphAssetPath =
             "Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset";
 
+        /// <summary>
+        /// Which graph this run audits. Defaults to the biomes graph above, so every existing caller
+        /// (Tools/BatchTasks/run_graph_dynamic.bat) keeps auditing exactly what it audited before.
+        ///
+        /// WHY THIS EXISTS. The sandbox has TWO graphs and this auditor could only ever see one of them:
+        /// the 500-node biomes graph. The 16-node HECTON_PROCEDURAL_GEOLOGY_GRAPH - the geology bench, the
+        /// one whose height output is currently under investigation - was unreachable by the only tool in
+        /// the repo that can report which outlet feeds which inlet. Hardcoding the second path as a second
+        /// const would have produced two auditors that drift apart.
+        ///
+        /// Passed as `-graphAsset &lt;path&gt;` on the Unity command line. An unrecognised or empty value is
+        /// NOT silently replaced by the default: a run asked to audit graph B must never publish a report
+        /// about graph A, because the report is then cited as evidence about the wrong asset.
+        /// </summary>
+        private static string ResolveGraphAssetPath(out string failure)
+        {
+            failure = null;
+            // GLOBALLY QUALIFIED, and it has to be: this project declares a Hecton8.Environment namespace,
+            // and inside namespace Hecton8.Editor.Diagnostics the name `Environment` binds to THAT, not to
+            // System.Environment. The unqualified form fails with CS0234 "GetCommandLineArgs does not exist
+            // in the namespace Hecton8.Environment" - and Unity still exited 0 on that failed compile, so
+            // the run looked like a clean audit that simply produced no file.
+            string[] args = global::System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (!string.Equals(args[i], "-graphAsset", StringComparison.Ordinal))
+                    continue;
+
+                if (i + 1 >= args.Length || string.IsNullOrWhiteSpace(args[i + 1]))
+                {
+                    failure =
+                        "-graphAsset was passed with no path after it. Refusing to fall back to the " +
+                        $"default '{GraphAssetPath}', because a report about the wrong graph is worse " +
+                        "than no report.";
+                    return null;
+                }
+
+                return args[i + 1].Trim();
+            }
+
+            return GraphAssetPath;
+        }
+
         // Was C:\Users\Admin\.gemini\antigravity\brain\7b5d06d2-...\graph_dump_dynamic.md - another agent's
         // private scratch directory: outside the repo, unversioned, never created by this tool, and
         // invisible to anyone auditing this project's graph evidence. The subfolder is per-tool because
@@ -41,7 +84,19 @@ namespace Hecton8.Editor.Diagnostics
         private static readonly string OutputDir =
             Path.Combine(Directory.GetCurrentDirectory(), "Logs", "dynamic_graph_audit");
 
-        private static readonly string ReportPath = Path.Combine(OutputDir, "graph_dump_dynamic.md");
+        /// <summary>
+        /// Report path for one specific graph. A single fixed filename was correct while exactly one graph
+        /// could be audited; now that -graphAsset selects between the 500-node biomes graph and the 16-node
+        /// geology graph, one filename means the second run silently overwrites the first run's evidence
+        /// with a document whose header names a different asset. The header note on OutputDir records that
+        /// two diagnostics in this folder already did that to each other once.
+        ///
+        /// The old `ReportPath` field is GONE rather than left in place: once every call site took the
+        /// per-graph path, it was an unreferenced constant that still looked authoritative, and a later
+        /// edit reaching for the "existing" report path would have quietly restored the overwrite.
+        /// </summary>
+        private static string ReportPathFor(string graphAssetPath) =>
+            Path.Combine(OutputDir, $"graph_dump_{Path.GetFileNameWithoutExtension(graphAssetPath)}.md");
 
         private const BindingFlags AnyInstance =
             BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -65,10 +120,18 @@ namespace Hecton8.Editor.Diagnostics
         [MenuItem("Hecton8/Diagnostics/Dynamic Graph Audit")]
         public static void Audit()
         {
+            string graphAssetPath = ResolveGraphAssetPath(out string argFailure);
+            if (graphAssetPath == null)
+            {
+                Debug.LogError($"[DynamicGraphAuditorTask] REFUSED: {argFailure} No report was written.");
+                EditorApplication.Exit(2);
+                return;
+            }
+
             try
             {
                 Directory.CreateDirectory(OutputDir);
-                DoAudit();
+                DoAudit(graphAssetPath);
             }
             catch (Exception ex)
             {
@@ -85,17 +148,22 @@ namespace Hecton8.Editor.Diagnostics
             EditorApplication.Exit(0);
         }
 
-        private static void DoAudit()
+        private static void DoAudit(string graphAssetPath)
         {
-            Object graphObj = AssetDatabase.LoadAssetAtPath<Object>(GraphAssetPath);
+            // Local, not a field: two audits of two different graphs must not be able to see each other's
+            // report path, and the name is deliberately not the same as the GraphAssetPath const so a
+            // reader can tell the requested graph from the default one.
+            string reportPath = ReportPathFor(graphAssetPath);
+
+            Object graphObj = AssetDatabase.LoadAssetAtPath<Object>(graphAssetPath);
             if (graphObj == null)
             {
                 // Was Debug.LogError("Could not find graph") + Exit(1): non-zero, but it named neither the
                 // path it looked at nor the artifact that did not appear, and 1 is outside this project's
                 // diagnostic exit-code set (0 proved / 2 failed / 3 no GPU / 4 timeout).
                 throw new InvalidOperationException(
-                    $"the graph asset '{GraphAssetPath}' did not load, so there was no graph to audit and " +
-                    $"no report was written to {ReportPath}.");
+                    $"the graph asset '{graphAssetPath}' did not load, so there was no graph to audit and " +
+                    $"no report was written to {reportPath}.");
             }
 
             Type graphType = graphObj.GetType();
@@ -108,7 +176,7 @@ namespace Hecton8.Editor.Diagnostics
                 // and called EditorApplication.Exit(0). A run that reached ZERO nodes therefore published a
                 // header-plus-one-sentence document and told its caller the audit had succeeded.
                 throw new InvalidOperationException(
-                    $"'{graphType.FullName}' loaded from '{GraphAssetPath}' has no instance field named " +
+                    $"'{graphType.FullName}' loaded from '{graphAssetPath}' has no instance field named " +
                     "'generators', so not one node could be reached. Expected " +
                     "MapMagic.Nodes.Graph.generators (Assets/MapMagic/Nodes/Graph.cs:22). No report was " +
                     "written; an audit that enumerated nothing is not a pass.");
@@ -122,7 +190,7 @@ namespace Hecton8.Editor.Diagnostics
                 // `if (generators != null)` skipped the entire loop in total silence - no log line, no note
                 // in the report - then wrote a header-only file and exited 0.
                 throw new InvalidOperationException(
-                    $"'{graphType.FullName}.generators' read as null from '{GraphAssetPath}'. The graph's " +
+                    $"'{graphType.FullName}.generators' read as null from '{graphAssetPath}'. The graph's " +
                     "deserialization callback did not populate it, so there are no nodes to audit.");
             }
 
@@ -328,7 +396,7 @@ namespace Hecton8.Editor.Diagnostics
                 // A valid-but-empty generators array walked cleanly, appended nothing, and exited 0 with a
                 // header-only report. Zero nodes is a finding, never a pass.
                 throw new InvalidOperationException(
-                    $"'{GraphAssetPath}' enumerated ZERO generators. There is nothing to audit, so no " +
+                    $"'{graphAssetPath}' enumerated ZERO generators. There is nothing to audit, so no " +
                     "report was written rather than publishing an empty document that reads as a clean " +
                     "graph.");
             }
@@ -336,7 +404,7 @@ namespace Hecton8.Editor.Diagnostics
             StringBuilder doc = new StringBuilder();
             doc.AppendLine("# MapMagic Graph Dynamic Audit");
             doc.AppendLine();
-            doc.AppendLine($"Graph asset: {GraphAssetPath}");
+            doc.AppendLine($"Graph asset: {graphAssetPath}");
             doc.AppendLine($"Graph type: {graphType.FullName}");
             doc.AppendLine($"Nodes enumerated: {nodeCount}");
             doc.AppendLine($"Inlets inspected: {inletsInspected}");
@@ -362,12 +430,12 @@ namespace Hecton8.Editor.Diagnostics
             doc.AppendLine();
             doc.Append(body.ToString());
 
-            File.WriteAllText(ReportPath, doc.ToString(), Encoding.UTF8);
+            File.WriteAllText(reportPath, doc.ToString(), Encoding.UTF8);
 
             // The headline numbers go into the Unity log too. The report file alone meant every finding
             // lived in a directory nobody reading the batchmode log would ever open.
             Debug.Log(
-                $"[DynamicGraphAuditorTask] Wrote {ReportPath}: {nodeCount} node(s), {inletsInspected} " +
+                $"[DynamicGraphAuditorTask] Wrote {reportPath}: {nodeCount} node(s), {inletsInspected} " +
                 $"inlet(s) inspected, {linksResolved} link(s) resolved, {absentFields} absent field(s), " +
                 $"{unreadable.Count} unreadable fact(s).");
 
@@ -378,15 +446,15 @@ namespace Hecton8.Editor.Diagnostics
                 Debug.LogWarning(
                     $"[DynamicGraphAuditorTask] ZERO inlet links resolved across {nodeCount} node(s) and " +
                     $"{inletsInspected} inlet(s). Either this graph is genuinely unwired or the link " +
-                    $"lookup is reading the wrong member; check the per-node lines in {ReportPath} before " +
+                    $"lookup is reading the wrong member; check the per-node lines in {reportPath} before " +
                     "quoting this audit.");
             }
 
             if (unreadable.Count > 0)
             {
                 throw new InvalidOperationException(
-                    $"{unreadable.Count} fact(s) about '{GraphAssetPath}' could not be read, so the link " +
-                    $"tree in {ReportPath} is not a complete topology. That report is stamped " +
+                    $"{unreadable.Count} fact(s) about '{graphAssetPath}' could not be read, so the link " +
+                    $"tree in {reportPath} is not a complete topology. That report is stamped " +
                     "'VERDICT: INCOMPLETE' and must not be cited as a pass. First unreadable fact: " +
                     unreadable[0]);
             }
