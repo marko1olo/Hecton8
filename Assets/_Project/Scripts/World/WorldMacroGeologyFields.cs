@@ -255,7 +255,7 @@ namespace Hecton8.World
 
         public const bool DiagNoiseBroadband = false;
         public const bool DiagRidgedAsFbm  = false;
-        public const bool DiagFoldsDunesOff = true;
+        public const bool DiagFoldsDunesOff = false;
         // R13 RAW PRIMITIVE PROBE. Pattern across R8-R12: removing any FEATURE makes zebra/seam WORSE or
         // unchanged, and zebra appears even on FLAT tiles (P5 1km slope 0.1%, hatch 4.33). Conclusion: the
         // artifact is NOT any added feature — it is intrinsic to the FOUNDATION every term shares:
@@ -1538,18 +1538,27 @@ namespace Hecton8.World
                 double2 duneWarpD = new double2(
                     DoubleFractalSimplexNoise01(warpedPosD * 0.0015 + new double2(13.4, -7.2), seed ^ 0x778899AAu, 2) * 2.0 - 1.0,
                     DoubleFractalSimplexNoise01(warpedPosD * 0.0015 + new double2(-5.1, 18.9), seed ^ 0xBBCCDDEEu, 2) * 2.0 - 1.0) * 180.0;
-                // 2.0 rad, MEASURED DOWN FROM 12.0. This is a PHASE offset added to a wave whose intended
-                // crest spacing is 2*pi/0.025 = 251 m, and the offset field itself runs at 1/0.008 = 125 m
-                // falling to 31 m over three octaves.
+                // ONE OCTAVE AT 500 m, and the OCTAVE COUNT is the fix rather than the multiplier.
                 //
-                // At 12 rad the offset swung the phase by 1.91 WHOLE dune periods across 31-125 m of ground.
-                // That does not warp the dunes - it scrambles them: the crest spacing stops being the 251 m
-                // the wave asks for and becomes the warp field's own 31-125 m, which turns the 8.5 m dune
-                // amplitude from a 6 degree bedform into a 41 degree one. Measured on the 10 km slope map:
-                // the whole abyssal plain covered in uniform comma-shaped curls, which is what the owner saw
-                // and called ugly noise. At 2 rad the offset is under a third of a period, so it bends and
-                // breaks up the crest lines - the organic look it was written for - without moving them.
-                float duneOrgWarp = DoubleFractalSimplexNoise01(warpedPosD * 0.008, seed ^ 0x778899AAu, 3) * 2.0f;
+                // This is a PHASE offset on a wave whose intended crest spacing is 2*pi/0.025 = 251 m. What
+                // sets the visible spacing is not the offset's size but its GRADIENT: wherever
+                // d(offset)/dx exceeds the base 0.025 rad/m, the crests follow the offset field instead of
+                // the dune axis. At the original 12.0 rad over 3 octaves (125 m falling to 31 m) that
+                // gradient was 0.60-2.43 rad/m - twenty-four to ninety-seven times the base - so the crest
+                // spacing became the warp's own 31 m and the 8.5 m dune amplitude turned into 41 degree
+                // slopes. That was the comma-curl carpet over the whole abyssal plain.
+                //
+                // LOWERING THE MULTIPLIER ALONE DOES NOT FIX IT, and trying it is why this comment exists:
+                // at 2.0 rad the finest octave still runs 0.41 rad/m, and even 0.25 rad leaves the 31 m
+                // octave at 0.051 rad/m - still dominant. The 2.0 attempt was rendered and changed nothing
+                // visible. What identified the culprit was intervention: rendering with
+                // DiagFoldsDunesOff = true removed the curls entirely and left the crescent arcs untouched,
+                // which both convicted the dune phase of the curls and cleared it of the arcs.
+                //
+                // So: ONE octave, so there is no 31 m harmonic to dominate with, at 1/0.002 = 500 m - twice
+                // the dune spacing - times 0.6 rad. Gradient 0.6*2*pi/500 = 0.0075 rad/m, comfortably under
+                // the base 0.025, so crest lines bend and wander instead of being replaced.
+                float duneOrgWarp = DoubleFractalSimplexNoise01(warpedPosD * 0.002, seed ^ 0x778899AAu, 1) * 0.6f;
                 float dunePhase = (float)math.dot((float2)(warpedPosD + duneWarpD), duneAxis) * 0.025f + duneOrgWarp;
                 float duneWave = math.pow(0.5f - 0.5f * math.cos(dunePhase), 1.5f);
                 
