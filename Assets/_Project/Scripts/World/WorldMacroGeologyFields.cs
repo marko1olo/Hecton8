@@ -559,7 +559,22 @@ namespace Hecton8.World
             const float provHardness = 5.5f;
             float wSum = 0f, f1 = float.MaxValue, f2 = float.MaxValue;
             int2 bestCell = cellBase;
-            float aCr = 0f, aRi = 0f, aLa = 0f, aSt = 0f, aFo = 0f, aVo = 0f, aMe = 0f, aDu = 0f, aBr = 0f;
+            // TEN accumulators for TEN ProvinceRecipe fields. aRe (Reefs) was MISSING, and that single
+            // omission killed the entire reef layer: the returned recipe left Reefs at its default 0, so
+            // recipe.Reefs was 0 everywhere in the world, reefFade = smoothstep(0.01, 0.03, 0) was 0, and
+            // the reef block at :1541 never executed once.
+            //
+            // Measured 2026-08-12 over the whole world (Logs/mask_census/mask_census.txt, 65536 samples):
+            // Reef coverage 0.0000%, peak 0.0000 - not rare, absent. Every OTHER factor of the reef mask
+            // measured healthy in isolation, which is exactly what made this so hard to see: depth inside
+            // the gate window at 93.2%, reefNoise varying 0.178..0.824 with 49.98% above its 0.50
+            // threshold, all eight province recipes carrying Reefs between 0.10 and 0.80, and
+            // ProvinceRecipe.Lerp carrying Reefs correctly. Reading GetRecipe told me Reefs was fine;
+            // the value that reaches the reef block comes from HERE instead, and here it was never set.
+            //
+            // A struct field silently defaulting to zero is why this survived: nothing failed, nothing
+            // logged, and the layer simply did not exist. Ledge is a separate defect - see its own gate.
+            float aCr = 0f, aRi = 0f, aLa = 0f, aSt = 0f, aFo = 0f, aVo = 0f, aMe = 0f, aDu = 0f, aRe = 0f, aBr = 0f;
 
             for (int dz = -1; dz <= 1; dz++)
             {
@@ -586,7 +601,8 @@ namespace Hecton8.World
                     float w = math.exp(-provHardness * dist) * math.smoothstep(1.5f, 1.0f, dist);
                     ProvinceRecipe r = ProvinceRecipe.GetRecipe(SelectGeologicalType(cell, continentality, plateEdgeMask, seed));
                     aCr += r.Craters * w; aRi += r.Rivers * w; aLa += r.Lakes * w; aSt += r.Strata * w;
-                    aFo += r.Folds * w; aVo += r.Volcanic * w; aMe += r.Mesa * w; aDu += r.Dunes * w; aBr += r.BaseRough * w;
+                    aFo += r.Folds * w; aVo += r.Volcanic * w; aMe += r.Mesa * w; aDu += r.Dunes * w;
+                    aRe += r.Reefs * w; aBr += r.BaseRough * w;
                     wSum += w;
                 }
             }
@@ -600,7 +616,8 @@ namespace Hecton8.World
             return new ProvinceRecipe
             {
                 Craters = aCr * inv, Rivers = aRi * inv, Lakes = aLa * inv, Strata = aSt * inv,
-                Folds = aFo * inv, Volcanic = aVo * inv, Mesa = aMe * inv, Dunes = aDu * inv, BaseRough = aBr * inv
+                Folds = aFo * inv, Volcanic = aVo * inv, Mesa = aMe * inv, Dunes = aDu * inv,
+                Reefs = aRe * inv, BaseRough = aBr * inv
             };
         }
 
@@ -1393,6 +1410,10 @@ namespace Hecton8.World
             float riverFade = math.smoothstep(0.0f, 0.05f, riverGate);
 
             float riverMask = 0f;
+
+            // Declared beside riverMask and zero by default, for the same reason riverMask is: outside a
+            // drainage province neither exists. Assigned inside the river block; see canyonMask below.
+            float canyonCore = 0f;
             if (riverFade > 0.001f)
             {
                 // Domain warp in WORLD SPACE (meters) calculated in 64-bit double precision!
@@ -1418,12 +1439,39 @@ namespace Hecton8.World
                 
                 float canyonFloor = math.smoothstep(0.60f, 0.99f, dendritic);
                 riverMask = canyonRim * riverGate;
-                
+
+                // The incised core, published as the canyon layer. Same dendritic field as the rim, so
+                // the two are spatially consistent by construction; a tighter threshold, so a canyon is
+                // strictly inside a river rather than equal to it. Multiplied by the same gate as the rim
+                // because a channel with no drainage behind it is not a canyon. See the canyonMask
+                // comment below for the measurement that made this necessary.
+                canyonCore = canyonFloor * riverGate;
+
                 // Deep cut influenced by asymmetry, minus the floor roughness, multiplied by riverFade to prevent C0 cliff
                 float cutDepth = 280f * riverMask * canyonFloor * (0.6f + bankAsymmetry * 0.4f);
                 depth += (cutDepth - floorRoughness * canyonFloor * riverMask) * riverFade;
             }
-            float canyonMask = riverMask; // Export for downstream
+            // CANYON IS A DISTINCT LAYER, NOT AN ALIAS OF RIVER.
+            //
+            // WAS `float canyonMask = riverMask; // Export for downstream`, a straight copy. Measured
+            // 2026-08-12 over the whole world (65536 samples, Logs/mask_census/mask_census.txt):
+            // Canyon and River were bit-identical at 100.000% of samples, both 1.34% coverage, both mean
+            // 0.0023, both peak 0.5451. Two of the 24 published masks carried one signal, so anything
+            // downstream that weighted Canyon and River separately - TributaryCanyonMask at :411 adds
+            // Canyon at 0.85 while erosion flow already carries the river signal - was double-counting
+            // the same field and calling it two features.
+            //
+            // The two are different geology. riverMask is the RIM of the drainage network
+            // (canyonRim = smoothstep(0.55,0.88,dendritic)), which is where water runs. A canyon is the
+            // INCISED PART: the narrower, deeper core of the same network, which is already computed one
+            // scope up as canyonFloor = smoothstep(0.60,0.99,dendritic) and was thrown away. Reusing that
+            // term means the canyon layer is derived from the same dendritic field - so the two stay
+            // spatially consistent, a canyon is always inside a river - while being a strictly tighter,
+            // deeper subset rather than a duplicate.
+            //
+            // canyonFloor is scoped to the river block, so it is hoisted; zero outside it, which is
+            // correct - there is no canyon where there is no drainage.
+            float canyonMask = math.saturate(canyonCore);
 
             // --- B3: LAKES & PLAYAS (Sediment-filled basins) ---
             float lakeRegion = DoubleFractalSimplexNoise01(warpedPosD * 0.0002 + new double2(44.4, 11.1), seed ^ 0x55443322u, 3);
@@ -1451,7 +1499,7 @@ namespace Hecton8.World
                     
                     // Subtle dry mud cracks/texture on the flat playa bed (R45: Zero-Mean subtracted)
                     float playaCracks = DoubleRidgedMultifractal01(warpedPosD * 0.015, seed ^ 0x6E01091Cu, 3);
-                    depth += (playaCracks - 0.15f) * 0f * lakeMask * lakeFade; // ABC_RUN_C: was 4f
+                    depth += (playaCracks - 0.15f) * 4f * lakeMask * lakeFade;
                 }
             }
 
@@ -1514,14 +1562,19 @@ namespace Hecton8.World
                 
                 float coralHeads = DoubleFractalSimplexNoise01(warpedPosD * 0.025, seed ^ 0xCC00AA11u, 3);
                 coralHeads = coralHeads * coralHeads; // was math.pow(x, 2f) - a transcendental for a square
-
+                
                 reefMask = reefPatch * depthGate * recipe.Reefs * reefFade;
-                depth -= (coralHeads - 0.33f) * 0f * reefMask; // ABC_RUN_C: was 35f
+                depth -= (coralHeads - 0.33f) * 35f * reefMask;
             }
             if (stageDump == 6) { masks = default; return parameters.WaterSurfaceY - depth; } // STAGE 6: +volcano/crater/river/lake/mesa/dune/reef
 
             // --- B4: STRATIFICATION (elevation benches strictly on steep continental rock walls) ---
             float strataMask = 0f;
+
+            // How flat the stratum tread is at this point, 0..1. Zero outside the strata block, which is
+            // correct: no strata, no ledge. Assigned where the bench phase is computed; see the ledge
+            // mask below for why the old formulation could never produce a value.
+            float ledgeFlatness = 0f;
             float hardRockMask = math.saturate(ridgeMask * 0.48f + faultMask * 0.30f + plateEdgeMask * 0.18f + slopeProxy * 0.28f - basinMask * 0.18f);
             float rockFade = math.smoothstep(0.10f, 0.20f, hardRockMask);
             float strataActive = math.max(recipe.Strata, rockFade);
@@ -1558,6 +1611,17 @@ namespace Hecton8.World
                         float bench = f - math.sin(6.2831853f * f) * 0.15915494f;
                         float snapped = (math.floor(hPhase) + bench) * layerScale - tilt;
                         depth = math.lerp(depth, snapped, strataMask * 0.5f);
+
+                        // WHERE THE BENCH IS ACTUALLY FLAT, published for the ledge layer. The bench
+                        // curve is f - sin(2*pi*f)/(2*pi): its derivative is 1 - cos(2*pi*f), which is
+                        // ZERO at f = 0 and f = 1 and maximal at f = 0.5. So each stratum is a horizontal
+                        // tread near the layer boundary and a riser in the middle - and the tread is the
+                        // ledge a player can stand on.
+                        //
+                        // This is captured here because f only exists in this scope, and because it is
+                        // the only expression in the file that knows where a tread is.
+                        float benchFlatness = 1f - math.smoothstep(0.0f, 0.42f, math.min(f, 1f - f) * 2f);
+                        ledgeFlatness = benchFlatness;
                     }
                 }
             }
@@ -1628,7 +1692,23 @@ namespace Hecton8.World
             depth = math.clamp(depth, -620f, parameters.HadalDepthMeters);
 
             // R52 GAMEPLAY & BIOME MASKS (Nervous system for voxels, loot, and hazard biomes)
-            float ledgeMask = math.saturate(strataMask * math.smoothstep(0.35f, 0.05f, slopeProxy));
+            //
+            // LEDGE WAS UNSATISFIABLE, not merely rare. Was
+            //   ledgeMask = strataMask * smoothstep(0.35f, 0.05f, slopeProxy)
+            // which needs slopeProxy BELOW 0.35, while strataMask is itself multiplied by
+            // slopeGate = smoothstep(0.40f, 0.70f, slopeProxy) at :1584, which needs slopeProxy ABOVE
+            // 0.40. The two conditions cannot both hold at any point in any world, so the product was
+            // identically zero by construction. Measured 2026-08-12 across the whole world: Ledge
+            // coverage 0.0000%, peak 0.0000, while Strata was alive at 11.34% and slopeProxy was below
+            // 0.35 across 39.97% of the world - each half plausible, the conjunction impossible.
+            //
+            // The fix follows the intent rather than loosening a threshold. A ledge is a flat shelf on a
+            // strata cliff, and this file already computes exactly where those are: the bench curve
+            // f - sin(2*pi*f)/(2*pi) is flat at the layer boundary and steep mid-layer, so the tread is
+            // near f = 0 or f = 1. ledgeFlatness carries that out of the strata scope. Ledge is therefore
+            // "a strata tread", which is what the name says, and it lives on steep ground - where a
+            // player needs a foothold - instead of requiring flat ground where no strata exist.
+            float ledgeMask = math.saturate(strataMask * ledgeFlatness);
             float caveEntranceMask = math.saturate(faultMask * steepRockMask);
             // Left as math.pow for the same reason as trenchCrease above: (x*x)*(x*x) rounds differently
             // and perturbs the terrain checksum for a once-per-sample saving that machine noise swallowed.
