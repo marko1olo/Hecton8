@@ -255,7 +255,7 @@ namespace Hecton8.World
 
         public const bool DiagNoiseBroadband = false;
         public const bool DiagRidgedAsFbm  = false;
-        public const bool DiagFoldsDunesOff = false;
+        public const bool DiagFoldsDunesOff = true;
         // R13 RAW PRIMITIVE PROBE. Pattern across R8-R12: removing any FEATURE makes zebra/seam WORSE or
         // unchanged, and zebra appears even on FLAT tiles (P5 1km slope 0.1%, hatch 4.33). Conclusion: the
         // artifact is NOT any added feature — it is intrinsic to the FOUNDATION every term shares:
