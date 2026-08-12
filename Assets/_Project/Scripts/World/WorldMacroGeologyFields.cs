@@ -1451,7 +1451,7 @@ namespace Hecton8.World
                     
                     // Subtle dry mud cracks/texture on the flat playa bed (R45: Zero-Mean subtracted)
                     float playaCracks = DoubleRidgedMultifractal01(warpedPosD * 0.015, seed ^ 0x6E01091Cu, 3);
-                    depth += (playaCracks - 0.15f) * 4f * lakeMask * lakeFade;
+                    depth += (playaCracks - 0.15f) * 0f * lakeMask * lakeFade; // ABC_RUN_C: was 4f
                 }
             }
 
@@ -1514,9 +1514,9 @@ namespace Hecton8.World
                 
                 float coralHeads = DoubleFractalSimplexNoise01(warpedPosD * 0.025, seed ^ 0xCC00AA11u, 3);
                 coralHeads = coralHeads * coralHeads; // was math.pow(x, 2f) - a transcendental for a square
-                
+
                 reefMask = reefPatch * depthGate * recipe.Reefs * reefFade;
-                depth -= (coralHeads - 0.33f) * 35f * reefMask;
+                depth -= (coralHeads - 0.33f) * 0f * reefMask; // ABC_RUN_C: was 35f
             }
             if (stageDump == 6) { masks = default; return parameters.WaterSurfaceY - depth; } // STAGE 6: +volcano/crater/river/lake/mesa/dune/reef
 
@@ -2101,7 +2101,7 @@ namespace Hecton8.World
         /// chunk or stored checksum produced before this change describes a different world.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float DoubleFractalSimplexNoise01_ABC_DISABLED(double2 scaledPosD, uint seed, int octaves = 5)
+        public static float DoubleFractalSimplexNoise01(double2 scaledPosD, uint seed, int octaves = 5)
         {
             return DoubleFractalSimplexNoise01(scaledPosD, 1f, seed, octaves);
         }
@@ -2153,7 +2153,7 @@ namespace Hecton8.World
         /// are constants; neither is a field.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float DoubleRidgedMultifractal01_ABC_DISABLED(double2 scaledPosD, uint seed, int octaves = 5)
+        public static float DoubleRidgedMultifractal01(double2 scaledPosD, uint seed, int octaves = 5)
         {
             return DoubleRidgedMultifractal01(scaledPosD, 1f, seed, octaves);
         }
