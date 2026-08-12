@@ -1,27 +1,34 @@
-# Hecton8 Voxel Physics, Vertex Color Encoding & Terrain Erosion Master Plan
+# Hecton8 Documentation Audit, Consolidation & Knowledge Graph Master Plan
 
 ## Authority Quote & Constraints
-> "Physics interaction is blocked until collider bake is complete... GlobalQualityWeight may scale SDF resolution, extraction distance, diagnostic depth, and rebuild cadence, but it must not change collision truth, carve permission, or save delta identity." — `voxels.md`
-> "Zero-GC Terrain Height Reads: On chunk generation complete (or chunk stream-in), the terrain subsystem copies its height data... Continuous coordinate wrapping must be achieved via signed modulo (math.fmod) exclusively" — `terrain.md`
+> "The canonical authority is C:\hades\Hecton8\AGENTS.md... PROJECT_BIBLES.md for domain/bible selection... VISION_LOCKS.md for product vision, ambiguity, priority, or taste conflicts... TASTE.md for player-visible work." — HECTON-8 Global Router & AGENTS.md
 
 ## Architecture & Scope
-This plan covers the voxel physics bake signal publishing, vertex color encoding for URP cave shader blending, and non-destructive perimeter guards for terrain erosion jobs.
+This plan covers the comprehensive audit, consolidation, mandate verification, refactoring, and knowledge graph generation across the HECTON-8 project documentation.
+
+Key Objectives:
+- R1: Integrity Audit & Stale Data Removal across `Docs/`.
+- R2: Mandate Verification against Unity C# codebase in `Assets/_Project/Scripts/`.
+- R3: Documentation Refactoring & archiving obsolete task files to `Docs/Archive/`.
+- R4: Knowledge Graph Generation (`Docs/HECTON8_KNOWLEDGE_GRAPH.md`).
 
 ## Milestones & Status
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1-M7 | Voxel Surface Nets & SDF Determinism Pipeline | Dual-mesh extraction, vault memory, SDF determinism, capacity protection, and forensic verification. | none | DONE |
-| M8 | Voxel Physics Bake Signal & Kinematic Spawner Integration (R1) | Audit & strengthen WorldChunkPhysicsBakedSignal publishing in HectonVoxelVolume.cs & HectonVoxelEngine.cs. Integrate signal reception in HectonPlayerSpawner.cs & MapMagicBridge.cs. | M7 | DONE |
-| M9 | Voxel Vertex Color Channel & Shader Blending Audit (R2) | Audit VoxelSurfaceColorEncoding in HectonVoxelEngine.cs. Ensure Red (Floor weight), Green (Wall weight), Alpha (AO) conform to URP cave shader blending without debug artifacts or NaNs. | M8 | DONE |
-| M10 | Terrain Boundary Guard & Erosion Stability Audit (R3) | Audit WorldProceduralTerrainThermalWeatheringJobs.cs & HydraulicErosionJob.cs. Ensure perimeter guards at chunk edge boundaries [x==0, z==0] preserve mass-conserving talus heightmaps across contiguous tiles. | M9 | DONE |
-| M11 | Final Verification, Reviewer, Challenger & Forensic Integrity Audit | Reviewer code review (PASS), Challenger empirical stress testing (PASS), Forensic Integrity Audit (CLEAN). | M10 | DONE |
+| M1-M11 | Previous Voxel & Terrain Milestones | Core engine, SDF determinism, erosion stability, physics signal. | none | DONE |
+| M12 | Documentation Reconnaissance & Contradiction Survey | Survey all `Docs/` files, mandate registry (`Tools/Docs/TestMandateRegistry.py`), codebase alignment (`Assets/_Project/Scripts/`), obsolete tasks in `Docs/Tasks/`, and knowledge graph requirements. | none | DONE |
+| M13 | Documentation Refactoring & Knowledge Graph Implementation | Clean up `Docs/`, archive completed tasks to `Docs/Archive/Batch014_LegacyTasks/`, move unauthorized root docs (`BACKLOG.md`, `goose_audit_test.md`), standardize mandate header, resolve contradictions, and author `Docs/HECTON8_KNOWLEDGE_GRAPH.md`. | M12 | DONE |
+| M14 | Verification, Review, Stress Test & Forensic Integrity Audit | Reviewer verification of docs, Challenger automated execution (`python Tools/Docs/TestMandateRegistry.py --strict`, `git diff --check`, `python Tools/Docs/TestAgentRuleRouting.py`), and Forensic Integrity Audit (CLEAN). | M13 | IN_PROGRESS |
 
-## Interface Contracts & Data Flow
-- **Signals**: `WorldChunkPhysicsBakedSignal` with `FlagColliderActive` and `FlagHeightmapSynced` and minCorner `TerrainPosition = pos - size * 0.5f`.
-- **Color Encoding**: `VoxelSurfaceColorEncoding.ResolveFloorWeight` delegating SSOT in `VoxelSurfaceNetsJobs.cs` packing `Color32(R: FloorWeight, G: WallWeight, B: 0, A: AmbientOcclusion)`.
-- **Erosion Jobs**: `WorldProceduralTerrainThermalWeatheringJobs.cs` & `HydraulicErosionJob.cs` with `writeMaxZ - 2` clamping, `return 0f` out-of-window sediment carrying, and outer apron protection `x <= 0 || z <= 0 || x >= Width - 1 || z >= Height - 1`.
+## Interface Contracts & Constraints
+- Mandatory strict mandate test: `python Tools/Docs/TestMandateRegistry.py --strict` exits 0 with 0 errors and 0 warnings.
+- Mandatory formatting check: `git diff --check` shows no trailing whitespace or unresolved merge conflicts in documentation.
+- Mandatory routing test: `python Tools/Docs/TestAgentRuleRouting.py` exits 0.
+- No conflicting technical limits across active `.md` files.
+- Completed task files moved from `Docs/Tasks/` to `Docs/Archive/Batch014_LegacyTasks/`.
+- `Docs/HECTON8_KNOWLEDGE_GRAPH.md` created linking all active bibles and routing files.
 
 ## Verification Gate Summary
-- **Reviewer**: PASS (Reviewer Iteration 2)
-- **Challenger**: PASS (Challenger Iteration 2)
-- **Forensic Auditor**: CLEAN (Auditor Iteration 2)
+- **Reviewer**: Pending
+- **Challenger**: Pending
+- **Forensic Auditor**: Pending

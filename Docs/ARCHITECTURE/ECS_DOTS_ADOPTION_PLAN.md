@@ -1,8 +1,13 @@
-﻿# ECS/DOTS Adoption Plan - FaunaSimulationEngine and FluidMathCore
+# [DEPRECATED] ECS/DOTS Adoption Plan - FaunaSimulationEngine and FluidMathCore
+
+> **DEPRECATION NOTICE**
+>
+> This document is **DEPRECATED**. The proposal for `com.unity.entities` (ECS/DOTS) adoption has been rejected in favor of unmanaged C# Structs + Burst Jobs (`AGENTS.md` & `systems.md`).
+> All high-performance runtime logic in HECTON-8 strictly utilizes NativeArray/NativeSlice unmanaged DTO structs, GlobalDataVault, and Unity C# JobSystem + Burst Compiler without `com.unity.entities` package dependencies.
 
 Date: 2026-05-07
 
-Status: PENDING VERIFICATION
+Status: DEPRECATED / REJECTED (Replaced by Unmanaged C# Structs + Burst Jobs per AGENTS.md & systems.md)
 
 Evidence class: STATIC_DOC
 

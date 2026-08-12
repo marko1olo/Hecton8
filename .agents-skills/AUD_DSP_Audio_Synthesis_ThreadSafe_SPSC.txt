@@ -1,3 +1,5 @@
+# AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC
+
 CONTROL_DATA_TRANSFER: Double-buffered params via Interlocked/Volatile. Final sample output via DSPGraph `IAudioOutputJob`. Managed audio callbacks forbidden.
 
 ## RING_BUFFER_ARCHITECTURE

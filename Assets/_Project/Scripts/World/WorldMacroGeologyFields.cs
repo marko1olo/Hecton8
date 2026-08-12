@@ -2101,7 +2101,7 @@ namespace Hecton8.World
         /// chunk or stored checksum produced before this change describes a different world.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float DoubleFractalSimplexNoise01(double2 scaledPosD, uint seed, int octaves = 5)
+        public static float DoubleFractalSimplexNoise01_ABC_DISABLED(double2 scaledPosD, uint seed, int octaves = 5)
         {
             return DoubleFractalSimplexNoise01(scaledPosD, 1f, seed, octaves);
         }
@@ -2153,7 +2153,7 @@ namespace Hecton8.World
         /// are constants; neither is a field.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float DoubleRidgedMultifractal01(double2 scaledPosD, uint seed, int octaves = 5)
+        public static float DoubleRidgedMultifractal01_ABC_DISABLED(double2 scaledPosD, uint seed, int octaves = 5)
         {
             return DoubleRidgedMultifractal01(scaledPosD, 1f, seed, octaves);
         }

@@ -1,86 +1,87 @@
-# BRIEFING — 2026-07-27T03:07:30Z
+# BRIEFING — 2026-08-11T18:02:05Z
 
 ## Mission
-Lead deep codebase analysis and targeted fixes for:
-1. R1: Voxel physics bake signal publishing (`WorldChunkPhysicsBakedSignal`) and integration with `HectonPlayerSpawner.cs` and `MapMagicBridge.cs`.
-2. R2: Voxel vertex color channel encoding (`VoxelSurfaceColorEncoding`) audit for URP cave shader texture blending (R: Floor, G: Wall, A: AO, no debug artifacts or NaNs).
-3. R3: Terrain boundary guard & erosion stability audit in `WorldProceduralTerrainThermalWeatheringJobs.cs` and `HydraulicErosionJob.cs` for mass-conserving talus heightmaps on tile edges.
+Comprehensive audit, consolidation, mandate verification, refactoring, and knowledge graph generation for HECTON-8 project documentation.
+
+Key Deliverables:
+1. R1: Integrity Audit & Stale Data Removal across `Docs/`.
+2. R2: Mandate Verification against Unity C# codebase in `Assets/_Project/Scripts/`.
+3. R3: Documentation Refactoring & archiving obsolete task files to `Docs/Archive/`.
+4. R4: Knowledge Graph Generation (`Docs/HECTON8_KNOWLEDGE_GRAPH.md`) and mandate test verification (`python Tools/Docs/TestMandateRegistry.py --strict`, `git diff --check`).
 
 ## 🔒 My Identity
 - Archetype: Project Orchestrator
 - Roles: orchestrator, user_liaison, human_reporter, successor
 - Working directory: C:\hades\Hecton8\.agents\orchestrator
-- Original parent: parent (f9c9d21c-e243-46dc-8e9f-ee748185a7e8)
-- Original parent conversation ID: f9c9d21c-e243-46dc-8e9f-ee748185a7e8
+- Original parent: parent (fd9e0955-010c-426e-9dbc-26cb7f8cd6b5)
+- Original parent conversation ID: fd9e0955-010c-426e-9dbc-26cb7f8cd6b5
 
 ## 🔒 My Workflow
 - **Pattern**: Project Pattern (Orchestrator → Explorer → Worker → Reviewer / Challenger / Auditor cycle)
 - **Scope document**: C:\hades\Hecton8\.agents\orchestrator\plan.md
-1. **Decompose**: Decomposed follow-up mission into technical phases:
-   - M8: Voxel Physics Bake Signal & Kinematic Spawner Integration (R1) [done]
-   - M9: Voxel Vertex Color Channel & Shader Blending Audit (R2) [done]
-   - M10: Terrain Boundary Guard & Erosion Stability Audit (R3) [done]
-   - M11: Final Verification, Reviewer, Challenger & Forensic Integrity Audit [done]
+1. **Decompose**: Decomposed mission into milestones:
+   - M12: Documentation Reconnaissance & Contradiction Survey [done]
+   - M13: Documentation Refactoring & Knowledge Graph Implementation [done]
+   - M14: Verification, Review, Stress Test & Forensic Integrity Audit [in-progress]
 2. **Dispatch & Execute**: Iteration loop per milestone with specialist subagents.
 3. **On failure**: Retry → Replace → Skip (non-critical) → Redistribute → Redesign → Escalate.
 4. **Succession**: Self-succeed at spawn count >= 16.
 - **Work items**:
-  1. Milestone 8: Voxel Physics Bake Signal & Spawner Integration (R1) [done]
-  2. Milestone 9: Voxel Vertex Color Channel Encoding Audit (R2) [done]
-  3. Milestone 10: Terrain Boundary Guard & Erosion Stability Audit (R3) [done]
-  4. Milestone 11: Comprehensive Review, Stress Test & Forensic Integrity Audit [done]
-- **Current phase**: Complete
-- **Current focus**: Project completion report and handoff to parent.
+  1. Milestone 12: Documentation Reconnaissance & Contradiction Survey [done]
+  2. Milestone 13: Documentation Refactoring & Knowledge Graph Implementation [done]
+  3. Milestone 14: Verification, Review, Stress Test & Forensic Integrity Audit [in-progress]
+- **Current phase**: Milestone 14 (Verification & Forensic Audit)
+- **Current focus**: Parallel Reviewers, Challengers, and Forensic Auditor running.
 
 ## 🔒 Key Constraints
 - NO DIRECT CODE EDITING: Orchestrator MUST NOT edit source code files (.cs) or run compilation/test commands directly.
-- Direct quote requirement from domain bibles (`voxels.md`, `terrain.md`, `physics.md`).
-- WorldChunkPhysicsBakedSignal published on every completed PhysX chunk bake with valid FlagColliderActive and FlagHeightmapSynced.
-- Voxel vertex color channels produce finite, valid floor/wall blending weights (R: floor, G: wall, B: 0, A: AO).
-- Thermal weathering and hydraulic erosion jobs execute with 0 perimeter height artifacts on chunk borders.
-- Code compiles cleanly and passes all pre-commit Iron Gate checks.
+- Orchestrator edit privileges limited ONLY to metadata/state files (.md) in `.agents/orchestrator/`.
+- `python Tools/Docs/TestMandateRegistry.py --strict` MUST exit with code 0 (PASS) with 0 errors and 0 warnings.
+- `git diff --check` MUST show no trailing whitespace or unresolved merge conflicts in documentation.
+- No two active `.md` files assert conflicting technical limits.
+- All completed task logs moved out of `Docs/Tasks/` to `Docs/Archive/`.
+- `Docs/HECTON8_KNOWLEDGE_GRAPH.md` created with links to active bibles and routing files.
 - Mandatory Forensic Audit before declaring victory.
 
 ## Current Parent
-- Conversation ID: f9c9d21c-e243-46dc-8e9f-ee748185a7e8
-- Updated: 2026-07-27T03:07:30Z
+- Conversation ID: fd9e0955-010c-426e-9dbc-26cb7f8cd6b5
+- Updated: 2026-08-11T18:02:05Z
 
 ## Key Decisions Made
-- All milestones M8-M11 completed.
-- Reviewer returned PASS (Iter 2).
-- Challenger returned PASS (Iter 2).
-- Forensic Auditor returned CLEAN (Iter 2).
+- Milestone 12 & 13 completed.
+- Milestone 14 in progress: Dispatched reviewer_docs_1, reviewer_docs_2, challenger_docs_1, challenger_docs_2, and auditor_docs.
 
 ## Team Roster
 | Agent | Type | Work Item | Status | Conv ID |
 |-------|------|-----------|--------|---------|
-| explorer_m8_m10 | teamwork_preview_explorer | Reconnaissance & Root Cause Audit for R1, R2, R3 | completed | 00ed72b6-a99b-475e-aefc-72b1f8a741a1 |
-| worker_m8_m10 | teamwork_preview_worker | Code Implementation (Iter 1) | completed | c4cfd8eb-0426-4e0c-adf2-20ce672fe3a0 |
-| reviewer_m11 | teamwork_preview_reviewer | Code Review (Iter 1) | completed (VETO) | 077c3fc3-7ead-4376-b844-8fd755971479 |
-| challenger_m11 | teamwork_preview_challenger | Empirical Stress Test (Iter 1) | completed (PASS) | dbcee72f-214b-431a-a767-f407ce6094e7 |
-| auditor_m11 | teamwork_preview_auditor | Forensic Audit (Iter 1) | completed (CLEAN) | b7ce2c4b-27c2-4226-a2f8-2ee73edd60fa |
-| worker_m8_m10_iter2 | teamwork_preview_worker | Code Remediation (Iter 2) | completed | 4811a64c-e4a6-4fa4-94b5-70b235cc984a |
-| reviewer_m11_iter2 | teamwork_preview_reviewer | Code Re-Review (Iter 2) | completed (PASS) | 4224e028-51f9-4958-8c35-4d7a4b9d4f25 |
-| challenger_m11_iter2 | teamwork_preview_challenger | Stress Test Re-Run (Iter 2) | completed (PASS) | 23f424be-0f84-4d82-98db-5fde090433f7 |
-| auditor_m11_iter2 | teamwork_preview_auditor | Forensic Re-Audit (Iter 2) | completed (CLEAN) | 278e568c-62ff-4430-843e-73d6c89d6280 |
+| explorer_doc_audit | teamwork_preview_explorer | Docs/ Contradictions & Task Archive Survey | completed | e361a4c5-5230-4705-9e8a-b7d3491edc0e |
+| explorer_mandates | teamwork_preview_explorer | Mandate Registry & Formatting Audit | completed | 13dcb9e7-8d55-4331-a9e2-31b148431f0a |
+| explorer_codebase_alignment | teamwork_preview_explorer | Codebase vs Documentation Alignment Survey | completed | 3a1fe135-7482-4e49-af32-1766b2b6d957 |
+| worker_doc_refactor | teamwork_preview_worker | Doc Refactoring, Task Archiving & Knowledge Graph | completed | 7c527bec-7f56-4f37-aaa9-ecb638d07b43 |
+| reviewer_docs_1 | teamwork_preview_reviewer | Structure, Archiving & Knowledge Graph Review | running | 14186b89-7e6f-4587-8d39-af4af067df3b |
+| reviewer_docs_2 | teamwork_preview_reviewer | Technical Limits & Routing Review | running | 0dc7aa4f-597c-4d73-ad2e-5aadd2ced9bd |
+| challenger_docs_1 | teamwork_preview_challenger | Automated Test Suite Execution | running | cca39932-6f69-4457-ac46-b2a2c78e4081 |
+| challenger_docs_2 | teamwork_preview_challenger | Knowledge Graph Link & Structure Test | running | 2372439c-2686-4920-916f-a9fad84d2fa9 |
+| auditor_docs | teamwork_preview_auditor | Forensic Integrity Audit | running | 666f2d6b-ed64-4e0a-94e9-913d34022f5b |
 
 ## Succession Status
 - Succession required: no
-- Spawn count: 9 / 16 (in current sub-task sequence)
-- Pending subagents: none
+- Spawn count: 9 / 16
+- Pending subagents: 14186b89-7e6f-4587-8d39-af4af067df3b, 0dc7aa4f-597c-4d73-ad2e-5aadd2ced9bd, cca39932-6f69-4457-ac46-b2a2c78e4081, 2372439c-2686-4920-916f-a9fad84d2fa9, 666f2d6b-ed64-4e0a-94e9-913d34022f5b
 - Predecessor: none
 - Successor: not yet spawned
 
 ## Active Timers
-- Heartbeat cron: running (task-25)
+- Heartbeat cron: running (task-19)
 - Safety timer: none
 
 ## Artifact Index
 - C:\hades\Hecton8\.agents\orchestrator\ORIGINAL_REQUEST.md — Original user request
+- C:\hades\Hecton8\.agents\orchestrator\DISPATCH.md — Task assignment dispatch
 - C:\hades\Hecton8\.agents\orchestrator\BRIEFING.md — Persistent briefing index
 - C:\hades\Hecton8\.agents\orchestrator\plan.md — Master execution plan
 - C:\hades\Hecton8\.agents\orchestrator\progress.md — Liveness & status tracking
-- C:\hades\Hecton8\.agents\orchestrator\handoff.md — Master handoff report
-- C:\hades\Hecton8\.agents\reviewer_m11_iter2\review.md — Reviewer Iter 2 PASS report
-- C:\hades\Hecton8\.agents\challenger_m11_iter2\stress_test.md — Challenger Iter 2 PASS report
-- C:\hades\Hecton8\.agents\auditor_m11_iter2\audit.md — Forensic Auditor Iter 2 CLEAN report
+- C:\hades\Hecton8\.agents\explorer_mandates\handoff.md — Handoff from explorer_mandates
+- C:\hades\Hecton8\.agents\explorer_doc_audit\handoff.md — Handoff from explorer_doc_audit
+- C:\hades\Hecton8\.agents\explorer_codebase_alignment\handoff.md — Handoff from explorer_codebase_alignment
+- C:\hades\Hecton8\.agents\worker_doc_refactor\handoff.md — Handoff from worker_doc_refactor

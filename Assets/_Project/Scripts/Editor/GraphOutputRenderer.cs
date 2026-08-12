@@ -77,7 +77,10 @@ public static class GraphOutputRenderer
     /// Two beauty+slope pairs for the raw field and two for the graph output. Checked at the end so a run
     /// that silently skipped a render cannot report success.
     /// </summary>
-    private const int ExpectedArtifactCount = 8;
+    // Three phase-A windows (30 km, 10 km, 1024 m) and two phase-B windows (1024 m, 256 m), each producing a
+    // hillshade and a slope map: (3 + 2) * 2 = 10. Was 8 when phase A had two windows. This count is what
+    // makes a partial run fail loudly instead of publishing a half set, so it moves whenever a window does.
+    private const int ExpectedArtifactCount = 10;
 
     /// <summary>
     /// Below this metre spread the height field is constant for all practical purposes, which is what an
@@ -177,8 +180,23 @@ public static class GraphOutputRenderer
             Directory.CreateDirectory(OutputDir);
 
             // 1. Raw macro-geology field, no MapMagic involved.
+            // WINDOWS SIZED TO THE GEOLOGY, not to a round number.
+            //
+            // WAS 1024 m and 256 m, and at those sizes this instrument COULD NOT SEE the thing it exists to
+            // photograph. The macro field's own authored wavelengths, decoded from the graph node: descent
+            // 2600 m, plate cells 2100 m, ridges 1175 m, warp 725 m, and the two noise frequencies 0.0002 and
+            // 0.0001 - i.e. 5000 m and 10000 m. Not one of those fits even once inside a 1024 m frame, so
+            // every macro form was off-frame and the only thing left in the picture was the finest detail,
+            // which reads as uniform noise. The owner said it plainly on seeing the output: kilometre windows
+            // show "just ugly noise", 10 km windows had looked good.
+            //
+            // 30 km is the whole world (WorldExtentMeters = 30000) and 10 km covers the two noise
+            // wavelengths plus several plate cells. 1024 m is KEPT as the third window because meso-scale
+            // corruption is invisible at 10 km - one artifact class needs the wide frame and the other needs
+            // the close one, and dropping either is how a defect hides.
+            if (!RenderRaw(WorldCenterX, WorldCenterZ, 30000f, Resolution, "A_raw_30km")) { EditorApplication.Exit(2); return; }
+            if (!RenderRaw(WorldCenterX, WorldCenterZ, 10000f, Resolution, "A_raw_10km")) { EditorApplication.Exit(2); return; }
             if (!RenderRaw(WorldCenterX, WorldCenterZ, 1024f, Resolution, "A_raw_1024")) { EditorApplication.Exit(2); return; }
-            if (!RenderRaw(WorldCenterX, WorldCenterZ, 256f, Resolution, "A_raw_256")) { EditorApplication.Exit(2); return; }
 
             // 2. Setup scene for the graph render.
             SessionState.SetBool("UpdateSandboxSceneTaskRun", true); // Block the other task from messing with scenes
@@ -488,6 +506,13 @@ public static class GraphOutputRenderer
             {
                 // && short-circuits deliberately: if the 1024 m window failed there is nothing to learn
                 // from the 256 m one, and the log already names what was not produced.
+                // PHASE B CANNOT MATCH PHASE A's WIDE WINDOWS, and that asymmetry is deliberate rather than an
+                // oversight. Phase A samples the field analytically, so it is valid at any size. Phase B reads
+                // Terrain.SampleHeight on tiles that actually exist, and the sandbox holds nine 500 m tiles
+                // spanning 1500 m total (measured: x[-500..1000] z[-500..1000]). A 10 km request would miss
+                // every sample and refuse. So the macro comparison is A-only until the tile set is grown;
+                // phase B's job here is the meso scale, where it is the only thing that can show what the
+                // heightmap does to the field.
                 ok = RenderGraphOutput(WorldCenterX, WorldCenterZ, 1024f, Resolution, "B_graph_1024")
                      && RenderGraphOutput(WorldCenterX, WorldCenterZ, 256f, Resolution, "B_graph_256");
             }

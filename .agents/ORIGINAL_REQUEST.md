@@ -51,3 +51,37 @@ Audit WorldProceduralTerrainThermalWeatheringJobs.cs and HydraulicErosionJob.cs 
 - [ ] Thermal weathering and hydraulic erosion jobs execute with 0 perimeter height artifacts on chunk borders.
 - [ ] Code compiles cleanly and passes all pre-commit Iron Gate checks.
 
+## Follow-up — 2026-08-11T13:56:36Z
+
+Conduct a comprehensive audit, consolidation, and verification of all documentation in the HECTON-8 project. The team must identify contradictions, verify code compliance, refactor obsolete files, and generate a unified knowledge graph.
+
+Working directory: C:\hades\Hecton8
+Integrity mode: development
+
+## Requirements
+
+### R1. Integrity Audit & Stale Data Removal
+Identify and eliminate contradictions, outdated architectural assumptions (e.g., old world sizes, obsolete pipeline rules), and conflicting constraints across all documentation files in `Docs/`.
+
+### R2. Mandate Verification
+Compare the active documentation rules (the mandate spine) against the current Unity C# codebase in `Assets/_Project/Scripts/`. Identify where the codebase violates the documentation, or where the documentation is disconnected from reality.
+
+### R3. Documentation Refactoring
+Consolidate redundant files, move obsolete logs/task files to `Docs/Archive/`, and enforce the single source of truth routing dictated by `AGENTS.md` and `PROJECT_BIBLES.md`.
+
+### R4. Knowledge Graph Generation
+Produce a unified Markdown index/knowledge graph that maps all active systems, their governing bibles, and their authoritative file paths to serve as the new navigation hub.
+
+## Acceptance Criteria
+
+### Automated Mandate Integrity
+- [ ] Running `python Tools/Docs/TestMandateRegistry.py --strict` exits with code 0 (PASS) with 0 errors and 0 warnings.
+- [ ] Running `git diff --check` shows no trailing whitespace or unresolved merge conflicts in the documentation.
+
+### Content Quality
+- [ ] No two active `.md` files assert conflicting technical limits (e.g., one saying world is 12km, another saying 30km).
+- [ ] All completed task logs from previous batches are moved out of the active `Docs/Tasks/` directory and into `Docs/Archive/`.
+
+### Knowledge Graph Deliverable
+- [ ] A new file `Docs/HECTON8_KNOWLEDGE_GRAPH.md` exists and contains links to every active project bible and routing file.
+

@@ -82,9 +82,19 @@ namespace Hecton8.Editor
             // 6000/4000 = 1.5x once that graph is reachable again. For contrast the LIVE world graph is
             // 12000 m (LiveWorldGraphSpanMeters), which is a different world and not what this scene builds.
             //
-            // Raising 4000 would change generated geometry in 020_RENDER_SANDBOX_V2, and which number is
-            // right is the owner's vertical-extent decision. The value stays; only its home moved.
-            mm.globals.height = Hecton8.World.WorldVerticalExtentMath.SandboxV2AuthoredTerrainHeightMeters;
+            // THE PREDICTION IN THE PARAGRAPH ABOVE CAME TRUE AND IS NOW RESOLVED. That graph was restored to
+            // Data/World/Sandbox/ on 2026-08-11, so the scene did start rendering 6000 m of authored geology
+            // into 4000 m of terrain - a uniform 1.5x vertical compression of every slope, cliff, shelf-break
+            // and trench in it. Measured the same day: the node's own mismatch guard fired with
+            // "TerrainData.size.y (4000.0m) != geology Y-span (6000.0m)".
+            //
+            // The scene follows the GRAPH, not the reverse. Vertical extent is authored in the graph node
+            // (highWorldY +1000 / lowWorldY -5000, read off the asset), and the sandbox scene is a
+            // regenerable render target - the owner confirmed the terrain is seed-generated and disposable.
+            // Compressing the author's window to fit a scene constant would silently flatten the geology this
+            // scene exists to look at. Deliberately the ArchivedProcedural... constant rather than a fresh
+            // 6000f literal: the number already had a documented home and a second copy would drift from it.
+            mm.globals.height = Hecton8.World.WorldVerticalExtentMath.ArchivedProceduralGeologyGraphSpanMeters;
             mm.graph = graph;
 
             // Now activate — Awake/OnEnable will fire with graph already set

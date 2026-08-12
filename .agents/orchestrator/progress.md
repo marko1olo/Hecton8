@@ -1,17 +1,16 @@
 # Progress Tracking — Orchestrator
 
 ## Current Status
-Last visited: 2026-07-27T03:07:25Z
+Last visited: 2026-08-11T18:01:50Z
 
 ## Iteration Status
-Current iteration: 2 / 32
+Current iteration: 1 / 32
 
 ## Checklist
-- [x] Task Intake & Authority Verification (`AGENTS.md`, `GEMINI.md`, `voxels.md`, `terrain.md`)
-- [x] Update `plan.md`, `BRIEFING.md`, `progress.md` for R1, R2, R3 requirements
-- [x] Milestone 8-10 Reconnaissance & Root Cause Investigation (Explorer - COMPLETED)
-- [x] Milestone 8-10 Implementation Iteration 1 (Worker - COMPLETED)
-- [x] Milestone 11 Verification Iteration 1 (Reviewer - VETO, Challenger - PASS, Auditor - CLEAN)
-- [x] Milestone 8-10 Remediation Iteration 2 (Worker - COMPLETED)
-- [x] Milestone 11 Re-Verification Iteration 2 (Reviewer - PASS, Challenger - PASS, Auditor - CLEAN)
-- [x] Final Victory Report & Handoff
+- [x] Task Intake & Authority Routing (`AGENTS.md`, `PROJECT_BIBLES.md`, `ORIGINAL_REQUEST.md`)
+- [x] Update `plan.md`, `BRIEFING.md`, `progress.md`, `DISPATCH.md` for Doc Audit & Knowledge Graph mission
+- [x] Heartbeat cron scheduled (`task-19`)
+- [x] Milestone 12: Documentation Reconnaissance & Contradiction Survey (Explorers - 3 completed)
+- [x] Milestone 13: Documentation Refactoring, Task Archiving & Knowledge Graph Generation (Worker - completed)
+- [ ] Milestone 14: Final Review, Challenger Validation & Forensic Audit (Reviewer, Challenger, Auditor)
+- [ ] Victory Claim & Handoff to Parent / Sentinel
