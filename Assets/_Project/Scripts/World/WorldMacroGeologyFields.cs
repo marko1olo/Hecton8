@@ -1538,7 +1538,18 @@ namespace Hecton8.World
                 double2 duneWarpD = new double2(
                     DoubleFractalSimplexNoise01(warpedPosD * 0.0015 + new double2(13.4, -7.2), seed ^ 0x778899AAu, 2) * 2.0 - 1.0,
                     DoubleFractalSimplexNoise01(warpedPosD * 0.0015 + new double2(-5.1, 18.9), seed ^ 0xBBCCDDEEu, 2) * 2.0 - 1.0) * 180.0;
-                float duneOrgWarp = DoubleFractalSimplexNoise01(warpedPosD * 0.008, seed ^ 0x778899AAu, 3) * 12.0f;
+                // 2.0 rad, MEASURED DOWN FROM 12.0. This is a PHASE offset added to a wave whose intended
+                // crest spacing is 2*pi/0.025 = 251 m, and the offset field itself runs at 1/0.008 = 125 m
+                // falling to 31 m over three octaves.
+                //
+                // At 12 rad the offset swung the phase by 1.91 WHOLE dune periods across 31-125 m of ground.
+                // That does not warp the dunes - it scrambles them: the crest spacing stops being the 251 m
+                // the wave asks for and becomes the warp field's own 31-125 m, which turns the 8.5 m dune
+                // amplitude from a 6 degree bedform into a 41 degree one. Measured on the 10 km slope map:
+                // the whole abyssal plain covered in uniform comma-shaped curls, which is what the owner saw
+                // and called ugly noise. At 2 rad the offset is under a third of a period, so it bends and
+                // breaks up the crest lines - the organic look it was written for - without moving them.
+                float duneOrgWarp = DoubleFractalSimplexNoise01(warpedPosD * 0.008, seed ^ 0x778899AAu, 3) * 2.0f;
                 float dunePhase = (float)math.dot((float2)(warpedPosD + duneWarpD), duneAxis) * 0.025f + duneOrgWarp;
                 float duneWave = math.pow(0.5f - 0.5f * math.cos(dunePhase), 1.5f);
                 
@@ -1564,7 +1575,17 @@ namespace Hecton8.World
                 coralHeads = coralHeads * coralHeads; // was math.pow(x, 2f) - a transcendental for a square
                 
                 reefMask = reefPatch * depthGate * recipe.Reefs * reefFade;
-                depth -= (coralHeads - 0.33f) * 35f * reefMask;
+
+                // 6 m, MEASURED DOWN FROM 35 m. Coral heads are a real feature and the mask that gates them
+                // was dead until today, so this amplitude had never once been looked at on a rendered image.
+                //
+                // The arithmetic: coralHeads runs at wavelengths 40 m down to 10 m (position multiplier
+                // 0.025 = 40 m base, three octaves halving to 10 m). A 35 m amplitude across a 10-40 m
+                // wavelength is a peak slope of 70-85 degrees - every cell a cliff. Measured on the 10 km
+                // hillshade before this change: uniform speckle across the whole abyssal plain and a slope
+                // map that read white almost everywhere. At 6 m the same wavelengths give ~25 degrees, which
+                // is a coral mound. Real coral heads stand 1-5 m proud of the seabed, not 35.
+                depth -= (coralHeads - 0.33f) * 6f * reefMask;
             }
             if (stageDump == 6) { masks = default; return parameters.WaterSurfaceY - depth; } // STAGE 6: +volcano/crater/river/lake/mesa/dune/reef
 
