@@ -1535,9 +1535,25 @@ namespace Hecton8.World
             {
                 float duneDir = DoubleFractalSimplexNoise01((double2)warpedNorm * 2.5, seed ^ 0x4D3C2B1Au, 2) * 3.14159f;
                 float2 duneAxis = new float2(math.cos(duneDir), math.sin(duneDir));
+                // 60 m, MEASURED DOWN FROM 180 m. This is a POSITION offset (metres), not a phase, and the
+                // number that matters is its GRADIENT: 180 m of displacement over a 667 m field, halving to
+                // 333 m at the second octave, gives d(offset)/dx of 1.70 and 3.40.
+                //
+                // A POSITION WARP WITH GRADIENT ABOVE 1 IS NON-INVERTIBLE. Neighbouring points map to the
+                // same source location and the dune wave doubles back on itself, which is what draws closed
+                // curls rather than bent crest lines - and closed curls is exactly what the 10 km slope map
+                // shows. At 60 m the gradients are 0.57 and 1.13; the base octave no longer folds, and the
+                // dune field bends without turning inside out.
+                //
+                // THIS, NOT THE PHASE OFFSET BELOW, IS THE CURL SOURCE. Recorded because the phase term was
+                // the obvious suspect and cost two renders: dropping it from 12 rad to 2 rad changed nothing
+                // visible, and rebuilding it as a single 500 m octave changed nothing visible either. What
+                // proved the dune block guilty was DiagFoldsDunesOff = true, which removed the curls
+                // entirely - so the culprit was inside this block, and the phase term had been cleared by
+                // measurement twice.
                 double2 duneWarpD = new double2(
                     DoubleFractalSimplexNoise01(warpedPosD * 0.0015 + new double2(13.4, -7.2), seed ^ 0x778899AAu, 2) * 2.0 - 1.0,
-                    DoubleFractalSimplexNoise01(warpedPosD * 0.0015 + new double2(-5.1, 18.9), seed ^ 0xBBCCDDEEu, 2) * 2.0 - 1.0) * 180.0;
+                    DoubleFractalSimplexNoise01(warpedPosD * 0.0015 + new double2(-5.1, 18.9), seed ^ 0xBBCCDDEEu, 2) * 2.0 - 1.0) * 60.0;
                 // ONE OCTAVE AT 500 m, and the OCTAVE COUNT is the fix rather than the multiplier.
                 //
                 // This is a PHASE offset on a wave whose intended crest spacing is 2*pi/0.025 = 251 m. What
