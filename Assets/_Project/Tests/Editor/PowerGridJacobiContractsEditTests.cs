@@ -434,6 +434,31 @@ public sealed class PowerGridJacobiContractsEditTests
         Assert.AreEqual(-3.75f, local.z);
     }
 
+
+    [Test]
+    public void AupMath_DistanceMeters_CalculatesCorrectDistance()
+    {
+        double3 baseOrigin = new double3(100000.0, -2000.0, 75000.0);
+        double3 aupA = new double3(100010.0, -2000.0, 75000.0);
+        double3 aupB = new double3(100000.0, -2000.0, 75010.0);
+
+        float distance = PowerGridAupMath.DistanceMeters(aupA, aupB, baseOrigin);
+
+        Assert.AreEqual(14.1421356f, distance, 0.001f);
+    }
+
+    [Test]
+    public void AupMath_DistanceMeters_ReturnsZeroForMicroscopicDistances()
+    {
+        double3 baseOrigin = new double3(100000.0, -2000.0, 75000.0);
+        double3 aupA = new double3(100010.0, -2000.0, 75000.0);
+        double3 aupB = new double3(100010.0001, -2000.0, 75000.0);
+
+        float distance = PowerGridAupMath.DistanceMeters(aupA, aupB, baseOrigin);
+
+        Assert.AreEqual(0f, distance);
+    }
+
     private static int OffsetOf<T>(string fieldName) where T : struct
     {
         var field = typeof(T).GetField(fieldName);
