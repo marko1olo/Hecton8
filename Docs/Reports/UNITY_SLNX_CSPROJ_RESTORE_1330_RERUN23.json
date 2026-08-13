@@ -1,13 +1,76 @@
 {
   "agentId": "1330",
-  "createdProjectCount": 0,
-  "createdProjects": [],
+  "createdProjectCount": 50,
+  "createdProjects": [
+    "Unity.ShaderGraph.Editor.csproj",
+    "Hecton8.Core.csproj",
+    "Hecton8.Core.Contracts.csproj",
+    "MoreMountains.Feedbacks.csproj",
+    "Assembly-CSharp-Editor-firstpass.csproj",
+    "ShapesRuntime.csproj",
+    "Crest.csproj",
+    "MoreMountains.Tools.csproj",
+    "MoreMountains.Tools.Editor.csproj",
+    "AmplifyImpostors.Editor.csproj",
+    "Hecton8.Editor.csproj",
+    "VolumetricLightBeam.csproj",
+    "ShapesEditor.csproj",
+    "Assembly-CSharp.csproj",
+    "MoreMountains.Feedbacks.PostProcessing.csproj",
+    "VolumetricLightBeam.Editor.csproj",
+    "MoreMountains.Feedbacks.MMTools.csproj",
+    "MapMagic.csproj",
+    "MoreMountains.Feedbacks.Cinemachine.csproj",
+    "TechniePhysicsCreator.csproj",
+    "Assembly-CSharp-Editor.csproj",
+    "MeshBakerEditor.csproj",
+    "MoreMountains.Feedbacks.TextMeshPro.csproj",
+    "Assembly-CSharp-firstpass.csproj",
+    "MoreMountains.Feedbacks.HDRP.csproj",
+    "MoreMountains.Feedbacks.URP.csproj",
+    "Den.Tools.csproj",
+    "GPUInstancer.csproj",
+    "GPUInstancer.Editor.csproj",
+    "Lofelt.NiceVibrations.csproj",
+    "MapMagic.Editor.csproj",
+    "MoreMountains.Feedbacks.NiceVibrations.csproj",
+    "MoreMountains.Feedbacks.Authorizations.csproj",
+    "MeshBakerCore.csproj",
+    "JBooth.MicroSplat.Core.Editor.csproj",
+    "Lofelt.NiceVibrations.Editor.csproj",
+    "BakeryRuntimeAssembly.csproj",
+    "AmplifyImpostors.Runtime.csproj",
+    "MoreMountains.Feedbacks.Editor.csproj",
+    "Hecton8.World.Contracts.csproj",
+    "Crest.Helpers.Editor.csproj",
+    "Den.Tools.Editor.csproj",
+    "Technie.PhysicsCreator.Updater.csproj",
+    "Sirenix.OdinInspector.Modules.UnityMathematics.csproj",
+    "JBooth.MicroSplat.Core.csproj",
+    "Hecton8.Bootstrap.Contracts.csproj",
+    "MapMagic.Settings.csproj",
+    "MapMagic.MicroSplat.Editor.csproj",
+    "Hecton8.Input.Generated.csproj",
+    "MapMagic.MicroSplat.csproj"
+  ],
   "mappings": [
     {
       "editor": true,
       "project": "Unity.ShaderGraph.Editor.csproj",
       "projectReferences": [],
       "source": "Packages\\com.unity.shadergraph\\Editor\\Unity.ShaderGraph.Editor.asmdef"
+    },
+    {
+      "editor": false,
+      "project": "Hecton8.Core.csproj",
+      "projectReferences": [
+        "GPUInstancer",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Core.Contracts",
+        "Hecton8.World.Contracts",
+        "ShapesRuntime"
+      ],
+      "source": "Assets\\_Project\\Scripts\\Hecton8.Core.asmdef"
     },
     {
       "editor": false,
@@ -33,17 +96,13 @@
     {
       "editor": false,
       "project": "ShapesRuntime.csproj",
-      "projectReferences": [
-        "Unity.RenderPipelines.Universal.Runtime"
-      ],
+      "projectReferences": [],
       "source": "Assets\\Shapes\\Scripts\\Runtime\\Shapes Runtime.asmdef"
     },
     {
       "editor": false,
       "project": "Crest.csproj",
-      "projectReferences": [
-        "Unity.RenderPipelines.Universal.Runtime"
-      ],
+      "projectReferences": [],
       "source": "Assets\\Crest\\Crest\\Scripts\\Crest.asmdef"
     },
     {
@@ -81,26 +140,21 @@
         "Hecton8.Core.Contracts",
         "Hecton8.World.Contracts",
         "MapMagic",
-        "ShapesRuntime",
-        "Unity.RenderPipelines.Universal.Runtime"
+        "ShapesRuntime"
       ],
       "source": "Assets\\_Project\\Scripts\\Editor\\Hecton8.Editor.asmdef"
     },
     {
       "editor": false,
       "project": "VolumetricLightBeam.csproj",
-      "projectReferences": [
-        "Unity.RenderPipelines.Universal.Runtime"
-      ],
+      "projectReferences": [],
       "source": "Assets\\VolumetricLightBeam\\Scripts\\VolumetricLightBeam.asmdef"
     },
     {
       "editor": true,
       "project": "ShapesEditor.csproj",
       "projectReferences": [
-        "ShapesRuntime",
-        "Unity.RenderPipelines.Universal.Editor",
-        "Unity.RenderPipelines.Universal.Runtime"
+        "ShapesRuntime"
       ],
       "source": "Assets\\Shapes\\Scripts\\Editor\\Shapes Editor.asmdef"
     },
@@ -349,9 +403,7 @@
     {
       "editor": false,
       "project": "JBooth.MicroSplat.Core.csproj",
-      "projectReferences": [
-        "Unity.RenderPipelines.Universal.Runtime"
-      ],
+      "projectReferences": [],
       "source": "Packages\\com.jbooth.microsplat.core\\Scripts\\JBooth.MicroSplat.Core.asmdef"
     },
     {
@@ -397,18 +449,26 @@
       "source": "Assets\\MapMagic\\Compatibility\\MicroSplat\\MapMagic.MicroSplat.asmdef"
     }
   ],
-  "preservedProjectCount": 1,
-  "preservedProjects": [
-    "Hecton8.Core.csproj"
-  ],
-  "slnxProjectCount": 56,
+  "preservedProjectCount": 0,
+  "preservedProjects": [],
+  "slnxProjectCount": 51,
   "sourceOfTruth": "Unity .asmdef plus default Assembly-CSharp conventions; generated files are offline recovery artifacts",
   "staleScriptAssemblyMasking": "asmdef projects exclude all solution project DLLs from Library/ScriptAssemblies and use project references when the asmdef target is present in Hecton8.slnx",
   "status": "PARTIAL",
   "task": "UNITY_SLNX_CSPROJ_RESTORE",
-  "unchangedProjectCount": 49,
-  "unchangedProjects": [
+  "unchangedProjectCount": 0,
+  "unchangedProjects": [],
+  "unresolvedProjectCount": 1,
+  "unresolvedProjects": [
+    "Tools\\DataMonolithBakeCli\\DataMonolithBakeCli.csproj"
+  ],
+  "updatedProjectCount": 0,
+  "updatedProjects": [],
+  "verificationHashSha256": "b2112ddcb293fa5399948c508d3faf1a760b4bbd385397fb727f116379dca8a3",
+  "verifiedDirectWriteCount": 50,
+  "verifiedDirectWrites": [
     "Unity.ShaderGraph.Editor.csproj",
+    "Hecton8.Core.csproj",
     "Hecton8.Core.Contracts.csproj",
     "MoreMountains.Feedbacks.csproj",
     "Assembly-CSharp-Editor-firstpass.csproj",
@@ -458,20 +518,6 @@
     "Hecton8.Input.Generated.csproj",
     "MapMagic.MicroSplat.csproj"
   ],
-  "unresolvedProjectCount": 6,
-  "unresolvedProjects": [
-    "Unity.RenderPipelines.Universal.Editor.csproj",
-    "Unity.RenderPipelines.Core.Editor.csproj",
-    "Unity.RenderPipelines.Universal.Runtime.csproj",
-    "BakeryEditorAssembly.csproj",
-    "Hecton8.World.Dots.csproj",
-    "Tools\\DataMonolithBakeCli\\DataMonolithBakeCli.csproj"
-  ],
-  "updatedProjectCount": 0,
-  "updatedProjects": [],
-  "verificationHashSha256": "b337a583946143af3bc31e0394de6370e06ef7806a7177dacfa6024dee42c594",
-  "verifiedDirectWriteCount": 0,
-  "verifiedDirectWrites": [],
   "writeFailureCount": 0,
   "writeFailures": [],
   "writeMode": "verified direct writes; this sandbox denies Python os.replace/unlink on generated root artifacts, so the generator verifies readback instead of leaving temp files; Hecton8.Core.csproj preserved"

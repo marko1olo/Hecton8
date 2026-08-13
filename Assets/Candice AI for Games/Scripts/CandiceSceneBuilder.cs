@@ -8,6 +8,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 //Candice AI
 using CandiceAIforGames.AI;
+using Hecton8.Core;
 
 namespace CandiceAIforGames.AI
 {
@@ -113,9 +114,14 @@ namespace CandiceAIforGames.AI
 
             //destroy
             if (_instantiatedObjects != null) {
+                ObjectPoolManager objectPoolManager = GlobalRegistry.ObjectPool;
                 foreach (GameObject obj in _instantiatedObjects) {
                     if (obj != null) {
-                        Destroy(obj);
+                        if (objectPoolManager != null) {
+                            objectPoolManager.Despawn(obj);
+                        } else {
+                            Destroy(obj);
+                        }
                     }
                 }
                 _instantiatedObjects.Clear();
@@ -132,11 +138,18 @@ namespace CandiceAIforGames.AI
             if (sceneBuilderObjects != null && sceneBuilderObjects.Length > 0)
             {
 
+                ObjectPoolManager objectPoolManager = GlobalRegistry.ObjectPool;
+
                 foreach (GameObject sceneBuilderObject in sceneBuilderObjects) {
 
                     if (sceneBuilderObject != null) {
 
-                        GameObject instantiatedObj = Instantiate(sceneBuilderObject, sceneBuilderObject.transform.position, Quaternion.identity);
+                        GameObject instantiatedObj;
+                        if (objectPoolManager != null) {
+                            instantiatedObj = objectPoolManager.Spawn(sceneBuilderObject, sceneBuilderObject.transform.position, Quaternion.identity);
+                        } else {
+                            instantiatedObj = Instantiate(sceneBuilderObject, sceneBuilderObject.transform.position, Quaternion.identity);
+                        }
                         if (_instantiatedObjects == null) _instantiatedObjects = new List<GameObject>();
                         _instantiatedObjects.Add(instantiatedObj);
 
