@@ -28,6 +28,15 @@ namespace Hecton8.Tests.Editor
         public void BulkheadPlaneDTO_IsExactPromptLayout()
         {
             Assert.That(UnsafeUtility.SizeOf<BulkheadPlaneDTO>(), Is.EqualTo(BulkheadStateLayoutGuard.PlaneSizeBytes));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadPlaneDTO), nameof(BulkheadPlaneDTO.CenterAup)), Is.EqualTo(0));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadPlaneDTO), nameof(BulkheadPlaneDTO.Normal)), Is.EqualTo(24));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadPlaneDTO), nameof(BulkheadPlaneDTO.WidthMeters)), Is.EqualTo(36));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadPlaneDTO), nameof(BulkheadPlaneDTO.HeightMeters)), Is.EqualTo(40));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadPlaneDTO), nameof(BulkheadPlaneDTO.HalfThicknessMeters)), Is.EqualTo(44));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadPlaneDTO), nameof(BulkheadPlaneDTO.EdgeHashID)), Is.EqualTo(48));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadPlaneDTO), nameof(BulkheadPlaneDTO.Flags)), Is.EqualTo(52));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadPlaneDTO), nameof(BulkheadPlaneDTO.IntegrityIndex)), Is.EqualTo(56));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadPlaneDTO), nameof(BulkheadPlaneDTO.Reserved)), Is.EqualTo(60));
         }
 
         [Test]
