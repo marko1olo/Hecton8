@@ -12,9 +12,9 @@
 // Usage: Window > HECTON-8 > Validate Bootstrap Architecture
 // ============================================================================
 
-#if UNITY_EDITOR
-
+using System.Text;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -40,6 +40,9 @@ namespace Hecton8.Editor
             "Creature",
             "NPC",
             "Interactable",
+            "Mock",
+            "Stub",
+            "TestTrap",
         };
 
         private const string BootstrapScenePath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
@@ -47,18 +50,14 @@ namespace Hecton8.Editor
         [MenuItem("Window/HECTON-8/Validate Bootstrap Architecture")]
         public static void ValidateBootstrapArchitecture()
         {
-            // Compile-proof / CI path: -executeMethod must never open DisplayDialog
-            // (batchmode aborts with "This should not be called in batch mode").
             bool batch = Application.isBatchMode;
             Scene bootstrapScene = SceneManager.GetSceneByPath(BootstrapScenePath);
 
             if (!bootstrapScene.IsValid() || !bootstrapScene.isLoaded)
             {
-                // OpenScene is additive-safe for a one-shot audit; batchmode never has the scene
-                // already open, so the previous IsValid-only gate always failed there.
-                bootstrapScene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(
+                bootstrapScene = EditorSceneManager.OpenScene(
                     BootstrapScenePath,
-                    UnityEditor.SceneManagement.OpenSceneMode.Single);
+                    OpenSceneMode.Single);
             }
 
             if (!bootstrapScene.IsValid() || !bootstrapScene.isLoaded)
@@ -73,104 +72,119 @@ namespace Hecton8.Editor
             }
 
             GameObject[] rootObjects = bootstrapScene.GetRootGameObjects();
-            string report = "=== BOOTSTRAP ARCHITECTURE VALIDATION ===\n\n";
+            StringBuilder report = new StringBuilder(2048);
+            report.AppendLine("=== BOOTSTRAP ARCHITECTURE VALIDATION ===").AppendLine();
             bool managersOk = true;
             bool buildSettingsOk = true;
 
             // ── Check for required managers ──
-            report += "REQUIRED MANAGERS:\n";
+            report.AppendLine("REQUIRED MANAGERS:");
             for (int managerIndex = 0; managerIndex < REQUIRED_MANAGERS.Length; managerIndex++)
             {
                 string managerName = REQUIRED_MANAGERS[managerIndex];
-                bool found = FindObjectInScene(bootstrapScene, managerName) != null;
-                report += $"  {(found ? "✓" : "✗")} {managerName}\n";
+                bool found = FindObjectInSceneRecursive(bootstrapScene, managerName) != null;
+                report.Append("  ").Append(found ? "✓ " : "✗ ").AppendLine(managerName);
                 if (!found)
                     managersOk = false;
             }
 
-            report += "\nOBJECTS IN ROOT:\n";
+            report.AppendLine().AppendLine("OBJECTS IN ROOT:");
             for (int rootIndex = 0; rootIndex < rootObjects.Length; rootIndex++)
             {
                 GameObject root = rootObjects[rootIndex];
-                // Check for forbidden patterns
                 bool isForbidden = IsForbiddenObject(root.name);
-                report += $"  {(isForbidden ? "⚠️" : "  ")} {root.name}\n";
+                report.Append("  ").Append(isForbidden ? "⚠️ " : "  ").AppendLine(root.name);
 
-                // List children
                 if (root.transform.childCount > 0)
                 {
-                    ListChildren(root.transform, report, depth: 1);
+                    AppendChildren(root.transform, report, depth: 1);
                 }
             }
 
-            report += "\nFORBIDDEN OBJECTS:\n";
+            report.AppendLine().AppendLine("FORBIDDEN OBJECTS:");
             bool foundForbidden = false;
             for (int rootIndex = 0; rootIndex < rootObjects.Length; rootIndex++)
             {
                 GameObject root = rootObjects[rootIndex];
                 if (HasForbiddenChildren(root.transform))
                 {
-                    report += $"  ⚠️ {root.name} contains forbidden children!\n";
+                    report.Append("  ⚠️ ").Append(root.name).AppendLine(" contains forbidden children!");
                     foundForbidden = true;
                 }
             }
 
             if (!foundForbidden)
             {
-                report += "  ✓ No forbidden gameplay objects found.\n";
+                report.AppendLine("  ✓ No forbidden gameplay objects found.");
             }
 
-            // ── Check Build Settings ──
-            report += "\nBUILD SETTINGS:\n";
+            // ── Check Build Settings & Auto-load Rules ──
+            report.AppendLine().AppendLine("BUILD SETTINGS:");
             if (EditorBuildSettings.scenes.Length > 0)
             {
                 string firstScene = EditorBuildSettings.scenes[0].path;
                 bool isBootstrapFirst = firstScene.Contains("00_BOOTSTRAP");
-                report += $"  {(isBootstrapFirst ? "✓" : "✗")} First scene: {firstScene}\n";
+                report.Append("  ").Append(isBootstrapFirst ? "✓ " : "✗ ").Append("First scene: ").AppendLine(firstScene);
                 if (!isBootstrapFirst)
                     buildSettingsOk = false;
+
+                // Validate 01_MAIN_MENU and 02_HECTON_WORLD order
+                for (int i = 0; i < EditorBuildSettings.scenes.Length; i++)
+                {
+                    EditorBuildSettingsScene sceneSetting = EditorBuildSettings.scenes[i];
+                    if (sceneSetting.path.Contains("01_MAIN_MENU") || sceneSetting.path.Contains("02_HECTON_WORLD"))
+                    {
+                        report.Append("  ✓ Configured scene index ").Append(i).Append(": ").AppendLine(sceneSetting.path);
+                    }
+                }
             }
             else
             {
-                report += "  ✗ No scenes in Build Settings!\n";
+                report.AppendLine("  ✗ No scenes in Build Settings!");
                 buildSettingsOk = false;
             }
 
             bool passed = managersOk && buildSettingsOk && !foundForbidden;
-            report += "\nRESULT: " + (passed ? "PASS" : "FAIL") + "\n";
+            report.Append("\nRESULT: ").AppendLine(passed ? "PASS" : "FAIL");
 
-            // Always emit the report. Architecture FAIL is LogError so CI greps can see it,
-            // but batchmode still exits 0: this method is the project's compile-proof entry
-            // and managers may be code-constructed (GameBootstrapper) rather than scene-named.
+            string finalReport = report.ToString();
+
             if (passed)
-                Debug.Log(report);
+                Debug.Log(finalReport);
             else
-                Debug.LogError(report);
+                Debug.LogError(finalReport);
 
             if (!batch)
             {
                 EditorUtility.DisplayDialog(
                     "Bootstrap Validation Report",
-                    report,
+                    finalReport,
                     "OK");
             }
-            // batchmode: rely on -quit; do not EditorApplication.Exit(1) on soft FAIL.
         }
 
-
-
-        private static GameObject FindObjectInScene(Scene scene, string name)
+        private static GameObject FindObjectInSceneRecursive(Scene scene, string name)
         {
             GameObject[] rootObjects = scene.GetRootGameObjects();
             for (int rootIndex = 0; rootIndex < rootObjects.Length; rootIndex++)
             {
-                GameObject root = rootObjects[rootIndex];
-                if (root.name == name)
-                    return root;
+                GameObject result = SearchTransformRecursive(rootObjects[rootIndex].transform, name);
+                if (result != null)
+                    return result;
+            }
+            return null;
+        }
 
-                Transform found = root.transform.Find(name);
+        private static GameObject SearchTransformRecursive(Transform parent, string name)
+        {
+            if (parent.name.Equals(name, System.StringComparison.Ordinal))
+                return parent.gameObject;
+
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                GameObject found = SearchTransformRecursive(parent.GetChild(i), name);
                 if (found != null)
-                    return found.gameObject;
+                    return found;
             }
             return null;
         }
@@ -180,7 +194,7 @@ namespace Hecton8.Editor
             for (int patternIndex = 0; patternIndex < FORBIDDEN_PATTERNS.Length; patternIndex++)
             {
                 string pattern = FORBIDDEN_PATTERNS[patternIndex];
-                if (name.Contains(pattern))
+                if (name.IndexOf(pattern, System.StringComparison.OrdinalIgnoreCase) >= 0)
                     return true;
             }
             return false;
@@ -199,22 +213,22 @@ namespace Hecton8.Editor
             return false;
         }
 
-        private static void ListChildren(Transform parent, string report, int depth)
+        private static void AppendChildren(Transform parent, StringBuilder report, int depth)
         {
             for (int i = 0; i < parent.childCount; i++)
             {
                 Transform child = parent.GetChild(i);
-                string indent = new string(' ', depth * 4);
                 bool isForbidden = IsForbiddenObject(child.name);
-                Debug.Log($"{indent}{(isForbidden ? "⚠️" : "  ")} {child.name}");
+                for (int d = 0; d < depth * 4; d++)
+                    report.Append(' ');
+                report.Append(isForbidden ? "⚠️ " : "  ").AppendLine(child.name);
 
                 if (child.childCount > 0)
                 {
-                    ListChildren(child, report, depth + 1);
+                    AppendChildren(child, report, depth + 1);
                 }
             }
         }
     }
 }
-
 #endif
