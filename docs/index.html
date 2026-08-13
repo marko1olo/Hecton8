@@ -963,35 +963,13 @@
     
     <nav>
         <div class="logo">Hecton-8</div>
-        <div class="links">
-            <a href="https://github.com/marko1olo/Hecton8">GitHub</a>
-            <a href="#features">Features</a>
-            <a href="#about">About</a>
-        </div>
-    
-<div id="lang-switcher" style="display: inline-flex; gap: 6px; background: rgba(255,255,255,0.08); padding: 4px 8px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.15); font-size: 0.8rem; margin-left: 1rem; align-items: center;">
-    <span style="color: #aaa; font-weight: bold; margin-right: 2px;">🌐</span>
-    <button onclick="setLang('en')" style="background: transparent; border: none; color: #00ffcc; font-weight: bold; cursor: pointer; padding: 2px 4px;">EN</button> |
-    <button onclick="setLang('ru')" style="background: transparent; border: none; color: #fff; cursor: pointer; padding: 2px 4px;">RU</button> |
-    <button onclick="setLang('zh')" style="background: transparent; border: none; color: #fff; cursor: pointer; padding: 2px 4px;">ZH</button> |
-    <button onclick="setLang('de')" style="background: transparent; border: none; color: #fff; cursor: pointer; padding: 2px 4px;">DE</button>
-</div>
-<script>
-function setLang(lang) {
-    const notice = document.getElementById('i18n-notice');
-    if (notice) {
-        const msgs = {
-            en: '🌐 Switched language to English',
-            ru: '🌐 Язык переключён на Русский',
-            zh: '🌐 语言已切换为中文',
-            de: '🌐 Sprache auf Deutsch umgestellt'
-        };
-        notice.innerText = msgs[lang] || msgs.en;
-        notice.style.display = 'block';
-        setTimeout(() => notice.style.display = 'none', 3000);
-    }
-}
-</script>
+	        <div class="links">
+	            <a href="https://github.com/marko1olo/Hecton8">GitHub</a>
+	            <a href="#features">Features</a>
+	            <a href="#faq">About</a>
+	        </div>
+
+	        <div aria-label="Current prototype target" style="color: #00ffcc; border: 1px solid rgba(0,255,170,0.35); border-radius: 999px; font-size: 0.72rem; font-weight: bold; letter-spacing: 0.08em; padding: 0.45rem 0.7rem; text-transform: uppercase;">V0 Vertical Slice · Unity 6000.5</div>
 </nav>
     
     <section class="hero">
@@ -1002,16 +980,16 @@ function setLang(lang) {
     <section id="features" class="features">
         <div class="card">
             <h3>Sonar Sweep</h3>
-            <p>Experience the ultimate sonar sweep capabilities seamlessly integrated into the core platform.</p>
+            <p>An active-sweep simulator turns distant returns into a clear deep-water navigation language.</p>
         </div><div class="card">
             <h3>Depth Gauge</h3>
-            <p>Experience the ultimate depth gauge capabilities seamlessly integrated into the core platform.</p>
+            <p>Depth and pressure readouts establish the hostile survey conditions around the vehicle.</p>
         </div><div class="card">
             <h3>Submarine HUD</h3>
-            <p>Experience the ultimate submarine hud capabilities seamlessly integrated into the core platform.</p>
+            <p>An instrument-first interface keeps environmental state readable without losing the deep-sea mood.</p>
         </div><div class="card">
-            <h3>Bioluminescent Entities</h3>
-            <p>Experience the ultimate bioluminescent entities capabilities seamlessly integrated into the core platform.</p>
+            <h3>Bioluminescent Drift</h3>
+            <p>Living light traces current and debris, turning beauty into a restrained route cue and navigation risk.</p>
         </div>
     </section>
     
@@ -2126,7 +2104,5 @@ function setLang(lang) {
   </div>
 </section>
 
-
-<div id="i18n-notice" style="display:none; position:fixed; bottom:20px; right:20px; background:#00ffcc; color:#01070e; font-weight:bold; padding:12px 20px; border-radius:8px; z-index:9999; box-shadow:0 5px 20px rgba(0,255,204,0.4);">🌐 Switched language</div>
 </body>
 </html>
