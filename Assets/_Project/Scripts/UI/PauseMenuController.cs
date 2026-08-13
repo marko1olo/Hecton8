@@ -76,6 +76,7 @@ namespace Hecton8.UI
         [SerializeField] private PlayerPDA playerPDA;
         [SerializeField] private TMP_FontAsset labelFont;
         [SerializeField] private TMP_FontAsset numericFont;
+        [SerializeField] private RectTransform pauseMenuRoot;
 
         [Header("Settings")]
         [SerializeField] private string mainMenuSceneName = DefaultMainMenuSceneName;
@@ -1012,6 +1013,9 @@ namespace Hecton8.UI
 
         private RectTransform ResolveOrCreateMenuRoot(RectTransform self)
         {
+            if (pauseMenuRoot != null)
+                return pauseMenuRoot;
+
             if (self.name == PauseMenuRootName)
                 return self;
 
