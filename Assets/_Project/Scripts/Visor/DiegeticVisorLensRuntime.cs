@@ -85,7 +85,6 @@ namespace Hecton8.Visor
         private uint _frameCounter;
         private int _gpuGlobalsWriteIndex;
         private ushort _breachSequence;
-        private bool _hasScheduledWork;
         private bool _hasLastCameraRotation;
         private bool _nativeReady;
         private bool _hasGpuGlobals;
@@ -115,7 +114,6 @@ namespace Hecton8.Visor
             tuning = default;
             IDataVault vault = _vault;
             if (!_nativeReady ||
-                _hasScheduledWork ||
                 vault == null ||
                 !TryReadVaultArray(vault, in _stateHandle, StateBufferId, 1, out NativeArray<VisorStateDTO>.ReadOnly states) ||
                 !TryReadVaultArray(vault, in _gpuGlobalsHandle, GpuGlobalsBufferId, 1, out NativeArray<DiegeticVisorLensGpuGlobalsDTO>.ReadOnly gpuGlobals) ||
@@ -136,7 +134,7 @@ namespace Hecton8.Visor
         public bool TryWriteState(in VisorStateDTO state)
         {
             EnsureNativeState();
-            if (!_nativeReady || _hasScheduledWork)
+            if (!_nativeReady)
                 return false;
 
             IDataVault vault = EnsureVault();
@@ -169,7 +167,7 @@ namespace Hecton8.Visor
         public bool TryWriteTuning(in VisorLensTuningDTO tuning)
         {
             EnsureNativeState();
-            if (!_nativeReady || _hasScheduledWork)
+            if (!_nativeReady)
                 return false;
 
             IDataVault vault = EnsureVault();
@@ -210,7 +208,6 @@ namespace Hecton8.Visor
 
         private void OnDisable()
         {
-            CompleteScheduledWorkForTeardown();
             UploadGpuGlobals();
             TryUnregisterLateFrameTickable();
             TryUnregisterSlowTickable();
@@ -233,11 +230,6 @@ namespace Hecton8.Visor
             _frameCounter++;
             _breachCooldown = math.max(0f, _breachCooldown - safeDelta);
 
-            if (_hasScheduledWork)
-            {
-                return;
-            }
-
             ApplyPendingMockResetIfNeeded();
             IngestCoreSignals(safeDelta);
             UpdateHeadAngularVelocity(safeDelta);
@@ -256,7 +248,6 @@ namespace Hecton8.Visor
         public void LateFrameTick()
         {
             AdvanceVisorSimulation(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
-            TryFinalizeScheduledWorkNoWait();
             UploadGpuGlobals();
         }
 
@@ -276,12 +267,6 @@ namespace Hecton8.Visor
         public void GenerateEmergencyMockVisorData()
         {
             EnsureNativeState();
-            if (_hasScheduledWork)
-            {
-                _pendingMockReset = true;
-                _forceImmediateSimulation = true;
-                return;
-            }
 
             ApplyEmergencyMockVisorData();
         }
@@ -361,15 +346,6 @@ namespace Hecton8.Visor
             float safeRespiration = SanitizeRange(respirationRate, 4f, 44f, 12f);
             float safeHeartRate = SanitizeRange(heartRate, 28f, 220f, 72f);
             float safeCoreTemperature = SanitizeRange(coreTemperatureC, 28f, 43f, 37f);
-            if (_hasScheduledWork)
-            {
-                _pendingRespirationRate = safeRespiration;
-                _pendingHeartRate = safeHeartRate;
-                _pendingCoreTemperatureC = safeCoreTemperature;
-                _hasPendingPhysiology = true;
-                _forceImmediateSimulation = true;
-                return;
-            }
 
             IDataVault vault = EnsureVault();
             bool physiologyLocked = false;
@@ -398,13 +374,6 @@ namespace Hecton8.Visor
         {
             EnsureNativeState();
             float safePressure = Sanitize01(pressure01);
-            if (_hasScheduledWork)
-            {
-                _pendingExternalPressure01 = math.max(_pendingExternalPressure01, safePressure);
-                _hasPendingExternalPressure = true;
-                _forceImmediateSimulation = true;
-                return;
-            }
 
             IDataVault vault = EnsureVault();
             bool environmentLocked = false;
@@ -434,16 +403,6 @@ namespace Hecton8.Visor
             float safeSilt = Sanitize01(silt01);
             float safeDarkness = Sanitize01(darkness01);
             float safeCorruption = Sanitize01(corruption01);
-            if (_hasScheduledWork)
-            {
-                _pendingWaterTemperatureC = safeWaterTemperature;
-                _pendingSiltDensity01 = math.max(_pendingSiltDensity01, safeSilt);
-                _pendingDarkness01 = safeDarkness;
-                _pendingCorruption01 = math.max(_pendingCorruption01, safeCorruption);
-                _hasPendingEnvironment = true;
-                _forceImmediateSimulation = true;
-                return;
-            }
 
             IDataVault vault = EnsureVault();
             bool environmentLocked = false;
@@ -473,12 +432,6 @@ namespace Hecton8.Visor
         {
             EnsureNativeState();
             float safeIntensity = Sanitize01(intensity01);
-            if (_hasScheduledWork)
-            {
-                _pendingSurfaceEmergence01 = math.max(_pendingSurfaceEmergence01, safeIntensity);
-                _forceImmediateSimulation = true;
-                return;
-            }
 
             IDataVault vault = EnsureVault();
             bool environmentLocked = false;
@@ -506,12 +459,6 @@ namespace Hecton8.Visor
         {
             EnsureNativeState();
             float safeStrength = Sanitize01(strength01);
-            if (_hasScheduledWork)
-            {
-                _pendingWipeCommand01 = math.max(_pendingWipeCommand01, safeStrength);
-                _forceImmediateSimulation = true;
-                return;
-            }
 
             IDataVault vault = EnsureVault();
             bool environmentLocked = false;
@@ -538,8 +485,6 @@ namespace Hecton8.Visor
         public bool TryReloadCsvOverrides()
         {
             EnsureNativeState();
-            if (_hasScheduledWork)
-                return false;
 
             string root = Path.Combine(Application.dataPath, "..");
             string path = Path.Combine(root, CsvRelativePath);
@@ -758,7 +703,6 @@ namespace Hecton8.Visor
             if (ReferenceEquals(_vault, nextVault))
                 return;
 
-            CompleteScheduledWorkForTeardown();
             ReleaseNativeState(_vault, clearVault: false);
             _vault = nextVault;
             ResetNativeEpochState();
@@ -837,7 +781,6 @@ namespace Hecton8.Visor
         private void ResetNativeEpochState()
         {
             _nativeReady = false;
-            _hasScheduledWork = false;
             _hasGpuGlobals = false;
             _hasUploadedGpuGlobals = false;
             _nativeRepairPending = false;
@@ -1086,17 +1029,6 @@ namespace Hecton8.Visor
                 DumpBlackBoxOnce((uint)nanFlags);
 
             TryPublishBreach(in state);
-        }
-
-        private bool TryFinalizeScheduledWorkNoWait()
-        {
-            return true;
-        }
-
-        private bool CompleteScheduledWorkForTeardown()
-        {
-            _hasScheduledWork = false;
-            return true;
         }
 
         private void UploadGpuGlobals()
