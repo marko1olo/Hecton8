@@ -62,6 +62,16 @@ namespace Hecton8.Tests.Editor
         {
             Assert.That(UnsafeUtility.SizeOf<BulkheadContainmentIntentDTO>(), Is.EqualTo(64));
             Assert.That(UnsafeUtility.SizeOf<BulkheadContainmentIntentControlDTO>(), Is.EqualTo(64));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadContainmentIntentControlDTO), nameof(BulkheadContainmentIntentControlDTO.WriteCursor)), Is.EqualTo(0));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadContainmentIntentControlDTO), nameof(BulkheadContainmentIntentControlDTO.ReadCursor)), Is.EqualTo(4));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadContainmentIntentControlDTO), nameof(BulkheadContainmentIntentControlDTO.Capacity)), Is.EqualTo(8));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadContainmentIntentControlDTO), nameof(BulkheadContainmentIntentControlDTO.Dropped)), Is.EqualTo(12));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadContainmentIntentControlDTO), nameof(BulkheadContainmentIntentControlDTO.LastEdgeHashID)), Is.EqualTo(16));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadContainmentIntentControlDTO), nameof(BulkheadContainmentIntentControlDTO.Flags)), Is.EqualTo(20));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadContainmentIntentControlDTO), nameof(BulkheadContainmentIntentControlDTO.Reserved0)), Is.EqualTo(32));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadContainmentIntentControlDTO), nameof(BulkheadContainmentIntentControlDTO.Reserved1)), Is.EqualTo(40));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadContainmentIntentControlDTO), nameof(BulkheadContainmentIntentControlDTO.Reserved2)), Is.EqualTo(48));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadContainmentIntentControlDTO), nameof(BulkheadContainmentIntentControlDTO.Reserved3)), Is.EqualTo(56));
         }
 
         [Test]
