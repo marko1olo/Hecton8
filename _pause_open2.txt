@@ -1,7 +1,0 @@
-189:        public static bool IsAnyOpen => _openMenuCount > 0;
-601:        public void Open()
-625:            RegisterOpenMenu();
-645:            UIAudioFeedback.PlayPanelOpen();
-752:        private static void RegisterOpenMenu()
-1251:                UIAudioFeedback.PlayPanelOpen();
-2955:            Open();

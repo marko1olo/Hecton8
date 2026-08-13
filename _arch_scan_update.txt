@@ -1,2 +1,0 @@
-TOTAL=1
-Assets\_Project\Scripts\Tools\H8_PlayModeScreenshotter.cs:203:void Update()

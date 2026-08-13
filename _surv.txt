@@ -1,3 +1,0 @@
-244:    public sealed class HectonSurvivalSystem : MonoBehaviour, ISlowTickable, ILateFrameTickable, ISaveable, IGlobalRegistryHotSwapListener, IPlayerSurvivalEnvironmentReadModel, IPlayerBleedingReadModel
-914:        public void LateFrameTick()
-1089:        public void SlowTick()

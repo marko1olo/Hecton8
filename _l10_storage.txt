@@ -1,1 +1,0 @@
-11478:[PlayerInventory] DTO layout sovereignty PASSED: InventoryTelemetryEntry 64B, SalinityCorrosionTelemetryEntry 64B, VaultGenerationHandle<uint> 16B, all 24 asserted field offsets in place. Awake did NOT bail here, so an empty inventory this session has a different cause - look at the GlobalDataVault lane bind (STORAGE UNAVAILABLE above) instead.
