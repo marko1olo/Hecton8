@@ -198,6 +198,10 @@ namespace DigitalOpus.MB.MBEditor
 
             HashSet<Mesh> sourceMeshes = new HashSet<Mesh>();
             HashSet<Mesh> allResultMeshes = new HashSet<Mesh>();
+            List<GameObject> objsToDestroy = new List<GameObject>();
+
+            try
+            {
 
             //validate prefabs
             for (int i = 0; i < pb.prefabRows.Length; i++)
@@ -243,6 +247,8 @@ namespace DigitalOpus.MB.MBEditor
 
                 GameObject so = (GameObject)GameObject.Instantiate(pb.prefabRows[i].sourcePrefab);
                 GameObject ro = (GameObject)GameObject.Instantiate(pb.prefabRows[i].resultPrefab);
+                objsToDestroy.Add(so);
+                objsToDestroy.Add(ro);
                 Renderer[] rs = (Renderer[])so.GetComponentsInChildren<Renderer>(true);
 
                 for (int j = 0; j < rs.Length; j++)
@@ -267,8 +273,7 @@ namespace DigitalOpus.MB.MBEditor
                     }
                 }
 
-                GameObject.DestroyImmediate(so); //todo should cache these and have a proper cleanup at end
-                GameObject.DestroyImmediate(ro);
+
             }
 
             sourceMeshes.IntersectWith(allResultMeshes);
@@ -299,6 +304,17 @@ namespace DigitalOpus.MB.MBEditor
 
             AssetDatabase.Refresh();
             mb.ClearMesh();
+            }
+            finally
+            {
+                for (int i = 0; i < objsToDestroy.Count; i++)
+                {
+                    if (objsToDestroy[i] != null)
+                    {
+                        GameObject.DestroyImmediate(objsToDestroy[i]);
+                    }
+                }
+            }
         }
     }
 }
