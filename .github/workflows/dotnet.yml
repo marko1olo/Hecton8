@@ -20,17 +20,9 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-    - name: Generate SLNX projects
-      run: |
-        pip install defusedxml
-        python -B Tools/generate_unity_slnx_projects.py || true
     - name: Restore dependencies
-      run: dotnet restore Hecton8.slnx
+      run: dotnet restore
     - name: Build
-      run: dotnet build Hecton8.slnx --no-restore
+      run: dotnet build --no-restore
     - name: Test
-      run: dotnet test Hecton8.slnx --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity normal
