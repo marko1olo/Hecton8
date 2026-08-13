@@ -20,6 +20,6 @@
     <Compile Include="..\..\Assets\_Project\Scripts\Data\Monolith\H8DataMonolithTypes.cs" Link="ProjectData\H8DataMonolithTypes.cs" />
     <Compile Include="..\..\Assets\_Project\Scripts\Editor\DataMonolith\H8DataMonolithCompiler.cs" Link="EditorDataMonolith\H8DataMonolithCompiler.cs" />
     <Compile Include="..\..\Assets\_Project\Scripts\Editor\DataMonolith\H8DataMonolithCorruptionFuzzer.cs" Link="EditorDataMonolith\H8DataMonolithCorruptionFuzzer.cs" />
-    <!-- <Compile Include="..\..\Library\PackageCache\com.unity.collections@5b6ebd78ccc0\Unity.Collections\xxHash3.cs" Link="UnityCollections\xxHash3.cs" /> -->
+    <Compile Include="..\..\Library\PackageCache\com.unity.collections@5b6ebd78ccc0\Unity.Collections\xxHash3.cs" Link="UnityCollections\xxHash3.cs" />
   </ItemGroup>
 </Project>
