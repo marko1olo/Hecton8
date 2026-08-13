@@ -25,6 +25,18 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void BulkheadPlaneDTO_IsExactPromptLayout()
+        {
+            Assert.That(UnsafeUtility.SizeOf<BulkheadPlaneDTO>(), Is.EqualTo(BulkheadStateLayoutGuard.PlaneSizeBytes));
+        }
+
+        [Test]
+        public void BulkheadCollisionResultDTO_IsExactPromptLayout()
+        {
+            Assert.That(UnsafeUtility.SizeOf<BulkheadCollisionResultDTO>(), Is.EqualTo(32));
+        }
+
+        [Test]
         public void BulkheadIntentDTO_IsCacheLineAligned()
         {
             Assert.That(UnsafeUtility.SizeOf<BulkheadContainmentIntentDTO>(), Is.EqualTo(64));
