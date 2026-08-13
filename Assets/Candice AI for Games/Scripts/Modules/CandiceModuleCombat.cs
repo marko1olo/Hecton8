@@ -114,9 +114,12 @@ namespace CandiceAIforGames.AI
             projectilePoolPrefab = attackProjectile;
             for (int i = 0; i < projectilePool.Length; i++)
             {
-                GameObject projectile = UnityEngine.Object.Instantiate(attackProjectile, spawnPosition.position, Quaternion.identity);
-                projectile.SetActive(false);
-                projectilePool[i] = projectile;
+                if (projectilePool[i] == null)
+                {
+                    GameObject projectile = UnityEngine.Object.Instantiate(attackProjectile, spawnPosition.position, Quaternion.identity);
+                    projectile.SetActive(false);
+                    projectilePool[i] = projectile;
+                }
             }
         }
 
