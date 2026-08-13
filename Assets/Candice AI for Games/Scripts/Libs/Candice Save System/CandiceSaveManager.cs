@@ -47,7 +47,8 @@ namespace CandiceAIforGames.Data
                 Debug.LogWarning("ERROR: Please enter a save filename");
                 return;
             }
-            CandiceSaveSystem.Instance.SaveToFile(obj, folderName + "/" + filename.text + SAVEFILEEXTENSION);
+            string sanitizedFilename = System.IO.Path.GetFileName(filename.text);
+            CandiceSaveSystem.Instance.SaveToFile(obj, folderName + "/" + sanitizedFilename + SAVEFILEEXTENSION);
             LoadSaveItems();
         }
 
