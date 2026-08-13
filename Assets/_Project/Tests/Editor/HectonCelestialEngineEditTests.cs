@@ -1699,6 +1699,30 @@ public class HectonCelestialEngineEditTests
     }
 
     [Test]
+    public void SetOrbitalAngleAppliesModuloForPositiveAngles()
+    {
+        _engine.SetOrbitalAngle(400f);
+        float result = (float)GetPrivateField(_engine, "_accumulatedOrbitalAngle");
+        Assert.That(result, Is.EqualTo(40f).Within(0.001f));
+    }
+
+    [Test]
+    public void SetOrbitalAngleAppliesModuloForNegativeAngles()
+    {
+        _engine.SetOrbitalAngle(-400f);
+        float result = (float)GetPrivateField(_engine, "_accumulatedOrbitalAngle");
+        Assert.That(result, Is.EqualTo(-40f).Within(0.001f));
+    }
+
+    [Test]
+    public void SetOrbitalAngleAppliesModuloForZeroAngle()
+    {
+        _engine.SetOrbitalAngle(0f);
+        float result = (float)GetPrivateField(_engine, "_accumulatedOrbitalAngle");
+        Assert.That(result, Is.EqualTo(0f).Within(0.001f));
+    }
+
+    [Test]
     public void SeismicWaveMathKeepsNearWaveFiniteAfterAupSubtract()
     {
         SeismicSignal signal = CreateRadialSeismicSignal();
