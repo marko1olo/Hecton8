@@ -31,8 +31,6 @@ namespace Den.Tools.GUI.Popup
 			private PopupMenu parent;
 
 			private PopupMenu expandedWindow = null;
-
-			private static Action nextFrameShow; //hack to show the window next frame on click
 		
 			//void CloseMenuIfNotFocused () { if (UnityEditor.EditorWindow.focusedWindow.GetType() != typeof(PopupMenu)) this.Close(); } 
 			//void OnEnable () { UnityEditor.EditorApplication.update += CloseMenuIfNotFocused; }
@@ -86,10 +84,6 @@ namespace Den.Tools.GUI.Popup
 
 			public override void OnGUI(Rect rect)
 			{
-				//showing window next frame
-				Action tmp = nextFrameShow;
-				nextFrameShow = null; //because we can't null it after it has been called (new window will be started)
-				tmp?.Invoke();
 
 				//preparing textures
 				if (background==null)
@@ -206,9 +200,11 @@ namespace Den.Tools.GUI.Popup
 									parent = this };
 								expandedItem = currentItem;
 
-								//nextFrameShow = () => expandedWindow.Show(lineRect.max-new Vector2(0,currentItem.height));
-								expandedWindow.Show(lineRect.max-new Vector2(0,currentItem.height));
-								editorWindow.Focus();
+								UnityEditor.EditorApplication.delayCall += () =>
+								{
+									expandedWindow.Show(lineRect.max-new Vector2(0,currentItem.height));
+									editorWindow.Focus();
+								};
 
 								//if (currentItem.subItems != null) PopupWindow.Show(new Rect(lineRect.max-new Vector2(0,currentItem.height), Vector2.zero), expandedWindow);
 							}
