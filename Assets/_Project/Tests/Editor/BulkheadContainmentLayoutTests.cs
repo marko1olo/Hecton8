@@ -43,6 +43,12 @@ namespace Hecton8.Tests.Editor
         public void BulkheadCollisionResultDTO_IsExactPromptLayout()
         {
             Assert.That(UnsafeUtility.SizeOf<BulkheadCollisionResultDTO>(), Is.EqualTo(32));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadCollisionResultDTO), nameof(BulkheadCollisionResultDTO.Normal)), Is.EqualTo(0));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadCollisionResultDTO), nameof(BulkheadCollisionResultDTO.DepthMeters)), Is.EqualTo(12));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadCollisionResultDTO), nameof(BulkheadCollisionResultDTO.EdgeHashID)), Is.EqualTo(16));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadCollisionResultDTO), nameof(BulkheadCollisionResultDTO.Flags)), Is.EqualTo(20));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadCollisionResultDTO), nameof(BulkheadCollisionResultDTO.ClosureProgress)), Is.EqualTo(24));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadCollisionResultDTO), nameof(BulkheadCollisionResultDTO.Frame)), Is.EqualTo(28));
         }
 
         [Test]
