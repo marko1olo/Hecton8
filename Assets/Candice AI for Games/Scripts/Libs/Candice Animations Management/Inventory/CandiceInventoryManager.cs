@@ -22,18 +22,6 @@ namespace CandiceAIforGames.AI
 
             drop = prefab;
             dropPrefab = prefab;
-            for (int i = 0; i < dropPool.Length; i++)
-            {
-                if (dropPool[i] != null)
-                {
-                    dropPool[i].SetActive(false);
-                    continue;
-                }
-
-                GameObject pooledDrop = Instantiate(prefab, prefab.transform.position, prefab.transform.rotation);
-                pooledDrop.SetActive(false);
-                dropPool[i] = pooledDrop;
-            }
         }
 
         public void Drop(Transform t)
@@ -62,9 +50,19 @@ namespace CandiceAIforGames.AI
             for (int i = 0; i < dropPool.Length; i++)
             {
                 GameObject candidate = dropPool[i];
-                if (candidate != null && !candidate.activeSelf)
+                if (candidate != null)
                 {
-                    return candidate;
+                    if (!candidate.activeSelf)
+                    {
+                        return candidate;
+                    }
+                }
+                else if (dropPrefab != null)
+                {
+                    GameObject pooledDrop = Instantiate(dropPrefab, dropPrefab.transform.position, dropPrefab.transform.rotation);
+                    pooledDrop.SetActive(false);
+                    dropPool[i] = pooledDrop;
+                    return pooledDrop;
                 }
             }
 
