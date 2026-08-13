@@ -303,7 +303,7 @@ public static class TerrainShaderVerify
             if (cams.Length > 0) cam = cams[0];
         }
 
-        // WAS THE HEADLINE BUG: LogError, then fall through to Exit(0) with zero screenshots on disk.
+        // WAS THE HEADLINE ISSUE: LogError, then fall through to Exit(0) with zero screenshots on disk.
         if (cam == null)
         {
             return Fail(
