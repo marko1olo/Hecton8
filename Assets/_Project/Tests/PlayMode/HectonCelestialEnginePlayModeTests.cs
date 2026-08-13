@@ -75,5 +75,14 @@ namespace Hecton8.Tests.PlayMode
 
             yield return null;
         }
+
+        [UnityTest]
+        public IEnumerator TryApplyRuntimeTimeOfDay01_MissingAtmosphere_RejectsRequest()
+        {
+            Object.Destroy(_atmosphereObject);
+            yield return null;
+
+            Assert.That(_engine.TryApplyRuntimeTimeOfDay01(0.5f), Is.False);
+        }
     }
 }
