@@ -139,19 +139,19 @@
     "deferred_or_direct_collider_shared_mesh_assignments": [
       {
         "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
-        "line": 1986,
+        "line": 2036,
         "text": "collider.sharedMesh = stagedMesh;"
       }
     ],
     "deferred_or_direct_shared_mesh_assignments": [
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 13814,
+        "line": 13031,
         "text": "mf.sharedMesh = mesh;"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
-        "line": 1986,
+        "line": 2036,
         "text": "collider.sharedMesh = stagedMesh;"
       }
     ],
@@ -159,32 +159,32 @@
     "main_thread_mesh_upload_sites": [
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 13577,
+        "line": 12794,
         "text": "static unsafe bool UploadSurfaceMesh("
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 13624,
+        "line": 12841,
         "text": "Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 13636,
+        "line": 12853,
         "text": "static bool UploadColliderMesh("
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 13703,
+        "line": 12920,
         "text": "Mesh.ApplyAndDisposeWritableMeshData(meshDataArray, mesh, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontValidateIndices | MeshUpdateFlags.DontNotifyMeshUsers);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 13810,
+        "line": 13027,
         "text": "if (!UploadSurfaceMesh(mesh, surfaceVertices, triangleIndices, vertCount, triIndexCount, bounds))"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 14744,
+        "line": 14033,
         "text": "meshUploaded = UploadColliderMesh("
       }
     ],
@@ -207,12 +207,12 @@
       "hot_rebuild": [
         {
           "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-          "line": 15197,
+          "line": 14489,
           "text": "NativeArray<float> terrainHeights = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
         },
         {
           "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-          "line": 15198,
+          "line": 14490,
           "text": "NativeArray<float> gridBiome = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
         },
         {
@@ -226,12 +226,12 @@
     "native_allocations_in_voxel_sources": [
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 15197,
+        "line": 14489,
         "text": "NativeArray<float> terrainHeights = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 15198,
+        "line": 14490,
         "text": "NativeArray<float> gridBiome = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
       },
       {
@@ -244,24 +244,24 @@
     "physics_bake_calls": [
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 14160,
-        "text": "Physics.BakeMesh(bakeMeshEntityId, false);"
+        "line": 13449,
+        "text": "Physics.BakeMesh(bakeMeshEntityId, false, Hecton8.Caves.HectonVoxelVolume.VoxelColliderCookingOptions);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 14763,
-        "text": "Physics.BakeMesh(bakeMeshEntityId, false);"
+        "line": 14055,
+        "text": "Physics.BakeMesh(bakeMeshEntityId, false, Hecton8.Caves.HectonVoxelVolume.VoxelColliderCookingOptions);"
       }
     ],
     "residual_hot_native_allocations": [
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 15197,
+        "line": 14489,
         "text": "NativeArray<float> terrainHeights = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);"
       },
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 15198,
+        "line": 14490,
         "text": "NativeArray<float> gridBiome = new NativeArray<float>(pts * pts, Allocator.TempJob, NativeArrayOptions.ClearMemory);"
       },
       {
@@ -548,7 +548,7 @@
     "force_complete_sites": [
       {
         "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
-        "line": 8640,
+        "line": 7845,
         "text": "DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);"
       }
     ],
