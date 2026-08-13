@@ -144,6 +144,8 @@ namespace Hecton8.Core
         /// <summary>
         /// Converts an absolute-universe position into runtime space after this shift.
         /// </summary>
+        /// <param name="absoluteUniversePosition">Absolute-universe position.</param>
+        /// <returns>Runtime-space position under <see cref="NewTotalOffset"/>.</returns>
         public Vector3 ToRuntimePosition(double3 absoluteUniversePosition)
         {
             return ToVector3(absoluteUniversePosition - NewTotalOffsetDouble);
