@@ -1407,7 +1407,7 @@ namespace Hecton8.Editor.Authoring
 
             // TWO-PART GATE, and the second half is what makes it evidence instead of assertion.
             // The token search is a plain substring match, so a COMMENT containing the token would
-            // satisfy it on its own - somebody could write "// TODO H8_ORGANIC_VCOL_CONTRACT_OK"
+            // satisfy it on its own - somebody could write "// H8_ORGANIC_VCOL_CONTRACT_OK"
             // and unlock six materials by accident. ANDing on "and none of the known-bad reads is
             // still in the file" costs one comparison and means the claim and the evidence have to
             // agree. It is still not a parse: a THIRD wrong read nobody has catalogued would pass
