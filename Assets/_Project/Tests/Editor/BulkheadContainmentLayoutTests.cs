@@ -37,6 +37,12 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void BulkheadTelemetryEntry_IsExactPromptLayout()
+        {
+            Assert.That(UnsafeUtility.SizeOf<BulkheadTelemetryEntry>(), Is.EqualTo(BulkheadStateLayoutGuard.TelemetrySizeBytes));
+        }
+
+        [Test]
         public void BulkheadIntentDTO_IsCacheLineAligned()
         {
             Assert.That(UnsafeUtility.SizeOf<BulkheadContainmentIntentDTO>(), Is.EqualTo(64));
