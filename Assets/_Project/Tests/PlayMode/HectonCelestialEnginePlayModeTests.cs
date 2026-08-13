@@ -26,6 +26,7 @@ namespace Hecton8.Tests.PlayMode
             _engineObject = new GameObject(nameof(HectonCelestialEngine));
             _engine = _engineObject.AddComponent<HectonCelestialEngine>();
 
+            Assert.That(GlobalRegistry.Atmosphere, Is.SameAs(_atmosphereManager));
             yield return null;
         }
 
