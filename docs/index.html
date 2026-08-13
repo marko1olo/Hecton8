@@ -26,7 +26,9 @@
       z-index: -1;
     }
     nav {
+      align-items: center;
       display: flex;
+      gap: 1rem;
       justify-content: space-between;
       padding: 1.5rem 3rem;
       background: rgba(0,255,170,0.1);
@@ -36,6 +38,10 @@
       width: 100%;
       top: 0;
       z-index: 100;
+    }
+    .links {
+      align-items: center;
+      display: flex;
     }
     nav a {
       color: #00ffaa;
@@ -106,6 +112,55 @@
     }
     @keyframes spin { 100% { transform: rotate(360deg); } }
     @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+    @media (max-width: 780px) {
+      nav {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 1rem;
+      }
+      .links {
+        flex-wrap: wrap;
+        gap: 0.35rem 0.85rem;
+      }
+      nav a {
+        font-size: 0.86rem;
+        margin-left: 0;
+      }
+      nav [aria-label] {
+        align-self: flex-start;
+        font-size: 0.62rem !important;
+      }
+      .hero {
+        min-height: 100svh;
+        padding: 8.5rem 1.25rem 3rem;
+      }
+      h1 {
+        font-size: clamp(3rem, 16vw, 5rem);
+        letter-spacing: 0.1em;
+      }
+      h2 {
+        font-size: clamp(1.1rem, 5vw, 1.5rem);
+        line-height: 1.45;
+      }
+      .features {
+        gap: 1rem;
+        grid-template-columns: 1fr;
+        padding: 2rem 1rem;
+      }
+      .card {
+        padding: 1.35rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   
 /* Filler CSS to meet requirement 0 */
 .filler-0 { opacity: 0.7338801603928913; }
