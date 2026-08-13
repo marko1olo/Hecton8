@@ -24,8 +24,9 @@ class TestOptimizeBatch34AlphaPngSources(unittest.TestCase):
         self.assertEqual(opt.display(out_project), str(out_project))
 
     def test_project_path(self):
-        abs_path = Path("/tmp/absolute/path.png")
-        self.assertEqual(opt.project_path("/tmp/absolute/path.png"), abs_path)
+        abs_str = "C:/tmp/absolute/path.png" if sys.platform == "win32" else "/tmp/absolute/path.png"
+        abs_path = Path(abs_str)
+        self.assertEqual(opt.project_path(abs_str), abs_path)
 
         rel_path = "Assets/some/path.png"
         self.assertEqual(opt.project_path(rel_path), opt.ROOT / rel_path)
@@ -250,22 +251,5 @@ class TestOptimizeBatch34AlphaPngSources(unittest.TestCase):
         self.assertTrue(mock_print.called)
 
 if __name__ == '__main__':
-sys.path.insert(0, str(Path(__file__).parent))
-
-from OptimizeBatch34AlphaPngSources import display, ROOT
-
-    def test_display_relative_path(self):
-        """Test display with a path relative to ROOT."""
-        test_path = ROOT / "Assets" / "Test.png"
-        self.assertEqual(display(test_path), "Assets/Test.png")
-
-    def test_display_outside_path(self):
-        """Test display with a path outside ROOT to trigger ValueError."""
-        if sys.platform == "win32":
-            test_path = Path("D:/outside/path.png")
-        else:
-            test_path = Path("/tmp/outside/path.png")
-
-        self.assertEqual(display(test_path), str(test_path))
-
+    sys.path.insert(0, str(Path(__file__).parent))
     unittest.main()

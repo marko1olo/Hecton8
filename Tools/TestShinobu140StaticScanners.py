@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
-from H8VerifyCore import parse_xml_safe
 from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from H8VerifyCore import parse_xml_safe
 
 import argparse
 import json
