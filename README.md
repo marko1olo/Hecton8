@@ -133,23 +133,27 @@ graph TD
     Core --> Render[🎨 Unity 6000 URP Shaders]
 ```
 
-### ⚡ Technical Performance Budgets
+### ⚡ Technical Performance Guardrails
 
-| Metric | Budget / Actual | Status |
+> **These are V0 development targets, not claimed player-build measurements.** Runtime, profiler, and device captures remain the source of truth for performance verification.
+
+| Metric | Development guardrail | Verification state |
 |---|---|---|
-| **Target Frame Rate** | 60 FPS Constant | 🎮 PASS |
-| **Garbage Collector Allocations** | 0 B / frame (Zero-GC) | ⚡ OPTIMIZED |
-| **VRAM Memory Footprint** | < 2.2 GB VRAM | 🟢 STABLE |
-| **Chunk Generation Latency** | < 12ms / chunk | 🚀 FAST |
+| **Frame time** | 60 FPS target / 16.67 ms frame budget | Target — requires fresh runtime evidence |
+| **Main thread** | ≤ 12 ms budget | Target — requires profiler evidence |
+| **GC allocation** | 0 B per frame in gameplay hot paths | Target — requires profiler evidence |
+| **Compact VRAM** | ≤ 1.8 GB hard ceiling | Target — requires device or player-build evidence |
+| **Texture budget** | ≤ 900 MB on compact tier | Target — requires memory evidence |
+| **Render targets + depth** | ≤ 320 MB on compact tier | Target — requires memory evidence |
 
 ---
 
 ### 🚀 Technical Standards & Architecture
 
-* ⚡ **Performance Budget:** Strict 60 FPS (16.67 ms frame budget), 0 B/frame GC allocation in gameplay hot-paths.
-* 🌊 **Deep Sea Rendering:** Custom URP volumetric ocean shaders, photic underwater lighting, and procedural sea floor.
-* 🎮 **Platform Portability:** Scalable continuous `GlobalQualityWeight` architecture targeting 2GB VRAM handhelds up to Ultra PCVR.
-* 📦 **Unmanaged Memory:** Burst-compiled C#, NativeMemory collections, and Data-Oriented Design (DOD).
+* **Performance budget:** A 60 FPS target with a 16.67 ms frame budget and zero per-frame allocations in gameplay hot paths.
+* **Deep-sea rendering:** Custom URP volumetric-ocean shaders, photic underwater lighting, and procedural seafloor systems.
+* **Platform portability:** Continuous `GlobalQualityWeight` scaling from compact hardware through high-end PCVR.
+* **Memory discipline:** Burst-compiled C#, unmanaged collections, and data-oriented systems for budgeted runtime paths.
 
 ---
 
