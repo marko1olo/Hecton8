@@ -223,7 +223,7 @@ public static class GraphOutputRenderer
             }
             catch (Exception ex)
             {
-                // WAS THE BUG: this caught, logged, and then fell through to Exit(0) below.
+                // Note: previously, this caught, logged, and then fell through to Exit(0) below.
                 Debug.LogError(
                     $"[{ToolName}] FAILED: the B_graph_* images were not produced in {OutputDir}. " +
                     $"{VerifiedArtifacts.Count} of {ExpectedArtifactCount} images had been verified when this threw. {ex}");
