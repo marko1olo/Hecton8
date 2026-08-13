@@ -1,1 +1,0 @@
-This is an intentional no-op. The target code in Assets/MapMagic/Generators/Matrix/Runtime/HeightIn.cs is entirely within a multi-line comment block (/* ... */) starting at line 19. Therefore, implementing a solution for the TODO in this commented-out code is unactionable.
