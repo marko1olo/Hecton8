@@ -32,13 +32,19 @@ namespace CandiceAIforGames.AI
         public Transform CachedCameraParent => _cachedCameraParent;
         public Transform CachedVsfxRoot => _cachedVsfxRoot;
 
+#if UNITY_EDITOR
+        private void Reset()
+        {
+            if (_cachedCameraParent == null) _cachedCameraParent = transform.Find("CameraParent");
+            if (_cachedVsfxRoot == null) _cachedVsfxRoot = transform.Find("VSFX");
+        }
+#endif
+
         // Start is called before the first frame update
         void Awake()
         {
             rb = GetComponent<Rigidbody>();
             _initialParent = transform.parent;
-            if (_cachedCameraParent == null) _cachedCameraParent = transform.Find("CameraParent");
-            if (_cachedVsfxRoot == null) _cachedVsfxRoot = transform.Find("VSFX");
             _initialConstraints = rb == null ? RigidbodyConstraints.None : rb.constraints;
         }
 
