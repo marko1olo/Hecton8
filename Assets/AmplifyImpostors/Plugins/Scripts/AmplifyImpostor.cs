@@ -400,37 +400,6 @@ namespace AmplifyImpostors
 
 
 
-			Dictionary<GameObject, MeshFilter> mfDict = new Dictionary<GameObject, MeshFilter>();
-			MeshFilter[] allFilters = GetComponentsInChildren<MeshFilter>( true );
-			for( int i = 0; i < allFilters.Length; i++ )
-				mfDict[ allFilters[ i ].gameObject ] = allFilters[ i ];
-
-			if( m_rootTransform != null && m_rootTransform != transform )
-			{
-				MeshFilter[] rootFilters = m_rootTransform.GetComponentsInChildren<MeshFilter>( true );
-				for( int i = 0; i < rootFilters.Length; i++ )
-					mfDict[ rootFilters[ i ].gameObject ] = rootFilters[ i ];
-			}
-
-
-			MeshFilter[] cachedMeshFilters = new MeshFilter[Renderers.Length];
-			for( int i = 0; i < Renderers.Length; i++ )
-			{
-				if( Renderers[ i ] == null || !Renderers[ i ].enabled || Renderers[ i ].shadowCastingMode == ShadowCastingMode.ShadowsOnly )
-					continue;
-
-
-				mfDict.TryGetValue( Renderers[ i ].gameObject, out MeshFilter mf );
-
-				if( mf == null || mf.sharedMesh == null )
-					continue;
-
-				cachedMeshFilters[ i ] = mf;
-
-
-
-			}
-
 			for( int x = 0; x < hframes; x++ )
 			{
 				for( int y = 0; y <= vframes; y++ )
@@ -440,16 +409,11 @@ namespace AmplifyImpostors
 
 					for( int i = 0; i < Renderers.Length; i++ )
 					{
+						if( Renderers[ i ] == null || !Renderers[ i ].enabled || Renderers[ i ].shadowCastingMode == ShadowCastingMode.ShadowsOnly )
+							continue;
 
-
-
-
-						MeshFilter mf = cachedMeshFilters[ i ];
-						if( mf == null )
-
-
-
-
+						MeshFilter mf = MeshFilters[ i ];
+						if( mf == null || mf.sharedMesh == null )
 							continue;
 
 						if( frameBounds.size == Vector3.zero )
@@ -1624,7 +1588,8 @@ namespace AmplifyImpostors
 				}
 
 				// skip non-meshes, for now
-				if( !Renderers[ i ].TryGetComponent<MeshFilter>( out MeshFilter mf ) || mf.sharedMesh == null )
+				MeshFilter mf = MeshFilters[ i ];
+				if( mf == null || mf.sharedMesh == null )
 				{
 					validMeshes.Add( null );
 					continue;
