@@ -1409,11 +1409,6 @@ namespace Hecton8.Optimization
         }
 
 
-        private bool IsTrackerMutationBlockedByScheduledJob()
-        {
-            return false;
-        }
-
 #if UNITY_ADDRESSABLES_EXIST
 
 
@@ -4234,12 +4229,6 @@ namespace Hecton8.Optimization
 #endif
 
             bool nativeSlotCleared = ClearNativeHandleSlot(key);
-            if (!nativeSlotCleared && IsTrackerMutationBlockedByScheduledJob())
-            {
-                record.PendingRelease = EnqueuePendingRelease(key);
-                _assetRecords.Set(key, record);
-                return false;
-            }
 
             if (!nativeSlotCleared)
             {
