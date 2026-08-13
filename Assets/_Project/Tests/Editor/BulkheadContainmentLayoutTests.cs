@@ -60,6 +60,20 @@ namespace Hecton8.Tests.Editor
         public void BulkheadTelemetryEntry_IsExactPromptLayout()
         {
             Assert.That(UnsafeUtility.SizeOf<BulkheadTelemetryEntry>(), Is.EqualTo(BulkheadStateLayoutGuard.TelemetrySizeBytes));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.Frame)), Is.EqualTo(0));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.ActiveCount)), Is.EqualTo(4));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.SealedCount)), Is.EqualTo(8));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.JammedCount)), Is.EqualTo(12));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.AverageClosure)), Is.EqualTo(16));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.AuthorityCadenceHz)), Is.EqualTo(20));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.GlobalQualityWeight)), Is.EqualTo(24));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.LastScheduleMicroseconds)), Is.EqualTo(28));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.StateHash)), Is.EqualTo(32));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.CollisionEdgeHash)), Is.EqualTo(36));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.CollisionDepthMeters)), Is.EqualTo(40));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.Flags)), Is.EqualTo(44));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.Reserved0)), Is.EqualTo(48));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadTelemetryEntry), nameof(BulkheadTelemetryEntry.Reserved1)), Is.EqualTo(56));
         }
 
         [Test]
