@@ -1,12 +1,5 @@
-#if UNITY_EDITOR || UNITY_STANDALONE
-#define HECTON8_PDA_H8LR_MMF_AVAILABLE
-#endif
-
 using System;
 using System.IO;
-#if HECTON8_PDA_H8LR_MMF_AVAILABLE
-using System.IO.MemoryMappedFiles;
-#endif
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -57,10 +50,6 @@ namespace Hecton8.UI
         private const int VaultMirrorCopyChunkBytes = 8 * 1024;
         private const SystemID VaultOwnerSystemId = SystemID.UI;
 
-#if HECTON8_PDA_H8LR_MMF_AVAILABLE
-        private MemoryMappedFile _mappedFile;
-        private MemoryMappedViewAccessor _accessor;
-#endif
         private FileStream _fileStream;
         private int _mappedBytes;
         private int _entryCount;
@@ -164,19 +153,6 @@ namespace Hecton8.UI
 
         public void Dispose()
         {
-#if HECTON8_PDA_H8LR_MMF_AVAILABLE
-            if (_accessor != null)
-            {
-                _accessor.Dispose();
-                _accessor = null;
-            }
-
-            if (_mappedFile != null)
-            {
-                _mappedFile.Dispose();
-                _mappedFile = null;
-            }
-#endif
             if (_fileStream != null)
             {
                 _fileStream.Dispose();
@@ -195,13 +171,6 @@ namespace Hecton8.UI
             _vaultMirrorBacked = false;
             _btreeAvailable = false;
         }
-
-#if HECTON8_PDA_H8LR_MMF_AVAILABLE
-        private bool TryOpenMemoryMapped(string path, int fileBytes)
-        {
-            return false;
-        }
-#endif
 
         private bool TryOpenVaultMirror(
             string path,
