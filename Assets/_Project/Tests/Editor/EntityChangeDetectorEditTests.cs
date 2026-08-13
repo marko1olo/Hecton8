@@ -135,6 +135,20 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void EntityChangeDetector_ClearDirty_SetsDirtyFlagsToNone()
+        {
+            var detector = new EntityChangeDetector("test_entity");
+            detector.MarkDirty(EntityChangeFlag.All);
+
+            detector.ClearDirty();
+
+            var fieldInfo = typeof(EntityChangeDetector).GetField("_dirtyFlags", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var actualFlags = (EntityChangeFlag)fieldInfo.GetValue(detector);
+
+            Assert.AreEqual(EntityChangeFlag.None, actualFlags);
+        }
+
+        [Test]
         public void EntityChangeDetector_FlushChanges_InvokesCallbackAndClearsFlag_WhenValueChanges()
         {
             var detector = new EntityChangeDetector("test_entity");
