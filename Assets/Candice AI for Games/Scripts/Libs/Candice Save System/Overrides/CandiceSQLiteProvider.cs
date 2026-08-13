@@ -45,8 +45,7 @@ namespace CandiceAIforGames.Data
                     sqlCon = new SqliteConnection(conStr);
                     sqlCon.Open();
                     string safeQuery = query;
-                    if (safeQuery.Contains("'{0}'")) safeQuery = safeQuery.Replace("'{0}'", "@serialNr");
-                    else if (safeQuery.Contains("{0}")) safeQuery = safeQuery.Replace("{0}", "@serialNr");
+                    safeQuery = safeQuery.Replace("'{0}'", "@serialNr").Replace("{0}", "@serialNr");
 
                     deleteQuery = safeQuery;
                     sqlCmd = sqlCon.CreateCommand();
@@ -244,8 +243,7 @@ namespace CandiceAIforGames.Data
                     sqlCon = new SqliteConnection(conStr);
                     sqlCon.Open();
                     string safeQuery = query;
-                    if (safeQuery.Contains("'{0}'")) safeQuery = safeQuery.Replace("'{0}'", "@serialNr");
-                    else if (safeQuery.Contains("{0}")) safeQuery = safeQuery.Replace("{0}", "@serialNr");
+                    safeQuery = safeQuery.Replace("'{0}'", "@serialNr").Replace("{0}", "@serialNr");
 
                     sqlCmd = new SqliteCommand(safeQuery, sqlCon);
                     if (queryParameters != null)
@@ -311,8 +309,7 @@ namespace CandiceAIforGames.Data
                     string safeQuery = query;
                     // If caller expected a formatting placeholder for update logic, redirect it securely to a parameter
                     // though typically Update is fully parameterized in Candice AI
-                    if (safeQuery.Contains("'{0}'")) safeQuery = safeQuery.Replace("'{0}'", "@serialNr");
-                    else if (safeQuery.Contains("{0}")) safeQuery = safeQuery.Replace("{0}", "@serialNr");
+                    safeQuery = safeQuery.Replace("'{0}'", "@serialNr").Replace("{0}", "@serialNr");
 
                     sqlCmd = new SqliteCommand(safeQuery, sqlCon);
                     foreach (KeyValuePair<object, object> p in parameters)
