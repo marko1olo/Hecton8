@@ -242,8 +242,6 @@ keys.json
 **/bin/
 # Numbered temp spill files (e.g. *.json.tmp.12844) not caught by *.tmp:
 *.tmp.*
-# Scratch crypto test project (delete: git rm -r --cached TestCrypto):
-/TestCrypto/obj/
 
 # ---- Multi-agent advisory locks (transient, must not be versioned) ----
 .agent-locks/ACTIVE/
