@@ -114,7 +114,6 @@ namespace Hecton8.Dev
             if (uiRtBytes > ResolveBudgetBytes(runtimeThresholds.UIRTBudgetBytes, CompactUiRtBudgetBytes))
                 return Fail("ui-rt-budget");
 
-            LogPass(graphicsDriverBytes, graphicsBudgetBytes, trackedRtBytes, visorRtBytes, postFxRtBytes, uiRtBytes);
             return true;
         }
 
@@ -212,29 +211,6 @@ namespace Hecton8.Dev
             return false;
         }
 
-        private void LogPass(
-            long graphicsDriverBytes,
-            long graphicsBudgetBytes,
-            long trackedRtBytes,
-            long visorRtBytes,
-            long postFxRtBytes,
-            long uiRtBytes)
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (!verboseLogging)
-                return;
-
-            _reportBuilder.Clear();
-            _reportBuilder.Append("[VisualBudgetSmoke] PASS graphics=")
-                .Append(BytesToMegabytes(graphicsDriverBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("/")
-                .Append(BytesToMegabytes(graphicsBudgetBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
-                .Append(" rt=").Append(BytesToMegabytes(trackedRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
-                .Append(" visor=").Append(BytesToMegabytes(visorRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
-                .Append(" postfx=").Append(BytesToMegabytes(postFxRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
-                .Append(" ui=").Append(BytesToMegabytes(uiRtBytes).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB");
-            Hecton8.Core.H8Debug.Log(_reportBuilder.ToString(), this);
-#endif
-        }
 
         private static float BytesToMegabytes(long bytes)
         {
