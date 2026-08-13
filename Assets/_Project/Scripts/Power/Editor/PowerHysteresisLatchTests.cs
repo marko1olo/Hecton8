@@ -186,6 +186,75 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0f, PowerHysteresisLatch.ResolveReleaseLevel01(0.1f, 1f), 1e-6f);
             Assert.AreEqual(0f, PowerHysteresisLatch.ResolveReleaseLevel01(float.NaN, 0.3f), 1e-6f);
         }
+
+        [Test]
+        public void Evaluate_LevelExactlyAtUpperRail_DoesNotEngage()
+        {
+            byte state = PowerHysteresisLatch.Evaluate(
+                PowerHysteresisLatch.StateReleased, Engage, Engage, Release, 10f, 0f, Dwell, out float since);
+
+            Assert.AreEqual(PowerHysteresisLatch.StateReleased, state);
+            Assert.AreEqual(10f, since, "Level exactly at engage rail should not engage (needs to be strictly >)");
+        }
+
+        [Test]
+        public void Evaluate_LevelExactlyAtLowerRail_DropsLatch()
+        {
+            byte state = PowerHysteresisLatch.Evaluate(
+                PowerHysteresisLatch.StateEngaged, Release, Engage, Release, 12.5f, 0f, Dwell, out float since);
+
+            Assert.AreEqual(PowerHysteresisLatch.StateReleased, state);
+            Assert.AreEqual(12.5f, since);
+        }
+
+        [Test]
+        public void Evaluate_LevelPastUpperRail_EngagesLatch()
+        {
+            byte state = PowerHysteresisLatch.Evaluate(
+                PowerHysteresisLatch.StateReleased, Engage + 0.01f, Engage, Release, 12.5f, 0f, Dwell, out float since);
+
+            Assert.AreEqual(PowerHysteresisLatch.StateEngaged, state);
+            Assert.AreEqual(12.5f, since);
+        }
+
+        [Test]
+        public void Evaluate_RewoundClock_TreatsAsInvalidElapsed_RearmsClock()
+        {
+            byte state = PowerHysteresisLatch.Evaluate(
+                PowerHysteresisLatch.StateReleased, Engage + 0.01f, Engage, Release, 1f, 10f, Dwell, out float nextSince);
+
+            Assert.AreEqual(PowerHysteresisLatch.StateReleased, state);
+            Assert.AreEqual(1f, nextSince, "Rewound clock (now < since) should reset since to now");
+        }
+
+        [Test]
+        public void Evaluate_ZeroDwell_ClampsToMinimumDwell()
+        {
+            byte state = PowerHysteresisLatch.Evaluate(
+                PowerHysteresisLatch.StateEngaged, 0.01f, Engage, Release, 1f, 0f, 0f, out float since);
+
+            Assert.AreEqual(PowerHysteresisLatch.StateEngaged, state, "Dwell clamped to MinimumDwellSeconds (2s), so 1s elapsed should not drop");
+        }
+
+        [Test]
+        public void Evaluate_NegativeCandidateSince_SanitizesToZero()
+        {
+            byte state = PowerHysteresisLatch.Evaluate(
+                PowerHysteresisLatch.StateEngaged, 0.01f, Engage, Release, 1f, -5f, Dwell, out float nextSince);
+
+            Assert.AreEqual(PowerHysteresisLatch.StateEngaged, state);
+            Assert.AreEqual(0f, nextSince, "Negative candidate since should be sanitized to 0");
+        }
+
+        [Test]
+        public void Evaluate_ColdStartExactlyAtEngage_AdoptsReleasedState()
+        {
+            byte state = PowerHysteresisLatch.Evaluate(
+                PowerHysteresisLatch.StateUnknown, Engage, Engage, Release, 100f, 0f, Dwell, out float nextSince);
+
+            Assert.AreEqual(PowerHysteresisLatch.StateReleased, state);
+            Assert.AreEqual(100f, nextSince);
+        }
     }
 }
 #endif
