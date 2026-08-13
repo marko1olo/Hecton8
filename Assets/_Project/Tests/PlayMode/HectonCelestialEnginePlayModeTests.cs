@@ -63,5 +63,17 @@ namespace Hecton8.Tests.PlayMode
 
             yield return null;
         }
+
+        [UnityTest]
+        public IEnumerator TryApplyRuntimeTimeOfDay01_OutOfRangeTime_ClampsBeforeUpdatingAtmosphere()
+        {
+            Assert.That(_engine.TryApplyRuntimeTimeOfDay01(-0.25f), Is.True);
+            Assert.That(_atmosphereManager.TimeOfDay, Is.EqualTo(0f).Within(0.0001f));
+
+            Assert.That(_engine.TryApplyRuntimeTimeOfDay01(1.25f), Is.True);
+            Assert.That(_atmosphereManager.TimeOfDay, Is.EqualTo(1f).Within(0.0001f));
+
+            yield return null;
+        }
     }
 }
