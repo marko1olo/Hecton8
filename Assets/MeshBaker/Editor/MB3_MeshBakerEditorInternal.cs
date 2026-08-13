@@ -278,8 +278,15 @@ namespace DigitalOpus.MB.MBEditor
                     }
                 }
 
-                //todo switch to renderer
-                momm.meshCombiner.resultSceneObject = (GameObject)EditorGUILayout.ObjectField("Combined Mesh Object", momm.meshCombiner.resultSceneObject, typeof(GameObject), true);
+                Renderer r = (Renderer)EditorGUILayout.ObjectField("Combined Mesh Object", momm.meshCombiner.resultSceneObject != null ? momm.meshCombiner.resultSceneObject.GetComponent<Renderer>() : null, typeof(Renderer), true);
+                if (r != null)
+                {
+                    momm.meshCombiner.resultSceneObject = r.gameObject;
+                }
+                else
+                {
+                    momm.meshCombiner.resultSceneObject = null;
+                }
                 if (momm is MB3_MeshBaker)
                 {
                     EditorGUILayout.BeginHorizontal();
