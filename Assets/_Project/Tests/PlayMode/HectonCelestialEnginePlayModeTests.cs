@@ -1,5 +1,6 @@
 using System.Collections;
 using Hecton8.Celestial;
+using Hecton8.Core;
 using Hecton8.Environment;
 using NUnit.Framework;
 using UnityEngine;
@@ -79,6 +80,7 @@ namespace Hecton8.Tests.PlayMode
         [UnityTest]
         public IEnumerator TryApplyRuntimeTimeOfDay01_MissingAtmosphere_RejectsRequest()
         {
+            GlobalRegistry.UnregisterAtmosphereRuntime(_atmosphereManager);
             Object.Destroy(_atmosphereObject);
             yield return null;
 
