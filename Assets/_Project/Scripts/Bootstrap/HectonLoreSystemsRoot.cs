@@ -103,12 +103,6 @@ namespace Hecton8.Bootstrap
             RefreshLoreContentStatus();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Hecton8.Core.H8Debug.Log(
-                $"[LoreSystemsRoot] Validation: {CountFoundSystems()}/{ExpectedSystemCount} systems present. " +
-                $"Missing: {GetMissingSystemsSummary()}. " +
-                $"NarrativeDiscovery placed: {_narrativeDiscoveryCount}. " +
-                $"AudioLogPickup placed: {_audioLogPickupCount}.");
-
             if (_narrativeDiscoveryCount <= 0)
             {
                 Hecton8.Core.H8Debug.LogWarning(
