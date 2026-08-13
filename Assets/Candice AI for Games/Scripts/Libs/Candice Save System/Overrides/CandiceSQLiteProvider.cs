@@ -376,6 +376,49 @@ namespace CandiceAIforGames.Data
             }
         }
 
+
+        private string BuildColumnDefinition(CandiceColumnInfo info)
+        {
+            if (!IsValidIdentifier(info.Name))
+            {
+                Debug.LogError("Invalid column name provided: " + info.Name);
+                return null;
+            }
+            if (!IsValidColumnType(info.Type))
+            {
+                Debug.LogError("Invalid column type provided: " + info.Type);
+                return null;
+            }
+
+            string nonNull = "";
+            string autoincrement = "";
+            string pk = "";
+            string defaultVal = "";
+            if (info.Pk)
+            {
+                pk = " PRIMARY KEY";
+            }
+            if (info.Ai)
+            {
+                autoincrement = " AUTOINCREMENT";
+            }
+            if (info.NotNull)
+            {
+                nonNull = " NOT NULL";
+            }
+            if (!string.IsNullOrEmpty(info.DefaultValue))
+            {
+                if (!System.Text.RegularExpressions.Regex.IsMatch(info.DefaultValue, @"^[a-zA-Z0-9_\-\.\s]+$"))
+                {
+                    Debug.LogError("Invalid default value provided: " + info.DefaultValue);
+                    return null;
+                }
+                defaultVal = " DEFAULT '" + info.DefaultValue.Replace("'", "''") + "'";
+            }
+
+            return EscapeIdentifier(info.Name) + " " + info.Type + pk + autoincrement + nonNull + defaultVal;
+        }
+
         public int CreateTable(string tableName, List<CandiceColumnInfo> columnInfos)
         {
             if (!IsValidIdentifier(tableName))
@@ -387,46 +430,20 @@ namespace CandiceAIforGames.Data
             string columnParameters = "";
             if (columnInfos != null)
             {
-                columnParameters = " (";
-
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                sb.Append(" (");
                 for (int i = 0; i < columnInfos.Count; i++)
                 {
-                    CandiceColumnInfo info = columnInfos[i];
-                    if (!IsValidIdentifier(info.Name))
-                    {
-                        Debug.LogError("Invalid column name provided: " + info.Name);
-                        return -1;
-                    }
-                    if (!IsValidColumnType(info.Type))
-                    {
-                        Debug.LogError("Invalid column type provided: " + info.Type);
-                        return -1;
-                    }
-
-                    string nonNull = "";
-                    string autoincrement = "";
-                    string pk = "";
-                    if (info.Pk)
-                    {
-                        pk = " PRIMARY KEY";
-                    }
-                    if (info.Ai)
-                    {
-                        autoincrement = " AUTOINCREMENT";
-                    }
-                    if (info.NotNull)
-                    {
-                        nonNull = " NOT NULL";
-                    }
-
-                    string fragment = EscapeIdentifier(info.Name) + " " + info.Type + pk + autoincrement + nonNull;
+                    string colDef = BuildColumnDefinition(columnInfos[i]);
+                    if (colDef == null) return -1;
+                    sb.Append(colDef);
                     if (i != columnInfos.Count - 1)
                     {
-                        fragment += ", ";
+                        sb.Append(", ");
                     }
-                    columnParameters += fragment;
                 }
-                columnParameters += ")";
+                sb.Append(")");
+                columnParameters = sb.ToString();
             }
 
             int rc = -1;
@@ -498,44 +515,9 @@ namespace CandiceAIforGames.Data
                 Debug.LogError("Invalid table name provided: " + tableName);
                 return -1;
             }
-            if (!IsValidIdentifier(info.Name))
-            {
-                Debug.LogError("Invalid column name provided: " + info.Name);
-                return -1;
-            }
-            if (!IsValidColumnType(info.Type))
-            {
-                Debug.LogError("Invalid column type provided: " + info.Type);
-                return -1;
-            }
-
-            string columnParameters = " ";
-            string nonNull = "";
-            string autoincrement = "";
-            string pk = "";
-            string defaultVal = "";
-            if (info.Pk)
-            {
-                pk = " PRIMARY KEY";
-            }
-            if (info.Ai)
-            {
-                autoincrement = " AUTOINCREMENT";
-            }
-            if (info.NotNull)
-            {
-                nonNull = " NOT NULL";
-            }
-            if (!string.IsNullOrEmpty(info.DefaultValue))
-            {
-                if (!System.Text.RegularExpressions.Regex.IsMatch(info.DefaultValue, @"^[a-zA-Z0-9_\-\.\s]+$"))
-                {
-                    Debug.LogError("Invalid default value provided: " + info.DefaultValue);
-                    return -1;
-                }
-                defaultVal = " DEFAULT '" + info.DefaultValue.Replace("'", "''") + "'";
-            }
-            columnParameters += EscapeIdentifier(info.Name) + " " + info.Type + pk + autoincrement + nonNull + defaultVal;
+            string colDef = BuildColumnDefinition(info);
+            if (colDef == null) return -1;
+            string columnParameters = " " + colDef;
 
 
             int rc = 0;
@@ -748,6 +730,49 @@ namespace CandiceAIforGames.Data
 
         public void SetQuery(string query, Dictionary<object, object> parameters = null)
         {
+        }
+
+
+        private string BuildColumnDefinition(CandiceColumnInfo info)
+        {
+            if (!IsValidIdentifier(info.Name))
+            {
+                Debug.LogError("Invalid column name provided: " + info.Name);
+                return null;
+            }
+            if (!IsValidColumnType(info.Type))
+            {
+                Debug.LogError("Invalid column type provided: " + info.Type);
+                return null;
+            }
+
+            string nonNull = "";
+            string autoincrement = "";
+            string pk = "";
+            string defaultVal = "";
+            if (info.Pk)
+            {
+                pk = " PRIMARY KEY";
+            }
+            if (info.Ai)
+            {
+                autoincrement = " AUTOINCREMENT";
+            }
+            if (info.NotNull)
+            {
+                nonNull = " NOT NULL";
+            }
+            if (!string.IsNullOrEmpty(info.DefaultValue))
+            {
+                if (!System.Text.RegularExpressions.Regex.IsMatch(info.DefaultValue, @"^[a-zA-Z0-9_\-\.\s]+$"))
+                {
+                    Debug.LogError("Invalid default value provided: " + info.DefaultValue);
+                    return null;
+                }
+                defaultVal = " DEFAULT '" + info.DefaultValue.Replace("'", "''") + "'";
+            }
+
+            return EscapeIdentifier(info.Name) + " " + info.Type + pk + autoincrement + nonNull + defaultVal;
         }
 
         public int CreateTable(string tableName, List<CandiceColumnInfo> columnInfos)
