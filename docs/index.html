@@ -2102,13 +2102,13 @@
 
 
     <section id="sonar-simulator" style="padding: 3rem 1.5rem; max-width: 1000px; margin: 0 auto; background: rgba(0, 255, 204, 0.03); border: 1px solid rgba(0, 255, 204, 0.2); border-radius: 16px; margin-top: 2rem; text-align: center;">
-        <h2 style="font-size: 2rem; color: #00ffcc; margin-bottom: 1rem;">📡 Hydro-X Deep Sea Sonar Simulator</h2>
-        <p style="color: #a0e0fd; margin-bottom: 1.5rem;">Simulating real-time active sonar sweep at 4,000 meters depth in the Mariana Trench domain.</p>
-        <canvas id="sonar-canvas" width="300" height="300" style="background: #010a14; border: 2px solid #00ffcc; border-radius: 50%; box-shadow: 0 0 30px rgba(0,255,204,0.3);"></canvas>
+        <h2 style="font-size: 2rem; color: #00ffcc; margin-bottom: 1rem;">📡 Hydro-X Deep Sea Sonar Concept</h2>
+        <p style="color: #a0e0fd; margin-bottom: 1.5rem;">A browser-only visual concept for the instrument language of a deep-water sweep. It is not live gameplay telemetry.</p>
+        <canvas id="sonar-canvas" width="300" height="300" aria-hidden="true" style="background: #010a14; border: 2px solid #00ffcc; border-radius: 50%; box-shadow: 0 0 30px rgba(0,255,204,0.3);"></canvas>
         <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem;">
-            <button onclick="pingSonar()" style="padding: 0.8rem 1.5rem; background: #00ffcc; color: #01070e; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase;">🔊 Ping Active Sonar</button>
+            <button id="sonar-ping-button" type="button" aria-controls="sonar-log" aria-pressed="false" onclick="pingSonar()" style="padding: 0.8rem 1.5rem; background: #00ffcc; color: #01070e; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; text-transform: uppercase;">🔊 Ping Concept Sonar</button>
         </div>
-        <div id="sonar-log" style="margin-top: 1rem; color: #00ffcc; font-family: monospace; font-size: 0.9rem;">Sonar Status: STANDBY • Depth: 4,120m • Pressure: 400 bar</div>
+        <div id="sonar-log" role="status" aria-live="polite" aria-atomic="true" style="margin-top: 1rem; color: #00ffcc; font-family: monospace; font-size: 0.9rem;">Concept sonar: standby • visual depth marker 4,120m</div>
     </section>
     <script>
     (function() {
@@ -2140,7 +2140,18 @@
         drawSonar();
         window.pingSonar = function() {
             const log = document.getElementById('sonar-log');
-            if (log) log.innerText = "SONAR PING SENT! Detected " + (Math.floor(Math.random()*4)+2) + " submerged anomalies at range 1.4km";
+            const button = document.getElementById('sonar-ping-button');
+            const contacts = Math.floor(Math.random() * 4) + 2;
+
+            if (log) log.innerText = "Concept ping complete: " + contacts + " simulated returns at 1.4 km range.";
+            if (button) {
+                button.setAttribute('aria-pressed', 'true');
+                button.innerText = 'Concept Ping Sent';
+                window.setTimeout(() => {
+                    button.setAttribute('aria-pressed', 'false');
+                    button.innerText = '🔊 Ping Concept Sonar';
+                }, 1000);
+            }
         };
     })();
     </script>
