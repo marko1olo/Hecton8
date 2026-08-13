@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -836,7 +836,7 @@ namespace Den.Tools
 				return new CoordRect (minX, minZ, maxX-minX, maxZ-minZ);
 			}
 			[Obsolete]
-			public static CoordRect PickIntersectingCells (Coord center, int range, int cellRes=1) { return PickIntersectingCells( new CoordRect(center, range), cellRes); }
+			public static CoordRect PickIntersectingCells (Coord center, int range, int cellRes=1) { return PickIntersectingCells( new CoordRect(center.x - range, center.z - range, range * 2, range * 2), cellRes); }
 
 			[Obsolete]
 			public static CoordRect PickIntersectingCellsByPos (float rectMinX, float rectMinZ, float rectMaxX, float rectMaxZ, float cellSize)
