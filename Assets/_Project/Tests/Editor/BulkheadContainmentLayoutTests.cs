@@ -21,6 +21,11 @@ namespace Hecton8.Tests.Editor
         public void BulkheadStateDTO_IsExactPromptLayout()
         {
             Assert.That(UnsafeUtility.SizeOf<BulkheadStateDTO>(), Is.EqualTo(32));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadStateDTO), nameof(BulkheadStateDTO.EdgeHashID)), Is.EqualTo(0));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadStateDTO), nameof(BulkheadStateDTO.ClosureProgress)), Is.EqualTo(4));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadStateDTO), nameof(BulkheadStateDTO.AssociatedLock)), Is.EqualTo(8));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadStateDTO), nameof(BulkheadStateDTO.SiblingNodeHash)), Is.EqualTo(12));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(BulkheadStateDTO), nameof(BulkheadStateDTO.Flags)), Is.EqualTo(16));
             Assert.That(BulkheadStateLayoutGuard.ValidateLayout(), Is.True);
         }
 
