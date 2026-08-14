@@ -24,18 +24,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Setup Pages
-        uses: actions/configure-pages@v6
-        with:
-          enablement: true
+        uses: actions/configure-pages@v5
+
+      - name: Prepare Pages Artifacts
+        run: |
+          mkdir -p _site
+          if [ -d "docs" ]; then cp -r docs/* _site/ 2>/dev/null || true; fi
+          if [ -d "Docs" ]; then cp -r Docs/* _site/ 2>/dev/null || true; fi
+          cp -f index.html _site/ 2>/dev/null || true
+          cp -f llms.txt _site/ 2>/dev/null || true
+          touch _site/.nojekyll
 
       - name: Upload static project surface
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@v3
         with:
-          path: 'docs'
+          path: '_site'
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v4
