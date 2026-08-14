@@ -985,7 +985,62 @@ if ('serviceWorker' in navigator) {
         </div>
       </section>
 
-    </main>
+    
+    <!-- THERMOCLINE ACOUSTIC REFRACTION & HULL STRESS TELEMETRY -->
+    <section class="hecton-physics-deck" style="margin: 2rem 0; background: #050b14; border: 1px solid rgba(6, 182, 212, 0.35); border-radius: 12px; padding: 1.5rem; box-shadow: 0 8px 30px rgba(0,0,0,0.6); font-family: 'JetBrains Mono', monospace;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 1rem; margin-bottom: 1.25rem;">
+        <div>
+          <span style="background: rgba(6, 182, 212, 0.15); border: 1px solid #06b6d4; color: #22d3ee; font-size: 0.75rem; font-weight: bold; padding: 0.2rem 0.6rem; border-radius: 999px;">ACOUSTIC PHYSICS 6.0</span>
+          <h3 style="font-size: 1.25rem; color: #fff; margin-top: 0.4rem;">Thermocline Sonar Refraction & Submarine Hull Stress Gauge</h3>
+        </div>
+        <span style="color: #06b6d4; font-size: 0.8rem;">BURST COMPILED (0B GC)</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
+        <div style="background: #091322; border: 1px solid #162a47; border-radius: 8px; padding: 1.25rem;">
+          <h4 style="font-size: 0.85rem; color: #22d3ee; margin-bottom: 0.75rem;">🌊 SOUND VELOCITY PROFILE (SVP)</h4>
+          <canvas id="hecton-svp-canvas" width="280" height="70" style="background:#03070d; border-radius:4px; width:100%;"></canvas>
+          <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#94a3b8; margin-top:4px;">
+            <span>Surface: 1,520 m/s</span>
+            <span>SOFAR Axis: 1,480 m/s</span>
+            <span>Deep: 1,540 m/s</span>
+          </div>
+        </div>
+
+        <div style="background: #091322; border: 1px solid #162a47; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+          <h4 style="font-size: 0.85rem; color: #22d3ee; margin-bottom: 0.5rem;">⚙️ TITANIUM HULL STRESS MONITOR</h4>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #cbd5e1; margin-bottom: 0.3rem;">
+            <span>Hydrostatic Pressure:</span>
+            <strong style="color: #22d3ee;">86.8 MPa (Hadal)</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #cbd5e1; margin-bottom: 0.3rem;">
+            <span>Structural Hull Margin:</span>
+            <strong style="color: #22c55e;">+42.5% Safety Factor</strong>
+          </div>
+          <div style="height: 6px; background: #03070d; border-radius: 999px; overflow: hidden; margin-top: 4px;">
+            <div style="width: 58%; height: 100%; background: linear-gradient(90deg, #22c55e, #06b6d4);"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <script>
+    (function() {
+      const cvs = document.getElementById('hecton-svp-canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      ctx.fillStyle = '#03070d';
+      ctx.fillRect(0, 0, cvs.width, cvs.height);
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(10, 10);
+      ctx.bezierCurveTo(90, 15, 140, 55, 270, 20);
+      ctx.stroke();
+    })();
+    </script>
+
+</main>
 
     <!-- FOOTER -->
     
