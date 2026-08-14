@@ -993,7 +993,48 @@ if ('serviceWorker' in navigator) {
     <!-- ==========================================================================
          DUAL ARCHITECTS & CONNECTED SYNDICATE ECOSYSTEM (ADOLF PETUSHKOV & JIRNYAK)
          ========================================================================== -->
-    <section id="creator-ecosystem" style="margin: 4rem auto 3rem; max-width: 1200px; padding: 2.5rem 1.5rem; background: rgba(10, 16, 28, 0.82); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 16px; backdrop-filter: blur(14px); box-shadow: 0 10px 40px rgba(0,0,0,0.6);">
+    
+<div id="depth-layer-panel" style="margin: 1.5rem 0; padding: 1.25rem; background: rgba(5, 14, 26, 0.9); border: 1px solid rgba(0, 255, 194, 0.3); border-radius: 12px; display: flex; flex-direction: column; gap: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <span style="font-family: monospace; font-size: 0.8rem; color: #00ffc2; font-weight: bold; letter-spacing: 1px;">🌊 BATHYMETRIC DEPTH ZONE SELECTOR</span>
+        <span id="currentDepthLabel" style="font-family: monospace; font-size: 0.85rem; color: #fff; background: rgba(0,255,194,0.15); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(0,255,194,0.3);">Hadal Trench (8,420m &middot; 86.8 MPa)</span>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem;">
+        <button type="button" onclick="setBathymetricDepth(150, 'Epipelagic Sunlight Zone', 1.5, 0.1)" style="background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); color: #00e5ff; padding: 0.5rem; border-radius: 6px; font-family: monospace; font-size: 0.75rem; cursor: pointer; font-weight: bold;">
+            ☀️ Epipelagic<br><span style="font-size: 0.65rem; color: #94a3b8;">0-200m (1.5 MPa)</span>
+        </button>
+        <button type="button" onclick="setBathymetricDepth(850, 'Mesopelagic Twilight Zone', 8.7, 0.3)" style="background: rgba(0,180,216,0.1); border: 1px solid rgba(0,180,216,0.3); color: #00b4d8; padding: 0.5rem; border-radius: 6px; font-family: monospace; font-size: 0.75rem; cursor: pointer; font-weight: bold;">
+            🌌 Mesopelagic<br><span style="font-size: 0.65rem; color: #94a3b8;">200-1000m (8.7 MPa)</span>
+        </button>
+        <button type="button" onclick="setBathymetricDepth(3200, 'Bathypelagic Midnight Zone', 32.9, 0.6)" style="background: rgba(114,9,183,0.1); border: 1px solid rgba(114,9,183,0.3); color: #b5179e; padding: 0.5rem; border-radius: 6px; font-family: monospace; font-size: 0.75rem; cursor: pointer; font-weight: bold;">
+            🌑 Bathypelagic<br><span style="font-size: 0.65rem; color: #94a3b8;">1000-4000m (33 MPa)</span>
+        </button>
+        <button type="button" onclick="setBathymetricDepth(8420, 'Hadal Trench Abyss', 86.8, 0.95)" style="background: rgba(0,255,194,0.15); border: 1px solid #00ffc2; color: #00ffc2; padding: 0.5rem; border-radius: 6px; font-family: monospace; font-size: 0.75rem; cursor: pointer; font-weight: bold;">
+            ⚓ Hadal Trench<br><span style="font-size: 0.65rem; color: #94a3b8;">6000-11000m (87 MPa)</span>
+        </button>
+    </div>
+</div>
+
+<script id="hecton-depth-script">
+function setBathymetricDepth(depth, name, mpa, backscatter) {
+    const label = document.getElementById('currentDepthLabel');
+    if (label) label.innerText = `${name} (${depth.toLocaleString()}m · ${mpa} MPa)`;
+    
+    // Update sonar state if accessible
+    if (typeof state !== 'undefined') {
+        state.depth = depth;
+        state.pressure = mpa;
+        state.backscatterGain = backscatter;
+    }
+    const depthValEl = document.getElementById('h8-depth-val');
+    if (depthValEl) depthValEl.innerText = depth.toLocaleString() + ' m';
+    const pressValEl = document.getElementById('h8-pressure-val');
+    if (pressValEl) pressValEl.innerText = mpa.toFixed(1) + ' MPa';
+}
+</script>
+
+<section id="creator-ecosystem" style="margin: 4rem auto 3rem; max-width: 1200px; padding: 2.5rem 1.5rem; background: rgba(10, 16, 28, 0.82); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 16px; backdrop-filter: blur(14px); box-shadow: 0 10px 40px rgba(0,0,0,0.6);">
         
         <!-- Syndicate Header & Dual Profiles -->
         <div style="padding-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
@@ -1747,6 +1788,64 @@ window.addEventListener('keydown', (e) => {
         const m = document.getElementById('eco-palette-modal');
         if (m) m.style.display = 'none';
     }
+});
+</script>
+
+
+<script id="eco-audio-theme-script">
+// Universal Web Audio UI Synthesizer (0 external assets, zero latency)
+let uiAudioCtx = null;
+let soundEnabled = true;
+
+function playUiSound(type = 'click') {
+    if (!soundEnabled) return;
+    try {
+        if (!uiAudioCtx) {
+            uiAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (uiAudioCtx.state === 'suspended') {
+            uiAudioCtx.resume();
+        }
+        const osc = uiAudioCtx.createOscillator();
+        const gain = uiAudioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(uiAudioCtx.destination);
+        
+        const now = uiAudioCtx.currentTime;
+        if (type === 'click') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(400, now + 0.04);
+            gain.gain.setValueAtTime(0.05, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+            osc.start(now);
+            osc.stop(now + 0.04);
+        } else if (type === 'hover') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.linearRampToValueAtTime(440, now + 0.03);
+            gain.gain.setValueAtTime(0.02, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+            osc.start(now);
+            osc.stop(now + 0.03);
+        } else if (type === 'open') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(900, now + 0.08);
+            gain.gain.setValueAtTime(0.08, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+    } catch(e) {}
+}
+
+// Add UI hover sounds to interactive elements
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('button, a, .card, .btn, input[type="range"]').forEach(el => {
+        el.addEventListener('mouseenter', () => playUiSound('hover'), { passive: true });
+        el.addEventListener('click', () => playUiSound('click'), { passive: true });
+    });
 });
 </script>
 
