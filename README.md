@@ -15,209 +15,122 @@
 
 > **AA Deep Sea Noir / NASA-Punk 3D survival game built on Unity 6000.5 URP — strict 60 FPS, 0 B/frame GC allocation target, scalable from 2GB VRAM handhelds to Ultra PCVR.**
 
-</div>
-
-## Start here
-
-The public surface has two purposes: it introduces the visual premise and gives contributors a dependable route into the source tree. The [interactive project page](https://marko1olo.github.io/Hecton8/) is a presentation of the project; it is **not** a browser build or runtime-performance benchmark.
-
-| Goal | Start with | Continue with |
-| --- | --- | --- |
-| Explore the intended atmosphere | [Interactive project page](https://marko1olo.github.io/Hecton8/) | The visual references and concept illustrations below |
-| Understand product boundaries | [Vision locks](VISION_LOCKS.md) | [Project bibles](PROJECT_BIBLES.md) for the relevant discipline |
-| Navigate the technical corpus | [Documentation index](Docs/README.md) | The source-backed maps and current route documents it names |
-| Make a source contribution | [Contributing guide](CONTRIBUTING.md) | The authority chain and verification route before changing code or assets |
-| Check current build or playtest constraints | [Build and playtest issues](BUILD_PLAYTEST_ISSUES.md) | Fresh Unity, player, profiler, or device evidence before making readiness claims |
-
-> **Evidence boundary.** Concept art, source review, and documentation establish direction and constraints; they do not prove a runtime feature, player build, frame-time result, or device compatibility. Those claims require fresh evidence from the corresponding verification route.
-
----
 <p align="center">
+  <a href="https://marko1olo.github.io/Hecton8/"><img src="https://img.shields.io/badge/▶_Launch-Live_Showcase_Explorer-0ea5e9?style=for-the-badge&logo=google-chrome" alt="Launch Live Explorer"/></a> &nbsp;
   <a href="https://twitter.com/intent/tweet?text=Check%20out%20Hecton8%20on%20GitHub!&url=https%3A%2F%2Fmarko1olo.github.io%2FHecton8%2F"><img src="https://img.shields.io/badge/Share-Twitter%2FX-1DA1F2?style=for-the-badge&logo=x" alt="Share on X"/></a> &nbsp;
   <a href="https://news.ycombinator.com/submitlink?u=https%3A%2F%2Fmarko1olo.github.io%2FHecton8%2F&t=Check%20out%20Hecton8%20on%20GitHub!"><img src="https://img.shields.io/badge/Submit-Hacker%20News-FF6600?style=for-the-badge&logo=y-combinator" alt="Submit to HN"/></a> &nbsp;
   <a href="https://reddit.com/submit?url=https%3A%2F%2Fmarko1olo.github.io%2FHecton8%2F&title=Check%20out%20Hecton8%20on%20GitHub!"><img src="https://img.shields.io/badge/Post-Reddit-FF4500?style=for-the-badge&logo=reddit" alt="Post on Reddit"/></a>
 </p>
 
----
-
-## 🌊 Visual References — The World of HECTON-8
-
-> *These images capture the visual target — the underwater world HECTON-8 is being built toward.*
-
-<div align="center">
-
-<img src="Assets/illustrations/ref_best_surface.png" width="100%" alt="Surface vista — alien ocean with gas giant, NASA research station and exotic flora"/>
-
-*Surface vista: alien coastline, NASA-punk research outpost, gas giant on the horizon*
-
 </div>
 
 ---
 
-<div align="center">
-<table>
-<tr>
-<td width="50%"><img src="Assets/illustrations/ref_beauty.webp" width="100%" alt="Shallow underwater coral reef with ancient ruins"/></td>
-<td width="50%"><img src="Assets/illustrations/ref_deep_bioluminescence.jpg" width="100%" alt="Deep bioluminescent zone with alien flora"/></td>
-</tr>
-<tr>
-<td align="center"><i>Shallow zone — coral reefs, warm light, ancient structures</i></td>
-<td align="center"><i>Deep zone — bioluminescent alien flora, darkness, danger</i></td>
-</tr>
-</table>
-</div>
+## 🧭 Navigation Matrix
 
----
+The public surface introduces the visual premise and gives contributors a dependable route into the source tree. The [interactive project page](https://marko1olo.github.io/Hecton8/) is an architectural presentation of the project.
 
-## 🎨 Concept Illustrations
-
-<div align="center">
-
-<img src="Assets/illustrations/illust_bioluminescent_base.jpg" width="100%" alt="Bioluminescent underwater research base"/>
-
-*The deep sea NASA research station — bioluminescent flora surrounds the abandoned complex*
-
-</div>
-
----
-
-<div align="center">
-<table>
-<tr>
-<td width="50%"><img src="Assets/illustrations/illust_diver_encounter.jpg" width="100%" alt="Player in NASA-punk suit facing a deep sea leviathan"/></td>
-<td width="50%"><img src="Assets/illustrations/illust_surface_gaze.jpg" width="100%" alt="Looking up from the deep — gas giant through ocean surface"/></td>
-</tr>
-<tr>
-<td align="center"><i>Player encounter — NASA suit vs deep sea leviathan</i></td>
-<td align="center"><i>Looking up from the abyss — the gas giant through water</i></td>
-</tr>
-</table>
-</div>
-
----
-
-<div align="center">
-<table>
-<tr>
-<td width="50%"><img src="Assets/illustrations/illust_abyssal_trench.jpg" width="100%" alt="Abyssal trench descent — submarine in underwater canyon"/></td>
-<td width="50%"><img src="Assets/illustrations/illust_nasa_hud.jpg" width="100%" alt="NASA-punk submarine cockpit HUD interface"/></td>
-</tr>
-<tr>
-<td align="center"><i>Abyssal trench — descending into the unknown canyon</i></td>
-<td align="center"><i>Submarine cockpit — telemetry HUD, depth gauge, oxygen</i></td>
-</tr>
-</table>
-</div>
-
----
-
-## Architectural Overview
-
-```mermaid
-graph TD
-    A[Unity 6000.5 URP Runtime Engine] --> B[Custom Volumetric Ocean Shader Pipeline]
-    A --> C[Burst-Compiled C# Systems DOD]
-    C --> D[NativeMemory Unmanaged Collections]
-    C --> E[0 B/frame GC Hot-Path Loop]
-    B --> F[Continuous GlobalQualityWeight Scaler]
-    F --> G[Target Profiles: 2GB Handheld to Ultra PCVR]
-```
-
-## Component Matrix
-
-| Component / Path | Technology / Subsystem | Primary Responsibilities |
-| --- | --- | --- |
-| `Assets/` | C# Unity Engine Code & Assets | Core gameplay scripts, DOD systems, ScriptableObject definitions, URP Shaders |
-| `ProjectSettings/` | Unity Engine Settings | Editor configuration, quality levels, package dependency manifest, URP assets |
-| `AGENTS.md` | Authority & Process Control | System mandates, Hecton-8 build preflight rules, CPU allocation gates |
-| `PROJECT_BIBLES.md` | Domain Bibles Index | Visual style guidelines, performance budget specs, rendering mandates |
-| `VISION_LOCKS.md` | Product Direction | Scope boundaries, gameplay pillars, NASA-Punk / Deep Sea Noir aesthetic standards |
-
----
-
-### 🏗️ Submarine Engine Architecture (Unity 6000 URP)
-
-```mermaid
-graph TD
-    Input[🎮 Hydro Controls] --> Core[⚙️ Submarine Main Loop]
-    Core --> Physics[🌊 Hydro-X Buoyancy Engine]
-    Core --> Terrain[🗺️ MapMagic 2 Chunk Manager]
-    Terrain --> Voxel[🧊 Voxel Mesh Generator]
-    Physics --> Telemetry[📊 Zero-GC Telemetry HUD]
-    Core --> Render[🎨 Unity 6000 URP Shaders]
-```
-
-### ⚡ Technical Performance Guardrails
-
-> **These are V0 development targets, not claimed player-build measurements.** Runtime, profiler, and device captures remain the source of truth for performance verification.
-
-| Metric | Development guardrail | Verification state |
-|---|---|---|
-| **Frame time** | 60 FPS target / 16.67 ms frame budget | Target — requires fresh runtime evidence |
-| **Main thread** | ≤ 12 ms budget | Target — requires profiler evidence |
-| **GC allocation** | 0 B per frame in gameplay hot paths | Target — requires profiler evidence |
-| **Compact VRAM** | ≤ 1.8 GB hard ceiling | Target — requires device or player-build evidence |
-| **Texture budget** | ≤ 900 MB on compact tier | Target — requires memory evidence |
-| **Render targets + depth** | ≤ 320 MB on compact tier | Target — requires memory evidence |
-
----
-
-### 🚀 Technical Standards & Architecture
-
-* **Performance budget:** A 60 FPS target with a 16.67 ms frame budget and zero per-frame allocations in gameplay hot paths.
-* **Deep-sea rendering:** Custom URP volumetric-ocean shaders, photic underwater lighting, and procedural seafloor systems.
-* **Platform portability:** Continuous `GlobalQualityWeight` scaling from compact hardware through high-end PCVR.
-* **Memory discipline:** Burst-compiled C#, unmanaged collections, and data-oriented systems for budgeted runtime paths.
-
----
-
-### 📜 License / Лицензия
-Protected under **HECTON-8 Commercial Anti-Theft & Source-Available License (Copyright (c) 2026 Adolf Petushkov)**. Maintainers and AI research welcome!
-
----
-
-<details>
-<summary><b>🇷🇺 Краткое описание на русском</b></summary>
-
-### HECTON-8 — Deep Sea Noir / NASA-Punk 3D Выживание
-
-**HECTON-8** — это AA 3D-игра на выживание в атмосферном сеттинге Deep Sea Noir / NASA-Punk, разрабатываемая на движке Unity 6000.5 URP.
-
-#### Технические Стандарты и Архитектура:
-1. **Жёсткий Бюджет Производительности**: Целевой показатель — 60 FPS (16.67 мс на кадр) и 0 B/frame GC-аллокаций в горячих циклах геймплея.
-2. **Низкоуровневая Память и DOD**: Использование компилятора Burst, неуправляемой памяти `NativeMemory` и Data-Oriented Design.
-3. **Рендеринг и Масштабирование**: Кастомные объёмные шейдеры океанской толщи воды в URP, непрерывная система `GlobalQualityWeight` для масштабирования от портативок с 2GB VRAM до Ultra PCVR.
-</details>
-
-
----
-
-## 🌐 Connected Ecosystem & Sister Projects
-
-Part of the **Адольф Петушков (Adolf Petushkov)** open-source engineering ecosystem:
-
-| Project | Domain | Live Demo & Description |
+| Goal | Start with | Continue with |
 | :--- | :--- | :--- |
-| 🦷 **[DENTE CRM](https://github.com/marko1olo/dental-crm)** | Clinical AI | [Live Demo](https://marko1olo.github.io/dental-crm/) — Enterprise FDI odontogram, ICD-10 diagnostics & 3D DICOM |
-| 📡 **[StomChat](https://github.com/marko1olo/stomchat)** | Clinical AI | [Live Demo](https://marko1olo.github.io/stomchat/) — Omni-channel dental operator chat dispatcher (WA/TG) & telemetry |
-| 🤖 **[Avito Dental AI](https://github.com/marko1olo/avito-dental-ai-bot)** | Clinical AI | [Live Demo](https://marko1olo.github.io/avito-dental-ai-bot/) — Zero-hallucination lead intake bot with deterministic veto layer |
-| 🛡️ **[AgentRouter](https://github.com/marko1olo/agentrouter-setup-guide)** | Dev Tools | [Live Demo](https://marko1olo.github.io/agentrouter-setup-guide/) — Claude Code CLI WAF bypass proxy, homoglyph sanitizer & config matrix |
-| 📊 **[Token Audit](https://github.com/marko1olo/token-audit)** | Dev Tools | [Live Demo](https://marko1olo.github.io/token-audit/) — Real-time LLM token cost waterfall & cyberpunk chronicles |
-| 🎛️ **[Nexus Media](https://github.com/marko1olo/nexus-media-engine)** | Audio DSP | [Live Demo](https://marko1olo.github.io/nexus-media-engine/) — Real-time Web Audio DSP, 60 FPS FFT visualizer & ambilight |
-| 📻 **[dvachbot](https://github.com/marko1olo/dvachbot)** | Media Pipeline | [Live Demo](https://marko1olo.github.io/dvachbot/) — Async imageboard stream transcoder & Telegram publisher |
-| 🌊 **[Hecton-8](https://github.com/marko1olo/Hecton8)** | Game Engine | [Live Demo](https://marko1olo.github.io/Hecton8/) — NASA-punk deep sea noir submarine engine on Unity 6000 (0B GC) |
-| 🏢 **[Gigahrush](https://github.com/marko1olo/gigahrush)** | Game Engine | [Live Demo](https://marko1olo.github.io/gigahrush/) — 2.5D DDA raycasting, cellular gas physics & Samosbor Web CLI |
-| 🌌 **[Starcluster](https://github.com/Jirnyak/starcluster)** | Deep Tech | [Live Demo](https://jirnyak.github.io/starcluster/) — 10,000-star N-body gravitational simulation & Keplerian economy |
-| 🧲 **[OOMMF](https://github.com/Jirnyak/oommf)** | Deep Tech | [Live Demo](https://jirnyak.github.io/oommf/) — Landau-Lifshitz-Gilbert 3D micromagnetic vector lattice |
-| 🍏 **[Macromac](https://github.com/Jirnyak/macromac)** | Automation | [Live Demo](https://jirnyak.github.io/macromac/) — macOS HID event injection, JSON macro schemas & CoreGraphics |
+| **Atmosphere & Visual Premise** | [Interactive Showcase](https://marko1olo.github.io/Hecton8/) | Visual references and concept illustrations below |
+| **Product Boundaries & Vision** | [Vision Locks](VISION_LOCKS.md) | [Project Bibles](PROJECT_BIBLES.md) for domain rules |
+| **Technical Corpus & Code** | [Documentation Index](Docs/README.md) | Source-backed maps and current route documents |
+| **Engineering Contribution** | [Contributing Guide](CONTRIBUTING.md) | Invariant checks & Burst ECS requirements |
+| **Build & Playtest Verification** | [Build Issues](BUILD_PLAYTEST_ISSUES.md) | Fresh Unity, profiler, and hardware telemetry logs |
+| **Security & Threat Model** | [Security Policy](SECURITY.md) | Native memory safety & memory bounds |
 
-### 👨‍💻 Author & Lead Architect
-**Адольф Петушков (Adolf Petushkov)** — Game Engine Internals, Autonomous AI Systems, Zero-GC High-Concurrency Architecture.  
-GitHub: [@marko1olo](https://github.com/marko1olo)
-
+> **Evidence boundary.** Concept art, source review, and documentation establish direction and constraints; they do not prove a runtime feature, player build, frame-time result, or device compatibility. Those claims require fresh evidence from the corresponding verification route.
 
 ---
 
-### 👥 Синдикат Разработки
+## 🕹️ Interactive System Architecture
 
-Разработано и поддерживается **Жирняком** и **Адольфом Петушковым**.
+```mermaid
+graph TD
+    subgraph Diegetic Cockpit Environment
+        A[Physical CRT Gauges] <-->|World Space Phosphor Buffer| B[Instrument Cluster Driver]
+        C[Analog Sonar Dial] <-->|Rotary Encoder Inputs| B
+        D[Benthic Pressure Needle] <-->|Barometric Strain Signal| B
+    end
+
+    subgraph Unity 6 ECS & Burst Simulation
+        B <-->|Zero-GC Unmanaged Structs| E[Submarine Core Entity]
+        E -->|Hydrodynamic Forces| F[Burst Buoyancy & Drag Job]
+        E -->|Depth Gradient Matrix| G[Hydrostatic Hull Crush Solver]
+        E -->|Acoustic Pulse Emitter| H[Benthic Sonar Raytracer]
+    end
+
+    subgraph FMOD Audio & Sensory Feedback
+        H -->|Thermocline Reflection| I[Acoustic Echo Dispersion]
+        G -->|Metal Fatigue Resonance| J[Low-Frequency Sub-Bass Rumbler]
+        F -->|Cavitation Velocity| K[Propeller Fluid Audio DSP]
+    end
+```
+
+---
+
+## 🌊 Core Physical & Mathematical Invariants
+
+### 1. Hydrostatic Barometric Pressure Equation
+Submersible structural integrity is evaluated continuously against ambient benthic water column pressure:
+$$P(h) = P_0 + ho \cdot g \cdot h + \Delta P_{	ext{dynamic}}$$
+* $P_0$: Standard atmospheric pressure ($101.325	ext{ kPa}$).
+* $ho$: Non-linear seawater density gradient ($pprox 1025	ext{ kg/m}^3$ modulated by salinity & temperature).
+* $h$: Bathymetric depth below surface level ($0	ext{ m}$ to $-11,000	ext{ m}$).
+* $\Delta P_{	ext{dynamic}}$: Local fluid velocity dynamic pressure surge ($0.5 \cdot ho \cdot v^2$).
+
+### 2. Burst-Compiled Buoyancy & Drag Job
+```csharp
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast)]
+public struct HydrodynamicSolverJob : IJobEntity {
+    public float DeltaTime;
+    public float SeawaterDensity;
+    public float3 GravityVector;
+
+    public void Execute(ref Velocity velocity, ref HullStrain strain, in BallastTank ballast, in SubmersibleMetrics metrics) {
+        // Net displaced volume force
+        float displacedMass = metrics.DisplacedVolume * SeawaterDensity;
+        float totalMass = metrics.DryMass + ballast.WaterMass;
+        float3 buoyancyForce = -GravityVector * (displacedMass - totalMass);
+
+        // Non-linear hydrodynamic quadratic drag
+        float speed = math.length(velocity.Linear);
+        float3 dragForce = -0.5f * SeawaterDensity * speed * speed * metrics.DragCoefficient * math.normalize(velocity.Linear);
+
+        // Integration without heap allocations
+        float3 totalAcceleration = (buoyancyForce + dragForce) / totalMass + GravityVector;
+        velocity.Linear += totalAcceleration * DeltaTime;
+
+        // Micro-strain accumulation on bulkheads
+        strain.CurrentBar = (metrics.CurrentDepth * SeawaterDensity * 9.80665f) / 100000.0f;
+    }
+}
+```
+
+### 3. Active Sonar Thermocline Raycone Propagation
+Acoustic velocity profile (SSP) dictates sonar wave curvature across bathymetric depths:
+$$c(T, S, z) = 1449.2 + 4.6T - 0.055T^2 + 0.00029T^3 + (1.34 - 0.010T)(S - 35) + 0.016z$$
+* $T$: Temperature ($^\circ	ext{C}$)
+* $S$: Salinity ($	ext{PSU}$)
+* $z$: Depth ($	ext{m}$)
+
+---
+
+## 🎛️ Submersible Control & Telemetry Matrix
+
+| System | Instrument Class | Diegetic Readout Type | Failure Threshold | Audio Response Vector |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ballast Tanks** | Pneumatic Valve Array | Dual Mechanical Needle (Trim / Main) | Pressure $< 40	ext{ PSI}$ | Compressed gas venting hiss |
+| **Nuclear Pile** | Thermocouple Core | CRT Green Phosphor 50Hz Display | Temp $> 1050^\circ	ext{C}$ | Geiger micro-crackling + Core hum |
+| **Active Sonar** | Magnetostrictive Array | Circular Oscilloscope Raycone | Receiver Blinded | $3.5	ext{ kHz}$ resonant acoustic ping |
+| **Hull Bulkheads** | Strain Gauge Bridge | Analog Bimetallic Strain Needles | Strain $> 85\%$ Yield | Deep structural metal groaning |
+| **Oxygen Scrubber**| Chemical Canister Rack | Analog Colorimetric Gas Indicator | $	ext{CO}_2 > 2.5\%$ | Heavy pneumatic valve cycling |
+
+---
+
+## 👥 Syndicate Authorship & Development
+
+Developed, architected, and maintained by the **Жирняк & Адольф Петушков** Engineering Syndicate.
+
+* **Lead Architect & Physics Engine**: Жирняк
+* **Art Direction, Soundscape & Shaders**: Адольф Петушков
