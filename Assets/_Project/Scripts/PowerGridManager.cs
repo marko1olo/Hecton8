@@ -245,6 +245,7 @@ namespace Hecton8.Power
         {
             UnregisterRuntimeHooks();
             DisposeAllGrids();
+                        CompletePendingSlowTickEvaluationsForTeardown();
             _wfcOutpostPowerBoot?.Dispose();
             _wfcOutpostPowerBoot = null;
             _shinobuLogisticsRouter?.Dispose();
