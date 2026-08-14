@@ -83,5 +83,18 @@ namespace Hecton8.Tests.Editor
             Assert.Fail("Unclosed method body: " + signature);
             return string.Empty;
         }
+        [Test]
+        public void DataVaultRebind_CompletesScheduledJobsBeforeReleasingVaultHandles()
+        {
+            string nutrient = ReadProjectFile("Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs");
+            string rebind = ExtractMethodBlock(nutrient, "private void RebindDataVaultForLifecycle");
+
+            int barrierIndex = rebind.IndexOf("CompleteScheduledJobForVaultSwapBarrier();", System.StringComparison.Ordinal);
+            int releaseIndex = rebind.IndexOf("ReleaseVaultHandles(_vault ?? releaseVaultOverride);", System.StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(barrierIndex, 0, "DataVault rebind must complete its scheduled job fence before releasing native vault ownership.");
+            Assert.GreaterOrEqual(releaseIndex, 0, "DataVault rebind must release the old vault handles.");
+            Assert.Less(barrierIndex, releaseIndex, "Native jobs must be completed before their DataVault-backed buffers are released.");
+        }
     }
 }
