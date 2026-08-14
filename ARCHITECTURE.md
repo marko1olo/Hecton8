@@ -1,16 +1,32 @@
-# HECTON-8 — Architecture Specification
+# 🌊 HECTON-8 — System Architecture Specification
 
-## 1. Engine Boundaries & Assembly Definitions
-Unity 6000 architecture strictly partitioned into zero-allocation presentation, simulation, and render assemblies.
+> **NASA-Punk Deep Sea Submarine Simulation Architecture**  
+> Developed by **Жирняк** & **Адольф Петушков**
+
+---
+
+## 🏗️ 1. Engine Layering & Data Flow
 
 ```mermaid
 graph TD
-    Core[Hecton.Core (Burst & Jobs)] --> Data[Hecton.Data (ScriptableObjects)]
-    Core --> Render[Hecton.Rendering (URP Bathymetric Shaders)]
-    Core --> Audio[Hecton.Audio (Acoustic Convolver)]
-    Render --> UI[Hecton.Presentation (Canvas HUD)]
+    subgraph Simulation Domain
+        A[Kinematics Solver] -->|Position / Velocity| B[Hydrodynamic Buoyancy Grid]
+        B -->|Hydrostatic Pressure| C[Hull Stress & Compression Model]
+        C -->|Failure Thresholds| D[Damage & Flooding Simulation]
+    end
+    
+    subgraph Acoustics & Sensors
+        E[Active Ping Transceiver] -->|Ray Cones| F[Bathymetric Sonar Shader]
+        F -->|Benthic Echoes| G[Diegetic CRT Waterline Display]
+        H[Passive Cavitation Hydrophone] -->|FFT Spectrogram| I[Audio DSP Synthesizer]
+    end
 ```
 
-## 2. Hydrodynamic & Sonar Invariants
-- Zero heap allocation in `FixedUpdate()` physics loop.
-- Acoustic Sound Velocity Profile (SVP) refraction computed in Burst jobs.
+### 1.1 Performance & Memory Invariants
+* **Burst Compilation:** All physics and raycast loops compiled with Unity Burst Compiler and NativeArrays (`Allocator.Persistent`).
+* **Zero GC in Update:** Strict zero-heap-allocation per frame across cockpit telemetry and sensor processing.
+
+---
+
+### 👥 Engineering Syndicate
+Developed and maintained by **Жирняк** & **Адольф Петушков**.
