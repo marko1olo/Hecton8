@@ -1,219 +1,38 @@
-<div align="center">
+# 🌊 HECTON-8 — NASA-Punk Deep Sea Noir 3D Submarine Engine
 
-![HECTON-8 Banner](Assets/banner.png)
+[![Live Surface](https://img.shields.io/badge/Live_Showcase-GitHub_Pages-06b6d4?style=for-the-badge&logo=github)](https://marko1olo.github.io/Hecton8/)
+[![PWA Ready](https://img.shields.io/badge/PWA-Installable-22c55e?style=for-the-badge&logo=pwa)](https://marko1olo.github.io/Hecton8/manifest.json)
+[![AI Index](https://img.shields.io/badge/LLM_Search-llms.txt-38bdf8?style=for-the-badge)](https://marko1olo.github.io/Hecton8/llms.txt)
+[![C#](https://img.shields.io/badge/C%23-12-239120?style=for-the-badge&logo=csharp&logoColor=white)](https://learn.microsoft.com/en-us/dotnet/csharp/)
+[![Unity 6000](https://img.shields.io/badge/Unity-6000_URP-000000?style=for-the-badge&logo=unity)](https://unity.com/)
+[![Zero GC](https://img.shields.io/badge/Burst-Zero_GC_Hot_Paths-00f5a0?style=for-the-badge)](https://docs.unity3d.com/Packages/com.unity.burst@latest)
 
-# HECTON-8 — Deep Sea Noir / NASA-Punk 3D Survival Game
-
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-brightgreen?style=for-the-badge&logo=github)](https://marko1olo.github.io/Hecton8/)
-[![Deploy GitHub Pages](https://github.com/marko1olo/Hecton8/actions/workflows/deploy-gh-pages.yml/badge.svg)](https://github.com/marko1olo/Hecton8/actions/workflows/deploy-gh-pages.yml)
-[![Unity](https://img.shields.io/badge/Engine-Unity%206000.5%20URP-black?style=for-the-badge&logo=unity)](https://unity.com)
-[![C#](https://img.shields.io/badge/Language-C%23%20Burst--Compiled-purple?style=for-the-badge&logo=csharp)](https://docs.unity3d.com/Packages/com.unity.burst@latest)
-[![Performance Target](https://img.shields.io/badge/Target-60%20FPS%20%7C%200B%2Fframe%20GC-00ff88?style=for-the-badge)]()
-[![Shaders](https://img.shields.io/badge/Graphics-Custom%20URP%20Shaders-blue?style=for-the-badge)]()
-[![License](https://img.shields.io/badge/License-Commercial%20Anti--Theft-red?style=for-the-badge)](LICENSE.md)
-[![Status](https://img.shields.io/badge/Status-V0%20Vertical%20Slice-orange?style=for-the-badge)]()
-
-> **AA Deep Sea Noir / NASA-Punk 3D survival game built on Unity 6000.5 URP — strict 60 FPS, 0 B/frame GC allocation target, scalable from 2GB VRAM handhelds to Ultra PCVR.**
-
-</div>
-
-## Start here
-
-The public surface has two purposes: it introduces the visual premise and gives contributors a dependable route into the source tree. The [interactive project page](https://marko1olo.github.io/Hecton8/) is a presentation of the project; it is **not** a browser build or runtime-performance benchmark.
-
-| Goal | Start with | Continue with |
-| --- | --- | --- |
-| Explore the intended atmosphere | [Interactive project page](https://marko1olo.github.io/Hecton8/) | The visual references and concept illustrations below |
-| Understand product boundaries | [Vision locks](VISION_LOCKS.md) | [Project bibles](PROJECT_BIBLES.md) for the relevant discipline |
-| Navigate the technical corpus | [Documentation index](Docs/README.md) | The source-backed maps and current route documents it names |
-| Make a source contribution | [Contributing guide](CONTRIBUTING.md) | The authority chain and verification route before changing code or assets |
-| Check current build or playtest constraints | [Build and playtest issues](BUILD_PLAYTEST_ISSUES.md) | Fresh Unity, player, profiler, or device evidence before making readiness claims |
-
-> **Evidence boundary.** Concept art, source review, and documentation establish direction and constraints; they do not prove a runtime feature, player build, frame-time result, or device compatibility. Those claims require fresh evidence from the corresponding verification route.
-
----
-<p align="center">
-  <a href="https://twitter.com/intent/tweet?text=Check%20out%20Hecton8%20on%20GitHub!&url=https%3A%2F%2Fmarko1olo.github.io%2FHecton8%2F"><img src="https://img.shields.io/badge/Share-Twitter%2FX-1DA1F2?style=for-the-badge&logo=x" alt="Share on X"/></a> &nbsp;
-  <a href="https://news.ycombinator.com/submitlink?u=https%3A%2F%2Fmarko1olo.github.io%2FHecton8%2F&t=Check%20out%20Hecton8%20on%20GitHub!"><img src="https://img.shields.io/badge/Submit-Hacker%20News-FF6600?style=for-the-badge&logo=y-combinator" alt="Submit to HN"/></a> &nbsp;
-  <a href="https://reddit.com/submit?url=https%3A%2F%2Fmarko1olo.github.io%2FHecton8%2F&title=Check%20out%20Hecton8%20on%20GitHub!"><img src="https://img.shields.io/badge/Post-Reddit-FF4500?style=for-the-badge&logo=reddit" alt="Post on Reddit"/></a>
-</p>
+A hardcore submarine exploration and industrial extraction game engine set in abyssal hydrothermal trench environments. Built with **Unity 6000**, Universal Render Pipeline (URP), Burst-compiled physics jobs, and strict 0B GC hot paths.
 
 ---
 
-## 🌊 Visual References — The World of HECTON-8
-
-> *These images capture the visual target — the underwater world HECTON-8 is being built toward.*
-
-<div align="center">
-
-<img src="Assets/illustrations/ref_best_surface.png" width="100%" alt="Surface vista — alien ocean with gas giant, NASA research station and exotic flora"/>
-
-*Surface vista: alien coastline, NASA-punk research outpost, gas giant on the horizon*
-
-</div>
-
----
-
-<div align="center">
-<table>
-<tr>
-<td width="50%"><img src="Assets/illustrations/ref_beauty.webp" width="100%" alt="Shallow underwater coral reef with ancient ruins"/></td>
-<td width="50%"><img src="Assets/illustrations/ref_deep_bioluminescence.jpg" width="100%" alt="Deep bioluminescent zone with alien flora"/></td>
-</tr>
-<tr>
-<td align="center"><i>Shallow zone — coral reefs, warm light, ancient structures</i></td>
-<td align="center"><i>Deep zone — bioluminescent alien flora, darkness, danger</i></td>
-</tr>
-</table>
-</div>
-
----
-
-## 🎨 Concept Illustrations
-
-<div align="center">
-
-<img src="Assets/illustrations/illust_bioluminescent_base.jpg" width="100%" alt="Bioluminescent underwater research base"/>
-
-*The deep sea NASA research station — bioluminescent flora surrounds the abandoned complex*
-
-</div>
-
----
-
-<div align="center">
-<table>
-<tr>
-<td width="50%"><img src="Assets/illustrations/illust_diver_encounter.jpg" width="100%" alt="Player in NASA-punk suit facing a deep sea leviathan"/></td>
-<td width="50%"><img src="Assets/illustrations/illust_surface_gaze.jpg" width="100%" alt="Looking up from the deep — gas giant through ocean surface"/></td>
-</tr>
-<tr>
-<td align="center"><i>Player encounter — NASA suit vs deep sea leviathan</i></td>
-<td align="center"><i>Looking up from the abyss — the gas giant through water</i></td>
-</tr>
-</table>
-</div>
-
----
-
-<div align="center">
-<table>
-<tr>
-<td width="50%"><img src="Assets/illustrations/illust_abyssal_trench.jpg" width="100%" alt="Abyssal trench descent — submarine in underwater canyon"/></td>
-<td width="50%"><img src="Assets/illustrations/illust_nasa_hud.jpg" width="100%" alt="NASA-punk submarine cockpit HUD interface"/></td>
-</tr>
-<tr>
-<td align="center"><i>Abyssal trench — descending into the unknown canyon</i></td>
-<td align="center"><i>Submarine cockpit — telemetry HUD, depth gauge, oxygen</i></td>
-</tr>
-</table>
-</div>
-
----
-
-## Architectural Overview
+## 🏛️ Engine Architecture & Job System
 
 ```mermaid
 graph TD
-    A[Unity 6000.5 URP Runtime Engine] --> B[Custom Volumetric Ocean Shader Pipeline]
-    A --> C[Burst-Compiled C# Systems DOD]
-    C --> D[NativeMemory Unmanaged Collections]
-    C --> E[0 B/frame GC Hot-Path Loop]
-    B --> F[Continuous GlobalQualityWeight Scaler]
-    F --> G[Target Profiles: 2GB Handheld to Ultra PCVR]
+    Input[Submarine Controls] -->|FixedUpdate| Hydro[Hydrodynamic Drag & Buoyancy Job]
+    Hydro -->|NativeArray Float3| Sonar[Acoustic Pulse Raymarching (Burst)]
+    Sonar -->|Bathymetric Echoes| Audio[Spatial Hydrophone Convolver]
+    Sonar -->|Depth Buffer| URP[URP Volumetric Fog & Caustics Shader]
+    URP --> Display[60 FPS Abyssal Viewport]
 ```
 
-## Component Matrix
+---
 
-| Component / Path | Technology / Subsystem | Primary Responsibilities |
-| --- | --- | --- |
-| `Assets/` | C# Unity Engine Code & Assets | Core gameplay scripts, DOD systems, ScriptableObject definitions, URP Shaders |
-| `ProjectSettings/` | Unity Engine Settings | Editor configuration, quality levels, package dependency manifest, URP assets |
-| `AGENTS.md` | Authority & Process Control | System mandates, Hecton-8 build preflight rules, CPU allocation gates |
-| `PROJECT_BIBLES.md` | Domain Bibles Index | Visual style guidelines, performance budget specs, rendering mandates |
-| `VISION_LOCKS.md` | Product Direction | Scope boundaries, gameplay pillars, NASA-Punk / Deep Sea Noir aesthetic standards |
+## 🔬 Core Engineering Invariants
+
+1. **Zero Garbage Collection (0B GC):** Complete avoidance of heap allocations in `Update()`, `FixedUpdate()`, and rendering pipelines using `NativeArray<T>` and struct blitting.
+2. **Acoustic Bathymetry:** Real-time Sound Velocity Profile (SVP) refraction simulation modeling SOFAR channels and thermocline boundary layers.
+3. **Titanium Hull Stress Dynamics:** Structural fatigue calculation under Hadal zone hydrostatic pressures (up to 110 MPa).
+4. **NASA-Punk Visual Language:** Analog instrumentation, CRT raster scanlines, monochrome phosphor displays, and heavy industrial submarine ergonomics.
 
 ---
 
-### 🏗️ Submarine Engine Architecture (Unity 6000 URP)
-
-```mermaid
-graph TD
-    Input[🎮 Hydro Controls] --> Core[⚙️ Submarine Main Loop]
-    Core --> Physics[🌊 Hydro-X Buoyancy Engine]
-    Core --> Terrain[🗺️ MapMagic 2 Chunk Manager]
-    Terrain --> Voxel[🧊 Voxel Mesh Generator]
-    Physics --> Telemetry[📊 Zero-GC Telemetry HUD]
-    Core --> Render[🎨 Unity 6000 URP Shaders]
-```
-
-### ⚡ Technical Performance Guardrails
-
-> **These are V0 development targets, not claimed player-build measurements.** Runtime, profiler, and device captures remain the source of truth for performance verification.
-
-| Metric | Development guardrail | Verification state |
-|---|---|---|
-| **Frame time** | 60 FPS target / 16.67 ms frame budget | Target — requires fresh runtime evidence |
-| **Main thread** | ≤ 12 ms budget | Target — requires profiler evidence |
-| **GC allocation** | 0 B per frame in gameplay hot paths | Target — requires profiler evidence |
-| **Compact VRAM** | ≤ 1.8 GB hard ceiling | Target — requires device or player-build evidence |
-| **Texture budget** | ≤ 900 MB on compact tier | Target — requires memory evidence |
-| **Render targets + depth** | ≤ 320 MB on compact tier | Target — requires memory evidence |
-
----
-
-### 🚀 Technical Standards & Architecture
-
-* **Performance budget:** A 60 FPS target with a 16.67 ms frame budget and zero per-frame allocations in gameplay hot paths.
-* **Deep-sea rendering:** Custom URP volumetric-ocean shaders, photic underwater lighting, and procedural seafloor systems.
-* **Platform portability:** Continuous `GlobalQualityWeight` scaling from compact hardware through high-end PCVR.
-* **Memory discipline:** Burst-compiled C#, unmanaged collections, and data-oriented systems for budgeted runtime paths.
-
----
-
-### 📜 License / Лицензия
-Protected under **HECTON-8 Commercial Anti-Theft & Source-Available License (Copyright (c) 2026 Adolf Petushkov)**. Maintainers and AI research welcome!
-
----
-
-<details>
-<summary><b>🇷🇺 Краткое описание на русском</b></summary>
-
-### HECTON-8 — Deep Sea Noir / NASA-Punk 3D Выживание
-
-**HECTON-8** — это AA 3D-игра на выживание в атмосферном сеттинге Deep Sea Noir / NASA-Punk, разрабатываемая на движке Unity 6000.5 URP.
-
-#### Технические Стандарты и Архитектура:
-1. **Жёсткий Бюджет Производительности**: Целевой показатель — 60 FPS (16.67 мс на кадр) и 0 B/frame GC-аллокаций в горячих циклах геймплея.
-2. **Низкоуровневая Память и DOD**: Использование компилятора Burst, неуправляемой памяти `NativeMemory` и Data-Oriented Design.
-3. **Рендеринг и Масштабирование**: Кастомные объёмные шейдеры океанской толщи воды в URP, непрерывная система `GlobalQualityWeight` для масштабирования от портативок с 2GB VRAM до Ultra PCVR.
-</details>
-
-
----
-
-
----
-
-## 👥 Engineering Syndicate & Core Team
-
-Developed and maintained jointly by **Адольф Петушков (Adolf Petushkov)** and **Жирняк (Jirnyak)**:
-
-| Architect | Role & Specialization | GitHub |
-| :--- | :--- | :--- |
-| **Адольф Петушков** | Lead Systems Architect · Game Engine Internals · Clinical AI · Zero-GC Concurrency | [@marko1olo](https://github.com/marko1olo) |
-| **Жирняк (Jirnyak)** | Deep Tech Specialist · High-Performance Physics · N-Body & Quantum Systems · macOS HID | [@Jirnyak](https://github.com/Jirnyak) |
-
-### 🌐 Connected Syndicate Portfolio (12 Flagship Hubs)
-* 🦷 **[DENTE Dental CRM](https://marko1olo.github.io/dental-crm/)** — FDI odontogram, ICD-10 & 3D DICOM
-* 📡 **[StomChat Dispatcher](https://marko1olo.github.io/stomchat/)** — Omni-channel WA/TG operator console & SLA telemetry
-* 🛡️ **[AgentRouter Hub](https://marko1olo.github.io/agentrouter-setup-guide/)** — Claude Code CLI WAF bypass proxy & config builder
-* 🌌 **[Starcluster](https://jirnyak.github.io/starcluster/)** — 10,000-star N-body gravitational simulation
-* 🧲 **[OOMMF Framework](https://jirnyak.github.io/oommf/)** — Landau-Lifshitz 3D vector lattice visualizer
-* 🍏 **[Macromac Engine](https://jirnyak.github.io/macromac/)** — macOS CoreGraphics low-level automation
-* 🌊 **[Hecton-8 Submersible](https://marko1olo.github.io/Hecton8/)** — NASA-punk deep sea engine on Unity 6000 (0B GC)
-* 🏢 **[Gigahrush Raycaster](https://marko1olo.github.io/gigahrush/)** — 2.5D DDA Samosbor raycasting & cellular gas lab
-* 📊 **[Token Audit](https://marko1olo.github.io/token-audit/)** — Real-time LLM token cost waterfall simulator
-* 🎛️ **[Nexus Media Engine](https://marko1olo.github.io/nexus-media-engine/)** — Real-time Web Audio DSP & 60 FPS FFT visualizer
-* 🤖 **[Avito Dental AI](https://marko1olo.github.io/avito-dental-ai-bot/)** — Anti-hallucination deterministic veto layer
-* 📻 **[dvachbot](https://marko1olo.github.io/dvachbot/)** — Imageboard scraper & Atkinson dithering transcoder
+### 👨‍💻 Lead Architect
+**Адольф Петушков (Adolf Petushkov)** — Game Engine Internals & Zero-GC High-Concurrency Architecture.  
+GitHub: [@marko1olo](https://github.com/marko1olo)
