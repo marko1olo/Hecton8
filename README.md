@@ -220,6 +220,125 @@ public struct HydrodynamicSolverJob : IJobEntity {
 
 ---
 
+
+---
+
+## 🎛️ Deep Engineering Subsystems & Shader Pipeline
+
+```mermaid
+graph TD
+    subgraph Sonar Raytracer Pipeline
+        A[Active Acoustic Ping Emitter] -->|Spherical Wavefront| B[Medwin-Mackenzie Thermocline Layer]
+        B -->|Refracted Sound Ray Array| C[Benthic Bathymetry Voxel Mesh]
+        C -->|Backscatter Energy Reflection| D[Transceiver Hydrophone Array]
+        D -->|Doppler Frequency Shift Analysis| E[Diegetic CRT Phosphor Screen]
+    end
+
+    subgraph Power & Nuclear Core Bus
+        F[Thermocouple Pile Core] -->|High-Voltage DC| G[Main Switchboard Bus]
+        G -->|Primary Inverters| H[Hydro-X Magnetohydrodynamic Thrusters]
+        G -->|Low-Noise DC/DC| I[Life Support & Electrolysis]
+        G -->|Capacitor Bank| A
+    end
+```
+
+### 📡 1. Sonar Wavefield Raymarching URP Shader (HLSL)
+
+The diegetic CRT oscilloscope and bathymetric sonar viewports utilize custom URP raymarching compute passes to simulate acoustic attenuation ($e^{-\alpha(f) \cdot r}$) and seafloor backscatter:
+
+```hlsl
+// Custom URP Sonar Acoustic Volumetric Raymarcher Pass
+float4 FragSonarRaymarch(Varyings input) : SV_Target {
+    float3 rayOrigin = _SubmarineWorldPos;
+    float3 rayDir = normalize(input.worldPos - rayOrigin);
+    float soundSpeed = 1449.2 + 4.6 * _WaterTemp - 0.055 * _WaterTemp * _WaterTemp + 0.016 * input.worldPos.y;
+    
+    float totalEcho = 0.0;
+    float stepSize = _RaymarchStepSize;
+    float3 currentPos = rayOrigin;
+    
+    [loop]
+    for (int i = 0; i < 64; i++) {
+        currentPos += rayDir * stepSize;
+        float depth = abs(currentPos.y);
+        
+        // Sample voxel bathymetry density map
+        float terrainDensity = SampleBathymetryVoxel(currentPos);
+        if (terrainDensity > 0.5) {
+            // Lambertian acoustic backscatter with Rayleigh absorption
+            float absorptionCoeff = 0.003 * _PingFrequency * _PingFrequency;
+            float distance = length(currentPos - rayOrigin);
+            float acousticReturn = exp(-absorptionCoeff * distance) / (distance * distance + 1.0);
+            totalEcho = acousticReturn * saturate(dot(-rayDir, CalculateBathymetryNormal(currentPos)));
+            break;
+        }
+    }
+    
+    // Green phosphor CRT decay persistence
+    float3 crtColor = float3(0.1, 0.95, 0.3) * totalEcho * _PhosphorIntensity;
+    return float4(crtColor, 1.0);
+}
+```
+
+---
+
+### 🐙 2. Abyssal Bathymetry & Trench Threat Classification
+
+The abyssal trenches ($> 6,000\text{ m}$) are populated by biological and structural anomalies classified by the Hadal Research Directorate:
+
+| Classification | Anomaly Designation | Habitat Depth | Acoustic Signature | Primary Threat Vector | Evasion Protocol |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Class-I (Passive)** | *Bioluminescent Siphonophore* | $1,500 - 3,500\text{ m}$ | Low-frequency rhythmic hum ($12\text{ Hz}$) | Optical blinding & sensor occlusion | Switch cockpit to red night-vision filters |
+| **Class-II (Structural)**| *Hadal Methane Clathrate Eruption* | $4,000 - 8,500\text{ m}$ | High-amplitude seismic rumble | Sudden loss of buoyancy & density drop | Full ballast blow & emergency trim jets |
+| **Class-III (Biomorphic)**| *Leviathan Chitinous Cephalopod* | $6,000 - 11,000\text{ m}$ | High-frequency hunting clicks ($45\text{ kHz}$) | Hull constrictive crush ($> 850\text{ bar}$) | Silent running mode, kill reactor cooling pumps |
+| **Class-IV (Technogenic)**| *Derelict Autonomous Mining Siphon* | $8,000 - 10,500\text{ m}$ | Continuous mechanical cavitation | Active magnetic grapple & power siphon | Deploy acoustic decoy flares & pulse EMP |
+
+---
+
+### 🔊 3. FMOD Dynamic Acoustic Spatialization Matrix
+
+The audio architecture divides the soundscape into distinct physical frequency bands processed via FMOD Studio:
+
+| Frequency Range | Acoustic Source | Spatialization Model | Physical DSP Effect Chain |
+| :--- | :--- | :--- | :--- |
+| **Sub-Bass ($5 - 40\text{ Hz}$)** | Tectonic fault shifts & hull metal strain | Omnidirectional cockpit body resonance | 24dB/oct low-pass + Sub-harmonic synthesizer |
+| **Low-Mid ($40 - 250\text{ Hz}$)** | Nuclear coolant pumps & drive turbines | 3D Point source (Engine compartment) | Convolution reverb (Tight metal bulkheads) |
+| **Mid-Band ($250 - 2,500\text{ Hz}$)**| Hydrophone ocean ambient & internal relays| 5.1 Binaural spatial panning | Hydrodynamic comb filter + Doppler pitch shift |
+| **High-Band ($2.5 - 20\text{ kHz}$)** | Sonar pings & cavitation micro-bubbles | 3D Raytraced cone dispersion | Parametric notch filter (Thermocline reflection) |
+
+---
+
+### 💾 4. Deterministic Save-State & Telemetry Serialization
+
+To guarantee 100% reproducible playtests and 0-byte GC allocations during state persistence, HECTON-8 utilizes a custom zero-heap binary struct serialization format:
+
+```csharp
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct SubmarineStateSnapshot {
+    public ulong TickIndex;
+    public double Timestamp;
+    
+    // Transform & Dynamics (Fixed-Point Integer Representation)
+    public int PositionX_Fixed; // 1 unit = 0.001 mm
+    public int PositionY_Fixed;
+    public int PositionZ_Fixed;
+    public int VelocityX_Fixed;
+    public int VelocityY_Fixed;
+    public int VelocityZ_Fixed;
+    
+    // Hull & Life Support Metrics
+    public ushort HullIntegrityPermille; // 0 - 1000 permille
+    public ushort InternalPressureMbar;  // Millibars
+    public ushort OxygenPPM;             // Parts per million
+    public ushort ReactorTempKelvin;     // Core temperature
+    
+    // Ballast Tank Status
+    public uint MainBallastWaterGrams;
+    public uint AftTrimWaterGrams;
+    public uint ForeTrimWaterGrams;
+}
+```
+
 ### 📜 License / Лицензия
 Protected under **HECTON-8 Commercial Anti-Theft & Source-Available License (Copyright (c) 2026 Adolf Petushkov)**. Maintainers and AI research welcome!
 
