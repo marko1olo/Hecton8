@@ -32,6 +32,8 @@ jobs:
             Docs
             index.html
             llms.txt
+            manifest.json
+            manifest.webmanifest
             robots.txt
             sitemap.xml
             favicon.svg
@@ -47,6 +49,8 @@ jobs:
           mkdir -p _site
           cp -f docs/index.html _site/ 2>/dev/null || cp -f index.html _site/ 2>/dev/null || true
           cp -f docs/llms.txt _site/ 2>/dev/null || cp -f llms.txt _site/ 2>/dev/null || true
+          cp -f docs/manifest.json _site/ 2>/dev/null || cp -f manifest.json _site/ 2>/dev/null || true
+          cp -f docs/manifest.webmanifest _site/ 2>/dev/null || cp -f manifest.webmanifest _site/ 2>/dev/null || true
           cp -f docs/robots.txt _site/ 2>/dev/null || true
           cp -f docs/sitemap.xml _site/ 2>/dev/null || true
           cp -f docs/favicon.svg _site/ 2>/dev/null || true
