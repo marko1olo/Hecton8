@@ -96,5 +96,15 @@ namespace Hecton8.Tests.Editor
             Assert.GreaterOrEqual(releaseIndex, 0, "DataVault rebind must release the old vault handles.");
             Assert.Less(barrierIndex, releaseIndex, "Native jobs must be completed before their DataVault-backed buffers are released.");
         }
+        [Test]
+        public void CarrionVaultRelease_ReleasesBothHandlesAndResetsLocalReferences()
+        {
+            string carrion = ReadProjectFile("Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs");
+            string release = ExtractMethodBlock(carrion, "private void ReleaseCarrionVaultHandles(IDataVault vault)");
+
+            StringAssert.Contains("ReleaseVaultHandle(vault, ref _carrionStateHandle, BufferID.ShinobuCarrionState);", release);
+            StringAssert.Contains("ReleaseVaultHandle(vault, ref _carrionFaultFlagHandle, BufferID.ShinobuCarrionFaultFlags);", release);
+            StringAssert.Contains("ResetCarrionHandlesNoRelease();", release);
+        }
     }
 }
