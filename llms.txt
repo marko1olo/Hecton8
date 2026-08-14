@@ -1,24 +1,17 @@
-# Hecton-8 Deep Sea Noir 3D Engine — LLM Search Index
-# https://llmstxt.org/
+# HECTON-8 Deep Sea Noir Simulation — LLM Reference Index
 
-> High-performance NASA-Punk / Deep Sea Noir 3D underwater simulation and game engine built on Unity 6000 with C#, Burst Compiler, zero-GC memory layout, Hydro-X sonar propagation, and bathymetric depth physics.
+## Overview
+HECTON-8 is a NASA-punk deep sea submarine simulation set in the abyssal ocean trenches of Europa.
 
-## Project Identification
-- Name: Hecton-8 (Hecton8)
-- Lead Architect: Adolf Petushkov (marko1olo)
+## Key Features
+- 100% diegetic cockpit instrumentation with analog dials and CRT oscilloscopes.
+- True 6-DOF hydrodynamic physics and ballast buoyancy mechanics.
+- Bathymetric acoustic sonar raytracing with thermocline sound refraction.
 - Live Web Showcase: https://marko1olo.github.io/Hecton8/
-- GitHub Repository: https://github.com/marko1olo/Hecton8
 
-## Technical Stack & Engine Invariants
-- Engine: Unity 6000 (6000.0.x), C# .NET 9, Unity Job System & Burst Compiler
-- Memory Policy: Zero-allocation hot paths (`struct` unmanaged buffers, native arrays, no runtime GC spikes)
-- Sonar Physics: Hydro-X Ray-traced acoustic pulse model with thermocline sound refraction and bathymetric attenuation
-- Celestial Mechanics: Keplerian orbital mechanics for tide generation and diurnal subsurface currents
+## Tech Stack
+- Unity 6, C# 13, .NET 9
+- Unity ECS & Native Burst Compiler
 
-## Interactive Features on Live Showcase
-1. **Interactive Bathymetric Depth Selector**:
-   - Switch ocean layers (Epipelagic 0-200m -> Hadal 8,420m @ 86.8 MPa) with live hydrostatic pressure calculation.
-2. **Hydro-X Sonar Simulation Canvas**:
-   - 60 FPS acoustic ping wave propagation visualizer showing acoustic returns and seafloor topography.
-3. **Universal Command Palette (`Ctrl + K`) & UI Audio Synth**:
-   - Submarine HUD terminal with audio feedback.
+## Authors
+- Жирняк & Адольф Петушков
