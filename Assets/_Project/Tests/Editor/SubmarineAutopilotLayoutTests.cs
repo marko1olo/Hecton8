@@ -92,5 +92,30 @@ namespace Hecton8.Tests.Editor
             Assert.That(Marshal.OffsetOf<AutopilotHandlingProfileDTO>(nameof(AutopilotHandlingProfileDTO.RepulsionWeight)).ToInt32(), Is.EqualTo(16));
             Assert.That(Marshal.OffsetOf<AutopilotHandlingProfileDTO>(nameof(AutopilotHandlingProfileDTO.Flags)).ToInt32(), Is.EqualTo(20));
         }
+
+        [Test]
+        public void AutopilotTuningDTO_MatchesCanonicalUnsafeLayout()
+        {
+            Assert.That(Marshal.SizeOf<AutopilotTuningDTO>(), Is.EqualTo(128));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.FeelerLength)).ToInt32(), Is.EqualTo(0));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.SdfThresholdMeters)).ToInt32(), Is.EqualTo(4));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.RepulsionWeight)).ToInt32(), Is.EqualTo(8));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.MaxTurnRateRadians)).ToInt32(), Is.EqualTo(12));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.WaypointAcceptanceRadius)).ToInt32(), Is.EqualTo(16));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.FlowCompensationWeight)).ToInt32(), Is.EqualTo(20));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.TargetSpeedFallback)).ToInt32(), Is.EqualTo(24));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.GlobalQualityWeight)).ToInt32(), Is.EqualTo(28));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.SdfOrigin)).ToInt32(), Is.EqualTo(32));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.SdfCellSize)).ToInt32(), Is.EqualTo(44));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.SdfDimensions)).ToInt32(), Is.EqualTo(56));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.SdfRangeMeters)).ToInt32(), Is.EqualTo(68));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.Flags)).ToInt32(), Is.EqualTo(72));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.ActiveVehicleCount)).ToInt32(), Is.EqualTo(76));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.FlowOrigin)).ToInt32(), Is.EqualTo(80));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.FlowCellSize)).ToInt32(), Is.EqualTo(92));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.FlowDimensions)).ToInt32(), Is.EqualTo(104));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.SourceHash)).ToInt32(), Is.EqualTo(116));
+            Assert.That(Marshal.OffsetOf<AutopilotTuningDTO>(nameof(AutopilotTuningDTO.ResolvedQualityWeight)).ToInt32(), Is.EqualTo(120));
+        }
     }
 }
