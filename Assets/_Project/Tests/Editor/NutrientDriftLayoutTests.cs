@@ -52,6 +52,19 @@ namespace Hecton8.Tests.Editor
             Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.Flags)), Is.EqualTo(56));
             Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.StateHash)), Is.EqualTo(60));
         }
+        [Test]
+        public void NutrientProfileDTO_HasExactUnsafeLayout()
+        {
+            Assert.That(UnsafeUtility.SizeOf<NutrientProfileDTO>(), Is.EqualTo(32));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientProfileDTO), nameof(NutrientProfileDTO.BiomeHash)), Is.EqualTo(0));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientProfileDTO), nameof(NutrientProfileDTO.DecayMultiplier)), Is.EqualTo(4));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientProfileDTO), nameof(NutrientProfileDTO.InjectionMultiplier)), Is.EqualTo(8));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientProfileDTO), nameof(NutrientProfileDTO.RadiusMultiplier)), Is.EqualTo(12));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientProfileDTO), nameof(NutrientProfileDTO.TemperatureBias)), Is.EqualTo(16));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientProfileDTO), nameof(NutrientProfileDTO.ToxinMultiplier)), Is.EqualTo(20));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientProfileDTO), nameof(NutrientProfileDTO.Flags)), Is.EqualTo(24));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientProfileDTO), nameof(NutrientProfileDTO.SourceHash)), Is.EqualTo(28));
+        }
     }
 }
 #endif
