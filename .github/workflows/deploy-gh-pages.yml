@@ -25,6 +25,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            docs
+            Docs
+            index.html
+            llms.txt
+            robots.txt
+            sitemap.xml
+            favicon.svg
+            og-card.png
+            sw.js
+          sparse-checkout-cone-mode: false
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
