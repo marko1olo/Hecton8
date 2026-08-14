@@ -44,5 +44,20 @@ namespace Hecton8.Tests.Editor
             Assert.That(Marshal.OffsetOf<AutopilotFeelerResultDTO>(nameof(AutopilotFeelerResultDTO.FeelerIndex)).ToInt32(), Is.EqualTo(56));
             Assert.That(Marshal.OffsetOf<AutopilotFeelerResultDTO>(nameof(AutopilotFeelerResultDTO.Flags)).ToInt32(), Is.EqualTo(60));
         }
+
+        [Test]
+        public void AutopilotTelemetryEntry_MatchesCanonicalUnsafeLayout()
+        {
+            Assert.That(Marshal.SizeOf<AutopilotTelemetryEntry>(), Is.EqualTo(64));
+            Assert.That(Marshal.OffsetOf<AutopilotTelemetryEntry>(nameof(AutopilotTelemetryEntry.FirstAUP)).ToInt32(), Is.EqualTo(0));
+            Assert.That(Marshal.OffsetOf<AutopilotTelemetryEntry>(nameof(AutopilotTelemetryEntry.AverageRepulsion)).ToInt32(), Is.EqualTo(24));
+            Assert.That(Marshal.OffsetOf<AutopilotTelemetryEntry>(nameof(AutopilotTelemetryEntry.AverageRepulsionMagnitude)).ToInt32(), Is.EqualTo(36));
+            Assert.That(Marshal.OffsetOf<AutopilotTelemetryEntry>(nameof(AutopilotTelemetryEntry.Frame)).ToInt32(), Is.EqualTo(40));
+            Assert.That(Marshal.OffsetOf<AutopilotTelemetryEntry>(nameof(AutopilotTelemetryEntry.ActiveAutopilots)).ToInt32(), Is.EqualTo(44));
+            Assert.That(Marshal.OffsetOf<AutopilotTelemetryEntry>(nameof(AutopilotTelemetryEntry.FeelerCount)).ToInt32(), Is.EqualTo(48));
+            Assert.That(Marshal.OffsetOf<AutopilotTelemetryEntry>(nameof(AutopilotTelemetryEntry.Flags)).ToInt32(), Is.EqualTo(52));
+            Assert.That(Marshal.OffsetOf<AutopilotTelemetryEntry>(nameof(AutopilotTelemetryEntry.EstimatedBurstMicroseconds)).ToInt32(), Is.EqualTo(56));
+            Assert.That(Marshal.OffsetOf<AutopilotTelemetryEntry>(nameof(AutopilotTelemetryEntry.StateHash)).ToInt32(), Is.EqualTo(60));
+        }
     }
 }
