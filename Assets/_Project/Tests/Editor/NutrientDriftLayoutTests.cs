@@ -36,6 +36,22 @@ namespace Hecton8.Tests.Editor
             Assert.That(UnsafeUtility.GetFieldOffset(typeof(FluidGridTelemetryEntry), nameof(FluidGridTelemetryEntry.ActiveSources)), Is.EqualTo(60));
             Assert.That(UnsafeUtility.GetFieldOffset(typeof(FluidGridTelemetryEntry), nameof(FluidGridTelemetryEntry.ActiveAxis)), Is.EqualTo(62));
         }
+        [Test]
+        public void NutrientDriftGridHeaderDTO_HasExactUnsafeLayout()
+        {
+            Assert.That(UnsafeUtility.SizeOf<NutrientDriftGridHeaderDTO>(), Is.EqualTo(64));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.GridOriginAup)), Is.EqualTo(0));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.CellSizeMeters)), Is.EqualTo(24));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.TotalDensity)), Is.EqualTo(28));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.LastSolverMicroseconds)), Is.EqualTo(32));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.GlobalQualityWeight)), Is.EqualTo(36));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.ActiveAxis)), Is.EqualTo(40));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.ActiveSources)), Is.EqualTo(44));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.FrontBufferId)), Is.EqualTo(48));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.BackBufferId)), Is.EqualTo(52));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.Flags)), Is.EqualTo(56));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientDriftGridHeaderDTO), nameof(NutrientDriftGridHeaderDTO.StateHash)), Is.EqualTo(60));
+        }
     }
 }
 #endif
