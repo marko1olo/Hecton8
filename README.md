@@ -1,6 +1,6 @@
 <div align="center">
 
-![HECTON-8 Banner](assets/banner.png)
+![HECTON-8 Banner](Assets/banner.png)
 
 # HECTON-8 — Deep Sea Noir / NASA-Punk 3D Survival Game
 
@@ -32,7 +32,7 @@
 
 <div align="center">
 
-<img src="assets/illustrations/ref_best_surface.png" width="100%" alt="Surface vista — alien ocean with gas giant, NASA research station and exotic flora"/>
+<img src="Assets/illustrations/ref_best_surface.png" width="100%" alt="Surface vista — alien ocean with gas giant, NASA research station and exotic flora"/>
 
 *Surface vista: alien coastline, NASA-punk research outpost, gas giant on the horizon*
 
@@ -43,8 +43,8 @@
 <div align="center">
 <table>
 <tr>
-<td width="50%"><img src="assets/illustrations/ref_beauty.webp" width="100%" alt="Shallow underwater coral reef with ancient ruins"/></td>
-<td width="50%"><img src="assets/illustrations/ref_deep_bioluminescence.jpg" width="100%" alt="Deep bioluminescent zone with alien flora"/></td>
+<td width="50%"><img src="Assets/illustrations/ref_beauty.webp" width="100%" alt="Shallow underwater coral reef with ancient ruins"/></td>
+<td width="50%"><img src="Assets/illustrations/ref_deep_bioluminescence.jpg" width="100%" alt="Deep bioluminescent zone with alien flora"/></td>
 </tr>
 <tr>
 <td align="center"><i>Shallow zone — coral reefs, warm light, ancient structures</i></td>
@@ -59,7 +59,7 @@
 
 <div align="center">
 
-<img src="assets/illustrations/illust_bioluminescent_base.jpg" width="100%" alt="Bioluminescent underwater research base"/>
+<img src="Assets/illustrations/illust_bioluminescent_base.jpg" width="100%" alt="Bioluminescent underwater research base"/>
 
 *The deep sea NASA research station — bioluminescent flora surrounds the abandoned complex*
 
@@ -70,8 +70,8 @@
 <div align="center">
 <table>
 <tr>
-<td width="50%"><img src="assets/illustrations/illust_diver_encounter.jpg" width="100%" alt="Player in NASA-punk suit facing a deep sea leviathan"/></td>
-<td width="50%"><img src="assets/illustrations/illust_surface_gaze.jpg" width="100%" alt="Looking up from the deep — gas giant through ocean surface"/></td>
+<td width="50%"><img src="Assets/illustrations/illust_diver_encounter.jpg" width="100%" alt="Player in NASA-punk suit facing a deep sea leviathan"/></td>
+<td width="50%"><img src="Assets/illustrations/illust_surface_gaze.jpg" width="100%" alt="Looking up from the deep — gas giant through ocean surface"/></td>
 </tr>
 <tr>
 <td align="center"><i>Player encounter — NASA suit vs deep sea leviathan</i></td>
@@ -85,8 +85,8 @@
 <div align="center">
 <table>
 <tr>
-<td width="50%"><img src="assets/illustrations/illust_abyssal_trench.jpg" width="100%" alt="Abyssal trench descent — submarine in underwater canyon"/></td>
-<td width="50%"><img src="assets/illustrations/illust_nasa_hud.jpg" width="100%" alt="NASA-punk submarine cockpit HUD interface"/></td>
+<td width="50%"><img src="Assets/illustrations/illust_abyssal_trench.jpg" width="100%" alt="Abyssal trench descent — submarine in underwater canyon"/></td>
+<td width="50%"><img src="Assets/illustrations/illust_nasa_hud.jpg" width="100%" alt="NASA-punk submarine cockpit HUD interface"/></td>
 </tr>
 <tr>
 <td align="center"><i>Abyssal trench — descending into the unknown canyon</i></td>
