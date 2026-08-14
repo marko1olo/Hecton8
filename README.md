@@ -1,6 +1,6 @@
 <div align="center">
 
-![HECTON-8 Banner](Assets/banner.png)
+<img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/hecton8_cockpit.jpg" width="100%" alt="HECTON-8 Diegetic Cockpit View"/>
 
 # HECTON-8 — Deep Sea Noir / NASA-Punk 3D Survival Game
 
@@ -283,6 +283,11 @@ float4 FragSonarRaymarch(Varyings input) : SV_Target {
 ---
 
 ### 🐙 2. Abyssal Bathymetry & Trench Threat Classification
+<p align="center">
+  <img src="https://raw.githubusercontent.com/marko1olo/gigahrush/main/docs/hecton8_trench.jpg" width="100%" alt="Hecton-8 Abyssal Trench Exploration"/>
+</p>
+
+
 
 The abyssal trenches ($> 6,000\text{ m}$) are populated by biological and structural anomalies classified by the Hadal Research Directorate:
 
