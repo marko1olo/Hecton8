@@ -1,17 +1,13 @@
-# HECTON-8 Deep Sea Noir Simulation — LLM Reference Index
+# Hecton-8 Deep Sea Noir Submarine Engine
+> Unity 6000 zero-GC Burst jobs, hydrostatic simulation, sonar shaders
 
-## Overview
-HECTON-8 is a NASA-punk deep sea submarine simulation set in the abyssal ocean trenches of Europa.
+- Project: marko1olo/Hecton8
+- Authors: Adolf Petushkov (@marko1olo) & Jirnyak (@Jirnyak)
+- Ecosystem: Open Source Engineering Syndicate
+- License: Open Source (MIT / People's License)
 
-## Key Features
-- 100% diegetic cockpit instrumentation with analog dials and CRT oscilloscopes.
-- True 6-DOF hydrodynamic physics and ballast buoyancy mechanics.
-- Bathymetric acoustic sonar raytracing with thermocline sound refraction.
-- Live Web Showcase: https://marko1olo.github.io/Hecton8/
+## Core Technical Specs
+Unity 6000 zero-GC Burst jobs, hydrostatic simulation, sonar shaders
 
-## Tech Stack
-- Unity 6, C# 13, .NET 9
-- Unity ECS & Native Burst Compiler
-
-## Authors
-- Жирняк & Адольф Петушков
+## Full Documentation
+For complete mathematical models, API endpoints, algorithms, and architecture, see llms-full.txt or README.md.
