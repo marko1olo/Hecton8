@@ -68,5 +68,17 @@ namespace Hecton8.Tests.Editor
             Assert.That(Marshal.OffsetOf<AutopilotWaypointDTO>(nameof(AutopilotWaypointDTO.AcceptanceRadius)).ToInt32(), Is.EqualTo(24));
             Assert.That(Marshal.OffsetOf<AutopilotWaypointDTO>(nameof(AutopilotWaypointDTO.Flags)).ToInt32(), Is.EqualTo(28));
         }
+
+        [Test]
+        public void AutopilotRouteRangeDTO_MatchesCanonicalUnsafeLayout()
+        {
+            Assert.That(Marshal.SizeOf<AutopilotRouteRangeDTO>(), Is.EqualTo(32));
+            Assert.That(Marshal.OffsetOf<AutopilotRouteRangeDTO>(nameof(AutopilotRouteRangeDTO.StartIndex)).ToInt32(), Is.EqualTo(0));
+            Assert.That(Marshal.OffsetOf<AutopilotRouteRangeDTO>(nameof(AutopilotRouteRangeDTO.Count)).ToInt32(), Is.EqualTo(4));
+            Assert.That(Marshal.OffsetOf<AutopilotRouteRangeDTO>(nameof(AutopilotRouteRangeDTO.CurrentOffset)).ToInt32(), Is.EqualTo(8));
+            Assert.That(Marshal.OffsetOf<AutopilotRouteRangeDTO>(nameof(AutopilotRouteRangeDTO.AcceptanceRadius)).ToInt32(), Is.EqualTo(12));
+            Assert.That(Marshal.OffsetOf<AutopilotRouteRangeDTO>(nameof(AutopilotRouteRangeDTO.Flags)).ToInt32(), Is.EqualTo(16));
+            Assert.That(Marshal.OffsetOf<AutopilotRouteRangeDTO>(nameof(AutopilotRouteRangeDTO.RouteHash)).ToInt32(), Is.EqualTo(20));
+        }
     }
 }
