@@ -147,6 +147,55 @@ graph TD
     Core --> Render[🎨 Unity 6000 URP Shaders]
 ```
 
+
+---
+
+### 🌊 Hydrodynamic & Acoustic Simulation Solvers (Burst / ECS)
+
+HECTON-8 executes real-time fluid dynamics and oceanographic acoustic wavefield calculations compiled with Burst for zero-allocation performance:
+
+#### 1. Non-Linear Seawater Density & Hydrostatic Pressure
+The barometric load on the titanium-composite pressure hull accumulates with depth:
+$$P(z) = P_0 + \int_{0}^{z} \rho(T, S, z') \cdot g \, dz' + \frac{1}{2} \rho v^2$$
+
+#### 2. Sound Speed Profile (SSP) & Sonar Refraction
+Acoustic ping trajectories curve through the thermocline according to the empirical Medwin-Mackenzie formula:
+$$c(T, S, z) = 1449.2 + 4.6T - 0.055T^2 + 0.00029T^3 + (1.34 - 0.010T)(S - 35) + 0.016z$$
+
+```csharp
+// ✅ HECTON-8 Core Burst Hydrodynamic Solver
+[BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast)]
+public struct HydrodynamicSolverJob : IJobEntity {
+    public float DeltaTime;
+    public float SeawaterDensity;
+    public float3 GravityVector;
+
+    public void Execute(ref Velocity velocity, ref HullStrain strain, in BallastTank ballast, in SubmersibleMetrics metrics) {
+        float displacedMass = metrics.DisplacedVolume * SeawaterDensity;
+        float totalMass = metrics.DryMass + ballast.WaterMass;
+        float3 buoyancyForce = -GravityVector * (displacedMass - totalMass);
+
+        float speed = math.length(velocity.Linear);
+        float3 dragForce = -0.5f * SeawaterDensity * speed * speed * metrics.DragCoefficient * math.normalize(velocity.Linear);
+
+        float3 totalAcceleration = (buoyancyForce + dragForce) / totalMass + GravityVector;
+        velocity.Linear += totalAcceleration * DeltaTime;
+
+        strain.CurrentBar = (metrics.CurrentDepth * SeawaterDensity * 9.80665f) / 100000.0f;
+    }
+}
+```
+
+#### 3. Diegetic Cockpit Telemetry Matrix
+
+| Subsystem | Diegetic Readout | Sensor Physics | Failure Critical Limit | FMOD Sound Response |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ballast Tanks** | Pneumatic Dual Mechanical Needles | Differential Trim Pressure | Pressure $< 40\text{ PSI}$ | Compressed gas purge hiss |
+| **Nuclear Pile** | CRT Phosphor 50Hz Oscilloscope | Thermocouple Core Voltage | Core Temp $> 1050^\circ\text{C}$ | Geiger micro-crackling + Core hum |
+| **Active Sonar** | Magnetostrictive Beam Dial | Acoustic Wavefront Backscatter | Transceiver Saturation | $3.5\text{ kHz}$ resonant acoustic ping |
+| **Pressure Hull** | Analog Strain Gauge Bridge | Piezoelectric Crystal Voltage | Strain $> 85\%\text{ Yield}$ | Deep structural metal groaning |
+| **CO2 Scrubber** | Colorimetric Gas Reagent Lens | Chemical Concentration Sensor | $\text{CO}_2 > 2.5\%$ | Heavy pneumatic solenoid cycle |
+
 ### ⚡ Technical Performance Guardrails
 
 > **These are V0 development targets, not claimed player-build measurements.** Runtime, profiler, and device captures remain the source of truth for performance verification.
