@@ -6,145 +6,130 @@ useDefault = true
 # Each allowlist requires both the exact path and a reviewed non-secret text pattern.
 # It applies only to generic-api-key; all default rules remain enabled.
 
-[[allowlists]]
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
 description = "Disabled MMSaveLoad negative-test literal"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Assets/Feel/MMTools/Tools/MMSaveLoad/Editor/Tests/MMSaveLoadManagerMethodJsonEncryptedTests\.cs\.disabled$''']
 regexes = ['''InvalidKey456''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "MapMagic AnimationCurve key-count identifier"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Assets/MapMagic/Tools/Extensions/Extensions\.cs$''']
 regexes = ['''int numKeys = c1\.keys\.Length''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "Leviathan editor preference identifiers"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Assets/_Project/Editor/LeviathanProceduralAnimationTunerWindow\.cs$''']
 regexes = ['''H8\.LeviathanIK\.(SwimFrequency|SwimAmplitude|FabrikTolerance|SecondaryDamping)''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "Bulkhead editor aggregate-report identifier"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Assets/_Project/Scripts/Construction/Editor/BulkheadContainmentEditor\.cs$''']
 regexes = ['''shinobu_220_bulkhead_dod''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "Ecosystem editor aggregate-report identifier"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Assets/_Project/Scripts/Ecosystem/Editor/OOP_Destroy_Scanner\.cs$''']
 regexes = ['''shinobu314CarrionDecay''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "Ocean kinematics editor preference identifier"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Assets/_Project/Scripts/Plugins/Crest/Editor/OceanKinematics/OceanKinematicsAupSamplingGizmo\.cs$''']
 regexes = ['''Hecton8\.OceanKinematics\.AupGizmo\.Enabled''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "QA watchdog editor session-state identifiers"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Assets/_Project/Scripts/QA/Headless/Editor/Shinobu38QaWatchdogCommanderWindow\.cs$''']
 regexes = ['''H8\.SHINOBU79\.(Speed|Avoidance|Telemetry)''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "HUD editor report-section identifier"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Assets/_Project/Scripts/UI/Editor/HUDCanvasInquisition\.cs$''']
 regexes = ['''shinobu_270_visor_ar_stencil''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "Jacobian foam editor preference identifiers"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Assets/_Project/Scripts/VFX/JacobianFoam/Editor/JacobianFoamTunerWindow\.cs$''']
 regexes = ['''H8\.JacobianFoam\.(PinchThreshold|DecayRate)''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "Archived fog DTO status prose"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Docs/Archive/Batch010/Tasks/Status_SHINOBU_120\.md$''']
 regexes = ['''VolumetricFogParamsDTO is explicit vault DTO''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "Archived source checksum record"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Docs/Archive/Batch013/Tasks/Status_1318\.md$''']
 regexes = ['''source SHA256''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "Asset-audit material role metadata"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Docs/AssetAudit/BATCH31_LOCAL_PBR_IMPORT_INTENT_20260605\.json$''']
 regexes = ['''"role_key": "normal_tile2x2"''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "Generated water proof metadata"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Docs/GeneratedAssets/Water/WorldWaterLevelProof_Seed880031_WaterY(-100|0|560)\.json$''']
 regexes = ['''"key": "upper_saturated_500m"''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "RS009 lore graph custody prose"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Docs/Lore/AppliedContent/graphs/RS009_evidence_graph\.csv$''']
 regexes = ['''Medical access failed because authorization protected''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "RS019 lore graph access prose"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Docs/Lore/AppliedContent/graphs/RS019_evidence_graph\.csv$''']
 regexes = ['''Solid access appears as rare windows''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "RS074 lore graph access prose"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Docs/Lore/AppliedContent/graphs/RS074_PLAYER_EX_DEEP_REACH_PROFESSIONAL_DOSSIER_evidence_graph\.csv$''']
 regexes = ['''revoked access and language evidence''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "RS074 route-card narrative phrase"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Docs/Lore/AppliedContent/route_cards/RS074_route_cards\.csv$''']
 regexes = ['''revoked key echo''']
 
-[[allowlists]]
+[[rules.allowlists]]
 description = "Marketing distribution strategy prose"
-targetRules = ["generic-api-key"]
 condition = "AND"
 regexTarget = "line"
 paths = ['''^Docs/Marketing/Monetization/MONETIZATION_RESEARCH_RU_KZ_CRYPTO_2026-05-31\.md$''']
