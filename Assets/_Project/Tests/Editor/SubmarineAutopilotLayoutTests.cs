@@ -30,5 +30,19 @@ namespace Hecton8.Tests.Editor
             Assert.That(Marshal.OffsetOf<AutopilotAvoidanceDTO>(nameof(AutopilotAvoidanceDTO.HitFeelerCount)).ToInt32(), Is.EqualTo(48));
             Assert.That(Marshal.OffsetOf<AutopilotAvoidanceDTO>(nameof(AutopilotAvoidanceDTO.Flags)).ToInt32(), Is.EqualTo(52));
         }
+
+        [Test]
+        public void AutopilotFeelerResultDTO_MatchesCanonicalUnsafeLayout()
+        {
+            Assert.That(Marshal.SizeOf<AutopilotFeelerResultDTO>(), Is.EqualTo(64));
+            Assert.That(Marshal.OffsetOf<AutopilotFeelerResultDTO>(nameof(AutopilotFeelerResultDTO.StartRuntime)).ToInt32(), Is.EqualTo(0));
+            Assert.That(Marshal.OffsetOf<AutopilotFeelerResultDTO>(nameof(AutopilotFeelerResultDTO.EndRuntime)).ToInt32(), Is.EqualTo(12));
+            Assert.That(Marshal.OffsetOf<AutopilotFeelerResultDTO>(nameof(AutopilotFeelerResultDTO.HitRuntime)).ToInt32(), Is.EqualTo(24));
+            Assert.That(Marshal.OffsetOf<AutopilotFeelerResultDTO>(nameof(AutopilotFeelerResultDTO.Repulsion)).ToInt32(), Is.EqualTo(36));
+            Assert.That(Marshal.OffsetOf<AutopilotFeelerResultDTO>(nameof(AutopilotFeelerResultDTO.HitDistance)).ToInt32(), Is.EqualTo(48));
+            Assert.That(Marshal.OffsetOf<AutopilotFeelerResultDTO>(nameof(AutopilotFeelerResultDTO.SdfDensity)).ToInt32(), Is.EqualTo(52));
+            Assert.That(Marshal.OffsetOf<AutopilotFeelerResultDTO>(nameof(AutopilotFeelerResultDTO.FeelerIndex)).ToInt32(), Is.EqualTo(56));
+            Assert.That(Marshal.OffsetOf<AutopilotFeelerResultDTO>(nameof(AutopilotFeelerResultDTO.Flags)).ToInt32(), Is.EqualTo(60));
+        }
     }
 }
