@@ -80,5 +80,17 @@ namespace Hecton8.Tests.Editor
             Assert.That(Marshal.OffsetOf<AutopilotRouteRangeDTO>(nameof(AutopilotRouteRangeDTO.Flags)).ToInt32(), Is.EqualTo(16));
             Assert.That(Marshal.OffsetOf<AutopilotRouteRangeDTO>(nameof(AutopilotRouteRangeDTO.RouteHash)).ToInt32(), Is.EqualTo(20));
         }
+
+        [Test]
+        public void AutopilotHandlingProfileDTO_MatchesCanonicalUnsafeLayout()
+        {
+            Assert.That(Marshal.SizeOf<AutopilotHandlingProfileDTO>(), Is.EqualTo(32));
+            Assert.That(Marshal.OffsetOf<AutopilotHandlingProfileDTO>(nameof(AutopilotHandlingProfileDTO.NameHash)).ToInt32(), Is.EqualTo(0));
+            Assert.That(Marshal.OffsetOf<AutopilotHandlingProfileDTO>(nameof(AutopilotHandlingProfileDTO.MaxTurnRateRadians)).ToInt32(), Is.EqualTo(4));
+            Assert.That(Marshal.OffsetOf<AutopilotHandlingProfileDTO>(nameof(AutopilotHandlingProfileDTO.AccelerationLimit)).ToInt32(), Is.EqualTo(8));
+            Assert.That(Marshal.OffsetOf<AutopilotHandlingProfileDTO>(nameof(AutopilotHandlingProfileDTO.SpeedScale)).ToInt32(), Is.EqualTo(12));
+            Assert.That(Marshal.OffsetOf<AutopilotHandlingProfileDTO>(nameof(AutopilotHandlingProfileDTO.RepulsionWeight)).ToInt32(), Is.EqualTo(16));
+            Assert.That(Marshal.OffsetOf<AutopilotHandlingProfileDTO>(nameof(AutopilotHandlingProfileDTO.Flags)).ToInt32(), Is.EqualTo(20));
+        }
     }
 }
