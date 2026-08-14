@@ -1,0 +1,17 @@
+{
+  "name": "Hecton-8 Deep Sea Engine",
+  "short_name": "Hecton-8",
+  "description": "NASA-Punk / Deep Sea Noir 3D Submarine Engine",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050b14",
+  "theme_color": "#06b6d4",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
