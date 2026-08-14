@@ -339,6 +339,174 @@ public struct SubmarineStateSnapshot {
 }
 ```
 
+
+---
+
+## ⚡ Nuclear-Hydraulic Power Plant & Reactor Kinetics
+
+The submersible's primary energy source is a sub-critical molten salt thorium/plutonium compact breeder reactor operating under closed-loop helium-xenon Brayton thermodynamic cycles.
+
+```mermaid
+graph LR
+    subgraph Core Thermal Kinetics
+        A[Thorium/Pu Core Vessel] -->|Thermal Output Q_dot| B[Primary Molten Salt Loop]
+        B -->|Intermediate Heat Exchanger| C[He-Xe Brayton Gas Turbine]
+        C -->|Shaft Torque| D[Superconducting Homopolar Generator]
+        D -->|400V 3-Phase AC 400Hz| E[Main Electrical Busbar]
+    end
+
+    subgraph Coolant & Poisoning Dynamics
+        F[Xenon-135 Iodine Decay Matrix] -->|Reactivity Negative Feedback| A
+        G[Emergency Boron Carbide Rods] -->|Pneumatic Scram Drive| A
+        B -->|Thermoelectric Waste Heat| H[Cockpit Thermal Life Support]
+    end
+```
+
+### ☢️ 1. Reactor Kinetics & Xenon-135 Poisoning Differential Equations
+
+Point kinetics with 6 precursor groups and delayed neutron decay determine core reactivity balance during rapid load shifts:
+
+$$\frac{dn(t)}{dt} = \frac{\rho(t) - \beta}{\Lambda} n(t) + \sum_{i=1}^{6} \lambda_i C_i(t)$$
+
+$$\frac{dI(t)}{dt} = \gamma_I \Sigma_f \Phi(t) - \lambda_I I(t)$$
+
+$$\frac{dX(t)}{dt} = \gamma_X \Sigma_f \Phi(t) + \lambda_I I(t) - \lambda_X X(t) - \sigma_a^X X(t) \Phi(t)$$
+
+* $\Phi(t)$: Thermal neutron flux ($n / (\text{cm}^2 \cdot \text{s})$)
+* $I(t), X(t)$: Iodine-135 and Xenon-135 concentration densities
+* $\sigma_a^X$: Microscopic thermal neutron absorption cross-section of Xenon-135 ($2.65 \times 10^6\text{ barns}$)
+* Rapid reactor shutdowns down in the hadal trench initiate the *Xenon Pit* — an unavoidable 36-hour deadzone where reactivity is suppressed below criticality unless emergency chemical reactivity boosters (tritium-fueled neutron injectors) are manually engaged via the cockpit console.
+
+---
+
+## 🌊 Magnetohydrodynamic (MHD) Propulsion & Cavitation Hydrodynamics
+
+The **Hydro-X Silent Drive** eliminates mechanical shaft bearings, utilizing cross-field Lorentz force acceleration of seawater:
+
+$$\vec{F}_{\text{Lorentz}} = \int_V (\vec{J} \times \vec{B}) \, dV = \sigma (\vec{E} + \vec{v} \times \vec{B}) \times \vec{B}$$
+
+```
+   ┌─────────────────────────────────────────────────────────────┐
+   │                   MHD SEAWATER DUCT (HYDRO-X)               │
+   │                                                             │
+   │   [+] Top Electrode (+400V DC)                              │
+   │   ═══════════════════════════════════════════════════════   │
+   │   Seawater Inflow  ───►  ───►  ───►  ───► Thrust Jet Out    │
+   │   (Conductivity σ ≈ 4.8 S/m)        (Lorentz F = J × B)    │
+   │   ═══════════════════════════════════════════════════════   │
+   │   [-] Bottom Electrode (0V Ground)                          │
+   │                                                             │
+   │   Magnetic Field B = 8.5 Tesla (Superconducting Niobium)    │
+   └─────────────────────────────────────────────────────────────┘
+```
+
+### 🌪️ Cavitation Inception Number (Thoma Criterion)
+To prevent acoustic detection by hadal predators, the pilot must maintain the cavitation index $\sigma_c$ above the critical inception boundary:
+
+$$\sigma_c = \frac{P_{\text{ambient}} - P_{\text{vapor}}}{\frac{1}{2} \rho v_{\text{duct}}^2} > 1.45$$
+
+* At $8,000\text{ m}$ depth ($P_{\text{ambient}} \approx 800\text{ bar}$), cavitation is physically suppressed even at extreme exit velocities ($v > 45\text{ m/s}$), allowing hyper-thrust sprint bursts with zero acoustic signature.
+
+---
+
+## 🗺️ Bathymetric Stratigraphy & Depth Biome Hierarchy
+
+```
+Depth (m)   Zone              Illumination   Pressure      Dominant Hazard / Subsystem Interaction
+════════════════════════════════════════════════════════════════════════════════════════════════════
+0m        ┌ Epipelagic      │ 100% Sunlight│ 1 atm       │ Surface weather, maritime radar detection
+          │ (Sunlit)        │ λ = 400-700nm│             │
+-200m     ├─────────────────┼──────────────┼─────────────┼──────────────────────────────────────────
+          │ Mesopelagic     │ Twilight     │ 20 bar      │ Thermocline sound inversion layers,
+          │ (Twilight)      │ λ = 475nm    │             │ counter-illuminating predators
+-1,000m   ├─────────────────┼──────────────┼─────────────┼──────────────────────────────────────────
+          │ Bathypelagic    │ 0% Solar     │ 100 bar     │ Complete darkness, heavy bioluminescence,
+          │ (Midnight)      │ Biolum only  │             │ hull strain starts accumulating
+-4,000m   ├─────────────────┼──────────────┼─────────────┼──────────────────────────────────────────
+          │ Abyssopelagic   │ Pitch Black  │ 400 bar     │ Subzero brine pools, hydrothermal vents,
+          │ (The Abyss)     │ 1.2°C water  │             │ magnetic field anomalies
+-6,000m   ├─────────────────┼──────────────┼─────────────┼──────────────────────────────────────────
+          │ Hadal Trench    │ Void         │ 800-1100 bar│ Hull crush zone, seismic trench collapses,
+-11,000m  └ (The Hadal Zone)│ High Chem    │             │ Class-III Leviathan predatory hunting
+```
+
+---
+
+## 🧩 Unity ECS Data-Oriented Memory Layout & SoA Architecture
+
+To achieve absolute 0 B/frame GC allocation and cache-line saturation ($64\text{ bytes}$ per L1 cache line), all submarine physics entities are organized into **Structure of Arrays (SoA)** memory chunks:
+
+```csharp
+// Unmanaged Component Architecture (Zero-Garbage Collection)
+public struct SubmarineTelemetryChunk {
+    public const int CAPACITY = 128; // Fits exactly into L2 cache allocation slices
+
+    // Packed 64-byte aligned SIMD vectors
+    public fixed float PositionX[CAPACITY];
+    public fixed float PositionY[CAPACITY];
+    public fixed float PositionZ[CAPACITY];
+
+    public fixed float VelocityX[CAPACITY];
+    public fixed float VelocityY[CAPACITY];
+    public fixed float VelocityZ[CAPACITY];
+
+    public fixed float HydrostaticPressureBar[CAPACITY];
+    public fixed float HullStrainPermille[CAPACITY];
+    public fixed float CoreTemperatureKelvin[CAPACITY];
+    public fixed float BatteryChargeCoulombs[CAPACITY];
+}
+```
+
+```mermaid
+graph TD
+    subgraph L1/L2 Hardware Cache Line Saturation
+        A[SubmarineTelemetryChunk SoA Memory Block] -->|Streamed 64B Cache Line| B[Burst SIMD Vector Register]
+        B -->|AVX-512 FMA Packed Instructions| C[Hydrodynamic Navier-Stokes Solver]
+        C -->|Direct Unmanaged Memory Write| D[NativeArray Screen Buffer]
+        D -->|Zero-Copy GPU Upload via GraphicsBuffer| E[DirectX 12 / Vulkan Command Queue]
+    end
+```
+
+---
+
+## 💥 Damage Propagation, Electrical Arcing & Bulkhead Flooding FSM
+
+Damage in HECTON-8 is physically simulated across 6 isolated pressure compartments with cascading finite-state machine transitions:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Nominal_Operation
+    
+    Nominal_Operation --> Pressure_MicroStrain: Ambient Pressure > 600 bar
+    Nominal_Operation --> Bulkhead_Puncture: External Kinetic Impact
+    
+    Pressure_MicroStrain --> Rivet_Failure: Strain > 75% Yield
+    Rivet_Failure --> High_Pressure_Jet_Flooding: Seawater Ingress (800 bar)
+    
+    Bulkhead_Puncture --> High_Pressure_Jet_Flooding: Compartment Breach
+    
+    High_Pressure_Jet_Flooding --> Electrical_Arcing: Water contacts 400V Busbar
+    High_Pressure_Jet_Flooding --> Emergency_Bulkhead_Seal: Auto/Manual Door Drop
+    
+    Electrical_Arcing --> Cockpit_Blackout: Main Breaker Trip
+    Electrical_Arcing --> Electrolytic_Hydrogen_Fire: Gas Accumulation
+    
+    Emergency_Bulkhead_Seal --> Isolated_Flooded_Compartment: Loss of Module Volume
+    Isolated_Flooded_Compartment --> Negative_Buoyancy_Sink: Weight > Ballast Capacity
+    
+    Electrolytic_Hydrogen_Fire --> Total_Hull_Rupture: Overpressure Explosion
+    Negative_Buoyancy_Sink --> [*]: Hadal Floor Crush Depth
+```
+
+| Compartment | Volume ($m^3$) | Critical Equipment | Flooding Consequence | Emergency Countermeasure |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. Bow Torpedo & Sonar Bay** | $45	ext{ m}^3$ | Active Transceiver, Decoy Launchers | Loss of forward acoustic visibility | Seal Bulkhead Door Alpha |
+| **2. Command Cockpit** | $28	ext{ m}^3$ | Pilot Helm, CRT Displays, Navigation | Total loss of primary instrumentation | Engage backup analog periscope & trim |
+| **3. Life Support & Berthing** | $34	ext{ m}^3$ | $O_2$ Candle Rack, $	ext{CO}_2$ Scrubbers | Rapid asphyxiation timer ($6	ext{ min}$) | Don portable breathing apparatus (PBA) |
+| **4. Battery & Capacitor Bay** | $52	ext{ m}^3$ | 400V DC Lithium-Iron Matrix | Catastrophic chlorine/hydrogen gas arc | Vent compartment to external vacuum duct |
+| **5. Reactor Containment** | $60	ext{ m}^3$ | Molten Salt Pile, Heat Exchangers | Thermal shock & steam overpressure | Emergency boron injection & Scram |
+| **6. Aft MHD Propulsion Tunnel**| $48	ext{ m}^3$ | Superconducting Coils, Lorentz Duct | Total propulsion loss ($v = 0	ext{ m/s}$) | Drop emergency solid lead keel ballast |
+
 ### 📜 License / Лицензия
 Protected under **HECTON-8 Commercial Anti-Theft & Source-Available License (Copyright (c) 2026 Adolf Petushkov)**. Maintainers and AI research welcome!
 
