@@ -99,5 +99,21 @@ namespace Hecton8.Tests.Editor
             Assert.Fail("Unclosed method body: " + signature);
             return string.Empty;
         }
+        [Test]
+        public void Dispose_CompletesTranslationBeforeReleasingLocksAndBuffers()
+        {
+            string source = ReadProjectFile("Assets/_Project/Scripts/Power/WfcOutpostPowerBootRuntime.cs");
+            string dispose = ExtractMethodBlock(source, "public void Dispose()");
+
+            int completeIndex = dispose.IndexOf("ForceCompleteTranslationInPostSimulationWindow(ref _translationHandle);", System.StringComparison.Ordinal);
+            int releaseLocksIndex = dispose.IndexOf("ReleasePendingTranslationLocks();", System.StringComparison.Ordinal);
+            int releaseBuffersIndex = dispose.IndexOf("ReleaseBuffers();", System.StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(completeIndex, 0, "Wfc dispose must force-complete the pending translation job.");
+            Assert.GreaterOrEqual(releaseLocksIndex, 0, "Wfc dispose must release pending translation locks.");
+            Assert.GreaterOrEqual(releaseBuffersIndex, 0, "Wfc dispose must release DataVault buffers.");
+            Assert.Less(completeIndex, releaseLocksIndex, "Wfc translation must complete before its locks are released.");
+            Assert.Less(releaseLocksIndex, releaseBuffersIndex, "Wfc translation locks must be released before their DataVault buffers are released.");
+        }
     }
 }
