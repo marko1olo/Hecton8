@@ -1,0 +1,18 @@
+# Hecton8 — LLM Search Index
+# https://llmstxt.org/
+
+> Hecton-8 — NASA-Punk / Deep Sea Noir 3D Unity игровой движок. Burst Compiler, zero-GC, гидроакустический сонар, батиметрическая симуляция глубин, кеплерианская механика.
+
+## Project
+- Name: Hecton8
+- Author: Adolf Petushkov (marko1olo)
+- Repository: https://github.com/marko1olo/Hecton8
+- Live Demo: https://marko1olo.github.io/Hecton8/
+- License: MIT
+
+## Architecture
+This project is part of the Adolf Petushkov Engineering Ecosystem — a portfolio of 12+ production-grade open-source applications spanning clinical AI, game engines, DSP audio, cybersecurity, and developer tooling.
+
+## Links
+- GitHub Profile: https://github.com/marko1olo
+- Portfolio: https://marko1olo.github.io/marko1olo/
