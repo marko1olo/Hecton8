@@ -65,6 +65,14 @@ namespace Hecton8.Tests.Editor
             Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientProfileDTO), nameof(NutrientProfileDTO.Flags)), Is.EqualTo(24));
             Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientProfileDTO), nameof(NutrientProfileDTO.SourceHash)), Is.EqualTo(28));
         }
+        [Test]
+        public void NutrientCellDTO_HasExactUnsafeLayout()
+        {
+            Assert.That(UnsafeUtility.SizeOf<NutrientCellDTO>(), Is.EqualTo(16));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientCellDTO), nameof(NutrientCellDTO.Density)), Is.EqualTo(0));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientCellDTO), nameof(NutrientCellDTO.Temperature)), Is.EqualTo(4));
+            Assert.That(UnsafeUtility.GetFieldOffset(typeof(NutrientCellDTO), nameof(NutrientCellDTO.ToxinLevel)), Is.EqualTo(8));
+        }
     }
 }
 #endif
