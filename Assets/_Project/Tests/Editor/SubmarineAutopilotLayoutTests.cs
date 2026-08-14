@@ -59,5 +59,14 @@ namespace Hecton8.Tests.Editor
             Assert.That(Marshal.OffsetOf<AutopilotTelemetryEntry>(nameof(AutopilotTelemetryEntry.EstimatedBurstMicroseconds)).ToInt32(), Is.EqualTo(56));
             Assert.That(Marshal.OffsetOf<AutopilotTelemetryEntry>(nameof(AutopilotTelemetryEntry.StateHash)).ToInt32(), Is.EqualTo(60));
         }
+
+        [Test]
+        public void AutopilotWaypointDTO_MatchesCanonicalUnsafeLayout()
+        {
+            Assert.That(Marshal.SizeOf<AutopilotWaypointDTO>(), Is.EqualTo(32));
+            Assert.That(Marshal.OffsetOf<AutopilotWaypointDTO>(nameof(AutopilotWaypointDTO.TargetAUP)).ToInt32(), Is.EqualTo(0));
+            Assert.That(Marshal.OffsetOf<AutopilotWaypointDTO>(nameof(AutopilotWaypointDTO.AcceptanceRadius)).ToInt32(), Is.EqualTo(24));
+            Assert.That(Marshal.OffsetOf<AutopilotWaypointDTO>(nameof(AutopilotWaypointDTO.Flags)).ToInt32(), Is.EqualTo(28));
+        }
     }
 }
